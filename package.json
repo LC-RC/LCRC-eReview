@@ -1,0 +1,12 @@
+{
+  "name": "ereview-lms",
+  "version": "1.0.0",
+  "description": "LCRC eReview LMS - Tailwind CSS + Alpine.js",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css",
+    "watch": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

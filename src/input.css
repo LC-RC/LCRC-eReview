@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-gray-700;
+  }
+}
+
+@layer components {
+  .btn-brand {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-bold text-brand-navy-dark bg-gradient-to-r from-brand-gold to-brand-gold-light hover:opacity-95 transition focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2;
+  }
+  .btn-primary-custom {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-semibold text-white bg-primary hover:bg-primary-dark transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  .input-custom {
+    @apply w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition;
+  }
+  .card-app {
+    @apply bg-white rounded-xl shadow-card border border-gray-100;
+  }
+}
+
+/* Alpine.js cloak - hide until ready */
+[x-cloak] {
+  display: none !important;
+}
