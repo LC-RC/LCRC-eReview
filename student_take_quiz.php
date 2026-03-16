@@ -381,8 +381,8 @@ if ($userId) {
     }
     .exam-progress-wrap:hover .exam-progress-fill {
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.4),
-        0 0 18px rgba(79, 70, 229, 0.45);
+        0 0 0 1px rgba(51, 147, 255, 0.55),
+        0 0 20px rgba(51, 147, 255, 0.6);
     }
     .exam-progress-label {
       font-size: 0.8125rem;
@@ -484,11 +484,11 @@ if ($userId) {
       transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
     }
     .exam-choice:hover {
-      border-color: #c7d2fe;
-      background: #fafbff;
+      border-color: rgba(51, 147, 255, 0.55);
+      background: #f4f8ff;
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.35),
-        0 6px 18px rgba(79, 70, 229, 0.28);
+        0 0 0 1px rgba(51, 147, 255, 0.55),
+        0 8px 20px rgba(51, 147, 255, 0.45);
     }
     .exam-choice.selected {
       border-color: var(--exam-success);
@@ -559,11 +559,11 @@ if ($userId) {
       border: 2px solid var(--exam-primary);
     }
     .exam-btn-next:hover {
-      background: #2d3fc7;
-      border-color: #2d3fc7;
+      background: #2563eb;
+      border-color: #2563eb;
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.55),
-        0 10px 24px rgba(37, 99, 235, 0.45);
+        0 0 0 1px rgba(51, 147, 255, 0.7),
+        0 10px 26px rgba(51, 147, 255, 0.6);
       transform: translateY(-1px);
     }
     .exam-btn-submit {
@@ -572,7 +572,7 @@ if ($userId) {
       border-radius: var(--exam-radius-sm);
       font-weight: 700;
       font-size: 1rem;
-      background: var(--exam-success);
+      background: var(--exam-primary);
       color: white;
       border: none;
       display: inline-flex;
@@ -582,16 +582,16 @@ if ($userId) {
       transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
     }
     .exam-btn-submit:hover:not(:disabled) {
-      background: #047857;
+      background: #2563eb;
       transform: translateY(-2px);
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.65),
-        0 10px 26px rgba(37, 99, 235, 0.55);
+        0 0 0 1px rgba(51, 147, 255, 0.7),
+        0 12px 30px rgba(51, 147, 255, 0.65);
     }
     .exam-btn-submit:active:not(:disabled) { transform: scale(0.98); }
     .exam-btn-submit:disabled {
-      background: #94a3b8;
-      color: #e2e8f0;
+      background: #cbd5e1;
+      color: #94a3b8;
       cursor: not-allowed;
       opacity: 0.9;
     }
@@ -605,9 +605,18 @@ if ($userId) {
       padding-right: 1rem;
     }
     .exam-page-container-result {
-      max-width: 720px;
-      padding-top: 1.5rem;
-      padding-bottom: 2rem;
+      /* Full-width page container; inner content handles max-width */
+      width: 100%;
+      padding-top: 1.75rem;
+      padding-bottom: 2.5rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .exam-result-inner {
+      /* Let the result card span the full content width (no large side gaps) */
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
     .exam-page-header {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
@@ -647,8 +656,8 @@ if ($userId) {
       align-items: center;
       justify-content: center;
       box-shadow:
-        0 0 0 1px rgba(148, 163, 184, 0.3),
-        0 10px 24px rgba(15, 23, 42, 0.18);
+        0 0 0 1px rgba(51, 147, 255, 0.35),
+        0 14px 32px rgba(51, 147, 255, 0.5);
       border-radius: 9999px;
       transition: box-shadow 0.25s ease, transform 0.18s ease;
     }
@@ -710,10 +719,10 @@ if ($userId) {
       text-align: left;
     }
     .exam-sidebar-section-head:hover {
-      background: #f8fafc;
+      background: #f1f5ff;
       box-shadow:
-        0 0 0 1px rgba(148, 163, 184, 0.4),
-        0 6px 18px rgba(15, 23, 42, 0.12);
+        0 0 0 1px rgba(51, 147, 255, 0.55),
+        0 8px 22px rgba(51, 147, 255, 0.5);
     }
     .exam-sidebar-section-head i.bi-chevron-up { transition: transform 0.2s ease; }
     .exam-sidebar-section.collapsed .exam-sidebar-section-head i.bi-chevron-up { transform: rotate(180deg); }
@@ -742,11 +751,11 @@ if ($userId) {
       transition: background 0.2s, transform 0.15s ease, box-shadow 0.2s;
     }
     .exam-q-list a:hover {
-      background: #f1f5f9;
+      background: #eff6ff;
       transform: translateX(2px);
       box-shadow:
-        0 0 0 1px rgba(148, 163, 184, 0.4),
-        0 4px 16px rgba(15, 23, 42, 0.12);
+        0 0 0 1px rgba(51, 147, 255, 0.6),
+        0 6px 18px rgba(51, 147, 255, 0.55);
     }
     .exam-q-list a.current { background: var(--exam-primary-light); color: var(--exam-primary); font-weight: 600; box-shadow: 0 1px 3px rgba(65, 84, 241, 0.12); }
     .exam-q-list a .q-num { flex-shrink: 0; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--exam-border); color: var(--exam-muted); font-size: 0.75rem; font-weight: 700; transition: background 0.2s, color 0.2s; }
@@ -755,17 +764,47 @@ if ($userId) {
     .exam-q-list a .q-check { margin-left: auto; color: #059669; font-size: 0.875rem; transition: transform 0.2s; }
     .exam-q-list a.answered:hover .q-check { transform: scale(1.1); }
     /* Answer style – green when selected (saved), checkmark on right, interactive */
-    .exam-choice.selected { border-color: var(--exam-success); background: #f0fdf4; box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25); }
+    .exam-choice.selected {
+      border-color: var(--exam-success);
+      background: #f0fdf4;
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.5),
+        0 0 0 3px rgba(5, 150, 105, 0.28);
+    }
     .exam-choice.selected .exam-choice-letter { background: var(--exam-success); color: white; }
     .exam-choice .exam-choice-check { margin-left: auto; flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--exam-success); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; opacity: 0; transition: opacity 0.2s; }
     .exam-choice.selected .exam-choice-check { opacity: 1; }
     .exam-choice { transition: transform 0.15s ease, box-shadow 0.2s ease; }
-    .exam-choice:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
-    .exam-choice.selected:hover { box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3), 0 4px 14px rgba(0,0,0,0.06); }
+    .exam-choice:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.6),
+        0 10px 22px rgba(51, 147, 255, 0.5);
+    }
+    .exam-choice.selected:hover {
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.55),
+        0 0 0 3px rgba(5, 150, 105, 0.3),
+        0 10px 22px rgba(51, 147, 255, 0.5);
+    }
     .exam-choice:active { transform: translateY(0); }
-    .exam-choice:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(65, 84, 241, 0.4); }
-    .exam-q-list a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--exam-primary); }
-    .exam-btn-submit:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.5); }
+    .exam-choice:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(51, 147, 255, 0.7),
+        0 0 0 4px rgba(148, 163, 184, 0.6);
+    }
+    .exam-q-list a:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(51, 147, 255, 0.85);
+    }
+    .exam-btn-submit:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(51, 147, 255, 0.8),
+        0 0 0 4px rgba(5, 150, 105, 0.45);
+    }
     .exam-question-card:target { border-color: rgba(65, 84, 241, 0.35); box-shadow: 0 6px 20px rgba(65, 84, 241, 0.1); }
     .exam-nav-card { transition: box-shadow 0.2s ease, border-color 0.2s ease; }
     .exam-nav-card:focus-within { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: rgba(5, 150, 105, 0.25); }
@@ -797,6 +836,62 @@ if ($userId) {
     .exam-time-warning-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .exam-time-warning-toast.warning { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
     .exam-time-warning-toast.danger { background: #fef2f2; color: #b91c1c; border: 1px solid #dc2626; }
+    /* Global quiz submit loading overlay – similar to welcome modal feel */
+    .quiz-submit-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(51,147,255,0.18), transparent 55%),
+                  rgba(15,23,42,0.78);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .quiz-submit-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .quiz-submit-card {
+      background: linear-gradient(135deg, #0f172a 0%, #020617 55%, #020617 100%);
+      border-radius: 1rem;
+      padding: 1.75rem 2rem;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      border: 1px solid rgba(148,163,184,0.35);
+      color: #e5e7eb;
+    }
+    .quiz-submit-spinner {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      border-width: 3px;
+      border-style: solid;
+      border-color: #3393ff transparent #60a5fa transparent;
+      margin: 0 auto 1.25rem;
+      animation: quiz-spin 0.9s linear infinite;
+      box-shadow:
+        0 0 0 1px rgba(51,147,255,0.55),
+        0 0 30px rgba(51,147,255,0.85);
+    }
+    @keyframes quiz-spin {
+      to { transform: rotate(360deg); }
+    }
+    .quiz-submit-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: #f9fafb;
+    }
+    .quiz-submit-text {
+      font-size: 0.9rem;
+      color: #cbd5f5;
+    }
     /* App modal – dark gradient format (same style for all confirmations/alerts) */
     .quiz-confirm-overlay {
       position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 1rem;
@@ -846,19 +941,22 @@ if ($userId) {
     /* Result card: clear hierarchy, balanced spacing, softer shape */
     .result-card {
       border-width: 1px;
-      border-radius: 24px;
-      padding: 1.75rem 2.5rem 2rem;
-      max-width: 640px;
-      margin-left: auto;
-      margin-right: auto;
+      border-radius: 20px;
+      padding: 0.85rem 1.5rem 0.9rem;
+      width: 100%;
       position: relative;
+      overflow: hidden;
+      /* Stronger banner-style gradient background */
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 25%, #0ea5e9 60%, #22c55e 100%);
     }
     .result-card::before {
       content: "";
       position: absolute;
-      inset: -1px;
-      border-radius: inherit;
-      background: linear-gradient(135deg, rgba(65,84,241,0.2), rgba(14,165,233,0.18));
+      inset: -30%;
+      background:
+        radial-gradient(circle at 0 0, rgba(255,255,255,0.16), transparent 50%),
+        radial-gradient(circle at 100% 0, rgba(255,255,255,0.2), transparent 52%),
+        radial-gradient(circle at 0 100%, rgba(15,23,42,0.35), transparent 55%);
       opacity: 0.9;
       z-index: -1;
     }
@@ -866,14 +964,14 @@ if ($userId) {
       position: relative;
       z-index: 1;
       border-radius: inherit;
-      padding: 0.5rem 0 0;
+      padding: 0.25rem 0 0;
     }
     .result-card.result-pass {
       background: #f0fdf4;
       border-color: #bbf7d0;
       box-shadow:
-        0 18px 40px rgba(15, 118, 110, 0.18),
-        0 0 0 1px rgba(34, 197, 94, 0.12);
+        0 20px 46px rgba(51, 147, 255, 0.45),
+        0 0 0 1px rgba(34, 197, 94, 0.18);
     }
     .result-card.result-pass .result-score { color: #047857; }
     .result-card.result-pass .result-badge { background: #059669; color: white; }
@@ -882,8 +980,8 @@ if ($userId) {
       background: #fffbeb;
       border-color: #fed7aa;
       box-shadow:
-        0 18px 40px rgba(217, 119, 6, 0.18),
-        0 0 0 1px rgba(251, 191, 36, 0.12);
+        0 20px 46px rgba(51, 147, 255, 0.4),
+        0 0 0 1px rgba(251, 191, 36, 0.16);
     }
     .result-card.result-fair .result-score { color: #b45309; }
     .result-card.result-fair .result-badge { background: #d97706; color: white; }
@@ -892,24 +990,25 @@ if ($userId) {
       background: #fef2f2;
       border-color: #fecaca;
       box-shadow:
-        0 18px 40px rgba(220, 38, 38, 0.18),
-        0 0 0 1px rgba(248, 113, 113, 0.16);
+        0 20px 46px rgba(51, 147, 255, 0.4),
+        0 0 0 1px rgba(248, 113, 113, 0.18);
     }
     .result-card.result-fail .result-score { color: #b91c1c; }
     .result-card.result-fail .result-badge { background: #dc2626; color: white; }
     .result-card.result-fail h2 i { color: #dc2626; }
     .result-badge {
       display: inline-block;
-      padding: 0.35rem 0.9rem;
+      padding: 0.25rem 0.8rem;
       border-radius: 9999px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
+      background: rgba(255,255,255,0.9);
     }
-    .result-card h2 { margin-bottom: 0.35rem; }
-    .result-card .result-score { margin-bottom: 0.35rem; }
+    .result-card h2 { margin-bottom: 0.15rem; }
+    .result-card .result-score { margin-bottom: 0.15rem; }
     /* Result actions: vertically stacked on mobile, evenly spaced on desktop */
     .result-card-actions {
       display: flex;
@@ -941,8 +1040,8 @@ if ($userId) {
     .result-card-actions .exam-btn-view-history:hover {
       transform: translateY(-1px);
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.55),
-        0 10px 24px rgba(37, 99, 235, 0.5);
+        0 0 0 1px rgba(51, 147, 255, 0.75),
+        0 10px 26px rgba(51, 147, 255, 0.65);
     }
     .result-card-actions .exam-btn-view-history {
       border: 2px solid var(--exam-primary);
@@ -959,6 +1058,82 @@ if ($userId) {
         align-items: center;
         justify-content: center;
       }
+    }
+    /* Result stats row under main score */
+    .result-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.35rem;
+      margin-bottom: 0.35rem;
+    }
+    .result-stat-card {
+      border-radius: 9999px;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.78);
+      color: #0f172a;
+      box-shadow: 0 1px 4px rgba(15,23,42,0.08);
+    }
+    .result-stat-card i {
+      font-size: 0.9rem;
+    }
+    .result-stat-correct i { color: #16a34a; }
+    .result-stat-wrong i { color: #dc2626; }
+    .result-stat-total i { color: #0ea5e9; }
+    @media (max-width: 640px) {
+      .result-stats-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    /* Section 2: compact actions under result card */
+    .result-actions-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .result-actions-bar a,
+    .result-actions-bar button {
+      font-size: 0.875rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-width: 1px;
+      border-style: solid;
+      transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.22s ease, transform 0.16s ease;
+    }
+    .result-actions-primary {
+      background: #4154f1;
+      border-color: #4154f1;
+      color: #ffffff;
+    }
+    .result-actions-primary:hover {
+      background: #2563eb;
+      box-shadow:
+        0 0 0 1px rgba(51,147,255,0.75),
+        0 10px 26px rgba(51,147,255,0.65);
+      transform: translateY(-1px);
+    }
+    .result-actions-ghost {
+      background: #ffffff;
+      border-color: #d1d5db;
+      color: #4b5563;
+    }
+    .result-actions-ghost:hover {
+      background: #f3f4f6;
+      box-shadow:
+        0 0 0 1px rgba(51,147,255,0.45),
+        0 8px 20px rgba(51,147,255,0.4);
+      transform: translateY(-1px);
     }
     /* Review: correct = green, wrong = red – consistent padding */
     .review-item-correct { background: #f0fdf4 !important; border-color: #059669 !important; padding: 1.25rem !important; }
@@ -1040,28 +1215,127 @@ if ($userId) {
       $resultClass = $score >= 50 ? 'result-pass' : 'result-fail';
       $resultLabel = $score >= 50 ? 'Passed' : 'Failed';
       $backUrl = $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php';
+      // Personal best + time insight (compare with previous attempts)
+      $currentAttemptId = (int)($result['attempt_id'] ?? 0);
+      $bestBefore = null;
+      $currentTimeSpent = null;
+      $prevTimeSum = 0;
+      $prevTimeCount = 0;
+      foreach ($quizHistoryAttempts as $h) {
+        $s = isset($h['score']) ? (float)$h['score'] : null;
+        $t = isset($h['time_spent_seconds']) ? (int)$h['time_spent_seconds'] : 0;
+        if ($currentAttemptId && (int)$h['attempt_id'] === $currentAttemptId) {
+          $currentTimeSpent = $t;
+          continue;
+        }
+        if ($s !== null) {
+          if ($bestBefore === null || $s > $bestBefore) $bestBefore = $s;
+        }
+        if ($t > 0) {
+          $prevTimeSum += $t;
+          $prevTimeCount++;
+        }
+      }
+      $isPersonalBest = ($bestBefore !== null && $score > $bestBefore);
+      $prevAvgTime = $prevTimeCount > 0 ? (int)round($prevTimeSum / $prevTimeCount) : null;
+      function formatSecondsShort(int $sec): string {
+        if ($sec <= 0) return '0s';
+        $m = intdiv($sec, 60);
+        $s = $sec % 60;
+        if ($m && $s) return $m . 'm ' . $s . 's';
+        if ($m) return $m . 'm';
+        return $s . 's';
+      }
     ?>
       <div class="exam-page-container exam-page-container-result">
+        <div class="exam-result-inner">
         <header class="exam-page-header">
           <h1><i class="bi bi-trophy-fill text-[#4154f1]"></i> <?php echo h($quiz['title']); ?></h1>
         </header>
-        <div class="exam-question-card result-card w-full text-center mb-6 <?php echo $resultClass; ?>">
-          <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?> — Quiz Complete</div>
-          <span class="result-badge"><?php echo h($resultLabel); ?></span>
-          <h2 class="text-2xl font-bold text-[#1e293b] mb-2"><i class="bi bi-trophy-fill mr-2"></i>Results</h2>
-          <div class="text-5xl font-bold mb-2 result-score"><?php echo number_format($score, 0); ?>%</div>
-          <p class="text-[#64748b] mb-6">You got <strong class="text-[#1e293b]"><?php echo (int)$result['correct']; ?></strong> out of <strong class="text-[#1e293b]"><?php echo (int)$result['total']; ?></strong> questions correct.</p>
-          <div class="result-card-actions">
-            <a href="<?php echo h($backUrl); ?>" class="exam-btn-prev"><i class="bi bi-arrow-left"></i> Back to Subject</a>
-            <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="exam-btn-next"><i class="bi bi-arrow-repeat"></i> Take Again</a>
-            <button type="button" class="exam-btn-view-history js-open-quiz-history" data-target="quizHistoryWrap">
-              <i class="bi bi-clock-history"></i> View History
-            </button>
+        <div class="exam-question-card result-card w-full text-center mb-4 <?php echo $resultClass; ?>">
+          <div class="result-card-inner">
+            <div class="flex flex-col items-center gap-2 mb-4">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center bg-white/80 shadow-sm">
+                <i class="bi bi-trophy-fill text-[#f97373] text-xl"></i>
+              </div>
+              <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?> — Quiz Complete</div>
+            </div>
+            <span class="result-badge"><?php echo h($resultLabel); ?></span>
+            <h2 class="text-2xl font-bold text-[#1e293b] mb-2"><i class="bi bi-bar-chart-fill mr-2"></i>Results</h2>
+            <div class="text-5xl font-extrabold mb-3 result-score tracking-tight"><?php echo number_format($score, 0); ?>%</div>
+            <?php $scoreWidth = max(4, min(100, (int)round($score))); ?>
+            <div class="w-full max-w-xs mx-auto h-2 rounded-full bg-white/70 overflow-hidden mb-4">
+              <div class="h-full rounded-full" style="width: <?php echo $scoreWidth; ?>%; background: linear-gradient(90deg, #3393ff, #60a5fa);"></div>
+            </div>
+            <p class="text-[#64748b] mb-3 text-sm sm:text-base">
+              You got
+              <strong class="text-[#1e293b]"><?php echo (int)$result['correct']; ?></strong>
+              out of
+              <strong class="text-[#1e293b]"><?php echo (int)$result['total']; ?></strong>
+              questions correct.
+            </p>
+            <?php if ($isPersonalBest): ?>
+              <p class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold mb-3 shadow-sm">
+                <i class="bi bi-stars"></i>
+                New personal best score!
+              </p>
+            <?php endif; ?>
+            <?php if ($currentTimeSpent !== null && $currentTimeSpent > 0 && $prevAvgTime !== null && $prevAvgTime > 0): ?>
+              <?php
+                $faster = $currentTimeSpent < $prevAvgTime;
+                $diffSec = abs($currentTimeSpent - $prevAvgTime);
+              ?>
+              <p class="text-[0.7rem] sm:text-xs text-[#e5e7eb] mb-3">
+                You finished in <strong><?php echo formatSecondsShort($currentTimeSpent); ?></strong>.
+                Your previous average was <strong><?php echo formatSecondsShort($prevAvgTime); ?></strong>,
+                so this attempt was <strong><?php echo formatSecondsShort($diffSec); ?></strong>
+                <?php echo $faster ? 'faster' : 'slower'; ?> than before.
+              </p>
+            <?php endif; ?>
+            <div class="result-stats-row text-xs sm:text-sm text-[#64748b]">
+              <?php
+                $correctCount = (int)$result['correct'];
+                $totalCount = (int)$result['total'];
+                $incorrectCount = max(0, $totalCount - $correctCount);
+              ?>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 text-[#0f172a] font-semibold">
+                <i class="bi bi-check-circle-fill result-stat-correct"></i>
+                <?php echo $correctCount; ?> correct
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60">
+                <i class="bi bi-x-circle-fill result-stat-wrong"></i>
+                <?php echo $incorrectCount; ?> incorrect
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60">
+                <i class="bi bi-question-circle result-stat-total"></i>
+                <?php echo $totalCount; ?> questions
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+        <!-- Section 2: global actions under summary -->
+        <div class="result-actions-bar">
+          <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="result-actions-primary">
+            <i class="bi bi-arrow-repeat"></i>
+            Take Again
+          </a>
+          <a href="#reviewAnswers" class="result-actions-ghost">
+            <i class="bi bi-journal-text"></i>
+            Review Answers
+          </a>
+          <button type="button"
+                  class="result-actions-ghost js-open-quiz-history"
+                  data-target="quizHistoryWrap">
+            <i class="bi bi-clock-history"></i>
+            View History
+          </button>
+          <a href="<?php echo h($backUrl); ?>" class="result-actions-ghost">
+            <i class="bi bi-arrow-left"></i>
+            Back to Subject
+          </a>
+        </div>
       <?php if (!empty($reviewQuestions)): ?>
-      <div class="exam-question-card w-full mb-5">
+      <div class="exam-question-card w-full mb-5" id="reviewAnswers">
         <h3 class="text-lg font-bold text-[#1e293b] mb-4"><i class="bi bi-journal-text text-[#4154f1] mr-2"></i>Review answers</h3>
         <p class="text-[#64748b] text-sm mb-4">Review each question, your answer, and the correct answer below.</p>
         <div class="space-y-5">
@@ -1188,6 +1462,7 @@ if ($userId) {
           <p class="text-[#64748b] text-xs mt-3 text-center"><a href="student_quiz_history.php" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
         </div>
       </div>
+      </div><!-- end exam-result-inner -->
       <?php endif; ?>
       </div><!-- end exam-page-container (result) -->
     <?php elseif ($totalQuestions === 0): ?>
@@ -1468,6 +1743,15 @@ if ($userId) {
       <div class="exam-saved-toast" id="examSavedToast" aria-live="polite"><i class="bi bi-check-circle-fill mr-1"></i> Answer saved</div>
       <div class="exam-time-warning-toast" id="examTimeWarningToast" aria-live="assertive" role="alert"></div>
 
+      <!-- Global quiz submit loader -->
+      <div class="quiz-submit-overlay" id="quizSubmitOverlay" aria-live="assertive" aria-busy="true">
+        <div class="quiz-submit-card">
+          <div class="quiz-submit-spinner"></div>
+          <div class="quiz-submit-title">Submitting your quiz…</div>
+          <p class="quiz-submit-text">Please wait a moment while we save your answers and calculate your score.</p>
+        </div>
+      </div>
+
       <!-- App modal: Leave quiz (dark gradient format) -->
       <div class="quiz-confirm-overlay" id="examLeaveConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="examLeaveConfirmTitle" aria-describedby="examLeaveConfirmMessage">
         <div class="quiz-confirm-card">
@@ -1533,8 +1817,33 @@ if ($userId) {
         var circleTimerValue = document.getElementById('examTimerCircleValue');
         var circleProgress = document.getElementById('examTimerCircleProgress');
         var form = document.getElementById('submitForm');
+        var submitOverlay = document.getElementById('quizSubmitOverlay');
+        var submitBtn = document.getElementById('submitQuizBtn');
+        var submitIntercepted = false;
         if (!circleTimer || !form) return;
-        form.addEventListener('submit', function() { setLeavingAllowed(true); });
+        form.addEventListener('submit', function(e) {
+          // First time: show loading modal for a short moment before real submit
+          if (!submitIntercepted) {
+            e.preventDefault();
+            submitIntercepted = true;
+            setLeavingAllowed(true);
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.classList.add('opacity-90', 'cursor-not-allowed');
+              submitBtn.innerHTML = '<span class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-fast"></span>Submitting…</span>';
+            }
+            if (submitOverlay) {
+              submitOverlay.classList.add('show');
+            }
+            // Give the user time to see the modal, then perform the real submit
+            setTimeout(function() {
+              form.submit();
+            }, 900);
+            return;
+          }
+          // Second time (programmatic submit) – let it pass through immediately
+          setLeavingAllowed(true);
+        });
         var serverRemaining = parseInt(circleTimer.getAttribute('data-remaining'), 10);
         var totalSec = parseInt(circleTimer.getAttribute('data-total'), 10) || Math.max(1, serverRemaining);
         var circumference = 327;
@@ -1610,7 +1919,6 @@ if ($userId) {
         var progressBar = document.getElementById('progressBar');
         var total = <?php echo $totalQuestions; ?>;
 
-        var submitBtn = document.getElementById('submitQuizBtn');
         var answeredCountEl = document.getElementById('answeredCountNum');
         function updateProgressUi(answered) {
           if (progressBar) progressBar.style.width = Math.round((answered / total) * 100) + '%';

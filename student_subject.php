@@ -140,10 +140,10 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease;
     }
     .quiz-table-row:hover {
-      background-color: rgba(65, 84, 241, 0.03);
+      background-color: rgba(51, 147, 255, 0.04);
       box-shadow:
-        0 0 0 1px rgba(148, 163, 184, 0.25),
-        0 0 18px rgba(65, 84, 241, 0.16);
+        0 0 0 1px rgba(51, 147, 255, 0.55),
+        0 10px 24px rgba(51, 147, 255, 0.5);
       transform: translateY(-1px);
     }
     .quiz-action-btn {
@@ -155,8 +155,8 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-action-btn:hover {
       transform: translateY(-2px) scale(1.02);
       box-shadow:
-        0 0 0 1px rgba(129, 140, 248, 0.35),
-        0 10px 25px rgba(37, 99, 235, 0.28);
+        0 0 0 1px rgba(51, 147, 255, 0.75),
+        0 12px 28px rgba(51, 147, 255, 0.6);
     }
     .quiz-action-btn:active {
       transform: translateY(0) scale(0.98);
@@ -215,7 +215,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       outline: none;
       box-shadow:
         0 0 0 2px rgba(255, 255, 255, 1),
-        0 0 0 4px rgba(65, 84, 241, 0.6);
+        0 0 0 4px rgba(51, 147, 255, 0.7);
     }
     /* Take Again / Take Quiz: force primary blue so button is always visible */
     .quiz-take-again-btn {
@@ -251,17 +251,41 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quizzers-header .quizzers-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
     .quiz-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; padding: 1rem 1.5rem; margin-bottom: 0; }
     .quiz-summary-card {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 0.875rem 1rem;
+      /* Soft 3D, light glass card tuned to app blue */
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, #f3f4ff 0%, #e0f2ff 40%, #f4fbff 100%);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      border-radius: 18px;
+      padding: 0.9rem 1.1rem;
       text-align: center;
-      transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+      box-shadow:
+        0 14px 35px rgba(15, 23, 42, 0.28),
+        0 0 0 1px rgba(148, 163, 184, 0.35);
+      color: #0f172a;
+      transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease, translate 0.15s ease;
+    }
+    .quiz-summary-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.75), transparent 55%),
+        radial-gradient(circle at 110% 10%, rgba(51, 147, 255, 0.16), transparent 55%),
+        radial-gradient(circle at 0 120%, rgba(15, 23, 42, 0.07), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .quiz-summary-card > * {
+      position: relative;
+      z-index: 1;
     }
     .quiz-summary-card:hover {
-      box-shadow: 0 0 0 1px rgba(65, 84, 241, 0.2), 0 8px 20px rgba(65, 84, 241, 0.12);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.45),
+        0 10px 24px rgba(51, 147, 255, 0.4);
       transform: translateY(-2px);
-      border-color: rgba(65, 84, 241, 0.3);
+      border-color: rgba(51, 147, 255, 0.6);
     }
     .quiz-summary-card .summary-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; line-height: 1.2; display: block; }
     .quiz-summary-card .summary-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.25rem; }
@@ -270,30 +294,60 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-summary-card.summary-avg .summary-value { color: #4154f1; }
     .quiz-table-wrap { overflow-x: auto; border-radius: 0 0 12px 12px; }
     .quiz-table { width: 100%; border-collapse: separate; border-spacing: 0; text-sm; }
-    .quiz-table thead th { padding: 1rem 1.25rem; font-weight: 600; color: #475569; background: #f8fafc; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+    .quiz-table thead th { padding: 0.75rem 1rem; font-weight: 600; color: #475569; background: #f8fafc; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
     .quiz-table thead th:first-child { text-align: left; padding-left: 1.5rem; }
     .quiz-table thead th:not(:first-child) { text-align: center; }
     .quiz-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease; }
     .quiz-table tbody tr:hover {
-      background-color: rgba(65, 84, 241, 0.04);
-      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2), 0 0 20px rgba(65, 84, 241, 0.14);
+      background-color: rgba(51, 147, 255, 0.04);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.6),
+        0 10px 24px rgba(51, 147, 255, 0.5);
       transform: translateY(-1px);
     }
-    .quiz-table tbody td { padding: 1rem 1.25rem; vertical-align: middle; }
+    .quiz-table tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
     .quiz-table tbody td:first-child { text-align: left; padding-left: 1.5rem; font-weight: 500; color: #1e293b; }
     .quiz-table tbody td:not(:first-child) { text-align: center; color: #475569; }
     .quiz-last-score-cell { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
     .quiz-last-score-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
     .quiz-score-badge-lg { display: inline-flex; align-items: center; justify-content: center; min-width: 3rem; padding: 0.35rem 0.65rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .quiz-score-badge-lg.pass { background: #dcfce7; color: #15803d; box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3); }
-    .quiz-score-badge-lg.fail { background: #fee2e2; color: #b91c1c; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3); }
+    .quiz-score-badge-lg.pass {
+      background: #dcfce7;
+      color: #15803d;
+      box-shadow:
+        0 0 0 1px rgba(34, 197, 94, 0.35),
+        0 0 16px rgba(51, 147, 255, 0.45);
+    }
+    .quiz-score-badge-lg.fail {
+      background: #fee2e2;
+      color: #b91c1c;
+      box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.4),
+        0 0 16px rgba(51, 147, 255, 0.35);
+    }
     .quiz-status-badge { display: inline-flex; align-items: center; padding: 0.4rem 0.75rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; }
     .quiz-status-badge.passed { background: #dcfce7; color: #15803d; }
     .quiz-status-badge.failed { background: #fee2e2; color: #b91c1c; }
     .quiz-status-badge.in-progress { background: #fef9c3; color: #a16207; }
     .quiz-status-badge.not-started { background: #f1f5f9; color: #64748b; }
-    .quiz-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.8125rem; font-weight: 600; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.22s ease; }
-    .quiz-btn:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.4), 0 8px 20px rgba(65, 84, 241, 0.25); }
+    .quiz-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.22s ease;
+    }
+    .quiz-btn:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.8),
+        0 10px 24px rgba(51, 147, 255, 0.6);
+    }
     .quiz-btn-primary { background: #4154f1; color: #fff; border: none; }
     .quiz-btn-primary:hover { background: #2d3fc7; color: #fff; }
     .quiz-take-again-btn.quiz-btn { background-color: #4154f1 !important; color: #fff !important; }
@@ -428,6 +482,35 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       </div>
     </div>
     <?php endif; ?>
+    <!-- Filters: status pills + search by title -->
+    <div class="px-4 pb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:justify-between">
+      <div class="flex flex-wrap gap-1.5 text-xs sm:text-sm">
+        <button type="button" class="px-3 py-1.5 rounded-full border text-gray-700 bg-white shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill is-active" data-status="">
+          All
+        </button>
+        <button type="button" class="px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="passed">
+          Passed
+        </button>
+        <button type="button" class="px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="need_retake">
+          Failed
+        </button>
+        <button type="button" class="px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="in_progress">
+          In Progress
+        </button>
+        <button type="button" class="px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="not_taken">
+          Not Started
+        </button>
+      </div>
+      <div class="relative w-full sm:max-w-xs">
+        <input
+          id="quizTitleFilter"
+          type="text"
+          class="w-full rounded-full border border-gray-300 bg-white/80 px-8 py-1.5 text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3393FF]/60 focus:border-[#3393FF]/70"
+          placeholder="Filter quizzes by title..."
+        >
+        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+      </div>
+    </div>
     <div class="quiz-table-wrap">
       <table class="quiz-table">
         <thead>
@@ -469,14 +552,13 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
             $statusBadgeClass = $rowStatus === 'passed' ? 'passed' : ($rowStatus === 'need_retake' ? 'failed' : ($rowStatus === 'in_progress' ? 'in-progress' : 'not-started'));
             $statusLabel = $rowStatus === 'need_retake' ? 'Failed' : ($rowStatus === 'not_taken' ? 'Not started' : ucfirst(str_replace('_', ' ', $rowStatus)));
           ?>
-            <tr class="quiz-table-row">
+            <tr class="quiz-table-row" data-status="<?php echo h($rowStatus); ?>">
               <td class="break-words" style="min-width: 220px;"><?php echo h($q['title']); ?></td>
               <td><?php echo formatTimeLimitSeconds($timeLimitSeconds); ?></td>
               <td>
                 <?php if ($lastAttemptDate): ?>
                   <div class="quiz-last-score-cell">
                     <?php if ($scorePct !== null): ?>
-                      <span class="quiz-last-score-label">Last Score</span>
                       <span class="quiz-score-badge-lg <?php echo $passed ? 'pass' : 'fail'; ?>"><?php echo $scorePct; ?>%</span>
                     <?php endif; ?>
                     <span class="text-xs text-gray-500 whitespace-nowrap"><?php echo date('M j, Y', strtotime($lastAttemptDate)); ?></span>
@@ -772,6 +854,41 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
       return size.toFixed(size >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
     }
+  </script>
+  <script>
+  // Client-side filtering for Quizzers table by quiz title + status
+  (function() {
+    var input = document.getElementById('quizTitleFilter');
+    var pills = document.querySelectorAll('.quiz-status-filter-pill');
+    var activeStatus = '';
+    if (!input && !pills.length) return;
+
+    function applyFilters() {
+      var term = input ? (input.value || '').toLowerCase().trim() : '';
+      var rows = document.querySelectorAll('.quiz-table tbody tr.quiz-table-row');
+      rows.forEach(function(row) {
+        var titleCell = row.querySelector('td:first-child');
+        if (!titleCell) return;
+        var text = (titleCell.textContent || '').toLowerCase();
+        var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+        var matchesTitle = !term || text.indexOf(term) !== -1;
+        var matchesStatus = !activeStatus || rowStatus === activeStatus;
+        row.style.display = (matchesTitle && matchesStatus) ? '' : 'none';
+      });
+    }
+
+    if (input) {
+      input.addEventListener('input', applyFilters);
+    }
+    pills.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        pills.forEach(function(p) { p.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        activeStatus = (btn.getAttribute('data-status') || '').toLowerCase();
+        applyFilters();
+      });
+    });
+  })();
   </script>
   <script>
   (function() {

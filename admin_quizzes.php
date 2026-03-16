@@ -100,6 +100,79 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .quiz-admin-header-actions .btn-admin {
+      transition: transform 0.18s ease, box-shadow 0.22s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+    .quiz-admin-header-actions .btn-admin:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.7),
+        0 10px 22px rgba(51, 147, 255, 0.55);
+    }
+    .quiz-admin-table tbody tr {
+      transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease;
+    }
+    .quiz-admin-table tbody tr:hover {
+      background-color: rgba(51, 147, 255, 0.03);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.6),
+        0 8px 20px rgba(51, 147, 255, 0.45);
+      transform: translateY(-1px);
+    }
+    .quiz-admin-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .quiz-admin-chip i {
+      font-size: 0.85rem;
+      color: #3393ff;
+    }
+    .quiz-admin-actions .btn-admin {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 0.65rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.22s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+    .quiz-admin-actions .btn-admin:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.75),
+        0 9px 22px rgba(51, 147, 255, 0.6);
+    }
+    .quiz-admin-pill {
+      border-radius: 9999px;
+      padding: 0.25rem 0.8rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      background: #e0f2fe;
+      color: #0369a1;
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.5),
+        0 0 16px rgba(51, 147, 255, 0.35);
+    }
+    .quiz-admin-empty-icon {
+      color: #cbd5e1;
+      text-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+    }
+    .quiz-admin-modal-primary:hover {
+      box-shadow:
+        0 0 0 1px rgba(51, 147, 255, 0.75),
+        0 10px 24px rgba(51, 147, 255, 0.65);
+    }
+  </style>
 </head>
 <body class="font-sans antialiased" x-data="quizzesApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
@@ -111,11 +184,11 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
     <p class="text-gray-500 mt-1">Create quizzes, then open Questions to build the question bank.</p>
   </div>
 
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-header-actions">
     <div></div>
     <div class="flex gap-2">
-      <a href="admin_subjects.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Subjects</a>
-      <button type="button" @click="openNewQuiz()" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Quiz</button>
+      <a href="admin_subjects.php" class="btn-admin px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Subjects</a>
+      <button type="button" @click="openNewQuiz()" class="btn-admin px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Quiz</button>
     </div>
   </div>
 
@@ -138,7 +211,7 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
       <span class="text-gray-500 text-sm">Subject: <?php echo h($subject['subject_name']); ?></span>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-left">
+      <table class="w-full text-left quiz-admin-table">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-5 py-3 font-semibold text-gray-700">Quiz</th>
@@ -152,15 +225,36 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
             while ($qz = mysqli_fetch_assoc($quizzes)): $hasAny = true;
             $timeSecs = getQuizTimeLimitSeconds($qz);
           ?>
-            <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-              <td class="px-5 py-3 font-semibold text-gray-800"><?php echo h($qz['title']); ?></td>
-              <td class="px-5 py-3 text-gray-600"><?php echo formatTimeLimitSeconds($timeSecs); ?></td>
-              <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-sm bg-gray-100 text-gray-700"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></span></td>
+            <tr class="border-b border-gray-100">
+              <td class="px-5 py-3 font-semibold text-gray-800">
+                <?php echo h($qz['title']); ?>
+              </td>
+              <td class="px-5 py-3 text-gray-600">
+                <span class="quiz-admin-chip">
+                  <i class="bi bi-clock"></i>
+                  <?php echo formatTimeLimitSeconds($timeSecs); ?>
+                </span>
+              </td>
               <td class="px-5 py-3">
-                <div class="flex flex-wrap gap-2">
-                  <a href="admin_quiz_questions.php?quiz_id=<?php echo (int)$qz['quiz_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-list-check"></i> Questions</a>
-                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-time-secs="<?php echo $timeSecs; ?>" @click="openEditQuiz($el.dataset.id, $el.dataset.title || '', parseInt($el.dataset.timeSecs) || 1800)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition"><i class="bi bi-pencil"></i> Edit</button>
-                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" @click="openDeleteQuiz($el.dataset.id, $el.dataset.title || '')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
+                <span class="quiz-admin-pill">
+                  <i class="bi bi-list-check mr-0.5"></i>
+                  <?php echo (int)($qz['questions_cnt'] ?? 0); ?> item(s)
+                </span>
+              </td>
+              <td class="px-5 py-3">
+                <div class="quiz-admin-actions flex flex-wrap gap-2">
+                  <a href="admin_quiz_questions.php?quiz_id=<?php echo (int)$qz['quiz_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="btn-admin border-2 border-primary text-primary hover:bg-primary hover:text-white transition">
+                    <i class="bi bi-list-check"></i>
+                    Questions
+                  </a>
+                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-time-secs="<?php echo $timeSecs; ?>" @click="openEditQuiz($el.dataset.id, $el.dataset.title || '', parseInt($el.dataset.timeSecs) || 1800)" class="btn-admin border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">
+                    <i class="bi bi-pencil"></i>
+                    Edit
+                  </button>
+                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" @click="openDeleteQuiz($el.dataset.id, $el.dataset.title || '')" class="btn-admin border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">
+                    <i class="bi bi-trash"></i>
+                    Delete
+                  </button>
                 </div>
               </td>
             </tr>
@@ -168,7 +262,7 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
           <?php if (!$hasAny): ?>
             <tr>
               <td colspan="4" class="px-5 py-12 text-center text-gray-500">
-                <i class="bi bi-inbox text-4xl block mb-2"></i>
+                <i class="bi bi-inbox text-4xl block mb-2 quiz-admin-empty-icon"></i>
                 <div class="font-semibold">No quizzes yet</div>
                 <p class="text-sm mt-1">Create your first quiz, then add questions.</p>
                 <button type="button" @click="openNewQuiz()" class="mt-3 px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Quiz</button>
@@ -215,7 +309,7 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
         </div>
         <div class="mt-6 flex justify-end gap-2">
           <button type="button" @click="quizModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
+          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark quiz-admin-modal-primary transition inline-flex items-center gap-2"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
         </div>
       </form>
     </div>
