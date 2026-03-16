@@ -17,6 +17,15 @@ module.exports = {
           DEFAULT: "#4154f1",
           dark: "#2d3fc7",
         },
+        /* Student dashboard – LCRC eReview prototype (#143D59, #1665A0) */
+        student: {
+          sidebar: "#143D59",
+          accent: "#1665A0",
+          "accent-hover": "#0f4d7a",
+          "accent-light": "#e8f2fa",
+          danger: "#dc2626",
+          "danger-hover": "#b91c1c",
+        },
         /* Modal / LMS accent palette */
         accent: {
           orange: "#F59E0B",
@@ -33,6 +42,8 @@ module.exports = {
       boxShadow: {
         card: "0 2px 10px rgba(0, 0, 0, 0.05)",
         "card-lg": "0 10px 24px rgba(0, 0, 0, 0.06)",
+        "student-card": "0 1px 3px rgba(20, 61, 89, 0.08), 0 4px 12px rgba(20, 61, 89, 0.06)",
+        "student-card-hover": "0 4px 12px rgba(20, 61, 89, 0.1), 0 8px 24px rgba(20, 61, 89, 0.08)",
         modal: "0 20px 50px rgba(0, 0, 0, 0.12)",
         "modal-xl": "0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04)",
         glass: "0 25px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 0 rgba(255,255,255,0.12)",

@@ -27,16 +27,19 @@ unset($_SESSION['error']);
       --reg-bg: #0b0f1a;
       --reg-surface: #111827;
       --reg-surface-elevated: #1a2332;
+      --reg-input-bg: rgba(26, 35, 50, 0.9);
       --reg-border: rgba(255, 255, 255, 0.08);
       --reg-border-focus: #1F58C3;
       --reg-primary: #1F58C3;
       --reg-primary-hover: #2563eb;
       --reg-accent: #F59E0B;
       --reg-text: #f1f5f9;
+      --reg-text-label: #e2e8f0;
       --reg-text-muted: #94a3b8;
       --reg-radius: 0.75rem;
       --reg-radius-lg: 1rem;
-      --reg-space: 1.25rem;
+      --reg-space: 1.5rem;
+      --reg-input-height: 2.875rem;
       --reg-shadow-glow: 0 0 40px rgba(31, 88, 195, 0.12);
     }
     /* === Frame 8: split-panel layout, scrollable form === */
@@ -54,89 +57,204 @@ unset($_SESSION['error']);
     }
     .reg-frame8-left {
       flex: 0 0 50%;
-      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 20%, #e2e8f0 45%, #94a3b8 75%, #475569 95%, #1e293b 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 2.5rem 3rem;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(155deg, #0a0d14 0%, #0f1419 25%, #131922 50%, #0d1117 75%, #06080c 100%);
+    }
+    .reg-frame8-left::before {
+      content: '';
+      position: absolute;
+      inset: -30%;
+      background:
+        radial-gradient(ellipse 80% 60% at 85% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 70% 80% at 90% 55%, rgba(30, 64, 175, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 70% at 15% 85%, rgba(31, 88, 195, 0.06) 0%, transparent 45%);
+      animation: reg-left-glow-drift 20s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .reg-frame8-left::after {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -30%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+      border-radius: 50%;
+      filter: blur(80px);
+      animation: reg-left-shine 25s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .reg-grok-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(70px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .reg-grok-blob-1 {
+      width: 55%;
+      height: 55%;
+      top: 10%;
+      right: -15%;
+      background: radial-gradient(circle, rgba(71, 85, 105, 0.25) 0%, rgba(30, 41, 59, 0.1) 40%, transparent 70%);
+      animation: reg-grok-float-1 28s ease-in-out infinite;
+    }
+    .reg-grok-blob-2 {
+      width: 45%;
+      height: 45%;
+      bottom: 5%;
+      left: -10%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(30, 64, 175, 0.04) 50%, transparent 70%);
+      animation: reg-grok-float-2 32s ease-in-out infinite;
+    }
+    .reg-grok-blob-3 {
+      width: 40%;
+      height: 40%;
+      top: 50%;
+      left: 20%;
+      background: radial-gradient(circle, rgba(148, 163, 184, 0.06) 0%, transparent 60%);
+      animation: reg-grok-float-3 24s ease-in-out infinite;
+    }
+    @keyframes reg-left-glow-drift {
+      0% { opacity: 0.9; transform: scale(1) translate(0, 0); }
+      100% { opacity: 1; transform: scale(1.1) translate(-3%, -2%); }
+    }
+    @keyframes reg-left-shine {
+      0% { opacity: 0.6; transform: translate(4%, 2%) scale(1); }
+      100% { opacity: 1; transform: translate(-4%, -4%) scale(1.08); }
+    }
+    @keyframes reg-grok-float-1 {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+      33% { transform: translate(-8%, 5%) scale(1.05); opacity: 1; }
+      66% { transform: translate(5%, -6%) scale(0.98); opacity: 0.85; }
+    }
+    @keyframes reg-grok-float-2 {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+      50% { transform: translate(6%, -8%) scale(1.08); opacity: 1; }
+    }
+    @keyframes reg-grok-float-3 {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+      50% { transform: translate(-5%, 4%) scale(1.06); opacity: 1; }
+    }
+    .reg-frame8-left-bg-shape {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 72%;
+      max-width: 420px;
+      pointer-events: none;
+      z-index: 0;
+      animation: reg-left-logo-float 45s ease-in-out infinite;
+    }
+    .reg-frame8-left-bg-shape .reg-left-logo-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 24px rgba(147, 197, 253, 0.12));
+    }
+    .reg-frame8-left-bg-shape .reg-left-logo-g {
+      animation: reg-left-logo-pulse 6s ease-in-out infinite;
+    }
+    .reg-frame8-left-bg-shape .reg-paper-body {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: reg-paper-draw 10s ease-in-out infinite;
+    }
+    .reg-frame8-left-bg-shape .reg-paper-fold {
+      stroke-dasharray: 60;
+      stroke-dashoffset: 60;
+      animation: reg-paper-fold-draw 10s ease-in-out 0.3s infinite;
+    }
+    @keyframes reg-paper-draw {
+      0% { stroke-dashoffset: 200; }
+      25% { stroke-dashoffset: 0; }
+      75% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 200; }
+    }
+    @keyframes reg-paper-fold-draw {
+      0% { stroke-dashoffset: 60; }
+      25% { stroke-dashoffset: 0; }
+      75% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 60; }
+    }
+    @keyframes reg-left-logo-float {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.98) rotate(0deg); opacity: 0.5; }
+      12.5%    { transform: translate(-75%, -65%) scale(1) rotate(-3deg); opacity: 0.52; }
+      25%      { transform: translate(-80%, -50%) scale(1.02) rotate(2deg); opacity: 0.55; }
+      37.5%    { transform: translate(-70%, -30%) scale(0.98) rotate(-2deg); opacity: 0.52; }
+      50%      { transform: translate(-50%, -45%) scale(1.04) rotate(1deg); opacity: 0.5; }
+      62.5%    { transform: translate(-25%, -35%) scale(1) rotate(-1deg); opacity: 0.52; }
+      75%      { transform: translate(-20%, -55%) scale(0.98) rotate(3deg); opacity: 0.55; }
+      87.5%    { transform: translate(-35%, -70%) scale(1.02) rotate(-2deg); opacity: 0.52; }
+    }
+    @keyframes reg-left-logo-pulse {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
+    }
+    .reg-frame8-left .reg-frame8-hero {
+      position: relative;
+      z-index: 1;
     }
     .reg-frame8-hero {
       max-width: 420px;
-      color: #0f172a;
+      color: #e2e8f0;
     }
-    .reg-frame8-hero-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #1F58C3;
-      margin: 0 0 1rem;
-    }
-    .reg-frame8-hero-title {
-      font-size: 1.75rem;
-      font-weight: 800;
-      line-height: 1.25;
-      letter-spacing: -0.03em;
-      margin: 0 0 1rem;
-      color: #0f172a;
-    }
-    .reg-frame8-hero-desc {
-      font-size: 0.9375rem;
-      color: #475569;
-      line-height: 1.55;
-      margin: 0 0 1.5rem;
-    }
-    .reg-frame8-hero-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.625rem;
-    }
-    .reg-frame8-hero-list li {
-      font-size: 0.875rem;
-      color: #334155;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .reg-frame8-hero-list li i {
-      color: #1F58C3;
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-    .reg-frame8-hero-visual {
-      margin-top: 1.5rem;
+    .reg-left-statement {
       width: 100%;
-      max-width: 280px;
-      aspect-ratio: 1.4;
-      flex-shrink: 0;
+      max-width: 380px;
     }
-    .reg-frame8-hero-visual svg {
-      width: 100%;
-      height: 100%;
-      display: block;
+    .reg-left-statement-inner {
+      padding: 1.75rem 1.5rem;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 0.875rem;
+      box-shadow: 0 8px 32px -16px rgba(0, 0, 0, 0.35);
     }
-    .reg-frame8-hero-oneline {
-      display: none;
-      font-size: 0.8125rem;
-      color: #475569;
-      margin: 0;
+    .reg-left-statement-headline {
+      margin: 0 0 1rem;
+      font-size: 1.0625rem;
+      font-weight: 600;
       line-height: 1.5;
+      color: rgba(241, 245, 249, 0.95);
+      letter-spacing: -0.015em;
+    }
+    .reg-left-statement-metrics {
+      margin: 0 0 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: rgba(125, 211, 252, 0.9);
+      line-height: 1.4;
+      min-height: 1.5em;
+    }
+    .reg-left-statement-blurb {
+      margin: 0;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: rgba(148, 163, 184, 0.85);
+      line-height: 1.5;
+      min-height: 1.5em;
     }
     @media (max-width: 768px) {
       .reg-frame8-left {
         padding: 1.5rem 1.25rem;
-        align-items: flex-start;
+        align-items: center;
         justify-content: center;
       }
-      .reg-frame8-hero-title { font-size: 1.25rem; }
-      .reg-frame8-hero-desc { font-size: 0.875rem; }
-      .reg-frame8-hero-list { display: none; }
-      .reg-frame8-hero-oneline { display: block; margin-top: 0.75rem; }
-      .reg-frame8-hero-visual { max-width: 200px; margin-top: 1rem; }
+      .reg-left-statement-inner { padding: 1.5rem 1.25rem; }
+      .reg-left-statement-headline { font-size: 1rem; margin-bottom: 1rem; }
+      .reg-left-statement-metrics { font-size: 0.9375rem; }
+      .reg-left-statement-blurb { font-size: 0.8125rem; }
     }
     .reg-frame8-right {
       flex: 0 0 50%;
@@ -146,18 +264,19 @@ unset($_SESSION['error']);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       position: relative;
     }
     .reg-frame8-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1.25rem 2rem;
+      padding: 1rem 1.5rem 0.6rem;
       flex-shrink: 0;
     }
     .reg-frame8-brand {
-      font-size: 0.9375rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--reg-text-muted);
@@ -165,12 +284,12 @@ unset($_SESSION['error']);
     .reg-frame8-brand .blue { color: #1F58C3; }
     .reg-frame8-brand .amber { color: #F59E0B; }
     @media (max-width: 480px) {
-      .reg-frame8-brand { font-size: 1rem; font-weight: 700; }
+      .reg-frame8-brand { font-size: 0.875rem; font-weight: 700; }
     }
     .reg-frame8-logo-right {
-      height: 36px;
+      height: 28px;
       width: auto;
-      max-width: 140px;
+      max-width: 110px;
       object-fit: contain;
       object-position: right center;
     }
@@ -179,30 +298,28 @@ unset($_SESSION['error']);
       display: flex;
       flex-direction: column;
       min-height: 0;
-      padding: 0 2rem 1.5rem;
+      padding: 0 1.5rem 0.75rem;
       max-width: 100%;
       width: 100%;
     }
     .reg-frame8-title {
-      font-size: clamp(1.2rem, 3vw, 1.4rem);
+      font-size: clamp(1.4rem, 3.5vw, 1.75rem);
       font-weight: 800;
       color: var(--reg-text);
-      margin: 0 0 0.25rem;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
       text-align: center;
     }
     .reg-frame8-subtitle {
       font-size: 0.8125rem;
       color: var(--reg-text-muted);
-      margin: 0 0 1rem;
+      margin: 0 0 1.5rem;
       text-align: center;
+      line-height: 1.4;
     }
-    .reg-frame8-separator {
-      height: 1px;
-      background: var(--reg-border);
-      margin: 0 0 1rem;
-      flex-shrink: 0;
+    .reg-info-rotating {
+      transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .reg-frame8-info-block {
       flex-shrink: 0;
@@ -226,18 +343,18 @@ unset($_SESSION['error']);
     }
     .reg-frame8-info-block .reg-frame8-info-line { margin: 0; font-size: 0.75rem; color: var(--reg-text-muted); line-height: 1.4; text-align: center; }
     .reg-frame8-info-block .reg-frame8-info-metrics { margin: 0.35rem 0 0; font-size: 0.75rem; color: #7dd3fc; font-weight: 600; letter-spacing: 0.02em; text-align: center; }
-    /* Info block below submit: toned down (smaller, lower contrast) */
+    /* Info block below submit: compact so form content area gets more height */
     .reg-frame8-info-block.reg-info-below-submit {
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       margin-bottom: 0;
-      padding: 0.5rem 0.75rem 0.5rem 1rem;
+      padding: 0.35rem 0.5rem 0.35rem 0.75rem;
       background: rgba(31, 88, 195, 0.04);
       border: 1px solid rgba(31, 88, 195, 0.1);
       border-left: 2px solid rgba(31, 88, 195, 0.25);
     }
-    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-icon { font-size: 0.875rem; color: rgba(31, 88, 195, 0.7); }
-    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-line { font-size: 0.6875rem; color: var(--reg-text-muted); opacity: 0.9; }
-    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-metrics { font-size: 0.6875rem; color: rgba(125, 211, 252, 0.85); }
+    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-icon { font-size: 0.75rem; color: rgba(31, 88, 195, 0.6); }
+    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-line { font-size: 0.625rem; color: var(--reg-text-muted); opacity: 0.85; line-height: 1.3; }
+    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-metrics { font-size: 0.625rem; color: rgba(125, 211, 252, 0.8); }
     #reg-form {
       display: flex;
       flex-direction: column;
@@ -247,16 +364,16 @@ unset($_SESSION['error']);
     #reg-form .reg-form-progress { flex-shrink: 0; }
     .reg-frame8-form-fixed-bottom {
       flex-shrink: 0;
-      padding-top: 1.25rem;
-      margin-top: 0.75rem;
-      border-top: 1px solid var(--reg-border);
+      padding-top: 0.5rem;
+      margin-top: 0.25rem;
     }
+    .reg-frame8-form-fixed-bottom .reg-submit { margin-top: 0.75rem; }
     .reg-frame8-form-scroll {
       flex: 1 1 0;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 0 0.5rem 0.25rem 0;
+      padding: 1.75rem 0.5rem 0.25rem 0;
       -webkit-overflow-scrolling: touch;
       background: rgba(11, 15, 26, 0.35);
       -webkit-backdrop-filter: blur(8px);
@@ -269,22 +386,47 @@ unset($_SESSION['error']);
     .reg-frame8-form-scroll::-webkit-scrollbar-thumb { background: rgba(31, 88, 195, 0.4); border-radius: 3px; }
     .reg-frame8-form-scroll::-webkit-scrollbar-thumb:hover { background: rgba(31, 88, 195, 0.6); }
     .reg-section-label {
-      font-size: 0.6875rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--reg-text-muted);
       margin: 0 0 0.5rem;
-      display: block;
+      padding: 0.4rem 0 0.4rem 0.75rem;
+      border-left: 3px solid rgba(31, 88, 195, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      line-height: 1.4;
+      transition: color 0.3s ease, border-left-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 0 0.375rem 0.375rem 0;
     }
-    .reg-section-label:not(:first-child) { margin-top: 1.75rem; }
+    .reg-section-label:not(:first-child) { margin-top: 2rem; }
+    #reg-label-account { margin-bottom: 1.5rem; }
+    .reg-section-label--complete {
+      color: #86efac;
+      border-left-color: #22c55e;
+      background: rgba(34, 197, 94, 0.08);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15);
+    }
+    .reg-section-label--complete .reg-section-label-check {
+      opacity: 1;
+      color: #22c55e;
+    }
+    .reg-section-label-check {
+      font-size: 0.875rem;
+      opacity: 0;
+      color: #22c55e;
+      transition: opacity 0.3s ease;
+    }
     /* Unified top labels for selects and file upload (not float labels) */
     .reg-top-label {
       display: block;
       font-size: 0.875rem;
       font-weight: 500;
-      color: var(--reg-text);
+      color: var(--reg-text-label);
       margin-bottom: 0.35rem;
+      line-height: 1.4;
     }
     .reg-inline-error {
       display: block;
@@ -310,12 +452,14 @@ unset($_SESSION['error']);
       color: var(--reg-text-muted);
       margin: 0 0 0.5rem;
       font-weight: 500;
+      line-height: 1.5;
     }
     .reg-security-hint {
       font-size: 0.75rem;
       color: var(--reg-text-muted);
       margin: 0 0 0.75rem;
       opacity: 0.9;
+      line-height: 1.5;
     }
     .reg-frame8-grid { display: grid; gap: var(--reg-space); }
     .reg-frame8-grid-2 { grid-template-columns: 1fr 1fr; }
@@ -330,14 +474,14 @@ unset($_SESSION['error']);
       flex-wrap: nowrap;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
       width: 100%;
-      padding: 0.75rem 2rem 1rem;
+      padding: 0.5rem 1.5rem 0.75rem;
     }
     .reg-frame8-footer-terms {
       font-size: 0.5625rem;
       color: #94a3b8;
-      line-height: 1.5;
+      line-height: 1.4;
       margin: 0;
       text-align: left;
       flex-shrink: 0;
@@ -372,14 +516,14 @@ unset($_SESSION['error']);
       .reg-frame8-footer-terms, .reg-frame8-footer-copy { white-space: normal; }
     }
     @media (max-width: 640px) {
-      .reg-frame8-footer { flex-direction: column; align-items: flex-start; padding: 0.75rem 1.25rem 1rem; gap: 0.35rem; }
+      .reg-frame8-footer { flex-direction: column; align-items: flex-start; padding: 0.5rem 1rem 0.75rem; gap: 0.25rem; }
     }
     @media (max-width: 768px) {
       .reg-frame8-layout { flex-direction: column; }
       .reg-frame8-left { flex: 0 0 100px; min-height: 100px; }
       .reg-frame8-right { flex: 1; min-height: 0; }
       .reg-frame8-main { padding: 0 1.25rem 1rem 11rem 1rem; }
-      .reg-frame8-form-scroll { max-height: 50vh; padding-bottom: 1.5rem; }
+      .reg-frame8-form-scroll { max-height: 65vh; padding-bottom: 1.5rem; }
       .reg-frame8-form-fixed-bottom {
         position: fixed;
         bottom: 0;
@@ -387,7 +531,7 @@ unset($_SESSION['error']);
         right: 0;
         z-index: 40;
         background: var(--reg-bg);
-        padding: 0.75rem 1.25rem 1rem;
+        padding: 0.5rem 1rem 0.75rem;
         margin: 0;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
@@ -536,6 +680,11 @@ unset($_SESSION['error']);
     }
     body.registration-prototype .reg-section { margin-top: 1.25rem !important; }
     body.registration-prototype .reg-section:first-of-type { margin-top: 0 !important; }
+    .reg-section-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 1.5rem 0 0;
+    }
     body.registration-prototype .login-card .reg-intro { color: #94a3b8; font-size: 0.8125rem; margin-top: 0.375rem; }
     body.registration-prototype .login-header { margin-bottom: 1rem !important; }
     body.registration-prototype .login-logo-wrap { margin-bottom: 0.5rem !important; }
@@ -558,90 +707,148 @@ unset($_SESSION['error']);
       color: #fff !important; font-size: 1.25rem !important; font-weight: 700;
       letter-spacing: -0.025em;
     }
-    body.registration-prototype .login-card label { color: #fff !important; font-weight: 500; }
-    body.registration-prototype .login-card .auth-input {
-      background: var(--reg-surface-elevated) !important;
-      border: 1px solid var(--reg-border) !important;
-      color: var(--reg-text) !important;
+    body.registration-prototype .login-card label { color: var(--reg-text-label) !important; font-weight: 500; }
+    /* Registration form fields: apply to both .login-card (legacy) and .reg-frame8-main (split layout) so content is always readable */
+    body.registration-prototype .login-card .auth-input,
+    body.registration-prototype .reg-frame8-main .auth-input {
+      background: #1a2332 !important;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #f1f5f9 !important;
+      -webkit-text-fill-color: #f1f5f9 !important;
+      caret-color: #60a5fa !important;
       border-radius: var(--reg-radius) !important;
-      padding: 0.5rem 0.875rem !important;
-      min-height: 2.5rem;
-      font-size: 0.875rem !important;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset !important;
+      padding: 0.75rem 1.25rem !important;
+      min-height: var(--reg-input-height) !important;
+      font-size: 0.9375rem !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.01em !important;
+      line-height: 1.45 !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35) inset, 0 1px 0 rgba(255,255,255,0.03) !important;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
     }
-    body.registration-prototype .login-card .auth-input::placeholder { color: var(--reg-text-muted); }
-    body.registration-prototype .login-card .auth-input:hover {
-      border-color: rgba(31, 88, 195, 0.35) !important;
+    body.registration-prototype .login-card .auth-input::placeholder,
+    body.registration-prototype .reg-frame8-main .auth-input::placeholder {
+      color: #94a3b8 !important;
+      -webkit-text-fill-color: #94a3b8 !important;
+      opacity: 1;
     }
-    body.registration-prototype .login-card .auth-input:focus {
+    /* Autofill: keep dark background and light text */
+    body.registration-prototype .login-card .auth-input:-webkit-autofill,
+    body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill,
+    body.registration-prototype .login-card .auth-input:-webkit-autofill:hover,
+    body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill:hover,
+    body.registration-prototype .login-card .auth-input:-webkit-autofill:focus,
+    body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #f1f5f9 !important;
+      -webkit-box-shadow: 0 0 0 1000px #1a2332 inset !important;
+      box-shadow: 0 0 0 1000px #1a2332 inset, 0 1px 3px rgba(0,0,0,0.35) inset !important;
+      transition: background-color 5000s ease-in-out 0s !important;
+    }
+    body.registration-prototype .login-card .auth-input:hover,
+    body.registration-prototype .reg-frame8-main .auth-input:hover {
+      border-color: rgba(31, 88, 195, 0.4) !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35) inset, 0 0 0 1px rgba(31, 88, 195, 0.15) !important;
+    }
+    body.registration-prototype .login-card .auth-input:focus,
+    body.registration-prototype .reg-frame8-main .auth-input:focus {
       border-color: var(--reg-border-focus) !important;
-      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 1px 2px rgba(0,0,0,0.2) inset !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 0 16px rgba(31, 88, 195, 0.18), 0 1px 3px rgba(0,0,0,0.3) inset !important;
     }
     body.registration-prototype .login-card .auth-input[aria-invalid="true"],
-    body.registration-prototype .login-card .auth-input.is-invalid {
-      border-color: rgba(239, 68, 68, 0.6) !important;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 1px 2px rgba(0,0,0,0.2) inset !important;
+    body.registration-prototype .login-card .auth-input.is-invalid,
+    body.registration-prototype .reg-frame8-main .auth-input[aria-invalid="true"],
+    body.registration-prototype .reg-frame8-main .auth-input.is-invalid {
+      border-color: rgba(239, 68, 68, 0.7) !important;
+      background: rgba(239, 68, 68, 0.08) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 1px 3px rgba(0,0,0,0.25) inset !important;
     }
     body.registration-prototype .login-card .auth-input[aria-invalid="true"]:focus,
-    body.registration-prototype .login-card .auth-input.is-invalid:focus {
+    body.registration-prototype .login-card .auth-input.is-invalid:focus,
+    body.registration-prototype .reg-frame8-main .auth-input[aria-invalid="true"]:focus,
+    body.registration-prototype .reg-frame8-main .auth-input.is-invalid:focus {
       border-color: #ef4444 !important;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 1px 2px rgba(0,0,0,0.2) inset !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3), 0 1px 3px rgba(0,0,0,0.25) inset !important;
     }
-    body.registration-prototype .login-card select.auth-input {
+    body.registration-prototype .login-card #reg-password-confirm-wrap:has(~ .reg-confirm-success:not(.hidden)) .auth-input,
+    body.registration-prototype .reg-frame8-main #reg-password-confirm-wrap:has(~ .reg-confirm-success:not(.hidden)) .auth-input {
+      border-color: rgba(34, 197, 94, 0.5) !important;
+      background: rgba(34, 197, 94, 0.08) !important;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2), 0 1px 3px rgba(0,0,0,0.2) inset !important;
+    }
+    body.registration-prototype .login-card select.auth-input,
+    body.registration-prototype .reg-frame8-main select.auth-input {
       appearance: none;
       -webkit-appearance: none;
       cursor: pointer;
-      padding-right: 2.5rem;
-      min-height: 2.5rem;
-      background-color: var(--reg-surface-elevated) !important;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 1rem;
+      padding-right: 2.75rem;
+      padding-left: 1.25rem;
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      min-height: var(--reg-input-height) !important;
+      background-color: #1a2332 !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 1rem center !important;
+      background-size: 1rem !important;
     }
-    body.registration-prototype .login-card select.auth-input:hover {
-      border-color: rgba(31, 88, 195, 0.35) !important;
+    body.registration-prototype .login-card select.auth-input:hover,
+    body.registration-prototype .reg-frame8-main select.auth-input:hover {
+      border-color: rgba(31, 88, 195, 0.4) !important;
     }
-    body.registration-prototype .login-card select.auth-input:focus {
+    body.registration-prototype .login-card select.auth-input:focus,
+    body.registration-prototype .reg-frame8-main select.auth-input:focus {
       border-color: var(--reg-border-focus) !important;
-      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 1px 2px rgba(0,0,0,0.2) inset !important;
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 1px 3px rgba(0,0,0,0.3) inset !important;
     }
     body.registration-prototype .login-card select.auth-input[aria-invalid="true"],
-    body.registration-prototype .login-card select.auth-input.is-invalid {
-      border-color: rgba(239, 68, 68, 0.6) !important;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 1px 2px rgba(0,0,0,0.2) inset !important;
+    body.registration-prototype .login-card select.auth-input.is-invalid,
+    body.registration-prototype .reg-frame8-main select.auth-input[aria-invalid="true"],
+    body.registration-prototype .reg-frame8-main select.auth-input.is-invalid {
+      border-color: rgba(239, 68, 68, 0.7) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 1px 3px rgba(0,0,0,0.25) inset !important;
     }
-    body.registration-prototype .login-card select.auth-input option {
-      background: var(--reg-surface-elevated);
-      color: var(--reg-text);
+    body.registration-prototype .login-card select.auth-input option,
+    body.registration-prototype .reg-frame8-main select.auth-input option {
+      background: #1a2332;
+      color: #f1f5f9;
     }
     body.registration-prototype .login-card .auth-password-wrap { position: relative; }
-    body.registration-prototype .login-card .auth-password-wrap .auth-input { padding-right: 2.75rem !important; }
-    body.registration-prototype .login-card #toggle-register-password {
+    body.registration-prototype .reg-frame8-main .auth-password-wrap { position: relative; }
+    body.registration-prototype .login-card .auth-password-wrap .auth-input,
+    body.registration-prototype .reg-frame8-main .auth-password-wrap .auth-input { padding-right: 2.75rem !important; }
+    body.registration-prototype .login-card #toggle-register-password,
+    body.registration-prototype .reg-frame8-main #toggle-register-password {
       position: absolute !important; right: 0.5rem !important; top: 50% !important;
       transform: translateY(-50%) !important;
       width: 2rem; height: 2rem; padding: 0 !important;
       display: inline-flex; align-items: center; justify-content: center;
-      color: #64748b !important; background: transparent !important; border: none !important;
+      color: #94a3b8 !important; background: transparent !important; border: none !important;
     }
-    body.registration-prototype .login-card #toggle-register-password:hover { color: #F59E0B !important; }
+    body.registration-prototype .login-card #toggle-register-password:hover,
+    body.registration-prototype .reg-frame8-main #toggle-register-password:hover { color: #F59E0B !important; }
     body.registration-prototype .login-card .auth-input:focus-visible,
     body.registration-prototype .login-card .reg-submit:focus-visible,
-    body.registration-prototype .login-card .subtext a:focus-visible {
+    body.registration-prototype .login-card .subtext a:focus-visible,
+    body.registration-prototype .reg-frame8-main .auth-input:focus-visible {
       outline: none;
       box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #1F58C3 !important;
     }
-    body.registration-prototype .login-card #toggle-register-password-confirm {
+    body.registration-prototype .login-card #toggle-register-password-confirm,
+    body.registration-prototype .reg-frame8-main #toggle-register-password-confirm {
       position: absolute !important; right: 0.5rem !important; top: 50% !important;
       transform: translateY(-50%) !important;
       width: 2rem; height: 2rem; padding: 0 !important;
       display: inline-flex; align-items: center; justify-content: center;
-      color: #64748b !important; background: transparent !important; border: none !important;
+      color: #94a3b8 !important; background: transparent !important; border: none !important;
     }
-    body.registration-prototype .login-card #toggle-register-password-confirm:hover { color: #F59E0B !important; }
+    body.registration-prototype .login-card #toggle-register-password-confirm:hover,
+    body.registration-prototype .reg-frame8-main #toggle-register-password-confirm:hover { color: #F59E0B !important; }
     body.registration-prototype .login-card #toggle-register-password:focus-visible,
-    body.registration-prototype .login-card #toggle-register-password-confirm:focus-visible {
+    body.registration-prototype .login-card #toggle-register-password-confirm:focus-visible,
+    body.registration-prototype .reg-frame8-main #toggle-register-password:focus-visible,
+    body.registration-prototype .reg-frame8-main #toggle-register-password-confirm:focus-visible {
       outline: none;
       box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #F59E0B !important;
     }
@@ -674,7 +881,7 @@ unset($_SESSION['error']);
     body.registration-prototype .login-card .reg-submit,
     body.registration-prototype #reg-submit-btn,
     body.registration-prototype .reg-frame8-form-fixed-bottom .reg-submit {
-      background: linear-gradient(180deg, var(--reg-primary) 0%, #1E40AF 100%) !important;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%), linear-gradient(180deg, var(--reg-primary) 0%, #1E40AF 100%) !important;
       color: #fff !important;
       padding: 0.75rem 1.25rem !important;
       border-radius: var(--reg-radius);
@@ -682,10 +889,15 @@ unset($_SESSION['error']);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-size: 0.8125rem;
-      min-height: 2.75rem;
+      min-height: var(--reg-input-height) !important;
       border: none;
       box-shadow: 0 4px 16px rgba(31, 88, 195, 0.4), 0 1px 0 rgba(255,255,255,0.1) inset;
       transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    body.registration-prototype .reg-frame8-form-fixed-bottom .reg-submit {
+      min-height: 2.75rem !important;
+      padding: 0.5rem 1rem !important;
+      font-size: 0.75rem !important;
     }
     body.registration-prototype .login-card .reg-submit:hover,
     body.registration-prototype #reg-submit-btn:hover,
@@ -723,12 +935,41 @@ unset($_SESSION['error']);
     }
     .reg-submit-hint {
       font-size: 0.75rem;
-      color: var(--reg-text-muted);
+      color: #94a3b8;
       margin: 0 0 0.5rem;
       text-align: center;
       min-height: 1.25rem;
+      line-height: 1.45;
+      padding: 0.5rem 0.85rem;
+      background: rgba(31, 88, 195, 0.08);
+      border: 1px solid rgba(31, 88, 195, 0.15);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
     }
+    .reg-submit-hint .reg-hint-count { font-weight: 700; color: #7dd3fc; }
+    .reg-submit-hint.reg-hint-complete { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2); }
+    .reg-submit-hint.reg-hint-complete .reg-hint-count { color: #6ee7b7; }
     .reg-submit-hint.hidden { display: none !important; }
+    .reg-frame8-form-fixed-bottom .login-blurbs {
+      margin-top: 0.5rem !important;
+      padding-top: 0.5rem !important;
+      border-top-color: rgba(255, 255, 255, 0.06);
+    }
+    .reg-frame8-form-fixed-bottom .login-blurb {
+      font-size: 0.6875rem !important;
+      min-height: 1.25rem !important;
+      color: #64748b;
+    }
+    .reg-frame8-form-fixed-bottom .subtext {
+      margin-top: 0.5rem !important;
+      font-size: 0.75rem !important;
+      color: #64748b;
+    }
+    .reg-frame8-form-fixed-bottom .subtext a { color: #7dd3fc !important; }
     body.registration-prototype .login-card .subtext a {
       transition: color 0.2s ease, text-decoration 0.2s ease;
       text-decoration: none;
@@ -741,12 +982,26 @@ unset($_SESSION['error']);
       outline: 2px solid #F59E0B;
       outline-offset: 2px;
     }
-    @media (hover: none) and (pointer: coarse) {
-      body.registration-prototype .login-card .auth-input { min-height: 2.75rem !important; }
+    @media (max-width: 640px) {
+      body.registration-prototype .login-card .auth-input,
+      body.registration-prototype .reg-frame8-main .auth-input { min-height: var(--reg-input-height) !important; }
       body.registration-prototype .login-card .reg-submit,
-      body.registration-prototype #reg-submit-btn { min-height: 2.75rem !important; }
+      body.registration-prototype #reg-submit-btn { min-height: var(--reg-input-height) !important; }
+      body.registration-prototype .reg-frame8-form-fixed-bottom .reg-submit { min-height: 2.75rem !important; }
       body.registration-prototype .login-card #toggle-register-password,
-      body.registration-prototype .login-card #toggle-register-password-confirm { min-width: 2.75rem !important; min-height: 2.75rem !important; }
+      body.registration-prototype .login-card #toggle-register-password-confirm,
+      body.registration-prototype .reg-frame8-main #toggle-register-password,
+      body.registration-prototype .reg-frame8-main #toggle-register-password-confirm { min-width: 2.75rem !important; min-height: 2.75rem !important; }
+    }
+    @media (hover: none) and (pointer: coarse) {
+      body.registration-prototype .login-card .auth-input,
+      body.registration-prototype .reg-frame8-main .auth-input { min-height: var(--reg-input-height) !important; }
+      body.registration-prototype .login-card .reg-submit,
+      body.registration-prototype #reg-submit-btn { min-height: var(--reg-input-height) !important; }
+      body.registration-prototype .login-card #toggle-register-password,
+      body.registration-prototype .login-card #toggle-register-password-confirm,
+      body.registration-prototype .reg-frame8-main #toggle-register-password,
+      body.registration-prototype .reg-frame8-main #toggle-register-password-confirm { min-width: 2.75rem !important; min-height: 2.75rem !important; }
     }
     body.registration-prototype .login-footer-copy {
       color: #64748b !important; font-size: 0.6875rem !important;
@@ -762,70 +1017,136 @@ unset($_SESSION['error']);
     body.registration-prototype .login-card .reg-dashboard-preview span { display: inline-flex; align-items: center; gap: 0.25rem; }
     body.registration-prototype .login-card .reg-dashboard-preview .score { color: #7dd3fc; font-weight: 600; }
     body.registration-prototype .login-card .float-label-wrap { position: relative; }
-    body.registration-prototype .login-card .float-label-wrap .float-label {
-      position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
-      font-size: 0.875rem; color: #94a3b8; pointer-events: none;
+    body.registration-prototype .reg-frame8-main .float-label-wrap { position: relative; }
+    body.registration-prototype .login-card .float-label-wrap .float-label,
+    body.registration-prototype .reg-frame8-main .float-label-wrap .float-label {
+      position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+      font-size: 0.875rem; font-weight: 500; color: #94a3b8; pointer-events: none;
       transition: top 0.2s ease, font-size 0.2s ease, color 0.2s ease; z-index: 1;
     }
     body.registration-prototype .login-card .float-label-wrap.focused .float-label,
-    body.registration-prototype .login-card .float-label-wrap.has-value .float-label {
+    body.registration-prototype .login-card .float-label-wrap.has-value .float-label,
+    body.registration-prototype .reg-frame8-main .float-label-wrap.focused .float-label,
+    body.registration-prototype .reg-frame8-main .float-label-wrap.has-value .float-label {
       top: -0.35rem; font-size: 0.75rem; color: #7dd3fc;
     }
-    body.registration-prototype .login-card .reg-pw-strength-wrap { margin-top: 0.5rem; }
-    body.registration-prototype .login-card .reg-pw-strength-bar {
+    body.registration-prototype .login-card .reg-pw-strength-wrap,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-wrap {
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    body.registration-prototype .login-card .reg-pw-strength-bar,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-bar {
+      flex: 1;
+      min-width: 80px;
       height: 6px;
       border-radius: 999px;
-      background: rgba(31, 88, 195, 0.2);
+      background: rgba(30, 41, 59, 0.8);
       overflow: hidden;
       transition: background 0.2s ease;
     }
-    body.registration-prototype .login-card .reg-pw-strength-fill {
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    body.registration-prototype .login-card .reg-pw-strength-fill,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill {
       height: 100%;
       border-radius: 999px;
       width: 0;
-      transition: width 0.3s ease, background 0.3s ease;
+      transition: width 0.35s ease, background 0.35s ease;
     }
-    body.registration-prototype .login-card .reg-pw-strength-fill.weak { width: 20%; background: #ef4444; }
-    body.registration-prototype .login-card .reg-pw-strength-fill.fair { width: 40%; background: #f97316; }
-    body.registration-prototype .login-card .reg-pw-strength-fill.good { width: 60%; background: #eab308; }
-    body.registration-prototype .login-card .reg-pw-strength-fill.strong { width: 85%; background: #22c55e; }
-    body.registration-prototype .login-card .reg-pw-strength-fill.very-strong { width: 100%; background: #16a34a; }
-    body.registration-prototype .login-card .reg-pw-strength-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-top: 0.35rem;
+    body.registration-prototype .login-card .reg-pw-strength-fill.weak,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill.weak { width: 20%; background: linear-gradient(90deg, #ef4444, #f87171); }
+    body.registration-prototype .login-card .reg-pw-strength-fill.fair,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill.fair { width: 40%; background: linear-gradient(90deg, #f97316, #fb923c); }
+    body.registration-prototype .login-card .reg-pw-strength-fill.good,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill.good { width: 60%; background: linear-gradient(90deg, #eab308, #facc15); }
+    body.registration-prototype .login-card .reg-pw-strength-fill.strong,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill.strong { width: 85%; background: linear-gradient(90deg, #22c55e, #4ade80); }
+    body.registration-prototype .login-card .reg-pw-strength-fill.very-strong,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-fill.very-strong { width: 100%; background: linear-gradient(90deg, #16a34a, #22c55e); }
+    body.registration-prototype .login-card .reg-pw-strength-label,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      min-width: 4.5rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      text-align: center;
       color: #64748b;
-      transition: color 0.2s ease;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
     }
-    body.registration-prototype .login-card .reg-pw-strength-label.weak { color: #f87171; }
-    body.registration-prototype .login-card .reg-pw-strength-label.fair { color: #fb923c; }
-    body.registration-prototype .login-card .reg-pw-strength-label.good { color: #facc15; }
-    body.registration-prototype .login-card .reg-pw-strength-label.strong { color: #22c55e; }
-    body.registration-prototype .login-card .reg-pw-strength-label.very-strong { color: #16a34a; }
-    body.registration-prototype .login-card .reg-pw-checklist {
+    body.registration-prototype .login-card .reg-pw-strength-label.weak,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.weak { color: #fca5a5; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25); }
+    body.registration-prototype .login-card .reg-pw-strength-label.fair,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.fair { color: #fdba74; background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.25); }
+    body.registration-prototype .login-card .reg-pw-strength-label.good,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.good { color: #fde047; background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.25); }
+    body.registration-prototype .login-card .reg-pw-strength-label.strong,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.strong { color: #86efac; background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.25); }
+    body.registration-prototype .login-card .reg-pw-strength-label.very-strong,
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.very-strong { color: #86efac; background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.35); }
+    body.registration-prototype .reg-frame8-main .reg-pw-checklist-heading {
+      margin: 0.75rem 0 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.8);
+    }
+    body.registration-prototype .login-card .reg-pw-checklist,
+    body.registration-prototype .reg-frame8-main .reg-pw-checklist {
       margin-top: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
     }
-    body.registration-prototype .login-card .reg-pw-check-item {
+    @media (max-width: 480px) {
+      body.registration-prototype .login-card .reg-pw-checklist,
+      body.registration-prototype .reg-frame8-main .reg-pw-checklist { grid-template-columns: 1fr; }
+    }
+    body.registration-prototype .login-card .reg-pw-check-item,
+    body.registration-prototype .reg-frame8-main .reg-pw-check-item {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.75rem;
       color: #64748b;
-      transition: color 0.2s ease;
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.5rem;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
     }
-    body.registration-prototype .login-card .reg-pw-check-item i {
+    body.registration-prototype .reg-frame8-main .reg-pw-check-item:hover {
+      background: rgba(30, 41, 59, 0.6);
+    }
+    body.registration-prototype .login-card .reg-pw-check-item i,
+    body.registration-prototype .reg-frame8-main .reg-pw-check-item i {
       font-size: 0.875rem;
       flex-shrink: 0;
-      transition: color 0.2s ease;
+      transition: color 0.25s ease, transform 0.2s ease;
+      color: #475569;
     }
-    body.registration-prototype .login-card .reg-pw-check-item.met {
-      color: #22c55e;
+    body.registration-prototype .login-card .reg-pw-check-item.met,
+    body.registration-prototype .reg-frame8-main .reg-pw-check-item.met {
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.08);
+      border-color: rgba(34, 197, 94, 0.2);
     }
-    body.registration-prototype .login-card .reg-pw-check-item.met i {
+    body.registration-prototype .login-card .reg-pw-check-item.met i,
+    body.registration-prototype .reg-frame8-main .reg-pw-check-item.met i {
       color: #22c55e;
+      transform: scale(1.05);
     }
     body.registration-prototype .login-card .reg-confirm-error {
       font-size: 0.75rem;
@@ -839,20 +1160,73 @@ unset($_SESSION['error']);
     body.registration-prototype .login-card input[type="file"] {
       color: #e2e8f0;
     }
-    body.registration-prototype .login-card .reg-file-zone {
+    body.registration-prototype .login-card .reg-file-zone,
+    body.registration-prototype .reg-frame8-main .reg-file-zone {
+      min-height: 11rem;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       background: rgba(31, 88, 195, 0.06);
-      border-color: rgba(31, 88, 195, 0.25);
-      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      border: 2px dashed rgba(31, 88, 195, 0.25);
+      border-radius: var(--reg-radius);
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
     }
-    body.registration-prototype .login-card .reg-file-zone.dragover { border-color: #1F58C3; background: rgba(31, 88, 195, 0.12); }
-    body.registration-prototype .login-card .reg-file-zone.has-file {
+    body.registration-prototype .login-card .reg-file-zone.dragover,
+    body.registration-prototype .reg-frame8-main .reg-file-zone.dragover {
+      border-color: #1F58C3;
+      background: rgba(31, 88, 195, 0.12);
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.2);
+    }
+    body.registration-prototype .login-card .reg-file-zone.has-file,
+    body.registration-prototype .reg-frame8-main .reg-file-zone.has-file {
       border-color: rgba(34, 197, 94, 0.4);
       background: rgba(34, 197, 94, 0.06);
       box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+      min-height: 6rem;
+      padding: 1.25rem 1.5rem;
     }
-    body.registration-prototype .login-card .reg-file-zone.is-invalid {
+    body.registration-prototype .login-card .reg-file-zone.is-invalid,
+    body.registration-prototype .reg-frame8-main .reg-file-zone.is-invalid {
       border-color: rgba(239, 68, 68, 0.6) !important;
       background: rgba(239, 68, 68, 0.06);
+    }
+    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder,
+    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder p,
+    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder p {
+      font-size: 0.8125rem;
+      margin: 0;
+      color: #94a3b8;
+      letter-spacing: 0.02em;
+      font-weight: 500;
+    }
+    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder .bi,
+    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder .bi {
+      font-size: 0.875rem;
+      color: #7dd3fc;
+      margin-right: 0.375rem;
+    }
+    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder #reg-file-browse,
+    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder .text-\[\#7dd3fc\] {
+      font-size: inherit;
+      color: #7dd3fc;
+      font-weight: 600;
+    }
+    body.registration-prototype .reg-frame8-main .reg-file-zone .file-hint,
+    body.registration-prototype .login-card .reg-file-zone .file-hint {
+      font-size: 0.6875rem;
+      color: #64748b;
+      letter-spacing: 0.03em;
+      line-height: 1.4;
+      text-transform: uppercase;
     }
     body.registration-prototype .login-card .login-blurbs {
       margin-top: 1.5rem !important;
@@ -945,46 +1319,39 @@ unset($_SESSION['error']);
     }
     .reg-error-icon i { font-size: 1.5rem; color: #f87171; }
     .reg-error-card h2 { color: #fff; font-size: 1.125rem; margin: 0 0 0.5rem; font-weight: 700; }
-    .reg-error-card .reg-error-message { color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin: 0 0 1.25rem; }
+    .reg-error-card .reg-error-message { color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin: 0 0 1.25rem; text-align: left; }
+    .reg-error-card .reg-error-list { list-style: none; padding: 0; margin: 0 0 1.25rem; }
+    .reg-error-card .reg-error-list li { padding: 0.35rem 0 0.35rem 1.25rem; position: relative; }
+    .reg-error-card .reg-error-list li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 4px; height: 4px; border-radius: 50%; background: #f87171; }
     .reg-error-card .btn-primary { cursor: pointer; border: none; }
   </style>
 </head>
 <body class="auth-page registration-prototype min-h-screen font-sans antialiased" x-data="{ school: '' }">
   <div class="reg-frame8-layout">
     <div class="reg-frame8-left" aria-hidden="true">
-        <div class="reg-frame8-hero">
-          <p class="reg-frame8-hero-badge">LCRC eReview</p>
-          <h2 class="reg-frame8-hero-title">Your path to the CPA exam starts here.</h2>
-          <p class="reg-frame8-hero-desc">Join thousands of aspiring CPAs who track scores, drills, and mock exams in one place.</p>
-          <ul class="reg-frame8-hero-list" aria-hidden="true">
-            <li><i class="bi bi-check2-circle" aria-hidden="true"></i> Timed drills &amp; simulations</li>
-            <li><i class="bi bi-check2-circle" aria-hidden="true"></i> Mock exam cohorts &amp; analytics</li>
-            <li><i class="bi bi-check2-circle" aria-hidden="true"></i> Progress tracking &amp; benchmarks</li>
-          </ul>
-          <p class="reg-frame8-hero-oneline" aria-hidden="true">Timed drills · Mock exams · Progress tracking</p>
-          <div class="reg-frame8-hero-visual" aria-hidden="true">
-            <svg viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Progress curve">
-              <defs>
-                <linearGradient id="reg-chart-fill" x1="0" y1="1" x2="0" y2="0">
-                  <stop offset="0%" stop-color="#1F58C3" stop-opacity="0.25"/>
-                  <stop offset="100%" stop-color="#1F58C3" stop-opacity="0.02"/>
-                </linearGradient>
-                <linearGradient id="reg-chart-line-blue" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#1F58C3"/>
-                  <stop offset="100%" stop-color="#3B82F6"/>
-                </linearGradient>
-                <linearGradient id="reg-chart-line-amber" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#F59E0B"/>
-                  <stop offset="100%" stop-color="#FCD34D"/>
-                </linearGradient>
-              </defs>
-              <rect width="100%" height="100%" fill="transparent"/>
-              <path d="M 20 140 Q 80 120 140 100 T 260 60" fill="none" stroke="url(#reg-chart-line-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
-              <path d="M 20 140 Q 80 120 140 100 T 260 60 L 260 200 L 20 200 Z" fill="url(#reg-chart-fill)"/>
-              <path d="M 20 160 Q 90 130 160 110 T 260 80" fill="none" stroke="url(#reg-chart-line-amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3" opacity="0.9"/>
-              <circle cx="260" cy="60" r="4" fill="#1F58C3"/>
-              <circle cx="260" cy="80" r="3" fill="#F59E0B"/>
-            </svg>
+        <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
+        <div class="reg-grok-blob reg-grok-blob-2" aria-hidden="true"></div>
+        <div class="reg-grok-blob reg-grok-blob-3" aria-hidden="true"></div>
+        <div class="reg-frame8-left-bg-shape" aria-hidden="true">
+          <svg class="reg-left-logo-svg" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+            <defs>
+              <linearGradient id="reg-left-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(191, 219, 254, 0.75)"/>
+                <stop offset="100%" stop-color="rgba(96, 165, 250, 0.6)"/>
+              </linearGradient>
+            </defs>
+            <g class="reg-left-logo-g" fill="none" stroke="url(#reg-left-logo-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Paper / document shape: body + folded corner -->
+              <path class="reg-paper-body" d="M 12 8 L 12 88 L 68 88 L 68 28 L 42 28 L 42 8 Z"/>
+              <path class="reg-paper-fold" d="M 42 8 L 42 28 L 68 28 Z"/>
+            </g>
+          </svg>
+        </div>
+        <div class="reg-frame8-hero reg-left-statement" aria-live="polite">
+          <div class="reg-left-statement-inner">
+            <p class="reg-left-statement-headline">Track your scores, drills, and mock exams in one place.</p>
+            <p class="reg-left-statement-metrics reg-info-rotating" id="reg-left-metrics">Mock exam cohort 1 71% · Drill sets 69%</p>
+            <p class="reg-left-statement-blurb reg-info-rotating" id="reg-left-blurb">Benchmarked vs national pass rates.</p>
           </div>
         </div>
       </div>
@@ -996,7 +1363,6 @@ unset($_SESSION['error']);
       <main class="reg-frame8-main">
         <h1 class="reg-frame8-title">Create your Account</h1>
         <p class="reg-frame8-subtitle">One step closer to your CPA journey.</p>
-        <div class="reg-frame8-separator"></div>
 
         <form action="register_process.php" method="POST" enctype="multipart/form-data" novalidate id="reg-form">
           <div class="reg-form-progress" aria-hidden="true" id="reg-form-progress">
@@ -1011,7 +1377,7 @@ unset($_SESSION['error']);
               </div>
             <?php endif; ?>
 
-            <span class="reg-section-label" id="reg-label-account">Account</span>
+            <span class="reg-section-label" id="reg-label-account"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Account</span>
             <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
               <div class="space-y-1">
                 <div class="float-label-wrap" data-float-wrap>
@@ -1059,7 +1425,7 @@ unset($_SESSION['error']);
               </div>
             </div>
 
-            <span class="reg-section-label" id="reg-label-security">Security</span>
+            <span class="reg-section-label" id="reg-label-security"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Security</span>
             <p class="reg-security-subheading" id="reg-security-subheading">Choose a strong password.</p>
             <p class="reg-security-hint" id="reg-security-hint">Scroll down to see password and confirm fields.</p>
             <div class="reg-section reg-frame8-full space-y-2">
@@ -1077,6 +1443,7 @@ unset($_SESSION['error']);
                 </div>
                 <p class="reg-pw-strength-label" id="reg-pw-strength-label">—</p>
               </div>
+              <p class="reg-pw-checklist-heading" id="reg-pw-checklist-heading">Password requirements</p>
               <div class="reg-pw-checklist" id="reg-pw-checklist" aria-live="polite">
                 <div class="reg-pw-check-item" id="reg-pw-check-length" data-check="length">
                   <i class="bi bi-circle" aria-hidden="true"></i>
@@ -1111,7 +1478,7 @@ unset($_SESSION['error']);
               <p class="login-security-hint text-xs">Secure sign-in. We never share your data.</p>
             </div>
 
-            <span class="reg-section-label" id="reg-label-payment">Payment</span>
+            <span class="reg-section-label" id="reg-label-payment"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Payment</span>
             <div class="reg-section reg-frame8-full space-y-2">
               <label class="reg-top-label" for="register-payment-proof">Upload Payment Proof</label>
               <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-file-zone" aria-describedby="reg-error-payment_proof">
@@ -1140,21 +1507,11 @@ unset($_SESSION['error']);
 
           <div class="reg-frame8-form-fixed-bottom">
             <p class="reg-submit-hint" id="reg-submit-hint" aria-live="polite">Complete the fields above to continue.</p>
-            <button type="submit" class="reg-submit btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F58C3] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a] disabled:opacity-70 disabled:cursor-not-allowed" id="reg-submit-btn" disabled>
+            <button type="submit" class="reg-submit btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F58C3] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a] disabled:opacity-70 disabled:cursor-not-allowed" id="reg-submit-btn">
               <span id="reg-submit-text">Submit registration</span>
               <span id="reg-submit-spinner" class="hidden" aria-hidden="true"><i class="bi bi-arrow-repeat animate-spin text-lg"></i></span>
               <i class="bi bi-arrow-right text-lg" id="reg-submit-arrow" aria-hidden="true"></i>
             </button>
-            <div class="reg-frame8-info-block reg-info-below-submit" id="reg-info-below-submit">
-              <i class="bi bi-graph-up-arrow reg-frame8-info-icon" aria-hidden="true"></i>
-              <div>
-                <p class="reg-frame8-info-line">Track your scores, drills, and mock exams in one place.</p>
-                <p class="reg-frame8-info-metrics" id="reg-metrics-text">FAR 78% · REG 82% · AUD 65%</p>
-              </div>
-            </div>
-            <div class="login-blurbs mt-4 pt-4 border-t border-slate-700/50" aria-live="polite">
-              <p class="login-blurb text-center text-xs text-slate-400 min-h-[2.5rem] flex items-center justify-center" id="reg-blurb-text">Benchmarked vs national pass rates.</p>
-            </div>
             <p class="text-center text-xs subtext mt-3">
               Already have an account? <a href="login.php">Login</a>
             </p>
@@ -1312,55 +1669,113 @@ unset($_SESSION['error']);
         var fileZone = document.getElementById('reg-file-zone');
         if (fileZone) fileZone.classList.remove('is-invalid');
       }
+      function normalizeFullNameInput(val) {
+        if (!val) return '';
+        var s = val.replace(/[^A-Za-z.\s]/g, '').replace(/\s+/g, ' ').replace(/\.\.+/g, '.').replace(/^\s+/, '');
+        return s;
+      }
+      function formatFullNameCapitalize(val) {
+        if (!val) return '';
+        return val.split(/\s+/).map(function (word) {
+          if (!word) return '';
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }).join(' ');
+      }
+      function validateFullNameValue(name) {
+        var t = name.trim().replace(/\s+/g, ' ');
+        if (!t) return { valid: false, msg: 'Enter your full name.' };
+        if (/^\s/.test(name) || /\s\s+/.test(name)) return { valid: false, msg: 'No leading or double spaces allowed.' };
+        if (!/^[A-Za-z.\s]+$/.test(t)) return { valid: false, msg: 'Full name can only contain letters, spaces, and single dots.' };
+        if (/\.\./.test(t)) return { valid: false, msg: 'Do not use multiple dots in a row.' };
+        return { valid: true };
+      }
+      function validateEmailValue(emailVal) {
+        var t = (emailVal || '').trim();
+        if (!t) return { valid: false, msg: 'Enter your email address.' };
+        var at = t.indexOf('@');
+        var local = at >= 0 ? t.substring(0, at) : '';
+        if (!local || /^\s+$/.test(local)) return { valid: false, msg: 'Enter a valid email address.' };
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return { valid: false, msg: 'Enter a valid email address.' };
+        return { valid: true };
+      }
       function validateForm() {
         clearAllInlineErrors();
         var fullName = document.getElementById('reg-full_name');
         var email = document.getElementById('reg-email');
         var school = document.getElementById('reg-school');
         var reviewType = document.getElementById('reg-review_type');
-        var pw = passwordInput ? passwordInput.value : '';
-        var confirm = confirmInput ? confirmInput.value : '';
+        var pwRaw = passwordInput ? passwordInput.value : '';
+        var pw = (pwRaw || '').trim();
+        var confirmRaw = confirmInput ? confirmInput.value : '';
+        var confirm = (confirmRaw || '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
         var firstInvalid = null;
-        if (!fullName || !fullName.value.trim()) {
-          setInlineError('full_name', 'Enter your full name.');
+        var messages = [];
+        var fnVal = validateFullNameValue(fullName ? fullName.value : '');
+        if (!fnVal.valid) {
+          setInlineError('full_name', fnVal.msg);
+          messages.push(fnVal.msg);
           if (!firstInvalid) firstInvalid = fullName;
         }
-        if (!email || !email.value.trim()) {
-          setInlineError('email', 'Enter your email address.');
-          if (!firstInvalid) firstInvalid = email;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-          setInlineError('email', 'Enter a valid email address.');
+        var emVal = validateEmailValue(email ? email.value : '');
+        if (!emVal.valid) {
+          setInlineError('email', emVal.msg);
+          messages.push(emVal.msg);
           if (!firstInvalid) firstInvalid = email;
         }
         if (!school || !school.value) {
           setInlineError('school', 'Select your school.');
+          messages.push('Select your school.');
           if (!firstInvalid) firstInvalid = school;
         }
         if (!reviewType || !reviewType.value) {
           setInlineError('review_type', 'Select review type.');
+          messages.push('Select review type.');
           if (!firstInvalid) firstInvalid = reviewType;
         }
-        if (!pw) {
+        if (!pwRaw || !pwRaw.trim()) {
           setInlineError('password', 'Enter a password.');
+          messages.push('Enter a password.');
+          if (!firstInvalid) firstInvalid = passwordInput;
+        } else if (/^\s+$/.test(pwRaw)) {
+          setInlineError('password', 'Password cannot be only spaces.');
+          messages.push('Password cannot be only spaces.');
           if (!firstInvalid) firstInvalid = passwordInput;
         } else if (!allPasswordChecksMet(pw)) {
           setInlineError('password', 'Password must meet all requirements above.');
+          messages.push('Password must meet all requirements above.');
           if (!firstInvalid) firstInvalid = passwordInput;
         }
         if (pw !== confirm) {
           setInlineError('confirm', 'Passwords do not match.');
+          messages.push('Passwords do not match.');
           if (!firstInvalid) firstInvalid = confirmInput;
         } else if (confirm && !allPasswordChecksMet(pw)) {
           setInlineError('confirm', 'Complete all password requirements first.');
+          messages.push('Complete all password requirements first.');
           if (!firstInvalid) firstInvalid = confirmInput;
+        }
+        var fileInvalidType = false;
+        if (fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
+          var f = fileInputEl.files[0];
+          var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+          var ext = (f.name.split('.').pop() || '').toLowerCase();
+          var allowedExt = ['jpg', 'jpeg', 'png', 'pdf'];
+          if (!allowedTypes.includes(f.type) || !allowedExt.includes(ext)) {
+            fileInvalidType = true;
+            setInlineError('payment_proof', 'Please upload an image (JPG, PNG) or PDF only.');
+            messages.push('Invalid file type. Please upload an image or PDF for payment verification.');
+            if (fileZone) fileZone.classList.add('is-invalid');
+            if (!firstInvalid) firstInvalid = fileZone;
+          }
         }
         if (!fileInputEl || !fileInputEl.files || fileInputEl.files.length === 0) {
           setInlineError('payment_proof', 'Upload a payment proof file.');
+          messages.push('Upload a payment proof file.');
           if (fileZone) fileZone.classList.add('is-invalid');
           if (!firstInvalid) firstInvalid = fileZone;
         }
-        return { valid: !firstInvalid, firstInvalid: firstInvalid };
+        return { valid: !firstInvalid, firstInvalid: firstInvalid, messages: messages };
       }
       function scrollToFirstError(el) {
         if (!el) return;
@@ -1376,17 +1791,21 @@ unset($_SESSION['error']);
         var email = document.getElementById('reg-email');
         var school = document.getElementById('reg-school');
         var reviewType = document.getElementById('reg-review_type');
-        var pw = passwordInput ? passwordInput.value : '';
-        var confirm = confirmInput ? confirmInput.value : '';
+        var pw = (passwordInput ? passwordInput.value : '').trim();
+        var confirm = (confirmInput ? confirmInput.value : '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
-        if (!fullName || !fullName.value.trim()) return false;
-        if (!email || !email.value.trim()) return false;
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) return false;
+        if (!validateFullNameValue(fullName ? fullName.value : '').valid) return false;
+        if (!validateEmailValue(email ? email.value : '').valid) return false;
         if (!school || !school.value) return false;
         if (!reviewType || !reviewType.value) return false;
-        if (!pw || !allPasswordChecksMet(pw)) return false;
+        if (!pw || /^\s+$/.test(passwordInput ? passwordInput.value : '')) return false;
+        if (!allPasswordChecksMet(pw)) return false;
         if (pw !== confirm) return false;
         if (!fileInputEl || !fileInputEl.files || fileInputEl.files.length === 0) return false;
+        var f = fileInputEl.files[0];
+        var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        var ext = (f.name.split('.').pop() || '').toLowerCase();
+        if (!allowedTypes.includes(f.type) || !['jpg', 'jpeg', 'png', 'pdf'].includes(ext)) return false;
         return true;
       }
       function getFormCompleteCount() {
@@ -1409,9 +1828,6 @@ unset($_SESSION['error']);
       }
       function updateSubmitState() {
         var valid = isFormValid();
-        if (regSubmitBtn) {
-          regSubmitBtn.disabled = !valid;
-        }
         var hintEl = document.getElementById('reg-submit-hint');
         if (hintEl) {
           if (valid) {
@@ -1419,7 +1835,13 @@ unset($_SESSION['error']);
             hintEl.classList.add('hidden');
           } else {
             var count = getFormCompleteCount();
-            hintEl.textContent = count === 0 ? 'Complete the fields above to continue.' : count + ' of 7 complete — fill all required fields to submit.';
+            if (count === 0) {
+              hintEl.textContent = 'Complete the fields above to continue.';
+              hintEl.classList.remove('reg-hint-complete');
+            } else {
+              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 7 complete — fill all required fields to submit.';
+              hintEl.classList.toggle('reg-hint-complete', count >= 7);
+            }
             hintEl.classList.remove('hidden');
           }
         }
@@ -1438,6 +1860,53 @@ unset($_SESSION['error']);
         });
         updateFloatLabel(wrap, input);
       });
+      var fullNameInput = document.getElementById('reg-full_name');
+      if (fullNameInput) {
+        fullNameInput.addEventListener('input', function () {
+          var v = this.value;
+          var normalized = normalizeFullNameInput(v);
+          if (normalized.length > 0 && /[a-z]/.test(normalized.charAt(0))) {
+            normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+          }
+          if (normalized !== v) {
+            var sel = this.selectionStart;
+            this.value = normalized;
+            this.setSelectionRange(Math.min(sel, normalized.length), Math.min(sel, normalized.length));
+          }
+        });
+        fullNameInput.addEventListener('blur', function () {
+          var v = this.value.trim().replace(/\s+/g, ' ');
+          if (v) this.value = formatFullNameCapitalize(v);
+        });
+      }
+      var emailInput = document.getElementById('reg-email');
+      var emailCheckTimeout = null;
+      if (emailInput) {
+        emailInput.addEventListener('input', function () {
+          var v = this.value;
+          if (/\s/.test(v)) {
+            var sel = this.selectionStart;
+            this.value = v.replace(/\s/g, '');
+            this.setSelectionRange(Math.min(sel, this.value.length), Math.min(sel, this.value.length));
+          }
+        });
+        emailInput.addEventListener('blur', function () {
+          var em = (this.value || '').trim();
+          if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
+          if (emailCheckTimeout) clearTimeout(emailCheckTimeout);
+          emailCheckTimeout = setTimeout(function () {
+            fetch('check_email.php?email=' + encodeURIComponent(em))
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                if (data.available === false && data.message) {
+                  setInlineError('email', data.message);
+                  if (emailInput) { emailInput.setAttribute('aria-invalid', 'true'); emailInput.classList.add('is-invalid'); }
+                }
+              })
+              .catch(function () {});
+          }, 400);
+        });
+      }
       document.querySelectorAll('select.auth-input').forEach(function (sel) {
         sel.addEventListener('change', function () {
           sel.removeAttribute('aria-invalid');
@@ -1459,16 +1928,34 @@ unset($_SESSION['error']);
         togglePasswordButton.addEventListener('click', function () {
           var isPassword = passwordInput.type === 'password';
           passwordInput.type = isPassword ? 'text' : 'password';
-          togglePasswordIcon.classList.toggle('bi-eye-fill', !isPassword);
-          togglePasswordIcon.classList.toggle('bi-eye-slash-fill', isPassword);
+          togglePasswordIcon.classList.remove('bi-eye-fill', 'bi-eye-slash-fill');
+          togglePasswordIcon.classList.add(isPassword ? 'bi-eye-fill' : 'bi-eye-slash-fill');
         });
       }
       if (toggleConfirmBtn && toggleConfirmIcon && confirmInput) {
         toggleConfirmBtn.addEventListener('click', function () {
           var isPassword = confirmInput.type === 'password';
           confirmInput.type = isPassword ? 'text' : 'password';
-          toggleConfirmIcon.classList.toggle('bi-eye-fill', !isPassword);
-          toggleConfirmIcon.classList.toggle('bi-eye-slash-fill', isPassword);
+          toggleConfirmIcon.classList.remove('bi-eye-fill', 'bi-eye-slash-fill');
+          toggleConfirmIcon.classList.add(isPassword ? 'bi-eye-fill' : 'bi-eye-slash-fill');
+        });
+      }
+      if (passwordInput) {
+        passwordInput.addEventListener('input', function () {
+          var v = this.value;
+          if (/\s/.test(v)) {
+            this.value = v.replace(/\s/g, '');
+            updateStrengthBar(this.value);
+            updateChecklist(this.value);
+            updateConfirmFeedback();
+          }
+        });
+      }
+      if (confirmInput) {
+        confirmInput.addEventListener('input', function () {
+          var v = this.value;
+          if (/\s/.test(v)) this.value = v.replace(/\s/g, '');
+          updateConfirmFeedback();
         });
       }
 
@@ -1540,10 +2027,10 @@ unset($_SESSION['error']);
       }
       var confirmSuccessEl = document.getElementById('reg-confirm-success');
       function updateConfirmFeedback() {
-        var pw = passwordInput ? passwordInput.value : '';
-        var conf = confirmInput ? confirmInput.value : '';
+        var pw = (passwordInput ? passwordInput.value : '').trim();
+        var conf = (confirmInput ? confirmInput.value : '').trim();
         if (confirmErrorEl) {
-          if (!conf) {
+          if (!confirmInput || !confirmInput.value) {
             confirmErrorEl.textContent = '';
             confirmErrorEl.classList.add('hidden');
           } else if (pw !== conf) {
@@ -1593,6 +2080,23 @@ unset($_SESSION['error']);
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
       }
+      var allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+      var allowedFileExt = ['jpg', 'jpeg', 'png', 'pdf'];
+      function isAllowedPaymentFile(file) {
+        if (!file) return false;
+        var ext = (file.name.split('.').pop() || '').toLowerCase();
+        return allowedFileTypes.indexOf(file.type) !== -1 && allowedFileExt.indexOf(ext) !== -1;
+      }
+      function showInvalidFileModal() {
+        var errModal = document.getElementById('reg-modal-error');
+        var errTitle = document.getElementById('reg-error-title');
+        var errMsg = document.getElementById('reg-error-message');
+        if (errModal && errTitle && errMsg) {
+          errTitle.textContent = 'Invalid file type';
+          errMsg.innerHTML = 'Please upload an image (JPG, PNG) or PDF file for payment verification.';
+          errModal.classList.add('is-active');
+        }
+      }
       if (fileInput && filePlaceholder && filePreview && fileThumb && fileNameEl && fileSizeEl && fileProgress && fileClear) {
         fileInput.addEventListener('change', function () {
           var file = this.files[0];
@@ -1603,7 +2107,18 @@ unset($_SESSION['error']);
             if (fileZone) fileZone.classList.remove('has-file');
             return;
           }
+          if (!isAllowedPaymentFile(file)) {
+            this.value = '';
+            filePlaceholder.classList.remove('hidden');
+            filePreview.classList.add('hidden');
+            if (fileZone) fileZone.classList.remove('has-file');
+            setInlineError('payment_proof', 'Please upload an image (JPG, PNG) or PDF only.');
+            if (fileZone) fileZone.classList.add('is-invalid');
+            showInvalidFileModal();
+            return;
+          }
           setInlineError('payment_proof', '');
+          if (fileZone) fileZone.classList.remove('is-invalid');
           if (fileZone) fileZone.classList.add('has-file');
           filePlaceholder.classList.add('hidden');
           filePreview.classList.remove('hidden');
@@ -1635,6 +2150,16 @@ unset($_SESSION['error']);
           e.preventDefault();
           var v = validateForm();
           if (!v.valid) {
+            var errModal = document.getElementById('reg-modal-error');
+            var errTitle = document.getElementById('reg-error-title');
+            var errMsg = document.getElementById('reg-error-message');
+            if (errModal && errTitle && errMsg) {
+              errTitle.textContent = 'Please fix the following';
+              errMsg.innerHTML = v.messages && v.messages.length
+                ? '<ul class="reg-error-list">' + v.messages.map(function (m) { return '<li>' + (m || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</li>'; }).join('') + '</ul>'
+                : 'Please complete all required fields.';
+              errModal.classList.add('is-active');
+            }
             scrollToFirstError(v.firstInvalid);
             if (v.firstInvalid) {
               if (typeof v.firstInvalid.focus === 'function') v.firstInvalid.focus();
@@ -1690,6 +2215,7 @@ unset($_SESSION['error']);
               regSubmitText.textContent = 'Submit registration';
               regSubmitSpinner.classList.add('hidden');
               regSubmitArrow.classList.remove('hidden');
+              if (regSubmitBtn) regSubmitBtn.disabled = false;
               updateSubmitState();
               var errModal = document.getElementById('reg-modal-error');
               var errTitle = document.getElementById('reg-error-title');
@@ -1707,6 +2233,7 @@ unset($_SESSION['error']);
             regSubmitText.textContent = 'Submit registration';
             regSubmitSpinner.classList.add('hidden');
             regSubmitArrow.classList.remove('hidden');
+            if (regSubmitBtn) regSubmitBtn.disabled = false;
             updateSubmitState();
             var errModal = document.getElementById('reg-modal-error');
             var errTitle = document.getElementById('reg-error-title');
@@ -1735,28 +2262,49 @@ unset($_SESSION['error']);
         });
       }
 
+      function updateSectionLabels() {
+        var fullName = document.getElementById('reg-full_name');
+        var email = document.getElementById('reg-email');
+        var school = document.querySelector('select[name="school"]');
+        var reviewType = document.querySelector('select[name="review_type"]');
+        var schoolOther = document.getElementById('reg-school_other');
+        var pw = passwordInput ? passwordInput.value : '';
+        var confirm = confirmInput ? confirmInput.value : '';
+        var file = document.getElementById('register-payment-proof');
+        var accountComplete = fullName && fullName.value.trim() &&
+          email && email.value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) &&
+          school && school.value && reviewType && reviewType.value &&
+          (school.value !== 'Other' || (schoolOther && schoolOther.value.trim()));
+        var securityComplete = pw && allPasswordChecksMet(pw) && confirm === pw;
+        var paymentComplete = file && file.files && file.files.length > 0;
+        var accountEl = document.getElementById('reg-label-account');
+        var securityEl = document.getElementById('reg-label-security');
+        var paymentEl = document.getElementById('reg-label-payment');
+        if (accountEl) accountEl.classList.toggle('reg-section-label--complete', !!accountComplete);
+        if (securityEl) securityEl.classList.toggle('reg-section-label--complete', !!securityComplete);
+        if (paymentEl) paymentEl.classList.toggle('reg-section-label--complete', !!paymentComplete);
+      }
       function updateRegProgress() {
         var bar = document.getElementById('reg-form-progress-bar');
-        if (bar) {
-          var fullName = document.getElementById('reg-full_name');
-          var email = document.getElementById('reg-email');
-          var school = document.querySelector('select[name="school"]');
-          var reviewType = document.querySelector('select[name="review_type"]');
-          var pw = document.getElementById('register-password');
-          var confirm = document.getElementById('register-password-confirm');
-          var file = document.getElementById('register-payment-proof');
-          var n = 0;
-          if (fullName && fullName.value.trim()) n++;
-          if (email && email.value.trim()) n++;
-          if (school && school.value) n++;
-          if (reviewType && reviewType.value) n++;
-          if (pw && pw.value) n++;
-          if (confirm && confirm.value) n++;
-          if (file && file.files && file.files.length) n++;
-          var pct = n >= 7 ? 100 : Math.round((n / 7) * 100);
-          bar.style.width = pct + '%';
-        }
+        var fullName = document.getElementById('reg-full_name');
+        var email = document.getElementById('reg-email');
+        var school = document.querySelector('select[name="school"]');
+        var reviewType = document.querySelector('select[name="review_type"]');
+        var pw = document.getElementById('register-password');
+        var confirm = document.getElementById('register-password-confirm');
+        var file = document.getElementById('register-payment-proof');
+        var n = 0;
+        if (fullName && fullName.value.trim()) n++;
+        if (email && email.value.trim()) n++;
+        if (school && school.value) n++;
+        if (reviewType && reviewType.value) n++;
+        if (pw && pw.value) n++;
+        if (confirm && confirm.value) n++;
+        if (file && file.files && file.files.length) n++;
+        var pct = n >= 7 ? 100 : Math.round((n / 7) * 100);
+        if (bar) bar.style.width = pct + '%';
         updateSubmitState();
+        updateSectionLabels();
       }
       ['reg-full_name', 'reg-email', 'register-password', 'register-password-confirm'].forEach(function (id) {
         var el = document.getElementById(id);
@@ -1769,35 +2317,40 @@ unset($_SESSION['error']);
       updateRegProgress();
 
       var blurbEl = document.getElementById('reg-blurb-text');
+      var leftBlurbEl = document.getElementById('reg-left-blurb');
       var blurbs = ['Master simulations with timed drills.', 'Benchmarked vs national pass rates.', 'Track your weakest topics in real time.'];
-      if (blurbEl && blurbs.length) {
+      if ((blurbEl || leftBlurbEl) && blurbs.length) {
         var blurbIndex = 0;
         setInterval(function () {
-          blurbEl.style.opacity = '0';
+          if (blurbEl) blurbEl.style.opacity = '0';
+          if (leftBlurbEl) leftBlurbEl.style.opacity = '0';
           setTimeout(function () {
             blurbIndex = (blurbIndex + 1) % blurbs.length;
-            blurbEl.textContent = blurbs[blurbIndex];
-            blurbEl.style.opacity = '1';
-          }, 350);
+            var t = blurbs[blurbIndex];
+            if (blurbEl) { blurbEl.textContent = t; blurbEl.style.opacity = '1'; }
+            if (leftBlurbEl) { leftBlurbEl.textContent = t; leftBlurbEl.style.opacity = '1'; }
+          }, 450);
         }, 6000);
       }
 
-      // Rotating mock score ribbon for registration hero
       var regMetricsEl = document.getElementById('reg-metrics-text');
+      var leftMetricsEl = document.getElementById('reg-left-metrics');
       var regMetricsSlides = [
         'FAR 78% · REG 82% · AUD 65%',
         'Mock exam cohort 1 71% · Drill sets 69%',
         'Tax intensive 74% · Practice quizzes 80%'
       ];
-      if (regMetricsEl && regMetricsSlides.length) {
+      if ((regMetricsEl || leftMetricsEl) && regMetricsSlides.length) {
         var regMetricsIndex = 0;
         setInterval(function () {
-          regMetricsEl.style.opacity = '0';
+          if (regMetricsEl) regMetricsEl.style.opacity = '0';
+          if (leftMetricsEl) leftMetricsEl.style.opacity = '0';
           setTimeout(function () {
             regMetricsIndex = (regMetricsIndex + 1) % regMetricsSlides.length;
-            regMetricsEl.textContent = regMetricsSlides[regMetricsIndex];
-            regMetricsEl.style.opacity = '1';
-          }, 350);
+            var m = regMetricsSlides[regMetricsIndex];
+            if (regMetricsEl) { regMetricsEl.textContent = m; regMetricsEl.style.opacity = '1'; }
+            if (leftMetricsEl) { leftMetricsEl.textContent = m; leftMetricsEl.style.opacity = '1'; }
+          }, 450);
         }, 7000);
       }
     });

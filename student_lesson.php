@@ -38,6 +38,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
 </head>
 <body class="font-sans antialiased" x-data="{ viewMode: 'separate', handoutModalOpen: false, handoutModalTitle: '', handoutModalSrc: '', splitHandoutId: '' }">
   <?php include 'student_sidebar.php'; ?>
+  <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5 flex flex-wrap justify-between items-center gap-4">
     <div>
@@ -193,5 +194,6 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
     </div>
   </div>
 </main>
+</div>
 </body>
 </html>

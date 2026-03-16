@@ -1026,6 +1026,7 @@ if ($userId) {
 </head>
 <body class="font-sans antialiased">
   <?php include 'student_sidebar.php'; ?>
+  <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="w-full">
     <?php if (isset($_SESSION['error'])): ?>
@@ -1699,5 +1700,6 @@ if ($userId) {
 })();
 </script>
 </main>
+</div>
 </body>
 </html>

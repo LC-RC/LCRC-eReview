@@ -23,6 +23,7 @@ $pageTitle = $subject['subject_name'] . ' - Lessons';
 </head>
 <body class="font-sans antialiased">
   <?php include 'student_sidebar.php'; ?>
+  <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
@@ -63,5 +64,6 @@ $pageTitle = $subject['subject_name'] . ' - Lessons';
     <?php endif; ?>
   </div>
 </main>
+</div>
 </body>
 </html>

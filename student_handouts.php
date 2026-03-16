@@ -24,6 +24,7 @@ $pageTitle = $lesson['title'] . ' - Handouts';
 </head>
 <body class="font-sans antialiased" x-data="{ handoutModalOpen: false, handoutModalTitle: '', handoutModalSrc: '' }">
   <?php include 'student_sidebar.php'; ?>
+  <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
@@ -107,5 +108,6 @@ $pageTitle = $lesson['title'] . ' - Handouts';
     </div>
   </div>
 </main>
+</div>
 </body>
 </html>

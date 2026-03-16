@@ -24,8 +24,8 @@ cache/
 # Composer (if you use it later)
 /vendor/
 
-# Node dependencies (reinstall with npm install)
-node_modules/
+# Node dependencies (tracked so collaborators don't need npm install)
+# node_modules/
 
-# User uploads — keep on server only, not in repo
-uploads/
+# User uploads (tracked so collaborators get the folder; avoid very large files)
+# uploads/

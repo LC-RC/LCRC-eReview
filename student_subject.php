@@ -322,6 +322,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
 </head>
 <body class="font-sans antialiased" x-data="{ activeTab: 'materials', viewMode: 'separate' }" x-init="const h = window.location.hash; if (h === '#quizzers') activeTab = 'quizzers'; else if (h === '#materials') activeTab = 'materials';">
   <?php include 'student_sidebar.php'; ?>
+  <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2"><i class="bi bi-book"></i> <?php echo h($subject['subject_name']); ?></h1>
@@ -805,5 +806,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   })();
   </script>
 </main>
+</div>
 </body>
 </html>

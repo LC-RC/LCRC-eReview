@@ -351,9 +351,9 @@ if (isset($_SESSION['google_redirect_uri'])) {
       }
       body.login-prototype .login-card [for="login-remember"] { min-height: 2.75rem; display: inline-flex; align-items: center; }
     }
-    /* Card container: slightly wider + more compact vertically */
+    /* Card container: enlarged for better readability */
     body.login-prototype .login-card-wrap {
-      max-width: 460px !important;
+      max-width: 520px !important;
     }
     /* Card: floating depth, subtle light border, focus glow */
     body.login-prototype .login-card {
@@ -361,18 +361,18 @@ if (isset($_SESSION['google_redirect_uri'])) {
       border: 1px solid rgba(255, 255, 255, 0.06) !important;
       box-shadow: 0 24px 48px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(31, 88, 195, 0.1), 0 1px 0 rgba(255,255,255,0.03) inset !important;
       border-radius: 1rem !important;
-      padding: 1.1rem 1.75rem 1.3rem !important;
+      padding: 1.75rem 2.25rem 1.85rem !important;
       transition: box-shadow 0.25s ease, transform 0.25s ease;
     }
     body.login-prototype .login-card:focus-within {
       box-shadow: 0 24px 48px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(31, 88, 195, 0.18), 0 0 40px rgba(31, 88, 195, 0.12), 0 1px 0 rgba(255,255,255,0.03) inset !important;
     }
-    /* Header: tighter vertical spacing to reduce height */
+    /* Header: proper vertical spacing */
     body.login-prototype .login-header {
-      margin-bottom: 1rem !important;
+      margin-bottom: 1.25rem !important;
     }
     body.login-prototype .login-logo-wrap {
-      margin-bottom: 0.5rem !important;
+      margin-bottom: 0.75rem !important;
     }
     body.login-prototype .login-logo-hover {
       transition: transform 0.2s ease, filter 0.2s ease;
@@ -398,10 +398,10 @@ if (isset($_SESSION['google_redirect_uri'])) {
     body.login-prototype .login-card .brand-text .blue { color: #1F58C3; }
     body.login-prototype .login-card .brand-text .amber { color: #F59E0B; }
     body.login-prototype .login-welcome {
-      margin-bottom: 1rem !important;
+      margin-bottom: 1.35rem !important;
     }
     body.login-prototype .login-value-statement {
-      font-size: 0.8125rem; color: #94a3b8; margin-bottom: 0.5rem; line-height: 1.4;
+      font-size: 0.8125rem; color: #94a3b8; margin-bottom: 0.65rem; line-height: 1.4;
     }
     body.login-prototype .login-dashboard-preview {
       display: flex; align-items: center; justify-content: center; gap: 0.75rem;
@@ -418,10 +418,10 @@ if (isset($_SESSION['google_redirect_uri'])) {
       font-weight: 700;
       letter-spacing: -0.025em;
     }
-    /* Form: tighter spacing so form + footer fit on one screen */
-    body.login-prototype .login-form-fields.space-y-4 > * + * { margin-top: 0.65rem !important; }
-    body.login-prototype .login-card .space-y-2 > * + * { margin-top: 0.25rem !important; }
-    body.login-prototype .login-card .login-piece-5b { margin-top: 1.25rem !important; }
+    /* Form: proper spacing between sections and fields */
+    body.login-prototype .login-form-fields.space-y-4 > * + * { margin-top: 1rem !important; }
+    body.login-prototype .login-card .space-y-2 > * + * { margin-top: 0.5rem !important; }
+    body.login-prototype .login-card .login-piece-5b { margin-top: 1.5rem !important; }
     /* Floating label wrapper */
     body.login-prototype .login-card .float-label-wrap {
       position: relative;
@@ -502,9 +502,9 @@ if (isset($_SESSION['google_redirect_uri'])) {
       margin-top: 0.25rem !important;
       border-radius: 0.75rem !important;
     }
-    body.login-prototype .login-card .login-piece-6 { margin-top: 0.75rem !important; }
+    body.login-prototype .login-card .login-piece-6 { margin-top: 1.1rem !important; }
     body.login-prototype .login-card .or-divider {
-      margin-top: 0.75rem !important;
+      margin-top: 1rem !important;
       margin-bottom: 0.65rem !important;
     }
     /* Google: same size as Login button */
@@ -526,12 +526,10 @@ if (isset($_SESSION['google_redirect_uri'])) {
       height: 1rem !important;
       flex-shrink: 0;
     }
-    body.login-prototype .login-card .login-piece-8 {
-      margin-bottom: 0 !important;
-    }
+    body.login-prototype .login-card .login-piece-8 { margin-top: 1rem !important; }
     body.login-prototype .login-card .login-blurbs {
       margin-top: 1.5rem !important;
-      padding-top: 1.1rem !important;
+      padding-top: 1.35rem !important;
     }
     body.login-prototype .login-card .login-blurb {
       transition: opacity 0.35s ease;
@@ -1000,7 +998,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
   </div>
   <div class="login-page-layout min-h-screen flex flex-col relative z-10">
     <div class="flex-1 flex items-center justify-center p-4">
-    <div class="login-card-wrap w-full max-w-[400px] mx-auto">
+    <div class="login-card-wrap w-full max-w-[520px] mx-auto">
       <div class="login-card">
           <div class="flex flex-col items-center login-piece login-piece-1 login-header">
           <div class="login-logo-wrap flex items-center justify-center login-logo-hover">
