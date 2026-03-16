@@ -1,5 +1,6 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/quiz_helpers.php';
 requireRole('admin');
 
 $csrf = generateCSRFToken();
@@ -13,6 +14,18 @@ $subRes = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($subRes);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: admin_subjects.php'); exit; }
+
+// Ensure time_limit_minutes and time_limit_seconds exist (auto-migrate)
+$quizCols = [];
+$qc = @mysqli_query($conn, "SHOW COLUMNS FROM quizzes");
+if ($qc) { while ($row = mysqli_fetch_assoc($qc)) $quizCols[] = $row['Field']; }
+if (!in_array('time_limit_minutes', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `time_limit_minutes` int(11) NOT NULL DEFAULT 30 AFTER `title`");
+}
+if (!in_array('time_limit_seconds', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `time_limit_seconds` int(11) NOT NULL DEFAULT 1800 AFTER `time_limit_minutes`");
+    @mysqli_query($conn, "UPDATE `quizzes` SET `time_limit_seconds` = `time_limit_minutes` * 60 WHERE `time_limit_seconds` = 0");
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -36,22 +49,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $quizId = sanitizeInt($_POST['quiz_id'] ?? 0);
     $title = trim($_POST['title'] ?? '');
-    $quizType = $_POST['quiz_type'] ?? 'pre-test';
+    $timeLimitSeconds = (int)($_POST['time_limit_seconds'] ?? 1800);
+    if ($timeLimitSeconds < 1) $timeLimitSeconds = 1;
+    if ($timeLimitSeconds > 86400) $timeLimitSeconds = 86400; // max 24 hours
+    $timeLimitMinutes = (int)ceil($timeLimitSeconds / 60); // keep for backward compat
     if ($title === '') {
         $_SESSION['error'] = 'Quiz title is required.';
         header('Location: admin_quizzes.php?subject_id='.$subjectId);
         exit;
     }
-    if (!in_array($quizType, ['pre-test','post-test','mock'], true)) $quizType = 'pre-test';
+    $quizType = 'pre-test'; // All quizzes go to Quizzers; Test Bank uses mock only
     if ($quizId > 0) {
-        $stmt = mysqli_prepare($conn, "UPDATE quizzes SET title=?, quiz_type=? WHERE quiz_id=? AND subject_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssii', $title, $quizType, $quizId, $subjectId);
+        $stmt = mysqli_prepare($conn, "UPDATE quizzes SET title=?, quiz_type=?, time_limit_minutes=?, time_limit_seconds=? WHERE quiz_id=? AND subject_id=?");
+        mysqli_stmt_bind_param($stmt, 'ssiiii', $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $quizId, $subjectId);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Quiz updated.';
     } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type) VALUES (?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'iss', $subjectId, $title, $quizType);
+        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds) VALUES (?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Quiz created.';
@@ -126,24 +142,24 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-5 py-3 font-semibold text-gray-700">Quiz</th>
-            <th class="px-5 py-3 font-semibold text-gray-700">Type</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 w-28">Time limit</th>
             <th class="px-5 py-3 font-semibold text-gray-700">Questions</th>
             <th class="px-5 py-3 font-semibold text-gray-700 w-[340px]">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <?php $hasAny = false; while ($qz = mysqli_fetch_assoc($quizzes)): $hasAny = true;
-            $qt = (string)$qz['quiz_type'];
-            $typeClass = $qt === 'mock' ? 'bg-primary text-white' : ($qt === 'post-test' ? 'bg-sky-100 text-sky-800' : 'bg-gray-200 text-gray-700');
+          <?php $hasAny = false;
+            while ($qz = mysqli_fetch_assoc($quizzes)): $hasAny = true;
+            $timeSecs = getQuizTimeLimitSeconds($qz);
           ?>
             <tr class="border-b border-gray-100 hover:bg-gray-50/50">
               <td class="px-5 py-3 font-semibold text-gray-800"><?php echo h($qz['title']); ?></td>
-              <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $typeClass; ?>"><?php echo h($qz['quiz_type']); ?></span></td>
+              <td class="px-5 py-3 text-gray-600"><?php echo formatTimeLimitSeconds($timeSecs); ?></td>
               <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-sm bg-gray-100 text-gray-700"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></span></td>
               <td class="px-5 py-3">
                 <div class="flex flex-wrap gap-2">
                   <a href="admin_quiz_questions.php?quiz_id=<?php echo (int)$qz['quiz_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-list-check"></i> Questions</a>
-                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-type="<?php echo h($qz['quiz_type'] ?? 'pre-test'); ?>" @click="openEditQuiz($el.dataset.id, $el.dataset.title || '', $el.dataset.type || 'pre-test')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition"><i class="bi bi-pencil"></i> Edit</button>
+                  <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-time-secs="<?php echo $timeSecs; ?>" @click="openEditQuiz($el.dataset.id, $el.dataset.title || '', parseInt($el.dataset.timeSecs) || 1800)" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition"><i class="bi bi-pencil"></i> Edit</button>
                   <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" @click="openDeleteQuiz($el.dataset.id, $el.dataset.title || '')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
                 </div>
               </td>
@@ -180,15 +196,20 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
-            <input type="text" name="title" x-model="title" required placeholder="e.g., Pre-test: FAR Basics" class="input-custom">
+            <input type="text" name="title" x-model="title" required placeholder="e.g., Chapter 1 Quiz" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Type</label>
-            <select name="quiz_type" x-model="quiz_type" class="input-custom" required>
-              <option value="pre-test">Pre-test</option>
-              <option value="post-test">Post-test</option>
-              <option value="mock">Mock Exam</option>
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Time limit (how long to take the quiz)</label>
+            <div class="flex flex-wrap items-center gap-2">
+              <input type="number" x-model.number="time_limit_hours" min="0" max="24" class="input-custom w-20" placeholder="0">
+              <span class="text-gray-600">hour(s)</span>
+              <input type="number" x-model.number="time_limit_mins" min="0" max="59" class="input-custom w-20" placeholder="30">
+              <span class="text-gray-600">min(s)</span>
+              <input type="number" x-model.number="time_limit_secs" min="0" max="59" class="input-custom w-20" placeholder="0">
+              <span class="text-gray-600">sec(s)</span>
+            </div>
+            <input type="hidden" name="time_limit_seconds" :value="Math.max(1, time_limit_hours * 3600 + time_limit_mins * 60 + time_limit_secs)">
+            <p class="text-xs text-gray-500 mt-1">e.g. 1 hour 3 mins 2 seconds. At least 1 second; max 24 hours. Zero hours/minutes allowed.</p>
           </div>
           <p class="text-sm text-gray-500">You'll add the questions after creating the quiz.</p>
         </div>
@@ -232,22 +253,29 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
         isEdit: false,
         quiz_id: 0,
         title: '',
-        quiz_type: 'pre-test',
+        time_limit_hours: 0,
+        time_limit_mins: 30,
+        time_limit_secs: 0,
         delete_quiz_id: 0,
         delete_quiz_title: '',
-        editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['quiz_id'], 'title' => $edit['title'] ?? '', 'quiz_type' => $edit['quiz_type'] ?? 'pre-test']) : 'null'; ?>,
+        editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['quiz_id'], 'title' => $edit['title'] ?? '', 'time_limit_seconds' => (int)getQuizTimeLimitSeconds($edit ?? [])]) : 'null'; ?>,
         openNewQuiz() {
           this.isEdit = false;
           this.quiz_id = 0;
           this.title = '';
-          this.quiz_type = 'pre-test';
+          this.time_limit_hours = 0;
+          this.time_limit_mins = 30;
+          this.time_limit_secs = 0;
           this.quizModalOpen = true;
         },
-        openEditQuiz(id, title, type) {
+        openEditQuiz(id, title, totalSeconds) {
           this.isEdit = true;
           this.quiz_id = id;
           this.title = title || '';
-          this.quiz_type = (type === 'post-test' || type === 'mock') ? type : 'pre-test';
+          totalSeconds = (totalSeconds > 0 && totalSeconds <= 86400) ? totalSeconds : 1800;
+          this.time_limit_hours = Math.floor(totalSeconds / 3600);
+          this.time_limit_mins = Math.floor((totalSeconds % 3600) / 60);
+          this.time_limit_secs = totalSeconds % 60;
           this.quizModalOpen = true;
         },
         openDeleteQuiz(id, title) {
@@ -256,7 +284,7 @@ $pageTitle = 'Quizzes - ' . $subject['subject_name'];
           this.deleteModalOpen = true;
         },
         initEditFromServer() {
-          if (this.editFromServer) this.openEditQuiz(this.editFromServer.id, this.editFromServer.title, this.editFromServer.quiz_type);
+          if (this.editFromServer) this.openEditQuiz(this.editFromServer.id, this.editFromServer.title, this.editFromServer.time_limit_seconds || 1800);
         }
       };
     }

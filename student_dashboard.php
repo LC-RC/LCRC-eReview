@@ -6,17 +6,21 @@ $csrf = generateCSRFToken();
 
 $lastLoginAt = null;
 $uid = getCurrentUserId();
-$stmt = @mysqli_prepare($conn, 'SELECT last_login_at FROM users WHERE user_id = ? LIMIT 1');
-if ($stmt) {
-    mysqli_stmt_bind_param($stmt, 'i', $uid);
-    if (@mysqli_stmt_execute($stmt)) {
-        $res = mysqli_stmt_get_result($stmt);
-        $row = $res ? mysqli_fetch_assoc($res) : null;
-        if ($row && !empty($row['last_login_at'])) {
-            $lastLoginAt = $row['last_login_at'];
+try {
+    $stmt = mysqli_prepare($conn, 'SELECT last_login_at FROM users WHERE user_id = ? LIMIT 1');
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'i', $uid);
+        if (mysqli_stmt_execute($stmt)) {
+            $res = mysqli_stmt_get_result($stmt);
+            $row = $res ? mysqli_fetch_assoc($res) : null;
+            if ($row && !empty($row['last_login_at'])) {
+                $lastLoginAt = $row['last_login_at'];
+            }
         }
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_close($stmt);
+} catch (mysqli_sql_exception $e) {
+    // last_login_at column may not exist yet; run add_last_login.sql to add it
 }
 ?>
 <!DOCTYPE html>

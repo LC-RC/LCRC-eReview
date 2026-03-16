@@ -8,8 +8,9 @@
 require_once __DIR__ . '/session_config.php';
 
 $host = "localhost";
-$user = "root"; // change if may password
-$pass = "2429249_lms***";
+$user = "root";
+// Must match MySQL root password (MySQL Workbench / XAMPP). Default XAMPP = empty string ""
+$pass = "2429249_lms";
 $db = "ereview";
 
 $conn = mysqli_connect($host, $user, $pass, $db);
