@@ -1,0 +1,1301 @@
+/**
+ * Admin dashboard – Grok-style: deep black, high contrast, minimal chrome.
+ * Applied only when body has class .admin-app (admin account only).
+ */
+
+/* --- Base: true black, high contrast --- */
+body.admin-app {
+  background: #0d0d0d;
+  color: #a1a1aa;
+  font-weight: 400;
+}
+
+body.admin-app #main {
+  background: #0d0d0d !important;
+  color: #a1a1aa !important;
+}
+
+/* --- Sidebar: Grok-like elevation, crisp --- */
+body.admin-app #sidebar {
+  background: #0a0a0a !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.2s ease;
+}
+
+body.admin-app #sidebar .p-5.bg-white\/10 {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+body.admin-app #sidebar .p-5.bg-white\/10 h3 {
+  font-weight: 600 !important;
+  letter-spacing: 0.025em;
+  font-size: 1rem;
+  color: #fff !important;
+}
+
+body.admin-app #sidebar nav {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+body.admin-app #sidebar nav a {
+  color: rgba(255, 255, 255, 0.65);
+  border-left: 3px solid transparent;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+body.admin-app #sidebar nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Grok-style active: thin white left bar + subtle tint, text stays white */
+body.admin-app #sidebar nav a.bg-white\/15,
+body.admin-app #sidebar nav a[class*="border-l-white"] {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border-left-width: 2px !important;
+  border-left-style: solid !important;
+  border-left-color: #ffffff !important;
+  font-weight: 600;
+}
+
+body.admin-app #sidebar nav a.bg-white\/15 .bi,
+body.admin-app #sidebar nav a[class*="border-l-white"] .bi,
+body.admin-app #sidebar nav a.bg-white\/15 span,
+body.admin-app #sidebar nav a[class*="border-l-white"] span {
+  color: inherit !important;
+}
+
+/* --- Topbar: aligned with sidebar, same design language --- */
+body.admin-app .admin-topbar {
+  background: #0a0a0a !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+body.admin-app .admin-topbar .text-white\/90 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+body.admin-app .admin-topbar .text-white\/60 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Sidebar: collapsed rail (icons only) + expanded overlay */
+body.admin-app #sidebar {
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.45);
+  width: 72px; /* collapsed rail width */
+}
+body.admin-app #sidebar .admin-sidebar-brand {
+  display: none;
+}
+/* Burger button: remove blue focus outline */
+body.admin-app #sidebar button[aria-label="Toggle sidebar"],
+body.admin-app #sidebar button[aria-label="Toggle sidebar"]:focus,
+body.admin-app #sidebar button[aria-label="Toggle sidebar"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+body.admin-app #sidebar nav a {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  justify-content: center;
+}
+/* Default (collapsed rail): icons only */
+body.admin-app #sidebar nav a span:not(.admin-sidebar-badge),
+body.admin-app #sidebar .admin-sidebar-section-label,
+body.admin-app #sidebar .admin-sidebar-footer span {
+  display: none;
+}
+/* Expanded overlay */
+body.admin-app.sidebar-expanded #sidebar {
+  width: 260px;
+}
+body.admin-app.sidebar-expanded #sidebar .admin-sidebar-brand {
+  display: flex;
+}
+body.admin-app.sidebar-expanded #sidebar nav a {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  justify-content: flex-start;
+}
+body.admin-app.sidebar-expanded #sidebar nav a span:not(.admin-sidebar-badge),
+body.admin-app.sidebar-expanded #sidebar .admin-sidebar-section-label,
+body.admin-app.sidebar-expanded #sidebar .admin-sidebar-footer span {
+  display: inline;
+}
+
+/* Sidebar backdrop for overlay close-on-click */
+body.admin-app #sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-out;
+  z-index: 900;
+}
+body.admin-app.sidebar-expanded #sidebar-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Admin content: add left/right margin and center */
+body.admin-app #main .admin-content {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Main layout: leave room for collapsed rail so content isn't covered */
+body.admin-app #main {
+  margin-left: 72px;
+}
+
+/* --- Cards: Grok-style, border-only, no shadow --- */
+body.admin-app #main .bg-white {
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+body.admin-app #main .shadow-card {
+  box-shadow: none;
+}
+
+/* Dashboard stat cards: subtle hover (reference “slight brightening / faint border glow”) */
+body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
+  background: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* --- Dashboard cards: neutral default, semantic hover (outline + accent) --- */
+/* Modern palette: green #22c55e, amber #f59e0b, red #ef4444, Subjects=blue #0ea5e9, Lessons=yellow #FBEC52, violet #8b5cf6 */
+body.admin-app #main .dashboard-card {
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left-width: 1px !important;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.admin-app #main .dashboard-card:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__title,
+body.admin-app #main .dashboard-card .dashboard-card__title .bi {
+  color: #6b7280 !important;
+  transition: color 0.2s ease;
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__btn {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #9ca3af !important;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__btn .bi {
+  color: inherit;
+}
+
+/* Glow: soft halo + defined edge (all cards and buttons) */
+/* Enrolled → Green */
+body.admin-app #main .dashboard-card--enrolled:hover {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.22), 0 0 0 1px rgba(34, 197, 94, 0.35);
+}
+body.admin-app #main .dashboard-card--enrolled:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--enrolled:hover .dashboard-card__title .bi {
+  color: #22c55e !important;
+}
+body.admin-app #main .dashboard-card--enrolled:hover .dashboard-card__btn {
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+}
+body.admin-app #main .dashboard-card--enrolled .dashboard-card__btn:hover {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: #22c55e !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.25), 0 0 0 1px rgba(34, 197, 94, 0.3);
+}
+
+/* Pending approvals → Amber */
+body.admin-app #main .dashboard-card--pending:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.22), 0 0 0 1px rgba(245, 158, 11, 0.35);
+}
+body.admin-app #main .dashboard-card--pending:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--pending:hover .dashboard-card__title .bi {
+  color: #f59e0b !important;
+}
+body.admin-app #main .dashboard-card--pending:hover .dashboard-card__btn {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+body.admin-app #main .dashboard-card--pending .dashboard-card__btn:hover {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #f59e0b !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.3);
+}
+
+/* Expired access → Red */
+body.admin-app #main .dashboard-card--expired:hover {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.22), 0 0 0 1px rgba(239, 68, 68, 0.35);
+}
+body.admin-app #main .dashboard-card--expired:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--expired:hover .dashboard-card__title .bi {
+  color: #ef4444 !important;
+}
+body.admin-app #main .dashboard-card--expired:hover .dashboard-card__btn {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+body.admin-app #main .dashboard-card--expired .dashboard-card__btn:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.25), 0 0 0 1px rgba(239, 68, 68, 0.3);
+}
+
+/* Subjects → Blue */
+body.admin-app #main .dashboard-card--subjects:hover {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.22), 0 0 0 1px rgba(14, 165, 233, 0.35);
+}
+body.admin-app #main .dashboard-card--subjects:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--subjects:hover .dashboard-card__title .bi {
+  color: #0ea5e9 !important;
+}
+body.admin-app #main .dashboard-card--subjects:hover .dashboard-card__btn {
+  border-color: #0ea5e9 !important;
+  color: #0ea5e9 !important;
+}
+body.admin-app #main .dashboard-card--subjects .dashboard-card__btn:hover {
+  background: rgba(14, 165, 233, 0.12) !important;
+  color: #0ea5e9 !important;
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.3);
+}
+
+/* Lessons → Yellow */
+body.admin-app #main .dashboard-card--lessons:hover {
+  border-color: #FBEC52 !important;
+  box-shadow: 0 0 20px rgba(251, 236, 82, 0.22), 0 0 0 1px rgba(251, 236, 82, 0.35);
+}
+body.admin-app #main .dashboard-card--lessons:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--lessons:hover .dashboard-card__title .bi {
+  color: #FBEC52 !important;
+}
+body.admin-app #main .dashboard-card--lessons:hover .dashboard-card__btn {
+  border-color: #FBEC52 !important;
+  color: #FBEC52 !important;
+}
+body.admin-app #main .dashboard-card--lessons .dashboard-card__btn:hover {
+  background: rgba(251, 236, 82, 0.12) !important;
+  color: #FBEC52 !important;
+  border-color: #FBEC52 !important;
+  box-shadow: 0 0 14px rgba(251, 236, 82, 0.25), 0 0 0 1px rgba(251, 236, 82, 0.3);
+}
+
+/* Quizzes → Violet */
+body.admin-app #main .dashboard-card--quizzes:hover {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.22), 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+body.admin-app #main .dashboard-card--quizzes:hover .dashboard-card__title,
+body.admin-app #main .dashboard-card--quizzes:hover .dashboard-card__title .bi {
+  color: #8b5cf6 !important;
+}
+body.admin-app #main .dashboard-card--quizzes:hover .dashboard-card__btn {
+  border-color: #8b5cf6 !important;
+  color: #8b5cf6 !important;
+}
+body.admin-app #main .dashboard-card--quizzes .dashboard-card__btn:hover {
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: #8b5cf6 !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.25), 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+/* --- Typography: Grok-style, high contrast --- */
+body.admin-app #main .text-2xl.font-bold,
+body.admin-app #main h1.text-2xl {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em;
+}
+
+body.admin-app #main .text-\[#012970\] {
+  color: #ffffff !important;
+}
+
+body.admin-app #main .text-gray-800,
+body.admin-app #main .text-gray-700 {
+  color: #fafafa !important;
+}
+
+body.admin-app #main .text-gray-500,
+body.admin-app #main .text-gray-400 {
+  color: #a1a1aa !important;
+}
+
+body.admin-app #main .text-3xl.font-bold {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em;
+}
+
+body.admin-app #main h2 {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em;
+}
+
+/* --- Buttons: primary / accent (neutral gray for black palette) --- */
+body.admin-app #main a.border-primary.text-primary,
+body.admin-app #main button.border-primary {
+  border-color: #4c4e51 !important;
+  color: #d1d5db !important;
+}
+
+body.admin-app #main a.border-primary.text-primary:hover,
+body.admin-app #main button.border-primary:hover {
+  background: #4c4e51 !important;
+  color: #fff !important;
+  border-color: #4c4e51 !important;
+}
+
+body.admin-app #main .bg-primary,
+body.admin-app #main .hover\:bg-primary:hover {
+  background: #4c4e51 !important;
+}
+
+body.admin-app #main .bg-primary.text-white,
+body.admin-app #main .hover\:bg-primary:hover {
+  color: #fff !important;
+}
+
+body.admin-app #main .hover\:bg-primary-dark:hover {
+  background: #47484c !important;
+}
+
+/* Secondary / gray buttons */
+body.admin-app #main a.border-gray-400.text-gray-600,
+body.admin-app #main a.border-gray-300,
+body.admin-app #main button.border-gray-400 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #9ca3af !important;
+}
+
+body.admin-app #main a.border-gray-400.text-gray-600:hover,
+body.admin-app #main a.border-gray-300:hover,
+body.admin-app #main a.hover\:bg-gray-400:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Green (enrolled / success) */
+body.admin-app #main a.border-green-500.text-green-600 {
+  border-color: #27c27f !important;
+  color: #27c27f !important;
+}
+
+body.admin-app #main a.border-green-500.text-green-600:hover {
+  background: #27c27f !important;
+  color: #fff !important;
+}
+
+/* Amber (pending) – keep as primary accent on dashboard */
+body.admin-app #main a.border-amber-500.text-amber-600 {
+  border-color: #e6a23c !important;
+  color: #e6a23c !important;
+}
+
+body.admin-app #main a.border-amber-500.text-amber-600:hover {
+  background: #e6a23c !important;
+  color: #fff !important;
+}
+
+/* Subject blue #0ea5e9 – subjects/content hub (distinct from pending amber) */
+.admin-subject-left,
+.border-l-admin-subject { border-left-color: #0ea5e9 !important; }
+.admin-subject-text { color: #0ea5e9 !important; }
+a.admin-subject-btn,
+.admin-subject-btn {
+  border: 2px solid #0ea5e9 !important;
+  color: #0ea5e9 !important;
+}
+a.admin-subject-btn:hover,
+.admin-subject-btn:hover {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+}
+.admin-subject-bg {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+  border-color: #0ea5e9 !important;
+}
+.admin-subject-bg:hover {
+  background: #0284c7 !important;
+  color: #fff !important;
+  border-color: #0284c7 !important;
+}
+
+/* Subject: text-only (like Pending) – color on text only, neutral border, subtle bg on hover */
+.admin-subject-text-only {
+  border: 2px solid #d1d5db !important;
+  color: #0ea5e9 !important;
+  background: transparent !important;
+}
+.admin-subject-text-only:hover {
+  background: rgba(14, 165, 233, 0.12) !important;
+  color: #0ea5e9 !important;
+  border-color: rgba(14, 165, 233, 0.4) !important;
+}
+/* Subject: text-only button with fill on hover (e.g. New Subject) */
+.admin-subject-btn-text-only {
+  border: 2px solid #d1d5db !important;
+  color: #0ea5e9 !important;
+  background: transparent !important;
+}
+.admin-subject-btn-text-only:hover {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+  border-color: #0ea5e9 !important;
+}
+
+body.admin-app #main .admin-subject-left,
+body.admin-app #main .border-l-admin-subject { border-left-color: #0ea5e9 !important; }
+body.admin-app #main .admin-subject-text { color: #0ea5e9 !important; }
+body.admin-app #main a.admin-subject-btn,
+body.admin-app #main .admin-subject-btn {
+  border-color: #0ea5e9 !important;
+  color: #0ea5e9 !important;
+}
+body.admin-app #main a.admin-subject-btn:hover,
+body.admin-app #main .admin-subject-btn:hover {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+}
+body.admin-app #main .admin-subject-bg { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
+body.admin-app #main .admin-subject-bg:hover { background: #0284c7 !important; color: #fff !important; border-color: #0284c7 !important; }
+body.admin-app #main .admin-subject-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
+body.admin-app #main .admin-subject-text-only:hover { background: rgba(14, 165, 233, 0.15) !important; color: #0ea5e9 !important; border-color: rgba(14, 165, 233, 0.4) !important; }
+body.admin-app #main .admin-subject-btn-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
+body.admin-app #main .admin-subject-btn-text-only:hover { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
+
+/* Quick action buttons: uniform shape, semantic colors + hover effects */
+/* Use a.quick-action-btn so we beat a.border-gray-300:hover and hover colors show */
+body.admin-app #main a.quick-action-btn {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: transparent !important;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+body.admin-app #main a.quick-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Default: no semantic color – neutral text only */
+body.admin-app #main a.quick-action-btn--students,
+body.admin-app #main a.quick-action-btn--subject,
+body.admin-app #main a.quick-action-btn--pending {
+  color: #6b7280 !important;
+}
+
+/* Students: color only on hover */
+body.admin-app #main a.quick-action-btn--students:hover {
+  color: #e5e7eb !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Content Hub (Subjects): blue only on hover */
+body.admin-app #main a.quick-action-btn--subject:hover {
+  color: #0ea5e9 !important;
+  border-color: rgba(14, 165, 233, 0.6) !important;
+  background: rgba(14, 165, 233, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+/* Pending approvals: amber only on hover */
+body.admin-app #main a.quick-action-btn--pending:hover {
+  color: #e6a23c !important;
+  border-color: rgba(230, 162, 60, 0.6) !important;
+  background: rgba(230, 162, 60, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.15);
+}
+
+/* Dashboard only: “View enrolled” uses neutral style so only “Review pending” pops */
+
+/* --- Students page: filter tabs – neutral labels, semantic icon/count, blue = selection --- */
+body.admin-app #main .student-filter-tab {
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+/* Inactive: neutral tab label text */
+body.admin-app #main a.student-filter-tab:not(.bg-primary) {
+  color: #9ca3af;
+}
+/* Semantic colors only on icon and count when inactive */
+body.admin-app #main a.student-filter-tab--enrolled:not(.bg-primary) .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab--enrolled:not(.bg-primary) .student-filter-tab__icon .bi { color: #22c55e; }
+body.admin-app #main a.student-filter-tab--enrolled:not(.bg-primary) .student-filter-tab__count {
+  background: rgba(34, 197, 94, 0.2); color: #22c55e;
+}
+body.admin-app #main a.student-filter-tab--pending:not(.bg-primary) .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab--pending:not(.bg-primary) .student-filter-tab__icon .bi { color: #f59e0b; }
+body.admin-app #main a.student-filter-tab--pending:not(.bg-primary) .student-filter-tab__count {
+  background: rgba(245, 158, 11, 0.2); color: #f59e0b;
+}
+body.admin-app #main a.student-filter-tab--expired:not(.bg-primary) .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab--expired:not(.bg-primary) .student-filter-tab__icon .bi { color: #ef4444; }
+body.admin-app #main a.student-filter-tab--expired:not(.bg-primary) .student-filter-tab__count {
+  background: rgba(239, 68, 68, 0.2); color: #ef4444;
+}
+body.admin-app #main a.student-filter-tab--rejected:not(.bg-primary) .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab--rejected:not(.bg-primary) .student-filter-tab__icon .bi { color: #ef4444; }
+body.admin-app #main a.student-filter-tab--rejected:not(.bg-primary) .student-filter-tab__count {
+  background: rgba(239, 68, 68, 0.2); color: #ef4444;
+}
+/* "All" tab: use white so it's neutral but still visible */
+body.admin-app #main a.student-filter-tab--all:not(.bg-primary) {
+  color: #f9fafb;
+}
+body.admin-app #main a.student-filter-tab--all:not(.bg-primary) .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab--all:not(.bg-primary) .student-filter-tab__icon .bi { color: #f9fafb; }
+body.admin-app #main a.student-filter-tab--all:not(.bg-primary) .student-filter-tab__count {
+  background: rgba(249, 250, 251, 0.08); color: #f9fafb;
+}
+/* Hover: use each tab's semantic color for border + glow */
+body.admin-app #main a.student-filter-tab--enrolled:hover {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.25), 0 0 0 1px rgba(34, 197, 94, 0.35);
+}
+body.admin-app #main a.student-filter-tab--pending:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.35);
+}
+body.admin-app #main a.student-filter-tab--expired:hover,
+body.admin-app #main a.student-filter-tab--rejected:hover {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.25), 0 0 0 1px rgba(239, 68, 68, 0.35);
+}
+body.admin-app #main a.student-filter-tab--all:hover {
+  border-color: #f9fafb !important;
+  box-shadow: 0 0 14px rgba(249, 250, 251, 0.25), 0 0 0 1px rgba(249, 250, 251, 0.35);
+}
+/* Active: dark background, semantic border/text/icon, semantic glow */
+body.admin-app #main a.student-filter-tab.bg-primary,
+body.admin-app #main a.student-filter-tab.bg-primary.text-white {
+  background: #141414 !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+}
+body.admin-app #main a.student-filter-tab--enrolled.bg-primary,
+body.admin-app #main a.student-filter-tab--enrolled.bg-primary.text-white {
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.3), 0 0 0 1px rgba(34, 197, 94, 0.6);
+}
+body.admin-app #main a.student-filter-tab--pending.bg-primary,
+body.admin-app #main a.student-filter-tab--pending.bg-primary.text-white {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.3), 0 0 0 1px rgba(245, 158, 11, 0.6);
+}
+body.admin-app #main a.student-filter-tab--expired.bg-primary,
+body.admin-app #main a.student-filter-tab--expired.bg-primary.text-white,
+body.admin-app #main a.student-filter-tab--rejected.bg-primary,
+body.admin-app #main a.student-filter-tab--rejected.bg-primary.text-white {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.3), 0 0 0 1px rgba(239, 68, 68, 0.6);
+}
+body.admin-app #main a.student-filter-tab--all.bg-primary,
+body.admin-app #main a.student-filter-tab--all.bg-primary.text-white {
+  border-color: #f9fafb !important;
+  color: #f9fafb !important;
+  box-shadow: 0 0 14px rgba(249, 250, 251, 0.25), 0 0 0 1px rgba(249, 250, 251, 0.5);
+}
+body.admin-app #main a.student-filter-tab.bg-primary .student-filter-tab__icon,
+body.admin-app #main a.student-filter-tab.bg-primary .student-filter-tab__icon .bi {
+  /* icon color follows current text color, so no override needed */
+}
+body.admin-app #main a.student-filter-tab.bg-primary .student-filter-tab__count.student-filter-tab__count--active {
+  background: rgba(15, 23, 42, 0.6) !important;
+}
+/* Apply button: same sky glow on hover as Open Content Hub */
+body.admin-app #main .student-apply-btn {
+  background: transparent;
+  color: #f9fafb;
+  border-color: rgba(249, 250, 251, 0.4);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+body.admin-app #main .student-apply-btn:hover {
+  background: rgba(249, 250, 251, 0.06);
+  border-color: #f9fafb !important;
+  color: #f9fafb;
+  box-shadow: 0 0 14px rgba(249, 250, 251, 0.25), 0 0 0 1px rgba(249, 250, 251, 0.45);
+}
+
+/* Sky */
+body.admin-app #main a.border-sky-500.text-sky-600 {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+body.admin-app #main a.border-sky-500.text-sky-600:hover {
+  background: #38bdf8 !important;
+  color: #fff !important;
+}
+
+/* Violet */
+body.admin-app #main a.border-violet-500.text-violet-600 {
+  border-color: #a78bfa !important;
+  color: #a78bfa !important;
+}
+
+body.admin-app #main a.border-violet-500.text-violet-600:hover {
+  background: #a78bfa !important;
+  color: #fff !important;
+}
+
+/* Red (danger) */
+body.admin-app #main a.border-red-500.text-red-600,
+body.admin-app #main button.border-red-500 {
+  border-color: #f0545c !important;
+  color: #f0545c !important;
+}
+
+body.admin-app #main a.border-red-500.text-red-600:hover,
+body.admin-app #main button.border-red-500:hover {
+  background: #f0545c !important;
+  color: #fff !important;
+}
+
+/* Solid primary button (e.g. Approve, New Video) */
+body.admin-app #main .bg-primary.text-white {
+  background: #4c4e51 !important;
+  color: #fff !important;
+  border-color: transparent;
+}
+
+body.admin-app #main .bg-primary.text-white:hover {
+  background: #47484c !important;
+  color: #fff !important;
+}
+
+body.admin-app #main .bg-green-600 {
+  background: #27c27f !important;
+}
+
+body.admin-app #main .hover\:bg-green-700:hover {
+  background: #1fa86d !important;
+}
+
+/* --- Alerts (success / error) --- */
+body.admin-app #main .bg-green-50 {
+  background: rgba(39, 194, 127, 0.15) !important;
+  border-color: rgba(39, 194, 127, 0.4) !important;
+}
+
+body.admin-app #main .text-green-800 {
+  color: #27c27f !important;
+}
+
+body.admin-app #main .bg-red-50 {
+  background: rgba(240, 84, 92, 0.15) !important;
+  border-color: rgba(240, 84, 92, 0.4) !important;
+}
+
+body.admin-app #main .text-red-800 {
+  color: #f0545c !important;
+}
+
+/* --- Forms: inputs & selects --- */
+body.admin-app #main .input-custom,
+body.admin-app #main input[type="text"],
+body.admin-app #main input[type="number"],
+body.admin-app #main input[type="email"],
+body.admin-app #main input[type="search"],
+body.admin-app #main select {
+  background: #202129 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+
+body.admin-app #main .input-custom::placeholder,
+body.admin-app #main input::placeholder {
+  color: #6b7280;
+}
+
+body.admin-app #main .input-custom:focus,
+body.admin-app #main input:focus,
+body.admin-app #main select:focus {
+  border-color: #4c4e51 !important;
+  box-shadow: 0 0 0 2px rgba(76, 78, 81, 0.4);
+}
+
+body.admin-app #main label.text-gray-700 {
+  color: #9ca3af !important;
+}
+
+/* --- Tables --- */
+body.admin-app #main table thead.bg-gray-50 {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.admin-app #main table th {
+  color: #9ca3af !important;
+  font-weight: 600;
+}
+
+body.admin-app #main table tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.admin-app #main table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.admin-app #main table td {
+  color: #e5e7eb;
+}
+
+body.admin-app #main table .text-gray-800 {
+  color: #fff !important;
+}
+
+body.admin-app #main table .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+/* Table empty state */
+body.admin-app #main table .text-center.text-gray-500 {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main table .text-gray-600 {
+  color: #e5e7eb !important;
+}
+
+/* --- Tabs (e.g. Enrolled / Pending) --- */
+body.admin-app #main .bg-gray-100.text-primary.border-primary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #4c4e51 !important;
+  border-color: #4c4e51 !important;
+}
+
+body.admin-app #main .bg-gray-100.border-gray-200 {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .bg-gray-100.border-gray-200:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+body.admin-app #main .bg-gray-200.text-gray-700 {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .bg-white\/20 {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* --- Subject table: Lessons/Quizzes count pills (visible numbers, semantic colors) --- */
+body.admin-app #main .admin-count-pill {
+  font-weight: 600;
+}
+body.admin-app #main .admin-count-pill--lessons {
+  background: rgba(251, 236, 82, 0.2) !important;
+  color: #FBEC52 !important;
+  border: 1px solid rgba(251, 236, 82, 0.4);
+}
+body.admin-app #main .admin-count-pill--quizzes {
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: #a78bfa !important;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+/* --- Badges (status) --- */
+body.admin-app #main .bg-green-100.text-green-800 {
+  background: rgba(39, 194, 127, 0.2) !important;
+  color: #27c27f !important;
+}
+
+body.admin-app #main .bg-red-100.text-red-800 {
+  background: rgba(240, 84, 92, 0.2) !important;
+  color: #f0545c !important;
+}
+
+body.admin-app #main .bg-amber-100.text-amber-800 {
+  background: rgba(230, 162, 60, 0.2) !important;
+  color: #e6a23c !important;
+}
+
+body.admin-app #main .bg-gray-200.text-gray-700 {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #9ca3af !important;
+}
+
+/* --- Pagination (Students, Subjects, etc.) --- */
+body.admin-app #main nav[aria-label="Student pagination"] .border-gray-300,
+body.admin-app #main nav[aria-label="Subject pagination"] .border-gray-300,
+body.admin-app #main nav[aria-label*="pagination"] .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #9ca3af !important;
+}
+
+body.admin-app #main nav[aria-label="Student pagination"] a:hover,
+body.admin-app #main nav[aria-label="Subject pagination"] a:hover,
+body.admin-app #main nav[aria-label*="pagination"] a:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+body.admin-app #main nav[aria-label="Student pagination"] .bg-primary,
+body.admin-app #main nav[aria-label="Subject pagination"] .bg-primary,
+body.admin-app #main nav[aria-label*="pagination"] .bg-primary {
+  background: #4c4e51 !important;
+  border-color: #4c4e51 !important;
+  color: #fff !important;
+}
+
+/* --- Dashboard stats grid: generous spacing (reference) --- */
+body.admin-app #main > .grid {
+  gap: 1.5rem;
+}
+
+/* --- Border radius: consistent rounded (reference 8–15px) --- */
+body.admin-app #main .rounded-xl {
+  border-radius: 8px;
+}
+
+body.admin-app #main .rounded-lg {
+  border-radius: 6px;
+}
+
+/* --- Icons: keep Bootstrap Icons, subtle light --- */
+body.admin-app #main .bi {
+  opacity: 0.95;
+}
+
+body.admin-app #main .text-green-500 { color: #27c27f !important; }
+body.admin-app #main .text-amber-500 { color: #e6a23c !important; }
+body.admin-app #main .text-sky-500 { color: #38bdf8 !important; }
+body.admin-app #main .text-violet-500 { color: #a78bfa !important; }
+body.admin-app #main .text-primary { color: #d1d5db !important; }
+
+/* --- Focus (accessibility; reference “subtle visual feedback”) --- */
+body.admin-app #main a:focus-visible,
+body.admin-app #main button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #0d0d0d, 0 0 0 4px rgba(255, 255, 255, 0.12);
+}
+
+body.admin-app #sidebar nav a:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* Sidebar: pending badge and section labels */
+body.admin-app .admin-sidebar-badge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: #0a0a0a;
+  background: #e6a23c;
+  border-radius: 9999px;
+}
+
+body.admin-app .admin-sidebar-section {
+  list-style: none;
+  margin-top: 0.5rem;
+}
+
+body.admin-app .admin-sidebar-section:first-child {
+  margin-top: 0;
+}
+
+body.admin-app .admin-sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app .admin-sidebar-section-label {
+  display: block;
+  padding: 0.5rem 1.25rem 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Modals (may be outside #main) --- */
+body.admin-app .fixed .relative.bg-white,
+body.admin-app .fixed .bg-white.rounded-xl {
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+}
+
+body.admin-app .fixed .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app .fixed .text-gray-800 {
+  color: #fff !important;
+}
+
+body.admin-app .fixed .text-gray-500.hover\:bg-gray-100:hover,
+body.admin-app .fixed .hover\:bg-gray-100:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff;
+}
+
+body.admin-app .fixed .bg-amber-50 {
+  background: rgba(230, 162, 60, 0.15) !important;
+  border-color: rgba(230, 162, 60, 0.4) !important;
+}
+
+body.admin-app .fixed .text-amber-800 {
+  color: #e6a23c !important;
+}
+
+body.admin-app .fixed .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #9ca3af !important;
+}
+
+body.admin-app .fixed .border-gray-300:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+body.admin-app .fixed .bg-red-600 {
+  background: #f0545c !important;
+}
+
+body.admin-app .fixed .hover\:bg-red-700:hover {
+  background: #d9454d !important;
+}
+
+/* --- Dashboard: Grok-style tighter spacing --- */
+body.admin-app #main .admin-dashboard-hero {
+  padding: 1rem 1.25rem !important;
+}
+
+body.admin-app #main .admin-dashboard-quick-actions {
+  margin-bottom: 1.25rem;
+}
+
+body.admin-app #main .admin-dashboard-section {
+  margin-top: 1.25rem;
+}
+
+body.admin-app #main .admin-dashboard-section:first-of-type {
+  margin-top: 0;
+}
+
+body.admin-app #main .admin-dashboard-section .grid {
+  gap: 0.75rem 1rem;
+}
+
+body.admin-app #main .admin-dashboard-bottom-block {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  gap: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* --- Admin: breadcrumb (structure, admin only) --- */
+body.admin-app .admin-breadcrumb ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+body.admin-app .admin-breadcrumb a {
+  color: #a1a1aa;
+  text-decoration: none;
+}
+
+body.admin-app .admin-breadcrumb a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+body.admin-app .admin-breadcrumb-sep {
+  user-select: none;
+}
+
+body.admin-app .admin-breadcrumb-current {
+  color: #e5e7eb;
+}
+
+/* Dashboard: primary KPIs row (Students) — slightly emphasized structure */
+body.admin-app #main .admin-dashboard-primary-kpis .text-3xl.font-bold {
+  font-size: 1.875rem;
+}
+
+body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* --- Dashboard: zero state (soften "0" so it doesn’t dominate) --- */
+body.admin-app #main [data-zero="true"] {
+  color: #6b7280 !important;
+  font-weight: 600;
+}
+
+/* --- Dashboard: KPI strip (hero summary) --- */
+body.admin-app #main .admin-dashboard-kpi-strip {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+body.admin-app #main .admin-dashboard-kpi-strip .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
+  color: #e5e7eb !important;
+}
+
+/* --- Dashboard: Needs attention alert (neutral default, orange on hover) --- */
+body.admin-app #main .admin-dashboard-alert {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+body.admin-app #main .admin-dashboard-alert .text-gray-800 {
+  color: #fff !important;
+}
+
+body.admin-app #main .admin-dashboard-alert .text-gray-500 {
+  color: #a1a1aa !important;
+}
+
+body.admin-app #main .admin-alert-icon {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+body.admin-app #main .admin-dashboard-alert:hover .admin-alert-icon {
+  color: #e6a23c !important;
+  background: rgba(230, 162, 60, 0.12) !important;
+}
+
+body.admin-app #main .admin-alert-btn {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #e5e7eb !important;
+  background: transparent !important;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+body.admin-app #main .admin-alert-btn:hover {
+  border-color: #e6a23c !important;
+  color: #e6a23c !important;
+  background: rgba(230, 162, 60, 0.12) !important;
+}
+
+/* --- Dashboard: section icons, badges, links (neutral) --- */
+body.admin-app #main .admin-section-icon {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .admin-badge {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #d1d5db !important;
+}
+
+body.admin-app #main .admin-link {
+  color: #e5e7eb !important;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+body.admin-app #main .admin-link:hover {
+  color: #fff !important;
+}
+
+body.admin-app #main .admin-outline-btn {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #e5e7eb !important;
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app #main .admin-outline-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 14px rgba(249, 250, 251, 0.25), 0 0 0 1px rgba(249, 250, 251, 0.45);
+}
+
+/* Outline variants: color only on hover */
+body.admin-app #main .admin-outline-btn--lessons:hover {
+  background: rgba(251, 236, 82, 0.08) !important;
+  border-color: #FBEC52 !important;
+  color: #FBEC52 !important;
+  box-shadow: 0 0 14px rgba(251, 236, 82, 0.25), 0 0 0 1px rgba(251, 236, 82, 0.45);
+}
+body.admin-app #main .admin-outline-btn--quiz:hover {
+  background: rgba(167, 139, 250, 0.08) !important;
+  border-color: #a78bfa !important;
+  color: #a78bfa !important;
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.45);
+}
+
+/* --- Content Hub / list pages: neutral buttons, color on hover --- */
+body.admin-app #main .admin-content-btn {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #e5e7eb !important;
+  background: transparent !important;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app #main .admin-content-btn--subject:hover {
+  border-color: #0ea5e9 !important;
+  color: #0ea5e9 !important;
+  background: rgba(14, 165, 233, 0.1) !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.4);
+}
+
+/* Lessons primary button (yellow) */
+body.admin-app #main .admin-content-btn--lessons:hover {
+  border-color: #FBEC52 !important;
+  color: #FBEC52 !important;
+  background: rgba(251, 236, 82, 0.12) !important;
+  box-shadow: 0 0 14px rgba(251, 236, 82, 0.25), 0 0 0 1px rgba(251, 236, 82, 0.45);
+}
+
+/* Quiz primary button (violet) */
+body.admin-app #main .admin-content-btn--quiz:hover {
+  border-color: #a78bfa !important;
+  color: #a78bfa !important;
+  background: rgba(167, 139, 250, 0.12) !important;
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.45);
+}
+
+/* Quizzes page: subject text uses quiz violet instead of subject yellow */
+body.admin-app #main .admin-subject-text--quiz {
+  color: #a78bfa !important;
+}
+body.admin-app #main .admin-content-btn--subject:hover .bi {
+  color: inherit;
+}
+
+body.admin-app #main .admin-action-btn {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #e5e7eb !important;
+  background: transparent !important;
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app #main .admin-action-btn .bi {
+  color: inherit;
+}
+body.admin-app #main .admin-action-btn--lessons:hover {
+  border-color: #FBEC52 !important;
+  color: #FBEC52 !important;
+  background: rgba(251, 236, 82, 0.1) !important;
+  box-shadow: 0 0 14px rgba(251, 236, 82, 0.25), 0 0 0 1px rgba(251, 236, 82, 0.35);
+}
+body.admin-app #main .admin-action-btn--quizzes:hover {
+  border-color: #a78bfa !important;
+  color: #a78bfa !important;
+  background: rgba(167, 139, 250, 0.1) !important;
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.35);
+}
+body.admin-app #main .admin-action-btn--danger:hover {
+  border-color: #f0545c !important;
+  color: #f0545c !important;
+  background: rgba(240, 84, 92, 0.1) !important;
+}
+
+body.admin-app #main .admin-status-pill {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #d1d5db !important;
+}
+
+/* --- Dashboard: flash messages (neutral) --- */
+body.admin-app #main .admin-flash {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e7eb !important;
+}
+body.admin-app #main .admin-flash .bi {
+  color: #9ca3af !important;
+}
+
+/* --- Dashboard: section headings --- */
+body.admin-app #main h2.text-lg {
+  color: #fff !important;
+}
+
+body.admin-app #main .space-y-3 li .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+body.admin-app #main .space-y-3 li a:hover {
+  color: #4c4e51 !important;
+}
+
+body.admin-app #main .space-y-3 .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Quiz activity widget: big number */
+body.admin-app #main .flex.items-baseline .text-3xl.font-bold {
+  color: #fff !important;
+}
+
+/* Enrollment chart summary line (Total: X registrations) */
+body.admin-app #main .admin-dashboard-chart-summary strong {
+  color: #d1d5db !important;
+}
+
+/* --- Dividers / borders in content --- */
+body.admin-app #main .border-t.border-gray-100 {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app #main .border-b.border-gray-100 {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
