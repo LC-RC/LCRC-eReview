@@ -210,17 +210,24 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
     </form>
   </div>
 
-  <div class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
-    <div class="px-5 py-4 border-b border-[#1665A0]/15 bg-[#e8f2fa]/70 flex flex-wrap justify-between items-center gap-2">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
         <span class="font-semibold text-gray-800">Subjects</span>
-        <span class="admin-badge px-2.5 py-0.5 rounded-full text-sm font-medium"><?php echo (int)$total; ?></span>
+        <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
       </div>
-      <p class="text-[#143D59]/70 text-sm hidden md:block">Manage subjects, materials, quizzes, and Test Banks per subject.</p>
+      <p class="text-gray-500 text-sm hidden md:block m-0">Manage subjects, materials, quizzes, and Test Banks per subject.</p>
+      <div class="text-gray-500 text-sm text-right">
+        <?php if ($total > 0): ?>
+          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> subjects</span>
+        <?php else: ?>
+          <span>Showing 0-0 of 0 subjects</span>
+        <?php endif; ?>
+      </div>
     </div>
     <div class="overflow-x-auto pl-3 pr-8">
       <table class="w-full text-left">
-        <thead class="bg-gray-50 border-b border-[#d0e2f2]">
+        <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Subject</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
@@ -265,6 +272,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
                     <div class="flex flex-col gap-2">
                       <a href="admin_lessons.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--lessons flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-file-text"></i> Lessons</a>
                       <a href="admin_quizzes.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--quizzes flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-question-circle"></i> Quizzes</a>
+                      <a href="admin_preweek.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--lessons flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-lightning-charge"></i> Preweek</a>
                       <button type="button" @click="expanded = !expanded" class="flex items-center justify-center gap-1 w-full py-1 rounded-md text-xs text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition" :aria-expanded="expanded" title="More actions">
                         <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                         <span class="opacity-80">More</span>

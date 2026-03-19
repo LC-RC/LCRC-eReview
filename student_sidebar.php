@@ -49,6 +49,13 @@ if (count($nameWords) <= 1) {
           <span class="font-medium truncate whitespace-nowrap transition-all duration-300" :class="collapsed ? 'opacity-0 w-0 overflow-hidden absolute pointer-events-none' : 'opacity-100'">Preboards</span>
         </a>
       </li>
+      <li>
+        <a href="student_preweek.php" class="student-nav-item flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out <?php echo $currentPage === 'student_preweek.php' ? 'student-nav-item--active' : ''; ?>" :class="collapsed ? 'justify-center' : ''"
+          <?php if ($currentPage === 'student_preweek.php'): ?> style="background-color: rgba(255,255,255,0.22); box-shadow: 0 2px 10px rgba(0,0,0,0.1)" <?php endif; ?>>
+          <i class="bi bi-lightning-charge shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
+          <span class="font-medium truncate whitespace-nowrap transition-all duration-300" :class="collapsed ? 'opacity-0 w-0 overflow-hidden absolute pointer-events-none' : 'opacity-100'">Preweek</span>
+        </a>
+      </li>
       <li class="mt-auto pt-3">
         <a href="logout.php" class="student-nav-item student-nav-item--logout flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out" :class="collapsed ? 'justify-center' : ''">
           <i class="bi bi-box-arrow-right shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>

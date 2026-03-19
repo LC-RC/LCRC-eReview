@@ -210,21 +210,23 @@ $reqRes = mysqli_query($conn, "SELECT r.preboards_request_id, r.user_id, r.prebo
 if ($reqRes) { while ($r = mysqli_fetch_assoc($reqRes)) { $pendingRequests[] = $r; } }
 
 $pageTitle = 'Preboards Sets - ' . ($subject['subject_name'] ?? 'Subject');
+$adminBreadcrumbs = [
+    ['Dashboard', 'admin_dashboard.php'],
+    ['Preboards', 'admin_preboards_subjects.php'],
+    [($subject['subject_name'] ?? 'Subject'), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Sets'],
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased" x-data="preboardsSetsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app" x-data="preboardsSetsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
-    <div class="flex items-center gap-3 mb-2">
-      <a href="admin_preboards_subjects.php" class="text-primary hover:text-primary-dark text-sm font-medium inline-flex items-center gap-1"><i class="bi bi-arrow-left"></i> Preboards</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-gray-600 font-medium"><?php echo h($subject['subject_name']); ?></span>
-    </div>
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-clipboard-check"></i> Sets
     </h1>
@@ -232,16 +234,16 @@ $pageTitle = 'Preboards Sets - ' . ($subject['subject_name'] ?? 'Subject');
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
-    <a href="admin_preboards_subjects.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back</a>
+    <a href="admin_preboards_subjects.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back</a>
     <div class="flex flex-wrap gap-2">
       <?php if ($showCompletion): ?>
-        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition">Back to sets</a>
+        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back to sets</a>
       <?php else: ?>
-        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>&completion=1" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition">View completion report</a>
+        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>&completion=1" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">View completion report</a>
         <button type="button"
                 @click="openNewSet()"
                 :disabled="!nextSetLabelFromServer"
-                class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary">
+                class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary">
           <i class="bi bi-plus-circle"></i>
           <span x-text="nextSetLabelFromServer ? 'Add set' : 'All sets created'"></span>
         </button>
@@ -250,13 +252,13 @@ $pageTitle = 'Preboards Sets - ' . ($subject['subject_name'] ?? 'Subject');
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2 text-green-800">
+    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
+    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
       <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>

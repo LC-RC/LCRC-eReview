@@ -27,6 +27,7 @@ $adminNavConfig = [
         'items' => [
             ['label' => 'Content', 'href' => 'admin_subjects.php', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, materials, quizzes', 'active' => ['admin_subjects.php', 'admin_lessons.php', 'admin_videos.php', 'admin_handouts.php', 'admin_materials.php', 'admin_quizzes.php', 'admin_quiz_questions.php']],
             ['label' => 'Preboards', 'href' => 'admin_preboards_subjects.php', 'icon' => 'bi-clipboard-check', 'title' => 'Preboards: subjects, sets, questions', 'active' => ['admin_preboards_subjects.php', 'admin_preboards_sets.php', 'admin_preboards_questions.php']],
+            ['label' => 'Preweek', 'href' => 'admin_preweek.php', 'icon' => 'bi-lightning-charge', 'title' => 'Preweek: videos and handouts', 'active' => ['admin_preweek.php']],
         ],
     ],
 ];
@@ -82,13 +83,19 @@ $adminNavConfig = [
   var body = document.body;
   var sidebar = document.getElementById('sidebar');
   var backdrop = document.getElementById('sidebar-backdrop');
+  var toggleBtn = sidebar ? sidebar.querySelector('button[aria-label="Toggle sidebar"]') : null;
+  var STORAGE_KEY = 'ereview_admin_sidebar_expanded';
 
   function openSidebar() {
     body.classList.add('sidebar-expanded');
+    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
   }
 
   function closeSidebar() {
     body.classList.remove('sidebar-expanded');
+    try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
   }
 
   window.toggleAdminSidebar = function () {
@@ -102,6 +109,23 @@ $adminNavConfig = [
   if (backdrop) {
     backdrop.addEventListener('click', closeSidebar);
   }
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && body.classList.contains('sidebar-expanded')) {
+      closeSidebar();
+    }
+  });
+
+  // Initialize from saved preference (default: collapsed on small screens, expanded on desktop)
+  (function init() {
+    var isDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)').matches : true;
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved === '1') openSidebar();
+    else if (saved === '0') closeSidebar();
+    else if (isDesktop) openSidebar();
+    else closeSidebar();
+  })();
 })();
 </script>
 

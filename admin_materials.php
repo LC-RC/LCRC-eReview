@@ -159,23 +159,33 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           </div>
           <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition">Add Video</button>
         </form>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto pl-3 pr-8">
+          <table class="w-full text-left">
             <thead class="bg-gray-50 border-b border-gray-200">
-              <tr><th class="px-3 py-2 font-semibold text-gray-700">Title</th><th class="px-3 py-2 font-semibold text-gray-700">URL</th><th class="px-3 py-2 font-semibold text-gray-700 w-[160px]">Actions</th></tr>
+              <tr>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center">URL</th>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[220px]">Actions</th>
+              </tr>
             </thead>
             <tbody>
               <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
-                <tr class="border-b border-gray-100">
-                  <td class="px-3 py-2"><?php echo h($v['video_title']); ?></td>
-                  <td class="px-3 py-2 max-w-[200px] truncate"><a href="<?php echo h($v['video_url']); ?>" target="_blank" class="text-primary hover:underline">Open</a></td>
-                  <td class="px-3 py-2">
-                    <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">Delete</a>
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                  <td class="px-5 py-3 text-center">
+                    <div class="font-semibold text-gray-800"><?php echo h($v['video_title']); ?></div>
+                  </td>
+                  <td class="px-5 py-3 text-center max-w-[260px] truncate">
+                    <a href="<?php echo h($v['video_url']); ?>" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-box-arrow-up-right"></i> Open</a>
+                  </td>
+                  <td class="px-5 py-3 text-center">
+                    <div class="flex flex-wrap gap-2 items-center justify-center">
+                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                    </div>
                   </td>
                 </tr>
               <?php endwhile; ?>
               <?php if (mysqli_num_rows($videos) == 0): ?>
-                <tr><td colspan="3" class="px-3 py-6 text-center text-gray-500">No videos yet.</td></tr>
+                <tr><td colspan="3" class="px-5 py-14 text-center text-gray-500">No videos yet.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -202,28 +212,43 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           </div>
           <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition">Upload Handout</button>
         </form>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
+        <div class="overflow-x-auto pl-3 pr-8">
+          <table class="w-full text-left">
             <thead class="bg-gray-50 border-b border-gray-200">
-              <tr><th class="px-3 py-2 font-semibold text-gray-700">Title</th><th class="px-3 py-2 font-semibold text-gray-700">File</th><th class="px-3 py-2 font-semibold text-gray-700">Downloads</th><th class="px-3 py-2 font-semibold text-gray-700 w-[220px]">Actions</th></tr>
+              <tr>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center">File</th>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Downloads</th>
+                <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[220px]">Actions</th>
+              </tr>
             </thead>
             <tbody>
               <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
-                <tr class="border-b border-gray-100">
-                  <td class="px-3 py-2"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></td>
-                  <td class="px-3 py-2"><?php if (!empty($h['file_path'])): ?><a href="<?php echo h($h['file_path']); ?>" target="_blank" class="text-primary hover:underline">Download</a><?php endif; ?></td>
-                  <td class="px-3 py-2">
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                  <td class="px-5 py-3 text-center">
+                    <div class="font-semibold text-gray-800"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
+                  </td>
+                  <td class="px-5 py-3 text-center">
+                    <?php if (!empty($h['file_path'])): ?>
+                      <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-download"></i> Download</a>
+                    <?php else: ?>
+                      <span class="text-gray-500">—</span>
+                    <?php endif; ?>
+                  </td>
+                  <td class="px-5 py-3 text-center">
                     <?php if (!empty($h['allow_download'])): ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Allowed</span>
                     <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">Locked</span><?php endif; ?>
                   </td>
-                  <td class="px-3 py-2">
-                    <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border-2 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white transition"><?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
-                    <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">Delete</a>
+                  <td class="px-5 py-3 text-center">
+                    <div class="flex flex-wrap gap-2 items-center justify-center">
+                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white transition"><i class="bi bi-lock"></i> <?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
+                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                    </div>
                   </td>
                 </tr>
               <?php endwhile; ?>
               <?php if (mysqli_num_rows($handouts) == 0): ?>
-                <tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">No handouts yet.</td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500">No handouts yet.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>

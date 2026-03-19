@@ -398,6 +398,15 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
+  <div class="max-w-6xl mx-auto mb-3 px-1 sm:px-0 flex flex-wrap items-center justify-between gap-3">
+    <a href="student_subjects.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[#1665A0] bg-[#e8f2fa]/80 border border-[#1665A0]/20 hover:bg-[#e8f2fa] transition">
+      <i class="bi bi-arrow-left"></i> Back to Subjects
+    </a>
+    <a href="student_preweek.php?subject_id=<?php echo (int)$subjectId; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-[#1665A0] hover:bg-[#0f4d7a] shadow-[0_2px_8px_rgba(22,101,160,0.35)] transition">
+      <i class="bi bi-lightning-charge"></i> Preweek
+    </a>
+  </div>
+
   <section class="mb-4 sm:mb-5">
     <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0 flex-1">

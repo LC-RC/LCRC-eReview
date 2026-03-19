@@ -189,23 +189,26 @@ if (isset($_GET['edit'])) {
 $questions = mysqli_query($conn, "SELECT * FROM preboards_questions WHERE preboards_set_id=$setId ORDER BY sort_order ASC, preboards_question_id ASC");
 
 $pageTitle = 'Preboards Questions - Set ' . $setRow['set_label'];
+$adminBreadcrumbs = [
+    ['Dashboard', 'admin_dashboard.php'],
+    ['Preboards', 'admin_preboards_subjects.php'],
+    [($setRow['subject_name'] ?? 'Subject'), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Sets', 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Set ' . ($setRow['set_label'] ?? ''), 'admin_preboards_questions.php?preboards_set_id=' . (int)$setId . '&preboards_subject_id=' . (int)$subjectId],
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <?php $baseUrl = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'); ?>
   <link rel="stylesheet" href="<?php echo $baseUrl ? $baseUrl . '/' : ''; ?>assets/css/admin-quiz-ui.css">
 </head>
-<body class="font-sans antialiased bg-[#f6f9ff]" x-data="preboardsQuestionsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app bg-[#f6f9ff]" x-data="preboardsQuestionsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
   <div class="admin-quiz-hero">
-    <div class="flex items-center gap-3 mb-2">
-      <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="text-primary hover:text-primary-dark text-sm font-medium inline-flex items-center gap-1"><i class="bi bi-arrow-left"></i> Sets</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-gray-600 font-medium"><?php echo h($setRow['subject_name']); ?> – Set <?php echo h($setRow['set_label']); ?></span>
-    </div>
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl md:text-3xl font-bold text-[#012970] m-0 flex items-center gap-3">
       <span class="admin-quiz-hero-icon"><i class="bi bi-clipboard-check"></i></span>
       Preboard questions

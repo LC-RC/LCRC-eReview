@@ -141,16 +141,18 @@ mysqli_stmt_execute($stmt);
 $subjects = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Preboards';
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased" x-data="adminPreboardsSubjectsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app" x-data="adminPreboardsSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-clipboard-check"></i> Preboards
     </h1>
@@ -158,16 +160,14 @@ $pageTitle = 'Preboards';
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2 text-green-800">
-      <i class="bi bi-check-circle-fill"></i>
-      <span><?php echo h($_SESSION['message']); ?></span>
+    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
+      <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span><?php echo h($_SESSION['error']); ?></span>
+    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
   <?php endif; ?>
@@ -190,10 +190,10 @@ $pageTitle = 'Preboards';
         </select>
       </div>
       <div class="lg:col-span-4 flex flex-wrap gap-2 justify-end">
-        <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2">
+        <button type="submit" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
           <i class="bi bi-funnel"></i> Apply
         </button>
-        <button type="button" @click="openNewSubject()" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2">
+        <button type="button" @click="openNewSubject()" class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
           <i class="bi bi-plus-circle"></i> New Preboards
         </button>
       </div>
@@ -203,26 +203,28 @@ $pageTitle = 'Preboards';
     </form>
   </div>
 
-  <div class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
-    <div class="px-5 py-4 border-b border-[#1665A0]/15 bg-[#e8f2fa]/70 flex flex-wrap justify-between items-center gap-2">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
-        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-md shadow-[#1665A0]/30">
-          <i class="bi bi-clipboard-check" aria-hidden="true"></i>
-        </span>
-        <div>
-          <span class="font-semibold text-[#143D59] block">Preboards</span>
-          <span class="px-2.5 py-0.5 mt-0.5 inline-flex rounded-full text-xs font-medium bg-white/80 text-[#1665A0] border border-[#1665A0]/20"><?php echo (int)$total; ?> total</span>
-        </div>
+        <span class="font-semibold text-gray-800">Preboards</span>
+        <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
       </div>
-      <p class="text-[#143D59]/70 text-sm hidden md:block">These are shown to students under “Preboards”.</p>
+      <p class="text-gray-500 text-sm hidden md:block m-0">These are shown to students under “Preboards”.</p>
+      <div class="text-gray-500 text-sm text-right">
+        <?php if ($total > 0): ?>
+          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> preboards</span>
+        <?php else: ?>
+          <span>Showing 0-0 of 0 preboards</span>
+        <?php endif; ?>
+      </div>
     </div>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto pl-3 pr-8">
       <table class="w-full text-left">
-        <thead class="bg-gray-50 border-b border-[#d0e2f2]">
+        <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th class="px-5 py-3 font-semibold text-[#143D59]">Name</th>
-            <th class="px-5 py-3 font-semibold text-[#143D59]">Status</th>
-            <th class="px-5 py-3 font-semibold text-[#143D59] w-[300px]">Actions</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Name</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[300px]">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -239,32 +241,40 @@ $pageTitle = 'Preboards';
             </tr>
           <?php else: ?>
             <?php while ($s = mysqli_fetch_assoc($subjects)): ?>
-              <tr class="border-b border-[#e2e8f0] hover:bg-[#e8f2fa]/40 transition">
-                <td class="px-5 py-3">
+              <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                <td class="px-5 py-3 text-center">
                   <div class="font-semibold text-gray-800"><?php echo h($s['subject_name']); ?></div>
                   <?php if (!empty($s['description'])): ?>
                     <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 90, '…')); ?></div>
                   <?php endif; ?>
                 </td>
-                <td class="px-5 py-3">
+                <td class="px-5 py-3 text-center">
                   <?php $st = strtolower((string)$s['status']); ?>
-                  <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $st === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'; ?>"><?php echo h($s['status']); ?></span>
+                  <span class="admin-status-pill inline-block px-2.5 py-1 rounded-full text-xs font-medium"><?php echo h($s['status']); ?></span>
                 </td>
-                <td class="px-5 py-3">
-                  <div class="flex flex-wrap gap-2">
-                    <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-collection"></i> Manage sets</a>
+                <td class="px-5 py-3 text-center">
+                  <div class="inline-block text-left w-[220px]" x-data="{ expanded: false }">
+                    <div class="flex flex-col gap-2">
+                      <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-action-btn admin-action-btn--lessons flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-collection"></i> Manage sets</a>
+                      <button type="button" @click="expanded = !expanded" class="flex items-center justify-center gap-1 w-full py-1 rounded-md text-xs text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition" :aria-expanded="expanded" title="More actions">
+                        <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                        <span class="opacity-80">More</span>
+                      </button>
+                    </div>
+                    <div x-show="expanded" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="flex flex-col gap-2 mt-2">
                     <button type="button"
                             data-id="<?php echo (int)$s['preboards_subject_id']; ?>"
                             data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
                             data-description="<?php echo h($s['description'] ?? ''); ?>"
                             data-status="<?php echo h($s['status'] ?? 'active'); ?>"
-                            @click="openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active')"
-                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition"><i class="bi bi-pencil"></i> Edit</button>
+                            @click="expanded = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active')"
+                            class="admin-outline-btn flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-pencil"></i> Edit</button>
                     <button type="button"
                             data-id="<?php echo (int)$s['preboards_subject_id']; ?>"
                             data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
-                            @click="openDeleteSubject($el.dataset.id, $el.dataset.name || '')"
-                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
+                            @click="expanded = false; openDeleteSubject($el.dataset.id, $el.dataset.name || '')"
+                            class="admin-action-btn admin-action-btn--danger flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-trash"></i> Delete</button>
+                    </div>
                   </div>
                 </td>
               </tr>

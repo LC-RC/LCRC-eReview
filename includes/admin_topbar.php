@@ -1,49 +1,109 @@
 <?php
 /**
  * Admin Topbar – Reusable across all admin pages.
- * Renders current time, date, and notification icon. Stays aligned with sidebar.
+ * Built from the student topbar pattern, but tailored for admin (black/white theme).
  */
-$adminTopbarDate = date('l, F j, Y');
-$adminTopbarTime = date('g:i A');
+$tzName = 'Asia/Manila';
+$tzObj  = @timezone_open($tzName);
+$now    = new DateTime('now', $tzObj ?: null);
+$offsetLabel = 'PHT · UTC+08:00';
+$adminName = $_SESSION['full_name'] ?? 'Admin';
 ?>
-<header class="admin-topbar flex items-center gap-4 px-5 py-3 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-sm shrink-0" aria-label="Admin top bar">
-  <div class="flex items-center gap-6 text-sm shrink-0">
-    <span class="text-white/90 font-medium" aria-live="polite">
-      <i class="bi bi-calendar3 mr-1.5 text-white/60"></i>
-      <time id="admin-topbar-date"><?php echo h($adminTopbarDate); ?></time>
-    </span>
-    <span class="text-white/90 font-medium tabular-nums" aria-live="polite">
-      <i class="bi bi-clock mr-1.5 text-white/60"></i>
-      <time id="admin-topbar-time"><?php echo h($adminTopbarTime); ?></time>
-    </span>
-  </div>
-  <div class="flex-1 flex justify-center items-center gap-3 min-w-0">
-    <img src="image%20assets/lms-logo.png" alt="LCRC" class="admin-topbar-logo h-8 w-auto max-h-9 object-contain object-center select-none" loading="eager" decoding="async">
-    <span class="text-white/90 font-semibold text-sm whitespace-nowrap">Welcome Admin</span>
-  </div>
-  <div class="flex items-center gap-3 shrink-0">
-    <button type="button" class="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition focus:outline-none focus:ring-2 focus:ring-white/30" title="Notifications" aria-label="Notifications">
-      <i class="bi bi-bell text-lg"></i>
-    </button>
+<header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
+    userMenuOpen: false,
+    searchFocused: false,
+    toggleSidebar() { window.toggleAdminSidebar && window.toggleAdminSidebar(); },
+    closeAll() { this.userMenuOpen = false; }
+  }" @keydown.escape.window="closeAll()">
+  <div class="admin-topbar-inner">
+    <div class="admin-topbar-left">
+      <button type="button" aria-label="Toggle sidebar" class="admin-topbar-menu-btn" @click="toggleSidebar()">
+        <span class="burger-icon" aria-hidden="true">
+          <span class="burger-line burger-line--1"></span>
+          <span class="burger-line burger-line--2"></span>
+          <span class="burger-line burger-line--3"></span>
+        </span>
+      </button>
+      <a href="admin_dashboard.php" class="admin-topbar-brand flex items-center gap-2 shrink-0 rounded-xl px-3 py-2 transition-all duration-300">
+        <i class="bi bi-mortarboard-fill admin-topbar-brand-icon" aria-hidden="true"></i>
+        <span class="admin-topbar-brand-text font-bold tracking-tight whitespace-nowrap hidden sm:inline">LCRC eReview</span>
+      </a>
+      <div class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
+        <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
+        <input type="search" placeholder="Search students, subjects..." aria-label="Search" class="admin-topbar-search"
+               @focus="searchFocused = true" @blur="searchFocused = false">
+      </div>
+    </div>
+
+    <div class="admin-topbar-right">
+      <div class="admin-topbar-time" aria-label="Current timezone and local time">
+        <span class="admin-topbar-time-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
+        <div class="admin-topbar-time-text">
+          <span class="admin-topbar-time-label">Local time</span>
+          <span class="admin-topbar-time-value">
+            <span id="adminTopbarTimeMain"><?php echo htmlspecialchars($now->format('M j · g:i A')); ?></span>
+            <span class="admin-topbar-time-offset" id="adminTopbarTimeOffset"><?php echo htmlspecialchars($offsetLabel); ?></span>
+          </span>
+        </div>
+      </div>
+
+      <nav class="admin-topbar-actions" aria-label="Quick actions">
+        <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications">
+          <i class="bi bi-bell" aria-hidden="true"></i>
+        </button>
+      </nav>
+
+      <div class="admin-topbar-profile-wrap">
+        <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="admin-topbar-profile-btn">
+          <span class="admin-topbar-avatar" aria-hidden="true"><?php echo strtoupper(mb_substr(trim($adminName ?: 'A'), 0, 1)); ?></span>
+          <span class="admin-topbar-name"><?php echo h($adminName); ?></span>
+          <i class="bi bi-chevron-down admin-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
+        </button>
+        <div x-show="userMenuOpen" x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-0"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             @click.outside="userMenuOpen = false"
+             class="admin-topbar-dropdown" role="menu">
+          <div class="admin-topbar-dropdown-head">
+            <p class="admin-topbar-dropdown-label">Account</p>
+            <p class="admin-topbar-dropdown-name"><?php echo h($adminName); ?></p>
+          </div>
+          <a href="logout.php" class="admin-topbar-dropdown-item admin-topbar-logout" role="menuitem">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            <span>Log out</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
+<style>[x-cloak]{display:none!important}</style>
 <script>
-(function() {
-  function pad(n) { return n < 10 ? '0' + n : n; }
-  function updateTime() {
-    var d = new Date();
-    var timeEl = document.getElementById('admin-topbar-time');
-    var dateEl = document.getElementById('admin-topbar-date');
-    if (timeEl) {
-      var h = d.getHours(), m = d.getMinutes(), am = h < 12;
-      timeEl.textContent = (h % 12 || 12) + ':' + pad(m) + ' ' + (am ? 'AM' : 'PM');
+  // Real-time Philippines (Asia/Manila) clock in topbar
+  document.addEventListener('DOMContentLoaded', function () {
+    var mainEl = document.getElementById('adminTopbarTimeMain');
+    var offsetEl = document.getElementById('adminTopbarTimeOffset');
+    if (!mainEl || !offsetEl) return;
+    var formatter = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila'
+    });
+    var offsetLabel = 'PHT · UTC+08:00';
+    function updateTime() {
+      var now = new Date();
+      var formatted = formatter.format(now).replace(',', ' ·');
+      mainEl.textContent = formatted;
+      offsetEl.textContent = offsetLabel;
     }
-    if (dateEl) {
-      var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      dateEl.textContent = d.toLocaleDateString(undefined, options);
-    }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { updateTime(); setInterval(updateTime, 60000); });
-  else { updateTime(); setInterval(updateTime, 60000); }
-})();
+    updateTime();
+    setInterval(updateTime, 60 * 1000);
+  });
 </script>
