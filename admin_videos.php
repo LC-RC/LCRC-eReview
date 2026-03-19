@@ -65,19 +65,22 @@ if (isset($_GET['edit'])) {
 
 $videos = mysqli_query($conn, "SELECT * FROM lesson_videos WHERE lesson_id=".$lessonId." ORDER BY video_id DESC");
 $pageTitle = 'Videos - ' . $lesson['title'];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Videos'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased" x-data="{ uploadType: '<?php echo (isset($edit) && strpos($edit['video_url'] ?? '', 'uploads/videos/') === 0) ? 'file' : 'url'; ?>' }">
+<body class="font-sans antialiased admin-app" x-data="{ uploadType: '<?php echo (isset($edit) && strpos($edit['video_url'] ?? '', 'uploads/videos/') === 0) ? 'file' : 'url'; ?>' }">
   <?php include 'admin_sidebar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-play-circle"></i> Videos - <?php echo h($lesson['title']); ?> (<?php echo h($lesson['subject_name']); ?>)
+      <i class="bi bi-play-circle"></i> Videos - <?php echo h($lesson['title']); ?> (<span class="admin-subject-text"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
+    <p class="text-gray-500 mt-1">Add or edit video links or uploads for this lesson.</p>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
@@ -152,6 +155,7 @@ $pageTitle = 'Videos - ' . $lesson['title'];
       </div>
     </div>
   </div>
+</div>
 </main>
 </body>
 </html>

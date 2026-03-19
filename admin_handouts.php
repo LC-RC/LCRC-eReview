@@ -79,19 +79,22 @@ if (isset($_GET['edit'])) {
 
 $handouts = mysqli_query($conn, "SELECT * FROM lesson_handouts WHERE lesson_id=".$lessonId." ORDER BY handout_id DESC");
 $pageTitle = 'Handouts - ' . $lesson['title'];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Handouts'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-file-earmark-pdf"></i> Handouts - <?php echo h($lesson['title']); ?> (<?php echo h($lesson['subject_name']); ?>)
+      <i class="bi bi-file-earmark-pdf"></i> Handouts - <?php echo h($lesson['title']); ?> (<span class="admin-subject-text"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
+    <p class="text-gray-500 mt-1">Upload PDFs or documents and control download access per handout.</p>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
@@ -176,6 +179,7 @@ $pageTitle = 'Handouts - ' . $lesson['title'];
       </div>
     </div>
   </div>
+</div>
 </main>
 </body>
 </html>

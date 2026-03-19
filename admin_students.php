@@ -79,6 +79,7 @@ $counts = [
 ];
 
 $pageTitle = 'Students';
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students'] ];
 $mk = function(string $t, int $p = 1) use ($q) : string {
   $params = ['tab' => $t, 'q' => $q, 'page' => $p];
   return 'admin_students.php?' . http_build_query($params);
@@ -87,16 +88,17 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-people"></i> Students
     </h1>
-    <p class="text-gray-500 mt-1">Track enrollment status, approvals, access, and expirations.</p>
+    <p class="text-gray-500 mt-1">Manage enrollments and access — view by status, approve, or extend.</p>
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
@@ -115,22 +117,23 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
   <?php endif; ?>
 
   <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5">
+    <p class="text-gray-500 text-sm mb-3">Filter by status</p>
     <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-      <nav class="flex flex-wrap gap-2" aria-label="Student tabs">
-        <a href="<?php echo h($mk('enrolled', 1)); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition <?php echo $tab === 'enrolled' ? 'bg-primary text-white border-2 border-primary' : 'bg-gray-100 text-primary border-2 border-gray-200 hover:bg-gray-200'; ?>">
-          <i class="bi bi-check2-circle"></i> Enrolled <span class="px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'enrolled' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'; ?>"><?php echo (int)$counts['enrolled']; ?></span>
+      <nav class="flex flex-wrap gap-2 student-filter-tabs" aria-label="Student tabs">
+        <a href="<?php echo h($mk('enrolled', 1)); ?>" class="student-filter-tab student-filter-tab--enrolled inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'enrolled' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
+          <span class="student-filter-tab__icon"><i class="bi bi-check2-circle"></i></span> Enrolled <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'enrolled' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['enrolled']; ?></span>
         </a>
-        <a href="<?php echo h($mk('pending', 1)); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition <?php echo $tab === 'pending' ? 'bg-primary text-white border-2 border-primary' : 'bg-gray-100 text-primary border-2 border-gray-200 hover:bg-gray-200'; ?>">
-          <i class="bi bi-hourglass-split"></i> Pending <span class="px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'pending' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'; ?>"><?php echo (int)$counts['pending']; ?></span>
+        <a href="<?php echo h($mk('pending', 1)); ?>" class="student-filter-tab student-filter-tab--pending inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'pending' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
+          <span class="student-filter-tab__icon"><i class="bi bi-hourglass-split"></i></span> Pending <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'pending' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['pending']; ?></span>
         </a>
-        <a href="<?php echo h($mk('expired', 1)); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition <?php echo $tab === 'expired' ? 'bg-primary text-white border-2 border-primary' : 'bg-gray-100 text-primary border-2 border-gray-200 hover:bg-gray-200'; ?>">
-          <i class="bi bi-calendar-x"></i> Expired <span class="px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'expired' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'; ?>"><?php echo (int)$counts['expired']; ?></span>
+        <a href="<?php echo h($mk('expired', 1)); ?>" class="student-filter-tab student-filter-tab--expired inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'expired' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
+          <span class="student-filter-tab__icon"><i class="bi bi-calendar-x"></i></span> Expired <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'expired' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['expired']; ?></span>
         </a>
-        <a href="<?php echo h($mk('rejected', 1)); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition <?php echo $tab === 'rejected' ? 'bg-primary text-white border-2 border-primary' : 'bg-gray-100 text-primary border-2 border-gray-200 hover:bg-gray-200'; ?>">
-          <i class="bi bi-x-circle"></i> Rejected <span class="px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'rejected' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'; ?>"><?php echo (int)$counts['rejected']; ?></span>
+        <a href="<?php echo h($mk('rejected', 1)); ?>" class="student-filter-tab student-filter-tab--rejected inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'rejected' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
+          <span class="student-filter-tab__icon"><i class="bi bi-x-circle"></i></span> Rejected <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'rejected' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['rejected']; ?></span>
         </a>
-        <a href="<?php echo h($mk('all', 1)); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition <?php echo $tab === 'all' ? 'bg-primary text-white border-2 border-primary' : 'bg-gray-100 text-primary border-2 border-gray-200 hover:bg-gray-200'; ?>">
-          <i class="bi bi-collection"></i> All <span class="px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'all' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'; ?>"><?php echo (int)$counts['all']; ?></span>
+        <a href="<?php echo h($mk('all', 1)); ?>" class="student-filter-tab student-filter-tab--all inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'all' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
+          <span class="student-filter-tab__icon"><i class="bi bi-collection"></i></span> All <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'all' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['all']; ?></span>
         </a>
       </nav>
       <form method="GET" class="flex flex-wrap gap-2 items-center">
@@ -139,31 +142,57 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="bi bi-search"></i></span>
           <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search name or email..." class="input-custom pl-10">
         </div>
-        <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-funnel"></i> Apply</button>
+        <button type="submit" class="student-apply-btn px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2" title="Apply filters"><i class="bi bi-funnel"></i> Apply</button>
+        <?php if ($q !== ''): ?>
+          <a href="admin_students.php?tab=<?php echo h($tab); ?>&page=1" class="text-gray-500 text-sm hover:text-gray-700 hover:underline">Clear search</a>
+        <?php endif; ?>
       </form>
     </div>
-    <p class="text-gray-500 text-sm">Showing <?php echo $total ? ($offset + 1) : 0; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> students</p>
   </div>
 
   <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-gray-800">Students</span>
+        <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
+      </div>
+      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Click <strong>View</strong> for details, approve pending, or extend access.</p>
+      <div class="text-gray-500 text-sm text-right">
+        <?php if ($total > 0): ?>
+          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> students</span>
+        <?php else: ?>
+          <span>Showing 0-0 of 0 students</span>
+        <?php endif; ?>
+      </div>
+    </div>
+    <div class="overflow-x-auto pl-3 pr-8">
       <table class="w-full text-left">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th class="px-5 py-3 font-semibold text-gray-700">Name</th>
-            <th class="px-5 py-3 font-semibold text-gray-700">Email</th>
-            <th class="px-5 py-3 font-semibold text-gray-700">Status</th>
-            <th class="px-5 py-3 font-semibold text-gray-700">Access</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 w-[420px]">Actions</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Name</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Email</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Access</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[420px]">Actions</th>
           </tr>
         </thead>
         <tbody>
           <?php if ($total === 0): ?>
+            <?php
+              $emptyHint = 'Try changing the tab or clearing search.';
+              if ($tab === 'pending') $emptyHint = 'When students register, they’ll appear here for approval.';
+              elseif ($tab === 'enrolled') $emptyHint = 'Approved students with active access will appear here.';
+              elseif ($tab === 'expired') $emptyHint = 'Students whose access has ended will appear here.';
+              elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
+            ?>
             <tr>
-              <td colspan="5" class="px-5 py-12 text-center text-gray-500">
-                <i class="bi bi-inbox text-4xl block mb-2"></i>
-                <div class="font-semibold">No students found</div>
-                <p class="text-sm mt-1">Try changing the tab or clearing search.</p>
+              <td colspan="5" class="px-5 py-14 text-center text-gray-500">
+                <i class="bi bi-people text-5xl block mb-3 opacity-50"></i>
+                <div class="font-semibold text-gray-600">No students found</div>
+                <p class="text-sm mt-1 max-w-sm mx-auto"><?php echo h($emptyHint); ?></p>
+                <?php if ($q !== ''): ?>
+                  <a href="admin_students.php?tab=<?php echo h($tab); ?>&page=1" class="inline-block mt-4 px-4 py-2 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition">Clear search</a>
+                <?php endif; ?>
               </td>
             </tr>
           <?php else: ?>
@@ -180,25 +209,29 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                 $isExpired = ($statusClass === 'approved' && !empty($row['access_end']) && strtotime($row['access_end']) < time());
               ?>
               <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-                <td class="px-5 py-3">
+                <td class="px-5 py-3 text-center">
                   <div class="font-semibold text-gray-800"><?php echo h($row['full_name']); ?></div>
                   <div class="text-gray-500 text-sm"><?php echo h($schoolLabel); ?> • <?php echo h($row['review_type']); ?></div>
                 </td>
-                <td class="px-5 py-3"><?php echo h($row['email']); ?></td>
-                <td class="px-5 py-3">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>"><?php echo h($row['status']); ?></span>
+                <td class="px-5 py-3 text-center"><?php echo h($row['email']); ?></td>
+                <td class="px-5 py-3 text-center">
+                  <?php
+                    $statusTitle = $statusClass === 'approved' ? 'Approved – has active access' : ($statusClass === 'rejected' ? 'Registration rejected' : 'Awaiting approval');
+                    if ($isExpired) $statusTitle .= ' (access period ended)';
+                  ?>
+                  <span class="inline-block px-2.5 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>" title="<?php echo h($statusTitle); ?>"><?php echo h($row['status']); ?></span>
                   <?php if ($isExpired): ?>
-                    <span class="ml-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">expired</span>
+                    <span class="ml-1 inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Access period has ended">expired</span>
                   <?php endif; ?>
                 </td>
-                <td class="px-5 py-3"><?php echo h($access); ?></td>
-                <td class="px-5 py-3">
-                  <div class="flex flex-wrap gap-2 items-center">
-                    <a href="admin_student_view.php?id=<?php echo (int)$row['user_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-eye"></i> View</a>
+                <td class="px-5 py-3 text-center" title="<?php echo $access !== '-' && $isExpired ? 'Access ended' : ($access !== '-' ? 'Access period' : 'No access set'); ?>"><?php echo h($access); ?></td>
+                <td class="px-5 py-3 text-center">
+                  <div class="flex flex-wrap gap-2 items-center justify-center">
+                    <a href="admin_student_view.php?id=<?php echo (int)$row['user_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition" title="View details, approve, or extend"><i class="bi bi-eye"></i> View</a>
                     <?php if ($hasProof): ?>
-                      <a href="admin_payment_proof.php?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition"><i class="bi bi-receipt"></i> Proof</a>
+                      <a href="admin_payment_proof.php?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition" title="View payment proof"><i class="bi bi-receipt"></i> Proof</a>
                     <?php else: ?>
-                      <span class="text-gray-500 text-sm">No proof</span>
+                      <span class="text-gray-500 text-sm" title="No payment proof uploaded">No proof</span>
                     <?php endif; ?>
 
                     <?php if ($row['status'] !== 'approved'): ?>
@@ -250,6 +283,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
   </div>
 
   <?php mysqli_stmt_close($stmt); ?>
+</div>
 </main>
 </body>
 </html>

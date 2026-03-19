@@ -285,26 +285,21 @@ mysqli_stmt_execute($stmt);
 $questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Quiz Questions - ' . $quiz['title'];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($quiz['subject_name']), 'admin_quizzes.php?subject_id=' . $subjectId ], [ h($quiz['title']), 'admin_quizzes.php?subject_id=' . $subjectId ], ['Questions'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
-  <?php $baseUrl = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'); ?>
-  <link rel="stylesheet" href="<?php echo $baseUrl ? $baseUrl . '/' : ''; ?>assets/css/admin-quiz-ui.css">
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css">
 </head>
-<body class="font-sans antialiased bg-[#f6f9ff]" x-data="quizQuestionsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app" x-data="quizQuestionsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="admin-quiz-hero">
-    <div class="flex items-center gap-3 mb-2">
-      <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-primary hover:text-primary-dark text-sm font-medium inline-flex items-center gap-1"><i class="bi bi-arrow-left"></i> Quizzes</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-gray-600 font-medium"><?php echo h($quiz['title']); ?></span>
-    </div>
-    <h1 class="text-2xl md:text-3xl font-bold text-[#012970] m-0 flex items-center gap-3">
-      <span class="admin-quiz-hero-icon"><i class="bi bi-patch-question"></i></span>
-      Quiz Questions
+  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
+    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
+      <i class="bi bi-question-circle"></i> Quiz Questions - <?php echo h($quiz['title']); ?> (<span class="admin-subject-text"><?php echo h($quiz['subject_name']); ?></span>)
     </h1>
     <p class="text-gray-500 mt-2"><?php echo h($quiz['subject_name']); ?> — Add and manage questions in one go.</p>
   </div>
@@ -656,6 +651,7 @@ $pageTitle = 'Quiz Questions - ' . $quiz['title'];
       };
     }
   </script>
+</div>
 </main>
 </body>
 </html>

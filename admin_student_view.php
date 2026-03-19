@@ -23,24 +23,26 @@ if (!$user || $user['role'] !== 'student') {
 $schoolLabel = $user['school'] === 'Other' && !empty($user['school_other']) ? $user['school_other'] : $user['school'];
 $csrf = generateCSRFToken();
 $pageTitle = 'Student Details - ' . $user['full_name'];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_students.php'], [ h($user['full_name']) ] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
   <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5 flex flex-wrap justify-between items-center gap-4">
     <div>
+      <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
       <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
         <i class="bi bi-person-badge"></i> Student Details
       </h1>
-      <p class="text-gray-500 mt-1">ID: <?php echo (int)$user['user_id']; ?></p>
+      <p class="text-gray-500 mt-1">View registration, approve or reject, and manage access. ID: <?php echo (int)$user['user_id']; ?></p>
     </div>
     <div class="flex gap-2">
-      <a href="admin_dashboard.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back</a>
+      <a href="admin_students.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to list</a>
       <a href="admin_payment_proof.php?user_id=<?php echo (int)$user['user_id']; ?>" target="_blank" rel="noopener" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-receipt"></i> View Proof</a>
     </div>
   </div>
@@ -130,6 +132,7 @@ $pageTitle = 'Student Details - ' . $user['full_name'];
       </div>
     </div>
   </div>
+</div>
 </main>
 </body>
 </html>
