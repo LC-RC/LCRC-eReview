@@ -263,47 +263,58 @@ INSERT INTO `users` (`user_id`, `full_name`, `review_type`, `school`, `school_ot
 ON DUPLICATE KEY UPDATE `user_id`=`user_id`;
 
 -- ---------------------------------------------------------------------------
--- 6. Indexes (on first run only; re-run may show "Duplicate key name" - ignore)
+-- 6. Indexes (idempotent — safe to re-run; skips indexes that already exist)
 -- ---------------------------------------------------------------------------
 
--- users
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_created_at ON users(created_at);
-CREATE INDEX idx_users_role_status ON users(role, status);
+DELIMITER //
+DROP PROCEDURE IF EXISTS create_index_if_missing//
+CREATE PROCEDURE create_index_if_missing(IN tbl VARCHAR(64), IN idx VARCHAR(64), IN stmt VARCHAR(512))
+BEGIN
+  DECLARE cnt INT DEFAULT 0;
+  SELECT COUNT(*) INTO cnt FROM information_schema.statistics
+   WHERE table_schema = DATABASE() AND table_name = tbl AND index_name = idx;
+  IF cnt = 0 THEN
+    SET @create_idx_stmt = stmt;
+    PREPARE ps FROM @create_idx_stmt;
+    EXECUTE ps;
+    DEALLOCATE PREPARE ps;
+  END IF;
+END//
+DELIMITER ;
 
--- subjects
-CREATE INDEX idx_subjects_status ON subjects(status);
-CREATE INDEX idx_subjects_name ON subjects(subject_name);
+CALL create_index_if_missing('users', 'idx_users_role', 'CREATE INDEX idx_users_role ON users(role)');
+CALL create_index_if_missing('users', 'idx_users_status', 'CREATE INDEX idx_users_status ON users(status)');
+CALL create_index_if_missing('users', 'idx_users_email', 'CREATE INDEX idx_users_email ON users(email)');
+CALL create_index_if_missing('users', 'idx_users_created_at', 'CREATE INDEX idx_users_created_at ON users(created_at)');
+CALL create_index_if_missing('users', 'idx_users_role_status', 'CREATE INDEX idx_users_role_status ON users(role, status)');
 
--- lessons
-CREATE INDEX idx_lessons_subject_id ON lessons(subject_id);
+CALL create_index_if_missing('subjects', 'idx_subjects_status', 'CREATE INDEX idx_subjects_status ON subjects(status)');
+CALL create_index_if_missing('subjects', 'idx_subjects_name', 'CREATE INDEX idx_subjects_name ON subjects(subject_name)');
 
--- lesson_videos
-CREATE INDEX idx_lesson_videos_lesson_id ON lesson_videos(lesson_id);
+CALL create_index_if_missing('lessons', 'idx_lessons_subject_id', 'CREATE INDEX idx_lessons_subject_id ON lessons(subject_id)');
 
--- lesson_handouts
-CREATE INDEX idx_lesson_handouts_lesson_id ON lesson_handouts(lesson_id);
-CREATE INDEX idx_lesson_handouts_handout_id ON lesson_handouts(handout_id);
+CALL create_index_if_missing('lesson_videos', 'idx_lesson_videos_lesson_id', 'CREATE INDEX idx_lesson_videos_lesson_id ON lesson_videos(lesson_id)');
 
--- handout_annotations
-CREATE INDEX idx_handout_annotations_handout_id ON handout_annotations(handout_id);
-CREATE INDEX idx_handout_annotations_student_id ON handout_annotations(student_id);
-CREATE INDEX idx_handout_annotations_composite ON handout_annotations(handout_id, student_id);
+CALL create_index_if_missing('lesson_handouts', 'idx_lesson_handouts_lesson_id', 'CREATE INDEX idx_lesson_handouts_lesson_id ON lesson_handouts(lesson_id)');
+CALL create_index_if_missing('lesson_handouts', 'idx_lesson_handouts_handout_id', 'CREATE INDEX idx_lesson_handouts_handout_id ON lesson_handouts(handout_id)');
 
--- quizzes
-CREATE INDEX idx_quizzes_subject_id ON quizzes(subject_id);
-CREATE INDEX idx_quizzes_quiz_type ON quizzes(quiz_type);
+CALL create_index_if_missing('handout_annotations', 'idx_handout_annotations_handout_id', 'CREATE INDEX idx_handout_annotations_handout_id ON handout_annotations(handout_id)');
+CALL create_index_if_missing('handout_annotations', 'idx_handout_annotations_student_id', 'CREATE INDEX idx_handout_annotations_student_id ON handout_annotations(student_id)');
+CALL create_index_if_missing('handout_annotations', 'idx_handout_annotations_composite', 'CREATE INDEX idx_handout_annotations_composite ON handout_annotations(handout_id, student_id)');
 
--- quiz_questions
-CREATE INDEX idx_quiz_questions_quiz_id ON quiz_questions(quiz_id);
-CREATE INDEX idx_quiz_questions_question_id ON quiz_questions(question_id);
+CALL create_index_if_missing('quizzes', 'idx_quizzes_subject_id', 'CREATE INDEX idx_quizzes_subject_id ON quizzes(subject_id)');
+CALL create_index_if_missing('quizzes', 'idx_quizzes_quiz_type', 'CREATE INDEX idx_quizzes_quiz_type ON quizzes(quiz_type)');
 
--- quiz_answers
-CREATE INDEX idx_quiz_answers_user_id ON quiz_answers(user_id);
-CREATE INDEX idx_quiz_answers_question_id ON quiz_answers(question_id);
-CREATE INDEX idx_quiz_answers_composite ON quiz_answers(user_id, question_id);
+CALL create_index_if_missing('quiz_questions', 'idx_quiz_questions_quiz_id', 'CREATE INDEX idx_quiz_questions_quiz_id ON quiz_questions(quiz_id)');
+CALL create_index_if_missing('quiz_questions', 'idx_quiz_questions_question_id', 'CREATE INDEX idx_quiz_questions_question_id ON quiz_questions(question_id)');
+
+CALL create_index_if_missing('quiz_answers', 'idx_quiz_answers_user_id', 'CREATE INDEX idx_quiz_answers_user_id ON quiz_answers(user_id)');
+CALL create_index_if_missing('quiz_answers', 'idx_quiz_answers_question_id', 'CREATE INDEX idx_quiz_answers_question_id ON quiz_answers(question_id)');
+CALL create_index_if_missing('quiz_answers', 'idx_quiz_answers_composite', 'CREATE INDEX idx_quiz_answers_composite ON quiz_answers(user_id, question_id)');
+
+DELIMITER //
+DROP PROCEDURE IF EXISTS create_index_if_missing//
+DELIMITER ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
