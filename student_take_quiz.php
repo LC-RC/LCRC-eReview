@@ -257,6 +257,7 @@ if ($totalQuestions > 0) {
 $allAnswered = ($totalQuestions > 0 && $answeredCount >= $totalQuestions);
 
 $pageTitle = 'Take Quiz - ' . ($quiz['title'] ?? '');
+$headerBackUrl = $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php';
 $csrf = generateCSRFToken();
 
 // For result view: load review questions (with answers from submitted attempt)
@@ -302,16 +303,17 @@ if ($userId) {
   <style>
     /* Exam UI – professional exam-style layout */
     :root {
-      --exam-primary: #4154f1;
-      --exam-primary-light: #eef2ff;
+      /* Aligned with site theme blues (#1665A0 / #143D59) */
+      --exam-primary: #1665A0;
+      --exam-primary-light: #e8f2fa;
       --exam-success: #059669;
       --exam-warning: #d97706;
       --exam-danger: #dc2626;
       --exam-surface: #ffffff;
-      --exam-bg: #f1f5f9;
-      --exam-text: #1e293b;
+      --exam-bg: #f6f9ff;
+      --exam-text: #143D59;
       --exam-muted: #64748b;
-      --exam-border: #e2e8f0;
+      --exam-border: rgba(22, 101, 160, 0.16);
       --exam-radius: 14px;
       --exam-radius-sm: 10px;
       --exam-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -376,7 +378,7 @@ if ($userId) {
     .exam-progress-fill {
       transition: width 0.4s ease, box-shadow 0.25s ease;
       height: 100%;
-      background: linear-gradient(90deg, var(--exam-primary), #6366f1);
+      background: linear-gradient(90deg, var(--exam-primary), #3393FF);
       border-radius: 9999px;
     }
     .exam-progress-wrap:hover .exam-progress-fill {
@@ -392,8 +394,8 @@ if ($userId) {
     }
     /* Instructions (start screen only) */
     .exam-instructions-wrap {
-      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-      border: 1px solid var(--exam-border);
+      background: linear-gradient(135deg, #f0f7fc 0%, #e8f2fa 100%);
+      border: 1px solid rgba(22, 101, 160, 0.16);
       border-radius: var(--exam-radius);
       margin-bottom: 1.5rem;
       overflow: hidden;
@@ -405,7 +407,7 @@ if ($userId) {
       gap: 0.5rem;
       font-size: 0.8125rem;
       font-weight: 700;
-      color: var(--exam-primary);
+      color: #1665A0;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       margin-bottom: 0.75rem;
@@ -485,7 +487,7 @@ if ($userId) {
     }
     .exam-choice:hover {
       border-color: rgba(51, 147, 255, 0.55);
-      background: #f4f8ff;
+      background: #e8f2fa;
       box-shadow:
         0 0 0 1px rgba(51, 147, 255, 0.55),
         0 8px 20px rgba(51, 147, 255, 0.45);
@@ -507,8 +509,8 @@ if ($userId) {
       border-radius: 50%;
       font-weight: 700;
       font-size: 0.9375rem;
-      background: var(--exam-border);
-      color: var(--exam-muted);
+      background: #d4e8f7;
+      color: var(--exam-text);
       transition: background 0.2s, color 0.2s;
     }
     .exam-choice.selected .exam-choice-letter {
@@ -598,11 +600,13 @@ if ($userId) {
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     /* Page container: consistent max-width and padding */
     .exam-page-container {
-      max-width: 1200px;
+      /* Full-width inside main content (no extra side gaps; main already has padding) */
+      width: 100%;
+      max-width: 100%;
       margin-left: auto;
       margin-right: auto;
-      padding-left: 1rem;
-      padding-right: 1rem;
+      padding-left: 0;
+      padding-right: 0;
     }
     .exam-page-container-result {
       /* Full-width page container; inner content handles max-width */
@@ -620,9 +624,17 @@ if ($userId) {
     }
     .exam-page-header {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
-      padding: 1rem 0; margin-bottom: 1rem; border-bottom: 1px solid var(--exam-border);
+      padding: 0.5rem 0 1rem; margin-bottom: 0.5rem;
     }
-    .exam-page-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--exam-text); margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .exam-page-header h1 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #143D59;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .exam-page-header .exam-back-link {
       display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: var(--exam-radius-sm);
       font-size: 0.875rem; font-weight: 600; color: var(--exam-primary); text-decoration: none;
@@ -938,26 +950,29 @@ if ($userId) {
       background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.6);
     }
     .quiz-confirm-btn-primary:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
-    /* Result card: clear hierarchy, balanced spacing, softer shape */
+    /* Result card: dashboard-style theme (blue card, subtle status colors) */
     .result-card {
       border-width: 1px;
-      border-radius: 20px;
-      padding: 0.85rem 1.5rem 0.9rem;
+      border-radius: 18px;
+      padding: 1.25rem 1.75rem 1.35rem;
       width: 100%;
       position: relative;
       overflow: hidden;
-      /* Stronger banner-style gradient background */
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 25%, #0ea5e9 60%, #22c55e 100%);
+      background: linear-gradient(to bottom right, #d4e8f7, #e8f2fa);
+      border-color: rgba(22, 101, 160, 0.18);
+      box-shadow:
+        0 2px 8px rgba(20, 61, 89, 0.12),
+        0 6px 18px rgba(20, 61, 89, 0.08);
+      border-left: 4px solid #1665A0;
     }
     .result-card::before {
       content: "";
       position: absolute;
       inset: -30%;
       background:
-        radial-gradient(circle at 0 0, rgba(255,255,255,0.16), transparent 50%),
-        radial-gradient(circle at 100% 0, rgba(255,255,255,0.2), transparent 52%),
-        radial-gradient(circle at 0 100%, rgba(15,23,42,0.35), transparent 55%);
-      opacity: 0.9;
+        radial-gradient(circle at 0 0, rgba(255,255,255,0.55), transparent 55%),
+        radial-gradient(circle at 100% 0, rgba(148, 197, 255,0.3), transparent 60%);
+      opacity: 0.5;
       z-index: -1;
     }
     .result-card-inner {
@@ -966,33 +981,15 @@ if ($userId) {
       border-radius: inherit;
       padding: 0.25rem 0 0;
     }
-    .result-card.result-pass {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-      box-shadow:
-        0 20px 46px rgba(51, 147, 255, 0.45),
-        0 0 0 1px rgba(34, 197, 94, 0.18);
-    }
+    .result-card.result-pass { border-left-color: #059669; }
     .result-card.result-pass .result-score { color: #047857; }
     .result-card.result-pass .result-badge { background: #059669; color: white; }
     .result-card.result-pass h2 i { color: #059669; }
-    .result-card.result-fair {
-      background: #fffbeb;
-      border-color: #fed7aa;
-      box-shadow:
-        0 20px 46px rgba(51, 147, 255, 0.4),
-        0 0 0 1px rgba(251, 191, 36, 0.16);
-    }
+    .result-card.result-fair { border-left-color: #d97706; }
     .result-card.result-fair .result-score { color: #b45309; }
     .result-card.result-fair .result-badge { background: #d97706; color: white; }
     .result-card.result-fair h2 i { color: #d97706; }
-    .result-card.result-fail {
-      background: #fef2f2;
-      border-color: #fecaca;
-      box-shadow:
-        0 20px 46px rgba(51, 147, 255, 0.4),
-        0 0 0 1px rgba(248, 113, 113, 0.18);
-    }
+    .result-card.result-fail { border-left-color: #dc2626; }
     .result-card.result-fail .result-score { color: #b91c1c; }
     .result-card.result-fail .result-badge { background: #dc2626; color: white; }
     .result-card.result-fail h2 i { color: #dc2626; }
@@ -1007,8 +1004,8 @@ if ($userId) {
       margin-bottom: 0.5rem;
       background: rgba(255,255,255,0.9);
     }
-    .result-card h2 { margin-bottom: 0.15rem; }
-    .result-card .result-score { margin-bottom: 0.15rem; }
+    .result-card h2 { margin-bottom: 0.35rem; }
+    .result-card .result-score { margin-bottom: 0.35rem; }
     /* Result actions: vertically stacked on mobile, evenly spaced on desktop */
     .result-card-actions {
       display: flex;
@@ -1173,7 +1170,16 @@ if ($userId) {
     .quiz-history-score-fail { color: #dc2626 !important; }
     /* Start screen – full-width card with history inside */
     .quiz-history-wrap.quiz-history-inside { margin-top: 0; margin-left: 0; margin-right: 0; border: none; border-radius: 0; box-shadow: none; border-top: 1px solid var(--exam-border); }
-    .quiz-start-hero { padding-bottom: 1.75rem; border-bottom: 1px solid var(--exam-border); margin-bottom: 1.75rem; }
+    .quiz-start-card {
+      background: linear-gradient(to bottom, #f0f7fc, #ffffff);
+      border-radius: var(--exam-radius);
+      border: 1px solid rgba(22, 101, 160, 0.16);
+      box-shadow:
+        0 2px 8px rgba(20, 61, 89, 0.1),
+        0 6px 18px rgba(20, 61, 89, 0.08);
+      border-left: 4px solid #1665A0;
+    }
+    .quiz-start-hero { padding-bottom: 1.75rem; border-bottom: 1px solid rgba(22, 101, 160, 0.16); margin-bottom: 1.75rem; }
     .quiz-start-hero .exam-question-label { margin-bottom: 0.5rem; }
     .quiz-start-hero h1 { font-size: 1.75rem; line-height: 1.3; }
     .quiz-start-meta { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; margin-top: 1rem; }
@@ -1198,8 +1204,23 @@ if ($userId) {
       .exam-nav-card form { display: flex; justify-content: center; width: 100%; }
     }
   </style>
+  <style>
+    /* Exam content protection: discourage copying (non-visual) */
+    .exam-protected {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .exam-protected ::selection {
+      background: transparent;
+    }
+    .exam-protected * {
+      -webkit-user-drag: none;
+    }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased exam-protected">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
@@ -1209,6 +1230,32 @@ if ($userId) {
         <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></span>
       </div>
     <?php endif; ?>
+
+    <!-- Quiz header card (same width as other pages) -->
+    <section class="mb-4 sm:mb-5">
+      <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <a href="<?php echo htmlspecialchars($headerBackUrl); ?>" class="exam-leave-link flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Leave quiz">
+            <i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i>
+          </a>
+          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
+            <i class="bi bi-question-circle text-lg sm:text-xl" aria-hidden="true"></i>
+          </span>
+          <div class="min-w-0">
+            <h1 class="text-lg sm:text-xl md:text-2xl font-bold m-0 tracking-tight truncate"><?php echo h($quiz['title'] ?? 'Quiz'); ?></h1>
+            <p class="text-xs sm:text-sm text-white/90 mt-1 mb-0 flex items-center gap-3">
+              <?php if (!empty($quiz['subject_name'])): ?>
+                <span class="inline-flex items-center gap-1"><i class="bi bi-book" aria-hidden="true"></i><?php echo h($quiz['subject_name']); ?></span>
+              <?php endif; ?>
+              <span class="inline-flex items-center gap-2 text-white/80 text-[0.75rem] sm:text-xs">
+                <span class="inline-flex items-center gap-1"><i class="bi bi-list-ol"></i> <?php echo $totalQuestions; ?> questions</span>
+                <span class="inline-flex items-center gap-1"><i class="bi bi-clock"></i> <?php echo h($timeLimitLabel); ?></span>
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <?php if ($showResult && $result):
       $score = (float)$result['score'];
@@ -1285,7 +1332,7 @@ if ($userId) {
                 $faster = $currentTimeSpent < $prevAvgTime;
                 $diffSec = abs($currentTimeSpent - $prevAvgTime);
               ?>
-              <p class="text-[0.7rem] sm:text-xs text-[#e5e7eb] mb-3">
+              <p class="text-[0.7rem] sm:text-xs text-[#64748b] mb-3">
                 You finished in <strong><?php echo formatSecondsShort($currentTimeSpent); ?></strong>.
                 Your previous average was <strong><?php echo formatSecondsShort($prevAvgTime); ?></strong>,
                 so this attempt was <strong><?php echo formatSecondsShort($diffSec); ?></strong>
@@ -1295,7 +1342,7 @@ if ($userId) {
             <div class="result-stats-row text-xs sm:text-sm text-[#64748b]">
               <?php
                 $correctCount = (int)$result['correct'];
-                $totalCount = (int)$result['total'];
+                $totalCount = (int)$result['total'];  
                 $incorrectCount = max(0, $totalCount - $correctCount);
               ?>
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 text-[#0f172a] font-semibold">
@@ -1311,28 +1358,24 @@ if ($userId) {
                 <?php echo $totalCount; ?> questions
               </span>
             </div>
+            <!-- Section 2: primary actions neatly attached under summary -->
+            <div class="result-actions-bar mt-4 pt-3 border-t border-[#dbeafe]">
+              <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="result-actions-primary">
+                <i class="bi bi-arrow-repeat"></i>
+                Take Again
+              </a>
+              <a href="#reviewAnswers" class="result-actions-ghost">
+                <i class="bi bi-journal-text"></i>
+                Review Answers
+              </a>
+              <button type="button"
+                      class="result-actions-ghost js-open-quiz-history"
+                      data-target="quizHistoryWrap">
+                <i class="bi bi-clock-history"></i>
+                View History
+              </button>
+            </div>
           </div>
-        </div>
-        <!-- Section 2: global actions under summary -->
-        <div class="result-actions-bar">
-          <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="result-actions-primary">
-            <i class="bi bi-arrow-repeat"></i>
-            Take Again
-          </a>
-          <a href="#reviewAnswers" class="result-actions-ghost">
-            <i class="bi bi-journal-text"></i>
-            Review Answers
-          </a>
-          <button type="button"
-                  class="result-actions-ghost js-open-quiz-history"
-                  data-target="quizHistoryWrap">
-            <i class="bi bi-clock-history"></i>
-            View History
-          </button>
-          <a href="<?php echo h($backUrl); ?>" class="result-actions-ghost">
-            <i class="bi bi-arrow-left"></i>
-            Back to Subject
-          </a>
         </div>
       <?php if (!empty($reviewQuestions)): ?>
       <div class="exam-question-card w-full mb-5" id="reviewAnswers">
@@ -1356,7 +1399,7 @@ if ($userId) {
                   ?>
                   <div class="flex items-start gap-2 p-3 rounded-lg border <?php
                     if ($isCorrectChoice) echo 'review-correct-choice';
-                    elseif ($isYourAnswer && !$isCorrect) echo 'bg-[#fef2f2] border-[#dc2626]';
+                    elseif ($isYourAnswer && !$isCorrect) echo 'bg-[#fef2f2] border-[#dc2626]'; 
                     else echo 'bg-white border-[#e2e8f0]';
                   ?>">
                     <span class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYourAnswer && !$isCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
@@ -1469,7 +1512,7 @@ if ($userId) {
       <div class="exam-page-container">
         <header class="exam-page-header">
           <h1><i class="bi bi-question-circle text-[#4154f1]"></i> <?php echo h($quiz['title']); ?></h1>
-          <a href="<?php echo $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php'; ?>" class="exam-back-link"><i class="bi bi-arrow-left"></i> Back</a>
+          <a href="<?php echo htmlspecialchars($headerBackUrl); ?>" class="exam-back-link"><i class="bi bi-arrow-left"></i> Back</a>
         </header>
         <div class="exam-question-card w-full text-center py-12">
           <i class="bi bi-inbox text-5xl text-[#cbd5e1] block mb-4"></i>
@@ -1480,19 +1523,8 @@ if ($userId) {
 
     <?php elseif ($attemptId <= 0): ?>
       <!-- Start Exam screen -->
-      <?php $backUrlStart = $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php'; ?>
-      <div class="exam-page-container">
-        <header class="exam-page-header">
-          <h1><i class="bi bi-question-circle text-[#4154f1]"></i> <?php echo h($quiz['title']); ?></h1>
-          <div class="flex flex-wrap items-center gap-2">
-            <?php if (!empty($quizHistoryAttempts)): ?>
-              <button type="button" class="exam-btn-view-history js-open-quiz-history" data-target="quizHistoryWrapStart" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                <i class="bi bi-clock-history"></i> View History
-              </button>
-            <?php endif; ?>
-            <a href="<?php echo h($backUrlStart); ?>" class="exam-back-link"><i class="bi bi-arrow-left"></i> Back</a>
-          </div>
-        </header>
+      <?php $backUrlStart = $headerBackUrl; ?>
+      <div class="exam-page-container exam-page-container--wide">
         <div class="exam-question-card quiz-start-card w-full">
           <div class="quiz-start-hero">
             <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?></div>
@@ -1632,18 +1664,6 @@ if ($userId) {
       </div>
       <?php endif; ?>
       <div class="exam-page-container">
-      <!-- Breadcrumb: Home > Subject > Quiz title -->
-      <nav class="exam-breadcrumb" aria-label="Breadcrumb">
-        <a href="student_dashboard.php" class="exam-leave-link">Home</a>
-        <span> &gt; </span>
-        <?php if ($subjectId > 0): ?>
-          <a href="student_subject.php?subject_id=<?php echo (int)$subjectId; ?>" class="exam-leave-link"><?php echo h($quiz['subject_name']); ?></a>
-        <?php else: ?>
-          <a href="student_subjects.php" class="exam-leave-link">Subjects</a>
-        <?php endif; ?>
-        <span> &gt; </span>
-        <span><?php echo h($quiz['title']); ?></span>
-      </nav>
       <!-- Sticky header: quiz title, subject, progress, leave link -->
       <div class="exam-bar mb-4">
         <div class="exam-header">
@@ -1653,7 +1673,6 @@ if ($userId) {
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <div class="exam-q-badge"><strong id="answeredCountNum"><?php echo $answeredCount; ?></strong> of <strong><?php echo $totalQuestions; ?></strong> answered</div>
-            <a href="<?php echo $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php'; ?>" class="exam-leave-link exam-back-link" style="padding: 0.4rem 0.75rem; font-size: 0.8125rem;"><i class="bi bi-box-arrow-left"></i> Leave quiz</a>
           </div>
         </div>
         <div class="exam-progress-wrap">
@@ -1664,7 +1683,7 @@ if ($userId) {
         </div>
       </div>
 
-      <div class="exam-layout">
+      <div class="exam-layout exam-protected">
         <div class="exam-main">
       <?php foreach ($allQuestions as $idx => $q): $num = $idx + 1; ?>
       <div class="exam-question-card" id="q<?php echo $num; ?>">
@@ -1743,6 +1762,18 @@ if ($userId) {
       <div class="exam-saved-toast" id="examSavedToast" aria-live="polite"><i class="bi bi-check-circle-fill mr-1"></i> Answer saved</div>
       <div class="exam-time-warning-toast" id="examTimeWarningToast" aria-live="assertive" role="alert"></div>
 
+      <!-- Security modal: shown on tab switch / window blur -->
+      <div class="quiz-submit-overlay" id="examSecurityOverlay" aria-live="assertive" aria-modal="true" role="dialog">
+        <div class="quiz-submit-card">
+          <div class="quiz-submit-spinner"></div>
+          <div class="quiz-submit-title">Screen activity detected</div>
+          <p class="quiz-submit-text">Screen activity was detected (such as switching tabs or windows). This action is not allowed during the quiz.</p>
+          <button type="button" id="examSecurityContinue" class="exam-btn-submit w-full justify-center mt-4">
+            <i class="bi bi-shield-check"></i> Continue quiz
+          </button>
+        </div>
+      </div>
+
       <!-- Global quiz submit loader -->
       <div class="quiz-submit-overlay" id="quizSubmitOverlay" aria-live="assertive" aria-busy="true">
         <div class="quiz-submit-card">
@@ -1813,6 +1844,80 @@ if ($userId) {
           if (e.key === 'Escape' && leaveOverlay && leaveOverlay.classList.contains('show')) hideLeaveModal();
         });
 
+        // Suspicious activity protection: tab switch / window blur / devtools
+        var SECURITY_MODE = 'pause'; // 'pause' or 'autosubmit'
+        var securityOverlay = document.getElementById('examSecurityOverlay');
+        var securityContinue = document.getElementById('examSecurityContinue');
+        var securityReason = '';
+        function showSecurityOverlay(reason) {
+          if (!securityOverlay) return;
+          securityOverlay.classList.add('show');
+          window.__examTimerPaused = true;
+          securityReason = reason || '';
+        }
+        function hideSecurityOverlay() {
+          if (!securityOverlay) return;
+          securityOverlay.classList.remove('show');
+          window.__examTimerPaused = false;
+        }
+        if (securityContinue) {
+          securityContinue.addEventListener('click', hideSecurityOverlay);
+        }
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            if (SECURITY_MODE === 'autosubmit') {
+              // Auto-submit best-effort when student leaves the tab
+              setLeavingAllowed(true);
+              form && form.submit();
+            } else {
+              showSecurityOverlay('visibility');
+            }
+          }
+        });
+        window.addEventListener('blur', function() {
+          if (SECURITY_MODE === 'autosubmit') {
+            setLeavingAllowed(true);
+            form && form.submit();
+          } else {
+            showSecurityOverlay('blur');
+          }
+        });
+        window.addEventListener('focus', function() {
+          // don't auto-hide; user must click Continue to acknowledge
+        });
+
+        // Basic DevTools detection (best-effort)
+        function detectDevToolsOnce() {
+          var threshold = 160;
+          var widthDiff = Math.abs((window.outerWidth || 0) - (window.innerWidth || 0));
+          var heightDiff = Math.abs((window.outerHeight || 0) - (window.innerHeight || 0));
+          if (widthDiff > threshold || heightDiff > threshold) {
+            if (SECURITY_MODE === 'autosubmit') {
+              setLeavingAllowed(true);
+              form && form.submit();
+            } else {
+              showSecurityOverlay('devtools');
+            }
+          }
+        }
+        window.addEventListener('resize', detectDevToolsOnce);
+        window.addEventListener('keydown', function(e) {
+          var key = (e.key || '').toLowerCase();
+          var ctrlLike = e.ctrlKey || e.metaKey;
+          var devToolsCombo =
+            key === 'f12' ||
+            (ctrlLike && e.shiftKey && (key === 'i' || key === 'j' || key === 'c'));
+          if (devToolsCombo) {
+            e.preventDefault();
+            if (SECURITY_MODE === 'autosubmit') {
+              setLeavingAllowed(true);
+              form && form.submit();
+            } else {
+              showSecurityOverlay('devtools');
+            }
+          }
+        }, true);
+
         var circleTimer = document.getElementById('examTimerCircle');
         var circleTimerValue = document.getElementById('examTimerCircleValue');
         var circleProgress = document.getElementById('examTimerCircleProgress');
@@ -1880,7 +1985,13 @@ if ($userId) {
               }
             });
         }
+        window.__examTimerPaused = false;
+
         function updateTimer() {
+          if (window.__examTimerPaused) {
+            setTimeout(updateTimer, 500);
+            return;
+          }
           if (Date.now() - lastSyncAt >= SYNC_INTERVAL_MS) syncTimerFromServer();
           var now = new Date();
           var rem = Math.max(0, Math.floor((expires - now) / 1000));
@@ -1973,6 +2084,35 @@ if ($userId) {
             sb.click();
           }
         });
+      })();
+
+      // Basic client-side protections: disable right-click, selection, and common shortcuts inside exam
+      (function() {
+        var examRoot = document.querySelector('.exam-layout') || document.body;
+        if (!examRoot) return;
+        function isInputLike(el) {
+          if (!el) return false;
+          var tag = el.tagName ? el.tagName.toLowerCase() : '';
+          var type = (el.type || '').toLowerCase();
+          return tag === 'input' || tag === 'textarea' || el.isContentEditable || type === 'text' || type === 'password';
+        }
+        examRoot.addEventListener('contextmenu', function(e) {
+          if (!isInputLike(e.target)) {
+            e.preventDefault();
+          }
+        });
+        examRoot.addEventListener('selectstart', function(e) {
+          if (!isInputLike(e.target)) {
+            e.preventDefault();
+          }
+        });
+        window.addEventListener('keydown', function(e) {
+          var ctrlLike = e.ctrlKey || e.metaKey;
+          var key = (e.key || '').toLowerCase();
+          if (ctrlLike && ['c', 'x', 's', 'p', 'u', 'a'].indexOf(key) !== -1 && !isInputLike(e.target)) {
+            e.preventDefault();
+          }
+        }, true);
       })();
       </script>
     <?php endif; ?>

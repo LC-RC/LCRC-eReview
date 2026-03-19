@@ -101,10 +101,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
     .video-embed { aspect-ratio: 16/9; width: 100%; border: 0; border-radius: 8px; background: #000; }
-    .split-view-container { display: none; position: fixed; top: 0; left: 20%; right: 0; bottom: 0; z-index: 1000; background: #f6f9ff; padding: 6px; gap: 6px; overflow: hidden; }
-    .split-view-container.active { display: flex !important; }
-    .split-view-container .split-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .split-view-container iframe, .split-view-container video { flex: 1; width: 100%; min-height: 0; }
     .separate-view.hidden { display: none !important; }
 
     /* Tab navigation: smooth hover and transition */
@@ -244,41 +240,43 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       animation: quiz-row-fade-in 0.4s ease backwards;
     }
 
-    /* Quizzers dashboard: header, summary cards, table polish */
+    /* Quizzers / Test Bank: dashboard-style card (same theme as dashboard) */
     .quizzers-section { margin-top: 1rem; }
-    .quizzers-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #e5e7eb; }
-    .quizzers-header .quizzers-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
-    .quizzers-header .quizzers-subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+    .quizzers-header { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(22, 101, 160, 0.15); background: rgba(232, 242, 250, 0.5); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .quizzers-header .quizzers-title { font-size: 1.25rem; font-weight: 700; color: #143D59; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
+    .quizzers-header .quizzers-subtitle { font-size: 0.875rem; color: rgba(20, 61, 89, 0.7); margin: 0; width: 100%; }
     .quiz-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; padding: 1rem 1.5rem; margin-bottom: 0; }
     .quiz-summary-card {
-      /* Soft 3D, light glass card tuned to app blue */
+      /* Match student dashboard quick cards */
       position: relative;
       overflow: hidden;
-      background: linear-gradient(145deg, #f3f4ff 0%, #e0f2ff 40%, #f4fbff 100%);
-      border: 1px solid rgba(148, 163, 184, 0.55);
-      border-radius: 18px;
-      padding: 0.9rem 1.1rem;
-      text-align: center;
+      border-radius: 1rem; /* ~rounded-2xl */
+      padding: 1rem 1.25rem;
+      text-align: left;
+      background-image: linear-gradient(to bottom right, #d4e8f7, #e8f2fa);
+      border: 1px solid rgba(22, 101, 160, 0.22);
       box-shadow:
-        0 14px 35px rgba(15, 23, 42, 0.28),
-        0 0 0 1px rgba(148, 163, 184, 0.35);
-      color: #0f172a;
-      transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease, translate 0.15s ease;
+        0 2px 8px rgba(20, 61, 89, 0.12),
+        0 4px 16px rgba(20, 61, 89, 0.08);
+      transition: box-shadow 0.25s ease, transform 0.18s ease, border-color 0.18s ease;
+      color: #143D59;
     }
-    .quiz-summary-card::before {
-      content: "";
-      position: absolute;
-      inset: -40%;
-      background:
-        radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.75), transparent 55%),
-        radial-gradient(circle at 110% 10%, rgba(51, 147, 255, 0.16), transparent 55%),
-        radial-gradient(circle at 0 120%, rgba(15, 23, 42, 0.07), transparent 55%);
-      opacity: 0.9;
-      pointer-events: none;
+    .quiz-summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 24px rgba(20, 61, 89, 0.18),
+        0 10px 30px rgba(20, 61, 89, 0.24);
     }
-    .quiz-summary-card > * {
-      position: relative;
-      z-index: 1;
+    .quiz-summary-card .summary-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #143D59;
+    }
+    .quiz-summary-card .summary-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(20, 61, 89, 0.75);
     }
     .quiz-summary-card:hover {
       box-shadow:
@@ -293,8 +291,9 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-summary-card.summary-failed .summary-value { color: #dc2626; }
     .quiz-summary-card.summary-avg .summary-value { color: #4154f1; }
     .quiz-table-wrap { overflow-x: auto; border-radius: 0 0 12px 12px; }
-    .quiz-table { width: 100%; border-collapse: separate; border-spacing: 0; text-sm; }
-    .quiz-table thead th { padding: 0.75rem 1rem; font-weight: 600; color: #475569; background: #f8fafc; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+    .quiz-filter-pills { overflow-wrap: anywhere; }
+    .quiz-table { width: 100%; min-width: 860px; border-collapse: separate; border-spacing: 0; text-sm; }
+    .quiz-table thead th { padding: 0.75rem 1rem; font-weight: 600; color: #143D59; background: rgba(232, 242, 250, 0.6); border-bottom: 2px solid rgba(22, 101, 160, 0.2); white-space: nowrap; }
     .quiz-table thead th:first-child { text-align: left; padding-left: 1.5rem; }
     .quiz-table thead th:not(:first-child) { text-align: center; }
     .quiz-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease; }
@@ -348,22 +347,31 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
         0 0 0 1px rgba(51, 147, 255, 0.8),
         0 10px 24px rgba(51, 147, 255, 0.6);
     }
-    .quiz-btn-primary { background: #4154f1; color: #fff; border: none; }
-    .quiz-btn-primary:hover { background: #2d3fc7; color: #fff; }
-    .quiz-take-again-btn.quiz-btn { background-color: #4154f1 !important; color: #fff !important; }
-    .quiz-take-again-btn.quiz-btn:hover { background-color: #2d3fc7 !important; color: #fff !important; }
+    .quiz-btn-primary { background: #1665A0; color: #fff; border: none; }
+    .quiz-btn-primary:hover { background: #143D59; color: #fff; }
+    .quiz-take-again-btn.quiz-btn { background-color: #1665A0 !important; color: #fff !important; }
+    .quiz-take-again-btn.quiz-btn:hover { background-color: #143D59 !important; color: #fff !important; }
     .quiz-btn-outline { background: #fff; color: #475569; border: 2px solid #e2e8f0; }
     .quiz-btn-outline:hover { background: #f8fafc; border-color: #94a3b8; color: #1e293b; }
     .quiz-btn-amber { background: #f59e0b; color: #fff; border: none; }
     .quiz-btn-amber:hover { background: #d97706; color: #fff; }
-    .quiz-empty-state { padding: 3rem 1.5rem; text-align: center; }
-    .quiz-empty-state .quiz-empty-icon { font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block; }
-    .quiz-empty-state .quiz-empty-msg { font-size: 1rem; font-weight: 600; color: #64748b; margin: 0; }
+    .quiz-empty-state { padding: 3rem 1.5rem; text-align: center; background: linear-gradient(to bottom, rgba(240, 247, 252, 0.5), transparent); }
+    .quiz-empty-state .quiz-empty-icon { font-size: 3.5rem; color: rgba(22, 101, 160, 0.4); margin-bottom: 1rem; display: block; }
+    .quiz-empty-state .quiz-empty-msg { font-size: 1rem; font-weight: 600; color: #143D59; margin: 0; }
     @media (max-width: 768px) {
       .quiz-summary-grid { grid-template-columns: repeat(2, 1fr); }
       .quiz-table thead th, .quiz-table tbody td { padding: 0.75rem 0.5rem; font-size: 0.8125rem; }
       .quiz-table thead th:first-child, .quiz-table tbody td:first-child { padding-left: 1rem; }
+      .quizzers-section .quizzers-header { padding: 1rem 1rem; }
+      .quizzers-section .quizzers-title { font-size: 1.125rem; }
+      .quizzers-section .quizzers-subtitle { font-size: 0.8125rem; }
     }
+    @media (max-width: 480px) {
+      .quiz-table thead th, .quiz-table tbody td { padding: 0.5rem 0.375rem; font-size: 0.75rem; }
+      .quiz-table thead th:first-child, .quiz-table tbody td:first-child { padding-left: 0.75rem; }
+      .quiz-btn { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+    }
+    .quiz-table-wrap { -webkit-overflow-scrolling: touch; }
 
     /* Row enter/leave when filtering (smooth expand/collapse) */
     .quiz-row-enter { opacity: 0; transform: translateX(-8px); }
@@ -372,80 +380,84 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-row-leave { opacity: 1; transform: translateX(0); }
     .quiz-row-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
     .quiz-row-leave-to { opacity: 0; transform: translateX(8px); }
-  </style>
+</style>
+<style>
+  /* Light content protection – non-intrusive */
+  .student-protected {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  .student-protected ::selection {
+    background: transparent;
+  }
+</style>
 </head>
-<body class="font-sans antialiased" x-data="{ activeTab: 'materials', viewMode: 'separate' }" x-init="const h = window.location.hash; if (h === '#quizzers') activeTab = 'quizzers'; else if (h === '#materials') activeTab = 'materials';">
+<body class="font-sans antialiased student-protected" x-data="{ activeTab: 'materials' }" x-init="const h = window.location.hash; if (h === '#quizzers') activeTab = 'quizzers'; else if (h === '#materials') activeTab = 'materials'; else if (h === '#testbank') activeTab = 'testbank';">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2"><i class="bi bi-book"></i> <?php echo h($subject['subject_name']); ?></h1>
-    <p class="text-gray-500 mt-1 mb-0"><?php echo h($subject['description'] ?? ''); ?></p>
-  </div>
+  <section class="mb-4 sm:mb-5">
+    <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
+          <i class="bi bi-book text-xl" aria-hidden="true"></i>
+        </span>
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl font-bold m-0 tracking-tight truncate"><?php echo h($subject['subject_name']); ?></h1>
+          <p class="text-sm sm:text-base text-white/90 mt-1 mb-0 break-words"><?php echo h($subject['description'] ?? ''); ?></p>
+        </div>
+      </div>
+      <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0">
+        <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Subject</span>
+        <span class="text-white/90"><?php echo h($subject['subject_code'] ?? 'Subject details'); ?></span>
+      </div>
+    </div>
+  </section>
 
   <!-- Tabs (active tab persisted via URL hash so refresh keeps same tab) -->
   <nav class="flex flex-wrap gap-2 mb-4" role="tablist">
-    <button type="button" @click="activeTab = 'materials'; window.location.hash = '#materials'" :class="activeTab === 'materials' ? 'bg-primary text-white border-primary' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'" class="subject-tab-btn px-4 py-2 rounded-lg font-medium border-2 inline-flex items-center gap-2"><i class="bi bi-collection-play"></i> Materials (Videos + Handouts)</button>
-    <button type="button" @click="activeTab = 'quizzers'; window.location.hash = '#quizzers'" :class="activeTab === 'quizzers' ? 'bg-primary text-white border-primary' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'" class="subject-tab-btn px-4 py-2 rounded-lg font-medium border-2 inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzers</button>
+    <button type="button" @click="activeTab = 'materials'; window.location.hash = '#materials'" :class="activeTab === 'materials' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-collection-play shrink-0"></i> <span class="sm:hidden">Materials</span><span class="hidden sm:inline">Materials (Videos + Handouts)</span></button>
+    <button type="button" @click="activeTab = 'quizzers'; window.location.hash = '#quizzers'" :class="activeTab === 'quizzers' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-question-circle shrink-0"></i> Quizzers</button>
+    <button type="button" @click="activeTab = 'testbank'; window.location.hash = '#testbank'" :class="activeTab === 'testbank' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-folder2-open shrink-0"></i> Test Bank</button>
   </nav>
 
-  <!-- Split View Overlay -->
-  <div class="split-view-container" :class="{ 'active': viewMode === 'split' }">
-    <button type="button" @click="viewMode = 'separate'" class="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition" title="Close Split View"><i class="bi bi-x-lg"></i></button>
-    <div class="split-panel bg-white rounded-xl shadow-card overflow-hidden">
-      <div class="px-3 py-2 border-b border-gray-100 text-sm font-semibold text-gray-800"><i class="bi bi-play-circle mr-2"></i> Video Player</div>
-      <div id="splitVideoPlayer" class="flex-1 min-h-0 bg-gray-900 flex items-center justify-center text-gray-500">
-        <div class="text-center py-8"><i class="bi bi-play-circle text-4xl block mb-2"></i><p>Select a lesson to load materials.</p></div>
+  <!-- Tab: Materials (list of lessons; click to open full-page viewer like Test Bank) -->
+  <div x-show="activeTab === 'materials'" x-cloak class="materials-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+    <div class="px-4 sm:px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex items-center gap-3">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
+        <i class="bi bi-play-circle-fill text-lg" aria-hidden="true"></i>
+      </span>
+      <div>
+        <h2 class="text-lg font-bold text-[#143D59] m-0">Materials</h2>
+        <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Lessons, videos, and handouts. Click a lesson to view.</p>
       </div>
     </div>
-    <div class="split-panel bg-white rounded-xl shadow-card overflow-hidden" style="border-left: 2px solid #e5e7eb;">
-      <div class="px-3 py-2 border-b border-gray-100 flex justify-between items-center flex-wrap gap-2">
-        <span class="text-sm font-semibold text-gray-800"><i class="bi bi-file-earmark-pdf mr-2"></i> Handout</span>
-        <select id="splitHandoutSelect" class="rounded-lg border border-gray-300 px-2 py-1 text-sm min-w-[180px]">
-          <option value="">Select Handout...</option>
-        </select>
-      </div>
-      <div class="flex-1 min-h-0 relative">
-        <iframe id="splitHandoutFrame" class="absolute inset-0 w-full h-full border-0 rounded-b-xl bg-white" style="display: none;"></iframe>
-        <div id="splitHandoutEmpty" class="absolute inset-0 flex items-center justify-center flex-col text-gray-500"><i class="bi bi-file-earmark-pdf text-4xl block mb-2"></i><p>Select a handout to view</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab: Materials -->
-  <div x-show="activeTab === 'materials'" x-cloak class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-4">
-        <div class="bg-white rounded-xl border border-gray-100 overflow-hidden max-h-[60vh] overflow-y-auto">
-          <div class="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800"><i class="bi bi-file-text mr-2"></i> Lessons</div>
-          <div class="divide-y divide-gray-100">
-            <?php mysqli_data_seek($lessons, 0); while ($l = mysqli_fetch_assoc($lessons)): ?>
-              <a href="?subject_id=<?php echo (int)$subjectId; ?>#materials" onclick="loadLessonMaterials(<?php echo (int)$l['lesson_id']; ?>); return false;" class="block px-4 py-3 hover:bg-gray-50 text-gray-700 transition"><?php echo h($l['title']); ?></a>
+    <div class="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+      <table class="quiz-table w-full text-left">
+        <thead>
+          <tr>
+            <th class="px-4 sm:px-5 py-2.5 sm:py-3 font-semibold text-[#143D59] bg-[#e8f2fa]/60 border-b-2 border-[#1665A0]/20">Lesson</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php mysqli_data_seek($lessons, 0);
+          if ($lessons && mysqli_num_rows($lessons) > 0): ?>
+            <?php while ($l = mysqli_fetch_assoc($lessons)): ?>
+              <tr class="border-b border-[#1665A0]/10 hover:bg-[#e8f2fa]/30 transition">
+                <td class="px-4 sm:px-5 py-2.5 sm:py-3">
+                  <a href="student_lesson_viewer.php?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="block font-medium text-[#1665A0] hover:text-[#143D59] no-underline transition"><?php echo h($l['title']); ?></a>
+                </td>
+              </tr>
             <?php endwhile; ?>
-          </div>
-        </div>
-      </div>
-      <div class="lg:col-span-8">
-        <div id="viewToggleButtons" class="hidden gap-2 mb-3">
-          <button type="button" @click="viewMode = 'separate'" :class="viewMode === 'separate' ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-600'" class="px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-layout-split"></i> Separate</button>
-          <button type="button" @click="viewMode = 'split'" :class="viewMode === 'split' ? 'bg-primary text-white border-primary' : 'border-gray-300 text-gray-600'" class="px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-columns"></i> Split View</button>
-        </div>
-        <div class="border border-gray-100 rounded-xl overflow-hidden">
-          <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-            <span class="font-semibold text-gray-800"><i class="bi bi-list mr-2"></i> Playlist</span>
-            <span class="text-gray-500 text-sm" id="lessonTitle"></span>
-          </div>
-          <div class="p-4">
-            <div id="videoPlayer" class="mb-4">
-              <div class="text-center text-gray-500 py-12"><i class="bi bi-play-circle text-4xl block mb-2"></i><p class="mt-2 mb-0">Select a lesson to load materials.</p></div>
-            </div>
-            <div id="videoList" class="space-y-1 mb-4"></div>
-            <hr class="my-4 border-gray-200">
-            <h4 class="font-semibold text-gray-800 mb-3"><i class="bi bi-file-earmark-pdf mr-2"></i> Handouts</h4>
-            <div id="handoutList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-          </div>
-        </div>
-      </div>
+          <?php else: ?>
+            <tr>
+              <td class="px-4 sm:px-5 py-8 text-center text-[#143D59]/70">No lessons yet. Your instructor may add lessons and materials later.</td>
+            </tr>
+          <?php endif; ?>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -457,13 +469,18 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
        x-transition:leave="tab-panel-leave-active"
        x-transition:leave-start="tab-panel-leave"
        x-transition:leave-end="tab-panel-leave-to"
-       class="quizzers-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
+       class="quizzers-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
     <div class="quizzers-header">
-      <h2 class="quizzers-title"><i class="bi bi-question-circle-fill text-primary"></i> Quizzers</h2>
-      <p class="quizzers-subtitle">Take or review your quizzes. Passing score is 50%.</p>
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
+        <i class="bi bi-question-circle-fill text-lg" aria-hidden="true"></i>
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="quizzers-title">Quizzers</h2>
+        <p class="quizzers-subtitle">Take or review your quizzes. Passing score is 50%.</p>
+      </div>
     </div>
     <?php if ($totalQuizzes > 0): ?>
-    <div class="quiz-summary-grid">
+    <div class="quiz-summary-grid px-4 sm:px-6 pt-4 pb-2">
       <div class="quiz-summary-card">
         <span class="summary-value"><?php echo $totalQuizzes; ?></span>
         <span class="summary-label">Total Quizzes</span>
@@ -484,20 +501,20 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     <?php endif; ?>
     <!-- Filters: status pills + search by title -->
     <div class="px-4 pb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:justify-between">
-      <div class="flex flex-wrap gap-1.5 text-xs sm:text-sm">
-        <button type="button" class="px-3 py-1.5 rounded-full border text-gray-700 bg-white shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill is-active" data-status="">
+      <div class="quiz-filter-pills w-full min-w-0 flex flex-wrap gap-1.5 text-xs sm:text-sm">
+        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border text-gray-700 bg-white shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill is-active shrink-0" data-status="">
           All
         </button>
-        <button type="button" class="px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="passed">
+        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="passed">
           Passed
         </button>
-        <button type="button" class="px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="need_retake">
+        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="need_retake">
           Failed
         </button>
-        <button type="button" class="px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="in_progress">
+        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="in_progress">
           In Progress
         </button>
-        <button type="button" class="px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill" data-status="not_taken">
+        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="not_taken">
           Not Started
         </button>
       </div>
@@ -511,16 +528,16 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
         <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
       </div>
     </div>
-    <div class="quiz-table-wrap">
-      <table class="quiz-table">
+    <div class="quiz-table-wrap overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+      <table class="quiz-table" style="min-width: 860px;">
         <thead>
           <tr>
-            <th style="min-width: 220px;">Quiz Title</th>
-            <th class="w-24">Duration</th>
-            <th style="min-width: 120px;">Last Attempt</th>
-            <th class="w-28">Status</th>
-            <th class="w-24">Attempts</th>
-            <th style="min-width: 220px;">Action</th>
+            <th style="min-width: 180px;">Quiz Title</th>
+            <th class="w-24" style="min-width: 5rem;">Duration</th>
+            <th style="min-width: 110px;">Last Attempt</th>
+            <th class="w-28" style="min-width: 5.5rem;">Status</th>
+            <th class="w-24" style="min-width: 4rem;">Attempts</th>
+            <th style="min-width: 180px;">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -602,6 +619,66 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     </div>
   </div>
 
+  <!-- Tab: Test Bank (table list; files shown only when entry is opened) -->
+  <div x-show="activeTab === 'testbank'" x-cloak
+       x-transition:enter="tab-panel-enter-active"
+       x-transition:enter-start="tab-panel-enter"
+       x-transition:enter-end="tab-panel-enter-to"
+       x-transition:leave="tab-panel-leave-active"
+       x-transition:leave-start="tab-panel-leave"
+       x-transition:leave-end="tab-panel-leave-to"
+       class="quizzers-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+    <div class="quizzers-header">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
+        <i class="bi bi-folder2-open text-lg" aria-hidden="true"></i>
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="quizzers-title">Test Bank</h2>
+        <p class="quizzers-subtitle">Practice questions and answer sets. Click an entry to view (full-page, view only).</p>
+      </div>
+    </div>
+    <?php
+      $testBankList = @mysqli_query(
+        $conn,
+        "SELECT id, title FROM test_bank WHERE subject_id=" . (int)$subjectId . " ORDER BY id DESC"
+      );
+    ?>
+    <?php if ($testBankList && mysqli_num_rows($testBankList) > 0): ?>
+    <div class="quiz-table-wrap overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+      <table class="quiz-table" style="min-width: 320px;">
+        <thead>
+          <tr>
+            <th style="min-width: 200px;">Title</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php mysqli_data_seek($testBankList, 0); while ($tb = mysqli_fetch_assoc($testBankList)): ?>
+            <?php
+              $tbId = (int)$tb['id'];
+              $tbTitle = h($tb['title']);
+            ?>
+            <tr class="border-b border-[#1665A0]/10 hover:bg-[#e8f2fa]/30 transition">
+              <td class="px-4 sm:px-5 py-2.5 sm:py-3">
+                <a
+                  href="student_test_bank_viewer.php?id=<?php echo $tbId; ?>&subject_id=<?php echo (int)$subjectId; ?>"
+                  class="block font-medium text-[#1665A0] hover:text-[#143D59] no-underline transition"
+                >
+                  <?php echo $tbTitle; ?>
+                </a>
+              </td>
+            </tr>
+          <?php endwhile; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php else: ?>
+      <div class="quiz-empty-state">
+        <i class="bi bi-folder2-open quiz-empty-icon"></i>
+        <p class="quiz-empty-msg">No test bank materials yet. Your instructor may add practice questions and answers later.</p>
+      </div>
+    <?php endif; ?>
+  </div>
+
   <!-- App modal: Resume quiz (dark gradient format) -->
   <div class="quiz-confirm-overlay" id="quizResumeConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="quizResumeConfirmTitle" aria-describedby="quizResumeConfirmMessage">
     <div class="quiz-confirm-card">
@@ -634,9 +711,32 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   </div>
 
   <script>
+  // Global student-side protection: disable right-click and common shortcuts (except in inputs)
+  (function() {
+    function isInputLike(el) {
+      if (!el) return false;
+      var tag = (el.tagName || '').toLowerCase();
+      var type = (el.type || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || el.isContentEditable || type === 'text' || type === 'password';
+    }
+    document.addEventListener('contextmenu', function(e) {
+      if (!isInputLike(e.target)) e.preventDefault();
+    });
+    document.addEventListener('selectstart', function(e) {
+      if (!isInputLike(e.target)) e.preventDefault();
+    });
+    window.addEventListener('keydown', function(e) {
+      var ctrlLike = e.ctrlKey || e.metaKey;
+      var key = (e.key || '').toLowerCase();
+      if (ctrlLike && ['c','x','s','p','u','a'].indexOf(key) !== -1 && !isInputLike(e.target)) {
+        e.preventDefault();
+      }
+    }, true);
+  })();
+
     document.addEventListener('alpine:init', function() {
       Alpine.store('handoutViewer', { open: false, id: '', title: '' });
-      });
+    });
     window.openHandoutViewer = function(handoutId, title) {
       if (!handoutId) return;
       if (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('handoutViewer')) {
@@ -646,214 +746,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       }
     };
 
-    document.addEventListener('DOMContentLoaded', function() {
-      const btnSeparateView = document.getElementById('btnSeparateView');
-      const btnSplitView = document.getElementById('btnSplitView');
-      const viewToggleButtons = document.getElementById('viewToggleButtons');
-      const splitHandoutSelect = document.getElementById('splitHandoutSelect');
-      const splitHandoutFrame = document.getElementById('splitHandoutFrame');
-      const splitHandoutEmpty = document.getElementById('splitHandoutEmpty');
-      if (splitHandoutSelect && splitHandoutFrame && splitHandoutEmpty) {
-        splitHandoutSelect.addEventListener('change', function() {
-          const val = this.value;
-          if (val) {
-            splitHandoutFrame.src = 'handout_viewer.php?handout_id=' + encodeURIComponent(val);
-            splitHandoutFrame.style.display = 'block';
-            splitHandoutEmpty.style.display = 'none';
-          } else {
-            splitHandoutFrame.src = '';
-            splitHandoutFrame.style.display = 'none';
-            splitHandoutEmpty.style.display = 'flex';
-          }
-        });
-      }
-    });
-
-    async function loadLessonMaterials(lessonId) {
-      const titleEl = document.getElementById('lessonTitle');
-      const videoListEl = document.getElementById('videoList');
-      const videoPlayerEl = document.getElementById('videoPlayer');
-      const handoutListEl = document.getElementById('handoutList');
-      const splitVideoPlayerEl = document.getElementById('splitVideoPlayer');
-      const viewToggleButtons = document.getElementById('viewToggleButtons');
-      if (viewToggleButtons) viewToggleButtons.style.display = 'flex';
-      titleEl.textContent = '';
-      videoListEl.innerHTML = '';
-      videoPlayerEl.innerHTML = '<div class="text-center text-gray-500 py-8"><span class="inline-block w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></span><p class="mt-3 mb-0">Loading videos...</p></div>';
-      if (splitVideoPlayerEl) splitVideoPlayerEl.innerHTML = '<div class="text-center text-gray-500 py-8" style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column"><span class="inline-block w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></span><p class="mt-3 mb-0">Loading videos...</p></div>';
-      handoutListEl.innerHTML = '';
-      try {
-        const [vRes, hRes] = await Promise.all([
-          fetch('subject_api.php?action=videos&lesson_id=' + lessonId, { credentials: 'same-origin' }),
-          fetch('subject_api.php?action=handouts&lesson_id=' + lessonId, { credentials: 'same-origin' })
-        ]);
-        if (!vRes.ok || !hRes.ok) throw new Error('Request failed');
-        const videos = await vRes.json();
-        const handouts = await hRes.json();
-        if (videos.error) throw new Error(videos.error);
-        if (handouts.error) throw new Error(handouts.error);
-        titleEl.textContent = (videos.lesson && videos.lesson.title) || '';
-        const videoItems = Array.isArray(videos.videos) ? videos.videos : [];
-        if (videoItems.length === 0) {
-          videoPlayerEl.replaceChildren(renderEmptyState('No videos.', false, 'bi bi-play-circle'));
-          if (splitVideoPlayerEl) splitVideoPlayerEl.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="bi bi-play-circle text-4xl block mb-2"></i><p>No videos available.</p></div>';
-        } else {
-          renderVideoPlayer(videoItems[0].video_url || '');
-          renderSplitVideoPlayer(videoItems[0].video_url || '');
-          videoItems.forEach(v => {
-            const link = document.createElement('a');
-            link.href = '#'; link.className = 'flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-gray-50 text-gray-700 transition';
-            const icon = document.createElement('i'); icon.className = 'bi bi-play-circle'; link.appendChild(icon);
-            link.appendChild(document.createTextNode(' ' + (v.video_title || 'Untitled Video')));
-            link.addEventListener('click', (e) => { e.preventDefault(); renderVideoPlayer(v.video_url || ''); renderSplitVideoPlayer(v.video_url || ''); });
-            videoListEl.appendChild(link);
-          });
-        }
-        const handoutItems = Array.isArray(handouts.handouts) ? handouts.handouts : [];
-        const splitHandoutSelect = document.getElementById('splitHandoutSelect');
-        const splitHandoutFrame = document.getElementById('splitHandoutFrame');
-        const splitHandoutEmpty = document.getElementById('splitHandoutEmpty');
-        if (splitHandoutSelect) {
-          splitHandoutSelect.innerHTML = '<option value="">Select Handout...</option>';
-          handoutItems.forEach(h => {
-            if (h.file_path && h.handout_id) {
-              const opt = document.createElement('option');
-              opt.value = h.handout_id;
-              opt.textContent = h.handout_title || 'Untitled Handout';
-              splitHandoutSelect.appendChild(opt);
-            }
-          });
-          if (handoutItems.length > 0 && handoutItems[0].handout_id) {
-            splitHandoutSelect.value = handoutItems[0].handout_id;
-            if (splitHandoutFrame) { splitHandoutFrame.src = 'handout_viewer.php?handout_id=' + handoutItems[0].handout_id; splitHandoutFrame.style.display = 'block'; }
-            if (splitHandoutEmpty) splitHandoutEmpty.style.display = 'none';
-          } else {
-            if (splitHandoutFrame) splitHandoutFrame.style.display = 'none';
-            if (splitHandoutEmpty) splitHandoutEmpty.style.display = 'flex';
-          }
-        }
-        if (handoutItems.length === 0) {
-          handoutListEl.appendChild(renderEmptyState('No handouts.', true));
-        } else {
-          handoutItems.forEach(h => {
-            const col = document.createElement('div');
-            col.className = 'border border-gray-100 rounded-xl p-4';
-            const title = document.createElement('h6');
-            title.className = 'font-semibold text-gray-800 mb-1';
-            title.textContent = h.handout_title || 'Untitled Handout';
-            col.appendChild(title);
-            if (Number(h.file_size)) {
-              const size = document.createElement('div');
-              size.className = 'text-gray-500 text-sm mb-2';
-              size.textContent = formatFileSize(Number(h.file_size));
-              col.appendChild(size);
-            }
-            const actions = document.createElement('div');
-            actions.className = 'flex flex-wrap gap-2 mt-3';
-            if (h.file_path) {
-              const viewBtn = document.createElement('button');
-              viewBtn.type = 'button';
-              viewBtn.className = 'inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition';
-              viewBtn.textContent = 'View';
-              viewBtn.addEventListener('click', () => openHandoutViewer(h.handout_id, h.handout_title || 'Handout'));
-              actions.appendChild(viewBtn);
-            }
-            if (Number(h.allow_download) === 1 && h.file_path) {
-              const a = document.createElement('a');
-              a.className = 'inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition';
-              a.href = h.file_path; a.target = '_blank'; a.rel = 'noopener';
-              a.innerHTML = '<i class="bi bi-download"></i> Download';
-              actions.appendChild(a);
-            } else if (Number(h.allow_download) !== 1) {
-              const lock = document.createElement('div');
-              lock.className = 'p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2';
-              lock.innerHTML = '<i class="bi bi-lock"></i> Downloads locked by administrator.';
-              actions.appendChild(lock);
-            }
-            col.appendChild(actions);
-            handoutListEl.appendChild(col);
-          });
-        }
-      } catch (e) {
-        videoPlayerEl.replaceChildren(renderErrorState('Failed to load. ' + (e.message || '')));
-        handoutListEl.appendChild(renderErrorState('Failed to load handouts. ' + (e.message || '')));
-      }
-    }
-    function renderVideoPlayer(url) {
-      const el = document.getElementById('videoPlayer');
-      el.innerHTML = '';
-      if (!url) { el.appendChild(renderEmptyState('No videos.', false, 'bi bi-play-circle')); return; }
-      const isLocal = url.indexOf('uploads/videos/') === 0;
-      let embedUrl = url;
-      if (!isLocal && (url.includes('youtube.com') || url.includes('youtu.be'))) { const m = url.match(/(?:v=|\.be\/)([A-Za-z0-9_-]{6,})/); if (m) embedUrl = 'https://www.youtube.com/embed/' + m[1] + '?rel=0'; }
-      else if (!isLocal && url.includes('vimeo.com')) { const m = url.match(/vimeo.com\/(\d+)/); if (m) embedUrl = 'https://player.vimeo.com/video/' + m[1]; }
-      if (isLocal) {
-        const v = document.createElement('video');
-        v.className = 'video-embed'; v.controls = true;
-        const src = document.createElement('source'); src.src = embedUrl; src.type = 'video/mp4';
-        v.appendChild(src); el.appendChild(v);
-      } else {
-        const iframe = document.createElement('iframe');
-        iframe.className = 'video-embed'; iframe.src = embedUrl; iframe.allowFullscreen = true;
-        el.appendChild(iframe);
-      }
-    }
-    function renderSplitVideoPlayer(url) {
-      const el = document.getElementById('splitVideoPlayer');
-      if (!el) return;
-      el.innerHTML = '';
-      if (!url) { el.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="bi bi-play-circle text-4xl block mb-2"></i><p>No video selected.</p></div>'; return; }
-      const isLocal = url.indexOf('uploads/videos/') === 0;
-      let embedUrl = url;
-      if (!isLocal && (url.includes('youtube.com') || url.includes('youtu.be'))) { const m = url.match(/(?:v=|\.be\/)([A-Za-z0-9_-]{6,})/); if (m) embedUrl = 'https://www.youtube.com/embed/' + m[1] + '?rel=0'; }
-      else if (!isLocal && url.includes('vimeo.com')) { const m = url.match(/vimeo.com\/(\d+)/); if (m) embedUrl = 'https://player.vimeo.com/video/' + m[1]; }
-      if (isLocal) {
-        const v = document.createElement('video');
-        v.className = 'video-embed'; v.controls = true; v.style.height = '100%';
-        const src = document.createElement('source'); src.src = embedUrl; src.type = 'video/mp4';
-        v.appendChild(src); el.appendChild(v);
-      } else {
-        const iframe = document.createElement('iframe');
-        iframe.className = 'video-embed'; iframe.src = embedUrl; iframe.allowFullscreen = true; iframe.style.height = '100%';
-        el.appendChild(iframe);
-      }
-    }
-    function renderEmptyState(message, wrapInColumn, iconClass) {
-      const div = document.createElement('div');
-      div.className = 'text-center text-gray-500 py-8';
-      const icon = document.createElement('i');
-      icon.className = iconClass || 'bi bi-inbox';
-      icon.style.fontSize = '2.5rem';
-      div.appendChild(icon);
-      const p = document.createElement('p');
-      p.className = 'mt-2 mb-0';
-      p.textContent = message;
-      div.appendChild(p);
-      if (wrapInColumn) {
-        const col = document.createElement('div');
-        col.className = 'col-span-2';
-        col.appendChild(div);
-        return col;
-      }
-      return div;
-    }
-    function renderErrorState(message) {
-      const col = document.createElement('div');
-      col.className = 'col-span-2';
-      const alert = document.createElement('div');
-      alert.className = 'p-4 rounded-xl bg-red-50 border border-red-200 text-red-800';
-      alert.textContent = message;
-      col.appendChild(alert);
-      return col;
-    }
-    function formatFileSize(bytes) {
-      if (!bytes || isNaN(bytes)) return '';
-      const units = ['B', 'KB', 'MB', 'GB'];
-      let size = bytes;
-      let i = 0;
-      while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
-      return size.toFixed(size >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
-    }
   </script>
   <script>
   // Client-side filtering for Quizzers table by quiz title + status

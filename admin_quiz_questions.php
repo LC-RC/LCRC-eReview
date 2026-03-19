@@ -195,16 +195,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $questionText = trim($_POST['question_text'] ?? '');
-    // Read all choice columns from POST (A–J) so E,F,G,H,I,J save correctly
+    // Read all choice columns from POST (A–J) so E,F,G,H,I,J save correctly.
+    // "Active" choices = fields that actually exist in the form (have a POST key).
     $choiceVals = [];
+    $activeCols = [];
     foreach ($allChoiceCols as $col) {
-        $choiceVals[$col] = trim($_POST[$col] ?? '');
+        if (array_key_exists($col, $_POST)) {
+            $choiceVals[$col] = trim($_POST[$col] ?? '');
+            $activeCols[] = $col;
+        } else {
+            // Not rendered in the form (inactive choice slot)
+            $choiceVals[$col] = '';
+        }
     }
-    $filled = array_filter($choiceVals);
-    if (count($filled) < 2) {
+    // Require at least 2 active choices overall
+    if (count($activeCols) < 2) {
         $_SESSION['error'] = 'Please provide at least 2 choices.';
         header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
+    }
+    // All active choices (those shown in the UI) must be non-empty
+    foreach ($activeCols as $ac) {
+        if ($choiceVals[$ac] === '') {
+            $_SESSION['error'] = 'All visible choices must be filled in. Please remove any unused choice rows or enter text for them.';
+            header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+            exit;
+        }
     }
     $correctAnswer = trim($_POST['correct_answer'] ?? '');
     if ($correctAnswer === '' || !in_array($correctAnswer, $validCorrectLetters, true)) {

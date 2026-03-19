@@ -55,10 +55,19 @@ if ($hour < 12) {
   <?php
     $subjectsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM subjects WHERE status='active'");
     $subjectsRow = $subjectsCount ? mysqli_fetch_assoc($subjectsCount) : ['cnt' => 0];
-    $quizzesCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE s.status='active'");
-    $quizzesRow = $quizzesCount ? mysqli_fetch_assoc($quizzesCount) : ['cnt' => 0];
     $lessonsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE s.status='active'");
     $lessonsRow = $lessonsCount ? mysqli_fetch_assoc($lessonsCount) : ['cnt' => 0];
+    // Preboards subjects (separate module)
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS preboards_subjects (
+      preboards_subject_id INT AUTO_INCREMENT PRIMARY KEY,
+      subject_name VARCHAR(150) NOT NULL,
+      description TEXT NULL,
+      status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_preboards_subject_name (subject_name)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $preboardsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM preboards_subjects WHERE status='active'");
+    $preboardsRow = $preboardsCount ? mysqli_fetch_assoc($preboardsCount) : ['cnt' => 0];
   ?>
   <div class="student-dashboard-page min-h-full pb-8">
     <!-- Welcome hero: blue theme, gradient, elevation -->
@@ -109,16 +118,16 @@ if ($hour < 12) {
         <p class="text-sm text-white/90 m-0">Subjects you're enrolled in</p>
         <p class="text-xs text-white/80 mt-2"><?php echo (int)$subjectsRow['cnt']; ?> subjects</p>
       </a>
-      <a href="student_quizzes.php" class="dashboard-quick-card group block rounded-2xl p-5 shadow-[0_2px_8px_rgba(20,61,89,0.2)] hover:shadow-[0_8px_28px_rgba(20,61,89,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-[#143D59] text-white border border-[#143D59]">
+      <a href="student_preboards.php" class="dashboard-quick-card group block rounded-2xl p-5 shadow-[0_2px_8px_rgba(20,61,89,0.2)] hover:shadow-[0_8px_28px_rgba(20,61,89,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-[#143D59] text-white border border-[#143D59]">
         <div class="flex items-start justify-between">
           <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg group-hover:scale-105 transition-transform">
-            <i class="bi bi-patch-question text-xl" aria-hidden="true"></i>
+            <i class="bi bi-clipboard-check text-xl" aria-hidden="true"></i>
           </span>
           <i class="bi bi-three-dots-vertical text-white/70 text-lg" aria-hidden="true"></i>
         </div>
-        <h2 class="text-base font-bold mt-3 mb-1">My Practice Exams</h2>
-        <p class="text-sm text-white/90 m-0">Quizzes & mock exams</p>
-        <p class="text-xs text-white/80 mt-2"><?php echo (int)$quizzesRow['cnt']; ?> quizzes available</p>
+        <h2 class="text-base font-bold mt-3 mb-1">My Preboards</h2>
+        <p class="text-sm text-white/90 m-0">Preboard subjects & preparation</p>
+        <p class="text-xs text-white/80 mt-2"><?php echo (int)$preboardsRow['cnt']; ?> preboard subject<?php echo ((int)$preboardsRow['cnt'] === 1 ? '' : 's'); ?></p>
       </a>
     </section>
 
@@ -155,22 +164,21 @@ if ($hour < 12) {
             <div class="p-6 space-y-4 bg-white/50">
               <?php
                 $totalLessons = (int)$lessonsRow['cnt'];
-                $totalQuizzes = (int)$quizzesRow['cnt'];
                 $lessonsPct = $totalLessons > 0 ? min(100, (int)round(($totalLessons > 20 ? 12 : $totalLessons * 0.6) / $totalLessons * 100)) : 0;
-                $quizzesPct = $totalQuizzes > 0 ? min(100, (int)round(($totalQuizzes > 10 ? 5 : $totalQuizzes * 0.5) / $totalQuizzes * 100)) : 0;
-                $examsPct = $totalQuizzes > 0 ? min(100, (int)round(min(2, $totalQuizzes) / max(1, $totalQuizzes) * 100)) : 0;
+                $totalPreboards = (int)($preboardsRow['cnt'] ?? 0);
+                $preboardsPct = $totalPreboards > 0 ? min(100, (int)round(min(2, $totalPreboards) / max(1, $totalPreboards) * 100)) : 0;
               ?>
               <div>
                 <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Lessons completed</span><span class="text-[#1665A0] font-semibold"><?php echo $lessonsPct; ?>%</span></div>
                 <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $lessonsPct; ?>%"></div></div>
               </div>
               <div>
-                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Quizzes taken</span><span class="text-[#1665A0] font-semibold"><?php echo $quizzesPct; ?>%</span></div>
-                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $quizzesPct; ?>%"></div></div>
+                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Preboards progress</span><span class="text-[#1665A0] font-semibold"><?php echo $preboardsPct; ?>%</span></div>
+                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $preboardsPct; ?>%"></div></div>
               </div>
               <div>
-                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Practice exams finished</span><span class="text-[#1665A0] font-semibold"><?php echo $examsPct; ?>%</span></div>
-                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $examsPct; ?>%"></div></div>
+                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Subjects enrolled</span><span class="text-[#1665A0] font-semibold"><?php echo min(100, (int)$subjectsRow['cnt'] * 10); ?>%</span></div>
+                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo min(100, (int)$subjectsRow['cnt'] * 10); ?>%"></div></div>
               </div>
             </div>
           </article>
@@ -185,7 +193,7 @@ if ($hour < 12) {
             </div>
             <div class="p-6 flex flex-col items-center gap-6 bg-white/50">
               <?php
-                $readinessPct = min(100, $lessonsPct + $quizzesPct > 0 ? (int)round(($lessonsPct + $quizzesPct) / 2) : 0);
+                $readinessPct = min(100, $lessonsPct + $preboardsPct > 0 ? (int)round(($lessonsPct + $preboardsPct) / 2) : 0);
                 $subjectProgress = $totalLessons > 0 ? min(100, (int)round(($subjectsRow['cnt'] ?? 0) * 25)) : 0;
               ?>
               <div class="flex flex-wrap justify-center gap-8">

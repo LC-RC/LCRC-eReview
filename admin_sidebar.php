@@ -30,6 +30,12 @@
                 </a>
             </li>
             <li>
+                <a href="admin_preboards_subjects.php" class="flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition <?php echo in_array(basename($_SERVER['PHP_SELF']), ['admin_preboards_subjects.php', 'admin_preboards_sets.php', 'admin_preboards_questions.php']) ? 'bg-white/15 text-white border-l-white font-semibold' : ''; ?>">
+                    <i class="bi bi-clipboard-check text-lg w-6 text-center"></i>
+                    <span>Preboards</span>
+                </a>
+            </li>
+            <li>
                 <a href="logout.php" class="flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition">
                     <i class="bi bi-box-arrow-right text-lg w-6 text-center"></i>
                     <span>Logout</span>

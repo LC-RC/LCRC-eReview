@@ -20,7 +20,20 @@ $allowDownload = (int)$handout['allow_download'] === 1;
 $physicalPath = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file);
 if (!file_exists($physicalPath)) {
     http_response_code(404);
-    exit('File not found: ' . htmlspecialchars($file));
+    header('Content-Type: text/html; charset=utf-8');
+    $safeTitle = htmlspecialchars($title);
+    $safeFile = htmlspecialchars($file);
+    echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>File not found</title>';
+    echo '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">';
+    echo '<div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 max-w-md w-full text-center">';
+    echo '<div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4"><i class="bi bi-file-earmark-x text-3xl text-amber-600"></i></div>';
+    echo '<h1 class="text-xl font-bold text-gray-800 mb-2">File not found</h1>';
+    echo '<p class="text-gray-600 text-sm mb-4">The handout <strong>' . $safeTitle . '</strong> could not be loaded. The file may have been moved or deleted.</p>';
+    echo '<p class="text-gray-500 text-xs mb-4 break-all">' . $safeFile . '</p>';
+    echo '<p class="text-gray-500 text-sm">Please contact the admin to re-upload this handout if needed.</p>';
+    echo '<a href="javascript:history.back()" class="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1665A0] text-white font-semibold hover:bg-[#143D59] transition"><i class="bi bi-arrow-left"></i> Go back</a>';
+    echo '</div></body></html>';
+    exit;
 }
 
 if ($allowDownload) {

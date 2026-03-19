@@ -169,8 +169,8 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
     $configFile = __DIR__ . '/config/mail_config.php';
     if (file_exists($configFile)) {
         $config = require $configFile;
-        if (is_array($config) && !empty($config['smtp_password']) && !empty($config['smtp_username'])) {
-            require_once __DIR__ . '/smtp_sender.php';
+        require_once __DIR__ . '/smtp_sender.php';
+        if (is_array($config) && function_exists('isMailConfigValid') && isMailConfigValid($config)) {
             $fromEmail = $config['from_email'] ?? $config['smtp_username'];
             $fromName = $config['from_name'] ?? 'LCRC eReview';
             if (function_exists('sendMailSmtpHtml')) {
