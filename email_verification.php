@@ -44,14 +44,51 @@ function createPendingRegistration($data) {
         $schoolOther = null;
     }
 
-    $check = mysqli_prepare($conn, "SELECT 1 FROM users WHERE email = ? LIMIT 1");
-    mysqli_stmt_bind_param($check, 's', $email);
-    mysqli_stmt_execute($check);
-    if (mysqli_fetch_assoc(mysqli_stmt_get_result($check))) {
+    // If a verified account already exists, do not create a pending registration.
+    // If an unverified/stale account exists, remove it so verification can create a clean user row.
+    $hasEmailVerifiedCol = false;
+    $cols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
+    if ($cols && mysqli_fetch_assoc($cols)) $hasEmailVerifiedCol = true;
+
+    if ($hasEmailVerifiedCol) {
+        $unverifiedStmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? AND email_verified = 0 LIMIT 1");
+        if ($unverifiedStmt) {
+            mysqli_stmt_bind_param($unverifiedStmt, 's', $email);
+            mysqli_stmt_execute($unverifiedStmt);
+            $unverRes = mysqli_stmt_get_result($unverifiedStmt);
+            $unverRow = $unverRes ? mysqli_fetch_assoc($unverRes) : null;
+            mysqli_stmt_close($unverifiedStmt);
+
+            if ($unverRow && isset($unverRow['user_id'])) {
+                $delUnver = mysqli_prepare($conn, "DELETE FROM users WHERE user_id = ? LIMIT 1");
+                if ($delUnver) {
+                    $uid = (int)$unverRow['user_id'];
+                    mysqli_stmt_bind_param($delUnver, 'i', $uid);
+                    mysqli_stmt_execute($delUnver);
+                    mysqli_stmt_close($delUnver);
+                }
+            }
+        }
+
+        $check = mysqli_prepare($conn, "SELECT 1 FROM users WHERE email = ? AND email_verified = 1 LIMIT 1");
+        mysqli_stmt_bind_param($check, 's', $email);
+        mysqli_stmt_execute($check);
+        if (mysqli_fetch_assoc(mysqli_stmt_get_result($check))) {
+            mysqli_stmt_close($check);
+            return null;
+        }
         mysqli_stmt_close($check);
-        return null;
+    } else {
+        // Backward compatibility: if we can't tell verification state, any row blocks pending registration.
+        $check = mysqli_prepare($conn, "SELECT 1 FROM users WHERE email = ? LIMIT 1");
+        mysqli_stmt_bind_param($check, 's', $email);
+        mysqli_stmt_execute($check);
+        if (mysqli_fetch_assoc(mysqli_stmt_get_result($check))) {
+            mysqli_stmt_close($check);
+            return null;
+        }
+        mysqli_stmt_close($check);
     }
-    mysqli_stmt_close($check);
 
     $selector = bin2hex(random_bytes(16));
     $validator = random_bytes(32);

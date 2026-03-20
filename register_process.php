@@ -89,18 +89,53 @@ if ($pwLen < 8 || !$hasNumber || !$hasUpper || !$hasLower || !$hasSymbol) {
     exit;
 }
 
-$checkStmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? LIMIT 1");
-mysqli_stmt_bind_param($checkStmt, 's', $email);
-mysqli_stmt_execute($checkStmt);
-$result = mysqli_stmt_get_result($checkStmt);
-if (mysqli_num_rows($result) > 0) {
+$hasEmailVerifiedCol = false;
+$cols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
+if ($cols && mysqli_fetch_assoc($cols)) $hasEmailVerifiedCol = true;
+
+// If an account exists but is NOT email-verified yet, allow re-registration.
+// This fixes cases where a stale/unverified row blocks registration.
+if ($hasEmailVerifiedCol) {
+    $checkStmt = mysqli_prepare($conn, "SELECT user_id, email_verified FROM users WHERE email = ? LIMIT 1");
+    mysqli_stmt_bind_param($checkStmt, 's', $email);
+    mysqli_stmt_execute($checkStmt);
+    $result = mysqli_stmt_get_result($checkStmt);
+    $row = $result ? mysqli_fetch_assoc($result) : null;
     mysqli_stmt_close($checkStmt);
-    if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered. Please use another email or sign in instead.']);
-    $_SESSION['error'] = 'This email is already registered. Please use another email or sign in instead.';
-    header('Location: registration.php');
-    exit;
+
+    if ($row) {
+        $ev = (int)($row['email_verified'] ?? 1);
+        if ($ev === 0) {
+            // Remove unverified user so pending registration can be created cleanly.
+            $delStmt = mysqli_prepare($conn, "DELETE FROM users WHERE user_id = ? LIMIT 1");
+            if ($delStmt) {
+                $uid = (int)($row['user_id'] ?? 0);
+                mysqli_stmt_bind_param($delStmt, 'i', $uid);
+                mysqli_stmt_execute($delStmt);
+                mysqli_stmt_close($delStmt);
+            }
+        } else {
+            if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered. Please use another email or sign in instead.']);
+            $_SESSION['error'] = 'This email is already registered. Please use another email or sign in instead.';
+            header('Location: registration.php');
+            exit;
+        }
+    }
+} else {
+    // Backward compatibility: if the column doesn't exist, any existing row blocks registration.
+    $checkStmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? LIMIT 1");
+    mysqli_stmt_bind_param($checkStmt, 's', $email);
+    mysqli_stmt_execute($checkStmt);
+    $result = mysqli_stmt_get_result($checkStmt);
+    if ($result && mysqli_num_rows($result) > 0) {
+        mysqli_stmt_close($checkStmt);
+        if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered. Please use another email or sign in instead.']);
+        $_SESSION['error'] = 'This email is already registered. Please use another email or sign in instead.';
+        header('Location: registration.php');
+        exit;
+    }
+    mysqli_stmt_close($checkStmt);
 }
-mysqli_stmt_close($checkStmt);
 
 $uploadedPath = null;
 $allowed_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];

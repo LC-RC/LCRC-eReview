@@ -25,11 +25,20 @@ if (trim($local) === '') {
     exit;
 }
 
-$stmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? LIMIT 1");
+// "Exists" should mean: a VERIFIED account exists.
+$hasEmailVerifiedCol = false;
+$cols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
+if ($cols && mysqli_fetch_assoc($cols)) $hasEmailVerifiedCol = true;
+
+if ($hasEmailVerifiedCol) {
+    $stmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? AND (email_verified = 1 OR email_verified IS NULL) LIMIT 1");
+} else {
+    $stmt = mysqli_prepare($conn, "SELECT user_id FROM users WHERE email = ? LIMIT 1");
+}
 mysqli_stmt_bind_param($stmt, 's', $email);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
-$exists = mysqli_num_rows($result) > 0;
+$exists = ($result && mysqli_num_rows($result) > 0);
 mysqli_stmt_close($stmt);
 
 // Also check pending_registrations if table exists
@@ -44,7 +53,14 @@ if ($pendingStmt) {
     mysqli_stmt_close($pendingStmt);
 }
 
+$message = null;
+if ($exists) {
+    $message = 'This email is already registered. Please use another email or sign in instead.';
+} elseif ($pendingExists) {
+    $message = 'Verification pending. Please check your email to complete registration.';
+}
+
 echo json_encode([
     'available' => !$exists && !$pendingExists,
-    'message'   => ($exists || $pendingExists) ? 'This email is already registered. Please use another email or sign in instead.' : null,
+    'message'   => $message,
 ]);
