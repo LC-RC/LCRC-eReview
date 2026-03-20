@@ -422,6 +422,8 @@ if (isset($_SESSION['google_redirect_uri'])) {
     body.login-prototype .login-form-fields.space-y-4 > * + * { margin-top: 1rem !important; }
     body.login-prototype .login-card .space-y-2 > * + * { margin-top: 0.5rem !important; }
     body.login-prototype .login-card .login-piece-5b { margin-top: 1.5rem !important; }
+    /* Keep password secondary actions (Forgot password) close to the password field */
+    body.login-prototype .login-card .login-piece-5 > * + * { margin-top: 0.15rem !important; }
     /* Floating label wrapper */
     body.login-prototype .login-card .float-label-wrap {
       position: relative;
@@ -527,6 +529,93 @@ if (isset($_SESSION['google_redirect_uri'])) {
       flex-shrink: 0;
     }
     body.login-prototype .login-card .login-piece-8 { margin-top: 1rem !important; }
+    body.login-prototype .login-card .login-password-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.05rem;
+      padding-top: 0;
+    }
+    body.login-prototype .login-card .login-security-hint {
+      margin: 0;
+      color: #94a3b8 !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    body.login-prototype .login-card .login-password-actions .login-forgot-link {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    body.login-prototype .login-card .login-social-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      align-items: stretch;
+    }
+    body.login-prototype .login-card .login-social-actions .login-google-btn,
+    body.login-prototype .login-card .login-social-actions .login-magic-btn {
+      min-height: 2.5rem;
+      height: 100%;
+      border-radius: 0.75rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.625rem 0.8rem;
+      position: relative;
+      overflow: hidden;
+    }
+    body.login-prototype .login-card .login-social-actions .login-google-btn::before,
+    body.login-prototype .login-card .login-social-actions .login-magic-btn::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      opacity: 0;
+      transform: scale(1.02) translateY(6px);
+      transition: opacity 0.2s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+    body.login-prototype .login-card .login-social-actions .login-google-btn::before {
+      background: radial-gradient(circle at 25% 25%, rgba(31, 88, 195, 0.55), transparent 58%);
+    }
+    body.login-prototype .login-card .login-social-actions .login-magic-btn::before {
+      background: radial-gradient(circle at 25% 25%, rgba(245, 158, 11, 0.52), transparent 58%);
+    }
+    body.login-prototype .login-card .login-social-actions .login-google-btn:hover::before,
+    body.login-prototype .login-card .login-social-actions .login-magic-btn:hover::before {
+      opacity: 1;
+      transform: scale(1.08) translateY(-4px);
+    }
+    body.login-prototype .login-card .login-social-actions .login-google-btn:hover,
+    body.login-prototype .login-card .login-social-actions .login-magic-btn:hover {
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+    body.login-prototype .login-card .login-social-actions .login-magic-btn {
+      background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%) !important;
+      border: 1px solid rgba(245, 158, 11, 0.34) !important;
+      color: #f8fafc !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    body.login-prototype .login-card .login-social-actions .login-magic-btn:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(180deg, #27364a 0%, #1f2937 100%) !important;
+      border-color: rgba(245, 158, 11, 0.52) !important;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
+    }
+    body.login-prototype .login-card .login-social-actions .login-magic-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
     body.login-prototype .login-card .login-blurbs {
       margin-top: 1.5rem !important;
       padding-top: 1.35rem !important;
@@ -623,6 +712,18 @@ if (isset($_SESSION['google_redirect_uri'])) {
     body.login-prototype .login-card #login-remember-hint { color: #94a3b8 !important; font-size: 0.75rem; }
     body.login-prototype .login-card .login-forgot-link { color: #F59E0B !important; }
     body.login-prototype .login-card .login-forgot-link:hover { color: #FCD34D !important; }
+    @media (max-width: 560px) {
+      body.login-prototype .login-card .login-password-actions {
+        flex-wrap: wrap;
+        row-gap: 0.4rem;
+      }
+      body.login-prototype .login-card .login-password-actions .login-forgot-link {
+        margin-left: 0;
+      }
+      body.login-prototype .login-card .login-social-actions {
+        grid-template-columns: 1fr;
+      }
+    }
     body.login-prototype .login-footer-copy {
       color: #64748b !important;
       font-size: 0.6875rem !important;
@@ -1053,11 +1154,6 @@ if (isset($_SESSION['google_redirect_uri'])) {
           </div>
 
           <div class="space-y-2 login-piece login-piece-5">
-            <div class="flex items-center justify-end gap-3 flex-wrap">
-              <a href="forgot_password.php" class="login-forgot-link text-xs font-medium hover:underline">Forgot password?</a>
-              <span class="text-gray-400">·</span>
-              <a href="request_magic_link.php" class="text-xs font-medium hover:underline text-slate-400 hover:text-slate-300">Email me a sign-in link</a>
-            </div>
             <div class="relative float-label-wrap auth-password-wrap" id="login-password-wrap">
               <label for="login-password" class="float-label">Password</label>
               <span class="auth-input-icon-wrap absolute left-0 top-0 bottom-0 flex items-center justify-center input-icon">
@@ -1084,11 +1180,13 @@ if (isset($_SESSION['google_redirect_uri'])) {
               </button>
             </div>
             <p id="password-error" class="text-red-600 text-sm mt-1 min-h-[1.25rem]" role="alert" aria-live="polite"></p>
-            <p class="login-security-hint text-xs mt-1 text-slate-400 flex items-center gap-1.5">
-              <i class="bi bi-shield-lock text-slate-500" aria-hidden="true"></i>
-              <span>Secure sign-in. We never share your data.</span>
-              <span id="login-secure-connection" class="text-slate-500" style="display:none;">· Secure connection</span>
-            </p>
+            <div class="login-password-actions">
+              <p class="login-security-hint text-xs">
+                <i class="bi bi-shield-lock text-slate-500" aria-hidden="true"></i>
+                <span>Secure sign-in. We never share your data.</span>
+              </p>
+              <a href="forgot_password.php" class="login-forgot-link text-xs font-medium hover:underline">Forgot password?</a>
+            </div>
           </div>
 
           <div class="flex items-start gap-3 login-piece login-piece-5b">
@@ -1117,10 +1215,16 @@ if (isset($_SESSION['google_redirect_uri'])) {
           </div>
 
           <div class="login-piece login-piece-8">
-            <a href="google_auth.php" class="login-google-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Continue with Google">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" class="login-google-icon w-4 h-4" aria-hidden="true">
-              <span>Continue with Google</span>
-            </a>
+            <div class="login-social-actions">
+              <a href="google_auth.php" class="login-google-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Continue with Google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" class="login-google-icon w-4 h-4" aria-hidden="true">
+                <span>Google Sign-In</span>
+              </a>
+              <a href="request_magic_link.php" class="login-magic-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Email me a sign-in link">
+                <i class="bi bi-envelope-paper-fill" aria-hidden="true"></i>
+                <span>Sign-in Link</span>
+              </a>
+            </div>
           </div>
         </form>
         </div>
@@ -1417,11 +1521,6 @@ if (isset($_SESSION['google_redirect_uri'])) {
             if (document.activeElement === last) { e.preventDefault(); first.focus(); }
           }
         });
-      }
-
-      if (location.protocol === 'https:') {
-        var secureEl = document.getElementById('login-secure-connection');
-        if (secureEl) secureEl.style.display = 'inline';
       }
 
       // Rate limit countdown

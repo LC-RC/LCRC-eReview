@@ -1,6 +1,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo isset($pageTitle) ? h($pageTitle) . ' - ' : ''; ?>LCRC eReview</title>
+<link rel="icon" type="image/png" href="/image%20assets/lms-logo.png">
+<link rel="apple-touch-icon" href="/image%20assets/lms-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <?php
 $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
