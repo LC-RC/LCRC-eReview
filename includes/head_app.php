@@ -35,23 +35,5 @@ if (file_exists($tailwindFile)): ?>
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<script>
-document.addEventListener('alpine:init', function() {
-  var key = 'studentSidebarCollapsed';
-  var collapsed = false;
-  try { collapsed = JSON.parse(localStorage.getItem(key) || 'false'); } catch (e) {}
-  function persist(val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
-  Alpine.store('sidebar', {
-    collapsed: collapsed,
-    toggle: function() {
-      this.collapsed = !this.collapsed;
-      persist(this.collapsed);
-    },
-    expand: function() {
-      this.collapsed = false;
-      persist(this.collapsed);
-    }
-  });
-});
-</script>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css">
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>

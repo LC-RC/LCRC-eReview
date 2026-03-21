@@ -36,12 +36,14 @@ foreach ($migrations as $label => $sql) {
         }
     }
 }
-
-require_once __DIR__ . '/includes/head_app.php';
 ?>
-<body class="font-sans antialiased bg-gray-50">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+</head>
+<body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
-  <main class="md:ml-64 p-6">
     <div class="max-w-2xl mx-auto">
       <div class="bg-white rounded-xl shadow-card border border-gray-100 p-6 mb-6">
         <h1 class="text-xl font-bold text-gray-800 mb-2"><i class="bi bi-database-gear mr-2"></i>Quiz choices migration</h1>
@@ -77,6 +79,8 @@ require_once __DIR__ . '/includes/head_app.php';
         </div>
       </div>
     </div>
-  </main>
+  </div>
+</main>
 </body>
 </html>
+

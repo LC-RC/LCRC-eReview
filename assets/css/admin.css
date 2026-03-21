@@ -16,14 +16,14 @@ body.admin-app #main {
 }
 
 /* --- Sidebar: Grok-like elevation, crisp --- */
-body.admin-app #sidebar {
+body.admin-app #app-sidebar {
   background: #0a0a0a !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
   transition: box-shadow 0.2s ease;
 }
 
-body.admin-app #sidebar .p-5.bg-white\/10 {
+body.admin-app #app-sidebar .p-5.bg-white\/10 {
   background: transparent !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding-top: 1.25rem !important;
@@ -32,19 +32,19 @@ body.admin-app #sidebar .p-5.bg-white\/10 {
   padding-right: 1.25rem !important;
 }
 
-body.admin-app #sidebar .p-5.bg-white\/10 h3 {
+body.admin-app #app-sidebar .p-5.bg-white\/10 h3 {
   font-weight: 600 !important;
   letter-spacing: 0.025em;
   font-size: 1rem;
   color: #fff !important;
 }
 
-body.admin-app #sidebar nav {
+body.admin-app #app-sidebar nav {
   padding-top: 1rem !important;
   padding-bottom: 1rem !important;
 }
 
-body.admin-app #sidebar nav a {
+body.admin-app #app-sidebar nav a {
   color: rgba(255, 255, 255, 0.65);
   border-left: 3px solid transparent;
   font-weight: 500;
@@ -56,15 +56,15 @@ body.admin-app #sidebar nav a {
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
-body.admin-app #sidebar nav a:hover {
+body.admin-app #app-sidebar nav a:hover {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.95);
   border-left-color: rgba(255, 255, 255, 0.25);
 }
 
 /* Grok-style active: thin white left bar + subtle tint, text stays white */
-body.admin-app #sidebar nav a.bg-white\/15,
-body.admin-app #sidebar nav a[class*="border-l-white"] {
+body.admin-app #app-sidebar nav a.bg-white\/15,
+body.admin-app #app-sidebar nav a[class*="border-l-white"] {
   background: rgba(255, 255, 255, 0.06) !important;
   color: #ffffff !important;
   border-left-width: 2px !important;
@@ -73,10 +73,10 @@ body.admin-app #sidebar nav a[class*="border-l-white"] {
   font-weight: 600;
 }
 
-body.admin-app #sidebar nav a.bg-white\/15 .bi,
-body.admin-app #sidebar nav a[class*="border-l-white"] .bi,
-body.admin-app #sidebar nav a.bg-white\/15 span,
-body.admin-app #sidebar nav a[class*="border-l-white"] span {
+body.admin-app #app-sidebar nav a.bg-white\/15 .bi,
+body.admin-app #app-sidebar nav a[class*="border-l-white"] .bi,
+body.admin-app #app-sidebar nav a.bg-white\/15 span,
+body.admin-app #app-sidebar nav a[class*="border-l-white"] span {
   color: inherit !important;
 }
 
@@ -117,7 +117,7 @@ body.admin-app .admin-topbar-left {
   gap: 12px;
   min-width: 0;
   flex: 1;
-  max-width: 560px;
+  max-width: 480px;
 }
 body.admin-app .admin-topbar-brand {
   color: rgba(255, 255, 255, 0.92);
@@ -372,39 +372,40 @@ body.admin-app .admin-topbar-dropdown-item:hover {
 }
 
 /* Sidebar: collapsed rail (icons only) + expanded overlay */
-body.admin-app #sidebar {
+body.admin-app #app-sidebar {
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.45);
-  width: 72px; /* collapsed rail width */
+  width: 64px;
+  transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
-body.admin-app #sidebar .admin-sidebar-brand {
+body.admin-app #app-sidebar .admin-sidebar-brand {
   display: none;
 }
-body.admin-app #sidebar nav a {
+body.admin-app #app-sidebar nav a {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
   justify-content: center;
 }
 /* Default (collapsed rail): icons only */
-body.admin-app #sidebar nav a span:not(.admin-sidebar-badge),
-body.admin-app #sidebar .admin-sidebar-section-label,
-body.admin-app #sidebar .admin-sidebar-footer span {
+body.admin-app #app-sidebar nav a span:not(.admin-sidebar-badge),
+body.admin-app #app-sidebar .admin-sidebar-section-label,
+body.admin-app #app-sidebar .admin-sidebar-footer span {
   display: none;
 }
 /* Expanded overlay */
-body.admin-app.sidebar-expanded #sidebar {
-  width: 260px;
+body.admin-app.sidebar-expanded #app-sidebar {
+  width: 240px;
 }
-body.admin-app.sidebar-expanded #sidebar .admin-sidebar-brand {
+body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-brand {
   display: flex;
 }
-body.admin-app.sidebar-expanded #sidebar nav a {
+body.admin-app.sidebar-expanded #app-sidebar nav a {
   padding-left: 1.25rem;
   padding-right: 1.25rem;
   justify-content: flex-start;
 }
-body.admin-app.sidebar-expanded #sidebar nav a span:not(.admin-sidebar-badge),
-body.admin-app.sidebar-expanded #sidebar .admin-sidebar-section-label,
-body.admin-app.sidebar-expanded #sidebar .admin-sidebar-footer span {
+body.admin-app.sidebar-expanded #app-sidebar nav a span:not(.admin-sidebar-badge),
+body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-section-label,
+body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-footer span {
   display: inline;
 }
 
@@ -415,7 +416,7 @@ body.admin-app #sidebar-backdrop {
   background: rgba(0, 0, 0, 0.45);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.22s ease-out;
+  transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 900;
 }
 body.admin-app.sidebar-expanded #sidebar-backdrop {
@@ -434,16 +435,16 @@ body.admin-app #main .admin-content {
 
 /* Main layout: leave room for collapsed rail so content isn't covered */
 body.admin-app #main {
-  margin-left: 72px;
+  margin-left: 64px;
 }
 
-/* When expanded, shift content (no overlap) */
+/* When expanded, shift content (no overlap) — matches student rail widths */
 body.admin-app.sidebar-expanded #main {
-  margin-left: 260px;
+  margin-left: 240px;
 }
 
 body.admin-app #main {
-  transition: margin-left 0.22s ease-out;
+  transition: margin-left 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* --- Cards: Grok-style, border-only, no shadow --- */
@@ -1206,7 +1207,7 @@ body.admin-app #main button:focus-visible {
   box-shadow: 0 0 0 2px #0d0d0d, 0 0 0 4px rgba(255, 255, 255, 0.12);
 }
 
-body.admin-app #sidebar nav a:focus-visible {
+body.admin-app #app-sidebar nav a:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
 }

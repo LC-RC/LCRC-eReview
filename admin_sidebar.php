@@ -1,7 +1,6 @@
 <?php
 /**
- * Admin Sidebar – Reusable component across all admin pages.
- * Maintains nav links, active state, spacing, and icons. Edit $adminNavConfig to add/remove items.
+ * Admin shell entry — sidebar, topbar, and main wrapper are rendered by the unified component.
  */
 $adminPendingCount = 0;
 if (!empty($conn)) {
@@ -12,9 +11,10 @@ if (!empty($conn)) {
     }
 }
 
-$adminCurrentScript = basename($_SERVER['PHP_SELF']);
-
-$adminNavConfig = [
+$appShellCurrentScript = basename($_SERVER['PHP_SELF']);
+$appShellTheme = 'admin';
+$appShellSidebarHeader = 'brand';
+$appShellNavConfig = [
     [
         'label' => 'Manage',
         'items' => [
@@ -31,109 +31,5 @@ $adminNavConfig = [
         ],
     ],
 ];
-?>
-<!-- Sidebar -->
-<aside id="sidebar" class="fixed top-0 left-0 w-[260px] h-screen bg-[#012970] z-[1000] flex flex-col transition-transform duration-200 ease-out">
-    <div class="p-5 bg-white/10 border-b border-white/10 shrink-0 flex items-center gap-2">
-        <h3 class="admin-sidebar-brand text-white text-xl font-bold m-0 flex items-center gap-2">
-            <i class="bi bi-mortarboard-fill"></i> <span>LCRC eReview</span>
-        </h3>
-    </div>
-    <nav class="py-5 flex-1 overflow-y-auto" aria-label="Admin navigation">
-        <ul class="flex flex-col gap-0">
-            <?php foreach ($adminNavConfig as $section): ?>
-            <li class="admin-sidebar-section">
-                <span class="admin-sidebar-section-label" aria-hidden="true"><?php echo h($section['label']); ?></span>
-            </li>
-            <?php foreach ($section['items'] as $item):
-                $isActive = in_array($adminCurrentScript, $item['active'] ?? [], true);
-                $classes = 'flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition';
-                if ($isActive) $classes .= ' bg-white/15 text-white border-l-white font-semibold';
-            ?>
-            <li>
-                <a href="<?php echo h($item['href']); ?>" title="<?php echo h($item['title'] ?? ''); ?>" class="<?php echo $classes; ?>">
-                    <i class="bi <?php echo h($item['icon']); ?> text-lg w-6 text-center"></i>
-                    <span><?php echo h($item['label']); ?></span>
-                    <?php if (!empty($item['badge']) && (int)$item['badge'] > 0): ?>
-                        <span class="admin-sidebar-badge" aria-label="<?php echo (int)$item['badge']; ?> pending"><?php echo (int)$item['badge']; ?></span>
-                    <?php endif; ?>
-                </a>
-            </li>
-            <?php endforeach; ?>
-            <?php endforeach; ?>
-        </ul>
-    </nav>
-    <div class="admin-sidebar-footer shrink-0 border-t border-white/10">
-        <a href="logout.php" title="Sign out" class="ereview-logout-trigger flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition w-full">
-            <i class="bi bi-box-arrow-right text-lg w-6 text-center"></i>
-            <span>Logout</span>
-        </a>
-    </div>
-<?php /* Sidebar markup end */ ?>
-</aside>
-<div id="sidebar-backdrop"></div>
-<script>
-(function () {
-  var body = document.body;
-  var backdrop = document.getElementById('sidebar-backdrop');
-  var STORAGE_KEY = 'ereview_admin_sidebar_expanded';
 
-  function adminSidebarToggleBtn() {
-    return document.getElementById('admin-sidebar-toggle-btn');
-  }
-
-  function syncTopbarToggleAria() {
-    var btn = adminSidebarToggleBtn();
-    if (btn) btn.setAttribute('aria-expanded', body.classList.contains('sidebar-expanded') ? 'true' : 'false');
-  }
-
-  function openSidebar() {
-    body.classList.add('sidebar-expanded');
-    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
-    syncTopbarToggleAria();
-  }
-
-  function closeSidebar() {
-    body.classList.remove('sidebar-expanded');
-    try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
-    syncTopbarToggleAria();
-  }
-
-  window.toggleAdminSidebar = function () {
-    if (body.classList.contains('sidebar-expanded')) {
-      closeSidebar();
-    } else {
-      openSidebar();
-    }
-  };
-
-  if (backdrop) {
-    backdrop.addEventListener('click', closeSidebar);
-  }
-
-  document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape' && body.classList.contains('sidebar-expanded')) {
-      closeSidebar();
-    }
-  });
-
-  // Initialize from saved preference (default: collapsed on small screens, expanded on desktop)
-  (function init() {
-    var isDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)').matches : true;
-    var saved = null;
-    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
-    if (saved === '1') openSidebar();
-    else if (saved === '0') closeSidebar();
-    else if (isDesktop) openSidebar();
-    else closeSidebar();
-  })();
-
-  document.addEventListener('DOMContentLoaded', syncTopbarToggleAria);
-})();
-</script>
-<?php $ereviewLogoutModalVariant = 'admin'; include __DIR__ . '/includes/logout_confirm_modal.php'; ?>
-
-<!-- Main: topbar + content wrapper -->
-<main id="main" class="min-h-screen flex flex-col bg-[#f6f9ff] text-gray-700 font-sans">
-<?php include __DIR__ . '/includes/admin_topbar.php'; ?>
-<div class="admin-content flex-1 pt-5 pb-5">
+require __DIR__ . '/includes/components/app_shell_sidebar.php';
