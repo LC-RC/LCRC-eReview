@@ -468,6 +468,29 @@ if ($userId) {
       font-weight: 500;
       margin-bottom: 1.5rem;
     }
+    .exam-question-text table,
+    .exam-choice-text table,
+    .quiz-rich-text table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+    }
+    .exam-question-text th,
+    .exam-question-text td,
+    .exam-choice-text th,
+    .exam-choice-text td,
+    .quiz-rich-text th,
+    .quiz-rich-text td {
+      border: 1px solid #cbd5e1;
+      padding: 0.4rem 0.55rem;
+      vertical-align: top;
+    }
+    .exam-question-text thead th,
+    .exam-choice-text thead th,
+    .quiz-rich-text thead th {
+      background: #f8fafc;
+      font-weight: 700;
+    }
     .exam-choices {
       display: flex;
       flex-direction: column;
@@ -1390,7 +1413,7 @@ if ($userId) {
           ?>
             <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
               <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $i + 1; ?> of <?php echo count($reviewQuestions); ?></div>
-              <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo nl2br(h($q['question_text'])); ?></div>
+              <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
               <div class="space-y-2 mb-4">
                 <?php foreach ($choices as $letter => $choiceText): ?>
                   <?php
@@ -1403,7 +1426,7 @@ if ($userId) {
                     else echo 'bg-white border-[#e2e8f0]';
                   ?>">
                     <span class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYourAnswer && !$isCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
-                    <span class="text-[#1e293b] flex-1"><?php echo h($choiceText); ?></span>
+                    <div class="text-[#1e293b] flex-1 quiz-rich-text"><?php echo renderQuizRichText($choiceText); ?></div>
                     <?php if ($isYourAnswer && $isCorrectChoice): ?>
                       <span class="ml-auto review-correct-label text-sm"><i class="bi bi-check-circle-fill"></i> Your answer · Correct</span>
                     <?php elseif ($isCorrectChoice): ?>
@@ -1417,7 +1440,7 @@ if ($userId) {
               <?php if (!empty(trim((string)($q['explanation'] ?? '')))): ?>
                 <div class="pt-3 mt-3 border-t border-[#e2e8f0]">
                   <p class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Explanation</p>
-                  <p class="text-sm text-[#475569] leading-relaxed"><?php echo nl2br(h($q['explanation'])); ?></p>
+                  <div class="text-sm text-[#475569] leading-relaxed quiz-rich-text"><?php echo renderQuizRichText($q['explanation']); ?></div>
                 </div>
               <?php endif; ?>
             </div>
@@ -1479,13 +1502,13 @@ if ($userId) {
                   ?>
                   <div class="border rounded-xl p-4 <?php echo $hIsCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
                     <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $qi + 1; ?> of <?php echo count($h['questions']); ?></div>
-                    <div class="text-base font-semibold text-[#1e293b] mb-3 leading-relaxed"><?php echo nl2br(h($hq['question_text'])); ?></div>
+                    <div class="text-base font-semibold text-[#1e293b] mb-3 leading-relaxed"><?php echo renderQuizRichText($hq['question_text']); ?></div>
                     <div class="space-y-2 mb-3">
                       <?php foreach ($hChoices as $letter => $hChoiceText): ?>
                         <?php $isYour = ($hSel === $letter); $isCorrectChoice = ($hCorrectAns === $letter); ?>
                         <div class="flex items-start gap-2 p-2 rounded-lg border <?php echo $isCorrectChoice ? 'review-correct-choice' : ($isYour && !$hIsCorrect ? 'bg-[#fef2f2] border-[#dc2626]' : 'bg-white border-[#e2e8f0]'); ?>">
                           <span class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYour && !$hIsCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
-                          <span class="text-sm text-[#1e293b] flex-1"><?php echo h($hChoiceText); ?></span>
+                          <div class="text-sm text-[#1e293b] flex-1 quiz-rich-text"><?php echo renderQuizRichText($hChoiceText); ?></div>
                           <?php if ($isYour && $isCorrectChoice): ?><span class="ml-auto review-correct-label text-xs"><i class="bi bi-check-circle-fill"></i> Your answer · Correct</span>
                           <?php elseif ($isCorrectChoice): ?><span class="ml-auto review-correct-label text-xs"><i class="bi bi-check-circle-fill"></i> Correct answer</span>
                           <?php elseif ($isYour): ?><span class="ml-auto text-[#dc2626] font-semibold text-xs"><i class="bi bi-x-circle-fill"></i> Your answer · Wrong</span><?php endif; ?>
@@ -1493,7 +1516,7 @@ if ($userId) {
                       <?php endforeach; ?>
                     </div>
                     <?php if (!empty(trim((string)($hq['explanation'] ?? '')))): ?>
-                      <p class="text-xs text-[#64748b] mt-2 pt-2 border-t border-[#e2e8f0]"><strong>Explanation:</strong> <?php echo nl2br(h($hq['explanation'])); ?></p>
+                      <div class="text-xs text-[#64748b] mt-2 pt-2 border-t border-[#e2e8f0] quiz-rich-text"><strong>Explanation:</strong> <?php echo renderQuizRichText($hq['explanation']); ?></div>
                     <?php endif; ?>
                   </div>
                   <?php endforeach; ?>
@@ -1616,13 +1639,13 @@ if ($userId) {
                   ?>
                   <div class="border rounded-xl p-4 <?php echo $hIsCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
                     <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $qi + 1; ?> of <?php echo count($h['questions']); ?></div>
-                    <div class="text-base font-semibold text-[#1e293b] mb-3 leading-relaxed"><?php echo nl2br(h($hq['question_text'])); ?></div>
+                    <div class="text-base font-semibold text-[#1e293b] mb-3 leading-relaxed"><?php echo renderQuizRichText($hq['question_text']); ?></div>
                     <div class="space-y-2 mb-3">
                       <?php foreach ($hChoices as $letter => $hChoiceText): ?>
                         <?php $isYour = ($hSel === $letter); $isCorrectChoice = ($hCorrectAns === $letter); ?>
                         <div class="flex items-start gap-2 p-2 rounded-lg border <?php echo $isCorrectChoice ? 'review-correct-choice' : ($isYour && !$hIsCorrect ? 'bg-[#fef2f2] border-[#dc2626]' : 'bg-white border-[#e2e8f0]'); ?>">
                           <span class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYour && !$hIsCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
-                          <span class="text-sm text-[#1e293b] flex-1"><?php echo h($hChoiceText); ?></span>
+                          <div class="text-sm text-[#1e293b] flex-1 quiz-rich-text"><?php echo renderQuizRichText($hChoiceText); ?></div>
                           <?php if ($isYour && $isCorrectChoice): ?><span class="ml-auto review-correct-label text-xs"><i class="bi bi-check-circle-fill"></i> Your answer · Correct</span>
                           <?php elseif ($isCorrectChoice): ?><span class="ml-auto review-correct-label text-xs"><i class="bi bi-check-circle-fill"></i> Correct answer</span>
                           <?php elseif ($isYour): ?><span class="ml-auto text-[#dc2626] font-semibold text-xs"><i class="bi bi-x-circle-fill"></i> Your answer · Wrong</span><?php endif; ?>
@@ -1630,7 +1653,7 @@ if ($userId) {
                       <?php endforeach; ?>
                     </div>
                     <?php if (!empty(trim((string)($hq['explanation'] ?? '')))): ?>
-                      <p class="text-xs text-[#64748b] mt-2 pt-2 border-t border-[#e2e8f0]"><strong>Explanation:</strong> <?php echo nl2br(h($hq['explanation'])); ?></p>
+                      <div class="text-xs text-[#64748b] mt-2 pt-2 border-t border-[#e2e8f0] quiz-rich-text"><strong>Explanation:</strong> <?php echo renderQuizRichText($hq['explanation']); ?></div>
                     <?php endif; ?>
                   </div>
                   <?php endforeach; ?>
@@ -1688,7 +1711,7 @@ if ($userId) {
       <?php foreach ($allQuestions as $idx => $q): $num = $idx + 1; ?>
       <div class="exam-question-card" id="q<?php echo $num; ?>">
         <div class="exam-question-label">Question <?php echo $num; ?> of <?php echo $totalQuestions; ?></div>
-        <h2 class="exam-question-text mb-6"><?php echo nl2br(h($q['question_text'])); ?></h2>
+        <div class="exam-question-text mb-6"><?php echo renderQuizRichText($q['question_text']); ?></div>
         <div class="exam-choices">
           <?php $choices = get_question_choices($q); foreach ($choices as $letter => $choiceText): ?>
             <?php $isSelected = (isset($savedAnswers[$q['question_id']]) && $savedAnswers[$q['question_id']] === $letter); ?>
@@ -1696,7 +1719,7 @@ if ($userId) {
               <input type="radio" name="answer_<?php echo (int)$q['question_id']; ?>" value="<?php echo $letter; ?>" class="sr-only" data-question-id="<?php echo (int)$q['question_id']; ?>"
                 <?php echo $isSelected ? ' checked' : ''; ?>>
               <span class="exam-choice-letter"><?php echo $letter; ?></span>
-              <span class="exam-choice-text"><?php echo h($choiceText); ?></span>
+              <div class="exam-choice-text"><?php echo renderQuizRichText($choiceText); ?></div>
               <span class="exam-choice-check"><i class="bi bi-check"></i></span>
             </label>
           <?php endforeach; ?>

@@ -252,7 +252,8 @@ $adminBreadcrumbs = [
               <div class="space-y-4">
                 <div>
                   <label class="admin-quiz-label">Question text</label>
-                  <textarea :name="'questions[' + index + '][text]'" x-model="q.text" rows="2" required class="input-custom w-full admin-quiz-input" placeholder="Enter the question..."></textarea>
+                  <textarea :name="'questions[' + index + '][text]'" x-model="q.text" rows="2" required class="input-custom w-full admin-quiz-input js-preboard-richtext" placeholder="Enter the question..."></textarea>
+                  <p class="text-xs text-gray-500 mt-1">You can use basic HTML, including table tags (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>).</p>
                 </div>
                 <div class="space-y-2">
                   <span class="admin-quiz-label">Choices (min 2, max 10)</span>
@@ -273,7 +274,7 @@ $adminBreadcrumbs = [
                 </div>
                 <div>
                   <label class="admin-quiz-label">Explanation (optional)</label>
-                  <textarea :name="'questions[' + index + '][explanation]'" x-model="q.explanation" rows="1" class="input-custom w-full admin-quiz-input text-sm" placeholder="Why the correct answer is right..."></textarea>
+                  <textarea :name="'questions[' + index + '][explanation]'" x-model="q.explanation" rows="1" class="input-custom w-full admin-quiz-input text-sm js-preboard-richtext" placeholder="Why the correct answer is right..."></textarea>
                 </div>
               </div>
               <div class="admin-quiz-batch-question-footer">
@@ -363,7 +364,8 @@ $adminBreadcrumbs = [
         <div class="space-y-4">
           <div>
             <label class="admin-quiz-label">Question</label>
-            <textarea name="question_text" x-model="question_text" rows="3" required class="input-custom w-full admin-quiz-input"></textarea>
+            <textarea id="edit-preboard-question-text" name="question_text" x-model="question_text" rows="3" required class="input-custom w-full admin-quiz-input js-preboard-richtext"></textarea>
+            <p class="text-xs text-gray-500 mt-1">You can use basic HTML, including table tags (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>).</p>
           </div>
           <div class="space-y-2">
             <label class="admin-quiz-label mb-0">Choices (min 2, max 10)</label>
@@ -384,7 +386,7 @@ $adminBreadcrumbs = [
           </div>
           <div>
             <label class="admin-quiz-label">Explanation (optional)</label>
-            <textarea name="explanation" x-model="explanation" rows="2" class="input-custom w-full admin-quiz-input text-sm"></textarea>
+            <textarea id="edit-preboard-explanation" name="explanation" x-model="explanation" rows="2" class="input-custom w-full admin-quiz-input text-sm js-preboard-richtext"></textarea>
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -419,7 +421,46 @@ $adminBreadcrumbs = [
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.6/tinymce.min.js" referrerpolicy="origin"></script>
   <script>
+    function initPreboardRichEditors(scopeEl) {
+      if (!window.tinymce) return;
+      var root = scopeEl || document;
+      var nodes = root.querySelectorAll ? root.querySelectorAll('textarea.js-preboard-richtext') : [];
+      nodes.forEach(function (el) {
+        if (!el.id) el.id = 'preboard-rich-' + Math.random().toString(36).slice(2, 10);
+        if (window.tinymce.get(el.id)) return;
+        tinymce.init({
+          selector: '#' + el.id,
+          menubar: false,
+          height: 220,
+          branding: false,
+          plugins: 'table lists link',
+          toolbar: 'undo redo | bold italic underline | bullist numlist | table | removeformat',
+          valid_elements: 'p,br,strong/b,em/i,u,sub,sup,ul,ol,li,table,thead,tbody,tfoot,tr,th[colspan|rowspan|scope],td[colspan|rowspan]',
+          forced_root_block: 'p',
+          setup: function (editor) {
+            editor.on('change input undo redo keyup', function () { editor.save(); });
+          }
+        });
+      });
+    }
+
+    function refreshPreboardRichEditors() {
+      window.setTimeout(function () { initPreboardRichEditors(document); }, 0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initPreboardRichEditors(document);
+      var observer = new MutationObserver(function () { refreshPreboardRichEditors(); });
+      observer.observe(document.body, { childList: true, subtree: true });
+      document.querySelectorAll('form').forEach(function (formEl) {
+        formEl.addEventListener('submit', function () {
+          if (window.tinymce) tinymce.triggerSave();
+        });
+      });
+    });
+
     function newBatchQuestion() {
       return {
         text: '',
@@ -448,7 +489,7 @@ $adminBreadcrumbs = [
         explanation: '',
         delete_question_id: 0,
         delete_question_text: '',
-        addBatchQuestion() { this.batchQuestions.push(newBatchQuestion()); },
+        addBatchQuestion() { this.batchQuestions.push(newBatchQuestion()); refreshPreboardRichEditors(); },
         removeBatchQuestion(index) {
           if (this.batchQuestions.length <= 1) return;
           this.batchQuestions.splice(index, 1);
@@ -466,6 +507,7 @@ $adminBreadcrumbs = [
           if (!q.choices.some(function(c) { return c.letter === q.correct_answer; })) q.correct_answer = '';
         },
         validateBatchSubmit(ev) {
+          if (window.tinymce) tinymce.triggerSave();
           this.batchError = '';
           var validLetters = ['A','B','C','D','E','F','G','H','I','J'];
           for (var i = 0; i < this.batchQuestions.length; i++) {
@@ -527,6 +569,15 @@ $adminBreadcrumbs = [
           this.correct_answer = (d.correct && 'ABCDEFGHIJ'.indexOf(d.correct) >= 0) ? d.correct : '';
           this.explanation = d.explanation || '';
           this.questionModalOpen = true;
+          this.$nextTick(function () {
+            refreshPreboardRichEditors();
+            if (window.tinymce) {
+              var qEd = tinymce.get('edit-preboard-question-text');
+              if (qEd) qEd.setContent(this.question_text || '');
+              var eEd = tinymce.get('edit-preboard-explanation');
+              if (eEd) eEd.setContent(this.explanation || '');
+            }
+          }.bind(this));
         },
         openDeleteQuestion(id, text) {
           this.delete_question_id = id;
@@ -549,6 +600,15 @@ $adminBreadcrumbs = [
             this.correct_answer = this.editFromServer.correct_answer || '';
             this.explanation = this.editFromServer.explanation || '';
             this.questionModalOpen = true;
+            this.$nextTick(function () {
+              refreshPreboardRichEditors();
+              if (window.tinymce) {
+                var qEd = tinymce.get('edit-preboard-question-text');
+                if (qEd) qEd.setContent(this.question_text || '');
+                var eEd = tinymce.get('edit-preboard-explanation');
+                if (eEd) eEd.setContent(this.explanation || '');
+              }
+            }.bind(this));
           }
         }
       };
