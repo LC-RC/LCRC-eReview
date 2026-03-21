@@ -533,9 +533,13 @@ if (isset($_SESSION['google_redirect_uri'])) {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
-      margin-top: 0.05rem;
+      gap: 0.5rem;
+      margin-top: -0.05rem;
       padding-top: 0;
+    }
+    body.login-prototype .login-card #password-error {
+      margin-top: 0.15rem !important;
+      margin-bottom: 0 !important;
     }
     body.login-prototype .login-card .login-security-hint {
       margin: 0;
@@ -551,6 +555,18 @@ if (isset($_SESSION['google_redirect_uri'])) {
       font-size: 0.75rem;
       font-weight: 600;
       white-space: nowrap;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.6rem;
+      border: 1px solid transparent;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    body.login-prototype .login-card .login-password-actions .login-forgot-link:hover {
+      background: rgba(245, 158, 11, 0.12) !important;
+      border-color: rgba(245, 158, 11, 0.45) !important;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+      transform: translateY(-1px);
+      text-decoration: none !important;
+      color: #FCD34D !important;
     }
     body.login-prototype .login-card .login-social-actions {
       display: grid;
@@ -598,7 +614,8 @@ if (isset($_SESSION['google_redirect_uri'])) {
     }
     body.login-prototype .login-card .login-social-actions .login-google-btn:hover,
     body.login-prototype .login-card .login-social-actions .login-magic-btn:hover {
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
     }
     body.login-prototype .login-card .login-social-actions .login-magic-btn {
       background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%) !important;
@@ -608,7 +625,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
       transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
     body.login-prototype .login-card .login-social-actions .login-magic-btn:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       background: linear-gradient(180deg, #27364a 0%, #1f2937 100%) !important;
       border-color: rgba(245, 158, 11, 0.52) !important;
       box-shadow: 0 8px 20px rgba(245, 158, 11, 0.18);
@@ -688,7 +705,12 @@ if (isset($_SESSION['google_redirect_uri'])) {
     body.login-prototype .login-card #login-submit:hover { background: #1E40AF !important; transform: translateY(-2px); }
     body.login-prototype .login-card #login-submit:active { transform: translateY(0) scale(0.98); }
     body.login-prototype .login-card .login-google-btn { transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
-    body.login-prototype .login-card .login-google-btn:hover { transform: translateY(-2px); }
+    body.login-prototype .login-card .login-google-btn:hover {
+      transform: translateY(-3px);
+      background: #334155 !important;
+      border-color: rgba(31, 88, 195, 0.65) !important;
+      box-shadow: 0 14px 34px rgba(31, 88, 195, 0.22);
+    }
     body.login-prototype .login-card .login-google-btn:active { transform: translateY(0) scale(0.98); }
     body.login-prototype .login-card .or-divider { color: #64748b; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; }
     body.login-prototype .login-card .or-divider span:first-child,
@@ -705,7 +727,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
     body.login-prototype .login-card .social-btn:hover,
     body.login-prototype .login-card .login-google-btn:hover {
       background: #334155 !important;
-      border-color: rgba(245, 158, 11, 0.4) !important;
+      border-color: rgba(31, 88, 195, 0.65) !important;
     }
     body.login-prototype .login-card label[for="login-remember"] { color: #fff !important; }
     body.login-prototype .login-card label[for="login-remember"] span:first-child { color: #fff !important; font-weight: 500; }
@@ -1185,7 +1207,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
                 <i class="bi bi-shield-lock text-slate-500" aria-hidden="true"></i>
                 <span>Secure sign-in. We never share your data.</span>
               </p>
-              <a href="forgot_password.php" class="login-forgot-link text-xs font-medium hover:underline">Forgot password?</a>
+              <a href="forgot_password.php" class="login-forgot-link text-xs font-medium">Forgot password?</a>
             </div>
           </div>
 

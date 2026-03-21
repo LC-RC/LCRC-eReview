@@ -379,13 +379,6 @@ body.admin-app #sidebar {
 body.admin-app #sidebar .admin-sidebar-brand {
   display: none;
 }
-/* Burger button: remove blue focus outline */
-body.admin-app #sidebar button[aria-label="Toggle sidebar"],
-body.admin-app #sidebar button[aria-label="Toggle sidebar"]:focus,
-body.admin-app #sidebar button[aria-label="Toggle sidebar"]:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
 body.admin-app #sidebar nav a {
   padding-left: 0.5rem;
   padding-right: 0.5rem;

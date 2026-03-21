@@ -57,7 +57,7 @@ if (count($nameWords) <= 1) {
         </a>
       </li>
       <li class="mt-auto pt-3">
-        <a href="logout.php" class="student-nav-item student-nav-item--logout flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out" :class="collapsed ? 'justify-center' : ''">
+        <a href="logout.php" class="ereview-logout-trigger student-nav-item student-nav-item--logout flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out" :class="collapsed ? 'justify-center' : ''">
           <i class="bi bi-box-arrow-right shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
           <span class="font-medium truncate whitespace-nowrap transition-all duration-300" :class="collapsed ? 'opacity-0 w-0 overflow-hidden absolute pointer-events-none' : 'opacity-100'">Logout</span>
         </a>
@@ -150,3 +150,4 @@ if (count($nameWords) <= 1) {
   transition: transform 0.25s ease;
 }
 </style>
+<?php $ereviewLogoutModalVariant = 'student'; include __DIR__ . '/includes/logout_confirm_modal.php'; ?>

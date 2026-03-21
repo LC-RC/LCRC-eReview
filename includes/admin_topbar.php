@@ -17,7 +17,7 @@ $adminName = $_SESSION['full_name'] ?? 'Admin';
   }" @keydown.escape.window="closeAll()">
   <div class="admin-topbar-inner">
     <div class="admin-topbar-left">
-      <button type="button" aria-label="Toggle sidebar" class="admin-topbar-menu-btn" @click="toggleSidebar()">
+      <button type="button" id="admin-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar" class="admin-topbar-menu-btn" @click="toggleSidebar()">
         <span class="burger-icon" aria-hidden="true">
           <span class="burger-line burger-line--1"></span>
           <span class="burger-line burger-line--2"></span>
@@ -72,7 +72,7 @@ $adminName = $_SESSION['full_name'] ?? 'Admin';
             <p class="admin-topbar-dropdown-label">Account</p>
             <p class="admin-topbar-dropdown-name"><?php echo h($adminName); ?></p>
           </div>
-          <a href="logout.php" class="admin-topbar-dropdown-item admin-topbar-logout" role="menuitem">
+          <a href="logout.php" class="ereview-logout-trigger admin-topbar-dropdown-item admin-topbar-logout" role="menuitem" @click="userMenuOpen = false">
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
             <span>Log out</span>
           </a>

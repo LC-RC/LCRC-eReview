@@ -77,7 +77,7 @@
             <p class="student-topbar-dropdown-label">Account</p>
             <p class="student-topbar-dropdown-name"><?php echo h($_SESSION['full_name']); ?></p>
           </div>
-          <a href="logout.php" class="student-topbar-dropdown-item student-topbar-logout" role="menuitem">
+          <a href="logout.php" class="ereview-logout-trigger student-topbar-dropdown-item student-topbar-logout" role="menuitem" @click="userMenuOpen = false">
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
             <span>Log out</span>
           </a>
