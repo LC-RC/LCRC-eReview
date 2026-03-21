@@ -343,7 +343,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                 <div class="space-y-4">
                 <div>
                   <label class="admin-quiz-label">Question text</label>
-                  <textarea :name="'questions[' + index + '][text]'" x-model="q.text" rows="2" required class="input-custom w-full admin-quiz-input" placeholder="Enter the question..."></textarea>
+                  <textarea :name="'questions[' + index + '][text]'" x-model="q.text" rows="2" required class="input-custom w-full admin-quiz-input js-quiz-richtext" placeholder="Enter the question..."></textarea>
+                  <p class="text-xs text-gray-500 mt-1">You can use basic HTML, including table tags (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>).</p>
                 </div>
                 <div class="space-y-2">
                   <div>
@@ -370,7 +371,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                 <?php if ($hasExplanation): ?>
                 <div>
                   <label class="admin-quiz-label">Explanation (optional)</label>
-                  <textarea :name="'questions[' + index + '][explanation]'" x-model="q.explanation" rows="1" class="input-custom w-full admin-quiz-input text-sm" placeholder="Why the correct answer is right..."></textarea>
+                  <textarea :name="'questions[' + index + '][explanation]'" x-model="q.explanation" rows="1" class="input-custom w-full admin-quiz-input text-sm js-quiz-richtext" placeholder="Why the correct answer is right..."></textarea>
                 </div>
                 <?php endif; ?>
               </div>
@@ -462,7 +463,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         <div class="space-y-4">
           <div>
             <label class="admin-quiz-label">Question</label>
-            <textarea name="question_text" x-model="question_text" rows="3" required class="input-custom w-full admin-quiz-input"></textarea>
+            <textarea id="edit-question-text" name="question_text" x-model="question_text" rows="3" required class="input-custom w-full admin-quiz-input js-quiz-richtext"></textarea>
+            <p class="text-xs text-gray-500 mt-1">You can use basic HTML, including table tags (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>).</p>
           </div>
           <div class="space-y-2">
             <div>
@@ -517,7 +519,52 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.6/tinymce.min.js" referrerpolicy="origin"></script>
   <script>
+    function initQuizRichEditors(scopeEl) {
+      if (!window.tinymce) return;
+      var root = scopeEl || document;
+      var nodes = root.querySelectorAll ? root.querySelectorAll('textarea.js-quiz-richtext') : [];
+      nodes.forEach(function (el) {
+        if (!el.id) el.id = 'quiz-rich-' + Math.random().toString(36).slice(2, 10);
+        if (window.tinymce.get(el.id)) return;
+        tinymce.init({
+          selector: '#' + el.id,
+          menubar: false,
+          height: 220,
+          branding: false,
+          plugins: 'table lists link',
+          toolbar: 'undo redo | bold italic underline | bullist numlist | table | removeformat',
+          valid_elements: 'p,br,strong/b,em/i,u,sub,sup,ul,ol,li,table,thead,tbody,tfoot,tr,th[colspan|rowspan|scope],td[colspan|rowspan]',
+          forced_root_block: 'p',
+          setup: function (editor) {
+            editor.on('change input undo redo keyup', function () {
+              editor.save();
+            });
+          }
+        });
+      });
+    }
+
+    function refreshQuizRichEditors() {
+      window.setTimeout(function () {
+        initQuizRichEditors(document);
+      }, 0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initQuizRichEditors(document);
+      var observer = new MutationObserver(function () {
+        refreshQuizRichEditors();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      document.querySelectorAll('form').forEach(function (formEl) {
+        formEl.addEventListener('submit', function () {
+          if (window.tinymce) tinymce.triggerSave();
+        });
+      });
+    });
+
     function newBatchQuestion() {
       return {
         text: '',
@@ -547,6 +594,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         delete_question_text: '',
         addBatchQuestion() {
           this.batchQuestions.push(newBatchQuestion());
+          refreshQuizRichEditors();
         },
         removeBatchQuestion(index) {
           if (this.batchQuestions.length <= 1) return;
@@ -566,6 +614,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           if (!q.choices.some(function(c) { return c.letter === q.correct_answer; })) q.correct_answer = '';
         },
         validateBatchSubmit(ev) {
+          if (window.tinymce) tinymce.triggerSave();
           this.batchError = '';
           var validLetters = ['A','B','C','D','E','F','G','H','I','J'];
           for (var i = 0; i < this.batchQuestions.length; i++) {
@@ -625,6 +674,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           if (this.editChoices.length < 2) this.editChoices = [ {letter:'A',text:''}, {letter:'B',text:''} ];
           this.correct_answer = (d.correct && 'ABCDEFGHIJ'.indexOf(d.correct) >= 0) ? d.correct : '';
           this.questionModalOpen = true;
+          this.$nextTick(function () {
+            refreshQuizRichEditors();
+            if (window.tinymce) {
+              var ed = tinymce.get('edit-question-text');
+              if (ed) ed.setContent(this.question_text || '');
+            }
+          }.bind(this));
         },
         openDeleteQuestion(id, text) {
           this.delete_question_id = id;
@@ -646,6 +702,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
             if (this.editChoices.length < 2) this.editChoices = [ {letter:'A',text:''}, {letter:'B',text:''} ];
             this.correct_answer = this.editFromServer.correct_answer || '';
             this.questionModalOpen = true;
+            this.$nextTick(function () {
+              refreshQuizRichEditors();
+              if (window.tinymce) {
+                var ed = tinymce.get('edit-question-text');
+                if (ed) ed.setContent(this.question_text || '');
+              }
+            }.bind(this));
           }
         }
       };

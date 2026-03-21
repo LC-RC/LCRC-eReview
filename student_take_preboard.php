@@ -388,6 +388,31 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
       include __DIR__ . '/includes/_exam_ui_styles_inline.php';
     ?>
   </style>
+  <style>
+    .exam-question-text table,
+    .exam-choice-text table,
+    .quiz-rich-text table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+    }
+    .exam-question-text th,
+    .exam-question-text td,
+    .exam-choice-text th,
+    .exam-choice-text td,
+    .quiz-rich-text th,
+    .quiz-rich-text td {
+      border: 1px solid #cbd5e1;
+      padding: 0.4rem 0.55rem;
+      vertical-align: top;
+    }
+    .exam-question-text thead th,
+    .exam-choice-text thead th,
+    .quiz-rich-text thead th {
+      background: #f8fafc;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body class="font-sans antialiased exam-protected">
   <?php include 'student_sidebar.php'; ?>
@@ -510,7 +535,7 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
               ?>
               <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
                 <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $i + 1; ?> of <?php echo count($reviewQuestions); ?></div>
-                <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo nl2br(h($q['question_text'])); ?></div>
+                <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
                 <div class="space-y-2 mb-4">
                   <?php foreach ($choices as $letter => $choiceText): ?>
                     <?php
@@ -522,7 +547,7 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
                     <div class="review-choice flex items-start gap-3 p-3 rounded-xl border border-gray-200 <?php echo $cls; ?>">
                       <span class="review-choice-letter w-9 h-9 rounded-full flex items-center justify-center font-bold bg-gray-100 text-gray-700 shrink-0"><?php echo h($letter); ?></span>
                       <div class="flex-1">
-                        <div class="text-gray-800"><?php echo nl2br(h($choiceText)); ?></div>
+                        <div class="text-gray-800 quiz-rich-text"><?php echo renderQuizRichText($choiceText); ?></div>
                         <div class="text-xs mt-1">
                           <?php if ($isYourAnswer): ?>
                             <span class="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 font-semibold">Your answer</span>
@@ -589,7 +614,7 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
       <?php foreach ($questions as $idx => $q): $num = $idx + 1; ?>
       <div class="exam-question-card" id="q<?php echo $num; ?>">
         <div class="exam-question-label">Question <?php echo $num; ?> of <?php echo $totalQuestions; ?></div>
-        <h2 class="exam-question-text mb-6"><?php echo nl2br(h($q['question_text'])); ?></h2>
+        <div class="exam-question-text mb-6"><?php echo renderQuizRichText($q['question_text']); ?></div>
         <div class="exam-choices">
           <?php $choices = get_preboard_choices($q); foreach ($choices as $letter => $choiceText): ?>
             <?php $isSelected = (isset($savedAnswers[(int)$q['preboards_question_id']]) && $savedAnswers[(int)$q['preboards_question_id']] === $letter); ?>
@@ -597,7 +622,7 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
               <input type="radio" name="answer_<?php echo (int)$q['preboards_question_id']; ?>" value="<?php echo $letter; ?>" class="sr-only" data-question-id="<?php echo (int)$q['preboards_question_id']; ?>"
                 <?php echo $isSelected ? ' checked' : ''; ?>>
               <span class="exam-choice-letter"><?php echo $letter; ?></span>
-              <span class="exam-choice-text"><?php echo h($choiceText); ?></span>
+              <div class="exam-choice-text"><?php echo renderQuizRichText($choiceText); ?></div>
               <span class="exam-choice-check"><i class="bi bi-check"></i></span>
             </label>
           <?php endforeach; ?>

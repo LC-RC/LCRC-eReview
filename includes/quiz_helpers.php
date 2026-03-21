@@ -26,3 +26,81 @@ function getQuizTimeLimitSeconds($quizRow) {
   $mins = (int)($quizRow['time_limit_minutes'] ?? 30);
   return $mins * 60;
 }
+
+/**
+ * Render safe quiz HTML with support for table markup.
+ * Allows a small whitelist of tags and strips unsafe attributes.
+ */
+function renderQuizRichText($value) {
+  $value = (string)$value;
+  if ($value === '') return '';
+
+  // Keep plain text friendly (line breaks preserved) when no HTML tags are used.
+  if ($value === strip_tags($value)) {
+    return nl2br(h($value));
+  }
+
+  $allowedTags = [
+    'p','br','strong','b','em','i','u','sub','sup',
+    'ul','ol','li','table','thead','tbody','tfoot','tr','th','td'
+  ];
+  $allowedAttrs = [
+    'th' => ['colspan','rowspan','scope'],
+    'td' => ['colspan','rowspan'],
+  ];
+
+  $dom = new DOMDocument();
+  $previousUseInternalErrors = libxml_use_internal_errors(true);
+  $wrappedHtml = '<!DOCTYPE html><html><body>' . $value . '</body></html>';
+  $dom->loadHTML($wrappedHtml, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+  libxml_clear_errors();
+  libxml_use_internal_errors($previousUseInternalErrors);
+
+  $cleanNode = function (DOMNode $node) use (&$cleanNode, $allowedTags, $allowedAttrs, $dom) {
+    if ($node->nodeType === XML_ELEMENT_NODE) {
+      $tag = strtolower($node->nodeName);
+      if (!in_array($tag, $allowedTags, true)) {
+        if ($node->parentNode) {
+          while ($node->firstChild) {
+            $node->parentNode->insertBefore($node->firstChild, $node);
+          }
+          $node->parentNode->removeChild($node);
+        }
+        return;
+      }
+
+      if ($node->hasAttributes()) {
+        $toRemove = [];
+        foreach ($node->attributes as $attr) {
+          $name = strtolower($attr->name);
+          $allowedForTag = $allowedAttrs[$tag] ?? [];
+          if (!in_array($name, $allowedForTag, true)) {
+            $toRemove[] = $attr->name;
+          }
+        }
+        foreach ($toRemove as $attrName) {
+          $node->removeAttribute($attrName);
+        }
+      }
+    }
+
+    for ($i = $node->childNodes->length - 1; $i >= 0; $i--) {
+      $cleanNode($node->childNodes->item($i));
+    }
+  };
+
+  $body = $dom->getElementsByTagName('body')->item(0);
+  if (!$body) {
+    return nl2br(h($value));
+  }
+  // Clean children of <body>, not the body wrapper itself.
+  for ($i = $body->childNodes->length - 1; $i >= 0; $i--) {
+    $cleanNode($body->childNodes->item($i));
+  }
+
+  $html = '';
+  foreach ($body->childNodes as $child) {
+    $html .= $dom->saveHTML($child);
+  }
+  return $html;
+}
