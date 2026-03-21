@@ -1,13 +1,27 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/profile_avatar.php';
 requireRole('student');
 $pageTitle = 'Student Dashboard';
 $csrf = generateCSRFToken();
 
 $lastLoginAt = null;
 $uid = getCurrentUserId();
+$dashboardAvatarPath = '';
+$dashboardUseDefaultAvatar = 1;
+$dashboardAvatarInitial = ereview_avatar_initial($_SESSION['full_name'] ?? 'U');
 try {
-    $stmt = mysqli_prepare($conn, 'SELECT last_login_at FROM users WHERE user_id = ? LIMIT 1');
+    $hasProfilePicture = false;
+    $hasDefaultAvatar = false;
+    $cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
+    if ($cp1 && mysqli_fetch_assoc($cp1)) $hasProfilePicture = true;
+    $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
+    if ($cp2 && mysqli_fetch_assoc($cp2)) $hasDefaultAvatar = true;
+    $select = 'SELECT last_login_at';
+    if ($hasProfilePicture) $select .= ', profile_picture';
+    if ($hasDefaultAvatar) $select .= ', use_default_avatar';
+    $select .= ' FROM users WHERE user_id = ? LIMIT 1';
+    $stmt = mysqli_prepare($conn, $select);
     if ($stmt) {
         mysqli_stmt_bind_param($stmt, 'i', $uid);
         if (mysqli_stmt_execute($stmt)) {
@@ -15,6 +29,12 @@ try {
             $row = $res ? mysqli_fetch_assoc($res) : null;
             if ($row && !empty($row['last_login_at'])) {
                 $lastLoginAt = $row['last_login_at'];
+            }
+            if ($row) {
+                $dashboardAvatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
+                if ($hasDefaultAvatar) {
+                    $dashboardUseDefaultAvatar = !empty($row['use_default_avatar']) ? 1 : 0;
+                }
             }
         }
         mysqli_stmt_close($stmt);
@@ -78,8 +98,12 @@ if ($hour < 12) {
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
         <div>
           <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-4 text-white drop-shadow-sm">
-            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg">
-              <i class="bi bi-person-badge text-2xl" aria-hidden="true"></i>
+            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg overflow-hidden">
+              <?php if ($dashboardAvatarPath !== '' && !$dashboardUseDefaultAvatar): ?>
+                <img src="<?php echo h($dashboardAvatarPath); ?>" alt="" class="w-full h-full object-cover">
+              <?php else: ?>
+                <span class="text-xl font-semibold"><?php echo h($dashboardAvatarInitial); ?></span>
+              <?php endif; ?>
             </span>
             <span><?php echo h($greeting); ?>, <?php echo h($_SESSION['full_name']); ?></span>
           </h1>

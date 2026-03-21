@@ -1228,6 +1228,25 @@ unset($_SESSION['error']);
       line-height: 1.4;
       text-transform: uppercase;
     }
+    .reg-upload-box-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .reg-avatar-default-toggle {
+      justify-content: flex-end;
+    }
+    #reg-file-preview .text-left,
+    #reg-avatar-preview .text-left {
+      max-width: min(100%, 320px);
+      min-width: 0;
+    }
+    #reg-file-name,
+    #reg-avatar-name {
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
     body.registration-prototype .login-card .login-blurbs {
       margin-top: 1.5rem !important;
       padding-top: 1.1rem !important;
@@ -1478,30 +1497,58 @@ unset($_SESSION['error']);
               <p class="login-security-hint text-xs">Secure sign-in. We never share your data.</p>
             </div>
 
-            <span class="reg-section-label" id="reg-label-payment"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Payment</span>
-            <div class="reg-section reg-frame8-full space-y-2">
-              <label class="reg-top-label" for="register-payment-proof">Upload Payment Proof</label>
-              <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-file-zone" aria-describedby="reg-error-payment_proof">
-                <input type="file" name="payment_proof" id="register-payment-proof" required accept="image/*,application/pdf" class="hidden" aria-describedby="reg-error-payment_proof">
-                <div id="reg-file-placeholder">
-                  <p class="text-sm text-slate-400 mb-2"><i class="bi bi-cloud-arrow-up text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Drag file here or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-file-browse">browse</button></p>
-                  <p class="file-hint text-xs">Accepted: images, PDF. We use this to verify your payment.</p>
-                </div>
-                <div id="reg-file-preview" class="hidden">
-                  <div class="flex items-center gap-3 justify-center flex-wrap">
-                    <img id="reg-file-thumb" src="" alt="" class="w-14 h-14 object-cover rounded-lg border border-slate-600 hidden">
-                    <div class="text-left">
-                      <p class="text-sm font-medium text-slate-200" id="reg-file-name"></p>
-                      <p class="text-xs text-slate-500" id="reg-file-size"></p>
-                      <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden" id="reg-upload-progress-wrap">
-                        <div class="h-full bg-[#1F58C3] rounded-full transition-all duration-300" id="reg-upload-progress" style="width: 0%"></div>
+            <span class="reg-section-label" id="reg-label-payment"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Payment and profile</span>
+            <div class="reg-section reg-frame8-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+              <div class="reg-upload-box-wrap">
+                <label class="reg-top-label" for="register-payment-proof">Upload Payment Proof</label>
+                <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-file-zone" aria-describedby="reg-error-payment_proof">
+                  <input type="file" name="payment_proof" id="register-payment-proof" required accept="image/*,application/pdf" class="hidden" aria-describedby="reg-error-payment_proof">
+                  <div id="reg-file-placeholder">
+                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-cloud-arrow-up text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Drag file here or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-file-browse">browse</button></p>
+                    <p class="file-hint text-xs">Accepted: images, PDF. We use this to verify your payment.</p>
+                  </div>
+                  <div id="reg-file-preview" class="hidden">
+                    <div class="flex items-center gap-3 justify-center flex-wrap">
+                      <img id="reg-file-thumb" src="" alt="" class="w-14 h-14 object-cover rounded-lg border border-slate-600 hidden">
+                      <div class="text-left">
+                        <p class="text-sm font-medium text-slate-200" id="reg-file-name"></p>
+                        <p class="text-xs text-slate-500" id="reg-file-size"></p>
+                        <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden" id="reg-upload-progress-wrap">
+                          <div class="h-full bg-[#1F58C3] rounded-full transition-all duration-300" id="reg-upload-progress" style="width: 0%"></div>
+                        </div>
                       </div>
+                      <button type="button" id="reg-file-clear" class="text-slate-400 hover:text-white text-sm" aria-label="Remove file">Remove</button>
                     </div>
-                    <button type="button" id="reg-file-clear" class="text-slate-400 hover:text-white text-sm" aria-label="Remove file">Remove</button>
                   </div>
                 </div>
+                <span id="reg-error-payment_proof" class="reg-inline-error" role="alert" aria-live="polite"></span>
               </div>
-              <span id="reg-error-payment_proof" class="reg-inline-error" role="alert" aria-live="polite"></span>
+
+              <div class="reg-upload-box-wrap">
+                <label class="reg-top-label" for="register-profile-picture">Profile Picture</label>
+                <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-avatar-zone" aria-describedby="reg-error-profile_picture">
+                  <input type="file" name="profile_picture" id="register-profile-picture" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" aria-describedby="reg-error-profile_picture">
+                  <div id="reg-avatar-placeholder">
+                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-person-circle text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Upload photo or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-avatar-browse">browse</button></p>
+                    <p class="file-hint text-xs">Accepted: JPG, PNG, WEBP, GIF only. Videos and audio are not allowed.</p>
+                  </div>
+                  <div id="reg-avatar-preview" class="hidden">
+                    <div class="flex items-center gap-3 justify-center flex-wrap">
+                      <img id="reg-avatar-thumb" src="" alt="" class="w-14 h-14 object-cover rounded-full border border-slate-600 hidden">
+                      <div class="text-left">
+                        <p class="text-sm font-medium text-slate-200" id="reg-avatar-name"></p>
+                        <p class="text-xs text-slate-500" id="reg-avatar-size"></p>
+                      </div>
+                      <button type="button" id="reg-avatar-clear" class="text-slate-400 hover:text-white text-sm" aria-label="Remove image">Remove</button>
+                    </div>
+                  </div>
+                </div>
+                <label class="reg-avatar-default-toggle inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="register-use-default-avatar" name="use_default_avatar" value="1" checked class="rounded border-slate-500 bg-slate-800">
+                  Use default initial avatar
+                </label>
+                <span id="reg-error-profile_picture" class="reg-inline-error" role="alert" aria-live="polite"></span>
+              </div>
             </div>
           </div>
 
@@ -1588,6 +1635,16 @@ unset($_SESSION['error']);
       var fileProgressWrap = document.getElementById('reg-upload-progress-wrap');
       var fileBrowse = document.getElementById('reg-file-browse');
       var fileClear = document.getElementById('reg-file-clear');
+      var avatarInput = document.getElementById('register-profile-picture');
+      var avatarZone = document.getElementById('reg-avatar-zone');
+      var avatarPlaceholder = document.getElementById('reg-avatar-placeholder');
+      var avatarPreview = document.getElementById('reg-avatar-preview');
+      var avatarThumb = document.getElementById('reg-avatar-thumb');
+      var avatarNameEl = document.getElementById('reg-avatar-name');
+      var avatarSizeEl = document.getElementById('reg-avatar-size');
+      var avatarBrowse = document.getElementById('reg-avatar-browse');
+      var avatarClear = document.getElementById('reg-avatar-clear');
+      var useDefaultAvatar = document.getElementById('register-use-default-avatar');
       var regForm = document.getElementById('reg-form');
       var regSubmitBtn = document.getElementById('reg-submit-btn');
       var regSubmitText = document.getElementById('reg-submit-text');
@@ -1611,7 +1668,8 @@ unset($_SESSION['error']);
         school: 'reg-error-school',
         review_type: 'reg-error-review_type',
         password: 'reg-error-password',
-        payment_proof: 'reg-error-payment_proof'
+        payment_proof: 'reg-error-payment_proof',
+        profile_picture: 'reg-error-profile_picture'
       };
       function setInlineError(fieldKey, message) {
         var id = inlineErrorIds[fieldKey];
@@ -1622,6 +1680,7 @@ unset($_SESSION['error']);
         else if (fieldKey === 'review_type') control = document.getElementById('reg-review_type');
         else if (fieldKey === 'password') control = document.getElementById('register-password');
         else if (fieldKey === 'payment_proof') control = document.getElementById('register-payment-proof');
+        else if (fieldKey === 'profile_picture') control = document.getElementById('register-profile-picture');
         var el = id ? document.getElementById(id) : null;
         if (el) {
           el.textContent = message || '';
@@ -1629,6 +1688,10 @@ unset($_SESSION['error']);
         if (fieldKey === 'payment_proof') {
           var zone = document.getElementById('reg-file-zone');
           if (zone) zone.classList.toggle('is-invalid', !!message);
+        }
+        if (fieldKey === 'profile_picture') {
+          var avatarZoneEl = document.getElementById('reg-avatar-zone');
+          if (avatarZoneEl) avatarZoneEl.classList.toggle('is-invalid', !!message);
         }
         if (control) {
           if (message) {
@@ -1668,6 +1731,8 @@ unset($_SESSION['error']);
         });
         var fileZone = document.getElementById('reg-file-zone');
         if (fileZone) fileZone.classList.remove('is-invalid');
+        var avatarZoneEl = document.getElementById('reg-avatar-zone');
+        if (avatarZoneEl) avatarZoneEl.classList.remove('is-invalid');
       }
       function normalizeFullNameInput(val) {
         if (!val) return '';
@@ -1709,6 +1774,8 @@ unset($_SESSION['error']);
         var confirmRaw = confirmInput ? confirmInput.value : '';
         var confirm = (confirmRaw || '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
+        var avatarInputEl = document.getElementById('register-profile-picture');
+        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         var firstInvalid = null;
         var messages = [];
         var fnVal = validateFullNameValue(fullName ? fullName.value : '');
@@ -1775,6 +1842,23 @@ unset($_SESSION['error']);
           if (fileZone) fileZone.classList.add('is-invalid');
           if (!firstInvalid) firstInvalid = fileZone;
         }
+        if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length > 0) {
+          var af = avatarInputEl.files[0];
+          var avatarAllowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+          var avatarExt = (af.name.split('.').pop() || '').toLowerCase();
+          var avatarAllowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+          if (!avatarAllowedTypes.includes(af.type) || !avatarAllowedExt.includes(avatarExt)) {
+            setInlineError('profile_picture', 'Please upload JPG, PNG, WEBP, or GIF only.');
+            messages.push('Invalid profile picture type. Upload image files only.');
+            if (avatarZone) avatarZone.classList.add('is-invalid');
+            if (!firstInvalid) firstInvalid = avatarZone || avatarInputEl;
+          }
+        } else if (useDefaultAvatarEl && !useDefaultAvatarEl.checked) {
+          setInlineError('profile_picture', 'Upload a profile picture or select default avatar.');
+          messages.push('Choose a profile picture or use the default initial avatar.');
+          if (avatarZone) avatarZone.classList.add('is-invalid');
+          if (!firstInvalid) firstInvalid = avatarZone || useDefaultAvatarEl;
+        }
         return { valid: !firstInvalid, firstInvalid: firstInvalid, messages: messages };
       }
       function scrollToFirstError(el) {
@@ -1794,6 +1878,8 @@ unset($_SESSION['error']);
         var pw = (passwordInput ? passwordInput.value : '').trim();
         var confirm = (confirmInput ? confirmInput.value : '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
+        var avatarInputEl = document.getElementById('register-profile-picture');
+        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         if (!validateFullNameValue(fullName ? fullName.value : '').valid) return false;
         if (!validateEmailValue(email ? email.value : '').valid) return false;
         if (!school || !school.value) return false;
@@ -1806,6 +1892,14 @@ unset($_SESSION['error']);
         var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
         var ext = (f.name.split('.').pop() || '').toLowerCase();
         if (!allowedTypes.includes(f.type) || !['jpg', 'jpeg', 'png', 'pdf'].includes(ext)) return false;
+        if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length > 0) {
+          var af = avatarInputEl.files[0];
+          var avatarAllowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+          var avatarExt = (af.name.split('.').pop() || '').toLowerCase();
+          if (!avatarAllowedTypes.includes(af.type) || !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(avatarExt)) return false;
+        } else if (useDefaultAvatarEl && !useDefaultAvatarEl.checked) {
+          return false;
+        }
         return true;
       }
       function getFormCompleteCount() {
@@ -1816,6 +1910,8 @@ unset($_SESSION['error']);
         var pw = passwordInput ? passwordInput.value : '';
         var confirm = confirmInput ? confirmInput.value : '';
         var fileInputEl = document.getElementById('register-payment-proof');
+        var avatarInputEl = document.getElementById('register-profile-picture');
+        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         var n = 0;
         if (fullName && fullName.value.trim()) n++;
         if (email && email.value.trim()) n++;
@@ -1824,6 +1920,7 @@ unset($_SESSION['error']);
         if (pw && pw.length) n++;
         if (confirm && confirm.length) n++;
         if (fileInputEl && fileInputEl.files && fileInputEl.files.length) n++;
+        if ((avatarInputEl && avatarInputEl.files && avatarInputEl.files.length) || (useDefaultAvatarEl && useDefaultAvatarEl.checked)) n++;
         return n;
       }
       function updateSubmitState() {
@@ -1839,8 +1936,8 @@ unset($_SESSION['error']);
               hintEl.textContent = 'Complete the fields above to continue.';
               hintEl.classList.remove('reg-hint-complete');
             } else {
-              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 7 complete — fill all required fields to submit.';
-              hintEl.classList.toggle('reg-hint-complete', count >= 7);
+              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 8 complete — fill all required fields to submit.';
+              hintEl.classList.toggle('reg-hint-complete', count >= 8);
             }
             hintEl.classList.remove('hidden');
           }
@@ -2082,6 +2179,8 @@ unset($_SESSION['error']);
       }
       var allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
       var allowedFileExt = ['jpg', 'jpeg', 'png', 'pdf'];
+      var allowedAvatarTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      var allowedAvatarExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
       function isAllowedPaymentFile(file) {
         if (!file) return false;
         var ext = (file.name.split('.').pop() || '').toLowerCase();
@@ -2094,6 +2193,16 @@ unset($_SESSION['error']);
         if (errModal && errTitle && errMsg) {
           errTitle.textContent = 'Invalid file type';
           errMsg.innerHTML = 'Please upload an image (JPG, PNG) or PDF file for payment verification.';
+          errModal.classList.add('is-active');
+        }
+      }
+      function showInvalidAvatarModal() {
+        var errModal = document.getElementById('reg-modal-error');
+        var errTitle = document.getElementById('reg-error-title');
+        var errMsg = document.getElementById('reg-error-message');
+        if (errModal && errTitle && errMsg) {
+          errTitle.textContent = 'Invalid profile picture';
+          errMsg.innerHTML = 'Please upload JPG, PNG, WEBP, or GIF only. Video, audio, and other file types are not allowed.';
           errModal.classList.add('is-active');
         }
       }
@@ -2144,6 +2253,81 @@ unset($_SESSION['error']);
           fileInput.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }
+      function syncAvatarZoneState() {
+        if (!avatarInput || !avatarZone || !useDefaultAvatar) return;
+        avatarZone.classList.toggle('opacity-70', !!useDefaultAvatar.checked);
+      }
+      if (avatarBrowse && avatarInput) avatarBrowse.addEventListener('click', function () { avatarInput.click(); });
+      if (avatarZone && avatarInput) {
+        avatarZone.addEventListener('dragover', function (e) { e.preventDefault(); avatarZone.classList.add('dragover'); });
+        avatarZone.addEventListener('dragleave', function () { avatarZone.classList.remove('dragover'); });
+        avatarZone.addEventListener('drop', function (e) {
+          e.preventDefault();
+          avatarZone.classList.remove('dragover');
+          if (e.dataTransfer.files.length) avatarInput.files = e.dataTransfer.files;
+          avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+      if (useDefaultAvatar) {
+        useDefaultAvatar.addEventListener('change', function () {
+          if (this.checked && avatarInput) {
+            avatarInput.value = '';
+            if (avatarInput) avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setInlineError('profile_picture', '');
+          updateSubmitState();
+          syncAvatarZoneState();
+        });
+      }
+      if (avatarInput && avatarPlaceholder && avatarPreview && avatarThumb && avatarNameEl && avatarSizeEl && avatarClear) {
+        avatarInput.addEventListener('change', function () {
+          var file = this.files[0];
+          if (!file) {
+            avatarPlaceholder.classList.remove('hidden');
+            avatarPreview.classList.add('hidden');
+            if (avatarZone) avatarZone.classList.remove('has-file');
+            setInlineError('profile_picture', '');
+            syncAvatarZoneState();
+            updateSubmitState();
+            return;
+          }
+          var ext = (file.name.split('.').pop() || '').toLowerCase();
+          if (allowedAvatarTypes.indexOf(file.type) === -1 || allowedAvatarExt.indexOf(ext) === -1) {
+            this.value = '';
+            avatarPlaceholder.classList.remove('hidden');
+            avatarPreview.classList.add('hidden');
+            if (avatarZone) avatarZone.classList.remove('has-file');
+            setInlineError('profile_picture', 'Please upload JPG, PNG, WEBP, or GIF only.');
+            if (avatarZone) avatarZone.classList.add('is-invalid');
+            showInvalidAvatarModal();
+            updateSubmitState();
+            return;
+          }
+          if (useDefaultAvatar) useDefaultAvatar.checked = false;
+          setInlineError('profile_picture', '');
+          if (avatarZone) avatarZone.classList.remove('is-invalid');
+          if (avatarZone) avatarZone.classList.add('has-file');
+          avatarPlaceholder.classList.add('hidden');
+          avatarPreview.classList.remove('hidden');
+          avatarNameEl.textContent = file.name;
+          avatarSizeEl.textContent = formatSize(file.size);
+          avatarThumb.classList.add('hidden');
+          if (file.type.indexOf('image/') === 0) {
+            var aurl = URL.createObjectURL(file);
+            avatarThumb.src = aurl;
+            avatarThumb.alt = file.name;
+            avatarThumb.classList.remove('hidden');
+          }
+          syncAvatarZoneState();
+          updateSubmitState();
+        });
+        avatarClear.addEventListener('click', function () {
+          avatarInput.value = '';
+          if (useDefaultAvatar) useDefaultAvatar.checked = true;
+          avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+      syncAvatarZoneState();
 
       if (regForm && regSubmitBtn && regSubmitText && regSubmitSpinner && regSubmitArrow) {
         regForm.addEventListener('submit', function (e) {

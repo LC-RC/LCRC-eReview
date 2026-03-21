@@ -8,6 +8,7 @@ body.admin-app {
   background: #0d0d0d;
   color: #a1a1aa;
   font-weight: 400;
+  overflow-x: hidden;
 }
 
 body.admin-app #main {
@@ -21,6 +22,9 @@ body.admin-app #app-sidebar {
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
   transition: box-shadow 0.2s ease;
+  /* Breathing room above OS / browser edge (h-screen is flush to 100vh otherwise) */
+  box-sizing: border-box !important;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
 }
 
 body.admin-app #app-sidebar .p-5.bg-white\/10 {
@@ -93,19 +97,25 @@ body.admin-app .admin-topbar .text-white\/60 {
 }
 
 /* --- Admin topbar (student-style UX, admin theme) --- */
+/* No negative margins: unlike student main (px-5), admin main has no horizontal padding, so -20px
+   pulled the bar toward the sidebar and crowded the burger. Inset matches .admin-content rhythm. */
 body.admin-app .admin-topbar-modern {
-  margin-left: -20px;
-  margin-right: -20px;
+  margin-left: 0;
+  margin-right: 0;
 }
 body.admin-app .admin-topbar-modern .admin-topbar-inner {
-  min-height: 80px;
-  padding-left: 12px;
-  padding-right: 12px;
+  min-height: var(--app-shell-topbar-height, 80px);
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: linear-gradient(to bottom, #0a0a0a 0%, #0d0d0d 55%, #0a0a0a 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -116,12 +126,13 @@ body.admin-app .admin-topbar-left {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  flex: 1;
-  max-width: 480px;
+  flex: 1 1 auto;
+  max-width: min(480px, 52%);
 }
 body.admin-app .admin-topbar-brand {
   color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
+  flex-shrink: 0;
 }
 body.admin-app .admin-topbar-brand-icon {
   font-size: 1.25rem;
@@ -213,8 +224,10 @@ body.admin-app .admin-topbar-search:focus { outline: none; }
 body.admin-app .admin-topbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
 }
 body.admin-app .admin-topbar-time {
   display: flex;
@@ -308,7 +321,7 @@ body.admin-app .admin-topbar-name {
   font-size: 0.875rem;
   font-weight: 500;
   color: rgba(255,255,255,0.9);
-  max-width: 140px;
+  max-width: min(240px, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1237,6 +1250,8 @@ body.admin-app .admin-sidebar-section:first-child {
 
 body.admin-app .admin-sidebar-footer {
   border-top-color: rgba(255, 255, 255, 0.06);
+  margin-bottom: 0;
+  padding-bottom: 0.25rem;
 }
 
 body.admin-app .admin-sidebar-section-label {

@@ -23,9 +23,15 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
        data-storage-key="<?php echo h($storageKey); ?>"
        aria-label="<?php echo $appShellTheme === 'admin' ? 'Admin' : 'Student'; ?> navigation">
   <?php if ($appShellSidebarHeader === 'profile'): ?>
-  <div class="app-shell-sidebar-header app-shell-sidebar-header--profile p-4 border-b border-white/15 flex items-center shrink-0 min-h-[80px] transition-all duration-300 app-shell-hide-when-collapsed-center">
-    <a href="<?php echo h($appShellProfileHref ?? 'student_dashboard.php'); ?>" class="student-sidebar-brand flex items-center gap-3 min-w-0 overflow-hidden rounded-xl px-2 py-2 -mx-2 transition-all duration-300 w-full app-shell-brand-link">
-      <span class="student-sidebar-avatar shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg bg-white/20 border-2 border-white/30 transition-transform duration-300" aria-hidden="true"><?php echo h($appShellProfileInitial ?? 'U'); ?></span>
+  <div class="app-shell-sidebar-header app-shell-sidebar-header--profile px-4 py-2.5 border-b border-white/15 flex items-center shrink-0 transition-all duration-300 app-shell-hide-when-collapsed-center">
+    <a href="<?php echo h($appShellProfileHref ?? 'student_dashboard.php'); ?>" class="student-sidebar-brand flex items-center gap-3 min-w-0 overflow-hidden rounded-xl px-2 py-1.5 -mx-2 transition-all duration-300 w-full app-shell-brand-link">
+      <span class="student-sidebar-avatar shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg bg-white/20 border-2 border-white/30 transition-transform duration-300 overflow-hidden" aria-hidden="true">
+        <?php if (!empty($appShellProfileImage)): ?>
+          <img src="<?php echo h($appShellProfileImage); ?>" alt="" class="w-full h-full object-cover" loading="lazy">
+        <?php else: ?>
+          <?php echo h($appShellProfileInitial ?? 'U'); ?>
+        <?php endif; ?>
+      </span>
       <span class="app-shell-sidebar-profile-name text-white font-bold text-lg tracking-tight truncate transition-all duration-300"><?php echo h($appShellProfileName ?? 'User'); ?></span>
     </a>
   </div>

@@ -2,6 +2,35 @@
 require_once 'db.php';
 require_once 'email_verification.php';
 
+function ensureRegistrationProfileColumns($conn) {
+    $hasUserProfilePicture = false;
+    $hasUserDefaultAvatar = false;
+    $hasPendingProfilePicture = false;
+    $hasPendingDefaultAvatar = false;
+
+    $c1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
+    if ($c1 && mysqli_fetch_assoc($c1)) $hasUserProfilePicture = true;
+    $c2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
+    if ($c2 && mysqli_fetch_assoc($c2)) $hasUserDefaultAvatar = true;
+    $c3 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'profile_picture'");
+    if ($c3 && mysqli_fetch_assoc($c3)) $hasPendingProfilePicture = true;
+    $c4 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'use_default_avatar'");
+    if ($c4 && mysqli_fetch_assoc($c4)) $hasPendingDefaultAvatar = true;
+
+    if (!$hasUserProfilePicture) {
+        @mysqli_query($conn, "ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255) NULL AFTER payment_proof");
+    }
+    if (!$hasUserDefaultAvatar) {
+        @mysqli_query($conn, "ALTER TABLE users ADD COLUMN use_default_avatar TINYINT(1) NOT NULL DEFAULT 1 AFTER profile_picture");
+    }
+    if (!$hasPendingProfilePicture) {
+        @mysqli_query($conn, "ALTER TABLE pending_registrations ADD COLUMN profile_picture VARCHAR(255) NULL AFTER payment_proof");
+    }
+    if (!$hasPendingDefaultAvatar) {
+        @mysqli_query($conn, "ALTER TABLE pending_registrations ADD COLUMN use_default_avatar TINYINT(1) NOT NULL DEFAULT 1 AFTER profile_picture");
+    }
+}
+
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
     || (!empty($_GET['ajax']) || (!empty($_POST['ajax'])));
 
@@ -17,6 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
+ensureRegistrationProfileColumns($conn);
+
 $full_name_raw = $_POST['full_name'] ?? '';
 $full_name = trim(preg_replace('/\s+/', ' ', $full_name_raw));
 $review_type = $_POST['review_type'] ?? 'reviewee';
@@ -28,6 +59,7 @@ $password_raw = $_POST['password'] ?? '';
 $password = trim($password_raw);
 $password_confirm_raw = $_POST['password_confirm'] ?? '';
 $password_confirm = trim($password_confirm_raw);
+$useDefaultAvatar = isset($_POST['use_default_avatar']) ? 1 : 0;
 
 if (!in_array($review_type, ['reviewee', 'undergrad'])) $review_type = 'reviewee';
 if ($school !== 'Other') $school_other = null;
@@ -172,6 +204,51 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
     exit;
 }
 
+$profilePicturePath = null;
+$allowed_avatar_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+$allowed_avatar_ext = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
+    if ($_FILES['profile_picture']['error'] !== UPLOAD_ERR_OK) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
+        $_SESSION['error'] = 'Failed to upload profile picture.';
+        header('Location: registration.php');
+        exit;
+    }
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $_FILES['profile_picture']['tmp_name']);
+    finfo_close($finfo);
+    $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+    if (!in_array($mime, $allowed_avatar_mimes, true) || !in_array($ext, $allowed_avatar_ext, true)) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.']);
+        $_SESSION['error'] = 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.';
+        header('Location: registration.php');
+        exit;
+    }
+    $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'avatars';
+    if (!is_dir($uploadsDir)) {
+        mkdir($uploadsDir, 0777, true);
+    }
+    $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+    $filename = 'avatar_' . uniqid('', true) . ($safeExt ? ('.' . $safeExt) : '');
+    $target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
+    if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target)) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
+        $_SESSION['error'] = 'Failed to upload profile picture.';
+        header('Location: registration.php');
+        exit;
+    }
+    $profilePicturePath = 'uploads/avatars/' . $filename;
+}
+if ($profilePicturePath === null) {
+    if (!$useDefaultAvatar) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Upload a profile picture or choose the default avatar option.']);
+        $_SESSION['error'] = 'Upload a profile picture or choose the default avatar option.';
+        header('Location: registration.php');
+        exit;
+    }
+    $useDefaultAvatar = 1;
+}
+
 $hashed = password_hash($password, PASSWORD_DEFAULT);
 
 $delPending = mysqli_prepare($conn, "DELETE FROM pending_registrations WHERE email = ?");
@@ -188,17 +265,36 @@ $verificationUrl = createPendingRegistration([
     'school' => $school,
     'school_other' => $school_other,
     'payment_proof' => $uploadedPath,
+    'profile_picture' => $profilePicturePath,
+    'use_default_avatar' => $useDefaultAvatar,
     'password_hash' => $hashed,
 ]);
 
 if ($verificationUrl === null) {
-    if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered or a verification was already sent. Please check your email or use a different address.']);
+    $detail = function_exists('getLastPendingRegistrationError') ? trim(getLastPendingRegistrationError()) : '';
+    $msg = 'This email is already registered or a verification was already sent. Please check your email or use a different address.';
+    if ($detail !== '') {
+        $msg .= ' Details: ' . $detail;
+    }
+    if ($isAjax) sendJson(['success' => false, 'error' => $msg]);
     $_SESSION['error'] = 'Registration could not be created. Please try again.';
     header('Location: registration.php');
     exit;
 }
 
 $emailSent = sendVerificationEmail($email, $verificationUrl);
+
+if (!$emailSent) {
+    if ($isAjax) {
+        sendJson([
+            'success' => false,
+            'error' => 'Registration was saved, but we could not send the verification email right now. Please try again in a moment.'
+        ]);
+    }
+    $_SESSION['error'] = 'Registration was saved, but we could not send the verification email right now. Please try again in a moment.';
+    header('Location: registration.php');
+    exit;
+}
 
 if ($isAjax) {
     sendJson([

@@ -10,6 +10,18 @@
   --app-shell-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Sidebar header bottom border lines up with topbar inner (same box + min-height) */
+#app-sidebar .app-shell-sidebar-header--profile,
+#app-sidebar .app-shell-sidebar-header--brand {
+  box-sizing: border-box;
+  min-height: var(--app-shell-topbar-height);
+}
+
+/* Prevent full-bleed topbar negative margins from causing horizontal scroll */
+body.app-shell--student {
+  overflow-x: hidden;
+}
+
 /* ---- Student sidebar width + main offset (admin uses admin.css) ---- */
 #app-sidebar.app-shell-sidebar--student {
   width: var(--app-shell-sidebar-collapsed);
@@ -228,7 +240,7 @@ body.sidebar-expanded #app-sidebar {
   --topbar-bg: #ffffff;
   --topbar-border: rgba(22, 101, 160, 0.08);
   --topbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --topbar-height: 80px;
+  --topbar-height: var(--app-shell-topbar-height);
   --topbar-radius: 16px;
   --brand: #1665a0;
   --brand-light: rgba(22, 101, 160, 0.1);
@@ -245,14 +257,18 @@ body.sidebar-expanded #app-sidebar {
 }
 
 .student-topbar-inner {
-  min-height: var(--topbar-height);
+  min-height: var(--app-shell-topbar-height);
   padding-left: 12px;
   padding-right: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: linear-gradient(to bottom, #ffffff 0%, #f5f8ff 55%, #eef4ff 100%);
   border-bottom: 1px solid var(--topbar-border);
   box-shadow: var(--topbar-shadow);
@@ -264,13 +280,14 @@ body.sidebar-expanded #app-sidebar {
   align-items: center;
   gap: 12px;
   min-width: 0;
-  flex: 1;
-  max-width: 480px;
+  flex: 1 1 auto;
+  max-width: min(480px, 52%);
 }
 
 .student-topbar-brand {
   color: var(--text);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .student-topbar-brand:hover {
@@ -425,8 +442,10 @@ body.sidebar-expanded .student-topbar-menu-btn .burger-line--3 {
 .student-topbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 .student-topbar-time {
@@ -626,7 +645,7 @@ body.sidebar-expanded .student-topbar-menu-btn .burger-line--3 {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text);
-  max-width: 120px;
+  max-width: min(240px, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

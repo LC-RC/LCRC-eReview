@@ -9,6 +9,18 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 }
 
 const EMAIL_VERIFICATION_EXPIRY_HOURS = 24;
+global $ereviewLastPendingRegistrationError;
+$ereviewLastPendingRegistrationError = '';
+
+function setLastPendingRegistrationError($message) {
+    global $ereviewLastPendingRegistrationError;
+    $ereviewLastPendingRegistrationError = (string)$message;
+}
+
+function getLastPendingRegistrationError() {
+    global $ereviewLastPendingRegistrationError;
+    return (string)$ereviewLastPendingRegistrationError;
+}
 
 function getVerificationBaseUrl() {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -27,6 +39,7 @@ function getVerificationBaseUrl() {
  */
 function createPendingRegistration($data) {
     global $conn;
+    setLastPendingRegistrationError('');
     $email = trim($data['email'] ?? '');
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return null;
@@ -36,8 +49,11 @@ function createPendingRegistration($data) {
     $school = trim($data['school'] ?? '');
     $schoolOther = isset($data['school_other']) ? trim($data['school_other']) : null;
     $paymentProof = trim($data['payment_proof'] ?? '');
+    $profilePicture = trim($data['profile_picture'] ?? '');
+    $useDefaultAvatar = !empty($data['use_default_avatar']) ? 1 : 0;
     $passwordHash = $data['password_hash'] ?? '';
     if ($fullName === '' || $school === '' || $passwordHash === '') {
+        setLastPendingRegistrationError('Missing required registration fields.');
         return null;
     }
     if ($reviewType !== 'reviewee') {
@@ -75,6 +91,7 @@ function createPendingRegistration($data) {
         mysqli_stmt_execute($check);
         if (mysqli_fetch_assoc(mysqli_stmt_get_result($check))) {
             mysqli_stmt_close($check);
+            setLastPendingRegistrationError('Email is already verified and registered.');
             return null;
         }
         mysqli_stmt_close($check);
@@ -85,6 +102,7 @@ function createPendingRegistration($data) {
         mysqli_stmt_execute($check);
         if (mysqli_fetch_assoc(mysqli_stmt_get_result($check))) {
             mysqli_stmt_close($check);
+            setLastPendingRegistrationError('Email is already registered.');
             return null;
         }
         mysqli_stmt_close($check);
@@ -95,16 +113,54 @@ function createPendingRegistration($data) {
     $tokenHash = hash('sha256', $validator);
     $expiresAt = date('Y-m-d H:i:s', time() + EMAIL_VERIFICATION_EXPIRY_HOURS * 3600);
 
-    $stmt = mysqli_prepare($conn,
-        "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    );
-    if (!$stmt) return null;
-    mysqli_stmt_bind_param($stmt, 'ssssssssss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $passwordHash, $selector, $tokenHash, $expiresAt);
-    if (!mysqli_stmt_execute($stmt)) {
-        mysqli_stmt_close($stmt);
+    $hasPendingProfilePicture = false;
+    $hasPendingDefaultAvatar = false;
+    $cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'profile_picture'");
+    if ($cp1 && mysqli_fetch_assoc($cp1)) $hasPendingProfilePicture = true;
+    $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'use_default_avatar'");
+    if ($cp2 && mysqli_fetch_assoc($cp2)) $hasPendingDefaultAvatar = true;
+
+    if ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
+        $stmt = mysqli_prepare($conn,
+            "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+    } else {
+        $stmt = mysqli_prepare($conn,
+            "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+    }
+    if (!$stmt) {
+        setLastPendingRegistrationError('Could not prepare pending registration query.');
         return null;
     }
-    mysqli_stmt_close($stmt);
+    if ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
+        mysqli_stmt_bind_param($stmt, 'sssssssissss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $profilePicture, $useDefaultAvatar, $passwordHash, $selector, $tokenHash, $expiresAt);
+    } else {
+        mysqli_stmt_bind_param($stmt, 'ssssssssss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $passwordHash, $selector, $tokenHash, $expiresAt);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+        $firstError = mysqli_error($conn);
+        mysqli_stmt_close($stmt);
+        // Fallback insert (without profile fields) so email verification is not blocked by schema mismatch.
+        $fallbackStmt = mysqli_prepare($conn,
+            "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        if (!$fallbackStmt) {
+            setLastPendingRegistrationError('Pending insert failed: ' . $firstError);
+            return null;
+        }
+        mysqli_stmt_bind_param($fallbackStmt, 'ssssssssss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $passwordHash, $selector, $tokenHash, $expiresAt);
+        if (!mysqli_stmt_execute($fallbackStmt)) {
+            $fallbackError = mysqli_error($conn);
+            mysqli_stmt_close($fallbackStmt);
+            setLastPendingRegistrationError('Pending insert failed: ' . $firstError . ' | Fallback failed: ' . $fallbackError);
+            return null;
+        }
+        mysqli_stmt_close($fallbackStmt);
+        setLastPendingRegistrationError('Profile fields skipped for pending insert due schema/constraint mismatch.');
+    } else {
+        mysqli_stmt_close($stmt);
+    }
 
     $validatorHex = bin2hex($validator);
     $tokenParam = $selector . '.' . $validatorHex;
@@ -125,7 +181,17 @@ function validateVerificationToken($rawToken) {
     if (strlen($validatorHex) !== 64 || !ctype_xdigit($validatorHex)) return null;
 
     $nowStr = date('Y-m-d H:i:s', time());
-    $stmt = mysqli_prepare($conn, "SELECT id, email, full_name, review_type, school, school_other, payment_proof, password_hash, token_hash FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1");
+    $hasPendingProfilePicture = false;
+    $hasPendingDefaultAvatar = false;
+    $cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'profile_picture'");
+    if ($cp1 && mysqli_fetch_assoc($cp1)) $hasPendingProfilePicture = true;
+    $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'use_default_avatar'");
+    if ($cp2 && mysqli_fetch_assoc($cp2)) $hasPendingDefaultAvatar = true;
+
+    $selectSql = $hasPendingProfilePicture && $hasPendingDefaultAvatar
+        ? "SELECT id, email, full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, token_hash FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1"
+        : "SELECT id, email, full_name, review_type, school, school_other, payment_proof, password_hash, token_hash FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1";
+    $stmt = mysqli_prepare($conn, $selectSql);
     if (!$stmt) return null;
     mysqli_stmt_bind_param($stmt, 'ss', $selector, $nowStr);
     mysqli_stmt_execute($stmt);
@@ -151,6 +217,8 @@ function completeVerificationAndCreateUser($pendingRow) {
     $school = $pendingRow['school'];
     $schoolOther = $pendingRow['school_other'];
     $paymentProof = $pendingRow['payment_proof'];
+    $profilePicture = trim((string)($pendingRow['profile_picture'] ?? ''));
+    $useDefaultAvatar = !empty($pendingRow['use_default_avatar']) ? 1 : 0;
     $passwordHash = $pendingRow['password_hash'];
     $pendingId = (int) $pendingRow['id'];
 
@@ -158,12 +226,29 @@ function completeVerificationAndCreateUser($pendingRow) {
     $cols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
     if ($cols && mysqli_fetch_assoc($cols)) $hasEmailVerified = true;
 
-    $sql = $hasEmailVerified
-        ? "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, email, password, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 'pending', 1)"
-        : "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 'pending')";
+    $hasUserProfilePicture = false;
+    $hasUserDefaultAvatar = false;
+    $cu1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
+    if ($cu1 && mysqli_fetch_assoc($cu1)) $hasUserProfilePicture = true;
+    $cu2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
+    if ($cu2 && mysqli_fetch_assoc($cu2)) $hasUserDefaultAvatar = true;
+
+    if ($hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar) {
+        $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending', 1)";
+    } elseif (!$hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar) {
+        $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending')";
+    } elseif ($hasEmailVerified) {
+        $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, email, password, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 'pending', 1)";
+    } else {
+        $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'student', 'pending')";
+    }
     $stmt = mysqli_prepare($conn, $sql);
     if (!$stmt) return null;
-    mysqli_stmt_bind_param($stmt, 'sssssss', $fullName, $reviewType, $school, $schoolOther, $paymentProof, $email, $passwordHash);
+    if ($hasUserProfilePicture && $hasUserDefaultAvatar) {
+        mysqli_stmt_bind_param($stmt, 'ssssssiss', $fullName, $reviewType, $school, $schoolOther, $paymentProof, $profilePicture, $useDefaultAvatar, $email, $passwordHash);
+    } else {
+        mysqli_stmt_bind_param($stmt, 'sssssss', $fullName, $reviewType, $school, $schoolOther, $paymentProof, $email, $passwordHash);
+    }
     if (!mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
         return null;

@@ -2,6 +2,8 @@
 /**
  * Unified topbar — set $appShellTopbarTheme to 'admin' or 'student' before include.
  */
+require_once __DIR__ . '/../format_display_name.php';
+
 $t = ($appShellTopbarTheme ?? 'admin') === 'student' ? 'student' : 'admin';
 $tzName = 'Asia/Manila';
 $tzObj  = @timezone_open($tzName);
@@ -9,14 +11,16 @@ $now    = new DateTime('now', $tzObj ?: null);
 $offsetLabel = 'PHT · UTC+08:00';
 
 if ($t === 'admin') {
-  $displayName = $_SESSION['full_name'] ?? 'Admin';
+  $displayNameFull = trim($_SESSION['full_name'] ?? 'Admin');
   $timeIdMain = 'adminTopbarTimeMain';
   $timeIdOffset = 'adminTopbarTimeOffset';
 } else {
-  $displayName = $_SESSION['full_name'] ?? 'Student';
+  $displayNameFull = trim($_SESSION['full_name'] ?? 'Student');
   $timeIdMain = 'studentTopbarTimeMain';
   $timeIdOffset = 'studentTopbarTimeOffset';
 }
+
+$displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
 ?>
 <?php if ($t === 'admin'): ?>
 <header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
@@ -65,8 +69,8 @@ if ($t === 'admin') {
 
       <div class="admin-topbar-profile-wrap">
         <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="admin-topbar-profile-btn">
-          <span class="admin-topbar-avatar" aria-hidden="true"><?php echo strtoupper(mb_substr(trim($displayName ?: 'A'), 0, 1)); ?></span>
-          <span class="admin-topbar-name"><?php echo h($displayName); ?></span>
+          <span class="admin-topbar-avatar" aria-hidden="true"><?php echo strtoupper(mb_substr(trim($displayNameFull ?: 'A'), 0, 1)); ?></span>
+          <span class="admin-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
           <i class="bi bi-chevron-down admin-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
         </button>
         <div x-show="userMenuOpen" x-cloak
@@ -80,7 +84,7 @@ if ($t === 'admin') {
              class="admin-topbar-dropdown" role="menu">
           <div class="admin-topbar-dropdown-head">
             <p class="admin-topbar-dropdown-label">Account</p>
-            <p class="admin-topbar-dropdown-name"><?php echo h($displayName); ?></p>
+            <p class="admin-topbar-dropdown-name"><?php echo h($displayNameFull); ?></p>
           </div>
           <a href="logout.php" class="ereview-logout-trigger admin-topbar-dropdown-item admin-topbar-logout" role="menuitem" @click="userMenuOpen = false">
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
@@ -167,14 +171,20 @@ if ($t === 'admin') {
       </nav>
       <div class="student-topbar-profile-wrap">
         <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="student-topbar-profile-btn">
-          <span class="student-topbar-avatar" aria-hidden="true"><?php echo strtoupper(mb_substr(trim($displayName ?: 'U'), 0, 1)); ?></span>
-          <span class="student-topbar-name"><?php echo h($displayName); ?></span>
+          <span class="student-topbar-avatar overflow-hidden" aria-hidden="true">
+            <?php if (!empty($appShellTopbarAvatarImage)): ?>
+              <img src="<?php echo h($appShellTopbarAvatarImage); ?>" alt="" class="w-full h-full object-cover" loading="lazy">
+            <?php else: ?>
+              <?php echo h($appShellTopbarAvatarInitial ?? strtoupper(mb_substr(trim($displayNameFull ?: 'U'), 0, 1))); ?>
+            <?php endif; ?>
+          </span>
+          <span class="student-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
           <i class="bi bi-chevron-down student-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
         </button>
         <div x-show="userMenuOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-0" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" @click.outside="userMenuOpen = false" class="student-topbar-dropdown" role="menu">
           <div class="student-topbar-dropdown-head">
             <p class="student-topbar-dropdown-label">Account</p>
-            <p class="student-topbar-dropdown-name"><?php echo h($displayName); ?></p>
+            <p class="student-topbar-dropdown-name"><?php echo h($displayNameFull); ?></p>
           </div>
           <a href="logout.php" class="ereview-logout-trigger student-topbar-dropdown-item student-topbar-logout" role="menuitem" @click="userMenuOpen = false">
             <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
