@@ -1551,6 +1551,28 @@ body.admin-app #main .admin-action-btn--quizzes:hover {
   background: rgba(167, 139, 250, 0.1) !important;
   box-shadow: 0 0 14px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.35);
 }
+/* Test Bank action (teal, distinct from lessons/quizzes) */
+body.admin-app #main .admin-action-btn--testbank:hover {
+  border-color: #2dd4bf !important;
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.1) !important;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.25), 0 0 0 1px rgba(45, 212, 191, 0.35);
+}
+body.admin-app #main .admin-outline-btn--testbank:hover {
+  background: rgba(45, 212, 191, 0.08) !important;
+  border-color: #2dd4bf !important;
+  color: #2dd4bf !important;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.25), 0 0 0 1px rgba(45, 212, 191, 0.45);
+}
+body.admin-app #main .admin-content-btn--testbank:hover {
+  border-color: #2dd4bf !important;
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.12) !important;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.25), 0 0 0 1px rgba(45, 212, 191, 0.45);
+}
+body.admin-app #main .admin-subject-text--testbank {
+  color: #2dd4bf !important;
+}
 body.admin-app #main .admin-action-btn--danger:hover {
   border-color: #f0545c !important;
   color: #f0545c !important;

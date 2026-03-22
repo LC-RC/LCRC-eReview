@@ -25,7 +25,7 @@ $appShellNavConfig = [
     [
         'label' => 'Content',
         'items' => [
-            ['label' => 'Content', 'href' => 'admin_subjects.php', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, materials, quizzes', 'active' => ['admin_subjects.php', 'admin_lessons.php', 'admin_videos.php', 'admin_handouts.php', 'admin_materials.php', 'admin_quizzes.php', 'admin_quiz_questions.php']],
+            ['label' => 'Content', 'href' => 'admin_subjects.php', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, materials, quizzes, test bank', 'active' => ['admin_subjects.php', 'admin_lessons.php', 'admin_videos.php', 'admin_handouts.php', 'admin_materials.php', 'admin_quizzes.php', 'admin_quiz_questions.php', 'admin_test_bank.php']],
             ['label' => 'Preboards', 'href' => 'admin_preboards_subjects.php', 'icon' => 'bi-clipboard-check', 'title' => 'Preboards: subjects, sets, questions', 'active' => ['admin_preboards_subjects.php', 'admin_preboards_sets.php', 'admin_preboards_questions.php']],
             ['label' => 'Preweek', 'href' => 'admin_preweek.php', 'icon' => 'bi-lightning-charge', 'title' => 'Preweek: videos and handouts', 'active' => ['admin_preweek.php']],
         ],

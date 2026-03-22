@@ -21,6 +21,12 @@ if (!$subject) {
 }
 
 $pageTitle = 'Test Bank - ' . $subject['subject_name'];
+$adminBreadcrumbs = [
+    ['Dashboard', 'admin_dashboard.php'],
+    ['Content Hub', 'admin_subjects.php'],
+    [h($subject['subject_name']), 'admin_test_bank.php?subject_id=' . $subjectId],
+    ['Test Bank'],
+];
 $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'test_bank';
 $allowedExtensions = ['pdf', 'doc', 'docx', 'txt', 'ppt', 'pptx', 'xls', 'xlsx'];
 $maxSize = 20 * 1024 * 1024; // 20 MB per file
@@ -119,15 +125,14 @@ if (isset($_GET['edit'])) {
 }
 
 $list = mysqli_query($conn, "SELECT * FROM test_bank WHERE subject_id=" . $subjectId . " ORDER BY id DESC");
+$tbCount = $list ? (int)mysqli_num_rows($list) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <style>
     @media (max-width: 768px) {
-      .admin-tb-header { padding: 1rem 1rem !important; }
-      .admin-tb-header h1 { font-size: 1.25rem !important; }
       .admin-tb-table th, .admin-tb-table td { padding: 0.5rem 0.5rem !important; font-size: 0.8125rem; }
       .admin-tb-table th:first-child, .admin-tb-table td:first-child { padding-left: 1rem !important; }
     }
@@ -137,14 +142,25 @@ $list = mysqli_query($conn, "SELECT * FROM test_bank WHERE subject_id=" . $subje
     .admin-tb-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="admin-tb-header bg-white rounded-xl shadow-card px-4 sm:px-6 py-4 sm:py-5 mb-4 sm:mb-5">
-    <h1 class="text-xl sm:text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-folder2-open"></i> Test Bank - <?php echo h($subject['subject_name']); ?>
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
+    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2 flex-wrap">
+      <i class="bi bi-folder2-open"></i> Test Bank - <span class="admin-subject-text admin-subject-text--testbank"><?php echo h($subject['subject_name']); ?></span>
     </h1>
-    <p class="text-sm sm:text-base text-gray-500 mt-1">Upload and manage review materials (question + answer files) for this subject only.</p>
+    <p class="text-gray-500 mt-1">Upload and manage review materials (question + answer files) for this subject only.</p>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
+    <div></div>
+    <div class="flex flex-wrap gap-2">
+      <a href="admin_subjects.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
+      <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--lessons px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-file-text"></i> Lessons for <?php echo h($subject['subject_name']); ?></a>
+      <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
+      <a href="admin_preweek.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-lightning-charge"></i> Preweek for <?php echo h($subject['subject_name']); ?></a>
+    </div>
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
@@ -193,15 +209,21 @@ $list = mysqli_query($conn, "SELECT * FROM test_bank WHERE subject_id=" . $subje
           </div>
           <p class="text-xs text-gray-500">Max 20 MB per file. Allowed: <?php echo implode(', ', $allowedExtensions); ?></p>
           <div class="flex flex-wrap gap-2">
-            <button type="submit" class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-semibold bg-green-600 text-white hover:bg-green-700 transition"><?php echo $edit ? 'Update' : 'Add entry'; ?></button>
-            <?php if ($edit): ?><a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?>" class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</a><?php endif; ?>
+            <button type="submit" class="admin-content-btn admin-content-btn--testbank px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-<?php echo $edit ? 'check-lg' : 'plus-circle'; ?>"></i> <?php echo $edit ? 'Update entry' : 'Add entry'; ?></button>
+            <?php if ($edit): ?><a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Cancel</a><?php endif; ?>
           </div>
         </form>
       </div>
     </div>
     <div class="lg:col-span-7 order-1 lg:order-2">
       <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-        <div class="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 font-semibold text-gray-800 text-sm sm:text-base">All Test Bank entries</div>
+        <div class="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-800">Test Bank entries</span>
+            <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$tbCount; ?></span>
+          </div>
+          <p class="text-gray-500 text-sm hidden md:block m-0">Question file + answer file per entry.</p>
+        </div>
         <div class="admin-tb-table-wrap">
           <table class="admin-tb-table w-full text-left" style="min-width: 680px;">
             <thead class="bg-gray-50 border-b border-gray-200">
@@ -241,7 +263,11 @@ $list = mysqli_query($conn, "SELECT * FROM test_bank WHERE subject_id=" . $subje
                   </tr>
                 <?php endwhile; ?>
               <?php else: ?>
-                <tr><td colspan="5" class="px-4 sm:px-5 py-6 sm:py-8 text-center text-gray-500 text-sm sm:text-base">No test bank entries yet. Add one using the form.</td></tr>
+                <tr><td colspan="5" class="px-4 sm:px-5 py-12 text-center text-gray-500 text-sm sm:text-base">
+                  <i class="bi bi-folder2-open text-4xl block mb-2 opacity-60"></i>
+                  <div class="font-semibold">No test bank entries yet</div>
+                  <p class="text-sm mt-1">Add question and answer files using the form on the left.</p>
+                </td></tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -249,6 +275,7 @@ $list = mysqli_query($conn, "SELECT * FROM test_bank WHERE subject_id=" . $subje
       </div>
     </div>
   </div>
+</div>
 </main>
 </body>
 </html>
