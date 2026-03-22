@@ -3,15 +3,27 @@
  * Take Quiz - Exam-style: one question per page, server-side timer, resume, retake.
  * Security: One in-progress attempt per user per quiz; timer and answers stored server-side.
  */
+require_once __DIR__ . '/includes/quiz_http_debug.php';
 require_once 'auth.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
 requireRole('student');
+
+// PHP 8.1+ mysqli can throw mysqli_sql_exception on failed execute; this project checks return codes manually.
+if (function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
 
 $quizId = sanitizeInt($_GET['quiz_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($quizId <= 0) { header('Location: student_subjects.php'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT q.*, s.subject_name FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE q.quiz_id=? LIMIT 1");
+if (!$stmt) {
+    error_log('student_take_quiz: prepare failed (load quiz): ' . mysqli_error($conn));
+    $_SESSION['error'] = 'Unable to load this quiz. Please try again.';
+    header('Location: student_subjects.php');
+    exit;
+}
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
@@ -42,6 +54,12 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
 
 // ----- Load question IDs for this quiz -----
 $stmt = mysqli_prepare($conn, "SELECT question_id FROM quiz_questions WHERE quiz_id=? ORDER BY question_id ASC");
+if (!$stmt) {
+    error_log('student_take_quiz: prepare failed (question ids): ' . mysqli_error($conn));
+    $_SESSION['error'] = 'Unable to load quiz questions.';
+    header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id=' . (int)$subjectId : 'student_subjects.php'));
+    exit;
+}
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
 mysqli_stmt_execute($stmt);
 $qIdsRes = mysqli_stmt_get_result($stmt);
@@ -203,8 +221,29 @@ if ($attemptId > 0 && $totalQuestions > 0) {
         exit;
     }
 
-    $expiresAt = $attempt['expires_at'];
-    $remainingSeconds = max(0, strtotime($expiresAt) - time());
+    $expiresAtRaw = $attempt['expires_at'] ?? null;
+    $expiresTs = null;
+    if ($expiresAtRaw !== null && $expiresAtRaw !== '') {
+        $expiresTs = strtotime((string)$expiresAtRaw);
+        if ($expiresTs === false) {
+            $expiresTs = null;
+        }
+    }
+    // Missing or invalid expires_at (older rows / bad data): repair so the exam view can load
+    if ($expiresTs === null) {
+        $newExpires = date('Y-m-d H:i:s', time() + $timeLimitSeconds);
+        $upd = mysqli_prepare($conn, "UPDATE quiz_attempts SET expires_at=? WHERE attempt_id=? AND user_id=?");
+        if ($upd) {
+            mysqli_stmt_bind_param($upd, 'sii', $newExpires, $attemptId, $userId);
+            mysqli_stmt_execute($upd);
+            mysqli_stmt_close($upd);
+        }
+        $expiresAt = $newExpires;
+        $remainingSeconds = $timeLimitSeconds;
+    } else {
+        $expiresAt = date('Y-m-d H:i:s', $expiresTs);
+        $remainingSeconds = max(0, $expiresTs - time());
+    }
     $maxAllowedSeconds = $timeLimitSeconds;
     if ($remainingSeconds > $maxAllowedSeconds) {
         $remainingSeconds = $maxAllowedSeconds;
@@ -248,6 +287,12 @@ if ($attemptId > 0 && $totalQuestions > 0) {
 $allQuestions = [];
 if ($totalQuestions > 0) {
     $stmt = mysqli_prepare($conn, "SELECT * FROM quiz_questions WHERE quiz_id=? ORDER BY question_id ASC");
+    if (!$stmt) {
+        error_log('student_take_quiz: prepare failed (all questions): ' . mysqli_error($conn));
+        $_SESSION['error'] = 'Unable to load quiz questions.';
+        header('Location: student_take_quiz.php?quiz_id=' . $quizId . '&subject_id=' . $subjectId);
+        exit;
+    }
     mysqli_stmt_bind_param($stmt, 'i', $quizId);
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);

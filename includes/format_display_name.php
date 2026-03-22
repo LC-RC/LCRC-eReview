@@ -5,7 +5,29 @@
  * Examples:
  *   "System Admin"          → "S. Admin"
  *   "Sample Student Lizeth" → "S. S. Lizeth"
+ *
+ * Polyfills: some VPS images ship PHP without ext-mbstring; missing mb_* causes HTTP 500.
  */
+if (!function_exists('mb_substr')) {
+    function mb_substr($str, $start, $length = null, $encoding = null) {
+        $str = (string) $str;
+        if ($length === null) {
+            return substr($str, $start);
+        }
+        return substr($str, $start, $length);
+    }
+}
+if (!function_exists('mb_strtoupper')) {
+    function mb_strtoupper($str, $encoding = null) {
+        return strtoupper((string) $str);
+    }
+}
+if (!function_exists('mb_strlen')) {
+    function mb_strlen($str, $encoding = null) {
+        return strlen((string) $str);
+    }
+}
+
 if (!function_exists('ereview_format_topbar_display_name')) {
     function ereview_format_topbar_display_name(?string $fullName): string
     {

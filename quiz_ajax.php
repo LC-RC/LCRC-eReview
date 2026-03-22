@@ -3,8 +3,13 @@
  * Quiz AJAX API: save answer, get remaining time.
  * All state is server-side; prevents timer/answer manipulation.
  */
+require_once __DIR__ . '/includes/quiz_http_debug.php';
 require_once 'auth.php';
 requireRole('student');
+
+if (function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
 
 header('Content-Type: application/json');
 
@@ -39,6 +44,10 @@ if ($action === 'save_answer') {
     }
 
     $stmt = mysqli_prepare($conn, "SELECT a.attempt_id, a.quiz_id, a.status, a.expires_at FROM quiz_attempts a WHERE a.attempt_id=? AND a.user_id=? LIMIT 1");
+    if (!$stmt) {
+        echo json_encode(['ok' => false, 'error' => 'Server error (prepare attempt)']);
+        exit;
+    }
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -48,7 +57,9 @@ if ($action === 'save_answer') {
         echo json_encode(['ok' => false, 'error' => 'Attempt not found or already submitted']);
         exit;
     }
-    if (strtotime($attempt['expires_at']) < time()) {
+    $expRaw = $attempt['expires_at'] ?? '';
+    $expTs = ($expRaw !== '') ? strtotime((string) $expRaw) : false;
+    if ($expTs === false || $expTs < time()) {
         echo json_encode(['ok' => false, 'error' => 'Time expired']);
         exit;
     }
@@ -98,7 +109,9 @@ if ($action === 'get_time') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
         exit;
     }
-    $remaining = max(0, strtotime($row['expires_at']) - time());
+    $expRaw2 = $row['expires_at'] ?? '';
+    $expTs2 = ($expRaw2 !== '') ? strtotime((string) $expRaw2) : false;
+    $remaining = ($expTs2 !== false) ? max(0, $expTs2 - time()) : 0;
     echo json_encode(['ok' => true, 'remaining_seconds' => $remaining]);
     exit;
 }

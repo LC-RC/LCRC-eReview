@@ -69,7 +69,7 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
 
       <div class="admin-topbar-profile-wrap">
         <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="admin-topbar-profile-btn">
-          <span class="admin-topbar-avatar" aria-hidden="true"><?php echo strtoupper(mb_substr(trim($displayNameFull ?: 'A'), 0, 1)); ?></span>
+          <span class="admin-topbar-avatar" aria-hidden="true"><?php echo function_exists('mb_substr') ? strtoupper(mb_substr(trim($displayNameFull ?: 'A'), 0, 1)) : strtoupper(substr(trim($displayNameFull ?: 'A'), 0, 1)); ?></span>
           <span class="admin-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
           <i class="bi bi-chevron-down admin-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
         </button>
@@ -175,7 +175,11 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
             <?php if (!empty($appShellTopbarAvatarImage)): ?>
               <img src="<?php echo h($appShellTopbarAvatarImage); ?>" alt="" class="w-full h-full object-cover" loading="lazy">
             <?php else: ?>
-              <?php echo h($appShellTopbarAvatarInitial ?? strtoupper(mb_substr(trim($displayNameFull ?: 'U'), 0, 1))); ?>
+              <?php
+                $__dn = trim($displayNameFull ?: 'U');
+                $__initial = function_exists('mb_substr') ? strtoupper(mb_substr($__dn, 0, 1)) : strtoupper(substr($__dn, 0, 1));
+                echo h($appShellTopbarAvatarInitial ?? $__initial);
+              ?>
             <?php endif; ?>
           </span>
           <span class="student-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
