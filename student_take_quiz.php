@@ -586,7 +586,19 @@ if ($userId) {
       color: white;
     }
     .exam-choice-text { font-size: 1rem; color: var(--exam-text); line-height: 1.55; flex: 1; }
-    .exam-choice input { position: absolute; opacity: 0; pointer-events: none; }
+    /* Keep radio focusable/clickable for reliable change events (pointer-events:none broke some browsers) */
+    .exam-choice input[type="radio"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      opacity: 0.01;
+    }
     .exam-nav-card {
       background: var(--exam-surface);
       border-radius: var(--exam-radius);
@@ -1018,19 +1030,19 @@ if ($userId) {
       background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.6);
     }
     .quiz-confirm-btn-primary:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
-    /* Result card: dashboard-style theme (blue card, subtle status colors) */
+    /* Result card: modern, compact, and cleaner visual hierarchy */
     .result-card {
       border-width: 1px;
-      border-radius: 18px;
-      padding: 1.25rem 1.75rem 1.35rem;
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem 1.2rem;
       width: 100%;
       position: relative;
       overflow: hidden;
-      background: linear-gradient(to bottom right, #d4e8f7, #e8f2fa);
+      background: linear-gradient(160deg, #eef6fd 0%, #f8fbff 50%, #ffffff 100%);
       border-color: rgba(22, 101, 160, 0.18);
       box-shadow:
-        0 2px 8px rgba(20, 61, 89, 0.12),
-        0 6px 18px rgba(20, 61, 89, 0.08);
+        0 2px 8px rgba(20, 61, 89, 0.1),
+        0 10px 24px rgba(20, 61, 89, 0.08);
       border-left: 4px solid #1665A0;
     }
     .result-card::before {
@@ -1048,6 +1060,67 @@ if ($userId) {
       z-index: 1;
       border-radius: inherit;
       padding: 0.25rem 0 0;
+    }
+    .result-headline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .result-title {
+      margin: 0;
+      font-size: 1.5rem;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #1e293b;
+      letter-spacing: -0.01em;
+    }
+    .result-metrics {
+      margin: 0 auto 0.85rem;
+      max-width: 720px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+    .result-metric {
+      border: 1px solid rgba(22, 101, 160, 0.12);
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      padding: 0.55rem 0.6rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+    .result-metric .k {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 0.2rem;
+    }
+    .result-metric .v {
+      display: block;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+    .review-empty-note {
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #f8fafc;
+      text-align: center;
+      padding: 1.5rem 1rem;
+      color: #64748b;
+    }
+    .review-empty-note i {
+      font-size: 1.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.45rem;
+      display: block;
     }
     .result-card.result-pass { border-left-color: #059669; }
     .result-card.result-pass .result-score { color: #047857; }
@@ -1153,6 +1226,9 @@ if ($userId) {
     .result-stat-total i { color: #0ea5e9; }
     @media (max-width: 640px) {
       .result-stats-row {
+        grid-template-columns: 1fr;
+      }
+      .result-metrics {
         grid-template-columns: 1fr;
       }
     }
@@ -1369,18 +1445,34 @@ if ($userId) {
         </header>
         <div class="exam-question-card result-card w-full text-center mb-4 <?php echo $resultClass; ?>">
           <div class="result-card-inner">
-            <div class="flex flex-col items-center gap-2 mb-4">
+            <div class="flex flex-col items-center gap-2 mb-3">
               <div class="w-12 h-12 rounded-full flex items-center justify-center bg-white/80 shadow-sm">
                 <i class="bi bi-trophy-fill text-[#f97373] text-xl"></i>
               </div>
               <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?> — Quiz Complete</div>
             </div>
             <span class="result-badge"><?php echo h($resultLabel); ?></span>
-            <h2 class="text-2xl font-bold text-[#1e293b] mb-2"><i class="bi bi-bar-chart-fill mr-2"></i>Results</h2>
-            <div class="text-5xl font-extrabold mb-3 result-score tracking-tight"><?php echo number_format($score, 0); ?>%</div>
+            <div class="result-headline">
+              <h2 class="result-title"><i class="bi bi-bar-chart-fill mr-2"></i>Results</h2>
+              <div class="text-4xl sm:text-5xl font-extrabold result-score tracking-tight"><?php echo number_format($score, 0); ?>%</div>
+            </div>
             <?php $scoreWidth = max(4, min(100, (int)round($score))); ?>
             <div class="w-full max-w-xs mx-auto h-2 rounded-full bg-white/70 overflow-hidden mb-4">
               <div class="h-full rounded-full" style="width: <?php echo $scoreWidth; ?>%; background: linear-gradient(90deg, #3393ff, #60a5fa);"></div>
+            </div>
+            <div class="result-metrics">
+              <div class="result-metric">
+                <span class="k">Correct</span>
+                <span class="v"><?php echo (int)$result['correct']; ?></span>
+              </div>
+              <div class="result-metric">
+                <span class="k">Total</span>
+                <span class="v"><?php echo (int)$result['total']; ?></span>
+              </div>
+              <div class="result-metric">
+                <span class="k">Attempt</span>
+                <span class="v">#<?php echo (int)($result['attempt_id'] ?? 0); ?></span>
+              </div>
             </div>
             <p class="text-[#64748b] mb-3 text-sm sm:text-base">
               You got
@@ -1389,6 +1481,12 @@ if ($userId) {
               <strong class="text-[#1e293b]"><?php echo (int)$result['total']; ?></strong>
               questions correct.
             </p>
+            <?php if ((int)$result['total'] === 0): ?>
+              <p class="text-[0.75rem] sm:text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 inline-flex items-center gap-1.5">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                No saved answers were detected for this attempt.
+              </p>
+            <?php endif; ?>
             <?php if ($isPersonalBest): ?>
               <p class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold mb-3 shadow-sm">
                 <i class="bi bi-stars"></i>
@@ -1445,54 +1543,60 @@ if ($userId) {
             </div>
           </div>
         </div>
-      <?php if (!empty($reviewQuestions)): ?>
       <div class="exam-question-card w-full mb-5" id="reviewAnswers">
         <h3 class="text-lg font-bold text-[#1e293b] mb-4"><i class="bi bi-journal-text text-[#4154f1] mr-2"></i>Review answers</h3>
-        <p class="text-[#64748b] text-sm mb-4">Review each question, your answer, and the correct answer below.</p>
-        <div class="space-y-5">
-          <?php foreach ($reviewQuestions as $i => $q):
-            $choices = get_question_choices($q);
-            $sel = $q['selected_answer'] ?? '';
-            $correctAns = $q['correct_answer'] ?? '';
-            $isCorrect = !empty($q['is_correct']);
-          ?>
-            <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
-              <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $i + 1; ?> of <?php echo count($reviewQuestions); ?></div>
-              <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
-              <div class="space-y-2 mb-4">
-                <?php foreach ($choices as $letter => $choiceText): ?>
-                  <?php
-                    $isYourAnswer = ($sel === $letter);
-                    $isCorrectChoice = ($correctAns === $letter);
-                  ?>
-                  <div class="flex items-start gap-2 p-3 rounded-lg border <?php
-                    if ($isCorrectChoice) echo 'review-correct-choice';
-                    elseif ($isYourAnswer && !$isCorrect) echo 'bg-[#fef2f2] border-[#dc2626]'; 
-                    else echo 'bg-white border-[#e2e8f0]';
-                  ?>">
-                    <span class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYourAnswer && !$isCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
-                    <div class="text-[#1e293b] flex-1 quiz-rich-text"><?php echo renderQuizRichText($choiceText); ?></div>
-                    <?php if ($isYourAnswer && $isCorrectChoice): ?>
-                      <span class="ml-auto review-correct-label text-sm"><i class="bi bi-check-circle-fill"></i> Your answer · Correct</span>
-                    <?php elseif ($isCorrectChoice): ?>
-                      <span class="ml-auto review-correct-label text-sm"><i class="bi bi-check-circle-fill"></i> Correct answer</span>
-                    <?php elseif ($isYourAnswer): ?>
-                      <span class="ml-auto text-[#dc2626] font-semibold text-sm"><i class="bi bi-x-circle-fill"></i> Your answer · Wrong</span>
-                    <?php endif; ?>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-              <?php if (!empty(trim((string)($q['explanation'] ?? '')))): ?>
-                <div class="pt-3 mt-3 border-t border-[#e2e8f0]">
-                  <p class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Explanation</p>
-                  <div class="text-sm text-[#475569] leading-relaxed quiz-rich-text"><?php echo renderQuizRichText($q['explanation']); ?></div>
+        <?php if (!empty($reviewQuestions)): ?>
+          <p class="text-[#64748b] text-sm mb-4">Review each question, your answer, and the correct answer below.</p>
+          <div class="space-y-5">
+            <?php foreach ($reviewQuestions as $i => $q):
+              $choices = get_question_choices($q);
+              $sel = $q['selected_answer'] ?? '';
+              $correctAns = $q['correct_answer'] ?? '';
+              $isCorrect = !empty($q['is_correct']);
+            ?>
+              <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
+                <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $i + 1; ?> of <?php echo count($reviewQuestions); ?></div>
+                <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
+                <div class="space-y-2 mb-4">
+                  <?php foreach ($choices as $letter => $choiceText): ?>
+                    <?php
+                      $isYourAnswer = ($sel === $letter);
+                      $isCorrectChoice = ($correctAns === $letter);
+                    ?>
+                    <div class="flex items-start gap-2 p-3 rounded-lg border <?php
+                      if ($isCorrectChoice) echo 'review-correct-choice';
+                      elseif ($isYourAnswer && !$isCorrect) echo 'bg-[#fef2f2] border-[#dc2626]';
+                      else echo 'bg-white border-[#e2e8f0]';
+                    ?>">
+                      <span class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold review-choice-letter <?php echo $isCorrectChoice ? 'bg-[#059669] text-white' : ($isYourAnswer && !$isCorrect ? 'bg-[#dc2626] text-white' : 'bg-[#e2e8f0] text-[#64748b]'); ?>"><?php echo $letter; ?></span>
+                      <div class="text-[#1e293b] flex-1 quiz-rich-text"><?php echo renderQuizRichText($choiceText); ?></div>
+                      <?php if ($isYourAnswer && $isCorrectChoice): ?>
+                        <span class="ml-auto review-correct-label text-sm"><i class="bi bi-check-circle-fill"></i> Your answer · Correct</span>
+                      <?php elseif ($isCorrectChoice): ?>
+                        <span class="ml-auto review-correct-label text-sm"><i class="bi bi-check-circle-fill"></i> Correct answer</span>
+                      <?php elseif ($isYourAnswer): ?>
+                        <span class="ml-auto text-[#dc2626] font-semibold text-sm"><i class="bi bi-x-circle-fill"></i> Your answer · Wrong</span>
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
                 </div>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
+                <?php if (!empty(trim((string)($q['explanation'] ?? '')))): ?>
+                  <div class="pt-3 mt-3 border-t border-[#e2e8f0]">
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Explanation</p>
+                    <div class="text-sm text-[#475569] leading-relaxed quiz-rich-text"><?php echo renderQuizRichText($q['explanation']); ?></div>
+                  </div>
+                <?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="review-empty-note" role="status">
+            <i class="bi bi-journal-x"></i>
+            <p class="m-0 font-semibold">No answer details available yet.</p>
+            <p class="mt-1 mb-0 text-sm">This attempt has no saved answer records to review.</p>
+          </div>
+        <?php endif; ?>
       </div>
-      <?php endif; ?>
 
       <?php if (!empty($quizHistoryAttempts)): ?>
       <div class="quiz-history-wrap w-full mt-6" id="quizHistoryWrap">
@@ -1570,7 +1674,7 @@ if ($userId) {
             </div>
             <?php endforeach; ?>
           </div>
-          <p class="text-[#64748b] text-xs mt-3 text-center"><a href="student_quiz_history.php" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
+          <p class="text-[#64748b] text-xs mt-3 text-center"><a href="student_quiz_history.php?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
         </div>
       </div>
       </div><!-- end exam-result-inner -->
@@ -1707,7 +1811,7 @@ if ($userId) {
             </div>
             <?php endforeach; ?>
           </div>
-          <p class="text-[#64748b] text-xs mt-4 text-center"><a href="student_quiz_history.php" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
+          <p class="text-[#64748b] text-xs mt-4 text-center"><a href="student_quiz_history.php?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
         </div>
       </div>
       <?php endif; ?>
@@ -1993,6 +2097,132 @@ if ($userId) {
         var submitOverlay = document.getElementById('quizSubmitOverlay');
         var submitBtn = document.getElementById('submitQuizBtn');
         var submitIntercepted = false;
+
+        var toast = document.getElementById('examSavedToast');
+        function showSavedToast() {
+          if (!toast) return;
+          toast.classList.add('show');
+          setTimeout(function() { toast.classList.remove('show'); }, 2200);
+        }
+        function showExamErrorToast(msg) {
+          var el = document.getElementById('examTimeWarningToast');
+          if (!el) { try { alert(msg); } catch (e) {} return; }
+          el.textContent = msg;
+          el.className = 'exam-time-warning-toast show danger';
+          setTimeout(function() { el.classList.remove('show'); }, 6000);
+        }
+
+        var csrf = '<?php echo addslashes($csrf); ?>';
+        var attemptId = <?php echo (int)$attemptId; ?>;
+        var progressEl = document.getElementById('progressText');
+        var progressBar = document.getElementById('progressBar');
+        var totalQs = <?php echo (int)$totalQuestions; ?>;
+        var answeredCountEl = document.getElementById('answeredCountNum');
+        var quizAjaxUrl = 'quiz_ajax.php';
+
+        function countAnsweredInDom() {
+          var seen = Object.create(null);
+          document.querySelectorAll('input[type="radio"][name^="answer_"]:checked').forEach(function(inp) {
+            var id = inp.getAttribute('data-question-id');
+            if (id) seen[id] = true;
+          });
+          return Object.keys(seen).length;
+        }
+        function updateProgressUi(answered) {
+          if (!totalQs) return;
+          var n = Math.min(Math.max(0, answered), totalQs);
+          if (progressBar) progressBar.style.width = Math.round((n / totalQs) * 100) + '%';
+          if (progressEl) progressEl.textContent = n + ' of ' + totalQs + ' answered';
+          if (answeredCountEl) answeredCountEl.textContent = String(n);
+          if (submitBtn) {
+            if (n >= totalQs) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Submit quiz';
+            } else {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Answer all questions to submit';
+            }
+          }
+        }
+        function syncChoiceVisualForQuestion(qId) {
+          var sel = document.querySelector('input[type="radio"][name^="answer_"][data-question-id="' + qId + '"]:checked');
+          var card = sel && sel.closest('.exam-question-card');
+          if (card) {
+            card.querySelectorAll('.exam-choice').forEach(function(c) { c.classList.remove('selected'); });
+            var lab = sel.closest('.exam-choice');
+            if (lab) lab.classList.add('selected');
+          }
+        }
+        function saveAnswerToServer(qId, val, onDone) {
+          var tries = 0;
+          var maxTries = 4;
+          function attempt() {
+            var fd = new FormData();
+            fd.append('action', 'save_answer');
+            fd.append('csrf_token', csrf);
+            fd.append('attempt_id', String(attemptId));
+            fd.append('question_id', String(qId));
+            fd.append('selected_answer', String(val));
+            fetch(quizAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+              .then(function(r) { return r.text().then(function(t) { return { okHttp: r.ok, text: t }; }); })
+              .then(function(res) {
+                var data = null;
+                try {
+                  data = JSON.parse(res.text);
+                } catch (e1) {
+                  data = { ok: false, error: 'Invalid server response' };
+                }
+                if (data && data.ok) {
+                  if (typeof onDone === 'function') onDone(data);
+                  return;
+                }
+                tries++;
+                if (tries < maxTries) {
+                  setTimeout(attempt, 450);
+                  return;
+                }
+                if (typeof onDone === 'function') onDone(data || { ok: false, error: 'Save failed' });
+              })
+              .catch(function() {
+                tries++;
+                if (tries < maxTries) {
+                  setTimeout(attempt, 450);
+                  return;
+                }
+                if (typeof onDone === 'function') onDone({ ok: false, error: 'Network error' });
+              });
+          }
+          attempt();
+        }
+
+        document.querySelectorAll('input[type="radio"][name^="answer_"]').forEach(function(radio) {
+          radio.addEventListener('change', function() {
+            var qId = this.getAttribute('data-question-id');
+            var val = this.value;
+            if (!qId || !val) return;
+            syncChoiceVisualForQuestion(qId);
+            updateProgressUi(countAnsweredInDom());
+            saveAnswerToServer(qId, val, function(data) {
+              if (data && data.ok && typeof data.answered_count !== 'undefined') {
+                updateProgressUi(data.answered_count);
+                var link = document.querySelector('.exam-q-list a[data-question-id="' + qId + '"]');
+                if (link && !link.classList.contains('answered')) {
+                  link.classList.add('answered');
+                  if (!link.querySelector('.q-check')) {
+                    var ic = document.createElement('i');
+                    ic.className = 'bi bi-check-circle-fill q-check';
+                    link.appendChild(ic);
+                  }
+                }
+                showSavedToast();
+              } else {
+                var err = (data && data.error) ? data.error : 'Could not save answer';
+                showExamErrorToast(err + '. Check your connection and try again.');
+              }
+            });
+          });
+        });
+
         if (!circleTimer || !form) return;
         form.addEventListener('submit', function(e) {
           // First time: show loading modal for a short moment before real submit
@@ -2085,64 +2315,6 @@ if ($userId) {
             qListTrigger.setAttribute('aria-expanded', !qListSection.classList.contains('collapsed'));
           });
         }
-        var toast = document.getElementById('examSavedToast');
-        function showSavedToast() {
-          if (!toast) return;
-          toast.classList.add('show');
-          setTimeout(function() { toast.classList.remove('show'); }, 2200);
-        }
-
-        var csrf = '<?php echo addslashes($csrf); ?>';
-        var attemptId = <?php echo $attemptId; ?>;
-        var progressEl = document.getElementById('progressText');
-        var progressBar = document.getElementById('progressBar');
-        var total = <?php echo $totalQuestions; ?>;
-
-        var answeredCountEl = document.getElementById('answeredCountNum');
-        function updateProgressUi(answered) {
-          if (progressBar) progressBar.style.width = Math.round((answered / total) * 100) + '%';
-          if (progressEl) progressEl.textContent = answered + ' of ' + total + ' answered';
-          if (answeredCountEl) answeredCountEl.textContent = answered;
-          if (submitBtn) {
-            if (answered >= total) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Submit quiz';
-            }
-          }
-        }
-
-        document.querySelectorAll('input[name^="answer_"]').forEach(function(radio) {
-          radio.addEventListener('change', function() {
-            var qId = this.getAttribute('data-question-id');
-            var val = this.value;
-            var card = radio.closest('.exam-question-card');
-            if (card) card.querySelectorAll('.exam-choice').forEach(function(c) { c.classList.remove('selected'); });
-            radio.closest('.exam-choice').classList.add('selected');
-            var fd = new FormData();
-            fd.append('action', 'save_answer');
-            fd.append('csrf_token', csrf);
-            fd.append('attempt_id', attemptId);
-            fd.append('question_id', qId);
-            fd.append('selected_answer', val);
-            fetch('quiz_ajax.php', { method: 'POST', body: fd })
-              .then(function(r) { return r.json(); })
-              .then(function(data) {
-                if (data.ok && typeof data.answered_count !== 'undefined') {
-                  updateProgressUi(data.answered_count);
-                  var link = document.querySelector('.exam-q-list a[data-question-id="' + qId + '"]');
-                  if (link && !link.classList.contains('answered')) {
-                    link.classList.add('answered');
-                    if (!link.querySelector('.q-check')) {
-                      var ic = document.createElement('i');
-                      ic.className = 'bi bi-check-circle-fill q-check';
-                      link.appendChild(ic);
-                    }
-                  }
-                  showSavedToast();
-                }
-              });
-          });
-        });
 
         document.addEventListener('keydown', function(e) {
           if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;

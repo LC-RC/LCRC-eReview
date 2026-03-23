@@ -121,8 +121,13 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .preboards-view-page .rounded-2xl { border-radius: 0.75rem !important; }
+    .preboards-view-page .rounded-xl { border-radius: 0.625rem !important; }
+    .preboards-view-page .rounded-lg { border-radius: 0.5rem !important; }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased preboards-view-page">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 

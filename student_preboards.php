@@ -29,6 +29,10 @@ $pageTitle = 'Preboards';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .student-dashboard-page .rounded-2xl { border-radius: 0.75rem !important; }
+    .student-dashboard-page .rounded-xl { border-radius: 0.625rem !important; }
+  </style>
 </head>
 <body class="font-sans antialiased">
   <?php include 'student_sidebar.php'; ?>

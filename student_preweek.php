@@ -12,13 +12,28 @@ if ($subjectId <= 0) {
     <html lang="en">
     <head>
       <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+      <style>
+        .preweek-page { background: linear-gradient(180deg, #eef5fc 0%, #e3eef8 40%, #e8f2fa 100%); }
+        .preweek-page .rounded-2xl { border-radius: 0.75rem !important; }
+        .preweek-page .rounded-xl { border-radius: 0.625rem !important; }
+        .preweek-page .rounded-lg { border-radius: 0.5rem !important; }
+        .preweek-subject-card {
+          border: 1px solid rgba(22, 101, 160, 0.12) !important;
+          background: linear-gradient(to bottom, #f4f8fe, #ffffff) !important;
+          box-shadow: 0 1px 4px rgba(15,23,42,0.08), 0 6px 18px rgba(15,23,42,0.06) !important;
+        }
+        .preweek-subject-card:hover {
+          border-color: rgba(22, 101, 160, 0.26) !important;
+          box-shadow: 0 8px 26px rgba(15,23,42,0.16) !important;
+        }
+      </style>
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased preweek-page">
       <?php include 'student_sidebar.php'; ?>
       <?php include 'student_topbar.php'; ?>
 
-      <div class="student-page-wrap max-w-6xl mx-auto">
-        <div class="rounded-2xl px-6 py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div class="student-dashboard-page min-h-full pb-8">
+        <div class="rounded-2xl px-6 py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3 mb-5">
           <div class="flex items-center gap-3">
             <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
               <i class="bi bi-lightning-charge text-xl" aria-hidden="true"></i>
@@ -33,7 +48,7 @@ if ($subjectId <= 0) {
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           <?php if ($subjectsResult && mysqli_num_rows($subjectsResult) > 0): ?>
             <?php while ($s = mysqli_fetch_assoc($subjectsResult)): ?>
-              <article class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_26px_rgba(15,23,42,0.16)] hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden">
+              <article class="preweek-subject-card rounded-2xl border hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden">
                 <div class="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
                   <div class="flex items-start gap-3">
                     <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-md">
@@ -88,13 +103,34 @@ $pageTitle = 'Preweek';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .preweek-page { background: linear-gradient(180deg, #eef5fc 0%, #e3eef8 40%, #e8f2fa 100%); }
+    .preweek-page .rounded-2xl { border-radius: 0.75rem !important; }
+    .preweek-page .rounded-xl { border-radius: 0.625rem !important; }
+    .preweek-page .rounded-lg { border-radius: 0.5rem !important; }
+    .preweek-detail-panel {
+      background: linear-gradient(to bottom, #f0f7fc, #ffffff) !important;
+      border: 1px solid rgba(22, 101, 160, 0.15) !important;
+      border-left-width: 4px !important;
+      box-shadow: 0 2px 8px rgba(20,61,89,0.1), 0 4px 16px rgba(20,61,89,0.06) !important;
+    }
+    .preweek-item {
+      background: rgba(255,255,255,0.72) !important;
+      border-color: rgba(22, 101, 160, 0.1) !important;
+    }
+    .preweek-item:hover {
+      border-color: rgba(22, 101, 160, 0.26) !important;
+      background: #fff !important;
+      box-shadow: 0 8px 18px rgba(20,61,89,0.12);
+    }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased preweek-page">
   <?php include 'student_sidebar.php'; ?>
   <?php include 'student_topbar.php'; ?>
 
-  <div class="student-page-wrap max-w-6xl mx-auto">
-    <div class="bg-white rounded-2xl shadow-card px-6 py-6 mb-6 border border-gray-100">
+  <div class="student-dashboard-page min-h-full pb-8">
+    <div class="bg-white rounded-2xl shadow-card px-6 py-6 mb-5 border border-gray-100">
       <h1 class="text-2xl font-bold text-[#143D59] m-0 flex items-center gap-2">
         <i class="bi bi-lightning-charge text-[#1665A0]"></i> Preweek
       </h1>
@@ -102,7 +138,7 @@ $pageTitle = 'Preweek';
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <section class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+      <section class="preweek-detail-panel rounded-2xl overflow-hidden border-l-4 border-l-[#1665A0]">
         <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/60 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-md shadow-[#1665A0]/30">
@@ -125,7 +161,7 @@ $pageTitle = 'Preweek';
           <?php else: ?>
             <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
               <a href="<?php echo h($v['video_url']); ?>" target="_blank" rel="noopener"
-                 class="group block rounded-2xl p-4 bg-white/70 border border-[#1665A0]/10 hover:border-[#1665A0]/25 hover:bg-white transition shadow-sm">
+                 class="preweek-item group block rounded-2xl p-4 border transition shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <div class="font-semibold text-[#143D59] truncate"><?php echo h($v['video_title']); ?></div>
@@ -141,7 +177,7 @@ $pageTitle = 'Preweek';
         </div>
       </section>
 
-      <section class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#143D59]">
+      <section class="preweek-detail-panel rounded-2xl overflow-hidden border-l-4 border-l-[#143D59]">
         <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/60 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#143D59] text-white shadow-md shadow-[#143D59]/25">
@@ -163,7 +199,7 @@ $pageTitle = 'Preweek';
             </div>
           <?php else: ?>
             <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
-              <div class="rounded-2xl p-4 bg-white/70 border border-[#1665A0]/10 hover:border-[#1665A0]/25 hover:bg-white transition shadow-sm">
+              <div class="preweek-item rounded-2xl p-4 border transition shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <div class="font-semibold text-[#143D59] truncate"><?php echo h($h['handout_title']); ?></div>

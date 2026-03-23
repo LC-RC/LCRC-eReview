@@ -297,12 +297,46 @@ if ($hour < 12) {
 </div>
 <style>
 .student-dashboard-page {
-  background: linear-gradient(180deg, #eef5fc 0%, #e3eef8 35%, #dceaf6 60%, #e8f2fa 100%);
+  background: linear-gradient(180deg, #eef5fc 0%, #e3eef8 40%, #e8f2fa 100%);
 }
+.student-dashboard-page .rounded-2xl { border-radius: 0.75rem !important; }
+.student-dashboard-page .rounded-xl { border-radius: 0.625rem !important; }
 .dashboard-welcome-hero {
   min-height: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
-.dashboard-quick-card { transition: box-shadow 0.3s ease, transform 0.3s ease; }
+
+/* Admin-card structure, tailored to student blue/white */
+.dashboard-quick-card {
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.25s ease;
+  border: 1px solid rgba(22, 101, 160, 0.14) !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+}
+.dashboard-quick-card:hover {
+  border-color: rgba(22, 101, 160, 0.28) !important;
+  box-shadow: 0 8px 24px rgba(20, 61, 89, 0.16) !important;
+}
+
+.student-dashboard-page article,
+.student-dashboard-page aside {
+  background: linear-gradient(to bottom, #f0f7fc, #ffffff) !important;
+  border: 1px solid rgba(22, 101, 160, 0.14) !important;
+  border-left-width: 4px !important;
+  box-shadow: 0 2px 8px rgba(20, 61, 89, 0.1), 0 4px 16px rgba(20, 61, 89, 0.06) !important;
+}
+.student-dashboard-page article > div:first-child,
+.student-dashboard-page aside > div:first-child {
+  background: rgba(232, 242, 250, 0.6) !important;
+  border-bottom-color: rgba(22, 101, 160, 0.1) !important;
+}
+.student-dashboard-page article > div:last-child,
+.student-dashboard-page aside > div:last-child {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+#dashboardStudyChart {
+  filter: none;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>

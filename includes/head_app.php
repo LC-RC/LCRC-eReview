@@ -37,3 +37,12 @@ if (file_exists($tailwindFile)): ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css">
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+<style>
+  /*
+    Uniform student box corner radius (less rounded / more admin-like).
+    Scoped to the student app shell only so admin UI is unaffected.
+  */
+  .app-shell-main--student .rounded-2xl { border-radius: 0.75rem !important; }
+  .app-shell-main--student .rounded-xl { border-radius: 0.625rem !important; }
+  .app-shell-main--student .rounded-lg { border-radius: 0.5rem !important; }
+</style>

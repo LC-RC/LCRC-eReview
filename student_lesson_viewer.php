@@ -58,6 +58,9 @@ $pageTitle = $lessonTitle . ' - Materials';
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
+    .lesson-viewer-page .rounded-2xl { border-radius: 0.75rem !important; }
+    .lesson-viewer-page .rounded-xl { border-radius: 0.625rem !important; }
+    .lesson-viewer-page .rounded-lg { border-radius: 0.5rem !important; }
     .video-embed { aspect-ratio: 16/9; width: 100%; border: 0; border-radius: 12px; background: #000; }
     .lesson-split-container { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; min-height: 65vh; }
     @media (max-width: 900px) {
@@ -113,7 +116,7 @@ $pageTitle = $lessonTitle . ' - Materials';
     }
   </style>
 </head>
-<body class="font-sans antialiased student-protected" x-data="{ viewMode: 'normal', selectedHandoutId: '<?php echo $firstHandoutId; ?>' }">
+<body class="font-sans antialiased student-protected lesson-viewer-page" x-data="{ viewMode: 'normal', selectedHandoutId: '<?php echo $firstHandoutId; ?>' }">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 

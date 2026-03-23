@@ -36,7 +36,7 @@ if ($action === 'save_answer') {
     }
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
-    $selected = $_POST['selected_answer'] ?? '';
+    $selected = strtoupper(trim((string)($_POST['selected_answer'] ?? '')));
     $validLetters = ['A','B','C','D','E','F','G','H','I','J'];
     if (!in_array($selected, $validLetters, true)) {
         echo json_encode(['ok' => false, 'error' => 'Invalid answer']);
@@ -73,7 +73,8 @@ if ($action === 'save_answer') {
         echo json_encode(['ok' => false, 'error' => 'Invalid question']);
         exit;
     }
-    $isCorrect = ($selected === $qRow['correct_answer']) ? 1 : 0;
+    $correctLetter = strtoupper(trim((string)($qRow['correct_answer'] ?? '')));
+    $isCorrect = ($selected === $correctLetter) ? 1 : 0;
 
     $stmt = mysqli_prepare($conn, "SELECT answer_id FROM quiz_answers WHERE attempt_id=? AND question_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $questionId);
@@ -83,12 +84,25 @@ if ($action === 'save_answer') {
 
     if ($existing) {
         $stmt = mysqli_prepare($conn, "UPDATE quiz_answers SET selected_answer=?, is_correct=? WHERE answer_id=?");
+        if (!$stmt) {
+            echo json_encode(['ok' => false, 'error' => 'Server error (prepare update)']);
+            exit;
+        }
         mysqli_stmt_bind_param($stmt, 'sii', $selected, $isCorrect, $existing['answer_id']);
     } else {
         $stmt = mysqli_prepare($conn, "INSERT INTO quiz_answers (user_id, question_id, attempt_id, selected_answer, is_correct) VALUES (?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(['ok' => false, 'error' => 'Server error (prepare insert)']);
+            exit;
+        }
         mysqli_stmt_bind_param($stmt, 'iiisi', $userId, $questionId, $attemptId, $selected, $isCorrect);
     }
-    mysqli_stmt_execute($stmt);
+    if (!mysqli_stmt_execute($stmt)) {
+        $err = mysqli_stmt_error($stmt);
+        mysqli_stmt_close($stmt);
+        echo json_encode(['ok' => false, 'error' => 'Could not save answer', 'detail' => $err]);
+        exit;
+    }
     mysqli_stmt_close($stmt);
 
     $countRes = mysqli_query($conn, "SELECT COUNT(DISTINCT question_id) AS cnt FROM quiz_answers WHERE attempt_id=".(int)$attemptId);
