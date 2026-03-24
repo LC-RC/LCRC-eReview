@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 requireRole('admin');
+require_once __DIR__ . '/includes/profile_avatar.php';
 
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
@@ -8,7 +9,18 @@ if ($userId <= 0) {
     exit;
 }
 
-$stmt = mysqli_prepare($conn, "SELECT user_id, full_name, email, review_type, school, school_other, payment_proof, role, status, access_start, access_end, access_months, created_at, updated_at FROM users WHERE user_id=? LIMIT 1");
+$hasProfilePicture = false;
+$hasUseDefaultAvatar = false;
+$cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
+if ($cp1 && mysqli_fetch_assoc($cp1)) $hasProfilePicture = true;
+$cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
+if ($cp2 && mysqli_fetch_assoc($cp2)) $hasUseDefaultAvatar = true;
+
+$selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, role, status, access_start, access_end, access_months, created_at, updated_at";
+if ($hasProfilePicture) $selectCols .= ", profile_picture";
+if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
+
+$stmt = mysqli_prepare($conn, "SELECT $selectCols FROM users WHERE user_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $userId);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
@@ -21,6 +33,9 @@ if (!$user || $user['role'] !== 'student') {
 }
 
 $schoolLabel = $user['school'] === 'Other' && !empty($user['school_other']) ? $user['school_other'] : $user['school'];
+$avatarPath = ereview_avatar_public_path($user['profile_picture'] ?? '');
+$useDefaultAvatar = $hasUseDefaultAvatar ? !empty($user['use_default_avatar']) : true;
+$avatarInitial = ereview_avatar_initial($user['full_name'] ?? 'U');
 $csrf = generateCSRFToken();
 $pageTitle = 'Student Details - ' . $user['full_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_students.php'], [ h($user['full_name']) ] ];
@@ -29,6 +44,59 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <style>
+    .student-profile-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0 0.7rem;
+      margin-bottom: 1.1rem;
+    }
+    .student-profile-hero__avatar-wrap {
+      position: relative;
+      width: 6.25rem;
+      height: 6.25rem;
+      border-radius: 9999px;
+      padding: 3px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.6), rgba(99, 102, 241, 0.6));
+      box-shadow: 0 8px 20px rgba(30, 41, 59, 0.22);
+    }
+    .student-profile-hero__avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      color: #fff;
+      font-size: 1.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .student-profile-hero__avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .student-profile-hero__name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-top: 0.35rem;
+    }
+    .student-profile-hero__caption {
+      color: #94a3b8;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
@@ -64,6 +132,19 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
     <div class="lg:col-span-7">
       <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-card-text"></i> Registration Info</h2>
+        <div class="student-profile-hero">
+          <div class="student-profile-hero__avatar-wrap" aria-hidden="true">
+            <span class="student-profile-hero__avatar">
+              <?php if ($avatarPath !== '' && !$useDefaultAvatar): ?>
+                <img src="<?php echo h($avatarPath); ?>" alt="<?php echo h($user['full_name']); ?> profile photo" loading="lazy">
+              <?php else: ?>
+                <?php echo h($avatarInitial); ?>
+              <?php endif; ?>
+            </span>
+          </div>
+          <div class="student-profile-hero__name"><?php echo h($user['full_name']); ?></div>
+          <div class="student-profile-hero__caption">Student Profile</div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div class="text-gray-500 text-sm">Full Name</div>

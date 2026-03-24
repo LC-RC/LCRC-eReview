@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 requireRole('admin');
+require_once __DIR__ . '/includes/profile_avatar.php';
 
 $csrf = generateCSRFToken();
 $nowSql = date('Y-m-d H:i:s');
@@ -24,6 +25,25 @@ $whereMap = [
 ];
 $tabWhere = $whereMap[$tab];
 
+$hasProfilePicture = false;
+$hasUseDefaultAvatar = false;
+$hasIsOnline = false;
+$hasLastSeenAt = false;
+$hasLastLogoutAt = false;
+$hasLastLoginAt = false;
+$cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
+if ($cp1 && mysqli_fetch_assoc($cp1)) $hasProfilePicture = true;
+$cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
+if ($cp2 && mysqli_fetch_assoc($cp2)) $hasUseDefaultAvatar = true;
+$cp3 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'is_online'");
+if ($cp3 && mysqli_fetch_assoc($cp3)) $hasIsOnline = true;
+$cp4 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_seen_at'");
+if ($cp4 && mysqli_fetch_assoc($cp4)) $hasLastSeenAt = true;
+$cp5 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_logout_at'");
+if ($cp5 && mysqli_fetch_assoc($cp5)) $hasLastLogoutAt = true;
+$cp6 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_login_at'");
+if ($cp6 && mysqli_fetch_assoc($cp6)) $hasLastLoginAt = true;
+
 if (in_array($tab, ['enrolled','expired'], true)) {
   $countSql = "SELECT COUNT(*) AS total FROM users WHERE $tabWhere AND $searchSql";
   $stmt = mysqli_prepare($conn, $countSql);
@@ -43,6 +63,12 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
 $selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, status, access_start, access_end, access_months, created_at";
+if ($hasProfilePicture) $selectCols .= ", profile_picture";
+if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
+if ($hasIsOnline) $selectCols .= ", is_online";
+if ($hasLastSeenAt) $selectCols .= ", last_seen_at";
+if ($hasLastLogoutAt) $selectCols .= ", last_logout_at";
+if ($hasLastLoginAt) $selectCols .= ", last_login_at";
 if (in_array($tab, ['enrolled','expired'], true)) {
   $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY created_at DESC LIMIT ? OFFSET ?";
   $stmt = mysqli_prepare($conn, $sql);
@@ -89,6 +115,59 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <style>
+    .student-avatar-cell {
+      position: relative;
+      width: 2.85rem;
+      height: 2.85rem;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+    .student-avatar-media {
+      width: 100%;
+      height: 100%;
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #334155;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.24);
+      text-transform: uppercase;
+    }
+    .student-avatar-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .student-avatar-status-dot {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 0.9rem;
+      height: 0.9rem;
+      border-radius: 9999px;
+      border: 2px solid rgba(255,255,255,0.9);
+      z-index: 2;
+    }
+    .student-avatar-status-dot--active {
+      background: #22c55e;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.28), 0 0 12px rgba(34, 197, 94, 0.85);
+    }
+    .student-avatar-status-dot--inactive {
+      background: #9ca3af;
+      box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.24);
+    }
+  </style>
 </head>
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
@@ -169,6 +248,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       <table class="w-full text-left">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Profile</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Name</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Email</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
@@ -186,7 +266,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
               elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
             ?>
             <tr>
-              <td colspan="5" class="px-5 py-14 text-center text-gray-500">
+              <td colspan="6" class="px-5 py-14 text-center text-gray-500">
                 <i class="bi bi-people text-5xl block mb-3 opacity-50"></i>
                 <div class="font-semibold text-gray-600">No students found</div>
                 <p class="text-sm mt-1 max-w-sm mx-auto"><?php echo h($emptyHint); ?></p>
@@ -207,8 +287,47 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                 $badgeClass = $statusClass === 'approved' ? 'bg-green-100 text-green-800' : ($statusClass === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
                 $hasProof = !empty($row['payment_proof']);
                 $isExpired = ($statusClass === 'approved' && !empty($row['access_end']) && strtotime($row['access_end']) < time());
+                $avatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
+                $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($row['use_default_avatar']) : true;
+                $avatarInitial = ereview_avatar_initial($row['full_name'] ?? 'U');
+                $isSessionActive = false;
+                $recentThresholdTs = time() - (10 * 60);
+                if ($hasIsOnline) {
+                  $isSessionActive = !empty($row['is_online']);
+                }
+                if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
+                  $lastSeenTs = strtotime((string)$row['last_seen_at']);
+                  if ($lastSeenTs !== false) {
+                    $isSessionActive = $isSessionActive || ($lastSeenTs >= $recentThresholdTs);
+                  }
+                }
+                if (!$hasLastSeenAt && $hasLastLoginAt && !empty($row['last_login_at'])) {
+                  $lastLoginTs = strtotime((string)$row['last_login_at']);
+                  if ($lastLoginTs !== false && $lastLoginTs >= $recentThresholdTs) {
+                    $isSessionActive = true;
+                  }
+                }
+                if ($hasLastLogoutAt && !empty($row['last_logout_at'])) {
+                  $lastLogoutTs = strtotime((string)$row['last_logout_at']);
+                  $lastSeenTs2 = (!empty($row['last_seen_at']) ? strtotime((string)$row['last_seen_at']) : false);
+                  if ($lastLogoutTs !== false && ($lastSeenTs2 === false || $lastSeenTs2 <= $lastLogoutTs)) {
+                    $isSessionActive = false;
+                  }
+                }
               ?>
-              <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+              <tr class="border-b border-gray-100 hover:bg-gray-50/50" data-user-id="<?php echo (int)$row['user_id']; ?>">
+                <td class="px-5 py-3 text-center">
+                  <span class="student-avatar-cell" aria-hidden="true" title="<?php echo h($row['full_name']); ?>">
+                    <span class="student-avatar-media">
+                      <?php if ($avatarPath !== '' && !$useDefaultAvatar): ?>
+                        <img src="<?php echo h($avatarPath); ?>" alt="<?php echo h($row['full_name']); ?> profile photo" class="w-full h-full object-cover" loading="lazy">
+                      <?php else: ?>
+                        <?php echo h($avatarInitial); ?>
+                      <?php endif; ?>
+                    </span>
+                    <span data-status-dot class="student-avatar-status-dot <?php echo $isSessionActive ? 'student-avatar-status-dot--active' : 'student-avatar-status-dot--inactive'; ?>" title="<?php echo $isSessionActive ? 'Session active' : 'Session inactive'; ?>"></span>
+                  </span>
+                </td>
                 <td class="px-5 py-3 text-center">
                   <div class="font-semibold text-gray-800"><?php echo h($row['full_name']); ?></div>
                   <div class="text-gray-500 text-sm"><?php echo h($schoolLabel); ?> • <?php echo h($row['review_type']); ?></div>
@@ -238,6 +357,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                       <form class="inline-flex gap-2 ml-auto" action="activate_user.php" method="POST">
                         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                         <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                        <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students.php'); ?>">
                         <input type="number" min="1" max="24" name="months" class="input-custom w-28 py-1.5 text-sm" placeholder="Months" required>
                         <button type="submit" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition">Approve</button>
                       </form>
@@ -285,5 +405,50 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
   <?php mysqli_stmt_close($stmt); ?>
 </div>
 </main>
+<script>
+  (function () {
+    var POLL_MS = 10000;
+    var rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-user-id]'));
+    if (!rows.length) return;
+
+    function ids() {
+      return rows.map(function (r) { return r.getAttribute('data-user-id'); }).filter(Boolean);
+    }
+
+    function applyPresence(presenceMap) {
+      rows.forEach(function (row) {
+        var id = row.getAttribute('data-user-id');
+        var dot = row.querySelector('[data-status-dot]');
+        if (!id || !dot) return;
+        var active = !!presenceMap[id];
+        dot.classList.toggle('student-avatar-status-dot--active', active);
+        dot.classList.toggle('student-avatar-status-dot--inactive', !active);
+        dot.title = active ? 'Session active' : 'Session inactive';
+      });
+    }
+
+    function pollOnce() {
+      var idList = ids();
+      if (!idList.length) return;
+      fetch('admin_students_presence.php?ids=' + encodeURIComponent(idList.join(',')), {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store'
+      })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !data.ok || !data.presence) return;
+        applyPresence(data.presence);
+      })
+      .catch(function () {});
+    }
+
+    pollOnce();
+    setInterval(pollOnce, POLL_MS);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) pollOnce();
+    });
+  })();
+</script>
 </body>
 </html>

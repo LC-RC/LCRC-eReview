@@ -158,6 +158,7 @@ if ($upd) {
     @mysqli_stmt_execute($upd);
     mysqli_stmt_close($upd);
 }
+setUserPresenceStatus($uid, true);
 
 $target = ($user['role'] === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
 $fullName = trim($user['full_name'] ?? '');

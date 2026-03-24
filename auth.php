@@ -12,6 +12,10 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['ereview_rm'])) {
     loginFromRememberMe();
 }
 
+if (isset($_SESSION['user_id'])) {
+    touchUserPresence((int)$_SESSION['user_id']);
+}
+
 /**
  * Check if user is logged in
  * @return bool
@@ -138,4 +142,61 @@ function h($string) {
 function sanitizeInt($value, $default = 0) {
     $int = filter_var($value, FILTER_VALIDATE_INT);
     return $int !== false ? $int : $default;
+}
+
+/**
+ * Detect optional presence columns in users table.
+ * @return array{is_online:bool,last_seen_at:bool,last_logout_at:bool}
+ */
+function getUserPresenceColumns() {
+    static $cols = null;
+    if ($cols !== null) {
+        return $cols;
+    }
+    global $conn;
+    $cols = ['is_online' => false, 'last_seen_at' => false, 'last_logout_at' => false];
+    foreach (array_keys($cols) as $col) {
+        $res = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $col) . "'");
+        if ($res && mysqli_fetch_assoc($res)) {
+            $cols[$col] = true;
+        }
+    }
+    return $cols;
+}
+
+/**
+ * Set explicit online/offline state for a user when supported.
+ * Safe no-op if presence columns do not exist.
+ * @param int $userId
+ * @param bool $isOnline
+ */
+function setUserPresenceStatus($userId, $isOnline) {
+    global $conn;
+    $uid = (int)$userId;
+    if ($uid <= 0) return;
+
+    $cols = getUserPresenceColumns();
+    $sets = [];
+    if ($cols['is_online']) $sets[] = "is_online=" . ($isOnline ? "1" : "0");
+    if ($cols['last_seen_at'] && $isOnline) $sets[] = "last_seen_at=NOW()";
+    if ($cols['last_logout_at'] && !$isOnline) $sets[] = "last_logout_at=NOW()";
+    if (!$sets) return;
+
+    @mysqli_query($conn, "UPDATE users SET " . implode(', ', $sets) . " WHERE user_id=" . $uid . " LIMIT 1");
+}
+
+/**
+ * Touch current user presence with throttling.
+ * @param int $userId
+ */
+function touchUserPresence($userId) {
+    $uid = (int)$userId;
+    if ($uid <= 0) return;
+
+    $lastTouch = (int)($_SESSION['presence_last_touch'] ?? 0);
+    if ($lastTouch > 0 && (time() - $lastTouch) < 60) {
+        return; // Avoid writing on every request.
+    }
+    setUserPresenceStatus($uid, true);
+    $_SESSION['presence_last_touch'] = time();
 }

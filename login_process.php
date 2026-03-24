@@ -148,6 +148,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             @mysqli_stmt_execute($upd);
             mysqli_stmt_close($upd);
         }
+        setUserPresenceStatus($uid, true);
         
         // Verify session is valid
         if (!verifySession()) {

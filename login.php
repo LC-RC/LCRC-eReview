@@ -64,6 +64,7 @@ if (!empty($_GET['magic'])) {
                 @mysqli_stmt_execute($upd);
                 mysqli_stmt_close($upd);
             }
+            setUserPresenceStatus($uid, true);
             deleteMagicLinkToken($magicResult['token_id']);
             if (verifySession()) {
                 $target = ($user['role'] === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
