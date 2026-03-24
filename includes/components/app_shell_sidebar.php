@@ -8,12 +8,12 @@
  *
  * Optional:
  *   $appShellCurrentScript  defaults to basename($_SERVER['PHP_SELF'])
- *   $appShellSidebarHeader  'brand' (admin) | 'profile' (student)
+ *   $appShellSidebarHeader  'brand' (admin/student) | 'profile' (legacy)
  *   $appShellProfileInitial, $appShellProfileName, $appShellProfileHref — when header is profile
  */
 $appShellTheme = ($appShellTheme ?? 'admin') === 'student' ? 'student' : 'admin';
 $appShellCurrentScript = $appShellCurrentScript ?? basename($_SERVER['PHP_SELF'] ?? '');
-$appShellSidebarHeader = $appShellSidebarHeader ?? ($appShellTheme === 'student' ? 'profile' : 'brand');
+$appShellSidebarHeader = $appShellSidebarHeader ?? 'brand';
 $appShellNavConfig = $appShellNavConfig ?? [];
 $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
 ?>
@@ -36,10 +36,11 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
     </a>
   </div>
   <?php else: ?>
-  <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-white/10 border-b border-white/10 shrink-0 flex items-center gap-2">
-    <h3 class="admin-sidebar-brand text-white text-xl font-bold m-0 flex items-center gap-2">
-      <i class="bi bi-mortarboard-fill"></i> <span>LCRC eReview</span>
-    </h3>
+  <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-white/10 border-b border-white/10 shrink-0 flex items-center">
+    <a href="<?php echo $appShellTheme === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php'; ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
+      <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon" aria-hidden="true"></i>
+      <span class="app-shell-sidebar-brand-text">LCRC eReview</span>
+    </a>
   </div>
   <?php endif; ?>
 
@@ -86,21 +87,6 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
     </ul>
   </nav>
 
-  <?php if ($appShellTheme === 'admin'): ?>
-  <div class="admin-sidebar-footer shrink-0 border-t border-white/10">
-    <a href="logout.php" title="Sign out" class="ereview-logout-trigger flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition w-full">
-      <i class="bi bi-box-arrow-right text-lg w-6 text-center"></i>
-      <span class="app-shell-nav-text">Logout</span>
-    </a>
-  </div>
-  <?php else: ?>
-  <div class="app-shell-sidebar-footer--student shrink-0 border-t border-white/15 px-2 pt-3 pb-3 mt-auto">
-    <a href="logout.php" class="ereview-logout-trigger student-nav-item student-nav-item--logout flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out w-full justify-center sm:justify-start">
-      <i class="bi bi-box-arrow-right shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
-      <span class="font-medium truncate whitespace-nowrap app-shell-nav-text transition-all duration-300">Logout</span>
-    </a>
-  </div>
-  <?php endif; ?>
 </aside>
 
 <div id="sidebar-backdrop" class="app-shell-backdrop" aria-hidden="true"></div>
@@ -124,11 +110,20 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
     return document.getElementById('app-sidebar-toggle-btn');
   }
 
+  function syncBrandHeader() {
+    var collapsed = !body.classList.contains('sidebar-expanded');
+    var brandTextEls = aside.querySelectorAll('.app-shell-sidebar-brand-text');
+    for (var i = 0; i < brandTextEls.length; i++) {
+      brandTextEls[i].style.display = collapsed ? 'none' : '';
+    }
+  }
+
   function syncToggleAria() {
     var btn = toggleBtn();
     if (btn) {
       btn.setAttribute('aria-expanded', body.classList.contains('sidebar-expanded') ? 'true' : 'false');
     }
+    syncBrandHeader();
   }
 
   function openSidebar() {

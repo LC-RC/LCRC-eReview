@@ -37,11 +37,10 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
           <span class="burger-line burger-line--2"></span>
           <span class="burger-line burger-line--3"></span>
         </span>
+        <span class="app-shell-arrow-icon" aria-hidden="true">
+          <i class="bi bi-arrow-right"></i>
+        </span>
       </button>
-      <a href="admin_dashboard.php" class="admin-topbar-brand flex items-center gap-2 shrink-0 rounded-xl px-3 py-2 transition-all duration-300">
-        <i class="bi bi-mortarboard-fill admin-topbar-brand-icon" aria-hidden="true"></i>
-        <span class="admin-topbar-brand-text font-bold tracking-tight whitespace-nowrap hidden sm:inline">LCRC eReview</span>
-      </a>
       <div class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
         <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
         <input type="search" placeholder="Search students, subjects..." aria-label="Search" class="admin-topbar-search"
@@ -133,11 +132,10 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
           <span class="burger-line burger-line--2"></span>
           <span class="burger-line burger-line--3"></span>
         </span>
+        <span class="app-shell-arrow-icon" aria-hidden="true">
+          <i class="bi bi-arrow-right"></i>
+        </span>
       </button>
-      <a href="student_dashboard.php" class="student-topbar-brand flex items-center gap-2 shrink-0 rounded-xl px-3 py-2 transition-all duration-300">
-        <i class="bi bi-mortarboard-fill text-[#1665A0]" style="font-size:1.25rem" aria-hidden="true"></i>
-        <span class="font-bold text-gray-800 text-base tracking-tight whitespace-nowrap hidden sm:inline">LCRC eReview</span>
-      </a>
       <div class="student-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
         <i class="bi bi-search student-topbar-search-icon" aria-hidden="true"></i>
         <input type="search" placeholder="Search courses, subjects..." aria-label="Search" class="student-topbar-search" @focus="searchFocused = true" @blur="searchFocused = false">

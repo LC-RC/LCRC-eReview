@@ -79,6 +79,10 @@ body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--s
   justify-content: center;
 }
 
+body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand {
+  justify-content: center;
+}
+
 body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-profile-name {
   position: absolute;
   width: 1px;
@@ -96,6 +100,19 @@ body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--s
   width: 100%;
 }
 
+body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-brand-link {
+  justify-content: center;
+  width: 100%;
+}
+
+body.app-shell--student:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand span {
+  display: none !important;
+}
+
+body:not(.sidebar-expanded) #app-sidebar .app-shell-sidebar-brand-text {
+  display: none !important;
+}
+
 body.app-shell--student.sidebar-expanded #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-profile-name {
   position: static;
   width: auto;
@@ -105,29 +122,94 @@ body.app-shell--student.sidebar-expanded #app-sidebar.app-shell-sidebar--student
   overflow: visible;
 }
 
-/* ---- Unified burger: morph when sidebar is collapsed (rail mode) ---- */
-body:not(.sidebar-expanded) .app-shell-menu-btn .burger-line {
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, top 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+/* ---- Unified menu button: burger to arrow (no X) ---- */
+.app-shell-menu-btn {
+  position: relative;
 }
 
-body:not(.sidebar-expanded) .app-shell-menu-btn .burger-line--1 {
+.app-shell-menu-btn .burger-icon,
+.app-shell-menu-btn .app-shell-arrow-icon {
+  position: absolute;
   top: 50%;
-  transform: translateY(-50%) rotate(45deg);
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.3s var(--app-shell-ease), opacity 0.28s ease;
 }
 
-body:not(.sidebar-expanded) .app-shell-menu-btn .burger-line--2 {
+.app-shell-menu-btn .app-shell-arrow-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0;
-  transform: translateY(-50%) scaleX(0);
+  transform: translate(-50%, -50%) scale(0.9);
+  pointer-events: none;
 }
 
-body:not(.sidebar-expanded) .app-shell-menu-btn .burger-line--3 {
-  top: 50%;
-  transform: translateY(-50%) rotate(-45deg);
+.app-shell-menu-btn .app-shell-arrow-icon i {
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
-/* Admin burger lines base motion */
-body.admin-app .admin-topbar-menu-btn .burger-line {
+.app-shell-menu-btn .burger-line {
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, top 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body:not(.sidebar-expanded) .app-shell-menu-btn .burger-icon {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+body:not(.sidebar-expanded) .app-shell-menu-btn .app-shell-arrow-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+body:not(.sidebar-expanded) .app-shell-menu-btn .app-shell-arrow-icon i {
+  transform: rotate(0deg);
+}
+
+body.sidebar-expanded .app-shell-menu-btn .app-shell-arrow-icon i {
+  transform: rotate(180deg);
+}
+
+/* Prefer button state for icon swapping to avoid desync with body class */
+.app-shell-menu-btn[aria-expanded="false"] .burger-icon {
+  display: none !important;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.app-shell-menu-btn[aria-expanded="false"] .app-shell-arrow-icon {
+  display: inline-flex !important;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.app-shell-menu-btn[aria-expanded="false"] .app-shell-arrow-icon i {
+  transform: rotate(0deg);
+}
+
+.app-shell-menu-btn[aria-expanded="true"] .burger-icon {
+  display: block !important;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.app-shell-menu-btn[aria-expanded="true"] .app-shell-arrow-icon {
+  display: none !important;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.app-shell-menu-btn[aria-expanded="true"] .app-shell-arrow-icon i {
+  transform: rotate(180deg);
+}
+
+/* Keep navigation icons visible in collapsed rail for all themes */
+body:not(.sidebar-expanded) #app-sidebar .app-shell-nav-link i {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
 }
 
 /* Expanded sidebar: subtle focus emphasis */
@@ -318,7 +400,7 @@ body.sidebar-expanded #app-sidebar {
   color: var(--text-muted);
   background: transparent;
   border: 1px solid transparent;
-  transition: color 0.25s ease, background 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -326,12 +408,11 @@ body.sidebar-expanded #app-sidebar {
   color: var(--brand);
   background: var(--brand-light);
   box-shadow: 0 2px 12px rgba(22, 101, 160, 0.14);
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .student-topbar-menu-btn:active {
   transform: scale(0.96);
-  transition-duration: 0.15s;
 }
 
 .student-topbar-menu-btn:focus-visible {
@@ -344,6 +425,36 @@ body.sidebar-expanded #app-sidebar {
   height: 18px;
   position: relative;
   display: block;
+}
+
+/* Final-cascade lock: keep toggle icons perfectly centered (admin parity) */
+.app-shell-menu-btn .burger-icon {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 22px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.app-shell-menu-btn .app-shell-arrow-icon {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 22px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.app-shell-menu-btn .app-shell-arrow-icon i {
+  display: block;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .burger-line {
@@ -365,21 +476,6 @@ body.sidebar-expanded #app-sidebar {
 }
 
 .burger-line--3 {
-  top: 100%;
-  transform: translateY(-100%);
-}
-
-body.sidebar-expanded .student-topbar-menu-btn .burger-line--1 {
-  top: 0;
-  transform: none;
-}
-
-body.sidebar-expanded .student-topbar-menu-btn .burger-line--2 {
-  opacity: 1;
-  transform: translateY(-50%);
-}
-
-body.sidebar-expanded .student-topbar-menu-btn .burger-line--3 {
   top: 100%;
   transform: translateY(-100%);
 }
@@ -848,18 +944,11 @@ body.sidebar-expanded .student-topbar-menu-btn .burger-line--3 {
   }
 }
 
-/* Admin burger reset when expanded */
-body.sidebar-expanded .admin-topbar-menu-btn .burger-line--1 {
-  top: 0;
-  transform: none;
+/* Sidebar brand link + icon shared styles */
+#app-sidebar .app-shell-sidebar-brand-link {
+  text-decoration: none;
 }
 
-body.sidebar-expanded .admin-topbar-menu-btn .burger-line--2 {
-  opacity: 1;
-  transform: translateY(-50%);
-}
-
-body.sidebar-expanded .admin-topbar-menu-btn .burger-line--3 {
-  top: 100%;
-  transform: translateY(-100%);
+#app-sidebar .app-shell-sidebar-brand-icon {
+  font-size: 1.15rem;
 }

@@ -7,6 +7,7 @@
 <?php
 $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 $tailwindFile = __DIR__ . '/../assets/css/tailwind.css';
+$appShellFile = __DIR__ . '/../assets/css/app-shell.css';
 if (file_exists($tailwindFile)): ?>
 <link rel="stylesheet" href="<?php echo $base; ?>/assets/css/tailwind.css">
 <?php endif; ?>
@@ -35,7 +36,7 @@ if (file_exists($tailwindFile)): ?>
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css">
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo file_exists($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 <style>
   /*

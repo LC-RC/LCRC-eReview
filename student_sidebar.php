@@ -43,7 +43,7 @@ $avatarInitial = ereview_avatar_initial($fullName);
 
 $appShellTheme = 'student';
 $appShellCurrentScript = $currentPage;
-$appShellSidebarHeader = 'profile';
+$appShellSidebarHeader = 'brand';
 $appShellProfileInitial = $avatarInitial;
 $appShellProfileName = $studentShortName;
 $appShellProfileHref = 'student_dashboard.php';

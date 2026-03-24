@@ -393,6 +393,16 @@ body.admin-app #app-sidebar {
 body.admin-app #app-sidebar .admin-sidebar-brand {
   display: none;
 }
+body.admin-app #app-sidebar .app-shell-sidebar-header--brand {
+  justify-content: center;
+}
+body.admin-app #app-sidebar .app-shell-sidebar-brand-link {
+  justify-content: center;
+  width: 100%;
+}
+body.admin-app #app-sidebar .app-shell-sidebar-brand-text {
+  display: none;
+}
 body.admin-app #app-sidebar nav a {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -410,6 +420,15 @@ body.admin-app.sidebar-expanded #app-sidebar {
 }
 body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-brand {
   display: flex;
+}
+body.admin-app.sidebar-expanded #app-sidebar .app-shell-sidebar-header--brand {
+  justify-content: flex-start;
+}
+body.admin-app.sidebar-expanded #app-sidebar .app-shell-sidebar-brand-link {
+  justify-content: flex-start;
+}
+body.admin-app.sidebar-expanded #app-sidebar .app-shell-sidebar-brand-text {
+  display: inline;
 }
 body.admin-app.sidebar-expanded #app-sidebar nav a {
   padding-left: 1.25rem;
