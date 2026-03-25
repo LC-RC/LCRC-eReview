@@ -158,22 +158,22 @@ $prefill = $exam ?: [
 
     <?php if ($error): ?><div class="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-900"><?php echo h($error); ?></div><?php endif; ?>
 
-    <form method="post" class="mt-6 space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <form method="post" class="mt-6 space-y-6 rounded-xl border border-green-100 bg-gradient-to-b from-green-50/35 to-white p-6 shadow-sm">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
 
       <div class="grid grid-cols-1 gap-4">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
-          <input type="text" name="title" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo h($prefill['title'] ?? ''); ?>">
+          <label class="block text-sm font-semibold text-green-800 mb-1">Title</label>
+          <input type="text" name="title" required class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value="<?php echo h($prefill['title'] ?? ''); ?>">
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
-          <textarea name="description" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"><?php echo h($prefill['description'] ?? ''); ?></textarea>
+          <label class="block text-sm font-semibold text-green-800 mb-1">Description</label>
+          <textarea name="description" rows="3" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200"><?php echo h($prefill['description'] ?? ''); ?></textarea>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Time limit (seconds)</label>
-            <input type="number" name="time_limit_seconds" min="0" step="60" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo (int)($prefill['time_limit_seconds'] ?? 3600); ?>">
+            <label class="block text-sm font-semibold text-green-800 mb-1">Time limit (seconds)</label>
+            <input type="number" name="time_limit_seconds" min="0" step="60" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value="<?php echo (int)($prefill['time_limit_seconds'] ?? 3600); ?>">
             <p class="text-xs text-gray-500 mt-1">0 = no countdown timer (deadline still applies if set).</p>
           </div>
           <div class="flex items-center gap-2 pt-6">
@@ -183,13 +183,13 @@ $prefill = $exam ?: [
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Available from (optional)</label>
-            <input type="datetime-local" name="available_from" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            <label class="block text-sm font-semibold text-green-800 mb-1">Available from (optional)</label>
+            <input type="datetime-local" name="available_from" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
               value="<?php echo !empty($prefill['available_from']) ? h(date('Y-m-d\TH:i', strtotime($prefill['available_from']))) : ''; ?>">
           </div>
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Deadline (optional)</label>
-            <input type="datetime-local" name="deadline" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            <label class="block text-sm font-semibold text-green-800 mb-1">Deadline (optional)</label>
+            <input type="datetime-local" name="deadline" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
               value="<?php echo !empty($prefill['deadline']) ? h(date('Y-m-d\TH:i', strtotime($prefill['deadline']))) : ''; ?>">
           </div>
         </div>
@@ -200,17 +200,17 @@ $prefill = $exam ?: [
         <p class="text-sm text-gray-600 mb-4">Leave blank rows out; each block needs prompt and choices A–D.</p>
 
         <?php foreach ($questions as $idx => $q): ?>
-        <div class="mb-6 p-4 rounded-xl bg-gray-50 border border-gray-200">
-          <p class="text-sm font-semibold text-gray-700 mb-2">Question <?php echo $idx + 1; ?></p>
-          <textarea name="question_text[]" rows="2" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-2" placeholder="Question"><?php echo h($q['question_text'] ?? ''); ?></textarea>
+        <div class="mb-6 p-4 rounded-xl bg-green-50/55 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-sm font-semibold text-green-900 mb-2">Question <?php echo $idx + 1; ?></p>
+          <textarea name="question_text[]" rows="2" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Question"><?php echo h($q['question_text'] ?? ''); ?></textarea>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-            <input type="text" name="choice_a[]" class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" placeholder="Choice A" value="<?php echo h($q['choice_a'] ?? ''); ?>">
-            <input type="text" name="choice_b[]" class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" placeholder="Choice B" value="<?php echo h($q['choice_b'] ?? ''); ?>">
-            <input type="text" name="choice_c[]" class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" placeholder="Choice C" value="<?php echo h($q['choice_c'] ?? ''); ?>">
-            <input type="text" name="choice_d[]" class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" placeholder="Choice D" value="<?php echo h($q['choice_d'] ?? ''); ?>">
+            <input type="text" name="choice_a[]" class="rounded-lg border border-green-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Choice A" value="<?php echo h($q['choice_a'] ?? ''); ?>">
+            <input type="text" name="choice_b[]" class="rounded-lg border border-green-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Choice B" value="<?php echo h($q['choice_b'] ?? ''); ?>">
+            <input type="text" name="choice_c[]" class="rounded-lg border border-green-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Choice C" value="<?php echo h($q['choice_c'] ?? ''); ?>">
+            <input type="text" name="choice_d[]" class="rounded-lg border border-green-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Choice D" value="<?php echo h($q['choice_d'] ?? ''); ?>">
           </div>
-          <label class="text-sm font-semibold text-gray-700">Correct</label>
-          <select name="correct_answer[]" class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm ml-2">
+          <label class="text-sm font-semibold text-green-800">Correct</label>
+          <select name="correct_answer[]" class="rounded-lg border border-green-200 px-2 py-1.5 text-sm ml-2 focus:outline-none focus:ring-2 focus:ring-green-200">
             <?php foreach (['A','B','C','D'] as $L): ?>
             <option value="<?php echo $L; ?>" <?php echo strtoupper((string)($q['correct_answer'] ?? 'A')) === $L ? 'selected' : ''; ?>><?php echo $L; ?></option>
             <?php endforeach; ?>
@@ -221,7 +221,7 @@ $prefill = $exam ?: [
         <p class="text-xs text-gray-500">To add more questions, save and edit again — or duplicate rows in HTML (advanced).</p>
       </div>
 
-      <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition">Save exam</button>
+      <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition-all duration-300 hover:-translate-y-0.5">Save exam</button>
     </form>
   </div>
 </main>

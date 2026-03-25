@@ -4,13 +4,15 @@
  */
 require_once __DIR__ . '/../format_display_name.php';
 
-$t = ($appShellTopbarTheme ?? 'admin') === 'student' ? 'student' : 'admin';
+$t = ($appShellTopbarTheme ?? 'admin') === 'student'
+  ? 'student'
+  : (($appShellTopbarTheme ?? '') === 'professor' ? 'professor' : 'admin');
 $tzName = 'Asia/Manila';
 $tzObj  = @timezone_open($tzName);
 $now    = new DateTime('now', $tzObj ?: null);
 $offsetLabel = 'PHT · UTC+08:00';
 
-if ($t === 'admin') {
+if ($t === 'admin' || $t === 'professor') {
   $displayNameFull = trim($_SESSION['full_name'] ?? 'Admin');
   $timeIdMain = 'adminTopbarTimeMain';
   $timeIdOffset = 'adminTopbarTimeOffset';
@@ -22,7 +24,7 @@ if ($t === 'admin') {
 
 $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
 ?>
-<?php if ($t === 'admin'): ?>
+<?php if ($t === 'admin' || $t === 'professor'): ?>
 <header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
     userMenuOpen: false,
     searchFocused: false,
@@ -31,16 +33,18 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
   }" @keydown.escape.window="closeAll()">
   <div class="admin-topbar-inner">
     <div class="admin-topbar-left">
-      <button type="button" id="app-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="app-sidebar" class="admin-topbar-menu-btn app-shell-menu-btn" @click="toggleSidebar()">
-        <span class="burger-icon" aria-hidden="true">
-          <span class="burger-line burger-line--1"></span>
-          <span class="burger-line burger-line--2"></span>
-          <span class="burger-line burger-line--3"></span>
-        </span>
-        <span class="app-shell-arrow-icon" aria-hidden="true">
-          <i class="bi bi-arrow-right"></i>
-        </span>
-      </button>
+      <?php if ($t === 'admin' || $t === 'professor'): ?>
+        <button type="button" id="app-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="app-sidebar" class="admin-topbar-menu-btn app-shell-menu-btn" @click="toggleSidebar()">
+          <span class="burger-icon" aria-hidden="true">
+            <span class="burger-line burger-line--1"></span>
+            <span class="burger-line burger-line--2"></span>
+            <span class="burger-line burger-line--3"></span>
+          </span>
+          <span class="app-shell-arrow-icon" aria-hidden="true">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </button>
+      <?php endif; ?>
       <div class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
         <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
         <input type="search" placeholder="Search students, subjects..." aria-label="Search" class="admin-topbar-search"

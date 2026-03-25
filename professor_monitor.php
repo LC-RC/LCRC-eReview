@@ -47,11 +47,25 @@ if ($s) {
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <div class="admin-content max-w-7xl mx-auto w-full px-4 lg:px-6">
-    <h1 class="text-2xl font-bold text-green-800 m-0">Monitoring</h1>
-    <p class="text-gray-600 mt-1 mb-8">Exam participation and file submissions.</p>
+    <div class="mb-6">
+      <div class="rounded-xl border border-green-200 bg-gradient-to-r from-green-50/70 via-white to-white shadow-sm overflow-hidden">
+        <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-xl bg-green-600/10 border border-green-200 flex items-center justify-center shrink-0">
+              <i class="bi bi-graph-up text-green-700 text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-green-900 m-0 leading-tight">Monitoring</h1>
+              <p class="text-gray-600 mt-1 mb-0">Exam participation and file submissions.</p>
+            </div>
+          </div>
+          <div class="hidden sm:block"></div>
+        </div>
+      </div>
+    </div>
 
     <h2 class="text-lg font-bold text-green-800 mb-3">Exam attempts</h2>
-    <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto mb-10">
+    <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-x-auto mb-10">
       <table class="w-full text-sm text-left min-w-[640px]">
         <thead class="bg-green-50 text-green-800 font-semibold border-b border-gray-200">
           <tr>
@@ -63,12 +77,12 @@ if ($s) {
             <th class="px-4 py-3">Submitted</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-green-100">
           <?php if (empty($attempts)): ?>
           <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No data yet.</td></tr>
           <?php else: ?>
             <?php foreach ($attempts as $a): ?>
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-green-50/80 transition-colors">
               <td class="px-4 py-3 font-medium"><?php echo h($a['full_name']); ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h($a['email']); ?></td>
               <td class="px-4 py-3"><?php echo h($a['exam_title']); ?></td>
@@ -83,7 +97,7 @@ if ($s) {
     </div>
 
     <h2 class="text-lg font-bold text-green-800 mb-3">File submissions</h2>
-    <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
+    <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-x-auto">
       <table class="w-full text-sm text-left min-w-[640px]">
         <thead class="bg-green-50 text-green-800 font-semibold border-b border-gray-200">
           <tr>
@@ -94,12 +108,12 @@ if ($s) {
             <th class="px-4 py-3">Submitted</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-green-100">
           <?php if (empty($subs)): ?>
           <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No submissions yet.</td></tr>
           <?php else: ?>
             <?php foreach ($subs as $s): ?>
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-green-50/80 transition-colors">
               <td class="px-4 py-3 font-medium"><?php echo h($s['full_name']); ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h($s['email']); ?></td>
               <td class="px-4 py-3"><?php echo h($s['task_title']); ?></td>

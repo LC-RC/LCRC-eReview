@@ -72,21 +72,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($error): ?><div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-900"><?php echo h($error); ?></div><?php endif; ?>
     <?php if ($success): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900"><?php echo h($success); ?></div><?php endif; ?>
 
-    <form method="post" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+    <form method="post" class="rounded-xl border border-green-100 bg-gradient-to-b from-green-50/35 to-white p-6 shadow-sm space-y-4">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Full name</label>
-        <input type="text" name="full_name" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo h($_POST['full_name'] ?? ''); ?>">
+        <label class="block text-sm font-semibold text-green-800 mb-1">Full name</label>
+        <input type="text" name="full_name" required class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value="<?php echo h($_POST['full_name'] ?? ''); ?>">
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Email (login)</label>
-        <input type="email" name="email" required autocomplete="off" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo h($_POST['email'] ?? ''); ?>">
+        <label class="block text-sm font-semibold text-green-800 mb-1">Email (login)</label>
+        <input type="email" name="email" required autocomplete="off" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" value="<?php echo h($_POST['email'] ?? ''); ?>">
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-        <input type="password" name="password" required minlength="8" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" autocomplete="new-password">
+        <label class="block text-sm font-semibold text-green-800 mb-1">Password</label>
+        <input type="password" name="password" required minlength="8" class="w-full rounded-lg border border-green-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200" autocomplete="new-password">
       </div>
-      <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition">Create account</button>
+      <button type="submit" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition-all duration-300 hover:-translate-y-0.5">Create account</button>
     </form>
   </div>
 </main>

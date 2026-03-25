@@ -81,15 +81,29 @@ unset($_SESSION['message'], $_SESSION['error']);
 <body class="font-sans antialiased">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
-  <div class="admin-content max-w-6xl mx-auto w-full px-4 lg:px-6">
-    <h1 class="text-2xl font-bold text-green-800 m-0">File upload tasks</h1>
-    <p class="text-gray-600 mt-1 mb-6">Students can upload until the deadline.</p>
+  <main class="admin-content max-w-7xl mx-auto w-full px-4 lg:px-6">
+    <div class="mb-6">
+      <div class="rounded-xl border border-green-200 bg-gradient-to-r from-green-50/70 via-white to-white shadow-sm overflow-hidden">
+        <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <div class="w-11 h-11 rounded-xl bg-green-600/10 border border-green-200 flex items-center justify-center shrink-0">
+              <i class="bi bi-folder-plus text-green-700 text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-green-900 m-0 leading-tight">File upload tasks</h1>
+              <p class="text-gray-600 mt-1 mb-0">Students can upload until the deadline.</p>
+            </div>
+          </div>
+          <div class="hidden sm:block"></div>
+        </div>
+      </div>
+    </div>
 
     <?php if ($msg): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900"><?php echo h($msg); ?></div><?php endif; ?>
     <?php if ($err): ?><div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-900"><?php echo h($err); ?></div><?php endif; ?>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="rounded-xl border border-green-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
         <h2 class="text-lg font-bold text-green-800 m-0 mb-4"><?php echo $edit ? 'Edit task' : 'New task'; ?></h2>
         <form method="post" class="space-y-3">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -122,11 +136,11 @@ unset($_SESSION['message'], $_SESSION['error']);
             <label for="op" class="text-sm font-medium">Open for submissions</label>
           </div>
           <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition">Save</button>
-          <?php if ($edit): ?><a href="professor_upload_tasks.php" class="ml-3 text-sm font-semibold text-gray-600 hover:underline">Cancel</a><?php endif; ?>
+          <?php if ($edit): ?><a href="professor_upload_tasks.php" class="ml-3 text-sm font-semibold text-green-700 hover:underline">Cancel</a><?php endif; ?>
         </form>
       </div>
 
-      <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-hidden">
         <table class="w-full text-sm text-left">
           <thead class="bg-green-50 font-semibold text-green-800 border-b border-gray-200">
             <tr>
@@ -135,12 +149,12 @@ unset($_SESSION['message'], $_SESSION['error']);
               <th class="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-green-100">
             <?php if (empty($list)): ?>
             <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No tasks yet.</td></tr>
             <?php else: ?>
               <?php foreach ($list as $t): ?>
-              <tr class="hover:bg-gray-50">
+              <tr class="hover:bg-green-50/80 transition-colors">
                 <td class="px-4 py-3 font-medium"><?php echo h($t['title']); ?></td>
                 <td class="px-4 py-3 text-gray-600 hidden sm:table-cell"><?php echo h(date('M j, Y g:i A', strtotime($t['deadline']))); ?></td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">

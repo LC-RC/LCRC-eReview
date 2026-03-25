@@ -44,10 +44,10 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
   </div>
   <?php else: ?>
   <?php if ($appShellTheme === 'professor'): ?>
-    <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-white border-b border-green-100 shrink-0 flex items-center">
-      <a href="<?php echo h($appShellBrandHref); ?>" class="app-shell-sidebar-brand-link text-green-700 text-xl font-bold m-0 flex items-center gap-2">
-        <i class="bi bi-mortarboard-fill text-green-600 app-shell-sidebar-brand-icon" aria-hidden="true"></i>
-        <span class="app-shell-sidebar-brand-text text-gray-900">LCRC eReview</span>
+    <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-transparent border-b border-white/10 shrink-0 flex items-center">
+      <a href="<?php echo h($appShellBrandHref); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
+        <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon text-green-200/90" aria-hidden="true"></i>
+        <span class="app-shell-sidebar-brand-text text-white">LCRC eReview</span>
       </a>
     </div>
   <?php else: ?>
@@ -75,9 +75,9 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
             $classes .= ' bg-white/15 text-white border-l-white font-semibold';
           }
         } elseif ($appShellTheme === 'professor') {
-          $classes = 'app-shell-nav-link app-shell-nav-link--professor flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-green-50 hover:text-green-700 border-l-4 border-transparent transition';
+          $classes = 'app-shell-nav-link app-shell-nav-link--professor flex items-center gap-3 px-5 py-3 text-white/75 hover:bg-white/10 hover:text-white hover:border-l-green-300 border-l-4 border-transparent transition';
           if ($isActive) {
-            $classes .= ' bg-green-50 border-l-green-500 text-green-800 font-semibold';
+            $classes .= ' bg-green-400/10 border-l-green-300 text-white font-semibold';
           }
         } else {
           $classes = 'app-shell-nav-link app-shell-nav-link--student student-nav-item flex items-center gap-3 px-3 py-3 rounded-xl text-white transition-all duration-300 ease-out';
@@ -98,7 +98,7 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
           <a href="<?php echo h($item['href']); ?>"
              title="<?php echo h($item['title'] ?? ''); ?>"
              class="<?php echo $classes; ?>">
-            <i class="bi <?php echo h($item['icon']); ?> text-lg w-6 text-center"<?php echo ($appShellTheme === 'professor') ? ' style="color:#16a34a;"' : ''; ?>></i>
+            <i class="bi <?php echo h($item['icon']); ?> text-lg w-6 text-center<?php echo ($appShellTheme === 'professor') ? ' text-green-200/90' : ''; ?>"></i>
             <span class="app-shell-nav-text"><?php echo h($item['label']); ?></span>
             <?php if (!empty($item['badge']) && (int)$item['badge'] > 0): ?>
               <span class="admin-sidebar-badge" aria-label="<?php echo (int)$item['badge']; ?> pending"><?php echo (int)$item['badge']; ?></span>
@@ -213,7 +213,7 @@ include __DIR__ . '/app_shell_topbar.php';
 <?php elseif ($appShellTheme === 'professor'): ?>
 <main id="main" class="min-h-screen flex flex-col bg-white text-gray-700 font-sans">
 <?php
-$appShellTopbarTheme = 'admin';
+$appShellTopbarTheme = 'professor';
 include __DIR__ . '/app_shell_topbar.php';
 ?>
 <div class="admin-content flex-1 pt-5 pb-5">
