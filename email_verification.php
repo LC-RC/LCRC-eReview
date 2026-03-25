@@ -292,15 +292,53 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
     if (file_exists($configFile)) {
         $config = require $configFile;
         require_once __DIR__ . '/smtp_sender.php';
-        if (is_array($config) && function_exists('isMailConfigValid') && isMailConfigValid($config)) {
-            $fromEmail = $config['from_email'] ?? $config['smtp_username'];
-            $fromName = $config['from_name'] ?? 'LCRC eReview';
-            if (function_exists('sendMailSmtpHtml')) {
-                return sendMailSmtpHtml($toEmail, $subject, $html, $fromEmail, $fromName, $config);
+
+        // Retry once or twice for transient SMTP/network issues.
+        $attempts = 3;
+        for ($i = 0; $i < $attempts; $i++) {
+            try {
+                if (is_array($config)) {
+                    $fromEmail = $config['from_email'] ?? $config['smtp_username'] ?? '';
+                    $fromName = $config['from_name'] ?? 'LCRC eReview';
+
+                    $looksLikeSmtpConfigured =
+                        !empty($config['smtp_host'] ?? '') &&
+                        !empty($config['smtp_username'] ?? '') &&
+                        !empty($config['smtp_password'] ?? '');
+
+                    // isMailConfigValid is a "strict" guard; we still attempt SMTP if the config
+                    // looks real enough, to avoid false negatives causing hard failures.
+                    $strictValid = false;
+                    if (function_exists('isMailConfigValid')) {
+                        $strictValid = isMailConfigValid($config);
+                    }
+
+                    if (($strictValid || $looksLikeSmtpConfigured) && function_exists('sendMailSmtpHtml')) {
+                        $debugLog = null;
+                        $ok = sendMailSmtpHtml($toEmail, $subject, $html, $fromEmail, $fromName, $config, $debugLog);
+                        if ($ok) {
+                            return true;
+                        }
+                        // If strict validation failed but SMTP might still work, we continue attempts.
+                    }
+
+                    // Plain fallback via SMTP (sometimes HTML path fails with certain servers).
+                    if (($strictValid || $looksLikeSmtpConfigured) && function_exists('sendMailSmtp')) {
+                        $plain = strip_tags(str_replace(['<br>', '<br/>', '</p>'], ["\n", "\n", "\n"], $html));
+                        $debugLog = null;
+                        $ok = sendMailSmtp($toEmail, $subject, $plain, $fromEmail, $fromName, $config, $debugLog);
+                        if ($ok) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('[eReview] Verification email SMTP attempt failed: ' . $e->getMessage());
             }
-            $plain = strip_tags(str_replace(['<br>', '<br/>', '</p>'], ["\n", "\n", "\n"], $html));
-            if (sendMailSmtp($toEmail, $subject, $plain, $fromEmail, $fromName, $config)) {
-                return true;
+
+            // Backoff: keep it small for web requests.
+            if ($i < $attempts - 1) {
+                usleep(300000); // 0.3s
             }
         }
     }
@@ -309,6 +347,7 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
         'From: LCRC eReview <noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>',
+        'Reply-To: noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'),
     ];
-    return @mail($toEmail, $subject, $html, implode("\r\n", $headers));
+    return mail($toEmail, $subject, $html, implode("\r\n", $headers));
 }

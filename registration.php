@@ -2374,7 +2374,7 @@ unset($_SESSION['error']);
             if (data.success) {
               pendingEmail = data.email || pendingEmail;
               if (emailSentModal) emailSentModal.classList.add('is-active');
-              emailSentOk.addEventListener('click', function goNext() {
+              if (emailSentOk) emailSentOk.addEventListener('click', function goNext() {
                 emailSentOk.removeEventListener('click', goNext);
                 if (emailSentModal) emailSentModal.classList.remove('is-active');
                 if (waitingModal) waitingModal.classList.add('is-active');

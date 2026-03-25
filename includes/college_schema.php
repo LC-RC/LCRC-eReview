@@ -9,6 +9,17 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 
 @mysqli_query($conn, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','student','college_student','professor_admin') NOT NULL DEFAULT 'student'");
 
+// Optional profile field used by professor "Create college student" UI.
+// Adds the column only if it doesn't exist yet (idempotent).
+$hasSectionCol = @mysqli_query($conn, "SHOW COLUMNS FROM `users` LIKE 'section'");
+if ($hasSectionCol) {
+    $row = mysqli_fetch_assoc($hasSectionCol);
+    if (!$row) {
+        @mysqli_query($conn, "ALTER TABLE `users` ADD COLUMN `section` varchar(100) DEFAULT NULL");
+    }
+    mysqli_free_result($hasSectionCol);
+}
+
 $stmts = [
     "CREATE TABLE IF NOT EXISTS `college_exams` (
       `exam_id` int(11) NOT NULL AUTO_INCREMENT,
