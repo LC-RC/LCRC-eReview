@@ -5,7 +5,7 @@ require_once 'password_reset.php';
 require_once 'auth.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . (getCurrentUserRole() === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php'));
+    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
     exit;
 }
 

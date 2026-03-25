@@ -10,7 +10,7 @@ require_once __DIR__ . '/session_config.php';
 $host = "localhost";
 $user = "root";
 // Must match MySQL root password (MySQL Workbench / XAMPP). Default XAMPP = empty string ""
-$pass = "kath123_mmco";
+$pass = "2429249_lcrc";
 $db = "ereview";
 
 $conn = mysqli_connect($host, $user, $pass, $db);

@@ -110,14 +110,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         }
-        // Enforce approval and active access window for non-admins
-        if ($user['role'] !== 'admin' && strtolower($user['status']) !== 'approved') {
+        // Enforce approval and active access window for learners (not staff)
+        if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
             $_SESSION['error'] = 'Your account is not approved yet.';
             $_SESSION['error_type'] = 'not_approved';
             header('Location: login.php');
             exit;
         }
-        if ($user['role'] !== 'admin') {
+        if (!isStaffRole($user['role'])) {
             $now = new DateTime('now');
             if (!empty($user['access_end'])) {
                 $end = new DateTime($user['access_end']);
@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!empty($_POST['remember_me'])) {
             setRememberMeCookie($user['user_id']);
         }
-        $target = ($user['role'] === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
+        $target = dashboardUrlForRole($user['role']);
         $fullName = trim($user['full_name'] ?? '');
         $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
         header('Location: auth_success.php?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));

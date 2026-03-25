@@ -7,7 +7,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . (getCurrentUserRole() === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php'));
+    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
     exit;
 }
 
@@ -124,13 +124,13 @@ if ($hasEmailVerifiedCol) {
     }
 }
 
-if ($user['role'] !== 'admin' && strtolower($user['status']) !== 'approved') {
+if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
     $_SESSION['error'] = 'Your account is pending approval. An admin must approve your account before you can sign in. Please try again later or contact support.';
     $_SESSION['error_type'] = 'not_approved';
     header('Location: login.php');
     exit;
 }
-if ($user['role'] !== 'admin' && !empty($user['access_end'])) {
+if (!isStaffRole($user['role']) && !empty($user['access_end'])) {
     $now = new DateTime('now');
     $end = new DateTime($user['access_end']);
     if ($now > $end) {
@@ -160,7 +160,7 @@ if ($upd) {
 }
 setUserPresenceStatus($uid, true);
 
-$target = ($user['role'] === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
+$target = dashboardUrlForRole($user['role']);
 $fullName = trim($user['full_name'] ?? '');
 $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
 header('Location: auth_success.php?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));

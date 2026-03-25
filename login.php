@@ -5,14 +5,8 @@ require_once 'auth.php';
 require_once 'login_rate_limit.php';
 
 if (isLoggedIn() && verifySession()) {
-    $role = getCurrentUserRole();
-    if ($role === 'admin') {
-        header('Location: admin_dashboard.php');
-        exit;
-    } elseif ($role === 'student') {
-        header('Location: student_dashboard.php');
-        exit;
-    }
+    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
+    exit;
 }
 
 // Magic link sign-in: validate token and log user in
@@ -28,13 +22,13 @@ if (!empty($_GET['magic'])) {
         $user = $result ? mysqli_fetch_assoc($result) : null;
         mysqli_stmt_close($stmt);
         if ($user) {
-            if ($user['role'] !== 'admin' && strtolower($user['status']) !== 'approved') {
+            if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
                 $_SESSION['error'] = 'Your account is not approved yet.';
                 $_SESSION['error_type'] = 'not_approved';
                 header('Location: login.php');
                 exit;
             }
-            if ($user['role'] !== 'admin') {
+            if (!isStaffRole($user['role'])) {
                 $now = new DateTime('now');
                 if (!empty($user['access_end'])) {
                     $end = new DateTime($user['access_end']);
@@ -67,8 +61,7 @@ if (!empty($_GET['magic'])) {
             setUserPresenceStatus($uid, true);
             deleteMagicLinkToken($magicResult['token_id']);
             if (verifySession()) {
-                $target = ($user['role'] === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
-                header('Location: ' . $target);
+                header('Location: ' . dashboardUrlForRole($user['role']));
                 exit;
             }
         }

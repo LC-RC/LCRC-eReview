@@ -5,7 +5,7 @@ require_once 'db.php';
 require_once 'magic_link.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . (getCurrentUserRole() === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php'));
+    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
     exit;
 }
 

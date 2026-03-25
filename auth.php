@@ -25,8 +25,36 @@ function isLoggedIn() {
 }
 
 /**
+ * Staff roles: full back-office access (skip student-style access window rules where applied).
+ * @param string|null $role
+ * @return bool
+ */
+function isStaffRole($role) {
+    return $role === 'admin' || $role === 'professor_admin';
+}
+
+/**
+ * Dashboard URL for a given role (used after login).
+ * @param string|null $role
+ * @return string
+ */
+function dashboardUrlForRole($role) {
+    switch ($role) {
+        case 'admin':
+            return 'admin_dashboard.php';
+        case 'professor_admin':
+            return 'professor_admin_dashboard.php';
+        case 'college_student':
+            return 'college_student_dashboard.php';
+        case 'student':
+        default:
+            return 'student_dashboard.php';
+    }
+}
+
+/**
  * Check if user has a specific role
- * @param string $role Role to check (admin, student)
+ * @param string $role Role to check (admin, student, college_student, professor_admin)
  * @return bool
  */
 function hasRole($role) {
@@ -96,8 +124,8 @@ function verifySession() {
         return false;
     }
     
-    // For non-admin users, check if account is still approved
-    if ($user['role'] !== 'admin' && strtolower($user['status']) !== 'approved') {
+    // For non-staff users, account must remain approved
+    if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
         return false;
     }
     

@@ -3,14 +3,8 @@ require_once 'session_config.php';
 require_once 'auth.php';
 
 if (isLoggedIn() && verifySession()) {
-    $role = getCurrentUserRole();
-    if ($role === 'admin') {
-        header('Location: admin_dashboard.php');
-        exit;
-    } elseif ($role === 'student') {
-        header('Location: student_dashboard.php');
-        exit;
-    }
+    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
+    exit;
 }
 $pageTitle = 'Home';
 ?>

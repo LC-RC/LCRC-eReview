@@ -16,8 +16,7 @@ $name = isset($_GET['name']) ? trim($_GET['name']) : '';
 
 // Only allow relative paths (no protocol, no //)
 if ($target === '' || preg_match('#^https?://#i', $target) || strpos($target, '//') === 0) {
-    $role = getCurrentUserRole();
-    $target = ($role === 'admin') ? 'admin_dashboard.php' : 'student_dashboard.php';
+    $target = dashboardUrlForRole(getCurrentUserRole());
 }
 $firstName = $name !== '' ? $name : 'User';
 
