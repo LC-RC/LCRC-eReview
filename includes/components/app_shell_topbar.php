@@ -65,8 +65,9 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
       </div>
 
       <nav class="admin-topbar-actions" aria-label="Quick actions">
-        <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications">
+        <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
+          <span class="ere-notif__badge is-empty" data-notification-badge aria-hidden="true"></span>
         </button>
       </nav>
 
@@ -98,6 +99,10 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
     </div>
   </div>
 </header>
+<?php
+$notificationTheme = $t === 'professor' ? 'professor' : 'admin';
+include __DIR__ . '/notification_component.php';
+?>
 <style>[x-cloak]{display:none!important}</style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
@@ -166,9 +171,9 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
           @click.stop="prefsMenuOpen = !prefsMenuOpen; helpMenuOpen = false; userMenuOpen = false;">
           <i class="bi bi-gear" aria-hidden="true"></i>
         </button>
-        <button type="button" aria-label="Notifications" class="student-topbar-action student-topbar-action--notif has-unread" title="Notifications">
+        <button type="button" aria-label="Notifications" class="student-topbar-action student-topbar-action--notif has-unread" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
-          <span class="student-topbar-badge" aria-hidden="true"></span>
+          <span class="student-topbar-badge ere-notif__badge is-empty" data-notification-badge aria-hidden="true"></span>
         </button>
       </nav>
       <div class="student-topbar-profile-wrap">
@@ -201,6 +206,10 @@ $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
     </div>
   </div>
 </header>
+<?php
+$notificationTheme = 'student';
+include __DIR__ . '/notification_component.php';
+?>
 <style>[x-cloak]{display:none!important}</style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {

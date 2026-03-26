@@ -7,6 +7,7 @@
 if (!isset($conn) || !($conn instanceof mysqli)) {
     return;
 }
+require_once __DIR__ . '/includes/notification_helpers.php';
 
 const EMAIL_VERIFICATION_EXPIRY_HOURS = 24;
 global $ereviewLastPendingRegistrationError;
@@ -255,6 +256,9 @@ function completeVerificationAndCreateUser($pendingRow) {
     }
     $userId = (int) mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
+
+    // Notify all admins that a newly verified student is pending approval.
+    notifications_create_admin_pending_registration_notifications($conn, $userId);
 
     $del = mysqli_prepare($conn, "DELETE FROM pending_registrations WHERE id = ?");
     if ($del) {
