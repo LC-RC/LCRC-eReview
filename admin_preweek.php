@@ -17,11 +17,27 @@ if ($subjectId <= 0) {
     <html lang="en">
     <head>
       <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+      <style>
+        .admin-preweek-page .page-hero {
+          border: 1px solid #dbeafe;
+          background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
+          box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
+        }
+        .admin-preweek-page .page-card {
+          border: 1px solid #dbeafe;
+          box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3);
+        }
+        .admin-preweek-page .page-card thead th {
+          text-transform: uppercase;
+          letter-spacing: .02em;
+          font-size: .78rem;
+        }
+      </style>
     </head>
-    <body class="font-sans antialiased admin-app">
+    <body class="font-sans antialiased admin-app admin-preweek-page">
       <?php include 'admin_sidebar.php'; ?>
 
-      <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+      <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5 page-hero">
         <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
         <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
           <i class="bi bi-lightning-charge"></i> Preweek
@@ -29,7 +45,7 @@ if ($subjectId <= 0) {
         <p class="text-gray-500 mt-1">Select a subject to manage its Preweek videos and handouts.</p>
       </div>
 
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden page-card">
         <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-gray-800">Subjects</span>
@@ -330,11 +346,29 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <style>
+    .admin-preweek-page .page-hero {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
+      box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
+    }
+    .admin-preweek-page .panel-card {
+      border: 1px solid #dbeafe;
+      box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3);
+    }
+    .admin-preweek-page .panel-card thead th {
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      font-size: .78rem;
+    }
+    .admin-preweek-page .panel-card tbody tr { transition: background-color .2s ease, transform .2s ease; }
+    .admin-preweek-page .panel-card tbody tr:hover { background: #f8fbff; transform: translateY(-1px); }
+  </style>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-preweek-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5 page-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-lightning-charge"></i> Preweek
@@ -357,7 +391,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
     <!-- Videos -->
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden panel-card">
       <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
         <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-play-circle"></i> Videos</span>
         <?php if ($editVideo): ?>
@@ -396,7 +430,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition"><?php echo $editVideo ? 'Update video' : 'Add video'; ?></button>
         </form>
 
-        <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden panel-card">
           <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
             <div class="flex items-center gap-2">
               <span class="font-semibold text-gray-800">All videos</span>
@@ -444,7 +478,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     </div>
 
     <!-- Handouts -->
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden panel-card">
       <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
         <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> Handouts</span>
         <?php if ($editHandout): ?>
@@ -475,7 +509,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition"><?php echo $editHandout ? 'Update handout' : 'Upload handout'; ?></button>
         </form>
 
-        <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden panel-card">
           <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
             <div class="flex items-center gap-2">
               <span class="font-semibold text-gray-800">All handouts</span>

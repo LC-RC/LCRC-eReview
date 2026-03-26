@@ -152,11 +152,43 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <style>
+    .admin-subjects-page .page-hero {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
+      box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
+    }
+    .admin-subjects-page .page-hero h1 { color: #0f2f6b; }
+    .admin-subjects-page .page-filter,
+    .admin-subjects-page .page-table {
+      border: 1px solid #dbeafe;
+      box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3);
+    }
+    .admin-subjects-page .page-table thead th {
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      font-size: .78rem;
+    }
+    .admin-subjects-page .page-table tbody tr { transition: background-color .2s ease, transform .2s ease; }
+    .admin-subjects-page .page-table tbody tr:hover { background: #f8fbff; transform: translateY(-1px); }
+    .admin-subjects-page .table-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .2rem .55rem;
+      border-radius: 9999px;
+      font-size: .72rem;
+      font-weight: 700;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+  </style>
 </head>
-<body class="font-sans antialiased admin-app" x-data="adminSubjectsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app admin-subjects-page" x-data="adminSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5 page-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-book admin-section-icon"></i> Content Hub
@@ -179,7 +211,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
     </div>
   <?php endif; ?>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5 page-filter">
     <form method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
       <div class="lg:col-span-5">
         <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -210,7 +242,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
     </form>
   </div>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden page-table">
     <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
         <span class="font-semibold text-gray-800">Subjects</span>

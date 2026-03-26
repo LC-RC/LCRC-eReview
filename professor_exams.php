@@ -43,35 +43,78 @@ unset($_SESSION['message']);
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .prof-page { background: linear-gradient(180deg, #eefaf3 0%, #e6f6ee 45%, #edf9f2 100%); min-height: 100%; }
+    .dashboard-shell { padding-bottom: 1.5rem; color: #0f172a; }
+    .prof-hero {
+      border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(130deg, #0f766e 0%, #0e9f6e 35%, #16a34a 75%, #15803d 100%);
+      box-shadow: 0 14px 34px -20px rgba(5,46,22,.75), inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .prof-icon { background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.34); color: #fff; }
+    .prof-btn { border-radius: 9999px; transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
+    .prof-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 24px -20px rgba(21,128,61,.85); }
+    .section-title {
+      display: flex; align-items: center; gap: .5rem; margin: 0 0 .85rem; padding: .45rem .65rem;
+      border: 1px solid #d1fae5; border-radius: .62rem; background: linear-gradient(180deg,#f5fff9 0%,#fff 100%);
+      color: #14532d; font-size: 1.03rem; font-weight: 800;
+    }
+    .section-title i {
+      width: 1.55rem; height: 1.55rem; border-radius: .45rem; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #bbf7d0; background: #ecfdf3; color: #15803d; font-size: .83rem;
+    }
+    .table-card {
+      border-radius: .75rem; border: 1px solid rgba(22,163,74,.22); overflow: hidden;
+      background: linear-gradient(180deg, #f4fff8 0%, #fff 40%);
+      box-shadow: 0 10px 28px -22px rgba(21,128,61,.58), 0 1px 0 rgba(255,255,255,.8) inset;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .table-card:hover { transform: translateY(-2px); border-color: rgba(22,163,74,.38); box-shadow: 0 20px 34px -24px rgba(15,118,110,.4); }
+    .table-head { background: linear-gradient(180deg, #edfff4 0%, #f6fff9 100%); }
+    .table-head th { font-size: .78rem; text-transform: uppercase; letter-spacing: .01em; font-weight: 800; color: #166534; }
+    .table-row { transition: background-color .2s ease; }
+    .table-row:hover { background: #f4fff8; }
+    .action-link { font-weight: 700; transition: color .2s ease; }
+    .action-link:hover { color: #14532d; }
+    .dash-anim { opacity: 0; transform: translateY(12px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; }
+    .delay-2 { animation-delay: .12s; }
+    .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      .dash-anim { opacity: 1; transform: none; animation: none; }
+    }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased prof-page">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
-  <main class="admin-content max-w-7xl mx-auto w-full px-4 lg:px-6">
-    <div class="mb-6">
-      <div class="rounded-xl border border-green-200 bg-gradient-to-r from-green-50/70 via-white to-white shadow-sm overflow-hidden">
+  <main class="dashboard-shell w-full max-w-none">
+    <div class="mb-6 dash-anim delay-1">
+      <div class="prof-hero overflow-hidden">
         <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-xl bg-green-600/10 border border-green-200 flex items-center justify-center shrink-0">
-              <i class="bi bi-journal-text text-green-700 text-xl"></i>
+            <div class="prof-icon w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
+              <i class="bi bi-journal-text text-xl"></i>
             </div>
             <div>
-              <h1 class="text-2xl font-bold text-green-900 m-0 leading-tight">Exams &amp; quizzes</h1>
-              <p class="text-gray-600 mt-1 mb-0">Create timed assessments for college students.</p>
+              <h1 class="text-2xl font-bold text-white m-0 leading-tight">Exams &amp; quizzes</h1>
+              <p class="text-white/90 mt-1 mb-0">Create timed assessments for college students.</p>
             </div>
           </div>
-          <a href="professor_exam_edit.php" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition-all duration-300 hover:-translate-y-0.5 shadow-sm hover:shadow-md">
+          <a href="professor_exam_edit.php" class="prof-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
             <i class="bi bi-plus-lg"></i> New exam
           </a>
         </div>
       </div>
     </div>
 
-    <?php if ($msg): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900"><?php echo h($msg); ?></div><?php endif; ?>
+    <?php if ($msg): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 dash-anim delay-2"><?php echo h($msg); ?></div><?php endif; ?>
 
-    <div class="rounded-xl border border-green-200 bg-gradient-to-b from-green-50/50 to-white shadow-sm overflow-hidden">
+    <h2 class="section-title dash-anim delay-2"><i class="bi bi-list-check"></i> Exam Library</h2>
+    <div class="table-card dash-anim delay-3">
       <table class="w-full text-sm text-left">
-        <thead class="bg-green-50 text-green-800 font-semibold border-b border-gray-200">
+        <thead class="table-head border-b border-green-100">
           <tr>
             <th class="px-4 py-3">Title</th>
             <th class="px-4 py-3 hidden sm:table-cell">Questions</th>
@@ -85,24 +128,24 @@ unset($_SESSION['message']);
           <tr><td colspan="5" class="px-4 py-10 text-center text-gray-500">No exams yet.</td></tr>
           <?php else: ?>
             <?php foreach ($list as $e): ?>
-            <tr class="hover:bg-green-50/80 transition-colors">
+            <tr class="table-row">
               <td class="px-4 py-3 font-medium"><?php echo h($e['title']); ?></td>
               <td class="px-4 py-3 hidden sm:table-cell"><?php echo (int)$e['q_count']; ?></td>
               <td class="px-4 py-3"><?php echo !empty($e['is_published']) ? 'Yes' : 'No'; ?></td>
               <td class="px-4 py-3 text-gray-600 hidden md:table-cell"><?php echo $e['deadline'] ? h(date('M j, Y g:i A', strtotime($e['deadline']))) : '—'; ?></td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <a class="text-green-700 font-semibold hover:underline mr-3" href="professor_exam_edit.php?id=<?php echo (int)$e['exam_id']; ?>">Edit</a>
+                <a class="action-link text-green-700 hover:underline mr-3" href="professor_exam_edit.php?id=<?php echo (int)$e['exam_id']; ?>">Edit</a>
                 <form method="post" class="inline" onsubmit="return confirm('Delete this exam?');">
                   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="exam_id" value="<?php echo (int)$e['exam_id']; ?>">
-                  <button type="submit" class="text-red-600 font-semibold hover:underline">Delete</button>
+                  <button type="submit" class="action-link text-red-600 hover:underline">Delete</button>
                 </form>
                 <form method="post" class="inline ml-2">
                   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                   <input type="hidden" name="action" value="toggle_publish">
                   <input type="hidden" name="exam_id" value="<?php echo (int)$e['exam_id']; ?>">
-                  <button type="submit" class="text-gray-700 font-semibold hover:underline"><?php echo !empty($e['is_published']) ? 'Unpublish' : 'Publish'; ?></button>
+                  <button type="submit" class="action-link text-gray-700 hover:underline"><?php echo !empty($e['is_published']) ? 'Unpublish' : 'Publish'; ?></button>
                 </form>
               </td>
             </tr>

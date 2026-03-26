@@ -153,6 +153,17 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <style>
+    .admin-students-page .page-hero {
+      border: 1px solid #dbeafe;
+      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
+      box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
+    }
+    .admin-students-page .page-filter,
+    .admin-students-page .page-table,
+    .admin-students-page .page-trashlog {
+      border: 1px solid #dbeafe;
+      box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3);
+    }
     .student-avatar-cell {
       position: relative;
       width: 2.85rem;
@@ -713,10 +724,10 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     @keyframes adminSpin { to { transform: rotate(360deg); } }
   </style>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-students-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5 page-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-people"></i> Students
@@ -739,7 +750,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     </div>
   <?php endif; ?>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5 page-filter">
     <p class="text-gray-500 text-sm mb-3">Filter by status</p>
     <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
       <nav class="flex flex-wrap gap-2 student-filter-tabs" aria-label="Student tabs">
@@ -773,7 +784,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     </div>
   </div>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden page-table">
     <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
         <span class="font-semibold text-gray-800">Students</span>
@@ -981,7 +992,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     <?php endif; ?>
   </div>
 
-  <section class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden mt-5">
+  <section class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden mt-5 page-trashlog">
     <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
       <h2 class="text-base font-semibold text-gray-800 m-0">Deleted Users Log</h2>
       <span class="text-xs text-gray-500">Audit trail</span>

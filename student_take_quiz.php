@@ -367,14 +367,23 @@ if ($userId) {
       --exam-space-lg: 1.5rem;
       --exam-space-xl: 2rem;
     }
+    .student-shell-page {
+      background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
+      min-height: 100%;
+    }
+    .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
     /* Sticky exam header – clear hierarchy, balanced spacing */
     .exam-bar {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: var(--exam-surface);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-bottom: 1px solid var(--exam-border);
+      background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+      box-shadow: 0 10px 30px -24px rgba(20,61,89,0.42);
+      border: 1px solid rgba(22,101,160,.16);
+      border-radius: .75rem;
+      overflow: hidden;
     }
     .exam-header {
       display: flex;
@@ -492,6 +501,11 @@ if ($userId) {
       margin-bottom: 1.5rem;
       transition: box-shadow 0.25s ease, border-color 0.2s ease, transform 0.18s ease;
       scroll-margin-top: 1.5rem;
+    }
+    .exam-question-card {
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 64%);
+      border-color: rgba(22,101,160,.18);
+      box-shadow: 0 10px 28px -22px rgba(20,61,89,.35), 0 1px 0 rgba(255,255,255,.85) inset;
     }
     html { scroll-behavior: smooth; }
     .exam-question-card:focus-within {
@@ -612,6 +626,11 @@ if ($userId) {
       justify-content: center;
       gap: var(--exam-space-lg);
       box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .exam-nav-card {
+      background: linear-gradient(180deg, #f7fbff 0%, #ffffff 62%);
+      border-color: rgba(22,101,160,.18);
+      box-shadow: 0 10px 28px -22px rgba(20,61,89,.3), 0 1px 0 rgba(255,255,255,.85) inset;
     }
     .exam-nav-card .exam-nav-group {
       display: flex;
@@ -1364,7 +1383,7 @@ if ($userId) {
     }
   </style>
 </head>
-<body class="font-sans antialiased exam-protected">
+<body class="font-sans antialiased exam-protected student-shell-page">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
@@ -1376,7 +1395,7 @@ if ($userId) {
     <?php endif; ?>
 
     <!-- Quiz header card (same width as other pages) -->
-    <section class="mb-4 sm:mb-5">
+    <section class="mb-4 sm:mb-5 dash-anim delay-1">
       <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <a href="<?php echo htmlspecialchars($headerBackUrl); ?>" class="exam-leave-link flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Leave quiz">
@@ -1438,7 +1457,7 @@ if ($userId) {
         return $s . 's';
       }
     ?>
-      <div class="exam-page-container exam-page-container-result">
+      <div class="exam-page-container exam-page-container-result dash-anim delay-2">
         <div class="exam-result-inner">
         <header class="exam-page-header">
           <h1><i class="bi bi-trophy-fill text-[#4154f1]"></i> <?php echo h($quiz['title']); ?></h1>
@@ -1681,7 +1700,7 @@ if ($userId) {
       <?php endif; ?>
       </div><!-- end exam-page-container (result) -->
     <?php elseif ($totalQuestions === 0): ?>
-      <div class="exam-page-container">
+      <div class="exam-page-container dash-anim delay-2">
         <header class="exam-page-header">
           <h1><i class="bi bi-question-circle text-[#4154f1]"></i> <?php echo h($quiz['title']); ?></h1>
           <a href="<?php echo htmlspecialchars($headerBackUrl); ?>" class="exam-back-link"><i class="bi bi-arrow-left"></i> Back</a>
@@ -1696,7 +1715,7 @@ if ($userId) {
     <?php elseif ($attemptId <= 0): ?>
       <!-- Start Exam screen -->
       <?php $backUrlStart = $headerBackUrl; ?>
-      <div class="exam-page-container exam-page-container--wide">
+      <div class="exam-page-container exam-page-container--wide dash-anim delay-2">
         <div class="exam-question-card quiz-start-card w-full">
           <div class="quiz-start-hero">
             <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?></div>
@@ -1835,9 +1854,9 @@ if ($userId) {
         <button type="button" class="exam-resume-banner-dismiss" onclick="this.closest('.exam-resume-banner').classList.add('dismissed')" aria-label="Dismiss">×</button>
       </div>
       <?php endif; ?>
-      <div class="exam-page-container">
+      <div class="exam-page-container dash-anim delay-2">
       <!-- Sticky header: quiz title, subject, progress, leave link -->
-      <div class="exam-bar mb-4">
+      <div class="exam-bar mb-4 dash-anim delay-3">
         <div class="exam-header">
           <div class="exam-header-left">
             <span class="exam-title"><?php echo h($quiz['title']); ?></span>

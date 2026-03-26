@@ -77,21 +77,63 @@ unset($_SESSION['message'], $_SESSION['error']);
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .prof-page { background: linear-gradient(180deg, #eefaf3 0%, #e6f6ee 45%, #edf9f2 100%); min-height: 100%; }
+    .dashboard-shell { padding-bottom: 1.5rem; color: #0f172a; }
+    .prof-hero {
+      border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(130deg, #0f766e 0%, #0e9f6e 35%, #16a34a 75%, #15803d 100%);
+      box-shadow: 0 14px 34px -20px rgba(5,46,22,.75), inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .prof-icon { background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.34); color: #fff; }
+    .section-title {
+      display: flex; align-items: center; gap: .5rem; margin: 0 0 .85rem; padding: .45rem .65rem;
+      border: 1px solid #d1fae5; border-radius: .62rem; background: linear-gradient(180deg,#f5fff9 0%,#fff 100%);
+      color: #14532d; font-size: 1.03rem; font-weight: 800;
+    }
+    .section-title i {
+      width: 1.55rem; height: 1.55rem; border-radius: .45rem; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #bbf7d0; background: #ecfdf3; color: #15803d; font-size: .83rem;
+    }
+    .panel-card {
+      border-radius: .75rem; border: 1px solid rgba(22,163,74,.22); overflow: hidden;
+      background: linear-gradient(180deg, #f4fff8 0%, #fff 42%);
+      box-shadow: 0 10px 28px -22px rgba(21,128,61,.58), 0 1px 0 rgba(255,255,255,.8) inset;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .panel-card:hover { transform: translateY(-2px); border-color: rgba(22,163,74,.38); box-shadow: 0 20px 34px -24px rgba(15,118,110,.4); }
+    .table-head { background: linear-gradient(180deg, #edfff4 0%, #f6fff9 100%); }
+    .table-head th { font-size: .78rem; text-transform: uppercase; letter-spacing: .01em; font-weight: 800; color: #166534; }
+    .table-row { transition: background-color .2s ease; }
+    .table-row:hover { background: #f4fff8; }
+    .save-btn { border-radius: .6rem; transition: transform .2s ease, box-shadow .2s ease; }
+    .save-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 20px -18px rgba(21,128,61,.9); }
+    .field { border-color: #bbf7d0; }
+    .field:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); outline: none; }
+    .dash-anim { opacity: 0; transform: translateY(12px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; }
+    .delay-2 { animation-delay: .12s; }
+    .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      .dash-anim { opacity: 1; transform: none; animation: none; }
+    }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased prof-page">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
-  <main class="admin-content max-w-7xl mx-auto w-full px-4 lg:px-6">
-    <div class="mb-6">
-      <div class="rounded-xl border border-green-200 bg-gradient-to-r from-green-50/70 via-white to-white shadow-sm overflow-hidden">
+  <main class="dashboard-shell w-full max-w-none">
+    <div class="mb-6 dash-anim delay-1">
+      <div class="prof-hero overflow-hidden">
         <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-xl bg-green-600/10 border border-green-200 flex items-center justify-center shrink-0">
-              <i class="bi bi-folder-plus text-green-700 text-xl"></i>
+            <div class="prof-icon w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
+              <i class="bi bi-folder-plus text-xl"></i>
             </div>
             <div>
-              <h1 class="text-2xl font-bold text-green-900 m-0 leading-tight">File upload tasks</h1>
-              <p class="text-gray-600 mt-1 mb-0">Students can upload until the deadline.</p>
+              <h1 class="text-2xl font-bold text-white m-0 leading-tight">File upload tasks</h1>
+              <p class="text-white/90 mt-1 mb-0">Students can upload until the deadline.</p>
             </div>
           </div>
           <div class="hidden sm:block"></div>
@@ -99,12 +141,12 @@ unset($_SESSION['message'], $_SESSION['error']);
       </div>
     </div>
 
-    <?php if ($msg): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900"><?php echo h($msg); ?></div><?php endif; ?>
-    <?php if ($err): ?><div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-900"><?php echo h($err); ?></div><?php endif; ?>
+    <?php if ($msg): ?><div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 dash-anim delay-2"><?php echo h($msg); ?></div><?php endif; ?>
+    <?php if ($err): ?><div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-900 dash-anim delay-2"><?php echo h($err); ?></div><?php endif; ?>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div class="rounded-xl border border-green-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-        <h2 class="text-lg font-bold text-green-800 m-0 mb-4"><?php echo $edit ? 'Edit task' : 'New task'; ?></h2>
+      <div class="panel-card p-6 dash-anim delay-2">
+        <h2 class="section-title mb-4"><i class="bi bi-pencil-square"></i><?php echo $edit ? 'Edit Task' : 'New Task'; ?></h2>
         <form method="post" class="space-y-3">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="action" value="save">
@@ -112,37 +154,37 @@ unset($_SESSION['message'], $_SESSION['error']);
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
-            <input type="text" name="title" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo h($edit['title'] ?? ''); ?>">
+            <input type="text" name="title" required class="field w-full rounded-lg border px-3 py-2 text-sm" value="<?php echo h($edit['title'] ?? ''); ?>">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Instructions</label>
-            <textarea name="instructions" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"><?php echo h($edit['instructions'] ?? ''); ?></textarea>
+            <textarea name="instructions" rows="3" class="field w-full rounded-lg border px-3 py-2 text-sm"><?php echo h($edit['instructions'] ?? ''); ?></textarea>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Deadline</label>
-            <input type="datetime-local" name="deadline" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            <input type="datetime-local" name="deadline" required class="field w-full rounded-lg border px-3 py-2 text-sm"
               value="<?php echo $edit && !empty($edit['deadline']) ? h(date('Y-m-d\TH:i', strtotime($edit['deadline']))) : ''; ?>">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Max file size (bytes)</label>
-            <input type="number" name="max_file_size" min="1024" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo (int)($edit['max_file_size'] ?? 10485760); ?>">
+            <input type="number" name="max_file_size" min="1024" class="field w-full rounded-lg border px-3 py-2 text-sm" value="<?php echo (int)($edit['max_file_size'] ?? 10485760); ?>">
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Allowed extensions (comma)</label>
-            <input type="text" name="allowed_extensions" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" value="<?php echo h($edit['allowed_extensions'] ?? 'pdf,doc,docx,png,jpg,jpeg'); ?>">
+            <input type="text" name="allowed_extensions" class="field w-full rounded-lg border px-3 py-2 text-sm" value="<?php echo h($edit['allowed_extensions'] ?? 'pdf,doc,docx,png,jpg,jpeg'); ?>">
           </div>
           <div class="flex items-center gap-2">
             <input type="checkbox" name="is_open" id="op" value="1" <?php echo !isset($edit['is_open']) || !empty($edit['is_open']) ? 'checked' : ''; ?>>
             <label for="op" class="text-sm font-medium">Open for submissions</label>
           </div>
-          <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-green-600 text-white hover:bg-green-700 transition">Save</button>
+          <button type="submit" class="save-btn inline-flex items-center gap-2 px-4 py-2 font-semibold bg-green-600 text-white hover:bg-green-700 transition">Save</button>
           <?php if ($edit): ?><a href="professor_upload_tasks.php" class="ml-3 text-sm font-semibold text-green-700 hover:underline">Cancel</a><?php endif; ?>
         </form>
       </div>
 
-      <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-hidden">
+      <div class="panel-card dash-anim delay-3">
         <table class="w-full text-sm text-left">
-          <thead class="bg-green-50 font-semibold text-green-800 border-b border-gray-200">
+          <thead class="table-head border-b border-green-100">
             <tr>
               <th class="px-4 py-3">Title</th>
               <th class="px-4 py-3 hidden sm:table-cell">Deadline</th>
@@ -154,7 +196,7 @@ unset($_SESSION['message'], $_SESSION['error']);
             <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No tasks yet.</td></tr>
             <?php else: ?>
               <?php foreach ($list as $t): ?>
-              <tr class="hover:bg-green-50/80 transition-colors">
+              <tr class="table-row">
                 <td class="px-4 py-3 font-medium"><?php echo h($t['title']); ?></td>
                 <td class="px-4 py-3 text-gray-600 hidden sm:table-cell"><?php echo h(date('M j, Y g:i A', strtotime($t['deadline']))); ?></td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">

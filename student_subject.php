@@ -1112,6 +1112,21 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     }
 </style>
 <style>
+  .student-shell-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); min-height: 100%; }
+  .student-hero {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
+    box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  .hero-strip {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.24);
+    border-radius: .62rem;
+  }
+  .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
+  .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
+  @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
   .student-subject-page .rounded-2xl { border-radius: 0.75rem !important; }
   .student-subject-page .rounded-xl { border-radius: 0.625rem !important; }
   .student-subject-page .rounded-lg { border-radius: 0.5rem !important; }
@@ -1371,18 +1386,18 @@ document.addEventListener('alpine:init', function() {
 });
 </script>
 </head>
-<body class="font-sans antialiased student-protected student-subject-page" x-data="subjectPage">
+<body class="font-sans antialiased student-protected student-subject-page student-shell-page" x-data="subjectPage">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
-  <div class="subject-back-row">
+  <div class="subject-back-row dash-anim delay-1">
     <a href="student_subjects.php" class="btn-back-subjects">
       <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Subjects
     </a>
   </div>
 
-  <section class="mb-4 sm:mb-5">
-    <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
+  <section class="mb-4 sm:mb-5 dash-anim delay-1">
+    <div class="student-hero px-4 sm:px-6 py-4 sm:py-5 text-white flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0 flex-1">
         <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
           <i class="bi bi-book text-xl" aria-hidden="true"></i>
@@ -1392,7 +1407,7 @@ document.addEventListener('alpine:init', function() {
           <p class="text-sm sm:text-base text-white/90 mt-1 mb-0 break-words"><?php echo h($subject['description'] ?? ''); ?></p>
         </div>
       </div>
-      <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0">
+      <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0 hero-strip px-3 py-2">
         <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Subject</span>
         <span class="text-white/90"><?php echo h($subject['subject_code'] ?? 'Subject details'); ?></span>
       </div>
@@ -1400,14 +1415,14 @@ document.addEventListener('alpine:init', function() {
   </section>
 
   <!-- Tabs (active tab persisted via URL hash so refresh keeps same tab) -->
-  <nav class="flex flex-wrap gap-2 mb-4" role="tablist">
+  <nav class="flex flex-wrap gap-2 mb-4 dash-anim delay-2" role="tablist">
     <button type="button" @click="activeTab = 'materials'; window.location.hash = '#materials'" :class="activeTab === 'materials' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-collection-play shrink-0"></i> <span class="sm:hidden">Materials</span><span class="hidden sm:inline">Materials (Videos + Handouts)</span></button>
     <button type="button" @click="activeTab = 'quizzers'; window.location.hash = '#quizzers'" :class="activeTab === 'quizzers' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-question-circle shrink-0"></i> Quizzers</button>
     <button type="button" @click="activeTab = 'testbank'; window.location.hash = '#testbank'" :class="activeTab === 'testbank' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-folder2-open shrink-0"></i> Test Bank</button>
   </nav>
 
   <!-- Tab: Materials (lessons — card or list view; click to open viewer) -->
-  <div x-show="activeTab === 'materials'" x-cloak class="materials-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+  <div x-show="activeTab === 'materials'" x-cloak class="materials-section dash-anim delay-2 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
     <div class="px-4 sm:px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3 min-w-0">
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
@@ -1546,7 +1561,7 @@ document.addEventListener('alpine:init', function() {
        x-transition:leave="tab-panel-leave-active"
        x-transition:leave-start="tab-panel-leave"
        x-transition:leave-end="tab-panel-leave-to"
-       class="quizzers-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+       class="quizzers-section dash-anim delay-2 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
     <div class="quizzers-header flex-col sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3 min-w-0 flex-1">
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
@@ -1749,7 +1764,7 @@ document.addEventListener('alpine:init', function() {
        x-transition:leave="tab-panel-leave-active"
        x-transition:leave-start="tab-panel-leave"
        x-transition:leave-end="tab-panel-leave-to"
-       class="quizzers-section rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+       class="quizzers-section dash-anim delay-3 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
     <div class="quizzers-header flex-col sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3 min-w-0 flex-1">
       <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">

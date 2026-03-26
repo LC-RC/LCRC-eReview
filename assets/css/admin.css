@@ -1648,3 +1648,35 @@ body.admin-app #main .border-t.border-gray-100 {
 body.admin-app #main .border-b.border-gray-100 {
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
+
+/* --- Global admin page-load motion (all admin pages/tabs) --- */
+body.admin-app #main .admin-content > * {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: adminFadeUp 0.5s ease-out forwards;
+}
+body.admin-app #main .admin-content > *:nth-child(1) { animation-delay: 0.04s; }
+body.admin-app #main .admin-content > *:nth-child(2) { animation-delay: 0.09s; }
+body.admin-app #main .admin-content > *:nth-child(3) { animation-delay: 0.14s; }
+body.admin-app #main .admin-content > *:nth-child(4) { animation-delay: 0.19s; }
+body.admin-app #main .admin-content > *:nth-child(5) { animation-delay: 0.24s; }
+body.admin-app #main .admin-content > *:nth-child(6) { animation-delay: 0.29s; }
+body.admin-app #main .admin-content > *:nth-child(7) { animation-delay: 0.34s; }
+body.admin-app #main .admin-content > *:nth-child(8) { animation-delay: 0.39s; }
+body.admin-app #main .admin-content > *:nth-child(9) { animation-delay: 0.44s; }
+body.admin-app #main .admin-content > *:nth-child(10) { animation-delay: 0.49s; }
+
+@keyframes adminFadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app #main .admin-content > * {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

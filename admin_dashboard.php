@@ -149,11 +149,59 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
 <html lang="en">
 <head>
     <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+    <style>
+      .admin-dashboard-page .page-hero {
+        border: 1px solid #dbeafe;
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 72%);
+        box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
+      }
+      .admin-dashboard-page .page-section-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin: 0 0 .85rem;
+        padding: .45rem .65rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: .62rem;
+        background: #141414 !important;
+        color: #e5e7eb !important;
+      }
+      .admin-dashboard-page .page-section-title i {
+        width: 1.55rem;
+        height: 1.55rem;
+        border-radius: .45rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #1f1f1f;
+        color: #d1d5db !important;
+        font-size: .83rem;
+      }
+      .admin-dashboard-page .page-section-title .text-gray-500 {
+        color: #9ca3af !important;
+      }
+      .admin-dashboard-page .page-card {
+        border: 1px solid #dbeafe !important;
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 62%) !important;
+        box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3) !important;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      }
+      .admin-dashboard-page .page-card:hover {
+        transform: translateY(-2px);
+        border-color: #bfdbfe !important;
+        box-shadow: 0 20px 34px -24px rgba(30, 64, 175, 0.35) !important;
+      }
+      .admin-dashboard-page .quick-action-btn {
+        border-radius: .6rem;
+        font-weight: 700;
+      }
+    </style>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-dashboard-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="admin-dashboard-hero bg-white rounded-xl shadow-card px-5 py-5 mb-3">
+  <div class="admin-dashboard-hero page-hero bg-white rounded-xl shadow-card px-5 py-5 mb-3">
     <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
       <i class="bi bi-speedometer2"></i> Admin Dashboard
     </h1>
@@ -210,25 +258,25 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
   <?php endif; ?>
 
   <section class="admin-dashboard-section mt-6 first:mt-0" aria-label="Students overview">
-    <h2 class="text-lg font-semibold text-gray-700 mb-3 mt-0 flex items-center gap-2">
+    <h2 class="page-section-title text-lg font-semibold text-gray-700 mb-3 mt-0">
       <i class="bi bi-people-fill admin-section-icon"></i> Students <span class="text-gray-500 font-normal text-sm">(key metrics)</span>
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2 admin-dashboard-primary-kpis">
-    <div class="dashboard-card dashboard-card--enrolled bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--enrolled page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-check2-circle"></i> Enrolled</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $enrolledCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$enrolledCount; ?></div>
       <a href="admin_students.php?tab=enrolled" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> View enrolled
       </a>
     </div>
-    <div class="dashboard-card dashboard-card--pending bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--pending page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-hourglass-split"></i> Pending approvals</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $pendingCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$pendingCount; ?></div>
       <a href="admin_students.php?tab=pending" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Review pending
       </a>
     </div>
-    <div class="dashboard-card dashboard-card--expired bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--expired page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-calendar-x"></i> Expired access</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $expiredCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$expiredCount; ?></div>
       <a href="admin_students.php?tab=expired" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
@@ -239,25 +287,25 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
   </section>
 
   <section class="admin-dashboard-section mt-8" aria-label="Content overview">
-    <h2 class="text-lg font-semibold text-gray-700 mb-3 mt-0 flex items-center gap-2">
+    <h2 class="page-section-title text-lg font-semibold text-gray-700 mb-3 mt-0">
       <i class="bi bi-grid-3x3-gap admin-section-icon"></i> Content
     </h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-    <div class="dashboard-card dashboard-card--subjects bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--subjects page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-book"></i> Subjects</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$subjectsRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$subjectsRow['cnt']; ?></div>
       <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Manage content
       </a>
     </div>
-    <div class="dashboard-card dashboard-card--lessons bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--lessons page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-file-text"></i> Lessons</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$lessonsRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$lessonsRow['cnt']; ?></div>
       <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Open Content Hub
       </a>
     </div>
-    <div class="dashboard-card dashboard-card--quizzes bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
+    <div class="dashboard-card dashboard-card--quizzes page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-question-circle"></i> Quizzes</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$quizzesRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$quizzesRow['cnt']; ?></div>
       <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
@@ -268,8 +316,8 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
   </section>
 
   <div class="admin-dashboard-bottom-block mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-card border border-gray-100 p-5">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+    <div class="lg:col-span-2 page-card bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <h2 class="page-section-title text-lg font-semibold text-gray-800 mb-4">
         <i class="bi bi-graph-up-arrow admin-section-icon"></i> Enrollment trend
       </h2>
       <p class="text-gray-500 text-sm mb-2">New student registrations in the last 6 months.</p>
@@ -278,8 +326,8 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
         <canvas id="enrollmentChart" aria-label="Enrollment by month"></canvas>
       </div>
     </div>
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+    <div class="page-card bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <h2 class="page-section-title text-lg font-semibold text-gray-800 mb-4">
         <i class="bi bi-people admin-section-icon"></i> Recent registrations
       </h2>
       <p class="text-gray-500 text-sm mb-4">Latest students who signed up.</p>
@@ -303,8 +351,8 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
   </div>
 
   <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+    <div class="page-card bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <h2 class="page-section-title text-lg font-semibold text-gray-800 mb-4">
         <i class="bi bi-calendar-event admin-section-icon"></i> Expiring soon
       </h2>
       <p class="text-gray-500 text-sm mb-4">Access ends in the next 30 days. Extend from the student profile.</p>
@@ -325,8 +373,8 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
         <a href="admin_students.php?tab=enrolled" class="mt-4 block text-center text-sm font-medium admin-link hover:underline">View enrolled →</a>
       <?php endif; ?>
     </div>
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+    <div class="page-card bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <h2 class="page-section-title text-lg font-semibold text-gray-800 mb-4">
         <i class="bi bi-pencil-square admin-section-icon"></i> Quiz activity
       </h2>
       <p class="text-gray-500 text-sm mb-4">Student quiz answers in the last 30 days.</p>

@@ -13,6 +13,18 @@ if ($u && !empty($u['access_end']) && strtotime($u['access_end']) < time()) {
 }
 
 $subjectsResult = mysqli_query($conn, "SELECT * FROM subjects WHERE status='active' ORDER BY subject_name ASC");
+$lessonCounts = [];
+$totalLessons = 0;
+$lessonRes = @mysqli_query($conn, "SELECT subject_id, COUNT(*) AS c FROM lessons GROUP BY subject_id");
+if ($lessonRes) {
+    while ($lr = mysqli_fetch_assoc($lessonRes)) {
+        $sid = (int)($lr['subject_id'] ?? 0);
+        $cnt = (int)($lr['c'] ?? 0);
+        $lessonCounts[$sid] = $cnt;
+        $totalLessons += $cnt;
+    }
+    mysqli_free_result($lessonRes);
+}
 $pageTitle = 'Subjects';
 ?>
 <!DOCTYPE html>
@@ -20,8 +32,53 @@ $pageTitle = 'Subjects';
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
-    .student-dashboard-page .rounded-2xl { border-radius: 0.75rem !important; }
-    .student-dashboard-page .rounded-xl { border-radius: 0.625rem !important; }
+    .student-dashboard-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
+    .student-hero {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
+      box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+    .hero-strip {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 0.62rem;
+    }
+    .section-title {
+      display: flex; align-items: center; gap: .5rem;
+      margin: 0 0 .85rem; padding: .45rem .65rem;
+      border: 1px solid #d8e8f6; border-radius: .62rem;
+      background: linear-gradient(180deg,#f4f9fe 0%,#fff 100%);
+      color: #143D59; font-size: 1.03rem; font-weight: 800;
+    }
+    .section-title i {
+      width: 1.55rem; height: 1.55rem; border-radius: .45rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #b9daf2; background: #e8f2fa; color: #1665A0; font-size: .83rem;
+    }
+    .dash-card {
+      border-radius: .75rem;
+      border: 1px solid rgba(22,101,160,.18);
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 60%);
+      box-shadow: 0 10px 28px -22px rgba(20,61,89,.55), 0 1px 0 rgba(255,255,255,.85) inset;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
+    }
+    .dash-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(22,101,160,.32);
+      background-color: #fdfeff;
+      box-shadow: 0 20px 34px -24px rgba(20,61,89,.35);
+    }
+    .subject-btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      border-radius: .55rem; border: 1px solid #1665A0;
+      background: #1665A0; color: #fff; font-weight: 700;
+      padding: .5rem .85rem; font-size: .81rem; transition: all .2s ease;
+    }
+    .subject-btn:hover { background: #145a8f; border-color: #145a8f; transform: translateY(-1px); }
+    .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="font-sans antialiased">
@@ -29,49 +86,40 @@ $pageTitle = 'Subjects';
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="student-dashboard-page min-h-full pb-8">
-    <!-- Page header: subjects -->
-    <section class="mb-5">
-      <div class="rounded-2xl px-6 py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
-            <i class="bi bi-book text-xl" aria-hidden="true"></i>
-          </span>
-          <div>
-            <h1 class="text-xl sm:text-2xl font-bold m-0 tracking-tight">Subjects</h1>
-            <p class="text-sm sm:text-base text-white/90 mt-1 mb-0">Choose a subject to view lessons, videos, handouts and quizzes.</p>
-          </div>
+    <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7 text-white">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
+            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 border border-white/30"><i class="bi bi-book"></i></span>
+            Subjects
+          </h1>
+          <p class="text-white/90 mt-2 mb-0 max-w-2xl">Choose a subject to open lessons, videos, handouts, and quizzes.</p>
         </div>
-        <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1">
-          <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Overview</span>
-          <span>
-            <?php
-              $totalSubjects = $subjectsResult ? mysqli_num_rows($subjectsResult) : 0;
-            ?>
-            <?php echo (int)$totalSubjects; ?> active subject<?php echo $totalSubjects === 1 ? '' : 's'; ?>
-          </span>
-        </div>
+      </div>
+      <div class="hero-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
+        <?php $totalSubjects = $subjectsResult ? mysqli_num_rows($subjectsResult) : 0; ?>
+        <span class="font-semibold">Active subjects: <?php echo (int)$totalSubjects; ?></span>
+        <span class="text-white/50">·</span>
+        <span class="font-semibold">Total lessons: <?php echo (int)$totalLessons; ?></span>
       </div>
     </section>
 
     <?php if (isset($_SESSION['error'])): ?>
-      <div class="mb-5 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800 shadow-[0_2px_8px_rgba(248,113,113,0.35)]">
+      <div class="dash-anim delay-1 mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
         <i class="bi bi-exclamation-triangle-fill"></i>
         <span><?php echo h($_SESSION['error']); ?></span>
         <?php unset($_SESSION['error']); ?>
       </div>
     <?php endif; ?>
 
-    <!-- Subjects grid -->
+    <h2 class="section-title dash-anim delay-2"><i class="bi bi-grid-3x3-gap"></i> Subject Catalog</h2>
     <section aria-label="Subjects list">
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         <?php if ($subjectsResult && mysqli_num_rows($subjectsResult) > 0): ?>
           <?php mysqli_data_seek($subjectsResult, 0); ?>
           <?php while ($s = mysqli_fetch_assoc($subjectsResult)): ?>
-            <?php
-              $lessonsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lessons WHERE subject_id=" . (int)$s['subject_id']);
-              $lessonsRow = $lessonsCount ? mysqli_fetch_assoc($lessonsCount) : ['cnt' => 0];
-            ?>
-            <article class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_26px_rgba(15,23,42,0.16)] hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden">
+            <?php $cnt = (int)($lessonCounts[(int)$s['subject_id']] ?? 0); ?>
+            <article class="dash-card dash-anim delay-2 flex flex-col overflow-hidden">
               <div class="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
                 <div class="flex items-start gap-3">
                   <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-md">
@@ -91,12 +139,12 @@ $pageTitle = 'Subjects';
                   <?php echo h($s['description'] ?: 'Focused coverage of key exam topics for this subject.'); ?>
                 </p>
               </div>
-              <div class="px-5 pb-5 flex items-center justify-between gap-3 text-sm border-t border-[#1665A0]/10 bg-white/70">
+              <div class="px-5 pb-5 flex items-center justify-between gap-3 text-sm border-t border-[#d6e8f7] bg-white/70">
                 <div class="flex items-center gap-2 text-[#143D59]/75">
                   <i class="bi bi-file-text" aria-hidden="true"></i>
-                  <span><?php echo (int)$lessonsRow['cnt']; ?> lesson<?php echo (int)$lessonsRow['cnt'] === 1 ? '' : 's'; ?></span>
+                  <span><?php echo $cnt; ?> lesson<?php echo $cnt === 1 ? '' : 's'; ?></span>
                 </div>
-                <a href="student_subject.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-[#1665A0] hover:bg-[#0f4d7a] shadow-[0_2px_8px_rgba(22,101,160,0.45)] hover:shadow-[0_6px_18px_rgba(22,101,160,0.5)] active:scale-[0.97] transition-all duration-200">
+                <a href="student_subject.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="subject-btn">
                   <span>Open subject</span>
                   <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
                 </a>
@@ -105,7 +153,7 @@ $pageTitle = 'Subjects';
           <?php endwhile; ?>
         <?php else: ?>
           <div class="col-span-full">
-            <div class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] p-12 text-center text-[#143D59]/80">
+            <div class="dash-card dash-anim delay-3 p-12 text-center text-[#143D59]/80">
               <i class="bi bi-inbox text-5xl mb-3 text-[#1665A0]" aria-hidden="true"></i>
               <p class="text-lg font-semibold m-0">No subjects available yet.</p>
               <p class="text-sm mt-1 mb-0">Check back later or contact your administrator for enrollment assistance.</p>

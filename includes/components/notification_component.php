@@ -14,6 +14,7 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
   data-role-label="<?php echo h($notificationRoleLabel); ?>"
   data-csrf-token="<?php echo h($notificationCsrfToken); ?>"
   aria-hidden="true"
+  hidden
 >
   <button type="button" class="ere-notif__backdrop" data-notification-close tabindex="-1" aria-hidden="true"></button>
   <section class="ere-notif__panel" role="dialog" aria-modal="true" aria-labelledby="ereviewNotificationTitle">
@@ -38,7 +39,7 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     </div>
   </section>
 </aside>
-<div id="ereviewNotificationToasts" class="ere-notif-toasts" aria-live="polite" aria-atomic="true"></div>
+<div id="ereviewNotificationToasts" class="ere-notif-toasts" aria-live="polite" aria-atomic="true" hidden></div>
 
 <template id="ereviewNotificationItemTemplate">
   <article class="ere-notif__item" role="listitem">
@@ -477,12 +478,14 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
 
     var panel = document.getElementById('ereviewNotificationPanel');
     if (!panel) return;
+    panel.hidden = false;
     var closeButtons = panel.querySelectorAll('[data-notification-close]');
     var listEl = panel.querySelector('[data-notification-list]');
     var countEl = panel.querySelector('[data-notification-count]');
     var markAllBtn = panel.querySelector('[data-mark-all-read]');
     var tpl = document.getElementById('ereviewNotificationItemTemplate');
     var toastWrap = document.getElementById('ereviewNotificationToasts');
+    if (toastWrap) toastWrap.hidden = false;
     var theme = panel.getAttribute('data-theme') || '';
     var csrfToken = panel.getAttribute('data-csrf-token') || '';
     var apiUrl = 'notifications_api.php';

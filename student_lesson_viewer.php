@@ -58,6 +58,16 @@ $pageTitle = $lessonTitle . ' - Materials';
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
+    .student-shell-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); min-height: 100%; }
+    .student-hero {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
+      box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+    .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
     .lesson-viewer-page .rounded-2xl { border-radius: 0.75rem !important; }
     .lesson-viewer-page .rounded-xl { border-radius: 0.625rem !important; }
     .lesson-viewer-page .rounded-lg { border-radius: 0.5rem !important; }
@@ -116,14 +126,14 @@ $pageTitle = $lessonTitle . ' - Materials';
     }
   </style>
 </head>
-<body class="font-sans antialiased student-protected lesson-viewer-page" x-data="{ viewMode: 'normal', selectedHandoutId: '<?php echo $firstHandoutId; ?>' }">
+<body class="font-sans antialiased student-protected lesson-viewer-page student-shell-page" x-data="{ viewMode: 'normal', selectedHandoutId: '<?php echo $firstHandoutId; ?>' }">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="student-dashboard-page min-h-full pb-8" x-data>
     <!-- Title card (same style as Test Bank viewer) -->
-    <section class="mb-4 sm:mb-5">
-      <div class="lesson-viewer-title-card rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
+    <section class="mb-4 sm:mb-5 dash-anim delay-1">
+      <div class="lesson-viewer-title-card student-hero px-4 sm:px-6 py-4 sm:py-5 text-white flex flex-wrap items-center justify-between gap-3">
         <div class="lesson-viewer-title-block flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <a href="<?php echo htmlspecialchars($backUrl); ?>" class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back"><i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i></a>
           <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
@@ -138,7 +148,7 @@ $pageTitle = $lessonTitle . ' - Materials';
     </section>
 
     <!-- View mode toggle + Full screen (like Test Bank) -->
-    <div class="lesson-view-row flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="lesson-view-row dash-anim delay-2 flex flex-wrap items-center justify-between gap-3 mb-4">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-sm font-semibold text-[#143D59]/80 mr-1">View:</span>
         <button type="button" @click="viewMode = 'normal'" :class="viewMode === 'normal' ? 'bg-[#1665A0] text-white shadow-md' : 'bg-[#e8f2fa] text-[#143D59] hover:bg-[#d4e8f7]'" class="px-4 py-2 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5"><i class="bi bi-layout-split"></i> Normal</button>
@@ -148,7 +158,7 @@ $pageTitle = $lessonTitle . ' - Materials';
     </div>
 
     <!-- Viewer content (can go full screen like Test Bank) -->
-    <div id="lesson-viewer-wrap">
+    <div id="lesson-viewer-wrap" class="dash-anim delay-2">
       <div class="lesson-fs-header">
         <span class="lesson-fs-title"><?php echo h($lessonTitle); ?></span>
         <button type="button" id="lesson-exit-fullscreen-btn" class="lesson-exit-fullscreen" title="Exit full screen"><i class="bi bi-fullscreen-exit"></i> Exit full screen</button>

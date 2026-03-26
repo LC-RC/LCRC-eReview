@@ -42,21 +42,61 @@ if ($s) {
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <style>
+    .prof-page { background: linear-gradient(180deg, #eefaf3 0%, #e6f6ee 45%, #edf9f2 100%); min-height: 100%; }
+    .dashboard-shell { padding-bottom: 1.5rem; color: #0f172a; }
+    .prof-hero {
+      border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.28);
+      background: linear-gradient(130deg, #0f766e 0%, #0e9f6e 35%, #16a34a 75%, #15803d 100%);
+      box-shadow: 0 14px 34px -20px rgba(5,46,22,.75), inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .prof-icon { background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.34); color: #fff; }
+    .section-title {
+      display: flex; align-items: center; gap: .5rem; margin: 0 0 .85rem; padding: .45rem .65rem;
+      border: 1px solid #d1fae5; border-radius: .62rem; background: linear-gradient(180deg,#f5fff9 0%,#fff 100%);
+      color: #14532d; font-size: 1.03rem; font-weight: 800;
+    }
+    .section-title i {
+      width: 1.55rem; height: 1.55rem; border-radius: .45rem; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #bbf7d0; background: #ecfdf3; color: #15803d; font-size: .83rem;
+    }
+    .table-card {
+      border-radius: .75rem; border: 1px solid rgba(22,163,74,.22); overflow: hidden;
+      background: linear-gradient(180deg, #f4fff8 0%, #fff 40%);
+      box-shadow: 0 10px 28px -22px rgba(21,128,61,.58), 0 1px 0 rgba(255,255,255,.8) inset;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .table-card:hover { transform: translateY(-2px); border-color: rgba(22,163,74,.38); box-shadow: 0 20px 34px -24px rgba(15,118,110,.4); }
+    .table-head { background: linear-gradient(180deg, #edfff4 0%, #f6fff9 100%); }
+    .table-head th { font-size: .78rem; text-transform: uppercase; letter-spacing: .01em; font-weight: 800; color: #166534; }
+    .table-row { transition: background-color .2s ease; }
+    .table-row:hover { background: #f4fff8; }
+    .file-link { font-weight: 700; }
+    .dash-anim { opacity: 0; transform: translateY(12px); animation: dashFadeUp .55s ease-out forwards; }
+    .delay-1 { animation-delay: .05s; }
+    .delay-2 { animation-delay: .12s; }
+    .delay-3 { animation-delay: .18s; }
+    .delay-4 { animation-delay: .24s; }
+    @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) {
+      .dash-anim { opacity: 1; transform: none; animation: none; }
+    }
+  </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased prof-page">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
-  <div class="admin-content max-w-7xl mx-auto w-full px-4 lg:px-6">
-    <div class="mb-6">
-      <div class="rounded-xl border border-green-200 bg-gradient-to-r from-green-50/70 via-white to-white shadow-sm overflow-hidden">
+  <main class="dashboard-shell w-full max-w-none">
+    <div class="mb-6 dash-anim delay-1">
+      <div class="prof-hero overflow-hidden">
         <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-xl bg-green-600/10 border border-green-200 flex items-center justify-center shrink-0">
-              <i class="bi bi-graph-up text-green-700 text-xl"></i>
+            <div class="prof-icon w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
+              <i class="bi bi-graph-up text-xl"></i>
             </div>
             <div>
-              <h1 class="text-2xl font-bold text-green-900 m-0 leading-tight">Monitoring</h1>
-              <p class="text-gray-600 mt-1 mb-0">Exam participation and file submissions.</p>
+              <h1 class="text-2xl font-bold text-white m-0 leading-tight">Monitoring</h1>
+              <p class="text-white/90 mt-1 mb-0">Exam participation and file submissions.</p>
             </div>
           </div>
           <div class="hidden sm:block"></div>
@@ -64,10 +104,10 @@ if ($s) {
       </div>
     </div>
 
-    <h2 class="text-lg font-bold text-green-800 mb-3">Exam attempts</h2>
-    <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-x-auto mb-10">
+    <h2 class="section-title dash-anim delay-2"><i class="bi bi-clipboard-check"></i> Exam Attempts</h2>
+    <div class="table-card overflow-x-auto mb-10 dash-anim delay-3">
       <table class="w-full text-sm text-left min-w-[640px]">
-        <thead class="bg-green-50 text-green-800 font-semibold border-b border-gray-200">
+        <thead class="table-head border-b border-green-100">
           <tr>
             <th class="px-4 py-3">Student</th>
             <th class="px-4 py-3">Email</th>
@@ -82,7 +122,7 @@ if ($s) {
           <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No data yet.</td></tr>
           <?php else: ?>
             <?php foreach ($attempts as $a): ?>
-            <tr class="hover:bg-green-50/80 transition-colors">
+            <tr class="table-row">
               <td class="px-4 py-3 font-medium"><?php echo h($a['full_name']); ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h($a['email']); ?></td>
               <td class="px-4 py-3"><?php echo h($a['exam_title']); ?></td>
@@ -96,10 +136,10 @@ if ($s) {
       </table>
     </div>
 
-    <h2 class="text-lg font-bold text-green-800 mb-3">File submissions</h2>
-    <div class="rounded-xl border border-green-200 bg-white shadow-sm overflow-x-auto">
+    <h2 class="section-title dash-anim delay-3"><i class="bi bi-folder2-open"></i> File Submissions</h2>
+    <div class="table-card overflow-x-auto dash-anim delay-4">
       <table class="w-full text-sm text-left min-w-[640px]">
-        <thead class="bg-green-50 text-green-800 font-semibold border-b border-gray-200">
+        <thead class="table-head border-b border-green-100">
           <tr>
             <th class="px-4 py-3">Student</th>
             <th class="px-4 py-3">Email</th>
@@ -113,13 +153,13 @@ if ($s) {
           <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No submissions yet.</td></tr>
           <?php else: ?>
             <?php foreach ($subs as $s): ?>
-            <tr class="hover:bg-green-50/80 transition-colors">
+            <tr class="table-row">
               <td class="px-4 py-3 font-medium"><?php echo h($s['full_name']); ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h($s['email']); ?></td>
               <td class="px-4 py-3"><?php echo h($s['task_title']); ?></td>
               <td class="px-4 py-3">
                 <?php if (!empty($s['file_name']) && !empty($s['submission_id'])): ?>
-                  <a href="<?php echo h($s['file_path'] ?? ''); ?>" class="text-green-700 font-medium hover:underline" target="_blank" rel="noopener"><?php echo h($s['file_name']); ?></a>
+                  <a href="<?php echo h($s['file_path'] ?? ''); ?>" class="file-link text-green-700 hover:underline" target="_blank" rel="noopener"><?php echo h($s['file_name']); ?></a>
                 <?php else: ?>—<?php endif; ?>
               </td>
               <td class="px-4 py-3 text-gray-600"><?php echo h(date('M j, g:i A', strtotime($s['submitted_at']))); ?></td>
@@ -129,7 +169,6 @@ if ($s) {
         </tbody>
       </table>
     </div>
-  </div>
-</main>
+  </main>
 </body>
 </html>

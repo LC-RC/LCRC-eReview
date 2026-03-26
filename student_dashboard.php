@@ -10,6 +10,21 @@ $uid = getCurrentUserId();
 $dashboardAvatarPath = '';
 $dashboardUseDefaultAvatar = 1;
 $dashboardAvatarInitial = ereview_avatar_initial($_SESSION['full_name'] ?? 'U');
+
+$tableExists = static function (mysqli $conn, string $table): bool {
+    $safe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    if ($safe === '') return false;
+    $res = @mysqli_query($conn, "SHOW TABLES LIKE '{$safe}'");
+    return $res && mysqli_num_rows($res) > 0;
+};
+
+$scalar = static function (mysqli $conn, string $sql, int $default = 0): int {
+    $res = @mysqli_query($conn, $sql);
+    if (!$res) return $default;
+    $row = mysqli_fetch_assoc($res);
+    return (int)($row['c'] ?? $default);
+};
+
 try {
     $hasProfilePicture = false;
     $hasDefaultAvatar = false;
@@ -17,20 +32,22 @@ try {
     if ($cp1 && mysqli_fetch_assoc($cp1)) $hasProfilePicture = true;
     $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
     if ($cp2 && mysqli_fetch_assoc($cp2)) $hasDefaultAvatar = true;
-    $select = 'SELECT last_login_at';
+
+    $select = 'SELECT last_login_at, access_start, access_end';
     if ($hasProfilePicture) $select .= ', profile_picture';
     if ($hasDefaultAvatar) $select .= ', use_default_avatar';
     $select .= ' FROM users WHERE user_id = ? LIMIT 1';
+
     $stmt = mysqli_prepare($conn, $select);
+    $info = null;
     if ($stmt) {
         mysqli_stmt_bind_param($stmt, 'i', $uid);
         if (mysqli_stmt_execute($stmt)) {
             $res = mysqli_stmt_get_result($stmt);
             $row = $res ? mysqli_fetch_assoc($res) : null;
-            if ($row && !empty($row['last_login_at'])) {
-                $lastLoginAt = $row['last_login_at'];
-            }
             if ($row) {
+                $info = $row;
+                $lastLoginAt = !empty($row['last_login_at']) ? (string)$row['last_login_at'] : null;
                 $dashboardAvatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
                 if ($hasDefaultAvatar) {
                     $dashboardUseDefaultAvatar = !empty($row['use_default_avatar']) ? 1 : 0;
@@ -40,28 +57,68 @@ try {
         mysqli_stmt_close($stmt);
     }
 } catch (mysqli_sql_exception $e) {
-    // last_login_at column may not exist yet; run add_last_login.sql to add it
+    $info = null;
 }
 
-$info = null;
-$stmt = mysqli_prepare($conn, "SELECT access_start, access_end FROM users WHERE user_id=? LIMIT 1");
-if ($stmt) {
-    mysqli_stmt_bind_param($stmt, 'i', $uid);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $info = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
+$subjectsCount = $scalar($conn, "SELECT COUNT(*) AS c FROM subjects WHERE status='active'");
+$lessonsCount = $scalar($conn, "SELECT COUNT(*) AS c FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE s.status='active'");
+$quizzesCount = $scalar($conn, "SELECT COUNT(*) AS c FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE s.status='active'");
+$quizSubmittedCount = $tableExists($conn, 'quiz_attempts')
+    ? $scalar($conn, "SELECT COUNT(*) AS c FROM quiz_attempts WHERE user_id=" . (int)$uid . " AND status='submitted'")
+    : 0;
+$quizInProgressCount = $tableExists($conn, 'quiz_attempts')
+    ? $scalar($conn, "SELECT COUNT(*) AS c FROM quiz_attempts WHERE user_id=" . (int)$uid . " AND status='in_progress'")
+    : 0;
+$preboardsSubjectsCount = $tableExists($conn, 'preboards_subjects')
+    ? $scalar($conn, "SELECT COUNT(*) AS c FROM preboards_subjects WHERE status='active'")
+    : 0;
+$preboardsSubmittedCount = $tableExists($conn, 'preboards_attempts')
+    ? $scalar($conn, "SELECT COUNT(*) AS c FROM preboards_attempts WHERE user_id=" . (int)$uid . " AND status='submitted'")
+    : 0;
+
+$avgQuizScore = 0;
+if ($tableExists($conn, 'quiz_attempts')) {
+    $avgRes = @mysqli_query($conn, "SELECT AVG(score) AS avg_score FROM quiz_attempts WHERE user_id=" . (int)$uid . " AND status='submitted' AND score IS NOT NULL");
+    if ($avgRes && ($avgRow = mysqli_fetch_assoc($avgRes)) && $avgRow['avg_score'] !== null) {
+        $avgQuizScore = (int)round((float)$avgRow['avg_score']);
+    }
 }
 
-// Time-based greeting for a more personal welcome
+$weeklyActivity = [];
+$weeklyLabels = [];
+for ($i = 7; $i >= 0; $i--) {
+    $weekTs = strtotime("monday this week -{$i} week");
+    $key = date('o-W', $weekTs);
+    $weeklyActivity[$key] = 0;
+    $weeklyLabels[$key] = 'Wk ' . date('M j', $weekTs);
+}
+if ($tableExists($conn, 'quiz_attempts')) {
+    $act1 = @mysqli_query($conn, "SELECT DATE_FORMAT(submitted_at, '%x-%v') AS yw, COUNT(*) AS c FROM quiz_attempts WHERE user_id=" . (int)$uid . " AND status='submitted' AND submitted_at >= DATE_SUB(CURDATE(), INTERVAL 8 WEEK) GROUP BY yw");
+    if ($act1) {
+        while ($row = mysqli_fetch_assoc($act1)) {
+            $k = (string)($row['yw'] ?? '');
+            if (isset($weeklyActivity[$k])) $weeklyActivity[$k] += (int)($row['c'] ?? 0);
+        }
+    }
+}
+if ($tableExists($conn, 'preboards_attempts')) {
+    $act2 = @mysqli_query($conn, "SELECT DATE_FORMAT(submitted_at, '%x-%v') AS yw, COUNT(*) AS c FROM preboards_attempts WHERE user_id=" . (int)$uid . " AND status='submitted' AND submitted_at >= DATE_SUB(CURDATE(), INTERVAL 8 WEEK) GROUP BY yw");
+    if ($act2) {
+        while ($row = mysqli_fetch_assoc($act2)) {
+            $k = (string)($row['yw'] ?? '');
+            if (isset($weeklyActivity[$k])) $weeklyActivity[$k] += (int)($row['c'] ?? 0);
+        }
+    }
+}
+
+$activityLast8Weeks = array_sum($weeklyActivity);
+$currentWeekActivity = (int)end($weeklyActivity);
 $hour = (int)date('G');
-if ($hour < 12) {
-    $greeting = 'Good morning';
-} elseif ($hour < 17) {
-    $greeting = 'Good afternoon';
-} else {
-    $greeting = 'Good evening';
-}
+$greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+
+$progressBase = max(1, $subjectsCount + $quizzesCount + $preboardsSubjectsCount);
+$progressDone = min($progressBase, $quizSubmittedCount + $preboardsSubmittedCount + (int)round($lessonsCount / 6));
+$learningProgressPct = (int)round(($progressDone / $progressBase) * 100);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -70,310 +127,308 @@ if ($hour < 12) {
 </head>
 <body class="font-sans antialiased">
   <?php include 'student_sidebar.php'; ?>
-  <?php include 'student_topbar.php'; ?>
-
-  <?php
-    $subjectsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM subjects WHERE status='active'");
-    $subjectsRow = $subjectsCount ? mysqli_fetch_assoc($subjectsCount) : ['cnt' => 0];
-    $lessonsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE s.status='active'");
-    $lessonsRow = $lessonsCount ? mysqli_fetch_assoc($lessonsCount) : ['cnt' => 0];
-    // Preboards subjects (separate module)
-    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS preboards_subjects (
-      preboards_subject_id INT AUTO_INCREMENT PRIMARY KEY,
-      subject_name VARCHAR(150) NOT NULL,
-      description TEXT NULL,
-      status ENUM('active','inactive') NOT NULL DEFAULT 'active',
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY uq_preboards_subject_name (subject_name)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    $preboardsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM preboards_subjects WHERE status='active'");
-    $preboardsRow = $preboardsCount ? mysqli_fetch_assoc($preboardsCount) : ['cnt' => 0];
-  ?>
   <div class="student-dashboard-page min-h-full pb-8">
-    <!-- Welcome hero: blue theme, gradient, elevation -->
-    <section class="dashboard-welcome-hero relative overflow-hidden rounded-2xl mb-6 px-6 py-6 sm:py-8 border-0 shadow-[0_8px_30px_rgba(20,61,89,0.25),0_0_0_1px_rgba(255,255,255,0.08)_inset]" aria-label="Welcome">
-      <div class="absolute inset-0 bg-gradient-to-br from-[#1665A0] via-[#145a8f] to-[#143D59] opacity-100"></div>
-      <div class="absolute top-0 right-0 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2"></div>
-      <div class="absolute bottom-0 left-0 w-56 h-56 rounded-full bg-white/5 -translate-x-1/2 translate-y-1/2"></div>
-      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-4 text-white drop-shadow-sm">
-            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg overflow-hidden">
-              <?php if ($dashboardAvatarPath !== '' && !$dashboardUseDefaultAvatar): ?>
-                <img src="<?php echo h($dashboardAvatarPath); ?>" alt="" class="w-full h-full object-cover">
-              <?php else: ?>
-                <span class="text-xl font-semibold"><?php echo h($dashboardAvatarInitial); ?></span>
-              <?php endif; ?>
-            </span>
-            <span><?php echo h($greeting); ?>, <?php echo h($_SESSION['full_name']); ?></span>
-          </h1>
-          <p class="text-white/95 text-base sm:text-lg mt-3 mb-0 font-medium max-w-xl">Your learning hub — continue where you left off.</p>
+    <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7">
+      <div class="relative z-10 text-white">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
+              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 border border-white/30 overflow-hidden">
+                <?php if ($dashboardAvatarPath !== '' && !$dashboardUseDefaultAvatar): ?>
+                  <img src="<?php echo h($dashboardAvatarPath); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                  <span class="text-lg font-semibold"><?php echo h($dashboardAvatarInitial); ?></span>
+                <?php endif; ?>
+              </span>
+              <?php echo h($greeting); ?>, <?php echo h($_SESSION['full_name']); ?>
+            </h1>
+            <p class="text-white/90 mt-2 mb-0 max-w-2xl">A smarter learning overview with your real-time review activity and progress.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a href="student_subjects.php" class="hero-btn inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#145a8f] font-semibold">
+              <i class="bi bi-journal-bookmark"></i> Open subjects
+            </a>
+            <a href="student_preboards.php" class="hero-btn inline-flex items-center gap-2 px-4 py-2.5 border border-white/35 bg-white/10 text-white font-semibold">
+              <i class="bi bi-clipboard-check"></i> Open preboards
+            </a>
+          </div>
         </div>
-        <?php if ($lastLoginAt): ?>
-        <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 text-white/95 text-sm font-medium shrink-0">
-          <i class="bi bi-clock-history text-lg opacity-90" aria-hidden="true"></i>
-          <span>Last login: <?php echo date('M j, Y \a\t g:i A', strtotime($lastLoginAt)); ?></span>
+        <div class="hero-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
+          <span class="font-semibold">Active subjects: <?php echo (int)$subjectsCount; ?></span>
+          <span class="text-white/50">·</span>
+          <span class="font-semibold">Lessons: <?php echo (int)$lessonsCount; ?></span>
+          <span class="text-white/50">·</span>
+          <span class="font-semibold">Quiz submissions: <?php echo (int)$quizSubmittedCount; ?></span>
+          <span class="text-white/50">·</span>
+          <span class="font-semibold">Preboards done: <?php echo (int)$preboardsSubmittedCount; ?></span>
+          <?php if ($lastLoginAt): ?>
+            <span class="text-white/50">·</span>
+            <span class="font-semibold">Last login: <?php echo h(date('M j, g:i A', strtotime($lastLoginAt))); ?></span>
+          <?php endif; ?>
         </div>
-        <?php endif; ?>
       </div>
     </section>
 
-    <!-- 1. Quick Access Cards (Top Section) -->
-    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" aria-label="Quick Access">
-      <a href="student_subjects.php" class="dashboard-quick-card group block rounded-2xl p-5 shadow-[0_2px_8px_rgba(20,61,89,0.12),0_4px_16px_rgba(20,61,89,0.08)] hover:shadow-[0_8px_24px_rgba(20,61,89,0.18)] hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-br from-[#d4e8f7] to-[#e8f2fa] border border-[#1665A0]/20">
-        <div class="flex items-start justify-between">
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/30 group-hover:scale-105 transition-transform">
-            <i class="bi bi-graph-up-arrow text-xl" aria-hidden="true"></i>
-          </span>
-          <i class="bi bi-three-dots-vertical text-[#143D59]/50 text-lg" aria-hidden="true"></i>
+    <h2 class="section-title dash-anim delay-2"><i class="bi bi-speedometer2"></i> Learning Overview</h2>
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
+      <article class="dash-card kpi-card dash-anim delay-2 p-5">
+        <div class="flex items-center gap-4">
+          <span class="kpi-icon bg-[#e8f2fa] text-[#1665A0]"><i class="bi bi-journal-bookmark"></i></span>
+          <div>
+            <p class="text-sm text-slate-500 m-0">Subjects</p>
+            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$subjectsCount; ?></p>
+          </div>
         </div>
-        <h2 class="text-base font-bold text-[#143D59] mt-3 mb-1">My Review Progress</h2>
-        <p class="text-sm text-[#143D59]/80 m-0">Track lessons & subjects completed</p>
-        <p class="text-xs text-[#1665A0] font-medium mt-2"><?php echo (int)$lessonsRow['cnt']; ?> lessons available</p>
-      </a>
-      <a href="student_subjects.php" class="dashboard-quick-card group block rounded-2xl p-5 shadow-[0_2px_8px_rgba(20,61,89,0.2)] hover:shadow-[0_8px_28px_rgba(20,61,89,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-[#1665A0] text-white border border-[#145a8f]">
-        <div class="flex items-start justify-between">
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/25 text-white shadow-lg group-hover:scale-105 transition-transform">
-            <i class="bi bi-journal-bookmark text-xl" aria-hidden="true"></i>
-          </span>
-          <i class="bi bi-three-dots-vertical text-white/70 text-lg" aria-hidden="true"></i>
+        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Manage subjects</a>
+      </article>
+      <article class="dash-card kpi-card dash-anim delay-2 p-5">
+        <div class="flex items-center gap-4">
+          <span class="kpi-icon bg-cyan-50 text-cyan-700"><i class="bi bi-journal-text"></i></span>
+          <div>
+            <p class="text-sm text-slate-500 m-0">Lessons</p>
+            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$lessonsCount; ?></p>
+          </div>
         </div>
-        <h2 class="text-base font-bold mt-3 mb-1">My Enrolled Review</h2>
-        <p class="text-sm text-white/90 m-0">Subjects you're enrolled in</p>
-        <p class="text-xs text-white/80 mt-2"><?php echo (int)$subjectsRow['cnt']; ?> subjects</p>
-      </a>
-      <a href="student_preboards.php" class="dashboard-quick-card group block rounded-2xl p-5 shadow-[0_2px_8px_rgba(20,61,89,0.2)] hover:shadow-[0_8px_28px_rgba(20,61,89,0.35)] hover:-translate-y-0.5 transition-all duration-300 bg-[#143D59] text-white border border-[#143D59]">
-        <div class="flex items-start justify-between">
-          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg group-hover:scale-105 transition-transform">
-            <i class="bi bi-clipboard-check text-xl" aria-hidden="true"></i>
-          </span>
-          <i class="bi bi-three-dots-vertical text-white/70 text-lg" aria-hidden="true"></i>
+        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Continue learning</a>
+      </article>
+      <article class="dash-card kpi-card dash-anim delay-3 p-5">
+        <div class="flex items-center gap-4">
+          <span class="kpi-icon bg-emerald-50 text-emerald-700"><i class="bi bi-check2-circle"></i></span>
+          <div>
+            <p class="text-sm text-slate-500 m-0">Quiz completed</p>
+            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$quizSubmittedCount; ?></p>
+          </div>
         </div>
-        <h2 class="text-base font-bold mt-3 mb-1">My Preboards</h2>
-        <p class="text-sm text-white/90 m-0">Preboard subjects & preparation</p>
-        <p class="text-xs text-white/80 mt-2"><?php echo (int)$preboardsRow['cnt']; ?> preboard subject<?php echo ((int)$preboardsRow['cnt'] === 1 ? '' : 's'); ?></p>
-      </a>
+        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View quizzes</a>
+      </article>
+      <article class="dash-card kpi-card dash-anim delay-3 p-5">
+        <div class="flex items-center gap-4">
+          <span class="kpi-icon bg-indigo-50 text-indigo-700"><i class="bi bi-clipboard-check"></i></span>
+          <div>
+            <p class="text-sm text-slate-500 m-0">Preboards done</p>
+            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$preboardsSubmittedCount; ?></p>
+          </div>
+        </div>
+        <a href="student_preboards.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Open preboards</a>
+      </article>
     </section>
 
-    <!-- Main content grid: left column (chart + overview cards) + right panel -->
     <div class="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
       <div class="space-y-6 min-w-0">
-        <!-- 2. Progress Analytics Section -->
-        <article class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
-          <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50">
-            <h2 class="text-lg font-bold text-[#143D59] m-0">Student Study Progress</h2>
-            <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Weekly activity overview</p>
+        <h2 class="section-title dash-anim delay-3"><i class="bi bi-graph-up-arrow"></i> Insights</h2>
+        <article class="dash-card dash-anim delay-3 p-5">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-bold text-[#143D59] m-0">Study activity trend</h3>
+              <p class="text-sm text-slate-500 m-0 mt-1">Quiz and preboard submissions over the last 8 weeks.</p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-sm">
+              <div class="metric-box">
+                <p class="metric-label">8-week activity</p>
+                <p class="metric-value"><?php echo (int)$activityLast8Weeks; ?></p>
+              </div>
+              <div class="metric-box">
+                <p class="metric-label">This week</p>
+                <p class="metric-value"><?php echo (int)$currentWeekActivity; ?></p>
+              </div>
+              <div class="metric-box">
+                <p class="metric-label">Avg score</p>
+                <p class="metric-value"><?php echo (int)$avgQuizScore; ?>%</p>
+              </div>
+            </div>
           </div>
-          <div class="p-6 bg-white/60">
-            <div class="h-[260px] w-full" aria-hidden="true">
-              <canvas id="dashboardStudyChart" width="400" height="260"></canvas>
-            </div>
-            <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[#1665A0]/10 text-sm">
-              <span class="flex items-center gap-2 text-[#143D59]/80"><span class="w-3 h-3 rounded-full bg-[#1665A0] shadow-sm"></span> Study activity</span>
-              <span class="flex items-center gap-2 text-[#143D59]/80"><span class="w-3 h-3 rounded-full bg-[#89CFF0] shadow-sm"></span> Quizzes completed</span>
-            </div>
+          <div class="mt-4 h-[240px]">
+            <canvas id="dashboardStudyChart" aria-label="Student activity trend"></canvas>
           </div>
         </article>
 
-        <!-- 3. Overview Cards Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Study Statistics -->
-          <article class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
-            <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex items-center gap-3">
-              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
-                <i class="bi bi-bar-chart-steps text-lg" aria-hidden="true"></i>
-              </span>
-              <h2 class="text-base font-bold text-[#143D59] m-0">Study Statistics</h2>
+        <article class="dash-card dash-anim delay-4 p-5">
+          <h3 class="text-base font-bold text-[#143D59] m-0 mb-4 flex items-center gap-2"><i class="bi bi-bar-chart-line"></i> Progress indicators</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-600 font-medium">Overall learning progress</span><span class="text-[#1665A0] font-semibold"><?php echo (int)$learningProgressPct; ?>%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:<?php echo (int)$learningProgressPct; ?>%"></div></div>
             </div>
-            <div class="p-6 space-y-4 bg-white/50">
-              <?php
-                $totalLessons = (int)$lessonsRow['cnt'];
-                $lessonsPct = $totalLessons > 0 ? min(100, (int)round(($totalLessons > 20 ? 12 : $totalLessons * 0.6) / $totalLessons * 100)) : 0;
-                $totalPreboards = (int)($preboardsRow['cnt'] ?? 0);
-                $preboardsPct = $totalPreboards > 0 ? min(100, (int)round(min(2, $totalPreboards) / max(1, $totalPreboards) * 100)) : 0;
-              ?>
-              <div>
-                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Lessons completed</span><span class="text-[#1665A0] font-semibold"><?php echo $lessonsPct; ?>%</span></div>
-                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $lessonsPct; ?>%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Preboards progress</span><span class="text-[#1665A0] font-semibold"><?php echo $preboardsPct; ?>%</span></div>
-                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $preboardsPct; ?>%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1"><span class="text-[#143D59] font-medium">Subjects enrolled</span><span class="text-[#1665A0] font-semibold"><?php echo min(100, (int)$subjectsRow['cnt'] * 10); ?>%</span></div>
-                <div class="h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo min(100, (int)$subjectsRow['cnt'] * 10); ?>%"></div></div>
-              </div>
+            <div>
+              <?php $quizCoverage = $quizzesCount > 0 ? min(100, (int)round(($quizSubmittedCount / $quizzesCount) * 100)) : 0; ?>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-600 font-medium">Quiz coverage</span><span class="text-[#1665A0] font-semibold"><?php echo (int)$quizCoverage; ?>%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:<?php echo (int)$quizCoverage; ?>%"></div></div>
             </div>
-          </article>
-
-          <!-- Exam Readiness -->
-          <article class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#143D59]">
-            <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex items-center gap-3">
-              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#143D59] text-white shadow-lg shadow-[#143D59]/25">
-                <i class="bi bi-award text-lg" aria-hidden="true"></i>
-              </span>
-              <h2 class="text-base font-bold text-[#143D59] m-0">Exam Readiness</h2>
+            <div>
+              <?php $preboardCoverage = $preboardsSubjectsCount > 0 ? min(100, (int)round(($preboardsSubmittedCount / $preboardsSubjectsCount) * 100)) : 0; ?>
+              <div class="flex justify-between text-sm mb-1"><span class="text-slate-600 font-medium">Preboards coverage</span><span class="text-[#1665A0] font-semibold"><?php echo (int)$preboardCoverage; ?>%</span></div>
+              <div class="progress-track"><div class="progress-fill" style="width:<?php echo (int)$preboardCoverage; ?>%"></div></div>
             </div>
-            <div class="p-6 flex flex-col items-center gap-6 bg-white/50">
-              <?php
-                $readinessPct = min(100, $lessonsPct + $preboardsPct > 0 ? (int)round(($lessonsPct + $preboardsPct) / 2) : 0);
-                $subjectProgress = $totalLessons > 0 ? min(100, (int)round(($subjectsRow['cnt'] ?? 0) * 25)) : 0;
-              ?>
-              <div class="flex flex-wrap justify-center gap-8">
-                <div class="text-center">
-                  <div class="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner" style="background: conic-gradient(#1665A0 <?php echo $readinessPct * 3.6; ?>deg, #e8f2fa 0deg);">
-                    <div class="absolute inset-2 rounded-full bg-[#f0f7fc] flex items-center justify-center border-2 border-[#1665A0]/20"><span class="text-xl font-bold text-[#143D59]"><?php echo $readinessPct; ?>%</span></div>
-                  </div>
-                  <p class="text-sm font-medium text-[#143D59]/80 mt-2 mb-0">CPA Readiness</p>
-                </div>
-                <div class="text-center">
-                  <div class="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner" style="background: conic-gradient(#143D59 <?php echo $subjectProgress * 3.6; ?>deg, #e8f2fa 0deg);">
-                    <div class="absolute inset-2 rounded-full bg-[#f0f7fc] flex items-center justify-center border-2 border-[#1665A0]/20"><span class="text-xl font-bold text-[#143D59]"><?php echo $subjectProgress; ?>%</span></div>
-                  </div>
-                  <p class="text-sm font-medium text-[#143D59]/80 mt-2 mb-0">Subject progress</p>
-                </div>
-              </div>
-            </div>
-          </article>
-        </div>
+          </div>
+        </article>
       </div>
 
-      <!-- 4. Right-Side Insight Panel -->
-      <aside class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_6px_20px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white xl:max-w-[320px] order-first xl:order-last border-l-4 border-l-[#1665A0]">
-        <div class="px-5 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/60">
-          <h2 class="text-base font-bold text-[#143D59] m-0">Preview & insights</h2>
-          <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Schedules, tips & reminders</p>
+      <aside class="dash-card dash-anim delay-4 overflow-hidden h-fit">
+        <div class="px-5 py-4 border-b border-[#d6e8f7] bg-gradient-to-r from-[#f0f7fc] to-white">
+          <h3 class="text-base font-bold text-[#143D59] m-0">Focus panel</h3>
+          <p class="text-sm text-slate-500 m-0 mt-1">Data-backed reminders for your account.</p>
         </div>
-        <div class="p-4 space-y-3 bg-white/40">
-          <div class="rounded-xl p-4 bg-gradient-to-br from-[#1665A0] to-[#143D59] text-white shadow-lg shadow-[#1665A0]/25">
-            <h3 class="font-bold text-sm m-0 mb-1">Upcoming review</h3>
-            <p class="text-xs text-white/90 m-0">Stick to your weekly study plan. Next: <?php echo (int)$subjectsRow['cnt']; ?> subjects to cover.</p>
+        <div class="p-4 space-y-3">
+          <div class="focus-card is-primary">
+            <p class="focus-title">In-progress quizzes</p>
+            <p class="focus-copy"><?php echo (int)$quizInProgressCount; ?> active quiz attempt<?php echo $quizInProgressCount === 1 ? '' : 's'; ?> ready to continue.</p>
           </div>
-          <div class="rounded-xl p-4 bg-[#d4e8f7] border border-[#1665A0]/25 text-[#143D59]">
-            <h3 class="font-bold text-sm m-0 mb-1">Reminder</h3>
-            <p class="text-xs text-[#143D59]/90 m-0">Complete at least one quiz this week to keep your streak.</p>
+          <div class="focus-card">
+            <p class="focus-title">Preboards library</p>
+            <p class="focus-copy"><?php echo (int)$preboardsSubjectsCount; ?> available preboard subject<?php echo $preboardsSubjectsCount === 1 ? '' : 's'; ?> in your module.</p>
           </div>
-          <div class="rounded-xl p-4 bg-[#d4e8f7] border border-[#1665A0]/25 text-[#143D59]">
-            <h3 class="font-bold text-sm m-0 mb-1">Announcement</h3>
-            <p class="text-xs text-[#143D59]/90 m-0">New handouts and videos have been added. Check your subjects.</p>
-          </div>
-          <div class="rounded-xl p-4 bg-gradient-to-br from-[#145a8f] to-[#143D59] text-white shadow-lg shadow-[#143D59]/25">
-            <h3 class="font-bold text-sm m-0 mb-1">CPA tip</h3>
-            <p class="text-xs text-white/90 m-0">Review time management strategies for exam day. Practice under timed conditions.</p>
+          <div class="focus-card">
+            <p class="focus-title">Completed assessments</p>
+            <p class="focus-copy"><?php echo (int)($quizSubmittedCount + $preboardsSubmittedCount); ?> total submitted attempts in your record.</p>
           </div>
         </div>
       </aside>
     </div>
 
-    <!-- Access status (compact, below main grid) -->
     <?php if ($info && !empty($info['access_end'])): ?>
-      <?php $daysLeft = floor((strtotime($info['access_end']) - time()) / 86400); ?>
-      <?php if ($daysLeft > 0):
-        $startTs = $info['access_start'] ? strtotime($info['access_start']) : null;
-        $endTs = strtotime($info['access_end']);
-        $pct = 0;
-        if ($startTs && $endTs && $endTs > $startTs) {
+      <?php
+      $daysLeft = (int)floor((strtotime((string)$info['access_end']) - time()) / 86400);
+      $startTs = !empty($info['access_start']) ? strtotime((string)$info['access_start']) : null;
+      $endTs = strtotime((string)$info['access_end']);
+      $pct = 0;
+      if ($startTs && $endTs && $endTs > $startTs) {
           $pct = (int)round(((time() - $startTs) / ($endTs - $startTs)) * 100);
           $pct = max(0, min(100, $pct));
-        }
+      }
       ?>
-    <div class="mt-6 p-5 rounded-2xl border border-[#1665A0]/25 bg-gradient-to-r from-[#e8f2fa] to-[#d4e8f7] text-[#143D59] flex flex-wrap items-center justify-between gap-3 shadow-[0_2px_8px_rgba(20,61,89,0.08)]">
-      <p class="m-0 flex items-center gap-2 font-semibold"><i class="bi bi-calendar-check text-[#1665A0] text-lg"></i> Access: <?php echo date('Y-m-d', strtotime($info['access_start'])); ?> – <?php echo date('Y-m-d', $endTs); ?> · <?php echo $daysLeft; ?> days remaining</p>
-      <div class="flex items-center gap-3">
-        <div class="w-36 h-2.5 rounded-full bg-white/80 overflow-hidden border border-[#1665A0]/20"><div class="h-full rounded-full bg-[#1665A0] transition-all duration-500" style="width:<?php echo $pct; ?>%"></div></div>
-        <span class="text-sm font-bold text-[#1665A0]"><?php echo $pct; ?>% used</span>
+      <?php if ($daysLeft > 0): ?>
+      <div class="dash-card dash-anim delay-5 mt-6 p-5 flex flex-wrap items-center justify-between gap-3">
+        <p class="m-0 flex items-center gap-2 font-semibold text-[#143D59]"><i class="bi bi-calendar-check text-[#1665A0] text-lg"></i> Access active until <?php echo h(date('M j, Y', (int)$endTs)); ?> · <?php echo (int)$daysLeft; ?> day<?php echo $daysLeft === 1 ? '' : 's'; ?> left</p>
+        <div class="flex items-center gap-3">
+          <div class="w-40 h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden border border-[#cde2f4]"><div class="h-full rounded-full bg-[#1665A0]" style="width:<?php echo (int)$pct; ?>%"></div></div>
+          <span class="text-sm font-bold text-[#1665A0]"><?php echo (int)$pct; ?>% used</span>
+        </div>
       </div>
-    </div>
-      <?php elseif ($daysLeft <= 0): ?>
-    <div class="mt-6 p-5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-800 flex items-center gap-2 shadow-[0_2px_8px_rgba(20,61,89,0.06)]">
-      <i class="bi bi-exclamation-triangle text-xl"></i> <span class="font-medium">Access expired. Contact admin to renew.</span>
-    </div>
+      <?php else: ?>
+      <div class="dash-card dash-anim delay-5 mt-6 p-5 border-amber-300 bg-amber-50 text-amber-800 flex items-center gap-2">
+        <i class="bi bi-exclamation-triangle text-xl"></i> <span class="font-medium">Access expired. Contact admin to renew your access.</span>
+      </div>
       <?php endif; ?>
     <?php endif; ?>
   </div>
-  </div>
 </main>
-</div>
 <style>
 .student-dashboard-page {
-  background: linear-gradient(180deg, #eef5fc 0%, #e3eef8 40%, #e8f2fa 100%);
+  background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
 }
-.student-dashboard-page .rounded-2xl { border-radius: 0.75rem !important; }
-.student-dashboard-page .rounded-xl { border-radius: 0.625rem !important; }
-.dashboard-welcome-hero {
-  min-height: 120px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.student-hero {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.28);
+  background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
+  box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
 }
-
-/* Admin-card structure, tailored to student blue/white */
-.dashboard-quick-card {
-  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.25s ease;
-  border: 1px solid rgba(22, 101, 160, 0.14) !important;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08), 0 6px 18px rgba(15, 23, 42, 0.06) !important;
+.hero-btn {
+  border-radius: 9999px;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
 }
-.dashboard-quick-card:hover {
-  border-color: rgba(22, 101, 160, 0.28) !important;
-  box-shadow: 0 8px 24px rgba(20, 61, 89, 0.16) !important;
+.hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px -20px rgba(14, 64, 105, .95);
 }
-
-.student-dashboard-page article,
-.student-dashboard-page aside {
-  background: linear-gradient(to bottom, #f0f7fc, #ffffff) !important;
-  border: 1px solid rgba(22, 101, 160, 0.14) !important;
-  border-left-width: 4px !important;
-  box-shadow: 0 2px 8px rgba(20, 61, 89, 0.1), 0 4px 16px rgba(20, 61, 89, 0.06) !important;
+.hero-strip {
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.24);
+  border-radius: 0.62rem;
 }
-.student-dashboard-page article > div:first-child,
-.student-dashboard-page aside > div:first-child {
-  background: rgba(232, 242, 250, 0.6) !important;
-  border-bottom-color: rgba(22, 101, 160, 0.1) !important;
+.section-title {
+  display: flex; align-items: center; gap: .5rem;
+  margin: 0 0 .85rem; padding: .45rem .65rem;
+  border: 1px solid #d8e8f6; border-radius: .62rem;
+  background: linear-gradient(180deg,#f4f9fe 0%,#fff 100%);
+  color: #143D59; font-size: 1.03rem; font-weight: 800;
 }
-.student-dashboard-page article > div:last-child,
-.student-dashboard-page aside > div:last-child {
-  background: rgba(255, 255, 255, 0.55) !important;
+.section-title i {
+  width: 1.55rem; height: 1.55rem; border-radius: .45rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #b9daf2; background: #e8f2fa; color: #1665A0; font-size: .83rem;
 }
-
-#dashboardStudyChart {
-  filter: none;
+.dash-card {
+  border-radius: .75rem;
+  border: 1px solid rgba(22,101,160,.18);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 60%);
+  box-shadow: 0 10px 28px -22px rgba(20,61,89,.55), 0 1px 0 rgba(255,255,255,.85) inset;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
+}
+.dash-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22,101,160,.32);
+  background-color: #fdfeff;
+  box-shadow: 0 20px 34px -24px rgba(20,61,89,.35);
+}
+.kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 188px; }
+.kpi-icon {
+  width: 3rem; height: 3rem; border-radius: .75rem;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem;
+}
+.kpi-number { font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.kpi-action {
+  width: 100%; border: 1px solid #cde2f4; border-radius: .55rem; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  font-size: .82rem; font-weight: 700; color: #1665A0; padding: .55rem .7rem;
+  transition: all .2s ease;
+}
+.kpi-action:hover { border-color: #8fc0e8; background: #f4f9fe; transform: translateY(-1px); }
+.metric-box {
+  padding: .5rem .65rem;
+  border-radius: .55rem;
+  border: 1px solid #d6e8f7;
+  background: #f8fbff;
+}
+.metric-label { margin: 0; font-size: .66rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+.metric-value { margin: .15rem 0 0; font-size: .95rem; color: #1665A0; font-weight: 800; }
+.progress-track {
+  height: .65rem; border-radius: 9999px; background: #e8f2fa; overflow: hidden; border: 1px solid #d4e6f6;
+}
+.progress-fill {
+  height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #1665A0 0%, #3b82c4 100%);
+}
+.focus-card {
+  border: 1px solid #d6e8f7;
+  border-radius: .62rem;
+  background: #f8fbff;
+  padding: .75rem .8rem;
+}
+.focus-card.is-primary {
+  border-color: #9ec8e9;
+  background: linear-gradient(145deg, #1665A0 0%, #145a8f 85%);
+}
+.focus-title { margin: 0 0 .2rem; font-size: .75rem; font-weight: 800; color: #143D59; text-transform: uppercase; letter-spacing: .02em; }
+.focus-copy { margin: 0; font-size: .77rem; color: #475569; line-height: 1.45; }
+.focus-card.is-primary .focus-title, .focus-card.is-primary .focus-copy { color: #fff; }
+.dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
+.delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; } .delay-4 { animation-delay: .24s; } .delay-5 { animation-delay: .3s; }
+@keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .dash-anim { opacity: 1; transform: none; animation: none; }
+  .dash-card, .kpi-action, .hero-btn { transition: none !important; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (function() {
   var canvas = document.getElementById('dashboardStudyChart');
-  if (!canvas) return;
+  if (!canvas || typeof Chart === 'undefined') return;
   var ctx = canvas.getContext('2d');
-  var primary = '#1665A0';
-  var light = '#89CFF0';
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'],
-      datasets: [
-        {
-          label: 'Study activity',
-          data: [12, 19, 14, 22, 18, 24, 20, 26],
-          borderColor: primary,
-          backgroundColor: 'rgba(22, 101, 160, 0.08)',
-          fill: true,
-          tension: 0.35,
-          pointBackgroundColor: primary,
-          pointRadius: 4,
-          pointHoverRadius: 6
-        },
-        {
-          label: 'Quizzes completed',
-          data: [3, 5, 4, 7, 6, 8, 5, 9],
-          borderColor: light,
-          backgroundColor: 'rgba(137, 207, 240, 0.12)',
-          fill: true,
-          tension: 0.35,
-          pointBackgroundColor: light,
-          pointRadius: 4,
-          pointHoverRadius: 6
-        }
-      ]
+      labels: <?php echo json_encode(array_values($weeklyLabels)); ?>,
+      datasets: [{
+        label: 'Activity',
+        data: <?php echo json_encode(array_values($weeklyActivity)); ?>,
+        borderColor: '#1665A0',
+        backgroundColor: 'rgba(22, 101, 160, 0.12)',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#1665A0',
+        pointRadius: 3.6,
+        pointHoverRadius: 5.6
+      }]
     },
     options: {
       responsive: true,
@@ -384,8 +439,8 @@ if ($hour < 12) {
       scales: {
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(0,0,0,0.06)' },
-          ticks: { color: '#64748b', font: { size: 11 } }
+          ticks: { precision: 0, color: '#64748b', font: { size: 11 } },
+          grid: { color: 'rgba(22, 101, 160, 0.12)' }
         },
         x: {
           grid: { display: false },
