@@ -45,18 +45,26 @@ $sql = "SELECT " . implode(', ', $cols) . " FROM users WHERE user_id IN ($inList
 $res = @mysqli_query($conn, $sql);
 
 $presence = [];
-$recentThresholdTs = time() - (10 * 60);
+$recentThresholdTs = time() - (2 * 60); // 2 minutes idle window
 while ($res && ($row = mysqli_fetch_assoc($res))) {
-    $active = false;
-    if ($hasIsOnline) {
-        $active = !empty($row['is_online']);
+    $uid = (int) ($row['user_id'] ?? 0);
+    if ($uid <= 0) {
+        continue;
     }
+    $active = false;
     if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
         $ts = strtotime((string)$row['last_seen_at']);
-        if ($ts !== false && $ts >= $recentThresholdTs) $active = true;
+        if ($ts !== false && $ts >= $recentThresholdTs) {
+            $active = true;
+        }
     } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
         $ts = strtotime((string)$row['last_login_at']);
-        if ($ts !== false && $ts >= $recentThresholdTs) $active = true;
+        if ($ts !== false && $ts >= $recentThresholdTs) {
+            $active = true;
+        }
+    } elseif (!$hasLastSeenAt && !$hasLastLoginAt && $hasIsOnline && !empty($row['is_online'])) {
+        // Legacy schema without timestamps: fall back to is_online flag.
+        $active = true;
     }
     if ($hasLastLogoutAt && !empty($row['last_logout_at'])) {
         $logoutTs = strtotime((string)$row['last_logout_at']);
@@ -65,7 +73,7 @@ while ($res && ($row = mysqli_fetch_assoc($res))) {
             $active = false;
         }
     }
-    $presence[(string)((int)$row['user_id'])] = $active;
+    $presence[(string) $uid] = $active;
 }
 
 echo json_encode(['ok' => true, 'presence' => $presence]);

@@ -65,7 +65,7 @@ $appShellNavConfig = [
         'items' => [
             ['label' => 'Dashboard', 'href' => 'college_student_dashboard.php', 'icon' => 'bi-speedometer2', 'active' => ['college_student_dashboard.php']],
             ['label' => 'Exams', 'href' => 'college_exams.php', 'icon' => 'bi-journal-text', 'active' => ['college_exams.php', 'college_take_exam.php']],
-            ['label' => 'Uploads', 'href' => 'college_uploads.php', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads.php']],
+            ['label' => 'Uploads', 'href' => 'college_uploads.php', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads.php', 'college_upload_task.php']],
         ],
     ],
 ];

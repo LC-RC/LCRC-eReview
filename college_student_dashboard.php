@@ -2,18 +2,57 @@
 require_once __DIR__ . '/auth.php';
 requireRole('college_student');
 require_once __DIR__ . '/includes/college_schema.php';
+require_once __DIR__ . '/includes/college_exam_helpers.php';
 
 $pageTitle = 'College Portal';
 $uid = getCurrentUserId();
 $csrf = generateCSRFToken();
 
 $now = date('Y-m-d H:i:s');
+$uidDash = (int)$uid;
+if ($uidDash > 0) {
+    college_exam_finalize_expired_in_progress($conn, 0, $uidDash, 0);
+}
 
 $activeExams = 0;
-$r = @mysqli_query($conn, "SELECT COUNT(*) AS c FROM college_exams e WHERE e.is_published=1 AND (e.available_from IS NULL OR e.available_from <= '$now') AND (e.deadline IS NULL OR e.deadline >= '$now')");
-if ($r) {
-    $activeExams = (int)(mysqli_fetch_assoc($r)['c'] ?? 0);
-    mysqli_free_result($r);
+$pubE = college_exam_where_published_sql('e');
+$dashExamRows = college_exams_load_published_exams($conn);
+$dashExamIds = array_values(array_unique(array_filter(array_map(static function ($row) {
+    return (int)($row['exam_id'] ?? 0);
+}, $dashExamRows), static function ($id) { return $id > 0; })));
+$dashSubmittedByExam = [];
+if ($dashExamIds !== []) {
+    $inDash = implode(',', $dashExamIds);
+    $dqs = @mysqli_query($conn, "
+      SELECT exam_id,
+        SUM(CASE WHEN status='submitted' THEN 1 ELSE 0 END) AS submitted_count
+      FROM college_exam_attempts
+      WHERE exam_id IN ({$inDash})
+      GROUP BY exam_id
+    ");
+    if ($dqs) {
+        while ($dr = mysqli_fetch_assoc($dqs)) {
+            $dashSubmittedByExam[(int)$dr['exam_id']] = (int)($dr['submitted_count'] ?? 0);
+        }
+        mysqli_free_result($dqs);
+    }
+}
+foreach ($dashExamRows as $de) {
+    if (!college_exam_row_is_published($de)) {
+        continue;
+    }
+    if (!empty($de['available_from']) && (string)$de['available_from'] > $now) {
+        continue;
+    }
+    if (!empty($de['deadline']) && (string)$de['deadline'] < $now) {
+        continue;
+    }
+    $deid = (int)($de['exam_id'] ?? 0);
+    $dSub = (int)($dashSubmittedByExam[$deid] ?? 0);
+    if (college_exam_finished_all_submitted_no_deadline($conn, $de, $dSub)) {
+        continue;
+    }
+    $activeExams++;
 }
 
 $pendingUploads = 0;
@@ -37,7 +76,7 @@ if ($r3) {
 $upcoming = [];
 $uq = @mysqli_query($conn, "
   SELECT e.exam_id, e.title, e.deadline FROM college_exams e
-  WHERE e.is_published=1 AND e.deadline IS NOT NULL AND e.deadline > '$now'
+  WHERE {$pubE} AND e.deadline IS NOT NULL AND e.deadline > '$now'
   ORDER BY e.deadline ASC LIMIT 5
 ");
 if ($uq) {
@@ -65,7 +104,7 @@ $dueSoonExams = 0;
 $r4 = @mysqli_query($conn, "
   SELECT COUNT(*) AS c
   FROM college_exams e
-  WHERE e.is_published=1
+  WHERE {$pubE}
     AND e.deadline IS NOT NULL
     AND e.deadline >= '{$now}'
     AND e.deadline <= DATE_ADD('{$now}', INTERVAL 3 DAY)

@@ -1,6 +1,9 @@
 <?php
 require_once 'session_config.php';
 require_once 'auth.php';
+require_once __DIR__ . '/includes/registration_school_options.php';
+
+$schoolDropdownOptions = ereview_get_registration_school_dropdown_options($conn);
 
 if (isLoggedIn() && verifySession()) {
     header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
@@ -156,10 +159,10 @@ $pageTitle = 'Home';
         <div class="grid grid-cols-2 gap-4 sm:gap-5 reveal-content reveal-delay-2">
           <?php
           $features = [
-            ['icon' => 'bi-lightning-charge', 'title' => 'Fast Registration', 'desc' => 'Quick sign up with proof upload', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
-            ['icon' => 'bi-shield-check', 'title' => 'Secure Access', 'desc' => 'Protected student dashboard', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
-            ['icon' => 'bi-people', 'title' => 'Admin Workflow', 'desc' => 'Approval made simple', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
-            ['icon' => 'bi-stars', 'title' => 'Modern UI', 'desc' => 'Clean, friendly design', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
+            ['icon' => 'bi-person-check', 'title' => 'Verified Enrollment', 'desc' => 'Register with payment proof and get admin-verified access.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
+            ['icon' => 'bi-journal-check', 'title' => 'CPA-Focused Modules', 'desc' => 'Study by subject with lessons, handouts, and progress tracking.', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
+            ['icon' => 'bi-clipboard2-pulse', 'title' => 'Mock Exams & Results', 'desc' => 'Take timed quizzes and monitor your readiness in real time.', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
+            ['icon' => 'bi-graph-up-arrow', 'title' => 'Performance Insights', 'desc' => 'Track strengths, weak areas, and next topics to improve.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
           ];
           foreach ($features as $i => $f):
             $delay = 50 + ($i * 75);
@@ -1032,9 +1035,10 @@ window.chatbot = function chatbot() {
                       :class="showRegisterError('school') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
                       class="w-full rounded-2xl border border-gray-300 bg-white/80 px-4 py-4 text-gray-900 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200 appearance-none bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat cursor-pointer" style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27 stroke=%27%236b7280%27%3E%3Cpath stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M19 9l-7 7-7-7%27/%3E%3C/svg%3E');">
                 <option value="" disabled selected>Select school</option>
-                <option value="SLU">SLU</option>
-                <option value="UB">UB</option>
-                <option value="BSU">BSU</option>
+                <?php foreach ($schoolDropdownOptions as $schoolOpt): ?>
+                  <?php if ($schoolOpt === 'Other') { continue; } ?>
+                  <option value="<?php echo h($schoolOpt); ?>"><?php echo h($schoolOpt); ?></option>
+                <?php endforeach; ?>
                 <option value="Other">Other</option>
               </select>
               <p id="reg-school-error" x-show="showRegisterError('school')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('school')"></p>

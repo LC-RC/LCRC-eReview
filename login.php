@@ -22,6 +22,15 @@ if (!empty($_GET['magic'])) {
         $user = $result ? mysqli_fetch_assoc($result) : null;
         mysqli_stmt_close($stmt);
         if ($user) {
+            require_once __DIR__ . '/includes/college_schema.php';
+            require_once __DIR__ . '/includes/college_exam_helpers.php';
+            $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+            if ($examBlock !== null) {
+                $_SESSION['error'] = $examBlock;
+                $_SESSION['error_type'] = 'exam_session_active';
+                header('Location: login.php');
+                exit;
+            }
             if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
                 $_SESSION['error'] = 'Your account is not approved yet.';
                 $_SESSION['error_type'] = 'not_approved';
@@ -105,6 +114,7 @@ $errorTitles = [
     'google_no_account' => 'No account found',
     'google_not_verified' => 'Email not verified',
     'google_not_configured' => 'Google Sign-In not set up',
+    'exam_session_active' => 'Exam in progress elsewhere',
 ];
 $errorModalTitle = $errorTitles[$errorType] ?? 'Incorrect credentials';
 $googleRedirectUri = '';
@@ -1500,6 +1510,8 @@ if (isset($_SESSION['google_redirect_uri'])) {
             errorHint.innerHTML = 'Create an account with your email first, then you can <a href="google_auth.php" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">sign in with Google</a>. <a href="registration.php" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded ml-1">Register here</a>.';
           } else if (serverErrorType === 'not_approved') {
             errorHint.textContent = 'An admin must approve your account before you can sign in. Please try again later or contact support.';
+          } else if (serverErrorType === 'exam_session_active') {
+            errorHint.textContent = 'Finish or submit the exam in the browser where you started it, or log out there first. Starting the same exam on two devices is not allowed.';
           } else {
             errorHint.innerHTML = 'Check your email and password, or <a href="forgot_password.php" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.';
           }

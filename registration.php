@@ -1,6 +1,9 @@
 <?php
 require_once 'session_config.php';
 require_once 'auth.php';
+require_once __DIR__ . '/includes/registration_school_options.php';
+
+$schoolDropdownOptions = ereview_get_registration_school_dropdown_options($conn);
 
 if (isLoggedIn() && verifySession()) {
     header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
@@ -1411,11 +1414,12 @@ unset($_SESSION['error']);
             <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
               <div class="space-y-1">
                 <label class="reg-top-label" for="reg-school">School</label>
-                <select name="school" id="reg-school" x-model="school" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" aria-describedby="reg-error-school">
+                <select name="school" id="reg-school" x-model="school" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" aria-describedby="reg-error-school" data-school-dynamic="1">
                   <option value="" selected disabled>Select school</option>
-                  <option value="SLU">SLU</option>
-                  <option value="UB">UB</option>
-                  <option value="BSU">BSU</option>
+                  <?php foreach ($schoolDropdownOptions as $schoolOpt): ?>
+                    <?php if ($schoolOpt === 'Other') { continue; } ?>
+                    <option value="<?php echo h($schoolOpt); ?>"><?php echo h($schoolOpt); ?></option>
+                  <?php endforeach; ?>
                   <option value="Other">Other</option>
                 </select>
                 <span id="reg-error-school" class="reg-inline-error" role="alert" aria-live="polite"></span>
@@ -1521,9 +1525,9 @@ unset($_SESSION['error']);
               <div class="reg-upload-box-wrap">
                 <label class="reg-top-label" for="register-profile-picture">Profile Picture</label>
                 <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-avatar-zone" aria-describedby="reg-error-profile_picture">
-                  <input type="file" name="profile_picture" id="register-profile-picture" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" aria-describedby="reg-error-profile_picture">
+                  <input type="file" name="profile_picture" id="register-profile-picture" required accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" aria-describedby="reg-error-profile_picture">
                   <div id="reg-avatar-placeholder">
-                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-person-circle text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Upload photo or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-avatar-browse">browse</button></p>
+                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-person-circle text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Upload your photo or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-avatar-browse">browse</button></p>
                     <p class="file-hint text-xs">Accepted: JPG, PNG, WEBP, GIF only. Videos and audio are not allowed.</p>
                   </div>
                   <div id="reg-avatar-preview" class="hidden">
@@ -1537,10 +1541,6 @@ unset($_SESSION['error']);
                     </div>
                   </div>
                 </div>
-                <label class="reg-avatar-default-toggle inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                  <input type="checkbox" id="register-use-default-avatar" name="use_default_avatar" value="1" checked class="rounded border-slate-500 bg-slate-800">
-                  Use default initial avatar
-                </label>
                 <span id="reg-error-profile_picture" class="reg-inline-error" role="alert" aria-live="polite"></span>
               </div>
             </div>
@@ -1638,7 +1638,6 @@ unset($_SESSION['error']);
       var avatarSizeEl = document.getElementById('reg-avatar-size');
       var avatarBrowse = document.getElementById('reg-avatar-browse');
       var avatarClear = document.getElementById('reg-avatar-clear');
-      var useDefaultAvatar = document.getElementById('register-use-default-avatar');
       var regForm = document.getElementById('reg-form');
       var regSubmitBtn = document.getElementById('reg-submit-btn');
       var regSubmitText = document.getElementById('reg-submit-text');
@@ -1769,7 +1768,6 @@ unset($_SESSION['error']);
         var confirm = (confirmRaw || '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
-        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         var firstInvalid = null;
         var messages = [];
         var fnVal = validateFullNameValue(fullName ? fullName.value : '');
@@ -1847,11 +1845,11 @@ unset($_SESSION['error']);
             if (avatarZone) avatarZone.classList.add('is-invalid');
             if (!firstInvalid) firstInvalid = avatarZone || avatarInputEl;
           }
-        } else if (useDefaultAvatarEl && !useDefaultAvatarEl.checked) {
-          setInlineError('profile_picture', 'Upload a profile picture or select default avatar.');
-          messages.push('Choose a profile picture or use the default initial avatar.');
+        } else {
+          setInlineError('profile_picture', 'Upload a profile picture to continue registration.');
+          messages.push('Profile picture is required. Please upload JPG, PNG, WEBP, or GIF.');
           if (avatarZone) avatarZone.classList.add('is-invalid');
-          if (!firstInvalid) firstInvalid = avatarZone || useDefaultAvatarEl;
+          if (!firstInvalid) firstInvalid = avatarZone || avatarInputEl;
         }
         return { valid: !firstInvalid, firstInvalid: firstInvalid, messages: messages };
       }
@@ -1873,7 +1871,6 @@ unset($_SESSION['error']);
         var confirm = (confirmInput ? confirmInput.value : '').trim();
         var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
-        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         if (!validateFullNameValue(fullName ? fullName.value : '').valid) return false;
         if (!validateEmailValue(email ? email.value : '').valid) return false;
         if (!school || !school.value) return false;
@@ -1891,7 +1888,7 @@ unset($_SESSION['error']);
           var avatarAllowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
           var avatarExt = (af.name.split('.').pop() || '').toLowerCase();
           if (!avatarAllowedTypes.includes(af.type) || !['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(avatarExt)) return false;
-        } else if (useDefaultAvatarEl && !useDefaultAvatarEl.checked) {
+        } else {
           return false;
         }
         return true;
@@ -1905,7 +1902,6 @@ unset($_SESSION['error']);
         var confirm = confirmInput ? confirmInput.value : '';
         var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
-        var useDefaultAvatarEl = document.getElementById('register-use-default-avatar');
         var n = 0;
         if (fullName && fullName.value.trim()) n++;
         if (email && email.value.trim()) n++;
@@ -1914,7 +1910,7 @@ unset($_SESSION['error']);
         if (pw && pw.length) n++;
         if (confirm && confirm.length) n++;
         if (fileInputEl && fileInputEl.files && fileInputEl.files.length) n++;
-        if ((avatarInputEl && avatarInputEl.files && avatarInputEl.files.length) || (useDefaultAvatarEl && useDefaultAvatarEl.checked)) n++;
+        if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length) n++;
         return n;
       }
       function updateSubmitState() {
@@ -2248,8 +2244,8 @@ unset($_SESSION['error']);
         });
       }
       function syncAvatarZoneState() {
-        if (!avatarInput || !avatarZone || !useDefaultAvatar) return;
-        avatarZone.classList.toggle('opacity-70', !!useDefaultAvatar.checked);
+        if (!avatarInput || !avatarZone) return;
+        avatarZone.classList.remove('opacity-70');
       }
       if (avatarBrowse && avatarInput) avatarBrowse.addEventListener('click', function () { avatarInput.click(); });
       if (avatarZone && avatarInput) {
@@ -2260,17 +2256,6 @@ unset($_SESSION['error']);
           avatarZone.classList.remove('dragover');
           if (e.dataTransfer.files.length) avatarInput.files = e.dataTransfer.files;
           avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-      }
-      if (useDefaultAvatar) {
-        useDefaultAvatar.addEventListener('change', function () {
-          if (this.checked && avatarInput) {
-            avatarInput.value = '';
-            if (avatarInput) avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          setInlineError('profile_picture', '');
-          updateSubmitState();
-          syncAvatarZoneState();
         });
       }
       if (avatarInput && avatarPlaceholder && avatarPreview && avatarThumb && avatarNameEl && avatarSizeEl && avatarClear) {
@@ -2297,7 +2282,6 @@ unset($_SESSION['error']);
             updateSubmitState();
             return;
           }
-          if (useDefaultAvatar) useDefaultAvatar.checked = false;
           setInlineError('profile_picture', '');
           if (avatarZone) avatarZone.classList.remove('is-invalid');
           if (avatarZone) avatarZone.classList.add('has-file');
@@ -2317,7 +2301,6 @@ unset($_SESSION['error']);
         });
         avatarClear.addEventListener('click', function () {
           avatarInput.value = '';
-          if (useDefaultAvatar) useDefaultAvatar.checked = true;
           avatarInput.dispatchEvent(new Event('change', { bubbles: true }));
         });
       }

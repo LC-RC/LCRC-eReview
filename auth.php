@@ -172,6 +172,8 @@ function sanitizeInt($value, $default = 0) {
     return $int !== false ? $int : $default;
 }
 
+// (presence helper functions for admin dashboard are defined in admin-specific files)
+
 /**
  * Detect optional presence columns in users table.
  * @return array{is_online:bool,last_seen_at:bool,last_logout_at:bool}

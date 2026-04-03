@@ -23,10 +23,11 @@ body.app-shell--student {
 }
 
 /* ---- Global student page-load motion (all student pages/tabs) ---- */
+/* Do NOT set opacity:0 on the element itself: if the animation is blocked or fails,
+   content would stay invisible forever. Keyframes define from→to; fill-mode handles delay. */
 body.app-shell--student #main.app-shell-main--student > *:not(.student-topbar):not(.admin-topbar) {
-  opacity: 0;
-  transform: translateY(10px);
   animation: studentFadeUp 0.5s ease-out forwards;
+  animation-fill-mode: both;
 }
 body.app-shell--student #main.app-shell-main--student > *:not(.student-topbar):not(.admin-topbar):nth-child(1) { animation-delay: 0.04s; }
 body.app-shell--student #main.app-shell-main--student > *:not(.student-topbar):not(.admin-topbar):nth-child(2) { animation-delay: 0.09s; }
@@ -38,10 +39,21 @@ body.app-shell--student #main.app-shell-main--student > *:not(.student-topbar):n
 body.app-shell--student #main.app-shell-main--student > *:not(.student-topbar):not(.admin-topbar):nth-child(8) { animation-delay: 0.39s; }
 
 @keyframes studentFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Opt out of the main-area fade entirely (prevents clipped/invisible content with overflow + transform). */
+body.app-shell--student #main.app-shell-main--student > .ereview-shell-no-fade {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
 }
 
 /* ---- Student sidebar width + main offset (admin uses admin.css) ---- */

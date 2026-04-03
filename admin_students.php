@@ -44,6 +44,24 @@ if ($cp5 && mysqli_fetch_assoc($cp5)) $hasLastLogoutAt = true;
 $cp6 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_login_at'");
 if ($cp6 && mysqli_fetch_assoc($cp6)) $hasLastLoginAt = true;
 
+// Prioritize active users at the top of the table.
+// Active = recent in-app activity within 2 minutes (last_seen/last_login),
+// with legacy fallback to is_online only when activity timestamps do not exist.
+$presenceOrderExpr = '0';
+if ($hasLastSeenAt) {
+  $presenceOrderExpr = "(CASE WHEN last_seen_at IS NOT NULL AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE) THEN 1 ELSE 0 END)";
+} elseif ($hasLastLoginAt) {
+  $presenceOrderExpr = "(CASE WHEN last_login_at IS NOT NULL AND last_login_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE) THEN 1 ELSE 0 END)";
+} elseif ($hasIsOnline) {
+  $presenceOrderExpr = "(CASE WHEN is_online = 1 THEN 1 ELSE 0 END)";
+}
+if ($hasLastLogoutAt) {
+  $activityCol = $hasLastSeenAt ? 'last_seen_at' : ($hasLastLoginAt ? 'last_login_at' : null);
+  $logoutIdleCond = $activityCol !== null ? "($activityCol IS NULL OR $activityCol <= last_logout_at)" : '1=1';
+  $presenceOrderExpr = "(CASE WHEN last_logout_at IS NOT NULL AND $logoutIdleCond THEN 0 ELSE $presenceOrderExpr END)";
+}
+$orderBySql = "$presenceOrderExpr DESC, created_at DESC";
+
 if (in_array($tab, ['enrolled','expired'], true)) {
   $countSql = "SELECT COUNT(*) AS total FROM users WHERE $tabWhere AND $searchSql";
   $stmt = mysqli_prepare($conn, $countSql);
@@ -70,11 +88,11 @@ if ($hasLastSeenAt) $selectCols .= ", last_seen_at";
 if ($hasLastLogoutAt) $selectCols .= ", last_logout_at";
 if ($hasLastLoginAt) $selectCols .= ", last_login_at";
 if (in_array($tab, ['enrolled','expired'], true)) {
-  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY created_at DESC LIMIT ? OFFSET ?";
+  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY $orderBySql LIMIT ? OFFSET ?";
   $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
 } else {
-  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY created_at DESC LIMIT ? OFFSET ?";
+  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY $orderBySql LIMIT ? OFFSET ?";
   $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
 }
@@ -228,6 +246,21 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       background: linear-gradient(90deg, rgba(59, 130, 246, 0.06) 0%, rgba(14, 165, 233, 0.03) 100%);
       box-shadow: inset 4px 0 0 rgba(59, 130, 246, 0.75);
       transform: translateY(-1px);
+    }
+    .admin-students-table tbody tr.student-row-priority-moved {
+      animation: studentRowPriorityMove 520ms cubic-bezier(.2,.7,.2,1);
+    }
+    @keyframes studentRowPriorityMove {
+      0% {
+        transform: translateY(-4px);
+        box-shadow: inset 4px 0 0 rgba(34, 197, 94, 0.9), 0 0 0 2px rgba(34, 197, 94, 0.18);
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0.18) 0%, rgba(16, 185, 129, 0.08) 100%);
+      }
+      100% {
+        transform: translateY(0);
+        box-shadow: none;
+        background: transparent;
+      }
     }
     .student-name {
       font-weight: 700;
@@ -848,21 +881,20 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                 $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($row['use_default_avatar']) : true;
                 $avatarInitial = ereview_avatar_initial($row['full_name'] ?? 'U');
                 $isSessionActive = false;
-                $recentThresholdTs = time() - (10 * 60);
-                if ($hasIsOnline) {
-                  $isSessionActive = !empty($row['is_online']);
-                }
+                $recentThresholdTs = time() - (2 * 60); // 2 minutes idle window
                 if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
                   $lastSeenTs = strtotime((string)$row['last_seen_at']);
-                  if ($lastSeenTs !== false) {
-                    $isSessionActive = $isSessionActive || ($lastSeenTs >= $recentThresholdTs);
+                  if ($lastSeenTs !== false && $lastSeenTs >= $recentThresholdTs) {
+                    $isSessionActive = true;
                   }
-                }
-                if (!$hasLastSeenAt && $hasLastLoginAt && !empty($row['last_login_at'])) {
+                } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
                   $lastLoginTs = strtotime((string)$row['last_login_at']);
                   if ($lastLoginTs !== false && $lastLoginTs >= $recentThresholdTs) {
                     $isSessionActive = true;
                   }
+                } elseif (!$hasLastSeenAt && !$hasLastLoginAt && $hasIsOnline && !empty($row['is_online'])) {
+                  // Legacy schema without timestamps: fall back to is_online flag.
+                  $isSessionActive = true;
                 }
                 if ($hasLastLogoutAt && !empty($row['last_logout_at'])) {
                   $lastLogoutTs = strtotime((string)$row['last_logout_at']);
@@ -1145,22 +1177,62 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
 <script>
   (function () {
     var POLL_MS = 10000;
+    var tableBody = document.querySelector('.admin-students-table tbody');
     var rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-user-id]'));
+    var initialOrder = {};
     if (!rows.length) return;
+    rows.forEach(function (row, idx) {
+      var id = row.getAttribute('data-user-id');
+      if (id) initialOrder[id] = idx;
+    });
+
+    function refreshRows() {
+      rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-user-id]'));
+      return rows;
+    }
 
     function ids() {
+      refreshRows();
       return rows.map(function (r) { return r.getAttribute('data-user-id'); }).filter(Boolean);
     }
 
     function applyPresence(presenceMap) {
+      refreshRows();
+      var beforeOrder = rows.map(function (row) { return row.getAttribute('data-user-id') || ''; });
       rows.forEach(function (row) {
         var id = row.getAttribute('data-user-id');
         var dot = row.querySelector('[data-status-dot]');
         if (!id || !dot) return;
         var active = !!presenceMap[id];
+        row.setAttribute('data-presence-active', active ? '1' : '0');
         dot.classList.toggle('student-avatar-status-dot--active', active);
         dot.classList.toggle('student-avatar-status-dot--inactive', !active);
         dot.title = active ? 'Session active' : 'Session inactive';
+      });
+      if (!tableBody) return;
+      var sortedRows = rows.slice().sort(function (a, b) {
+        var aId = a.getAttribute('data-user-id') || '';
+        var bId = b.getAttribute('data-user-id') || '';
+        var aActive = a.getAttribute('data-presence-active') === '1' ? 1 : 0;
+        var bActive = b.getAttribute('data-presence-active') === '1' ? 1 : 0;
+        if (aActive !== bActive) return bActive - aActive; // active first
+        var aOrder = Object.prototype.hasOwnProperty.call(initialOrder, aId) ? initialOrder[aId] : 999999;
+        var bOrder = Object.prototype.hasOwnProperty.call(initialOrder, bId) ? initialOrder[bId] : 999999;
+        return aOrder - bOrder;
+      });
+      sortedRows.forEach(function (row) { tableBody.appendChild(row); });
+      var afterOrder = sortedRows.map(function (row) { return row.getAttribute('data-user-id') || ''; });
+      sortedRows.forEach(function (row, idx) {
+        var id = row.getAttribute('data-user-id') || '';
+        if (!id) return;
+        if (beforeOrder[idx] !== id) {
+          row.classList.remove('student-row-priority-moved');
+          void row.offsetWidth; // restart animation when row moves repeatedly
+          row.classList.add('student-row-priority-moved');
+          setTimeout(function () {
+            row.classList.remove('student-row-priority-moved');
+          }, 560);
+        }
       });
     }
 

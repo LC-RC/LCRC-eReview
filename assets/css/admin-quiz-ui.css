@@ -286,3 +286,748 @@
   align-items: center;
   background: #fafafa;
 }
+
+/* =============================================================================
+   Admin Quizzes + Quiz Questions — dark shell alignment (admin_app main area)
+   ============================================================================= */
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-hero,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-hero-icon,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(167, 139, 250, 0.35) 0%, rgba(109, 40, 217, 0.25) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  color: #e9d5ff;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-toolbar,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-toolbar {
+  align-items: flex-start;
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-alert,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert {
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-alert--success,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-alert--error,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+/* Quizzes list table */
+body.admin-app.admin-quizzes-page #main .quiz-admin-table-shell {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141414;
+  box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-table-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(167, 139, 250, 0.2);
+  color: #e9d5ff;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-data-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-admin-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 3px 0 0 rgba(167, 139, 250, 0.75);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-type-pill {
+  border: 1px solid transparent;
+}
+body.admin-app.admin-quizzes-page #main .quiz-type-pill--pre {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+body.admin-app.admin-quizzes-page #main .quiz-type-pill--post {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+body.admin-app.admin-quizzes-page #main .quiz-type-pill--mock {
+  background: rgba(167, 139, 250, 0.2);
+  color: #ede9fe;
+  border-color: rgba(167, 139, 250, 0.45);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-qcount {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.admin-app.admin-quizzes-page #main .quiz-qcount--ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+body.admin-app.admin-quizzes-page #main .quiz-qcount--empty {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary {
+  border: 1px solid rgba(167, 139, 250, 0.55);
+  color: #ddd6fe;
+  background: rgba(167, 139, 250, 0.08);
+  text-decoration: none;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary:hover {
+  background: rgba(167, 139, 250, 0.22);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.45);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn {
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn:hover {
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  background: transparent;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-empty {
+  color: #9ca3af;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-empty-icon {
+  color: rgba(167, 139, 250, 0.35);
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-pagination {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-page-link {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d1d5db;
+  text-decoration: none;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-page-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-page-link.is-active {
+  background: rgba(167, 139, 250, 0.25);
+  border-color: rgba(167, 139, 250, 0.55);
+  color: #fff;
+}
+
+/* Shared modal surface (quizzes + questions) */
+body.admin-app.admin-quizzes-page #main .quiz-modal-panel,
+body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+body.admin-app.admin-quizzes-page #main .quiz-modal-panel__head,
+body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel__head {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .admin-quiz-label {
+  color: #d1d5db;
+}
+body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+/* Quiz questions page — cards & table */
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(109, 40, 217, 0.35);
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  box-shadow: 0 10px 28px rgba(109, 40, 217, 0.45);
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #e5e7eb;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-questions-card {
+  background: #141414;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-card-head {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-card-header-accent {
+  background: linear-gradient(90deg, rgba(167, 139, 250, 0.12) 0%, transparent 100%);
+  border-bottom-color: rgba(167, 139, 250, 0.2) !important;
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question {
+  background: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question:hover {
+  border-color: rgba(167, 139, 250, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-label {
+  color: #e5e7eb;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-table th {
+  background: #1a1a1a;
+  color: #9ca3af;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-q-preview {
+  color: #e5e7eb;
+  line-height: 1.45;
+  max-width: 42rem;
+}
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-q-empty {
+  color: #6b7280;
+  font-style: italic;
+  font-weight: 500;
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-outline {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #e5e7eb;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fff;
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .font-semibold.text-gray-700 {
+  color: #e5e7eb !important;
+}
+body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .admin-quiz-label {
+  color: #d1d5db;
+}
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+body.admin-app.admin-quiz-questions-page #main form[action*="admin_quiz_questions"] .bg-amber-50 {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  color: #fde68a !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-admin-row,
+  body.admin-app.admin-quiz-questions-page #main .admin-quiz-table tbody tr {
+    transition: none;
+  }
+}
+
+/* =============================================================================
+   Shared filter bar (quizzes, lessons, materials, test bank, preboards)
+   ============================================================================= */
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-filter,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter,
+body.admin-app.admin-lessons-page #main .quiz-admin-filter,
+body.admin-app.admin-materials-page #main .quiz-admin-filter,
+body.admin-app.admin-test-bank-page #main .quiz-admin-filter,
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 20, 20, 0.85);
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85);
+  align-items: flex-end;
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn,
+body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn,
+body.admin-app.admin-materials-page #main .quiz-admin-filter-btn,
+body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn,
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn {
+  background: rgba(167, 139, 250, 0.2);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  color: #ede9fe;
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn:hover,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn:hover,
+body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn:hover,
+body.admin-app.admin-materials-page #main .quiz-admin-filter-btn:hover,
+body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn:hover,
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn:hover {
+  background: rgba(167, 139, 250, 0.32);
+  color: #fff;
+}
+
+body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear,
+body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear,
+body.admin-app.admin-materials-page #main .quiz-admin-filter-clear,
+body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear,
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #d1d5db;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear:hover,
+body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear:hover,
+body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear:hover,
+body.admin-app.admin-materials-page #main .quiz-admin-filter-clear:hover,
+body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear:hover,
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* =============================================================================
+   Lessons — dark hub
+   ============================================================================= */
+
+body.admin-app.admin-lessons-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-lessons-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.22) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-lessons-page #main .quiz-admin-alert--success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+body.admin-app.admin-lessons-page #main .quiz-admin-alert--error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+body.admin-app.admin-lessons-page #main .quiz-admin-count-pill--lessons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+body.admin-app.admin-lessons-page #main .lesson-count-pill--ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+body.admin-app.admin-lessons-page #main .lesson-count-pill--warn {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+body.admin-app.admin-lessons-page #main .lesson-materials-link {
+  border: 1px solid rgba(52, 211, 153, 0.55);
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.08);
+  text-decoration: none;
+}
+body.admin-app.admin-lessons-page #main .lesson-materials-link:hover {
+  background: rgba(16, 185, 129, 0.22);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.45);
+}
+
+body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  background: transparent;
+}
+body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.admin-app.admin-lessons-page #main .quiz-admin-more-btn {
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+body.admin-app.admin-lessons-page #main .quiz-admin-more-btn:hover {
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* =============================================================================
+   Materials — dark hub
+   ============================================================================= */
+
+body.admin-app.admin-materials-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-materials-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.28) 0%, rgba(14, 165, 233, 0.18) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-materials-page #main .materials-panel-inner {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+body.admin-app.admin-materials-page #main .materials-data-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-materials-page #main .materials-data-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease;
+}
+body.admin-app.admin-materials-page #main .materials-data-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+body.admin-app.admin-materials-page #main .mat-link-open {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.08);
+  text-decoration: none;
+}
+body.admin-app.admin-materials-page #main .mat-link-open:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #fff;
+}
+
+body.admin-app.admin-materials-page #main .admin-materials-submit-btn {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.2);
+}
+
+/* =============================================================================
+   Test Bank — dark hub
+   ============================================================================= */
+
+body.admin-app.admin-test-bank-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-test-bank-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.25) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-test-bank-page #main .test-bank-form-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141414;
+  box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
+}
+
+body.admin-app.admin-test-bank-page #main .test-bank-form-fields .input-custom {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+body.admin-app.admin-test-bank-page #main .quiz-admin-count-pill--testbank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+body.admin-app.admin-test-bank-page #main .tb-file-link {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.06);
+  text-decoration: none;
+}
+body.admin-app.admin-test-bank-page #main .tb-file-link:hover {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fff;
+}
+
+body.admin-app.admin-test-bank-page #main .tb-action-link {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+body.admin-app.admin-test-bank-page #main .tb-action-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+body.admin-app.admin-test-bank-page #main .tb-action-link--danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.08);
+}
+body.admin-app.admin-test-bank-page #main .tb-action-link--danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}
+
+body.admin-app.admin-test-bank-page #main .quiz-admin-data-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-admin-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.65);
+}
+
+/* =============================================================================
+   Preboards sets — dark hub
+   ============================================================================= */
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(167, 139, 250, 0.35) 0%, rgba(109, 40, 217, 0.25) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  color: #e9d5ff;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-count-pill--preboards {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(167, 139, 250, 0.2);
+  color: #e9d5ff;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary {
+  border: 1px solid rgba(167, 139, 250, 0.55);
+  color: #ddd6fe;
+  background: rgba(167, 139, 250, 0.08);
+  text-decoration: none;
+}
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary:hover {
+  background: rgba(167, 139, 250, 0.22);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.45);
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  background: transparent;
+}
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.quiz-admin-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 3px 0 0 rgba(167, 139, 250, 0.75);
+}

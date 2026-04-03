@@ -187,10 +187,37 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
         box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3) !important;
         transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
       }
-      .admin-dashboard-page .page-card:hover {
+      .admin-dashboard-page .page-card:not(.dashboard-card):hover {
         transform: translateY(-2px);
         border-color: #bfdbfe !important;
         box-shadow: 0 20px 34px -24px rgba(30, 64, 175, 0.35) !important;
+      }
+      .admin-dashboard-page .dashboard-card:hover {
+        transform: translateY(-2px);
+      }
+      .admin-dashboard-page .dashboard-card--enrolled:hover {
+        border-color: #22c55e !important;
+        box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.55), 0 0 22px rgba(34, 197, 94, 0.34) !important;
+      }
+      .admin-dashboard-page .dashboard-card--pending:hover {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), 0 0 22px rgba(245, 158, 11, 0.34) !important;
+      }
+      .admin-dashboard-page .dashboard-card--expired:hover {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.55), 0 0 22px rgba(239, 68, 68, 0.34) !important;
+      }
+      .admin-dashboard-page .dashboard-card--subjects:hover {
+        border-color: #0ea5e9 !important;
+        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.55), 0 0 22px rgba(14, 165, 233, 0.34) !important;
+      }
+      .admin-dashboard-page .dashboard-card--lessons:hover {
+        border-color: #facc15 !important;
+        box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.58), 0 0 22px rgba(250, 204, 21, 0.36) !important;
+      }
+      .admin-dashboard-page .dashboard-card--quizzes:hover {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.55), 0 0 22px rgba(139, 92, 246, 0.34) !important;
       }
       .admin-dashboard-page .quick-action-btn {
         border-radius: .6rem;

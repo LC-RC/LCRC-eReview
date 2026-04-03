@@ -210,7 +210,7 @@ $pageTitle = $lessonTitle . ' - Materials';
       </div>
     </div>
 
-    <!-- Normal view: video + playlist + handouts below -->
+    <!-- Normal view: video + playlist (handouts list is outside #lesson-viewer-wrap) -->
     <div x-show="viewMode === 'normal'" class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
       <!-- Video + Playlist -->
       <div class="lg:col-span-8">
@@ -260,7 +260,10 @@ $pageTitle = $lessonTitle . ' - Materials';
       </div>
     </div>
 
-    <!-- Handouts (only in Normal view) -->
+      </div>
+    </div>
+
+    <!-- Handouts (only in Normal view) — outside #lesson-viewer-wrap so fullscreen shows video + playlist only -->
     <div x-show="viewMode === 'normal'" class="mt-5 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#143D59]">
       <div class="px-4 sm:px-6 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> Handouts</div>
       <div class="p-4 sm:p-5">
@@ -292,8 +295,6 @@ $pageTitle = $lessonTitle . ' - Materials';
             <?php endforeach; ?>
           </div>
         <?php endif; ?>
-      </div>
-    </div>
       </div>
     </div>
   </div>

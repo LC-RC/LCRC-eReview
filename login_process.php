@@ -3,6 +3,8 @@ require_once 'db.php';
 require_once 'auth.php';
 require_once 'login_rate_limit.php';
 require_once 'remember_me.php';
+require_once __DIR__ . '/includes/college_schema.php';
+require_once __DIR__ . '/includes/college_exam_helpers.php';
 
 // Regenerate session ID on login to prevent session fixation
 if (session_status() === PHP_SESSION_ACTIVE) {
@@ -128,6 +130,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     exit;
                 }
             }
+        }
+
+        $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+        if ($examBlock !== null) {
+            $_SESSION['error'] = $examBlock;
+            $_SESSION['error_type'] = 'exam_session_active';
+            header('Location: login.php');
+            exit;
         }
 
         // Set session variables

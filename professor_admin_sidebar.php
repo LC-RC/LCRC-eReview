@@ -19,7 +19,7 @@ $appShellNavConfig = [
         'items' => [
             ['label' => 'Students', 'href' => 'professor_college_students.php', 'icon' => 'bi-people', 'title' => 'College student accounts', 'active' => ['professor_college_students.php', 'professor_create_college_student.php']],
             ['label' => 'Exams', 'href' => 'professor_exams.php', 'icon' => 'bi-journal-text', 'title' => 'Quizzes and exams', 'active' => ['professor_exams.php', 'professor_exam_edit.php']],
-            ['label' => 'Upload tasks', 'href' => 'professor_upload_tasks.php', 'icon' => 'bi-folder-plus', 'title' => 'Assignment uploads', 'active' => ['professor_upload_tasks.php']],
+            ['label' => 'Upload tasks', 'href' => 'professor_upload_tasks.php', 'icon' => 'bi-folder-plus', 'title' => 'Assignment uploads', 'active' => ['professor_upload_tasks.php', 'professor_upload_task_monitor.php']],
             ['label' => 'Monitor', 'href' => 'professor_monitor.php', 'icon' => 'bi-graph-up', 'title' => 'Scores and files', 'active' => ['professor_monitor.php']],
         ],
     ],

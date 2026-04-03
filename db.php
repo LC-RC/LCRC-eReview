@@ -22,6 +22,9 @@ if (!$conn) {
 // Set charset to UTF-8
 mysqli_set_charset($conn, "utf8mb4");
 
+// Match session_config.php (Asia/Manila) so DATETIME/TIMESTAMP comparisons in SQL stay consistent with PHP.
+@mysqli_query($conn, "SET time_zone = '+08:00'");
+
 // Set connection timeout
 mysqli_options($conn, MYSQLI_OPT_CONNECT_TIMEOUT, 10);
 ?>

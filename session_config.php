@@ -5,6 +5,12 @@
  * before any output is sent to the browser
  */
 
+// App-wide canonical timezone (matches UI clock and scheduling inputs).
+// Keeps exam availability/deadline logic consistent across all pages.
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('Asia/Manila');
+}
+
 // Start session with secure configuration
 if (session_status() === PHP_SESSION_NONE) {
     // Configure session settings

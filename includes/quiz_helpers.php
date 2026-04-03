@@ -28,20 +28,13 @@ function getQuizTimeLimitSeconds($quizRow) {
 }
 
 /**
- * Render safe quiz HTML with support for table markup.
- * Allows a small whitelist of tags and strips unsafe attributes.
+ * Clean a fragment of HTML to allowed quiz/exam tags and attributes. Returns null on failure.
+ *
+ * @return string|null Safe HTML fragment (body inner HTML)
  */
-function renderQuizRichText($value) {
-  $value = (string)$value;
-  if ($value === '') return '';
-
-  // Keep plain text friendly (line breaks preserved) when no HTML tags are used.
-  if ($value === strip_tags($value)) {
-    return nl2br(h($value));
-  }
-
-  if (!class_exists('DOMDocument')) {
-    return nl2br(h($value));
+function quiz_rich_clean_html_fragment(string $value): ?string {
+  if ($value === '' || !class_exists('DOMDocument')) {
+    return null;
   }
 
   $allowedTags = [
@@ -61,10 +54,10 @@ function renderQuizRichText($value) {
     libxml_clear_errors();
     libxml_use_internal_errors($previousUseInternalErrors);
     if (!$loaded) {
-      return nl2br(h($value));
+      return null;
     }
 
-    $cleanNode = function (DOMNode $node) use (&$cleanNode, $allowedTags, $allowedAttrs, $dom) {
+    $cleanNode = function (DOMNode $node) use (&$cleanNode, $allowedTags, $allowedAttrs) {
       if ($node->nodeType === XML_ELEMENT_NODE) {
         $tag = strtolower($node->nodeName);
         if (!in_array($tag, $allowedTags, true)) {
@@ -99,7 +92,7 @@ function renderQuizRichText($value) {
 
     $body = $dom->getElementsByTagName('body')->item(0);
     if (!$body) {
-      return nl2br(h($value));
+      return null;
     }
     for ($i = $body->childNodes->length - 1; $i >= 0; $i--) {
       $cleanNode($body->childNodes->item($i));
@@ -111,6 +104,45 @@ function renderQuizRichText($value) {
     }
     return $html;
   } catch (Throwable $e) {
+    return null;
+  }
+}
+
+/**
+ * Sanitize rich question HTML before storing in the database (same rules as quiz questions).
+ */
+function sanitizeQuizRichHtmlForStorage(string $value): string {
+  $value = trim($value);
+  if ($value === '') {
+    return '';
+  }
+  if ($value === strip_tags($value)) {
+    return $value;
+  }
+  $clean = quiz_rich_clean_html_fragment($value);
+  if ($clean !== null && $clean !== '') {
+    return $clean;
+  }
+  return trim(strip_tags($value));
+}
+
+/**
+ * Render safe quiz HTML with support for table markup.
+ * Allows a small whitelist of tags and strips unsafe attributes.
+ */
+function renderQuizRichText($value) {
+  $value = (string)$value;
+  if ($value === '') return '';
+
+  // Keep plain text friendly (line breaks preserved) when no HTML tags are used.
+  if ($value === strip_tags($value)) {
     return nl2br(h($value));
   }
+
+  $html = quiz_rich_clean_html_fragment($value);
+  if ($html !== null && $html !== '') {
+    return $html;
+  }
+
+  return nl2br(h($value));
 }

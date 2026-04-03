@@ -10,6 +10,21 @@ $lesson = $lessonRes ? mysqli_fetch_assoc($lessonRes) : null;
 if (!$lesson) { header('Location: admin_subjects.php'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
+if (!function_exists('admin_materials_list_url')) {
+    function admin_materials_list_url(int $lessonId, int $subjectId): string {
+        $qs = ['lesson_id' => $lessonId, 'subject_id' => $subjectId];
+        $q = trim($_GET['q'] ?? '');
+        $t = $_GET['type'] ?? '';
+        if ($q !== '') {
+            $qs['q'] = $q;
+        }
+        if ($t !== '' && in_array($t, ['videos', 'handouts'], true)) {
+            $qs['type'] = $t;
+        }
+        return 'admin_materials.php?' . http_build_query($qs);
+    }
+}
+
 if (!function_exists('adminMaterialsUploadErrorMessage')) {
     function adminMaterialsUploadErrorMessage(int $code): string {
         switch ($code) {
@@ -76,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ],
             'successes' => []
         ];
-        header('Location: admin_materials.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+        header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
         exit;
     }
 
@@ -232,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'errors' => $errors,
         'successes' => $successes
     ];
-    header('Location: admin_materials.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
     exit;
 }
 
@@ -242,7 +257,7 @@ if (isset($_GET['delete_video'])) {
     $delVideo = $delRes ? mysqli_fetch_assoc($delRes) : null;
     if ($delVideo && strpos($delVideo['video_url'], 'uploads/videos/') === 0 && file_exists($delVideo['video_url'])) @unlink($delVideo['video_url']);
     mysqli_query($conn, "DELETE FROM lesson_videos WHERE video_id=".$delId." AND lesson_id=".$lessonId);
-    header('Location: admin_materials.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
     exit;
 }
 if (isset($_GET['delete_handout'])) {
@@ -251,7 +266,7 @@ if (isset($_GET['delete_handout'])) {
     $del = $delRes ? mysqli_fetch_assoc($delRes) : null;
     if ($del && !empty($del['file_path']) && file_exists($del['file_path'])) @unlink($del['file_path']);
     mysqli_query($conn, "DELETE FROM lesson_handouts WHERE handout_id=".$delId." AND lesson_id=".$lessonId);
-    header('Location: admin_materials.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
     exit;
 }
 if (isset($_GET['toggle_handout'])) {
@@ -262,12 +277,36 @@ if (isset($_GET['toggle_handout'])) {
         $newValue = $toggleRow['allow_download'] ? 0 : 1;
         mysqli_query($conn, "UPDATE lesson_handouts SET allow_download=".$newValue." WHERE handout_id=".$toggleId." AND lesson_id=".$lessonId);
     }
-    header('Location: admin_materials.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
     exit;
 }
 
-$videos = mysqli_query($conn, "SELECT * FROM lesson_videos WHERE lesson_id=".$lessonId." ORDER BY video_id DESC");
-$handouts = mysqli_query($conn, "SELECT * FROM lesson_handouts WHERE lesson_id=".$lessonId." ORDER BY handout_id DESC");
+$searchQ = trim($_GET['q'] ?? '');
+$matType = $_GET['type'] ?? '';
+if ($matType !== '' && !in_array($matType, ['videos', 'handouts'], true)) {
+    $matType = '';
+}
+$showVideos = ($matType === '' || $matType === 'videos');
+$showHandouts = ($matType === '' || $matType === 'handouts');
+
+if ($searchQ === '') {
+    $videos = mysqli_query($conn, 'SELECT * FROM lesson_videos WHERE lesson_id=' . (int)$lessonId . ' ORDER BY video_id DESC');
+} else {
+    $like = '%' . $searchQ . '%';
+    $stmtV = mysqli_prepare($conn, 'SELECT * FROM lesson_videos WHERE lesson_id=? AND (video_title LIKE ? OR video_url LIKE ?) ORDER BY video_id DESC');
+    mysqli_stmt_bind_param($stmtV, 'iss', $lessonId, $like, $like);
+    mysqli_stmt_execute($stmtV);
+    $videos = mysqli_stmt_get_result($stmtV);
+}
+if ($searchQ === '') {
+    $handouts = mysqli_query($conn, 'SELECT * FROM lesson_handouts WHERE lesson_id=' . (int)$lessonId . ' ORDER BY handout_id DESC');
+} else {
+    $likeH = '%' . $searchQ . '%';
+    $stmtH = mysqli_prepare($conn, 'SELECT * FROM lesson_handouts WHERE lesson_id=? AND (handout_title LIKE ? OR IFNULL(file_name, \'\') LIKE ?) ORDER BY handout_id DESC');
+    mysqli_stmt_bind_param($stmtH, 'iss', $lessonId, $likeH, $likeH);
+    mysqli_stmt_execute($stmtH);
+    $handouts = mysqli_stmt_get_result($stmtH);
+}
 $pageTitle = 'Materials - ' . $lesson['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Materials'] ];
 ?>
@@ -335,16 +374,17 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
       box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
     }
   </style>
+  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
-<body class="font-sans antialiased admin-app" x-data="{ uploadType: 'url' }">
+<body class="font-sans antialiased admin-app admin-materials-page" x-data="{ uploadType: 'url' }">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <?php if (!empty($materialsFlash['errors'])): ?>
-      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+      <div class="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-red-100">
         <p class="font-semibold mb-1"><i class="bi bi-exclamation-triangle mr-1"></i>Upload failed</p>
-        <ul class="list-disc pl-5 space-y-1">
+        <ul class="list-disc pl-5 space-y-1 text-sm">
           <?php foreach ($materialsFlash['errors'] as $err): ?>
             <li><?php echo h((string)$err); ?></li>
           <?php endforeach; ?>
@@ -352,147 +392,175 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
       </div>
     <?php endif; ?>
     <?php if (!empty($materialsFlash['successes'])): ?>
-      <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+      <div class="mb-4 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-4 py-3 text-emerald-100">
         <p class="font-semibold mb-1"><i class="bi bi-check-circle mr-1"></i>Success</p>
-        <ul class="list-disc pl-5 space-y-1">
+        <ul class="list-disc pl-5 space-y-1 text-sm">
           <?php foreach ($materialsFlash['successes'] as $ok): ?>
             <li><?php echo h((string)$ok); ?></li>
           <?php endforeach; ?>
         </ul>
       </div>
     <?php endif; ?>
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-folder-plus"></i> Materials - <?php echo h($lesson['title']); ?> (<span class="admin-subject-text"><?php echo h($lesson['subject_name']); ?></span>)
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
+      Materials — <?php echo h($lesson['title']); ?> <span class="text-gray-500 font-medium text-lg">(<?php echo h($lesson['subject_name']); ?>)</span>
     </h1>
-    <p class="text-gray-500 mt-1">Videos and handouts for this lesson — add, edit, or manage download access.</p>
+    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">Videos and handouts for this lesson — add, edit, or manage download access.</p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-        <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-play-circle"></i> Videos</span>
-        <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
+  <form method="get" action="admin_materials.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="lesson_id" value="<?php echo (int)$lessonId; ?>">
+    <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
+    <div class="flex-1 min-w-[200px]">
+      <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
+      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titles…" class="input-custom w-full" autocomplete="off">
+    </div>
+    <div class="w-full sm:w-44">
+      <label for="mat-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Show</label>
+      <select id="mat-search-type" name="type" class="input-custom w-full">
+        <option value=""<?php echo $matType === '' ? ' selected' : ''; ?>>Videos &amp; handouts</option>
+        <option value="videos"<?php echo $matType === 'videos' ? ' selected' : ''; ?>>Videos only</option>
+        <option value="handouts"<?php echo $matType === 'handouts' ? ' selected' : ''; ?>>Handouts only</option>
+      </select>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-funnel"></i> Apply</button>
+      <?php if ($searchQ !== '' || $matType !== ''): ?>
+        <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+      <?php endif; ?>
+    </div>
+  </form>
+
+  <div class="<?php echo ($showVideos && $showHandouts) ? 'grid grid-cols-1 lg:grid-cols-2 gap-5' : 'grid grid-cols-1 gap-5'; ?>">
+    <?php if ($showVideos): ?>
+    <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
+      <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
+        <span class="font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-play-circle text-sky-400"></i> Videos</span>
+        <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
       </div>
-      <div class="p-5">
-        <form method="POST" enctype="multipart/form-data" class="space-y-3 mb-4">
+      <div class="p-5 materials-panel-inner">
+        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4">
           <input type="hidden" name="type" value="video">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Title</label>
             <input type="text" name="video_title" id="videoTitleInput" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Upload Type</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Upload Type</label>
             <select name="upload_type" x-model="uploadType" class="input-custom">
               <option value="url">URL (YouTube/Vimeo/Link)</option>
               <option value="file">Upload Video File</option>
             </select>
           </div>
           <div x-show="uploadType === 'url'" x-cloak>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Video URL</label>
             <input type="url" name="video_url" class="input-custom" placeholder="https://...">
           </div>
           <div x-show="uploadType === 'file'" x-cloak>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Upload Video File</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Upload Video File</label>
             <input type="file" name="video_file" id="videoFileInput" class="input-custom admin-upload-input" accept="video/*">
           </div>
           <button type="submit" class="admin-materials-submit-btn"><i class="bi bi-plus-circle"></i><span>Add Video</span></button>
         </form>
         <div class="overflow-x-auto pl-3 pr-8">
-          <table class="w-full text-left">
-            <thead class="bg-gray-50 border-b border-gray-200">
+          <table class="materials-data-table w-full text-left">
+            <thead>
               <tr>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Title</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center">URL</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[220px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-center">URL</th>
+                <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
-                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
-                    <div class="font-semibold text-gray-800"><?php echo h($v['video_title']); ?></div>
+                    <div class="font-semibold text-gray-100"><?php echo h($v['video_title']); ?></div>
                   </td>
                   <td class="px-5 py-3 text-center max-w-[260px] truncate">
-                    <a href="<?php echo h($v['video_url']); ?>" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-box-arrow-up-right"></i> Open</a>
+                    <a href="<?php echo h($v['video_url']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-box-arrow-up-right"></i> Open</a>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <div class="flex flex-wrap gap-2 items-center justify-center">
-                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
                     </div>
                   </td>
                 </tr>
               <?php endwhile; ?>
               <?php if (mysqli_num_rows($videos) == 0): ?>
-                <tr><td colspan="3" class="px-5 py-14 text-center text-gray-500">No videos yet.</td></tr>
+                <tr><td colspan="3" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></td></tr>
               <?php endif; ?>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+    <?php endif; ?>
 
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> Handouts</div>
-      <div class="p-5">
-        <form method="POST" enctype="multipart/form-data" class="space-y-3 mb-4">
+    <?php if ($showHandouts): ?>
+    <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
+      <div class="quiz-admin-table-head px-5 py-4 font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-file-earmark-pdf text-amber-300"></i> Handouts</div>
+      <div class="p-5 materials-panel-inner">
+        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4">
           <input type="hidden" name="type" value="handout">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Title</label>
             <input type="text" name="handout_title" id="handoutTitleInput" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Upload File (PDF, DOC, PPT, etc.)</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Upload File (PDF, DOC, PPT, etc.)</label>
             <input type="file" name="handout_file" id="handoutFileInput" class="input-custom admin-upload-input" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" required>
           </div>
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="rounded border-gray-300 text-primary focus:ring-primary">
-            <label for="allowDownloadHandout" class="text-sm font-medium text-gray-700">Allow students to download</label>
+            <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="rounded border-white/20 text-emerald-500 focus:ring-emerald-500 bg-[#1a1a1a]">
+            <label for="allowDownloadHandout" class="text-sm font-medium text-gray-300">Allow students to download</label>
           </div>
           <button type="submit" class="admin-materials-submit-btn"><i class="bi bi-cloud-upload"></i><span>Upload Handout</span></button>
         </form>
         <div class="overflow-x-auto pl-3 pr-8">
-          <table class="w-full text-left">
-            <thead class="bg-gray-50 border-b border-gray-200">
+          <table class="materials-data-table w-full text-left">
+            <thead>
               <tr>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Title</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center">File</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center">Downloads</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[220px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-center">File</th>
+                <th class="px-5 py-3 font-semibold text-center">Downloads</th>
+                <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
-                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
-                    <div class="font-semibold text-gray-800"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
+                    <div class="font-semibold text-gray-100"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <?php if (!empty($h['file_path'])): ?>
-                      <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-download"></i> Download</a>
+                      <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-download"></i> Download</a>
                     <?php else: ?>
                       <span class="text-gray-500">—</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
-                    <?php if (!empty($h['allow_download'])): ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Allowed</span>
-                    <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">Locked</span><?php endif; ?>
+                    <?php if (!empty($h['allow_download'])): ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/35">Allowed</span>
+                    <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-gray-400 border border-white/15">Locked</span><?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <div class="flex flex-wrap gap-2 items-center justify-center">
-                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white transition"><i class="bi bi-lock"></i> <?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
-                      <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-amber-500/55 text-amber-200 hover:bg-amber-500 hover:text-white transition"><i class="bi bi-lock"></i> <?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
                     </div>
                   </td>
                 </tr>
               <?php endwhile; ?>
               <?php if (mysqli_num_rows($handouts) == 0): ?>
-                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500">No handouts yet.</td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No handouts match your search.' : 'No handouts yet.'; ?></td></tr>
               <?php endif; ?>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+    <?php endif; ?>
   </div>
 </div>
 </main>

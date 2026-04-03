@@ -47,6 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 }
 
 ensureRegistrationProfileColumns($conn);
+require_once __DIR__ . '/includes/registration_school_options.php';
 
 $full_name_raw = $_POST['full_name'] ?? '';
 $full_name = trim(preg_replace('/\s+/', ' ', $full_name_raw));
@@ -59,10 +60,28 @@ $password_raw = $_POST['password'] ?? '';
 $password = trim($password_raw);
 $password_confirm_raw = $_POST['password_confirm'] ?? '';
 $password_confirm = trim($password_confirm_raw);
-$useDefaultAvatar = isset($_POST['use_default_avatar']) ? 1 : 0;
+$useDefaultAvatar = 0;
 
 if (!in_array($review_type, ['reviewee', 'undergrad'])) $review_type = 'reviewee';
-if ($school !== 'Other') $school_other = null;
+if ($school !== 'Other') {
+    $school_other = null;
+} elseif ($school_other !== null && (function_exists('mb_strlen') ? mb_strlen($school_other, 'UTF-8') : strlen($school_other)) > 220) {
+    if ($isAjax) {
+        sendJson(['success' => false, 'error' => 'School name is too long. Please shorten it.']);
+    }
+    $_SESSION['error'] = 'School name is too long. Please shorten it.';
+    header('Location: registration.php');
+    exit;
+}
+
+if (!ereview_registration_school_is_submitted_value_allowed($conn, $school, $school_other)) {
+    if ($isAjax) {
+        sendJson(['success' => false, 'error' => 'Please choose a valid school from the list. If you pick “Other”, enter your school name.']);
+    }
+    $_SESSION['error'] = 'Please choose a valid school from the list. If you pick “Other”, enter your school name.';
+    header('Location: registration.php');
+    exit;
+}
 
 if ($full_name === '' || $email === '' || $password === '' || $password_confirm === '' || $school === '') {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Please complete all required fields.']);
@@ -207,47 +226,42 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
 $profilePicturePath = null;
 $allowed_avatar_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 $allowed_avatar_ext = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
-    if ($_FILES['profile_picture']['error'] !== UPLOAD_ERR_OK) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
-        $_SESSION['error'] = 'Failed to upload profile picture.';
-        header('Location: registration.php');
-        exit;
-    }
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $_FILES['profile_picture']['tmp_name']);
-    finfo_close($finfo);
-    $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
-    if (!in_array($mime, $allowed_avatar_mimes, true) || !in_array($ext, $allowed_avatar_ext, true)) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.']);
-        $_SESSION['error'] = 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.';
-        header('Location: registration.php');
-        exit;
-    }
-    $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'avatars';
-    if (!is_dir($uploadsDir)) {
-        mkdir($uploadsDir, 0777, true);
-    }
-    $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
-    $filename = 'avatar_' . uniqid('', true) . ($safeExt ? ('.' . $safeExt) : '');
-    $target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
-    if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target)) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
-        $_SESSION['error'] = 'Failed to upload profile picture.';
-        header('Location: registration.php');
-        exit;
-    }
-    $profilePicturePath = 'uploads/avatars/' . $filename;
+if (!isset($_FILES['profile_picture']) || $_FILES['profile_picture']['error'] === UPLOAD_ERR_NO_FILE) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Profile picture is required. Please upload JPG, PNG, WEBP, or GIF.']);
+    $_SESSION['error'] = 'Profile picture is required. Please upload JPG, PNG, WEBP, or GIF.';
+    header('Location: registration.php');
+    exit;
 }
-if ($profilePicturePath === null) {
-    if (!$useDefaultAvatar) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Upload a profile picture or choose the default avatar option.']);
-        $_SESSION['error'] = 'Upload a profile picture or choose the default avatar option.';
-        header('Location: registration.php');
-        exit;
-    }
-    $useDefaultAvatar = 1;
+if ($_FILES['profile_picture']['error'] !== UPLOAD_ERR_OK) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
+    $_SESSION['error'] = 'Failed to upload profile picture.';
+    header('Location: registration.php');
+    exit;
 }
+$finfo = finfo_open(FILEINFO_MIME_TYPE);
+$mime = finfo_file($finfo, $_FILES['profile_picture']['tmp_name']);
+finfo_close($finfo);
+$ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION));
+if (!in_array($mime, $allowed_avatar_mimes, true) || !in_array($ext, $allowed_avatar_ext, true)) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.']);
+    $_SESSION['error'] = 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.';
+    header('Location: registration.php');
+    exit;
+}
+$uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'avatars';
+if (!is_dir($uploadsDir)) {
+    mkdir($uploadsDir, 0777, true);
+}
+$safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+$filename = 'avatar_' . uniqid('', true) . ($safeExt ? ('.' . $safeExt) : '');
+$target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
+if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target)) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
+    $_SESSION['error'] = 'Failed to upload profile picture.';
+    header('Location: registration.php');
+    exit;
+}
+$profilePicturePath = 'uploads/avatars/' . $filename;
 
 $hashed = password_hash($password, PASSWORD_DEFAULT);
 
@@ -281,6 +295,8 @@ if ($verificationUrl === null) {
     header('Location: registration.php');
     exit;
 }
+
+ereview_registration_school_catalog_save($conn, $school, $school_other);
 
 $emailSent = sendVerificationEmail($email, $verificationUrl);
 

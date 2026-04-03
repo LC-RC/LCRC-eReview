@@ -279,8 +279,18 @@ if (isset($_GET['edit'])) {
     }
 }
 
-$stmt = mysqli_prepare($conn, "SELECT * FROM quiz_questions WHERE quiz_id=? ORDER BY question_id DESC");
-mysqli_stmt_bind_param($stmt, 'i', $quizId);
+$searchQ = trim($_GET['q'] ?? '');
+$qParts = ['quiz_id=?'];
+$qTypes = 'i';
+$qVals = [$quizId];
+if ($searchQ !== '') {
+    $qParts[] = 'question_text LIKE ?';
+    $qTypes .= 's';
+    $qVals[] = '%' . $searchQ . '%';
+}
+$qSql = 'SELECT * FROM quiz_questions WHERE ' . implode(' AND ', $qParts) . ' ORDER BY question_id DESC';
+$stmt = mysqli_prepare($conn, $qSql);
+mysqli_stmt_bind_param($stmt, $qTypes, ...$qVals);
 mysqli_stmt_execute($stmt);
 $questions = mysqli_stmt_get_result($stmt);
 
@@ -291,20 +301,22 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css">
+  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
-<body class="font-sans antialiased admin-app" x-data="quizQuestionsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="quizQuestionsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-question-circle"></i> Quiz Questions - <?php echo h($quiz['title']); ?> (<span class="admin-subject-text"><?php echo h($quiz['subject_name']); ?></span>)
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-question-circle"></i></span>
+      <span>Quiz Questions — <?php echo h($quiz['title']); ?></span>
+      <span class="text-gray-500 font-medium text-lg">(<?php echo h($quiz['subject_name']); ?>)</span>
     </h1>
-    <p class="text-gray-500 mt-2"><?php echo h($quiz['subject_name']); ?> — Add and manage questions in one go.</p>
+    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($quiz['subject_name']); ?> — Add and manage questions in one go.</p>
   </div>
 
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div></div>
     <div class="flex flex-wrap gap-2">
       <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to Quizzes</a>
@@ -313,23 +325,38 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-quiz-alert admin-quiz-alert-success">
+    <div class="quiz-admin-alert quiz-admin-alert--success admin-quiz-alert">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-quiz-alert admin-quiz-alert-error">
+    <div class="quiz-admin-alert quiz-admin-alert--error admin-quiz-alert">
       <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
   <?php endif; ?>
 
+  <form method="get" action="admin_quiz_questions.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="quiz_id" value="<?php echo (int)$quizId; ?>">
+    <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
+    <div class="flex-1 min-w-[220px]">
+      <label for="qq-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search questions</label>
+      <input type="search" id="qq-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text…" class="input-custom w-full" autocomplete="off">
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
+      <?php if ($searchQ !== ''): ?>
+        <a href="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+      <?php endif; ?>
+    </div>
+  </form>
+
   <!-- Add multiple questions (batch) -->
   <div class="mb-6" x-show="batchOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
-    <div class="admin-quiz-card">
-      <div class="admin-quiz-card-header admin-quiz-card-header-accent">
-        <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
+    <div class="admin-quiz-card quiz-admin-batch-card">
+      <div class="admin-quiz-card-header admin-quiz-card-header-accent quiz-admin-card-head">
+        <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
         <button type="button" @click="batchOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
@@ -391,9 +418,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     </div>
   </div>
 
-  <div class="admin-quiz-card">
-    <div class="admin-quiz-card-header">
-      <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-list-ol"></i> Questions list</span>
+  <div class="admin-quiz-card quiz-admin-questions-card">
+    <div class="admin-quiz-card-header quiz-admin-card-head">
+      <span class="font-semibold flex items-center gap-2"><i class="bi bi-list-ol"></i> Questions list</span>
       <span class="text-gray-500 text-sm"><?php echo h($quiz['title']); ?></span>
     </div>
     <div class="overflow-x-auto">
@@ -407,10 +434,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         </thead>
         <tbody>
           <?php $hasAny = false; while ($qq = mysqli_fetch_assoc($questions)): $hasAny = true;
-            $qPreview = mb_substr((string)$qq['question_text'], 0, 80) . (mb_strlen((string)$qq['question_text']) > 80 ? '…' : '');
+            $rawQt = (string)($qq['question_text'] ?? '');
+            $plainQt = trim(preg_replace('/\s+/u', ' ', strip_tags($rawQt)));
+            if ($plainQt === '') {
+              $plainQt = trim(preg_replace('/\s+/u', ' ', $rawQt));
+            }
+            $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '…' : '');
           ?>
-            <tr>
-              <td class="font-medium text-gray-800"><?php echo h($qPreview); ?></td>
+            <tr class="quiz-admin-q-row">
+              <td class="font-medium quiz-admin-q-preview"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></td>
               <td><span class="admin-quiz-badge admin-quiz-badge-success"><?php echo h($qq['correct_answer']); ?></span></td>
               <td>
                 <div class="flex flex-wrap gap-2">
@@ -450,13 +482,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 
   <!-- Edit Question Modal (for editing existing questions only) -->
   <div x-show="questionModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="questionModalOpen = false">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="questionModalOpen = false"></div>
-    <div class="relative admin-quiz-modal" @click.stop>
-      <div class="admin-quiz-modal-header">
-        <h2 class="m-0 text-lg font-bold text-gray-800">Edit Question</h2>
-        <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="questionModalOpen = false"></div>
+    <div class="relative admin-quiz-modal quiz-modal-panel" @click.stop>
+      <div class="admin-quiz-modal-header quiz-modal-panel__head">
+        <h2 class="m-0 text-lg font-bold text-gray-100">Edit Question</h2>
+        <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
+      <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="question_id" :value="question_id">
@@ -497,11 +529,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 
   <!-- Delete Question Modal -->
   <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="deleteModalOpen = false">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="deleteModalOpen = false"></div>
-    <div class="relative admin-quiz-modal admin-quiz-modal-sm" @click.stop>
-      <div class="admin-quiz-modal-header">
-        <h2 class="m-0 text-lg font-bold text-gray-800 flex items-center gap-2"><i class="bi bi-trash text-red-500"></i> Delete Question</h2>
-        <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="deleteModalOpen = false"></div>
+    <div class="relative admin-quiz-modal admin-quiz-modal-sm quiz-modal-panel" @click.stop>
+      <div class="admin-quiz-modal-header quiz-modal-panel__head">
+        <h2 class="m-0 text-lg font-bold text-gray-100 flex items-center gap-2"><i class="bi bi-trash text-red-400"></i> Delete Question</h2>
+        <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
