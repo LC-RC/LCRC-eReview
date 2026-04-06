@@ -3,14 +3,26 @@ require_once 'auth.php';
 requireRole('student');
 
 $handoutId = sanitizeInt($_GET['handout_id'] ?? 0);
-if ($handoutId <= 0) { http_response_code(400); exit('Bad Request'); }
+$preweekHandoutId = sanitizeInt($_GET['preweek_handout_id'] ?? 0);
 
-$stmt = mysqli_prepare($conn, "SELECT handout_title, file_path, allow_download FROM lesson_handouts WHERE handout_id=? LIMIT 1");
-mysqli_stmt_bind_param($stmt, 'i', $handoutId);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$handout = mysqli_fetch_assoc($result);
-mysqli_stmt_close($stmt);
+$handout = null;
+if ($preweekHandoutId > 0) {
+    require_once __DIR__ . '/includes/preweek_migrate.php';
+    $stmt = mysqli_prepare($conn, "SELECT handout_title, file_path, allow_download FROM preweek_handouts WHERE preweek_handout_id=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 'i', $preweekHandoutId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $handout = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+} elseif ($handoutId > 0) {
+    $stmt = mysqli_prepare($conn, "SELECT handout_title, file_path, allow_download FROM lesson_handouts WHERE handout_id=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 'i', $handoutId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $handout = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+}
+
 if (!$handout || empty($handout['file_path'])) { http_response_code(404); exit('Not Found'); }
 
 $title = $handout['handout_title'] ?: 'Handout';
