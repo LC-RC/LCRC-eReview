@@ -1708,6 +1708,14 @@ body.admin-app #main .admin-outline-btn--testbank:hover {
   color: #2dd4bf !important;
   box-shadow: 0 0 14px rgba(45, 212, 191, 0.25), 0 0 0 1px rgba(45, 212, 191, 0.45);
 }
+
+/* Preweek (amber, matches lightning / review-week accent) */
+body.admin-app #main .admin-action-btn--preweek:hover {
+  border-color: #fbbf24 !important;
+  color: #fbbf24 !important;
+  background: rgba(251, 191, 36, 0.1) !important;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.22), 0 0 0 1px rgba(251, 191, 36, 0.35);
+}
 body.admin-app #main .admin-content-btn--testbank:hover {
   border-color: #2dd4bf !important;
   color: #2dd4bf !important;
@@ -1736,6 +1744,15 @@ body.admin-app #main .admin-flash {
 }
 body.admin-app #main .admin-flash .bi {
   color: #9ca3af !important;
+}
+
+body.admin-app #main .admin-flash--error {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #fecaca !important;
+}
+body.admin-app #main .admin-flash--error .bi {
+  color: #f87171 !important;
 }
 
 /* --- Dashboard: section headings --- */

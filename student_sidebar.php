@@ -63,7 +63,7 @@ $appShellNavConfig = [
         'label' => 'Modules',
         'items' => [
             ['label' => 'Preboards', 'href' => 'student_preboards.php', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards.php', 'student_preboards_view.php']],
-            ['label' => 'Preweek', 'href' => 'student_preweek.php', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek.php']],
+            ['label' => 'Preweek', 'href' => 'student_preweek.php', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek.php', 'student_preweek_topics.php', 'student_preweek_viewer.php']],
         ],
     ],
 ];
