@@ -17,6 +17,94 @@
   min-height: var(--app-shell-topbar-height);
 }
 
+/* Sidebar footer: local time (all themes; clock moved from topbar) */
+.app-shell-sidebar-footer {
+  box-sizing: border-box;
+}
+
+.app-shell-sidebar-time {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.app-shell-sidebar-time:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.app-shell-sidebar-time-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #ffffff;
+  color: #1665a0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.2);
+}
+
+.app-shell-sidebar-time-icon i {
+  font-size: 0.95rem;
+}
+
+.app-shell-sidebar-time-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-shell-sidebar-time-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.app-shell-sidebar-time-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.app-shell-sidebar-time-offset {
+  display: inline;
+  margin-left: 4px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* Collapsed rail: show clock icon only */
+body:not(.sidebar-expanded) #app-sidebar .app-shell-sidebar-time-details {
+  display: none !important;
+}
+
+body:not(.sidebar-expanded) #app-sidebar .app-shell-sidebar-time {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+}
+
+body:not(.sidebar-expanded) #app-sidebar .app-shell-sidebar-footer {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 /* Prevent full-bleed topbar negative margins from causing horizontal scroll */
 body.app-shell--student {
   overflow-x: hidden;
@@ -648,9 +736,151 @@ body.sidebar-expanded #app-sidebar {
   position: relative;
 }
 
+/* Student topbar — access window countdown (users.access_end) */
+.student-topbar-access {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--text);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  max-width: min(340px, 42vw);
+  min-width: 0;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.student-topbar-access-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #fff 0%, #e8f4fc 100%);
+  color: #1665a0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.student-topbar-access-icon i {
+  font-size: 0.85rem;
+}
+
+.student-topbar-access-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.student-topbar-access-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.student-topbar-access-value {
+  display: block;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-topbar-access-date {
+  font-weight: 600;
+}
+
+.student-topbar-access-countdown {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin-left: 2px;
+}
+
+.student-topbar-access--soon {
+  border-color: rgba(253, 224, 71, 0.45);
+  background: rgba(255, 251, 235, 0.14);
+}
+
+.student-topbar-access--soon .student-topbar-access-countdown {
+  color: #fef08a;
+}
+
+.student-topbar-access--urgent {
+  border-color: rgba(251, 191, 36, 0.65);
+  background: rgba(255, 247, 237, 0.16);
+  animation: ereview-access-urgent-pulse 2.2s ease-in-out infinite;
+}
+
+.student-topbar-access--urgent .student-topbar-access-countdown {
+  color: #fde047;
+}
+
+@keyframes ereview-access-urgent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(253, 224, 71, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(253, 224, 71, 0.12);
+  }
+}
+
+.student-topbar-access--expired {
+  opacity: 0.88;
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(254, 226, 226, 0.12);
+}
+
+.student-topbar-access--expired .student-topbar-access-label {
+  color: rgba(254, 202, 202, 0.95);
+}
+
+.student-topbar-access--expired .student-topbar-access-date,
+.student-topbar-access--expired .student-topbar-access-countdown {
+  color: #fecaca;
+}
+
+.student-topbar-access:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
 @media (max-width: 768px) {
-  .student-topbar-time {
+  .student-topbar-access {
+    max-width: min(260px, 58vw);
+    padding: 5px 9px;
+    font-size: 0.75rem;
+  }
+
+  .student-topbar-access-date {
     display: none;
+  }
+
+  .student-topbar-access-label {
+    font-size: 0.62rem;
+  }
+
+  .student-topbar-access-value {
+    white-space: normal;
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-topbar-access {
+    max-width: min(200px, 50vw);
+  }
+
+  .student-topbar-access-label {
+    letter-spacing: 0.04em;
   }
 }
 
@@ -1088,6 +1318,22 @@ body.app-shell--professor #app-sidebar.app-shell-sidebar--professor .admin-sideb
   color: rgba(255, 255, 255, 0.55);
 }
 
+body.app-shell--professor #app-sidebar.app-shell-sidebar--professor .app-shell-sidebar-time-icon {
+  color: #065f46;
+  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+  box-shadow: 0 2px 10px rgba(6, 95, 70, 0.2);
+}
+
+body.app-shell--professor #app-sidebar.app-shell-sidebar--professor .app-shell-sidebar-time {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+body.app-shell--professor #app-sidebar.app-shell-sidebar--professor .app-shell-sidebar-time:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.38);
+}
+
 /* Professor sidebar hover polish */
 body.app-shell--professor #app-sidebar .app-shell-nav-link--professor {
   box-sizing: border-box;
@@ -1210,26 +1456,6 @@ body.app-shell--professor .admin-topbar-right {
   justify-content: flex-end;
 }
 
-body.app-shell--professor .admin-topbar-time {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.26);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.8125rem;
-  white-space: nowrap;
-}
-
-body.app-shell--professor .admin-topbar-time-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.55);
-}
-
 body.app-shell--professor .admin-topbar-name {
   color: #ffffff !important;
 }
@@ -1300,18 +1526,6 @@ body.app-shell--professor .admin-topbar-dropdown-item:hover {
   background: rgba(16, 185, 129, 0.14);
   transform: translateX(2px);
   color: #047857;
-}
-
-body.app-shell--professor .admin-topbar-time-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.20);
-  color: rgba(16, 185, 129, 0.95);
 }
 
 body.app-shell--professor .admin-topbar-profile-btn:hover {

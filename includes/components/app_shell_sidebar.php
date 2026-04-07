@@ -23,6 +23,11 @@ $appShellNavConfig = $appShellNavConfig ?? [];
 /** @var string $appShellBrandHref Dashboard link in sidebar brand header (admin theme defaults to admin_dashboard) */
 $appShellBrandHref = $appShellBrandHref ?? ($appShellTheme === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php');
 $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
+
+$appShellTzName = 'Asia/Manila';
+$appShellTzObj = @timezone_open($appShellTzName);
+$appShellSidebarNow = new DateTime('now', $appShellTzObj ?: null);
+$appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
 ?>
 <aside id="app-sidebar"
        class="app-shell-sidebar app-shell-sidebar--<?php echo h($appShellTheme); ?> fixed top-0 left-0 h-screen z-[1000] flex flex-col overflow-x-hidden overflow-y-auto"
@@ -111,6 +116,19 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
     </ul>
   </nav>
 
+  <footer class="app-shell-sidebar-footer shrink-0 border-t border-white/10 px-3 py-3.5 mt-auto">
+    <div class="app-shell-sidebar-time app-shell-sidebar-time--<?php echo h($appShellTheme); ?>" aria-label="Current timezone and local time">
+      <span class="app-shell-sidebar-time-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
+      <div class="app-shell-sidebar-time-text app-shell-sidebar-time-details">
+        <span class="app-shell-sidebar-time-label">Local time</span>
+        <span class="app-shell-sidebar-time-value">
+          <span id="appSidebarLocalTimeMain"><?php echo htmlspecialchars($appShellSidebarNow->format('M j · g:i A'), ENT_QUOTES, 'UTF-8'); ?></span>
+          <span class="app-shell-sidebar-time-offset" id="appSidebarLocalTimeOffset"><?php echo htmlspecialchars($appShellSidebarOffsetLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+        </span>
+      </div>
+    </div>
+  </footer>
+
 </aside>
 
 <div id="sidebar-backdrop" class="app-shell-backdrop" aria-hidden="true"></div>
@@ -191,6 +209,35 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
   })();
 
   document.addEventListener('DOMContentLoaded', syncToggleAria);
+})();
+
+(function () {
+  function initSidebarLocalTime() {
+    var mainEl = document.getElementById('appSidebarLocalTimeMain');
+    var offsetEl = document.getElementById('appSidebarLocalTimeOffset');
+    if (!mainEl || !offsetEl) return;
+    var formatter = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila'
+    });
+    var offsetLabel = 'PHT · UTC+08:00';
+    function tick() {
+      var now = new Date();
+      mainEl.textContent = formatter.format(now).replace(',', ' ·');
+      offsetEl.textContent = offsetLabel;
+    }
+    tick();
+    setInterval(tick, 60 * 1000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSidebarLocalTime);
+  } else {
+    initSidebarLocalTime();
+  }
 })();
 </script>
 <?php

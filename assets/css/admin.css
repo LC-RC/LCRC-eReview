@@ -260,7 +260,30 @@ body.admin-app .admin-topbar-time-label {
 }
 body.admin-app .admin-topbar-time-value { font-weight: 600; color: rgba(255,255,255,0.9); }
 body.admin-app .admin-topbar-time-offset { margin-left: 4px; font-weight: 500; color: rgba(255,255,255,0.7); }
-@media (max-width: 768px) { body.admin-app .admin-topbar-time { display: none; } }
+
+/* Local time lives in sidebar footer (see app_shell_sidebar.php) */
+body.admin-app #app-sidebar .app-shell-sidebar-time {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-icon {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow: none;
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-offset {
+  color: rgba(255, 255, 255, 0.68);
+}
 
 body.admin-app .admin-topbar-actions { display: flex; align-items: center; gap: 4px; }
 body.admin-app .admin-topbar-action {

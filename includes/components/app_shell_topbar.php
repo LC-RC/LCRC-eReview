@@ -7,19 +7,10 @@ require_once __DIR__ . '/../format_display_name.php';
 $t = ($appShellTopbarTheme ?? 'admin') === 'student'
   ? 'student'
   : (($appShellTopbarTheme ?? '') === 'professor' ? 'professor' : 'admin');
-$tzName = 'Asia/Manila';
-$tzObj  = @timezone_open($tzName);
-$now    = new DateTime('now', $tzObj ?: null);
-$offsetLabel = 'PHT · UTC+08:00';
-
 if ($t === 'admin' || $t === 'professor') {
   $displayNameFull = trim($_SESSION['full_name'] ?? 'Admin');
-  $timeIdMain = 'adminTopbarTimeMain';
-  $timeIdOffset = 'adminTopbarTimeOffset';
 } else {
   $displayNameFull = trim($_SESSION['full_name'] ?? 'Student');
-  $timeIdMain = 'studentTopbarTimeMain';
-  $timeIdOffset = 'studentTopbarTimeOffset';
 }
 
 $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
@@ -28,6 +19,40 @@ $ereviewHelpHref = 'help_center.php';
 $ereviewPrefsHref = 'account_preferences.php';
 $ereviewProfileMenuTone = ($t === 'admin') ? 'dark' : 'light';
 $ereviewStaffSubtitle = ($t === 'professor') ? 'Professor workspace' : 'System administrator';
+
+/** Student / reviewee: access window (users.access_end) for topbar countdown */
+$studentAccessEndMs = null;
+$studentAccessEndLabel = '';
+$studentAccessExpired = false;
+$studentAccessState = '';
+if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
+  $uid = (int)$_SESSION['user_id'];
+  $stmt = @mysqli_prepare($conn, 'SELECT access_end FROM users WHERE user_id = ? LIMIT 1');
+  if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 'i', $uid);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = $res ? mysqli_fetch_assoc($res) : null;
+    mysqli_stmt_close($stmt);
+    if ($row && !empty($row['access_end'])) {
+      $endTs = strtotime((string)$row['access_end']);
+      if ($endTs !== false) {
+        $studentAccessEndMs = $endTs * 1000;
+        $studentAccessEndLabel = date('M j, Y · g:i A', $endTs);
+        $nowTs = time();
+        $studentAccessExpired = ($endTs < $nowTs);
+        $secLeft = $endTs - $nowTs;
+        if ($studentAccessExpired) {
+          $studentAccessState = 'expired';
+        } elseif ($secLeft <= 86400) {
+          $studentAccessState = 'urgent';
+        } elseif ($secLeft <= 86400 * 7) {
+          $studentAccessState = 'soon';
+        }
+      }
+    }
+  }
+}
 ?>
 <?php if ($t === 'admin' || $t === 'professor'): ?>
 <header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
@@ -58,17 +83,6 @@ $ereviewStaffSubtitle = ($t === 'professor') ? 'Professor workspace' : 'System a
     </div>
 
     <div class="admin-topbar-right">
-      <div class="admin-topbar-time" aria-label="Current timezone and local time">
-        <span class="admin-topbar-time-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
-        <div class="admin-topbar-time-text">
-          <span class="admin-topbar-time-label">Local time</span>
-          <span class="admin-topbar-time-value">
-            <span id="<?php echo h($timeIdMain); ?>"><?php echo htmlspecialchars($now->format('M j · g:i A')); ?></span>
-            <span class="admin-topbar-time-offset" id="<?php echo h($timeIdOffset); ?>"><?php echo htmlspecialchars($offsetLabel); ?></span>
-          </span>
-        </div>
-      </div>
-
       <nav class="admin-topbar-actions" aria-label="Quick actions">
         <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
@@ -129,24 +143,6 @@ $notificationTheme = $t === 'professor' ? 'professor' : 'admin';
 include __DIR__ . '/notification_component.php';
 ?>
 <style>[x-cloak]{display:none!important}</style>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var mainEl = document.getElementById('adminTopbarTimeMain');
-    var offsetEl = document.getElementById('adminTopbarTimeOffset');
-    if (!mainEl || !offsetEl) return;
-    var formatter = new Intl.DateTimeFormat('en-US', {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila'
-    });
-    var offsetLabel = 'PHT · UTC+08:00';
-    function updateTime() {
-      var now = new Date();
-      mainEl.textContent = formatter.format(now).replace(',', ' ·');
-      offsetEl.textContent = offsetLabel;
-    }
-    updateTime();
-    setInterval(updateTime, 60 * 1000);
-  });
-</script>
 
 <?php else: ?>
 
@@ -175,16 +171,22 @@ include __DIR__ . '/notification_component.php';
     </div>
 
     <div class="student-topbar-right">
-      <div class="student-topbar-time" aria-label="Current timezone and local time">
-        <span class="student-topbar-time-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
-        <div class="student-topbar-time-text">
-          <span class="student-topbar-time-label">Local time</span>
-          <span class="student-topbar-time-value">
-            <span id="<?php echo h($timeIdMain); ?>"><?php echo htmlspecialchars($now->format('M j · g:i A')); ?></span>
-            <span class="student-topbar-time-offset" id="<?php echo h($timeIdOffset); ?>"><?php echo htmlspecialchars($offsetLabel); ?></span>
+      <?php if ($studentAccessEndMs !== null): ?>
+      <div class="student-topbar-access<?php
+        echo $studentAccessState === 'expired' ? ' student-topbar-access--expired' : '';
+        echo $studentAccessState === 'urgent' ? ' student-topbar-access--urgent' : '';
+        echo $studentAccessState === 'soon' ? ' student-topbar-access--soon' : '';
+      ?>" id="studentTopbarAccess" data-access-end-ms="<?php echo (int)$studentAccessEndMs; ?>" data-expired="<?php echo $studentAccessExpired ? '1' : '0'; ?>" role="status" aria-live="polite" title="Your enrollment access <?php echo $studentAccessExpired ? 'ended on ' : 'is active until '; ?><?php echo htmlspecialchars($studentAccessEndLabel, ENT_QUOTES, 'UTF-8'); ?>">
+        <span class="student-topbar-access-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+        <div class="student-topbar-access-text">
+          <span class="student-topbar-access-label"><?php echo $studentAccessExpired ? 'Access period' : 'Access active until'; ?></span>
+          <span class="student-topbar-access-value">
+            <span class="student-topbar-access-date"><?php echo htmlspecialchars($studentAccessEndLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="student-topbar-access-countdown" id="studentTopbarAccessCountdown"><?php echo $studentAccessExpired ? 'Ended' : ''; ?></span>
           </span>
         </div>
       </div>
+      <?php endif; ?>
       <nav class="student-topbar-actions" aria-label="Quick actions">
         <button type="button" aria-label="Notifications" class="student-topbar-action student-topbar-action--notif has-unread" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
@@ -258,20 +260,71 @@ include __DIR__ . '/notification_component.php';
 <style>[x-cloak]{display:none!important}</style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    var mainEl = document.getElementById('studentTopbarTimeMain');
-    var offsetEl = document.getElementById('studentTopbarTimeOffset');
-    if (!mainEl || !offsetEl) return;
-    var formatter = new Intl.DateTimeFormat('en-US', {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila'
-    });
-    var offsetLabel = 'PHT · UTC+08:00';
-    function updateTime() {
-      var now = new Date();
-      mainEl.textContent = formatter.format(now).replace(',', ' ·');
-      offsetEl.textContent = offsetLabel;
+    var accRoot = document.getElementById('studentTopbarAccess');
+    var cdEl = document.getElementById('studentTopbarAccessCountdown');
+    if (!accRoot || !cdEl) {
+      return;
     }
-    updateTime();
-    setInterval(updateTime, 60 * 1000);
+
+    var endMs = parseInt(accRoot.getAttribute('data-access-end-ms'), 10);
+    if (isNaN(endMs)) {
+      return;
+    }
+
+    function formatRemain(ms) {
+      if (ms <= 0) return '';
+      var t = Math.floor(ms / 1000);
+      var d = Math.floor(t / 86400);
+      t %= 86400;
+      var h = Math.floor(t / 3600);
+      t %= 3600;
+      var m = Math.floor(t / 60);
+      var s = t % 60;
+      if (d > 0) {
+        return '· ' + d + 'd ' + h + 'h ' + m + 'm left';
+      }
+      if (h > 0) {
+        return '· ' + h + 'h ' + m + 'm ' + s + 's left';
+      }
+      return '· ' + m + 'm ' + s + 's left';
+    }
+
+    function pulseUrgency(leftMs) {
+      accRoot.classList.remove('student-topbar-access--urgent', 'student-topbar-access--soon');
+      if (leftMs <= 0) {
+        accRoot.classList.add('student-topbar-access--expired');
+        accRoot.setAttribute('data-expired', '1');
+        return;
+      }
+      var sec = leftMs / 1000;
+      if (sec <= 86400) {
+        accRoot.classList.add('student-topbar-access--urgent');
+      } else if (sec <= 86400 * 7) {
+        accRoot.classList.add('student-topbar-access--soon');
+      }
+    }
+
+    function tick() {
+      if (accRoot.getAttribute('data-expired') === '1') {
+        cdEl.textContent = 'Ended';
+        return;
+      }
+      var left = endMs - Date.now();
+      if (left <= 0) {
+        pulseUrgency(0);
+        cdEl.textContent = 'Ended';
+        return;
+      }
+      pulseUrgency(left);
+      cdEl.textContent = formatRemain(left);
+    }
+
+    if (accRoot.getAttribute('data-expired') === '1') {
+      cdEl.textContent = 'Ended';
+    } else {
+      tick();
+      setInterval(tick, 1000);
+    }
   });
 </script>
 <?php endif; ?>
