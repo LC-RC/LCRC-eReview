@@ -81,20 +81,20 @@ body.app-shell--student.sidebar-expanded #main.app-shell-main--student {
   margin-left: var(--app-shell-sidebar-expanded);
 }
 
-/* Student backdrop (same interaction model as admin) */
+/* Student: no dimming overlay — main content stays clickable while sidebar is open */
 body.app-shell--student #sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: transparent;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s var(--app-shell-ease);
+  transition: none;
   z-index: 900;
 }
 
 body.app-shell--student.sidebar-expanded #sidebar-backdrop {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Collapsed rail: hide labels & text (admin-style grouping, student theme) */
@@ -356,20 +356,22 @@ body.sidebar-expanded #app-sidebar {
   color: rgba(255, 255, 255, 0.55);
 }
 
-/* ---- Student topbar (moved from student_topbar.php) ---- */
+/* ---- Student topbar — aligned with sidebar blue (#1665a0 / #143D59) ---- */
 .student-topbar-modern {
-  --topbar-bg: #ffffff;
-  --topbar-border: rgba(22, 101, 160, 0.08);
-  --topbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --topbar-bg: #1665a0;
+  --topbar-border: rgba(255, 255, 255, 0.14);
+  --topbar-shadow: 0 4px 20px rgba(15, 23, 42, 0.2);
   --topbar-height: var(--app-shell-topbar-height);
   --topbar-radius: 16px;
-  --brand: #1665a0;
-  --brand-light: rgba(22, 101, 160, 0.1);
-  --brand-focus: rgba(22, 101, 160, 0.2);
-  --text: #334155;
-  --text-muted: #64748b;
-  --surface: #f8fafc;
-  --surface-hover: #f1f5f9;
+  /* Interactive accents on blue */
+  --brand: #ffffff;
+  --brand-light: rgba(255, 255, 255, 0.16);
+  --brand-focus: rgba(255, 255, 255, 0.45);
+  --text: #f8fafc;
+  --text-muted: rgba(255, 255, 255, 0.78);
+  --surface: rgba(255, 255, 255, 0.14);
+  --surface-hover: rgba(255, 255, 255, 0.22);
+  --search-placeholder: rgba(255, 255, 255, 0.55);
 }
 
 .student-topbar-modern {
@@ -390,9 +392,9 @@ body.sidebar-expanded #app-sidebar {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(to bottom, #ffffff 0%, #f5f8ff 55%, #eef4ff 100%);
+  background: linear-gradient(180deg, #1b6fb8 0%, #1665a0 42%, #155a94 100%);
   border-bottom: 1px solid var(--topbar-border);
-  box-shadow: var(--topbar-shadow);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), var(--topbar-shadow);
   border-radius: 0;
 }
 
@@ -525,23 +527,31 @@ body.sidebar-expanded #app-sidebar {
   min-width: 0;
   border-radius: 12px;
   background: var(--surface);
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .student-topbar-search-wrap:hover {
   background: var(--surface-hover);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
 .student-topbar-search-wrap.is-focused {
-  background: #fff;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-light);
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28), 0 12px 28px -12px rgba(15, 23, 42, 0.35);
 }
 
 .student-topbar-search-wrap.is-focused .student-topbar-search-icon {
-  color: var(--brand);
+  color: #1665a0;
+}
+
+.student-topbar-search-wrap.is-focused .student-topbar-search {
+  color: #0f172a;
+}
+
+.student-topbar-search-wrap.is-focused .student-topbar-search::placeholder {
+  color: #94a3b8;
 }
 
 .student-topbar-search-icon {
@@ -549,7 +559,7 @@ body.sidebar-expanded #app-sidebar {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 1.1rem;
   pointer-events: none;
   transition: color 0.2s;
@@ -567,7 +577,7 @@ body.sidebar-expanded #app-sidebar {
 }
 
 .student-topbar-search::placeholder {
-  color: #94a3b8;
+  color: var(--search-placeholder);
 }
 
 .student-topbar-search:focus {
@@ -589,12 +599,13 @@ body.sidebar-expanded #app-sidebar {
   gap: 8px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(22, 101, 160, 0.08), rgba(20, 61, 89, 0.06));
-  border: 1px solid rgba(22, 101, 160, 0.16);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   color: var(--text);
   font-size: 0.8125rem;
   line-height: 1.2;
   white-space: nowrap;
+  backdrop-filter: blur(8px);
 }
 
 .student-topbar-time-icon {
@@ -605,8 +616,8 @@ body.sidebar-expanded #app-sidebar {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  color: var(--brand);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  color: #1665a0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
 .student-topbar-time-icon i {
@@ -622,18 +633,18 @@ body.sidebar-expanded #app-sidebar {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .student-topbar-time-value {
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .student-topbar-time-offset {
   margin-left: 4px;
   font-weight: 500;
-  color: var(--brand);
+  color: rgba(255, 255, 255, 0.88);
   position: relative;
 }
 
@@ -701,12 +712,12 @@ body.sidebar-expanded #app-sidebar {
 }
 
 .student-topbar-action--notif.has-unread {
-  background: rgba(22, 101, 160, 0.12);
-  color: var(--brand);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .student-topbar-action--notif.has-unread:hover {
-  background: rgba(22, 101, 160, 0.22);
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .student-topbar-badge {
@@ -719,7 +730,7 @@ body.sidebar-expanded #app-sidebar {
   min-height: 9px;
   border-radius: 50%;
   background: #ef4444;
-  box-shadow: 0 0 0 2px var(--topbar-bg);
+  box-shadow: 0 0 0 2px #1665a0;
 }
 
 .student-topbar-profile-wrap {
@@ -743,12 +754,12 @@ body.sidebar-expanded #app-sidebar {
 
 .student-topbar-profile-btn:hover {
   background: var(--brand-light);
-  box-shadow: 0 2px 12px rgba(22, 101, 160, 0.12);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.15);
   transform: scale(1.02);
 }
 
 .student-topbar-profile-btn:hover .student-topbar-avatar {
-  box-shadow: 0 3px 12px rgba(22, 101, 160, 0.4);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.45);
 }
 
 .student-topbar-profile-btn:active {
@@ -769,9 +780,9 @@ body.sidebar-expanded #app-sidebar {
   justify-content: center;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, var(--brand) 0%, #1a7bc4 100%);
-  box-shadow: 0 2px 8px rgba(22, 101, 160, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  color: #1665a0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
   transition: box-shadow 0.25s ease;
 }
@@ -1036,16 +1047,16 @@ body.app-shell--professor #main .admin-content {
 body.app-shell--professor #sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: transparent;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s var(--app-shell-ease);
+  transition: none;
   z-index: 900;
 }
 
 body.app-shell--professor.sidebar-expanded #sidebar-backdrop {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 0;
+  pointer-events: none;
 }
 
 body.app-shell--professor:not(.sidebar-expanded) #app-sidebar.app-shell-sidebar--professor .admin-sidebar-section-label,
@@ -1231,7 +1242,7 @@ body.app-shell--professor .admin-topbar-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  width: 260px;
+  width: 300px;
   padding: 6px;
   background: #ffffff;
   border: 1px solid rgba(16, 185, 129, 0.22);
@@ -1239,6 +1250,11 @@ body.app-shell--professor .admin-topbar-dropdown {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
   z-index: 50;
   overflow: hidden;
+}
+
+body.app-shell--professor .admin-topbar-dropdown.ereview-profile-menu--light {
+  padding: 0;
+  border-radius: 18px;
 }
 
 body.app-shell--professor .admin-topbar-dropdown-head {
@@ -1323,5 +1339,222 @@ body.app-shell--professor .admin-topbar-name {
 
 body.app-shell--professor .admin-topbar-chevron {
   color: rgba(16, 185, 129, 0.95) !important;
+}
+
+/* ---- Profile menu (student + professor light dropdown) ---- */
+.student-topbar-dropdown.ereview-profile-menu,
+body.app-shell--professor .admin-topbar-dropdown.ereview-profile-menu--light {
+  width: 300px;
+  padding: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(22, 101, 160, 0.12);
+  box-shadow:
+    0 22px 50px -24px rgba(15, 23, 42, 0.35),
+    0 12px 28px -18px rgba(22, 101, 160, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 55%, #f1f7fd 100%);
+}
+
+.ereview-profile-menu__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  position: relative;
+}
+
+.ereview-profile-menu__hero--light {
+  background: linear-gradient(135deg, rgba(22, 101, 160, 0.12) 0%, rgba(20, 61, 89, 0.06) 50%, rgba(255, 255, 255, 0) 100%);
+  border-bottom: 1px solid rgba(22, 101, 160, 0.1);
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__hero--light {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(21, 128, 61, 0.06) 55%, rgba(255, 255, 255, 0) 100%);
+  border-bottom-color: rgba(16, 185, 129, 0.18);
+}
+
+.ereview-profile-menu__avatar-ring {
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(22, 101, 160, 0.35), rgba(22, 101, 160, 0.08));
+  box-shadow: 0 4px 14px rgba(22, 101, 160, 0.18);
+}
+
+.ereview-profile-menu__avatar-ring--student {
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(22, 101, 160, 0.45), rgba(59, 130, 246, 0.15));
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__avatar-ring--student {
+  background: linear-gradient(145deg, rgba(22, 163, 74, 0.5), rgba(16, 185, 129, 0.2));
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.2);
+}
+
+.ereview-profile-menu__hero-avatar.student-topbar-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 1rem;
+}
+
+.ereview-profile-menu__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #1665a0 0%, #143d59 100%);
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__avatar {
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+}
+
+.ereview-profile-menu__hero-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.ereview-profile-menu__eyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.ereview-profile-menu__title {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.ereview-profile-menu__subtitle {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.ereview-profile-menu__section {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ereview-profile-menu__section-label {
+  padding: 6px 10px 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.ereview-profile-menu__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  border: 1px solid transparent;
+}
+
+.ereview-profile-menu__link--nav {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.ereview-profile-menu__link--nav:hover {
+  background: #fff;
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: 0 8px 20px -12px rgba(22, 101, 160, 0.45);
+  transform: translateX(2px);
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__link--nav:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 20px -12px rgba(21, 128, 61, 0.35);
+}
+
+.ereview-profile-menu__link-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, rgba(22, 101, 160, 0.12), rgba(22, 101, 160, 0.05));
+  color: #1665a0;
+  font-size: 1.1rem;
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__link-icon {
+  background: linear-gradient(145deg, rgba(21, 128, 61, 0.14), rgba(16, 185, 129, 0.06));
+  color: #15803d;
+}
+
+.ereview-profile-menu__link-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ereview-profile-menu__chev {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.ereview-profile-menu__link--nav:hover .ereview-profile-menu__chev {
+  color: #1665a0;
+}
+
+body.app-shell--professor .admin-topbar-dropdown .ereview-profile-menu__link--nav:hover .ereview-profile-menu__chev {
+  color: #15803d;
+}
+
+.ereview-profile-menu__divider {
+  height: 1px;
+  margin: 4px 14px 8px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.45), transparent);
+}
+
+.ereview-profile-menu__link--danger {
+  margin: 0 10px 10px;
+  color: #b91c1c;
+  font-weight: 800;
+  font-size: 0.9rem;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+  border: 1px solid rgba(254, 202, 202, 0.95);
+}
+
+.ereview-profile-menu__link--danger:hover {
+  background: linear-gradient(180deg, #ffe4e6 0%, #fecdd3 100%);
+  transform: translateX(2px);
+  box-shadow: 0 8px 22px -14px rgba(185, 28, 28, 0.55);
+}
+
+.ereview-profile-menu__link--danger .ereview-profile-menu__link-icon {
+  background: rgba(254, 202, 202, 0.55);
+  color: #b91c1c;
 }
 

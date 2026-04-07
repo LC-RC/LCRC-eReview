@@ -122,7 +122,6 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
   var theme = aside.getAttribute('data-app-theme') || 'admin';
   var STORAGE_KEY = aside.getAttribute('data-storage-key') || 'ereview_app_shell_sidebar_admin';
   var body = document.body;
-  var backdrop = document.getElementById('sidebar-backdrop');
 
   if (theme === 'student') {
     body.classList.add('app-shell--student');
@@ -174,10 +173,6 @@ $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
 
   window.toggleAppShellSidebar = toggleSidebar;
   window.toggleAdminSidebar = toggleSidebar;
-
-  if (backdrop) {
-    backdrop.addEventListener('click', closeSidebar);
-  }
 
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape' && body.classList.contains('sidebar-expanded')) {

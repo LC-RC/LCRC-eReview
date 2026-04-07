@@ -76,6 +76,39 @@ function college_exam_professor_roster_count(mysqli $conn, int $examId): int
 }
 
 /**
+ * Whether a student appears on the professor exam monitor roster for this exam
+ * (same rule as professor_exam_monitor: attempt holders ∪ approved/blank-status college students).
+ */
+function college_exam_student_on_professor_monitor_roster(mysqli $conn, int $examId, int $studentUserId): bool
+{
+    $examId = (int)$examId;
+    $studentUserId = (int)$studentUserId;
+    if ($examId <= 0 || $studentUserId <= 0) {
+        return false;
+    }
+    $stmt = mysqli_prepare(
+        $conn,
+        'SELECT 1 FROM users u WHERE u.user_id=? AND (
+          EXISTS (SELECT 1 FROM college_exam_attempts a WHERE a.exam_id=? AND a.user_id=u.user_id)
+          OR (
+            u.role=\'college_student\'
+            AND (u.status=\'approved\' OR u.status IS NULL OR TRIM(COALESCE(u.status,\'\'))=\'\')
+          )
+        ) LIMIT 1'
+    );
+    if (!$stmt) {
+        return false;
+    }
+    mysqli_stmt_bind_param($stmt, 'ii', $studentUserId, $examId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $ok = $res && mysqli_fetch_assoc($res);
+    mysqli_stmt_close($stmt);
+
+    return (bool)$ok;
+}
+
+/**
  * Exam with no deadline: treat as finished for UI/access once submitted attempts cover the full roster.
  * Roster = users with any attempt on this exam ∪ approved (or blank-status) college students.
  * Schema enforces one attempt per user per exam, so $submittedCount matches distinct submitters.

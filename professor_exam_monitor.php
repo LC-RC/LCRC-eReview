@@ -302,6 +302,21 @@ $monitorCsrf = generateCSRFToken();
     }
     .pem-xlsx-btn:hover { transform:translateY(-1px); filter:brightness(1.06); color:#fff; box-shadow:0 12px 24px -14px rgba(30,64,175,.65); }
     .pem-xlsx-btn i { font-size:1rem; }
+    .pem-review-btn {
+      display:inline-flex; align-items:center; gap:.38rem;
+      padding:.4rem .75rem; border-radius:.55rem;
+      border:1px solid #059669;
+      background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);
+      color:#065f46; font-size:.76rem; font-weight:900;
+      text-decoration:none;
+      box-shadow:0 4px 14px -8px rgba(5,150,105,.55);
+      transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+      white-space:nowrap;
+    }
+    .pem-review-btn:hover { transform:translateY(-1px); filter:brightness(1.03); color:#064e3b; box-shadow:0 8px 18px -10px rgba(5,150,105,.65); }
+    .pem-review-btn i { font-size:.95rem; }
+    .pem-review-muted { font-size:.74rem; font-weight:700; color:#94a3b8; display:inline-flex; align-items:center; gap:.3rem; }
+    .pem-review-muted.pending { color:#b45309; }
   </style>
 </head>
 <body class="font-sans antialiased prof-page">
@@ -437,7 +452,7 @@ $monitorCsrf = generateCSRFToken();
       <?php endif; ?>
     </div>
     <div class="card overflow-x-auto">
-      <table class="w-full text-sm text-left min-w-[1280px]">
+      <table class="w-full text-sm text-left min-w-[1400px]">
         <thead class="table-head border-b border-green-100">
           <tr>
             <th class="px-4 py-3">Student</th>
@@ -451,11 +466,12 @@ $monitorCsrf = generateCSRFToken();
             <th class="px-4 py-3">Last Seen</th>
             <th class="px-4 py-3">Tab leaves</th>
             <th class="px-4 py-3">Last tab leave</th>
+            <th class="px-4 py-3 whitespace-nowrap">Review sheet</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-green-100">
           <?php if ($students === []): ?>
-            <tr><td colspan="11" class="px-4 py-10 text-center text-gray-500">No college students found.</td></tr>
+            <tr><td colspan="12" class="px-4 py-10 text-center text-gray-500">No college students found.</td></tr>
           <?php else: ?>
             <?php foreach ($students as $st): ?>
               <?php
@@ -484,6 +500,13 @@ $monitorCsrf = generateCSRFToken();
                 }
                 $tabLeaveN = (int)($st['tab_switch_count'] ?? 0);
                 $tabLeaveLast = professor_exam_monitor_format_dt($st['last_tab_switch_at'] ?? null);
+                $canReviewSheet = false;
+                if (!empty($st['attempt_id'])) {
+                    $canReviewSheet = college_exam_attempt_is_effectively_submitted([
+                        'status' => $st['attempt_status'] ?? null,
+                        'submitted_at' => $st['submitted_at'] ?? null,
+                    ]);
+                }
               ?>
               <tr class="table-row js-monitor-row" data-user-id="<?php echo (int)$st['user_id']; ?>">
                 <td class="px-4 py-3">
@@ -557,6 +580,17 @@ $monitorCsrf = generateCSRFToken();
                     <span class="date-chip js-tab-last"><i class="bi bi-window"></i> <?php echo h($tabLeaveLast); ?></span>
                   <?php else: ?>
                     <span class="date-chip muted js-tab-last">—</span>
+                  <?php endif; ?>
+                </td>
+                <td class="px-4 py-3">
+                  <?php if ($canReviewSheet): ?>
+                    <a href="professor_exam_review_sheet.php?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="pem-review-btn" title="Open this student’s full examination sheet (questions, choices, explanations)">
+                      <i class="bi bi-layout-text-window-reverse"></i> Review
+                    </a>
+                  <?php elseif ($attemptStatus === 'in_progress'): ?>
+                    <span class="pem-review-muted pending"><i class="bi bi-hourglass-split"></i> After submit</span>
+                  <?php else: ?>
+                    <span class="pem-review-muted">—</span>
                   <?php endif; ?>
                 </td>
               </tr>

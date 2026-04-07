@@ -186,59 +186,91 @@ if (isset($_GET['edit'])) {
     }
 }
 
-$questions = mysqli_query($conn, "SELECT * FROM preboards_questions WHERE preboards_set_id=$setId ORDER BY sort_order ASC, preboards_question_id ASC");
+$searchQ = trim($_GET['q'] ?? '');
+$qParts = ['preboards_set_id=?'];
+$qTypes = 'i';
+$qVals = [$setId];
+if ($searchQ !== '') {
+    $qParts[] = 'question_text LIKE ?';
+    $qTypes .= 's';
+    $qVals[] = '%' . $searchQ . '%';
+}
+$qSql = 'SELECT * FROM preboards_questions WHERE ' . implode(' AND ', $qParts) . ' ORDER BY sort_order ASC, preboards_question_id ASC';
+$stmt = mysqli_prepare($conn, $qSql);
+mysqli_stmt_bind_param($stmt, $qTypes, ...$qVals);
+mysqli_stmt_execute($stmt);
+$questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Preboards Questions - Set ' . $setRow['set_label'];
 $adminBreadcrumbs = [
     ['Dashboard', 'admin_dashboard.php'],
     ['Preboards', 'admin_preboards_subjects.php'],
     [($setRow['subject_name'] ?? 'Subject'), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
-    ['Sets', 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
-    ['Set ' . ($setRow['set_label'] ?? ''), 'admin_preboards_questions.php?preboards_set_id=' . (int)$setId . '&preboards_subject_id=' . (int)$subjectId],
+    ['Set ' . ($setRow['set_label'] ?? ''), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Questions'],
 ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <?php $baseUrl = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'); ?>
-  <link rel="stylesheet" href="<?php echo $baseUrl ? $baseUrl . '/' : ''; ?>assets/css/admin-quiz-ui.css">
+  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
-<body class="font-sans antialiased admin-app bg-[#f6f9ff]" x-data="preboardsQuestionsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="preboardsQuestionsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="admin-quiz-hero">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl md:text-3xl font-bold text-[#012970] m-0 flex items-center gap-3">
-      <span class="admin-quiz-hero-icon"><i class="bi bi-clipboard-check"></i></span>
-      Preboard questions
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+      <span>Preboard Questions — Set <?php echo h($setRow['set_label'] ?? ''); ?></span>
+      <span class="text-gray-500 font-medium text-lg">(<?php echo h($setRow['subject_name'] ?? ''); ?>)</span>
     </h1>
-    <p class="text-gray-500 mt-2">Add questions for this set. Students get one attempt per set.</p>
+    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($setRow['subject_name'] ?? ''); ?> — Add and manage questions for this set. Students get one attempt per set.</p>
   </div>
 
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
-    <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to sets</a>
-    <button type="button" @click="batchOpen = !batchOpen; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
+    <div>
+      <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to sets</a>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" @click="batchOpen = !batchOpen; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
+    </div>
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-quiz-alert admin-quiz-alert-success">
+    <div class="quiz-admin-alert quiz-admin-alert--success admin-quiz-alert">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-quiz-alert admin-quiz-alert-error">
+    <div class="quiz-admin-alert quiz-admin-alert--error admin-quiz-alert">
       <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
   <?php endif; ?>
 
+  <form method="get" action="admin_preboards_questions.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="preboards_set_id" value="<?php echo (int)$setId; ?>">
+    <input type="hidden" name="preboards_subject_id" value="<?php echo (int)$subjectId; ?>">
+    <div class="flex-1 min-w-[220px]">
+      <label for="pb-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search questions</label>
+      <input type="search" id="pb-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text…" class="input-custom w-full" autocomplete="off">
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
+      <?php if ($searchQ !== ''): ?>
+        <a href="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+      <?php endif; ?>
+    </div>
+  </form>
+
   <!-- Batch add -->
-  <div class="mb-6" x-show="batchOpen" x-cloak x-transition>
-    <div class="admin-quiz-card">
-      <div class="admin-quiz-card-header admin-quiz-card-header-accent">
-        <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
+  <div class="mb-6" x-show="batchOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <div class="admin-quiz-card quiz-admin-batch-card">
+      <div class="admin-quiz-card-header admin-quiz-card-header-accent quiz-admin-card-head">
+        <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
         <button type="button" @click="batchOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
@@ -293,9 +325,9 @@ $adminBreadcrumbs = [
     </div>
   </div>
 
-  <div class="admin-quiz-card">
-    <div class="admin-quiz-card-header">
-      <span class="font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-list-ol"></i> Questions</span>
+  <div class="admin-quiz-card quiz-admin-questions-card">
+    <div class="admin-quiz-card-header quiz-admin-card-head">
+      <span class="font-semibold flex items-center gap-2"><i class="bi bi-list-ol"></i> Questions list</span>
       <span class="text-gray-500 text-sm">Set <?php echo h($setRow['set_label']); ?></span>
     </div>
     <div class="overflow-x-auto">
@@ -309,13 +341,17 @@ $adminBreadcrumbs = [
         </thead>
         <tbody>
           <?php $hasAny = false;
-          while ($qq = $questions ? mysqli_fetch_assoc($questions) : null):
-              if (!$qq) break;
+          while ($qq = mysqli_fetch_assoc($questions)):
               $hasAny = true;
-              $qPreview = mb_substr((string)$qq['question_text'], 0, 80) . (mb_strlen((string)$qq['question_text']) > 80 ? '…' : '');
+              $rawQt = (string)($qq['question_text'] ?? '');
+              $plainQt = trim(preg_replace('/\s+/u', ' ', strip_tags($rawQt)));
+              if ($plainQt === '') {
+                  $plainQt = trim(preg_replace('/\s+/u', ' ', $rawQt));
+              }
+              $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '…' : '');
           ?>
-            <tr>
-              <td class="font-medium text-gray-800"><?php echo h($qPreview); ?></td>
+            <tr class="quiz-admin-q-row">
+              <td class="font-medium quiz-admin-q-preview"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></td>
               <td><span class="admin-quiz-badge admin-quiz-badge-success"><?php echo h($qq['correct_answer']); ?></span></td>
               <td>
                 <div class="flex flex-wrap gap-2">
@@ -339,7 +375,7 @@ $adminBreadcrumbs = [
               <td colspan="3" class="admin-quiz-empty">
                 <div class="admin-quiz-empty-icon"><i class="bi bi-inbox"></i></div>
                 <div class="font-semibold text-gray-700">No questions yet</div>
-                <p class="text-sm text-gray-500 mt-1">Click <strong>Add multiple questions</strong> above to add questions.</p>
+                <p class="text-sm text-gray-500 mt-1">Click <strong>Add multiple questions</strong> above to add questions in one go.</p>
                 <button type="button" @click="batchOpen = true; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary mt-4"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
               </td>
             </tr>
@@ -348,16 +384,17 @@ $adminBreadcrumbs = [
       </table>
     </div>
   </div>
+  <?php mysqli_stmt_close($stmt); ?>
 
   <!-- Edit modal -->
   <div x-show="questionModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="questionModalOpen = false">
-    <div class="absolute inset-0 bg-black/50" @click="questionModalOpen = false"></div>
-    <div class="relative admin-quiz-modal" @click.stop>
-      <div class="admin-quiz-modal-header">
-        <h2 class="m-0 text-lg font-bold text-gray-800">Edit question</h2>
-        <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="questionModalOpen = false"></div>
+    <div class="relative admin-quiz-modal quiz-modal-panel" @click.stop>
+      <div class="admin-quiz-modal-header quiz-modal-panel__head">
+        <h2 class="m-0 text-lg font-bold text-gray-100">Edit Question</h2>
+        <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
+      <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="preboards_question_id" :value="question_id">
@@ -368,7 +405,9 @@ $adminBreadcrumbs = [
             <p class="text-xs text-gray-500 mt-1">You can use basic HTML, including table tags (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>).</p>
           </div>
           <div class="space-y-2">
-            <label class="admin-quiz-label mb-0">Choices (min 2, max 10)</label>
+            <div>
+              <label class="admin-quiz-label mb-0">Choices (min 2, max 10)</label>
+            </div>
             <template x-for="(ch, ci) in editChoices" :key="ci">
               <div class="flex flex-wrap gap-2 items-center">
                 <span class="admin-quiz-choice-letter" x-text="ch.letter"></span>
@@ -397,13 +436,13 @@ $adminBreadcrumbs = [
     </div>
   </div>
 
-  <!-- Delete modal -->
+  <!-- Delete question modal -->
   <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="deleteModalOpen = false">
-    <div class="absolute inset-0 bg-black/50" @click="deleteModalOpen = false"></div>
-    <div class="relative admin-quiz-modal admin-quiz-modal-sm" @click.stop>
-      <div class="admin-quiz-modal-header">
-        <h2 class="m-0 text-lg font-bold text-gray-800"><i class="bi bi-trash text-red-500 mr-2"></i> Delete question</h2>
-        <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="deleteModalOpen = false"></div>
+    <div class="relative admin-quiz-modal admin-quiz-modal-sm quiz-modal-panel" @click.stop>
+      <div class="admin-quiz-modal-header quiz-modal-panel__head">
+        <h2 class="m-0 text-lg font-bold text-gray-100 flex items-center gap-2"><i class="bi bi-trash text-red-400"></i> Delete Question</h2>
+        <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -614,6 +653,7 @@ $adminBreadcrumbs = [
       };
     }
   </script>
+</div>
 </main>
 </body>
 </html>
