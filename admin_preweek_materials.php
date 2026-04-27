@@ -1053,9 +1053,13 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
               <input type="file" name="video_file" id="videoFileInput" class="input-custom admin-upload-input w-full" accept="video/*">
               <p class="preweek-field-hint">MP4, WebM, MOV, and other common formats.</p>
             </div>
+            <p id="preweekVideoAutosaveHint" class="preweek-field-hint text-gray-500 mt-2 mb-0 max-w-xl">
+              Title, source, and URL are saved in this browser until the video is added successfully or you discard the draft. (Uploaded files cannot be remembered—select the file again after reopening.)
+            </p>
             <div class="flex flex-wrap gap-2 pt-2">
               <button type="submit" class="admin-materials-submit-btn preweek-submit-btn" data-default-label="Add video"><i class="bi bi-plus-circle"></i><span class="preweek-btn-label">Add video</span></button>
               <button type="button" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-300 hover:bg-white/10 preweek-modal-close">Cancel</button>
+              <button type="button" id="preweekVideoDiscardDraft" class="px-4 py-2.5 rounded-lg font-semibold border border-red-500/30 text-red-300/90 hover:bg-red-950/40 text-sm">Discard draft</button>
             </div>
           </div>
         </form>
@@ -1187,6 +1191,89 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
 </main>
 <script>
   (function () {
+    var PREWEEK_TOPIC_ID = <?php echo (int)$topicId; ?>;
+    var VIDEO_ADD_DRAFT_KEY = 'ereview_preweek_video_add_draft_v1_' + PREWEEK_TOPIC_ID;
+
+    function readPreweekVideoAddDraft() {
+      try {
+        var raw = localStorage.getItem(VIDEO_ADD_DRAFT_KEY);
+        if (!raw) return null;
+        var o = JSON.parse(raw);
+        if (!o || typeof o !== 'object') return null;
+        return o;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearPreweekVideoAddDraft() {
+      try {
+        localStorage.removeItem(VIDEO_ADD_DRAFT_KEY);
+      } catch (e) {}
+    }
+
+    function writePreweekVideoAddDraftFromDom() {
+      var titleIn = document.getElementById('videoTitleInput');
+      var typeSel = document.getElementById('preweekUploadType');
+      var urlIn = document.getElementById('preweekVideoUrl');
+      var title = titleIn ? String(titleIn.value || '') : '';
+      var uploadType = typeSel ? String(typeSel.value || 'url') : 'url';
+      var url = urlIn ? String(urlIn.value || '') : '';
+      var hasFile = false;
+      var vf = document.getElementById('videoFileInput');
+      if (vf && vf.files && vf.files.length) hasFile = true;
+      try {
+        if (
+          uploadType === 'url' &&
+          !title.trim() &&
+          !url.trim()
+        ) {
+          localStorage.removeItem(VIDEO_ADD_DRAFT_KEY);
+          return;
+        }
+        if (uploadType === 'file' && !title.trim() && !hasFile) {
+          localStorage.removeItem(VIDEO_ADD_DRAFT_KEY);
+          return;
+        }
+        localStorage.setItem(
+          VIDEO_ADD_DRAFT_KEY,
+          JSON.stringify({
+            v: 1,
+            title: title,
+            uploadType: uploadType === 'file' ? 'file' : 'url',
+            url: url
+          })
+        );
+      } catch (e) {}
+    }
+
+    var preweekVideoDraftTimer = null;
+    function schedulePreweekVideoAddDraftSave() {
+      if (preweekVideoDraftTimer) clearTimeout(preweekVideoDraftTimer);
+      preweekVideoDraftTimer = setTimeout(function () {
+        preweekVideoDraftTimer = null;
+        writePreweekVideoAddDraftFromDom();
+      }, 250);
+    }
+
+    function applyPreweekVideoAddDraft() {
+      var d = readPreweekVideoAddDraft();
+      var titleIn = document.getElementById('videoTitleInput');
+      var typeSel = document.getElementById('preweekUploadType');
+      var urlIn = document.getElementById('preweekVideoUrl');
+      var fileIn = document.getElementById('videoFileInput');
+      if (!titleIn || !typeSel || !urlIn || !fileIn) return;
+      if (!d) {
+        syncVideoAddMode();
+        return;
+      }
+      titleIn.value = typeof d.title === 'string' ? d.title : '';
+      typeSel.value = d.uploadType === 'file' ? 'file' : 'url';
+      urlIn.value = typeof d.url === 'string' ? d.url : '';
+      fileIn.value = '';
+      syncVideoAddMode();
+    }
+
     function toTitleFromFilename(fileName) {
       if (!fileName) return '';
       var base = fileName.replace(/\.[^/.]+$/, '');
@@ -1203,6 +1290,9 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
         if (!file) return;
         if (titleInput.value.trim() !== '') return;
         titleInput.value = toTitleFromFilename(file.name);
+        if (typeof schedulePreweekVideoAddDraftSave === 'function') {
+          schedulePreweekVideoAddDraftSave();
+        }
       });
     }
 
@@ -1296,6 +1386,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
             return;
           }
         }
+        clearPreweekVideoAddDraft();
         setLoading(videoForm.querySelector('.preweek-submit-btn'), true);
       });
     }
@@ -1361,6 +1452,9 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
     var vam = document.getElementById('preweekVideoAddModal');
     var ham = document.getElementById('preweekHandoutAddModal');
     function closePreweekModals() {
+      if (vam && !vam.hidden) {
+        writePreweekVideoAddDraftFromDom();
+      }
       if (vm) vm.hidden = true;
       if (hm) hm.hidden = true;
       if (vam) vam.hidden = true;
@@ -1396,14 +1490,31 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
     var addTypeSel = document.getElementById('preweekUploadType');
     if (addTypeSel) {
       addTypeSel.addEventListener('change', syncVideoAddMode);
+      addTypeSel.addEventListener('change', schedulePreweekVideoAddDraftSave);
     }
+    var videoTitleDraft = document.getElementById('videoTitleInput');
+    var preweekVideoUrlDraft = document.getElementById('preweekVideoUrl');
+    var videoFileDraft = document.getElementById('videoFileInput');
+    if (videoTitleDraft) videoTitleDraft.addEventListener('input', schedulePreweekVideoAddDraftSave);
+    if (preweekVideoUrlDraft) preweekVideoUrlDraft.addEventListener('input', schedulePreweekVideoAddDraftSave);
+    if (videoFileDraft) videoFileDraft.addEventListener('change', schedulePreweekVideoAddDraftSave);
 
     if (document.getElementById('preweekOpenVideoAdd') && vam) {
       document.getElementById('preweekOpenVideoAdd').addEventListener('click', function () {
         var f = document.getElementById('preweekVideoForm');
         if (f) f.reset();
-        syncVideoAddMode();
+        applyPreweekVideoAddDraft();
         vam.hidden = false;
+        schedulePreweekVideoAddDraftSave();
+      });
+    }
+    var preweekDiscardDraft = document.getElementById('preweekVideoDiscardDraft');
+    if (preweekDiscardDraft) {
+      preweekDiscardDraft.addEventListener('click', function () {
+        clearPreweekVideoAddDraft();
+        var f = document.getElementById('preweekVideoForm');
+        if (f) f.reset();
+        syncVideoAddMode();
       });
     }
     if (document.getElementById('preweekOpenHandoutAdd') && ham) {
@@ -1453,6 +1564,9 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
         return;
       }
       if (e.target.classList.contains('preweek-modal-overlay')) {
+        if (e.target.id === 'preweekVideoAddModal') {
+          writePreweekVideoAddDraftFromDom();
+        }
         e.target.hidden = true;
       }
       if (e.target.closest('.preweek-modal-close')) {
@@ -1483,7 +1597,10 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
     }
     if (vam) {
       vam.addEventListener('click', function (e) {
-        if (e.target === vam) vam.hidden = true;
+        if (e.target === vam) {
+          writePreweekVideoAddDraftFromDom();
+          vam.hidden = true;
+        }
       });
     }
     if (ham) {

@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
+require_once __DIR__ . '/includes/vimeo_helpers.php';
 requireRole('student');
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
@@ -28,14 +30,54 @@ if ($lessons) {
     }
 }
 
-// Client-side Materials tab: search + sort (Alpine)
+// Load stored lesson thumbnails (first non-empty per lesson) + first Vimeo video URL per lesson (for client-side oEmbed).
+$thumbByLesson = [];
+$vimeoOembedUrlByLesson = [];
+if (!empty($lessonsRows)) {
+    $lessonIds = [];
+    foreach ($lessonsRows as $row) {
+        $lessonIds[] = (int)($row['lesson_id'] ?? 0);
+    }
+    $lessonIds = array_values(array_unique(array_filter($lessonIds)));
+    if (!empty($lessonIds)) {
+        $in = implode(',', array_map('intval', $lessonIds));
+        $tv = @mysqli_query($conn, "SELECT lesson_id, video_url, thumbnail_url FROM lesson_videos WHERE lesson_id IN ($in) ORDER BY lesson_id ASC, video_id ASC");
+        if ($tv) {
+            while ($tr = mysqli_fetch_assoc($tv)) {
+                $lid = (int)($tr['lesson_id'] ?? 0);
+                if ($lid <= 0) {
+                    continue;
+                }
+                if (!isset($thumbByLesson[$lid])) {
+                    $tu = trim((string)($tr['thumbnail_url'] ?? ''));
+                    if ($tu !== '') {
+                        $thumbByLesson[$lid] = $tu;
+                    }
+                }
+                if (!isset($vimeoOembedUrlByLesson[$lid])) {
+                    $vu = trim((string)($tr['video_url'] ?? ''));
+                    if ($vu !== '' && stripos($vu, 'uploads/videos/') !== 0 && stripos($vu, 'uploads\\videos\\') !== 0) {
+                        if (ereview_parse_vimeo_id($vu) !== null) {
+                            $vimeoOembedUrlByLesson[$lid] = $vu;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Client-side Materials tab: search + sort (Alpine).
 $lessonsForAlpine = [];
 foreach ($lessonsRows as $l) {
+    $lid = (int)($l['lesson_id'] ?? 0);
     $lessonsForAlpine[] = [
-        'id' => (int)($l['lesson_id'] ?? 0),
+        'id' => $lid,
         'title' => (string)($l['title'] ?? ''),
         'desc' => (string)($l['description'] ?? ''),
-        'href' => 'student_lesson_viewer.php?lesson_id=' . (int)($l['lesson_id']) . '&subject_id=' . (int)$subjectId,
+        'href' => 'student_lesson_viewer.php?lesson_id=' . $lid . '&subject_id=' . (int)$subjectId,
+        'thumb' => (string)($thumbByLesson[$lid] ?? ''),
+        'vimeoOembedUrl' => (string)($vimeoOembedUrlByLesson[$lid] ?? ''),
     ];
 }
 
@@ -159,6 +201,36 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
     ];
 }
 mysqli_data_seek($quizzesAll, 0);
+
+$subjectHeroCoverSrc = '';
+$rawHeroCover = isset($subject['subject_cover']) ? trim((string)$subject['subject_cover']) : '';
+if ($rawHeroCover !== '') {
+    $subjectHeroCoverSrc = ereview_avatar_img_src($rawHeroCover);
+}
+$subjectHeroThemeMap = [
+    'afar' => 'afar',
+    'aud prob' => 'aud-prob',
+    'aud theories' => 'aud-theories',
+    'far' => 'far',
+    'mas' => 'mas',
+    'rfbt' => 'rfbt',
+    'tax' => 'tax',
+];
+$__heroName = strtolower(trim((string)($subject['subject_name'] ?? '')));
+$subjectHeroTheme = $subjectHeroThemeMap[$__heroName] ?? 'default';
+if ($subjectHeroTheme === 'default') {
+    $titleParts = explode(':', (string)($subject['subject_name'] ?? ''), 2);
+    $pfx = strtolower(trim($titleParts[0] ?? ''));
+    if ($pfx !== '' && isset($subjectHeroThemeMap[$pfx])) {
+        $subjectHeroTheme = $subjectHeroThemeMap[$pfx];
+    }
+}
+if ($subjectHeroTheme === 'default') {
+    $__code = strtolower(trim((string)($subject['subject_code'] ?? '')));
+    if ($__code !== '' && isset($subjectHeroThemeMap[$__code])) {
+        $subjectHeroTheme = $subjectHeroThemeMap[$__code];
+    }
+}
 
 $pageTitle = 'Subject - ' . $subject['subject_name'];
 ?>
@@ -448,47 +520,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-row-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
     .quiz-row-leave-to { opacity: 0; transform: translateX(8px); }
 
-    /* Subject page: back link (aligned with subject card) */
-    .subject-back-row {
-      margin-bottom: 0.75rem;
-    }
-    .btn-back-subjects {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.625rem 1.125rem;
-      border-radius: 9999px;
-      font-weight: 600;
-      font-size: 0.9375rem;
-      letter-spacing: 0.01em;
-      color: #143D59;
-      background: linear-gradient(180deg, #ffffff 0%, #f3f9fd 100%);
-      border: 1px solid rgba(22, 101, 160, 0.28);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.9) inset,
-        0 4px 14px rgba(20, 61, 89, 0.08),
-        0 1px 2px rgba(20, 61, 89, 0.06);
-      text-decoration: none;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    }
-    .btn-back-subjects:hover {
-      color: #1665A0;
-      border-color: rgba(22, 101, 160, 0.45);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 8px 22px rgba(22, 101, 160, 0.14),
-        0 2px 4px rgba(20, 61, 89, 0.08);
-      transform: translateY(-1px);
-    }
-    .btn-back-subjects:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(20, 61, 89, 0.1);
-    }
-    .btn-back-subjects i {
-      font-size: 1.05rem;
-      opacity: 0.9;
-    }
-
     /* Materials: view toggle (cards / list) */
     .materials-view-toggle {
       display: inline-flex;
@@ -567,7 +598,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       display: flex;
       flex-direction: column;
       min-height: 100%;
-      padding: 1rem 1rem 1.125rem;
+      padding: 0;
       border-radius: 1rem;
       text-decoration: none;
       color: inherit;
@@ -608,12 +639,56 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       outline: 2px solid #1665A0;
       outline-offset: 3px;
     }
-    .lesson-card__top {
+    .lesson-card__media {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(145deg, #143d59 0%, #1665a0 50%, #0c2742 100%);
+      overflow: hidden;
+    }
+    .lesson-card__thumb-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.01);
+      transition: transform 0.35s ease;
+    }
+    .lesson-card:hover .lesson-card__thumb-img {
+      transform: scale(1.05);
+    }
+    .lesson-card__media-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(155deg, rgba(20, 61, 89, 0.92) 0%, rgba(22, 101, 160, 0.75) 100%);
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 2.5rem;
+    }
+    .lesson-card__media-scrim {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(15, 41, 62, 0.62) 0%,
+        rgba(15, 41, 62, 0.2) 42%,
+        transparent 72%
+      );
+    }
+    .lesson-card__media-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 0.75rem;
-      margin-bottom: 0.625rem;
+      padding: 0.75rem 0.75rem 0.5rem;
+      z-index: 2;
     }
     .lesson-card__badge {
       flex-shrink: 0;
@@ -632,6 +707,12 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       border: 1px solid rgba(22, 101, 160, 0.2);
       box-shadow: 0 1px 2px rgba(20, 61, 89, 0.06);
     }
+    .lesson-card__media .lesson-card__badge {
+      color: #1665A0;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+    }
     .lesson-card__icon {
       flex-shrink: 0;
       display: flex;
@@ -644,6 +725,21 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       background: linear-gradient(145deg, #1e7cc8 0%, #1665A0 50%, #124a73 100%);
       box-shadow: 0 4px 12px rgba(22, 101, 160, 0.35);
       font-size: 1.125rem;
+    }
+    .lesson-card__media .lesson-card__icon {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+    }
+    .lesson-card__body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      padding: 1rem 1rem 1.125rem;
     }
     .lesson-card__title {
       margin: 0;
@@ -758,6 +854,34 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .lesson-list__link:focus-visible {
       outline: 2px solid #1665A0;
       outline-offset: -2px;
+    }
+    .lesson-list__thumb-wrap {
+      flex-shrink: 0;
+      position: relative;
+      width: 5rem;
+      aspect-ratio: 16 / 9;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      align-self: center;
+      background: linear-gradient(145deg, #143d59 0%, #1665a0 100%);
+      border: 1px solid rgba(22, 101, 160, 0.22);
+      box-shadow: 0 2px 8px rgba(20, 61, 89, 0.1);
+    }
+    .lesson-list__thumb {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .lesson-list__thumb-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 1.2rem;
     }
     .lesson-list__idx {
       flex-shrink: 0;
@@ -1114,15 +1238,242 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
 <style>
   .student-shell-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); min-height: 100%; }
   .student-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     border-radius: 0.75rem;
-    border: 1px solid rgba(255,255,255,0.28);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
-    box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+    box-shadow:
+      0 14px 34px -20px rgba(20, 61, 89, 0.85),
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    min-height: clamp(11.5rem, 26vh, 16rem);
+    transition: box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1), transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+  }
+  .student-hero--has-cover {
+    background: #0f2744;
+  }
+  .student-hero--has-cover:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    box-shadow:
+      0 22px 48px -24px rgba(15, 23, 42, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transform: translateY(-2px);
+  }
+  .student-hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .student-hero__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.045);
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .student-hero--has-cover:hover .student-hero__img {
+    transform: scale(1.07);
+  }
+  .student-hero__veil {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      105deg,
+      rgba(10, 28, 48, 0.82) 0%,
+      rgba(18, 52, 82, 0.48) 52%,
+      rgba(22, 101, 160, 0.22) 100%
+    );
+  }
+  .student-hero[data-subject-theme="afar"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(59, 7, 100, 0.82) 0%, rgba(88, 28, 135, 0.45) 50%, rgba(192, 38, 211, 0.2) 100%);
+  }
+  .student-hero[data-subject-theme="aud-prob"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(8, 47, 73, 0.85) 0%, rgba(14, 116, 144, 0.42) 55%, rgba(6, 182, 212, 0.18) 100%);
+  }
+  .student-hero[data-subject-theme="aud-theories"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(30, 41, 59, 0.88) 0%, rgba(51, 65, 85, 0.5) 52%, rgba(100, 116, 139, 0.22) 100%);
+  }
+  .student-hero[data-subject-theme="far"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(88, 28, 28, 0.78) 0%, rgba(127, 29, 29, 0.42) 52%, rgba(251, 113, 133, 0.2) 100%);
+  }
+  .student-hero[data-subject-theme="mas"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(20, 45, 35, 0.82) 0%, rgba(34, 84, 61, 0.48) 52%, rgba(134, 239, 172, 0.14) 100%);
+  }
+  .student-hero[data-subject-theme="rfbt"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(60, 15, 15, 0.85) 0%, rgba(91, 20, 20, 0.48) 52%, rgba(185, 28, 28, 0.2) 100%);
+  }
+  .student-hero[data-subject-theme="tax"] .student-hero__veil {
+    background: linear-gradient(105deg, rgba(67, 42, 14, 0.82) 0%, rgba(120, 53, 15, 0.45) 52%, rgba(245, 158, 11, 0.2) 100%);
+  }
+  .student-hero__body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 1rem;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+  }
+  .student-hero__nav {
+    flex-shrink: 0;
+  }
+  .student-hero__main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+    align-content: center;
+  }
+  .student-hero .btn-back-subjects {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 6px 20px rgba(0, 0, 0, 0.12);
+    text-decoration: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease,
+      background 0.25s ease, color 0.2s ease;
+  }
+  @media (min-width: 640px) {
+    .student-hero .btn-back-subjects {
+      padding: 0.5625rem 1.125rem;
+      font-size: 0.9375rem;
+    }
+  }
+  .student-hero .btn-back-subjects:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.28) inset, 0 10px 28px rgba(0, 0, 0, 0.16);
+    transform: translateY(-1px);
+  }
+  .student-hero .btn-back-subjects:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  }
+  .student-hero .btn-back-subjects i {
+    font-size: 1.05rem;
+    opacity: 0.92;
+  }
+  .student-hero--has-cover:hover .btn-back-subjects {
+    border-color: rgba(255, 255, 255, 0.38);
+  }
+  .student-hero__icon-chip {
+    display: flex;
+    height: 2.75rem;
+    width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  }
+  @media (min-width: 640px) {
+    .student-hero__icon-chip {
+      height: 3rem;
+      width: 3rem;
+    }
+  }
+  .student-hero--has-cover:hover .student-hero__icon-chip {
+    transform: scale(1.06) rotate(-2deg);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  }
+  .student-hero[data-subject-theme="afar"] .student-hero__icon-chip {
+    background: rgba(168, 85, 247, 0.28);
+    border-color: rgba(244, 114, 182, 0.45);
+    color: #fce7f3;
+  }
+  .student-hero[data-subject-theme="aud-prob"] .student-hero__icon-chip {
+    background: rgba(14, 165, 233, 0.22);
+    border-color: rgba(34, 211, 238, 0.4);
+    color: #e0f2fe;
+  }
+  .student-hero[data-subject-theme="aud-theories"] .student-hero__icon-chip {
+    background: rgba(148, 163, 184, 0.22);
+    border-color: rgba(203, 213, 225, 0.45);
+    color: #f1f5f9;
+  }
+  .student-hero[data-subject-theme="far"] .student-hero__icon-chip {
+    background: rgba(251, 113, 133, 0.22);
+    border-color: rgba(254, 202, 202, 0.5);
+    color: #fff1f2;
+  }
+  .student-hero[data-subject-theme="mas"] .student-hero__icon-chip {
+    background: rgba(74, 222, 128, 0.18);
+    border-color: rgba(134, 239, 172, 0.4);
+    color: #ecfccb;
+  }
+  .student-hero[data-subject-theme="rfbt"] .student-hero__icon-chip {
+    background: rgba(185, 28, 28, 0.28);
+    border-color: rgba(252, 165, 165, 0.42);
+    color: #fee2e2;
+  }
+  .student-hero[data-subject-theme="tax"] .student-hero__icon-chip {
+    background: rgba(245, 158, 11, 0.24);
+    border-color: rgba(253, 230, 138, 0.5);
+    color: #fffbeb;
+  }
+  .student-hero h1 {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 16px rgba(0, 0, 0, 0.18);
+  }
+  .student-hero .hero-title-wrap p {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   }
   .hero-strip {
-    background: rgba(255,255,255,0.14);
-    border: 1px solid rgba(255,255,255,0.24);
-    border-radius: .62rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 0.62rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, background 0.3s ease;
+  }
+  .student-hero--has-cover:hover .hero-strip {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .student-hero--has-cover:hover {
+      transform: none;
+    }
+    .student-hero__img,
+    .student-hero--has-cover:hover .student-hero__img {
+      transform: scale(1.03);
+      transition: none;
+    }
+    .student-hero--has-cover:hover .student-hero__icon-chip {
+      transform: none;
+    }
+    .student-hero--has-cover:hover .hero-strip {
+      transform: none;
+    }
+    .student-hero .btn-back-subjects:hover {
+      transform: none;
+    }
   }
   .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
   .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
@@ -1326,6 +1677,47 @@ document.addEventListener('alpine:init', function() {
       materialsSort: 'lesson_asc',
       quizzersView: 'list',
       testBankView: 'cards',
+      persistPref: function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {}
+      },
+      /**
+       * Replace vumbnail / missing thumbs with Vimeo CDN URLs via oEmbed (browser fetch; works when third-party proxy shows a lock image).
+       */
+      hydrateVimeoThumbs: function() {
+        var lessons = this.materialsLessons || [];
+        var queue = lessons.filter(function(l) {
+          var pageUrl = (l.vimeoOembedUrl || '').trim();
+          if (!pageUrl) return false;
+          var t = (l.thumb || '');
+          if (t.indexOf('vimeocdn.com') !== -1 && t.indexOf('vumbnail.com') === -1) return false;
+          return true;
+        });
+        if (queue.length === 0) return;
+        var concurrency = 4;
+        var i = 0;
+        function runOne() {
+          if (i >= queue.length) return Promise.resolve();
+          var lesson = queue[i++];
+          var embedUrl = 'https://vimeo.com/api/oembed.json?url=' + encodeURIComponent(lesson.vimeoOembedUrl) + '&width=1280';
+          return fetch(embedUrl, { mode: 'cors', credentials: 'omit' })
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('oembed')); })
+            .then(function(data) {
+              if (data && data.thumbnail_url) {
+                var u = String(data.thumbnail_url).replace(/^http:\/\//i, 'https://');
+                lesson.thumb = u;
+              }
+            })
+            .catch(function() {})
+            .then(function() { return runOne(); });
+        }
+        var starters = [];
+        for (var k = 0; k < Math.min(concurrency, queue.length); k++) {
+          starters.push(runOne());
+        }
+        return Promise.all(starters);
+      },
       get materialsFiltered() {
         var list = this.materialsLessons.slice();
         var q = (this.materialsSearch || '').trim().toLowerCase();
@@ -1380,6 +1772,8 @@ document.addEventListener('alpine:init', function() {
             this.materialsSort = ms;
           }
         } catch (e) {}
+        var self = this;
+        setTimeout(function() { self.hydrateVimeoThumbs(); }, 0);
       }
     };
   });
@@ -1390,26 +1784,36 @@ document.addEventListener('alpine:init', function() {
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
-  <div class="subject-back-row dash-anim delay-1">
-    <a href="student_subjects.php" class="btn-back-subjects">
-      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Subjects
-    </a>
-  </div>
-
   <section class="mb-4 sm:mb-5 dash-anim delay-1">
-    <div class="student-hero px-4 sm:px-6 py-4 sm:py-5 text-white flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0 flex-1">
-        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
-          <i class="bi bi-book text-xl" aria-hidden="true"></i>
-        </span>
-        <div class="min-w-0">
-          <h1 class="text-xl sm:text-2xl font-bold m-0 tracking-tight truncate"><?php echo h($subject['subject_name']); ?></h1>
-          <p class="text-sm sm:text-base text-white/90 mt-1 mb-0 break-words"><?php echo h($subject['description'] ?? ''); ?></p>
-        </div>
+    <div class="student-hero px-4 sm:px-6 py-5 sm:py-7 text-white flex flex-col <?php echo $subjectHeroCoverSrc !== '' ? 'student-hero--has-cover' : ''; ?>"
+         data-subject-theme="<?php echo h($subjectHeroTheme); ?>">
+      <?php if ($subjectHeroCoverSrc !== ''): ?>
+      <div class="student-hero__media" aria-hidden="true">
+        <img class="student-hero__img" src="<?php echo h($subjectHeroCoverSrc); ?>" alt="" width="1280" height="420" loading="eager" fetchpriority="high" decoding="async">
       </div>
-      <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0 hero-strip px-3 py-2">
-        <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Subject</span>
-        <span class="text-white/90"><?php echo h($subject['subject_code'] ?? 'Subject details'); ?></span>
+      <div class="student-hero__veil" aria-hidden="true"></div>
+      <?php endif; ?>
+      <div class="student-hero__body flex-1">
+        <div class="student-hero__nav">
+          <a href="student_subjects.php" class="btn-back-subjects">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Subjects
+          </a>
+        </div>
+        <div class="student-hero__main">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            <span class="student-hero__icon-chip shrink-0">
+              <i class="bi bi-book text-xl sm:text-2xl" aria-hidden="true"></i>
+            </span>
+            <div class="min-w-0 hero-title-wrap">
+              <h1 class="text-2xl sm:text-3xl font-bold m-0 tracking-tight leading-tight"><?php echo h($subject['subject_name']); ?></h1>
+              <p class="text-sm sm:text-base text-white/90 mt-2 mb-0 break-words max-w-3xl"><?php echo h($subject['description'] ?? ''); ?></p>
+            </div>
+          </div>
+          <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0 hero-strip px-3 py-2 sm:px-4 sm:py-2.5 self-start sm:self-center">
+            <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Subject</span>
+            <span class="text-white/90"><?php echo h($subject['subject_code'] ?? 'Subject details'); ?></span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1438,14 +1842,14 @@ document.addEventListener('alpine:init', function() {
         <span class="materials-view-toggle__label">View</span>
         <div class="materials-view-seg">
           <button type="button"
-            @click="materialsView = 'cards'; try { localStorage.setItem('ereview_materials_view', 'cards'); } catch (e) {}"
+            @click="materialsView = 'cards'; persistPref('ereview_materials_view', 'cards')"
             :class="materialsView === 'cards' ? 'is-active' : ''"
             :aria-pressed="materialsView === 'cards'"
             aria-label="Card view">
             <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><span class="hidden sm:inline">Cards</span>
           </button>
           <button type="button"
-            @click="materialsView = 'list'; try { localStorage.setItem('ereview_materials_view', 'list'); } catch (e) {}"
+            @click="materialsView = 'list'; persistPref('ereview_materials_view', 'list')"
             :class="materialsView === 'list' ? 'is-active' : ''"
             :aria-pressed="materialsView === 'list'"
             aria-label="List view">
@@ -1493,7 +1897,7 @@ document.addEventListener('alpine:init', function() {
             class="materials-sort-select"
             aria-labelledby="materials-sort-lbl"
             x-model="materialsSort"
-            @change="try { localStorage.setItem('ereview_materials_sort', materialsSort); } catch (e) {}"
+            @change="persistPref('ereview_materials_sort', materialsSort)"
           >
             <option value="lesson_asc">Oldest first</option>
             <option value="lesson_desc">Newest first</option>
@@ -1515,14 +1919,21 @@ document.addEventListener('alpine:init', function() {
         <div class="lesson-cards-grid" role="list">
           <template x-for="(lesson, idx) in materialsFiltered" :key="lesson.id">
             <a :href="lesson.href" class="lesson-card" role="listitem">
-              <div class="lesson-card__top">
-                <span class="lesson-card__badge" aria-hidden="true" x-text="idx + 1"></span>
-                <span class="lesson-card__icon" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+              <div class="lesson-card__media">
+                <img class="lesson-card__thumb-img" x-show="lesson.thumb" x-bind:src="lesson.thumb || null" alt="" loading="lazy" decoding="async" width="640" height="360" />
+                <div class="lesson-card__media-fallback" x-show="!lesson.thumb" aria-hidden="true"><i class="bi bi-play-circle"></i></div>
+                <div class="lesson-card__media-scrim" aria-hidden="true"></div>
+                <div class="lesson-card__media-bar">
+                  <span class="lesson-card__badge" aria-hidden="true" x-text="idx + 1"></span>
+                  <span class="lesson-card__icon" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+                </div>
               </div>
-              <h3 class="lesson-card__title" x-text="lesson.title"></h3>
-              <div class="lesson-card__meta">
-                <span class="lesson-card__hint">Lesson</span>
-                <span class="lesson-card__cta">Open <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
+              <div class="lesson-card__body">
+                <h3 class="lesson-card__title" x-text="lesson.title"></h3>
+                <div class="lesson-card__meta">
+                  <span class="lesson-card__hint">Lesson</span>
+                  <span class="lesson-card__cta">Open <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
+                </div>
               </div>
             </a>
           </template>
@@ -1534,6 +1945,10 @@ document.addEventListener('alpine:init', function() {
             <li class="lesson-list__item" role="listitem">
               <a :href="lesson.href" class="lesson-list__link">
                 <span class="lesson-list__idx" aria-hidden="true" x-text="idx + 1"></span>
+                <div class="lesson-list__thumb-wrap">
+                  <img class="lesson-list__thumb" x-show="lesson.thumb" x-bind:src="lesson.thumb || null" alt="" loading="lazy" decoding="async" width="160" height="90" />
+                  <span class="lesson-list__thumb-fallback" x-show="!lesson.thumb" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+                </div>
                 <div class="lesson-list__body">
                   <h3 class="lesson-list__title" x-text="lesson.title"></h3>
                   <span class="lesson-list__sub">Lesson · Videos &amp; handouts</span>
@@ -1577,14 +1992,14 @@ document.addEventListener('alpine:init', function() {
         <span class="materials-view-toggle__label">View</span>
         <div class="materials-view-seg">
           <button type="button"
-            @click="quizzersView = 'cards'; try { localStorage.setItem('ereview_quizzers_view', 'cards'); } catch (e) {}"
+            @click="quizzersView = 'cards'; persistPref('ereview_quizzers_view', 'cards')"
             :class="quizzersView === 'cards' ? 'is-active' : ''"
             :aria-pressed="quizzersView === 'cards'"
             aria-label="Card view">
             <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><span class="hidden sm:inline">Cards</span>
           </button>
           <button type="button"
-            @click="quizzersView = 'list'; try { localStorage.setItem('ereview_quizzers_view', 'list'); } catch (e) {}"
+            @click="quizzersView = 'list'; persistPref('ereview_quizzers_view', 'list')"
             :class="quizzersView === 'list' ? 'is-active' : ''"
             :aria-pressed="quizzersView === 'list'"
             aria-label="List view">
@@ -1792,14 +2207,14 @@ document.addEventListener('alpine:init', function() {
         <span class="materials-view-toggle__label">View</span>
         <div class="materials-view-seg">
           <button type="button"
-            @click="testBankView = 'cards'; try { localStorage.setItem('ereview_testbank_view', 'cards'); } catch (e) {}"
+            @click="testBankView = 'cards'; persistPref('ereview_testbank_view', 'cards')"
             :class="testBankView === 'cards' ? 'is-active' : ''"
             :aria-pressed="testBankView === 'cards'"
             aria-label="Card view">
             <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><span class="hidden sm:inline">Cards</span>
           </button>
           <button type="button"
-            @click="testBankView = 'list'; try { localStorage.setItem('ereview_testbank_view', 'list'); } catch (e) {}"
+            @click="testBankView = 'list'; persistPref('ereview_testbank_view', 'list')"
             :class="testBankView === 'list' ? 'is-active' : ''"
             :aria-pressed="testBankView === 'list'"
             aria-label="List view">

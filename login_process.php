@@ -143,6 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Set session variables
         $_SESSION['user_id'] = $user['user_id'];
         $_SESSION['full_name'] = $user['full_name'];
+        $_SESSION['email'] = $user['email'] ?? '';
         $_SESSION['role'] = $user['role'];
         $_SESSION['created'] = time();
         $_SESSION['last_activity'] = time();

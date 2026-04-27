@@ -3,7 +3,7 @@ $notificationTheme = ($notificationTheme ?? 'admin') === 'student'
     ? 'student'
     : (($notificationTheme ?? '') === 'professor' ? 'professor' : 'admin');
 $notificationRoleLabel = $notificationTheme === 'student'
-    ? 'Student'
+    ? 'Reviewee'
     : ($notificationTheme === 'professor' ? 'Professor Admin' : 'Admin');
 $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToken() : (string)($_SESSION['csrf_token'] ?? '');
 ?>
@@ -114,13 +114,17 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     background: #fff;
     color: #102a43;
     box-shadow: -22px 0 44px rgba(6, 18, 40, 0.16);
-    transform: translate3d(100%, 0, 0);
+    /* translateX for slide; when open use transform:none + will-change:auto so text isn’t stuck on a blurry GPU layer (Chromium) */
+    transform: translateX(100%);
     transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.18, 1);
     will-change: transform;
   }
   .ere-notif.is-open { pointer-events: auto; }
   .ere-notif.is-open .ere-notif__backdrop { opacity: 1; }
-  .ere-notif.is-open .ere-notif__panel { transform: translate3d(0, 0, 0); }
+  .ere-notif.is-open .ere-notif__panel {
+    transform: none;
+    will-change: auto;
+  }
 
   .ere-notif__header {
     display: flex;
@@ -396,6 +400,139 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
   }
   .ere-notif--admin [data-notification-badge] {
     border-color: rgba(13, 17, 23, 0.95);
+  }
+
+  /* Reviewee / student — blue shell, crisp contrast (no glass blur on panel) */
+  .ere-notif--student .ere-notif__backdrop {
+    background: rgba(8, 20, 40, 0.55);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .ere-notif--student .ere-notif__panel {
+    background: linear-gradient(180deg, #1b6fb8 0%, #155a94 38%, #0f4a78 100%);
+    color: #f0f9ff;
+    box-shadow:
+      -1px 0 0 rgba(255, 255, 255, 0.12),
+      -16px 0 48px rgba(8, 30, 60, 0.45);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .ere-notif--student .ere-notif__header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 0.75rem;
+  }
+  .ere-notif--student .ere-notif__eyebrow {
+    color: rgba(224, 242, 254, 0.72);
+    letter-spacing: 0.1em;
+  }
+  .ere-notif--student .ere-notif__title {
+    color: #ffffff;
+  }
+  .ere-notif--student .ere-notif__close {
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.12);
+    color: #f0f9ff;
+  }
+  .ere-notif--student .ere-notif__close:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .ere-notif--student .ere-notif__meta {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    padding-bottom: 0.9rem;
+  }
+  .ere-notif--student .ere-notif__meta-pill {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+  .ere-notif--student .ere-notif__meta-muted {
+    color: rgba(224, 242, 254, 0.82);
+    font-weight: 700;
+  }
+  .ere-notif--student .ere-notif__markall {
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    background: rgba(15, 74, 120, 0.45);
+    color: #e0f2fe;
+  }
+  .ere-notif--student .ere-notif__markall:hover {
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(15, 74, 120, 0.65);
+    color: #ffffff;
+  }
+  .ere-notif--student .ere-notif__list {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.14) 100%);
+  }
+  .ere-notif--student .ere-notif__state {
+    color: rgba(224, 242, 254, 0.88);
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+    background: rgba(15, 50, 90, 0.5);
+    font-weight: 600;
+  }
+  .ere-notif--student .ere-notif__item {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 2px 8px rgba(0, 20, 45, 0.2);
+  }
+  .ere-notif--student .ere-notif__item.is-unread {
+    border-color: rgba(125, 211, 252, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 4px 16px rgba(0, 30, 65, 0.35);
+  }
+  .ere-notif--student .ere-notif__avatar {
+    background: #0c4a6e;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #f0f9ff;
+  }
+  .ere-notif--student .ere-notif__actor-name {
+    color: #ffffff;
+    font-weight: 800;
+  }
+  .ere-notif--student .ere-notif__actor-sub {
+    color: rgba(186, 230, 253, 0.88);
+    font-weight: 600;
+  }
+  .ere-notif--student .ere-notif__item-title {
+    color: #ffffff;
+    font-weight: 800;
+  }
+  .ere-notif--student .ere-notif__item-message {
+    color: rgba(224, 242, 254, 0.92);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  .ere-notif--student .ere-notif__item-time {
+    color: rgba(186, 230, 253, 0.85);
+    font-weight: 700;
+  }
+  .ere-notif--student .ere-notif__item-mark {
+    color: #bae6fd;
+  }
+  .ere-notif--student .ere-notif__item-mark:hover {
+    color: #ffffff;
+    text-decoration: underline;
+  }
+  .ere-notif--student .ere-notif__item-delete {
+    border: 1px solid rgba(252, 165, 165, 0.55);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fecaca;
+  }
+  .ere-notif--student .ere-notif__item-delete:hover {
+    background: rgba(153, 27, 27, 0.5);
+    border-color: rgba(252, 165, 165, 0.75);
+    color: #ffffff;
+  }
+  .ere-notif--student .ere-notif__dot {
+    background: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
+  }
+  .ere-notif--student [data-notification-badge] {
+    border-color: rgba(22, 101, 160, 0.95);
   }
 
   .ere-notif--professor .ere-notif__meta-pill {
@@ -763,6 +900,9 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
 
     closeButtons.forEach(function(btn) {
       btn.addEventListener('click', function() { closePanel(true); });
+    });
+    panel.querySelectorAll('[data-notification-close-link]').forEach(function(a) {
+      a.addEventListener('click', function() { closePanel(false); });
     });
     if (markAllBtn) {
       markAllBtn.addEventListener('click', function() { markAllRead(); });

@@ -302,86 +302,6 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       min-width: 15.5rem;
       text-align: left;
     }
-    .admin-students-actions {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 0.5rem;
-      align-items: center;
-      justify-content: flex-end;
-      min-width: max-content;
-      width: 100%;
-    }
-    .student-action-btn {
-      --btn-bg: rgba(255, 255, 255, 0.06);
-      --btn-bd: rgba(255, 255, 255, 0.16);
-      --btn-fg: #e5e7eb;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.34rem;
-      min-height: 2rem;
-      padding: 0.38rem 0.74rem;
-      border-radius: 0.66rem;
-      border: 1px solid var(--btn-bd);
-      background: var(--btn-bg);
-      color: var(--btn-fg);
-      font-size: 0.74rem;
-      font-weight: 700;
-      line-height: 1;
-      text-decoration: none;
-      cursor: pointer;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-      transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-    }
-    .student-action-btn i {
-      font-size: 0.82rem;
-      transition: transform 0.2s ease;
-    }
-    .student-action-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 16px rgba(2, 6, 23, 0.26);
-    }
-    .student-action-btn:hover i { transform: scale(1.08); }
-    .student-action-btn:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
-    }
-    .student-action-btn--view {
-      --btn-bg: linear-gradient(140deg, rgba(37, 99, 235, 0.28) 0%, rgba(29, 78, 216, 0.18) 100%);
-      --btn-bd: rgba(96, 165, 250, 0.5);
-      --btn-fg: #dbeafe;
-    }
-    .student-action-btn--proof {
-      --btn-bg: linear-gradient(140deg, rgba(124, 58, 237, 0.28) 0%, rgba(91, 33, 182, 0.18) 100%);
-      --btn-bd: rgba(167, 139, 250, 0.48);
-      --btn-fg: #ede9fe;
-    }
-    .student-action-btn--extend {
-      --btn-bg: linear-gradient(140deg, rgba(249, 115, 22, 0.25) 0%, rgba(194, 65, 12, 0.18) 100%);
-      --btn-bd: rgba(253, 186, 116, 0.52);
-      --btn-fg: #ffedd5;
-    }
-    .student-action-btn--approve {
-      --btn-bg: linear-gradient(140deg, rgba(16, 185, 129, 0.26) 0%, rgba(5, 150, 105, 0.18) 100%);
-      --btn-bd: rgba(110, 231, 183, 0.52);
-      --btn-fg: #dcfce7;
-    }
-    .student-action-btn--reject {
-      --btn-bg: linear-gradient(140deg, rgba(239, 68, 68, 0.26) 0%, rgba(185, 28, 28, 0.2) 100%);
-      --btn-bd: rgba(252, 165, 165, 0.5);
-      --btn-fg: #fee2e2;
-    }
-    .student-action-btn--delete {
-      --btn-bg: linear-gradient(140deg, rgba(220, 38, 38, 0.26) 0%, rgba(153, 27, 27, 0.2) 100%);
-      --btn-bd: rgba(252, 165, 165, 0.46);
-      --btn-fg: #fee2e2;
-    }
-    .student-action-btn[disabled] {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
     .student-extend-form {
       display: inline-flex;
       align-items: center;
@@ -438,43 +358,349 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     }
     .student-action-cell {
       text-align: right;
-      min-width: 34rem;
+      vertical-align: middle;
+      min-width: 9.5rem;
+      width: 1%;
     }
     .student-actions-head {
-      text-align: center !important;
+      text-align: right !important;
+      width: 9.5rem;
     }
-    .access-range {
+    /* Consolidated row actions (aligned with professor exams pattern, admin dark theme) */
+    .admin-student-action-menu-wrap {
+      position: relative;
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    .admin-student-action-menu-wrap.is-open {
+      z-index: 120;
+    }
+    .admin-student-action-menu-trigger {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      border-radius: 0.68rem;
-      border: 1px solid rgba(148, 163, 184, 0.38);
-      background: linear-gradient(180deg, rgba(30, 41, 59, 0.22) 0%, rgba(15, 23, 42, 0.18) 100%);
-      padding: 0.34rem 0.5rem;
-      color: #e2e8f0;
-      font-size: 0.75rem;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.58rem;
+      border: 1px solid rgba(96, 165, 250, 0.5);
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.38) 0%, rgba(29, 78, 216, 0.22) 100%);
+      color: #e0f2fe;
+      font-size: 0.74rem;
       font-weight: 700;
-      line-height: 1;
-      white-space: nowrap;
+      line-height: 1.2;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
     }
-    .access-range__date {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.2rem 0.4rem;
-      border-radius: 0.5rem;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    .admin-student-action-menu-trigger:hover {
+      transform: translateY(-1px);
+      border-color: rgba(147, 197, 253, 0.65);
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.45) 0%, rgba(37, 99, 235, 0.3) 100%);
       color: #ffffff;
     }
-    .access-range__arrow {
-      color: rgba(191, 219, 254, 0.95);
-      font-size: 0.75rem;
+    .admin-student-action-menu-trigger:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
     }
-    .access-range--empty {
-      color: rgba(226, 232, 240, 0.72);
+    .admin-student-action-menu {
+      position: fixed;
+      z-index: 1300;
+      min-width: 208px;
+      max-width: min(260px, calc(100vw - 1.5rem));
+      padding: 0.35rem;
+      border-radius: 0.62rem;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: #0f172a;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.35),
+        0 18px 48px rgba(0, 0, 0, 0.55);
+      display: none;
+    }
+    .admin-student-action-menu.open {
+      display: block;
+    }
+    .admin-student-action-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: 100%;
+      padding: 0.5rem 0.55rem;
+      border-radius: 0.48rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-decoration: none;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.25;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .admin-student-action-item i {
+      font-size: 1rem;
+      opacity: 0.92;
+    }
+    .admin-student-action-item:hover {
+      background: rgba(59, 130, 246, 0.22);
+      color: #f8fafc;
+    }
+    .admin-student-action-item--disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .admin-student-action-item--reject {
+      color: #fecaca;
+    }
+    .admin-student-action-item--reject:hover {
+      background: rgba(239, 68, 68, 0.22);
+      color: #fef2f2;
+    }
+    .admin-student-action-item--approve {
+      color: #bbf7d0;
+    }
+    .admin-student-action-item--approve:hover {
+      background: rgba(34, 197, 94, 0.2);
+      color: #dcfce7;
+    }
+    .admin-student-action-item--extend {
+      color: #fed7aa;
+    }
+    .admin-student-action-item--extend:hover {
+      background: rgba(249, 115, 22, 0.22);
+      color: #ffedd5;
+    }
+    .admin-student-action-item--danger {
+      color: #fca5a5;
+    }
+    .admin-student-action-item--danger:hover {
+      background: rgba(220, 38, 38, 0.28);
+      color: #fecaca;
+    }
+    .admin-student-action-menu .student-pending-form,
+    .admin-student-action-menu .student-extend-form {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+      padding: 0.45rem;
+      margin: 0.35rem 0 0;
+      border-top: 1px solid rgba(51, 65, 85, 0.85);
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 0.5rem;
+    }
+    .admin-student-action-menu .student-pending-month-input,
+    .admin-student-action-menu .student-extend-form input[type="number"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .admin-student-action-menu form.admin-student-action-menu-reject-form {
+      margin: 0.25rem 0 0;
+      padding: 0;
+    }
+    .admin-student-action-item--section {
+      margin-top: 0.35rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.9);
+    }
+    /* Access column: wide enough for full "Enrollment window | MMM d, YYYY – MMM d, YYYY" (no ellipsis). */
+    .admin-students-table .admin-students-access-col {
+      min-width: 28rem;
+    }
+    .access-cell {
+      vertical-align: middle;
+    }
+    .access-window {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.32rem;
+      text-align: left;
+      padding: 0.32rem 0.5rem 0.38rem;
+      border-radius: 0.55rem;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      background: linear-gradient(165deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.35) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      width: max-content;
+      max-width: none;
+    }
+    .access-window__headline {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-width: min-content;
+      line-height: 1.2;
+    }
+    .access-window__hourglass {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 1.15rem;
+      height: 1.15rem;
+      transform-origin: 50% 50%;
+      backface-visibility: hidden;
+      will-change: transform;
+      animation: adminAccessHourglassSpin 6s linear infinite;
+    }
+    .access-window__hourglass i {
+      font-size: 0.78rem;
+      color: rgba(186, 230, 253, 0.95);
+      display: block;
+      line-height: 1;
+    }
+    .access-window__headline-inner {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      gap: 0.28rem;
+      flex: 0 1 auto;
+      min-width: min-content;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .access-window__kw {
+      flex-shrink: 0;
+      color: rgba(186, 230, 253, 0.88);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .access-window__pipe {
+      flex-shrink: 0;
+      color: rgba(148, 163, 184, 0.65);
+      font-weight: 600;
+      padding: 0 0.05rem;
+    }
+    .access-window__dates {
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: visible;
+    }
+    .access-window__dates time {
+      font-variant-numeric: tabular-nums;
+    }
+    .access-window__dash {
+      margin: 0 0.12rem;
+      color: rgba(148, 163, 184, 0.85);
+      font-weight: 600;
+    }
+    .access-window__track {
+      position: relative;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.72);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .access-window__fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #22d3ee, #2563eb);
+      transition: width 0.45s ease;
+    }
+    .access-window__fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        100deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0) 35%,
+        rgba(255, 255, 255, 0.38) 50%,
+        rgba(255, 255, 255, 0) 65%,
+        transparent 100%
+      );
+      background-size: 220% 100%;
+      animation: adminAccessBarShimmer 2.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .access-window__meta {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(148, 163, 184, 0.72);
+      line-height: 1.2;
+    }
+    @keyframes adminAccessHourglassSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes adminAccessBarShimmer {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+    .access-window--ending .access-window__hourglass {
+      animation-duration: 3s;
+    }
+    .access-window--expired .access-window__hourglass {
+      animation: none;
+    }
+    .access-window--active .access-window__fill {
+      background: linear-gradient(90deg, #38bdf8, #2563eb);
+    }
+    .access-window--ending .access-window__fill {
+      background: linear-gradient(90deg, #fbbf24, #ea580c);
+    }
+    .access-window--ending .access-window__meta {
+      color: rgba(253, 230, 138, 0.55);
+    }
+    .access-window--expired .access-window__fill {
+      background: linear-gradient(90deg, #94a3b8, #64748b);
+    }
+    .access-window--expired .access-window__meta {
+      color: rgba(252, 165, 165, 0.55);
+    }
+    .access-window--upcoming .access-window__fill {
+      background: linear-gradient(90deg, #a78bfa, #6366f1);
+    }
+    .access-window--upcoming .access-window__meta {
+      color: rgba(233, 213, 255, 0.55);
+    }
+    .access-window--partial .access-window__meta {
+      color: rgba(148, 163, 184, 0.65);
+      font-weight: 500;
+      font-size: 0.58rem;
+    }
+    .access-window--empty {
       border-style: dashed;
-      background: rgba(15, 23, 42, 0.12);
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.25);
+    }
+    .access-window__headline--empty .access-window__empty-icon {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+    .access-window__headline--empty .access-window__empty-icon i {
+      font-size: 0.78rem;
+      color: rgba(186, 230, 253, 0.72);
+      display: block;
+      line-height: 1;
+    }
+    .access-window--empty .access-window__kw {
+      color: rgba(226, 232, 240, 0.72);
+    }
+    .access-window--empty .access-window__dates {
+      color: rgba(148, 163, 184, 0.75);
+      font-weight: 600;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .access-window__hourglass {
+        animation: none !important;
+      }
+      .access-window__fill::after {
+        animation: none !important;
+      }
     }
 
     .admin-modal-overlay {
@@ -823,7 +1049,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
         <span class="font-semibold text-gray-800">Students</span>
         <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
       </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Click <strong>View</strong> for details, approve pending, or extend access.</p>
+      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Use <strong>Actions</strong> for view, proof, approve, extend, or delete.</p>
       <div class="text-gray-500 text-sm text-right">
         <?php if ($total > 0): ?>
           <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> students</span>
@@ -842,8 +1068,8 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Review Type</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-left">Email</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Access</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 w-[540px] student-actions-head">Actions</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center admin-students-access-col">Access</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 student-actions-head">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -873,6 +1099,48 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                 $accessStartLabel = !empty($row['access_start']) ? date('F j, Y', strtotime((string)$row['access_start'])) : '?';
                 $accessEndLabel = !empty($row['access_end']) ? date('F j, Y', strtotime((string)$row['access_end'])) : '?';
                 $access = $hasAccessRange ? ($accessStartLabel . ' → ' . $accessEndLabel) : '-';
+                $accessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : false;
+                $accessEndTs = !empty($row['access_end']) ? strtotime((string)$row['access_end']) : false;
+                $accessStartShort = ($accessStartTs !== false) ? date('M j, Y', $accessStartTs) : '?';
+                $accessEndShort = ($accessEndTs !== false) ? date('M j, Y', $accessEndTs) : '?';
+                $accessWindowTone = 'partial';
+                $accessWindowPct = null;
+                $accessWindowMeta = '';
+                $nowTs = time();
+                if ($accessStartTs !== false && $accessEndTs !== false && $accessEndTs > $accessStartTs) {
+                  $totalSec = $accessEndTs - $accessStartTs;
+                  if ($totalSec <= 0) {
+                    $accessWindowMeta = 'Check date range';
+                    $accessWindowTone = 'partial';
+                  } elseif ($nowTs < $accessStartTs) {
+                    $accessWindowPct = 0.0;
+                    $accessWindowTone = 'upcoming';
+                    $d = (int) ceil(($accessStartTs - $nowTs) / 86400);
+                    $accessWindowMeta = $d <= 0 ? 'Starts today' : ('Starts in ' . $d . ' day' . ($d === 1 ? '' : 's'));
+                  } elseif ($nowTs > $accessEndTs) {
+                    $accessWindowPct = 100.0;
+                    $accessWindowTone = 'expired';
+                    $d = (int) floor(($nowTs - $accessEndTs) / 86400);
+                    $accessWindowMeta = $d <= 0 ? 'Ended today' : ('Ended ' . $d . 'd ago');
+                  } else {
+                    $elapsed = $nowTs - $accessStartTs;
+                    $accessWindowPct = round(min(100, max(0, ($elapsed / $totalSec) * 100)), 1);
+                    $d = (int) ceil(($accessEndTs - $nowTs) / 86400);
+                    if ($d <= 0) {
+                      $accessWindowMeta = 'Ends today';
+                      $accessWindowTone = 'ending';
+                    } elseif ($d <= 7) {
+                      $accessWindowMeta = $d . ' day' . ($d === 1 ? '' : 's') . ' left';
+                      $accessWindowTone = 'ending';
+                    } else {
+                      $accessWindowMeta = $d . ' day' . ($d === 1 ? '' : 's') . ' left';
+                      $accessWindowTone = 'active';
+                    }
+                  }
+                } elseif ($accessStartTs !== false || $accessEndTs !== false) {
+                  $accessWindowMeta = 'Complete start & end dates to see timeline';
+                  $accessWindowTone = 'partial';
+                }
                 $statusClass = strtolower((string)$row['status']);
                 $badgeClass = $statusClass === 'approved' ? 'bg-green-100 text-green-800' : ($statusClass === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
                 $hasProof = !empty($row['payment_proof']);
@@ -946,56 +1214,98 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                     <span class="ml-1 inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Access period has ended">expired</span>
                   <?php endif; ?>
                 </td>
-                <td class="px-5 py-3 text-center" title="<?php echo $access !== '-' && $isExpired ? 'Access ended' : ($access !== '-' ? 'Access period' : 'No access set'); ?>">
+                <td class="px-5 py-3 text-center access-cell admin-students-access-col" title="<?php echo h($access !== '-' ? $access : 'No access set'); ?>">
                   <?php if ($hasAccessRange): ?>
-                    <span class="access-range">
-                      <span class="access-range__date"><i class="bi bi-calendar3"></i> <?php echo h($accessStartLabel); ?></span>
-                      <span class="access-range__arrow"><i class="bi bi-arrow-right"></i></span>
-                      <span class="access-range__date"><i class="bi bi-calendar-check"></i> <?php echo h($accessEndLabel); ?></span>
-                    </span>
+                    <div class="access-window access-window--<?php echo h($accessWindowTone); ?>">
+                      <div class="access-window__headline">
+                        <span class="access-window__hourglass" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                        <span class="access-window__headline-inner">
+                          <span class="access-window__kw">Enrollment window</span>
+                          <span class="access-window__pipe" aria-hidden="true">|</span>
+                          <span class="access-window__dates">
+                            <?php if ($accessStartTs !== false): ?>
+                              <time datetime="<?php echo h(date('c', $accessStartTs)); ?>"><?php echo h($accessStartShort); ?></time>
+                            <?php else: ?>
+                              <span><?php echo h($accessStartShort); ?></span>
+                            <?php endif; ?>
+                            <span class="access-window__dash" aria-hidden="true">–</span>
+                            <?php if ($accessEndTs !== false): ?>
+                              <time datetime="<?php echo h(date('c', $accessEndTs)); ?>"><?php echo h($accessEndShort); ?></time>
+                            <?php else: ?>
+                              <span><?php echo h($accessEndShort); ?></span>
+                            <?php endif; ?>
+                          </span>
+                        </span>
+                      </div>
+                      <?php if ($accessWindowPct !== null): ?>
+                        <div class="access-window__track" role="presentation" aria-hidden="true">
+                          <span class="access-window__fill" style="width: <?php echo htmlspecialchars((string) $accessWindowPct, ENT_QUOTES, 'UTF-8'); ?>%;"></span>
+                        </div>
+                      <?php endif; ?>
+                      <?php if ($accessWindowMeta !== ''): ?>
+                        <div class="access-window__meta"><?php echo h($accessWindowMeta); ?></div>
+                      <?php endif; ?>
+                    </div>
                   <?php else: ?>
-                    <span class="access-range access-range--empty"><i class="bi bi-dash-circle"></i> No access set</span>
+                    <div class="access-window access-window--empty">
+                      <div class="access-window__headline access-window__headline--empty">
+                        <span class="access-window__empty-icon" aria-hidden="true"><i class="bi bi-calendar-x"></i></span>
+                        <span class="access-window__headline-inner">
+                          <span class="access-window__kw">No access set</span>
+                          <span class="access-window__pipe" aria-hidden="true">|</span>
+                          <span class="access-window__dates">Set dates in student profile</span>
+                        </span>
+                      </div>
+                    </div>
                   <?php endif; ?>
                 </td>
                 <td class="px-5 py-3 student-action-cell">
-                  <div class="admin-students-actions">
-                    <a href="admin_student_view.php?id=<?php echo (int)$row['user_id']; ?>" class="student-action-btn student-action-btn--view" title="View details, approve, or extend"><i class="bi bi-eye"></i> View</a>
-                    <?php if ($hasProof): ?>
-                      <a href="admin_payment_proof.php?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener" class="student-action-btn student-action-btn--proof" title="View payment proof"><i class="bi bi-receipt"></i> Proof</a>
-                    <?php else: ?>
-                      <button type="button" class="student-action-btn student-action-btn--proof" disabled title="No payment proof uploaded"><i class="bi bi-receipt"></i> Proof</button>
-                    <?php endif; ?>
-
-                    <?php if ($row['status'] !== 'approved'): ?>
-                      <form class="student-pending-form js-approve-form" action="activate_user.php" method="POST" data-student-name="<?php echo h($row['full_name']); ?>">
-                        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                        <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                        <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students.php'); ?>">
-                        <input type="number" min="1" name="months" class="student-pending-month-input" placeholder="+Months" required>
-                        <button type="submit" class="student-action-btn student-action-btn--approve"><i class="bi bi-check2-circle"></i> Approve</button>
-                      </form>
-                      <form class="inline-flex" action="reject.php" method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                        <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                        <button type="submit" class="student-action-btn student-action-btn--reject"><i class="bi bi-x-circle"></i> Reject</button>
-                      </form>
-                    <?php else: ?>
-                      <form class="student-extend-form" action="extend_access.php" method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                        <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                        <input type="number" min="1" name="months" placeholder="+Months" required title="Add months">
-                        <button type="submit" class="student-action-btn student-action-btn--extend"><i class="bi bi-calendar-plus"></i> Extend</button>
-                      </form>
-                    <?php endif; ?>
-                    <button
-                      type="button"
-                      class="student-action-btn student-action-btn--delete js-delete-student-btn"
-                      data-user-id="<?php echo (int)$row['user_id']; ?>"
-                      data-user-name="<?php echo h($row['full_name']); ?>"
-                      data-user-email="<?php echo h($row['email']); ?>"
-                      title="Delete student permanently">
-                      <i class="bi bi-trash"></i> Delete
+                  <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
+                    <button type="button" class="admin-student-action-menu-trigger" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="Open actions for <?php echo h($row['full_name']); ?>">
+                      <i class="bi bi-three-dots" aria-hidden="true"></i> Actions
                     </button>
+                    <div class="admin-student-action-menu" data-action-menu-list role="menu">
+                      <a role="menuitem" class="admin-student-action-item" href="admin_student_view.php?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
+                      <?php if ($hasProof): ?>
+                        <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof.php?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Proof</a>
+                      <?php else: ?>
+                        <span class="admin-student-action-item admin-student-action-item--disabled" aria-disabled="true"><i class="bi bi-receipt" aria-hidden="true"></i> Proof (none)</span>
+                      <?php endif; ?>
+
+                      <?php if ($row['status'] !== 'approved'): ?>
+                        <form class="student-pending-form js-approve-form" action="activate_user.php" method="POST" data-student-name="<?php echo h($row['full_name']); ?>">
+                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                          <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students.php'); ?>">
+                          <label class="sr-only" for="pending-months-<?php echo (int)$row['user_id']; ?>">Months of access</label>
+                          <input id="pending-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" class="student-pending-month-input" placeholder="+ Months" required>
+                          <button type="submit" class="admin-student-action-item admin-student-action-item--approve" role="menuitem"><i class="bi bi-check2-circle" aria-hidden="true"></i> Approve</button>
+                        </form>
+                        <form class="admin-student-action-menu-reject-form" action="reject.php" method="POST">
+                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                          <button type="submit" class="admin-student-action-item admin-student-action-item--reject" role="menuitem"><i class="bi bi-x-circle" aria-hidden="true"></i> Reject</button>
+                        </form>
+                      <?php else: ?>
+                        <form class="student-extend-form" action="extend_access.php" method="POST">
+                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                          <label class="sr-only" for="extend-months-<?php echo (int)$row['user_id']; ?>">Months to extend</label>
+                          <input id="extend-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" placeholder="+ Months" required title="Add months">
+                          <button type="submit" class="admin-student-action-item admin-student-action-item--extend" role="menuitem"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Extend access</button>
+                        </form>
+                      <?php endif; ?>
+                      <button
+                        type="button"
+                        class="admin-student-action-item admin-student-action-item--danger admin-student-action-item--section js-delete-student-btn"
+                        role="menuitem"
+                        data-user-id="<?php echo (int)$row['user_id']; ?>"
+                        data-user-name="<?php echo h($row['full_name']); ?>"
+                        data-user-email="<?php echo h($row['email']); ?>"
+                        title="Delete student permanently">
+                        <i class="bi bi-trash" aria-hidden="true"></i> Delete
+                      </button>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -1557,6 +1867,77 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Confirm Delete';
       });
+    });
+  })();
+
+  (function () {
+    var wraps = document.querySelectorAll('[data-admin-student-action-menu]');
+    if (!wraps.length) return;
+    var menuPairs = [];
+    function positionMenu(wrap, menu) {
+      var trigger = wrap.querySelector('[data-action-menu-trigger]');
+      if (!trigger || !menu) return;
+      var rect = trigger.getBoundingClientRect();
+      var menuWidth = 220;
+      var wasOpen = menu.classList.contains('open');
+      if (!wasOpen) {
+        menu.style.visibility = 'hidden';
+        menu.classList.add('open');
+      }
+      var mw = menu.offsetWidth || menuWidth;
+      if (!wasOpen) {
+        menu.classList.remove('open');
+        menu.style.visibility = '';
+      }
+      var left = Math.min(window.innerWidth - mw - 10, Math.max(10, rect.right - mw));
+      var top = rect.bottom + 6;
+      var menuHeight = menu.offsetHeight || 280;
+      var spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < menuHeight + 12) {
+        var need = menuHeight + 16 - spaceBelow;
+        if (need > 0) {
+          window.scrollBy({ top: need, behavior: 'smooth' });
+        }
+        top = Math.max(10, window.innerHeight - menuHeight - 10);
+      }
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+    function closeAllMenus() {
+      menuPairs.forEach(function (pair) {
+        var menu = pair.menu;
+        var wrap = pair.wrap;
+        var tr = wrap.querySelector('[data-action-menu-trigger]');
+        if (menu) menu.classList.remove('open');
+        wrap.classList.remove('is-open');
+        if (tr) tr.setAttribute('aria-expanded', 'false');
+      });
+    }
+    wraps.forEach(function (wrap) {
+      var trigger = wrap.querySelector('[data-action-menu-trigger]');
+      var menu = wrap.querySelector('[data-action-menu-list]');
+      if (!trigger || !menu) return;
+      document.body.appendChild(menu);
+      menuPairs.push({ wrap: wrap, menu: menu });
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var wasOpen = menu.classList.contains('open');
+        closeAllMenus();
+        if (wasOpen) return;
+        positionMenu(wrap, menu);
+        menu.classList.add('open');
+        wrap.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+      });
+      menu.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+    });
+    window.addEventListener('resize', closeAllMenus);
+    window.addEventListener('scroll', closeAllMenus, true);
+    document.addEventListener('click', closeAllMenus);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAllMenus();
     });
   })();
 </script>

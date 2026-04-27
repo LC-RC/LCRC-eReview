@@ -173,9 +173,12 @@ if ($useBuiltCss): ?>
   .scroll-reveal.revealed .reveal-delay-2 { transition-delay: 150ms; }
   .scroll-reveal.revealed .reveal-delay-3 { transition-delay: 200ms; }
   .scroll-reveal.revealed .reveal-delay-4 { transition-delay: 300ms; }
-  
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-reveal .reveal-content { opacity: 1 !important; transform: none !important; transition: none !important; }
+  }
+
   /* Chatbot visibility - ensure it's always visible */
-  #chatbot-container { position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; z-index: 9999 !important; }
+  #chatbot-container { position: fixed !important; bottom: max(1.5rem, env(safe-area-inset-bottom, 0px)) !important; right: max(1.5rem, env(safe-area-inset-right, 0px)) !important; z-index: 9999 !important; }
   #chatbot-container button { display: flex !important; visibility: visible !important; opacity: 1 !important; }
   
   /* Chatbox positioning and size - properly big but constrained height */
@@ -779,7 +782,6 @@ if ($useBuiltCss): ?>
   }
 </style>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.13.3/cdn.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 <script>
   // Reveal sections when they scroll into view (does not depend on Alpine so content always shows)

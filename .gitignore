@@ -7,6 +7,9 @@
 config/*_config.php
 !config/recaptcha_config.example.php
 
+# OpenAI key for support chat (optional local override)
+includes/chat_openai.local.php
+
 # IDE and OS
 .idea/
 .vscode/

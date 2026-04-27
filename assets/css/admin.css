@@ -265,24 +265,67 @@ body.admin-app .admin-topbar-time-offset { margin-left: 4px; font-weight: 500; c
 body.admin-app #app-sidebar .app-shell-sidebar-time {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.4);
 }
 body.admin-app #app-sidebar .app-shell-sidebar-time-icon {
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.95);
+  width: 36px;
+  height: 36px;
+  background: transparent;
   box-shadow: none;
 }
+body.admin-app #app-sidebar .app-shell-sidebar-clock-svg {
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-ring {
+  background: conic-gradient(
+    from 0deg,
+    rgba(40, 167, 69, 0) 0%,
+    rgba(40, 167, 69, 0.45) 50%,
+    rgba(40, 167, 69, 0) 100%
+  );
+  opacity: 0.5;
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-face {
+  fill: rgba(255, 255, 255, 0.1);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-rim {
+  stroke: rgba(255, 255, 255, 0.22);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-ticks {
+  stroke: rgba(255, 255, 255, 0.28);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-hand line {
+  stroke: rgba(255, 255, 255, 0.92);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-hand--sec line {
+  stroke: #5ce1a8;
+  opacity: 0.95;
+}
+body.admin-app #app-sidebar .app-shell-sidebar-clock-pivot {
+  fill: rgba(255, 255, 255, 0.95);
+}
 body.admin-app #app-sidebar .app-shell-sidebar-time-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.48);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-value {
-  color: rgba(255, 255, 255, 0.92);
+body.admin-app #app-sidebar .app-shell-sidebar-time-digital {
+  color: rgba(255, 255, 255, 0.96);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-offset {
-  color: rgba(255, 255, 255, 0.68);
+body.admin-app #app-sidebar .app-shell-sidebar-time-date {
+  color: rgba(255, 255, 255, 0.88);
+}
+body.admin-app #app-sidebar .app-shell-sidebar-time-meta {
+  color: rgba(255, 255, 255, 0.62);
 }
 
 body.admin-app .admin-topbar-actions { display: flex; align-items: center; gap: 4px; }

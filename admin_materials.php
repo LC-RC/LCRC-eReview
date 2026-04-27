@@ -1,5 +1,6 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/vimeo_helpers.php';
 requireRole('admin');
 
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
@@ -9,6 +10,11 @@ $lessonRes = mysqli_query($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN
 $lesson = $lessonRes ? mysqli_fetch_assoc($lessonRes) : null;
 if (!$lesson) { header('Location: admin_subjects.php'); exit; }
 $subjectId = (int)$lesson['subject_id'];
+
+// Ensure modern thumbnail metadata columns exist on lesson_videos.
+@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_url TEXT NULL AFTER video_url");
+@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_source VARCHAR(32) NULL DEFAULT NULL AFTER thumbnail_url");
+@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_updated_at DATETIME NULL DEFAULT NULL AFTER thumbnail_source");
 
 if (!function_exists('admin_materials_list_url')) {
     function admin_materials_list_url(int $lessonId, int $subjectId): string {
@@ -65,6 +71,34 @@ if (!function_exists('adminMaterialsParseSizeToBytes')) {
                 $num *= 1024;
         }
         return (int)$num;
+    }
+}
+
+if (!function_exists('adminMaterialsNormalizeThumbUrl')) {
+    function adminMaterialsNormalizeThumbUrl(string $url): string {
+        $url = trim($url);
+        if ($url === '') return '';
+        if (preg_match('#^//#', $url)) return 'https:' . $url;
+        if (preg_match('#^http://#i', $url)) return preg_replace('#^http://#i', 'https://', $url);
+        return $url;
+    }
+}
+
+if (!function_exists('adminMaterialsResolveThumb')) {
+    /**
+     * @return array{0:string,1:string} [thumbnail_url, thumbnail_source]
+     */
+    function adminMaterialsResolveThumb(string $videoUrl): array {
+        $trimmed = trim($videoUrl);
+        if ($trimmed === '' || stripos($trimmed, 'uploads/videos/') === 0 || stripos($trimmed, 'uploads\\videos\\') === 0) {
+            return ['', 'fallback'];
+        }
+        $thumb = ereview_get_vimeo_thumbnail_for_url($trimmed);
+        if (is_string($thumb) && $thumb !== '') {
+            $norm = adminMaterialsNormalizeThumbUrl($thumb);
+            return [$norm, ereview_vimeo_thumbnail_storage_source($norm)];
+        }
+        return ['', 'fallback'];
     }
 }
 
@@ -135,27 +169,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$errors && $finalUrl !== '') {
+            [$thumbUrl, $thumbSource] = adminMaterialsResolveThumb($finalUrl);
             if ($videoId > 0) {
-                $stmt = mysqli_prepare($conn, "UPDATE lesson_videos SET video_title=?, video_url=? WHERE video_id=? AND lesson_id=?");
+                $stmt = mysqli_prepare($conn, "UPDATE lesson_videos SET video_title=?, video_url=?, thumbnail_url=?, thumbnail_source=?, thumbnail_updated_at=NOW() WHERE video_id=? AND lesson_id=?");
                 if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, 'ssii', $title, $finalUrl, $videoId, $lessonId);
+                    mysqli_stmt_bind_param($stmt, 'ssssii', $title, $finalUrl, $thumbUrl, $thumbSource, $videoId, $lessonId);
                     if (!mysqli_stmt_execute($stmt)) {
                         $errors[] = 'Video update failed: ' . mysqli_stmt_error($stmt);
                     } else {
                         $successes[] = 'Video updated successfully.';
+                        if ($thumbUrl !== '') {
+                            $successes[] = 'Thumbnail refreshed from Vimeo.';
+                        }
                     }
                     mysqli_stmt_close($stmt);
                 } else {
                     $errors[] = 'Video update failed while preparing SQL statement.';
                 }
             } else {
-                $stmt = mysqli_prepare($conn, "INSERT INTO lesson_videos (lesson_id, video_title, video_url) VALUES (?, ?, ?)");
+                $stmt = mysqli_prepare($conn, "INSERT INTO lesson_videos (lesson_id, video_title, video_url, thumbnail_url, thumbnail_source, thumbnail_updated_at) VALUES (?, ?, ?, ?, ?, NOW())");
                 if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, 'iss', $lessonId, $title, $finalUrl);
+                    mysqli_stmt_bind_param($stmt, 'issss', $lessonId, $title, $finalUrl, $thumbUrl, $thumbSource);
                     if (!mysqli_stmt_execute($stmt)) {
                         $errors[] = 'Video insert failed: ' . mysqli_stmt_error($stmt);
                     } else {
                         $successes[] = 'Video added successfully.';
+                        if ($thumbUrl !== '') {
+                            $successes[] = 'Thumbnail fetched from Vimeo.';
+                        }
                     }
                     mysqli_stmt_close($stmt);
                 } else {
@@ -247,6 +288,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'errors' => $errors,
         'successes' => $successes
     ];
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
+    exit;
+}
+
+if (isset($_GET['refresh_video_thumb'])) {
+    $videoId = (int)$_GET['refresh_video_thumb'];
+    $errors = [];
+    $successes = [];
+    $res = mysqli_query($conn, "SELECT video_id, video_url FROM lesson_videos WHERE video_id=" . $videoId . " AND lesson_id=" . $lessonId . " LIMIT 1");
+    $row = $res ? mysqli_fetch_assoc($res) : null;
+    if (!$row) {
+        $errors[] = 'Video not found for thumbnail refresh.';
+    } else {
+        [$thumbUrl, $thumbSource] = adminMaterialsResolveThumb((string)$row['video_url']);
+        $stmt = mysqli_prepare($conn, "UPDATE lesson_videos SET thumbnail_url=?, thumbnail_source=?, thumbnail_updated_at=NOW() WHERE video_id=? AND lesson_id=?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'ssii', $thumbUrl, $thumbSource, $videoId, $lessonId);
+            if (!mysqli_stmt_execute($stmt)) {
+                $errors[] = 'Thumbnail refresh failed: ' . mysqli_stmt_error($stmt);
+            } else {
+                $successes[] = $thumbUrl !== '' ? 'Thumbnail refreshed successfully.' : 'No Vimeo thumbnail available; fallback will be used.';
+            }
+            mysqli_stmt_close($stmt);
+        } else {
+            $errors[] = 'Thumbnail refresh failed while preparing SQL statement.';
+        }
+    }
+    $_SESSION['admin_materials_flash'] = ['errors' => $errors, 'successes' => $successes];
+    header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
+    exit;
+}
+
+if (isset($_GET['refresh_all_thumbs'])) {
+    $errors = [];
+    $successes = [];
+    $res = mysqli_query($conn, "SELECT video_id, video_url FROM lesson_videos WHERE lesson_id=" . $lessonId . " ORDER BY video_id ASC");
+    $total = 0;
+    $ok = 0;
+    if ($res) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $total++;
+            $videoId = (int)$row['video_id'];
+            [$thumbUrl, $thumbSource] = adminMaterialsResolveThumb((string)$row['video_url']);
+            $stmt = mysqli_prepare($conn, "UPDATE lesson_videos SET thumbnail_url=?, thumbnail_source=?, thumbnail_updated_at=NOW() WHERE video_id=? AND lesson_id=?");
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, 'ssii', $thumbUrl, $thumbSource, $videoId, $lessonId);
+                if (mysqli_stmt_execute($stmt)) {
+                    $ok++;
+                }
+                mysqli_stmt_close($stmt);
+            }
+        }
+    }
+    $successes[] = 'Thumbnail refresh finished: ' . $ok . ' / ' . $total . ' videos updated.';
+    $_SESSION['admin_materials_flash'] = ['errors' => $errors, 'successes' => $successes];
     header('Location: ' . admin_materials_list_url($lessonId, $subjectId));
     exit;
 }
@@ -436,7 +532,10 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
       <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
         <span class="font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-play-circle text-sky-400"></i> Videos</span>
-        <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_all_thumbs=1" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-sky-400/45 text-sky-200 hover:bg-sky-500/20 hover:text-white transition"><i class="bi bi-arrow-repeat mr-1"></i> Refresh Thumbnails</a>
+          <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
+        </div>
       </div>
       <div class="p-5 materials-panel-inner">
         <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4">
@@ -468,6 +567,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
               <tr>
                 <th class="px-5 py-3 font-semibold text-center">Title</th>
                 <th class="px-5 py-3 font-semibold text-center">URL</th>
+                <th class="px-5 py-3 font-semibold text-center">Thumbnail</th>
                 <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
               </tr>
             </thead>
@@ -481,14 +581,22 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     <a href="<?php echo h($v['video_url']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-box-arrow-up-right"></i> Open</a>
                   </td>
                   <td class="px-5 py-3 text-center">
+                    <?php if (!empty($v['thumbnail_url'])): ?>
+                      <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/35">Ready</span>
+                    <?php else: ?>
+                      <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-200 border border-amber-500/35">Fallback</span>
+                    <?php endif; ?>
+                  </td>
+                  <td class="px-5 py-3 text-center">
                     <div class="flex flex-wrap gap-2 items-center justify-center">
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_video_thumb=<?php echo (int)$v['video_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-sky-500/55 text-sky-200 hover:bg-sky-600 hover:text-white transition"><i class="bi bi-arrow-repeat"></i> Refresh</a>
                       <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
                     </div>
                   </td>
                 </tr>
               <?php endwhile; ?>
               <?php if (mysqli_num_rows($videos) == 0): ?>
-                <tr><td colspan="3" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></td></tr>
               <?php endif; ?>
             </tbody>
           </table>

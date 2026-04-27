@@ -28,6 +28,16 @@ $appShellTzName = 'Asia/Manila';
 $appShellTzObj = @timezone_open($appShellTzName);
 $appShellSidebarNow = new DateTime('now', $appShellTzObj ?: null);
 $appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
+$__sh = (int) $appShellSidebarNow->format('G');
+$__si = (int) $appShellSidebarNow->format('i');
+$__ss = (int) $appShellSidebarNow->format('s');
+$__hour12 = $__sh % 12;
+$appShellClockHourDeg = $__hour12 * 30 + $__si * 0.5 + $__ss * (0.5 / 60);
+$appShellClockMinDeg = $__si * 6 + $__ss * 0.1;
+$appShellClockSecDeg = $__ss * 6;
+$appShellSidebarTimeDigital = $appShellSidebarNow->format('g:i:s A');
+$appShellSidebarDateLine = $appShellSidebarNow->format('D, M j');
+$appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:i A') . ' · ' . $appShellSidebarDateLine . ' · Philippines · ' . $appShellSidebarOffsetLabel;
 ?>
 <aside id="app-sidebar"
        class="app-shell-sidebar app-shell-sidebar--<?php echo h($appShellTheme); ?> fixed top-0 left-0 h-screen z-[1000] flex flex-col overflow-x-hidden overflow-y-auto"
@@ -61,6 +71,11 @@ $appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
         <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon" aria-hidden="true"></i>
         <span class="app-shell-sidebar-brand-text">LCRC eReview</span>
       </a>
+      <?php if ($appShellTheme === 'student'): ?>
+      <button type="button" id="app-sidebar-close-btn" class="app-shell-sidebar-close-btn" aria-label="Close menu">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
   <?php endif; ?>
@@ -117,15 +132,44 @@ $appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
   </nav>
 
   <footer class="app-shell-sidebar-footer shrink-0 border-t border-white/10 px-3 py-3.5 mt-auto">
-    <div class="app-shell-sidebar-time app-shell-sidebar-time--<?php echo h($appShellTheme); ?>" aria-label="Current timezone and local time">
-      <span class="app-shell-sidebar-time-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
-      <div class="app-shell-sidebar-time-text app-shell-sidebar-time-details">
-        <span class="app-shell-sidebar-time-label">Local time</span>
-        <span class="app-shell-sidebar-time-value">
-          <span id="appSidebarLocalTimeMain"><?php echo htmlspecialchars($appShellSidebarNow->format('M j · g:i A'), ENT_QUOTES, 'UTF-8'); ?></span>
-          <span class="app-shell-sidebar-time-offset" id="appSidebarLocalTimeOffset"><?php echo htmlspecialchars($appShellSidebarOffsetLabel, ENT_QUOTES, 'UTF-8'); ?></span>
-        </span>
+    <div
+      class="app-shell-sidebar-time app-shell-sidebar-time--<?php echo h($appShellTheme); ?>"
+      id="appShellSidebarTimeBlock"
+      role="group"
+      aria-label="Program time, Philippines, Manila"
+      title="<?php echo htmlspecialchars($appShellSidebarTimeTooltip, ENT_QUOTES, 'UTF-8'); ?>"
+    >
+      <div class="app-shell-sidebar-time-icon" aria-hidden="true">
+        <span class="app-shell-sidebar-time-ring"></span>
+        <svg class="app-shell-sidebar-clock-svg" viewBox="0 0 36 36" width="36" height="36" focusable="false">
+          <circle class="app-shell-sidebar-clock-face" cx="18" cy="18" r="15.25" />
+          <circle class="app-shell-sidebar-clock-rim" cx="18" cy="18" r="15.25" fill="none" stroke-width="1" />
+          <g class="app-shell-sidebar-clock-ticks" stroke-width="0.75" stroke-linecap="round">
+            <?php for ($__t = 0; $__t < 12; $__t++): $__a = $__t * 30; ?>
+            <line x1="18" y1="4" x2="18" y2="5.8" transform="rotate(<?php echo (int) $__a; ?> 18 18)" />
+            <?php endfor; ?>
+          </g>
+          <g class="app-shell-sidebar-clock-hand app-shell-sidebar-clock-hand--hour" id="appSidebarClockHour" transform="rotate(<?php echo htmlspecialchars((string) round($appShellClockHourDeg, 4), ENT_QUOTES, 'UTF-8'); ?> 18 18)">
+            <line x1="18" y1="18" x2="18" y2="11.5" stroke-width="2.25" stroke-linecap="round" />
+          </g>
+          <g class="app-shell-sidebar-clock-hand app-shell-sidebar-clock-hand--min" id="appSidebarClockMin" transform="rotate(<?php echo htmlspecialchars((string) round($appShellClockMinDeg, 4), ENT_QUOTES, 'UTF-8'); ?> 18 18)">
+            <line x1="18" y1="18" x2="18" y2="8" stroke-width="1.6" stroke-linecap="round" />
+          </g>
+          <g class="app-shell-sidebar-clock-hand app-shell-sidebar-clock-hand--sec" id="appSidebarClockSec" transform="rotate(<?php echo htmlspecialchars((string) round($appShellClockSecDeg, 4), ENT_QUOTES, 'UTF-8'); ?> 18 18)">
+            <line x1="18" y1="20" x2="18" y2="7" stroke-width="1" stroke-linecap="round" />
+          </g>
+          <circle class="app-shell-sidebar-clock-pivot" cx="18" cy="18" r="1.35" />
+        </svg>
       </div>
+      <div class="app-shell-sidebar-time-text app-shell-sidebar-time-details">
+        <span class="app-shell-sidebar-time-label">Program time</span>
+        <div class="app-shell-sidebar-time-hero" id="appSidebarLocalTimeHero">
+          <time class="app-shell-sidebar-time-digital" id="appSidebarLocalTimeTime" datetime="<?php echo htmlspecialchars($appShellSidebarNow->format('c'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($appShellSidebarTimeDigital, ENT_QUOTES, 'UTF-8'); ?></time>
+        </div>
+        <div class="app-shell-sidebar-time-date" id="appSidebarLocalTimeDate"><?php echo htmlspecialchars($appShellSidebarDateLine, ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="app-shell-sidebar-time-meta" id="appSidebarLocalTimeMeta">Philippines · <?php echo htmlspecialchars($appShellSidebarOffsetLabel, ENT_QUOTES, 'UTF-8'); ?></div>
+      </div>
+      <span id="appSidebarLocalTimeLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
     </div>
   </footer>
 
@@ -191,11 +235,35 @@ $appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
 
   window.toggleAppShellSidebar = toggleSidebar;
   window.toggleAdminSidebar = toggleSidebar;
+  window.closeAppShellSidebar = closeSidebar;
 
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape' && body.classList.contains('sidebar-expanded')) {
       closeSidebar();
     }
+  });
+
+  var backdrop = document.getElementById('sidebar-backdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', function () {
+      closeSidebar();
+    });
+  }
+
+  var closeBtn = document.getElementById('app-sidebar-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () {
+      closeSidebar();
+    });
+  }
+
+  aside.addEventListener('click', function (ev) {
+    var target = ev.target;
+    if (!target || !target.closest) return;
+    var navLink = target.closest('.app-shell-nav-link');
+    if (!navLink) return;
+    var isMobile = window.matchMedia ? window.matchMedia('(max-width: 1024px)').matches : false;
+    if (isMobile) closeSidebar();
   });
 
   (function init() {
@@ -213,25 +281,132 @@ $appShellSidebarOffsetLabel = 'PHT · UTC+08:00';
 
 (function () {
   function initSidebarLocalTime() {
-    var mainEl = document.getElementById('appSidebarLocalTimeMain');
-    var offsetEl = document.getElementById('appSidebarLocalTimeOffset');
-    if (!mainEl || !offsetEl) return;
-    var formatter = new Intl.DateTimeFormat('en-US', {
+    var block = document.getElementById('appShellSidebarTimeBlock');
+    var timeEl = document.getElementById('appSidebarLocalTimeTime');
+    var dateEl = document.getElementById('appSidebarLocalTimeDate');
+    var liveEl = document.getElementById('appSidebarLocalTimeLive');
+    var heroEl = document.getElementById('appSidebarLocalTimeHero');
+    var hourHand = document.getElementById('appSidebarClockHour');
+    var minHand = document.getElementById('appSidebarClockMin');
+    var secHand = document.getElementById('appSidebarClockSec');
+    if (!block || !timeEl || !dateEl) return;
+
+    var tz = 'Asia/Manila';
+    var reduceMotion =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      block.classList.add('app-shell-sidebar-time--reduced-motion');
+    }
+
+    var fmtTimeSec = new Intl.DateTimeFormat('en-PH', {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: tz
+    });
+    var fmtTimeMin = new Intl.DateTimeFormat('en-PH', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: tz
+    });
+    var fmtDate = new Intl.DateTimeFormat('en-PH', {
+      weekday: 'short',
       month: 'short',
+      day: 'numeric',
+      timeZone: tz
+    });
+    var fmtLive = new Intl.DateTimeFormat('en-PH', {
+      weekday: 'long',
+      month: 'long',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-      timeZone: 'Asia/Manila'
+      timeZone: tz
     });
-    var offsetLabel = 'PHT · UTC+08:00';
+
+    var lastMinuteKey = '';
+
+    function getManilaHms(now) {
+      var f = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      });
+      var parts = f.formatToParts(now);
+      var h = 0;
+      var m = 0;
+      var s = 0;
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (p.type === 'hour') h = parseInt(p.value, 10);
+        if (p.type === 'minute') m = parseInt(p.value, 10);
+        if (p.type === 'second') s = parseInt(p.value, 10);
+      }
+      return { h: h, m: m, s: s };
+    }
+
+    function setHands(p) {
+      if (!hourHand || !minHand) return;
+      var hour12 = p.h % 12;
+      var hourDeg = hour12 * 30 + p.m * 0.5 + p.s * (0.5 / 60);
+      var minDeg = p.m * 6 + p.s * 0.1;
+      var secDeg = p.s * 6;
+      hourHand.setAttribute('transform', 'rotate(' + hourDeg + ' 18 18)');
+      minHand.setAttribute('transform', 'rotate(' + minDeg + ' 18 18)');
+      if (secHand && !reduceMotion) {
+        secHand.setAttribute('transform', 'rotate(' + secDeg + ' 18 18)');
+      }
+    }
+
+    function pulseHero() {
+      if (!heroEl || reduceMotion) return;
+      heroEl.classList.remove('app-shell-sidebar-time-hero--tick');
+      void heroEl.offsetWidth;
+      heroEl.classList.add('app-shell-sidebar-time-hero--tick');
+      window.setTimeout(function () {
+        heroEl.classList.remove('app-shell-sidebar-time-hero--tick');
+      }, 280);
+    }
+
     function tick() {
       var now = new Date();
-      mainEl.textContent = formatter.format(now).replace(',', ' ·');
-      offsetEl.textContent = offsetLabel;
+      var p = getManilaHms(now);
+
+      if (reduceMotion) {
+        timeEl.textContent = fmtTimeMin.format(now);
+      } else {
+        timeEl.textContent = fmtTimeSec.format(now).replace(/\u202f/g, ' ');
+      }
+      dateEl.textContent = fmtDate.format(now);
+      timeEl.setAttribute('datetime', now.toISOString());
+      setHands(p);
+
+      var minuteKey = p.h + ':' + p.m + ':' + fmtDate.format(now);
+      if (minuteKey !== lastMinuteKey) {
+        if (lastMinuteKey !== '') pulseHero();
+        lastMinuteKey = minuteKey;
+        if (liveEl) {
+          liveEl.textContent =
+            'Program time ' + fmtLive.format(now) + ', Philippines, PHT, UTC plus eight.';
+        }
+      }
+
+      var tip =
+        'Program time: ' +
+        fmtTimeMin.format(now) +
+        ' · ' +
+        fmtDate.format(now) +
+        ' · Philippines · PHT · UTC+08:00';
+      block.setAttribute('title', tip);
     }
+
     tick();
-    setInterval(tick, 60 * 1000);
+    window.setInterval(tick, reduceMotion ? 60000 : 1000);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSidebarLocalTime);

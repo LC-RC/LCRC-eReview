@@ -1202,3 +1202,140 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn:hover {
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* =============================================================================
+   Question sorting (admin_question_sort.php) — same shell as pre-week materials
+   ============================================================================= */
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-hero-icon--preweek {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.16) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-table-shell {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #141414;
+  box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-alert--error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-alert--success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  background: transparent;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.admin-app.admin-question-sort-page .ereview-qsort-q {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0.65rem;
+}
+
+body.admin-app.admin-question-sort-page mark.ereview-qsort-hl,
+body.admin-app.admin-question-sort-page .ereview-qsort-hl {
+  background: linear-gradient(180deg, #fef08a 0%, #facc15 100%);
+  color: #1c1917;
+  padding: 0.06em 0.2em;
+  border-radius: 0.2rem;
+  font-weight: 600;
+}
+
+body.admin-app.admin-question-sort-page .ereview-qsort-font-red {
+  color: #f87171;
+  font-weight: 600;
+}
+
+body.admin-app.admin-question-sort-page .ereview-qsort-qnum {
+  color: #fde68a;
+  font-weight: 700;
+  margin-right: 0.15em;
+}
+
+body.admin-app.admin-question-sort-page .ereview-qsort-choice-letter {
+  color: #a5b4fc;
+  font-weight: 600;
+  margin-right: 0.35em;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-count-pill--preweek {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+body.admin-app.admin-question-sort-page .preweek-section-toolbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+body.admin-app.admin-question-sort-page .ereview-qsort-topic-shell .preweek-section-toolbar.cursor-pointer:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.admin-app.admin-question-sort-page .preweek-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+body.admin-app.admin-question-sort-page .preweek-materials-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-empty {
+  color: #9ca3af;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+body.admin-app.admin-question-sort-page #main .quiz-admin-empty-icon {
+  color: rgba(251, 191, 36, 0.35);
+}

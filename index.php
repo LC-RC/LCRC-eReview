@@ -12,11 +12,11 @@ if (isLoggedIn() && verifySession()) {
 $pageTitle = 'Home';
 ?>
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth overflow-x-hidden">
 <head>
     <?php require_once __DIR__ . '/includes/head_public.php'; ?>
 </head>
-<body class="min-h-screen bg-gray-50 font-sans antialiased"
+<body class="min-h-screen bg-gray-50 font-sans antialiased overflow-x-hidden"
       x-data="{
         openModal: '<?php echo isset($_SESSION['open_modal']) ? h($_SESSION['open_modal']) : ''; ?>',
         showLoginPass: false,
@@ -26,17 +26,18 @@ $pageTitle = 'Home';
       }"
       x-init="if (openModal) { $nextTick(() => { $dispatch('open-modal', openModal); }); } openModal = ''"
       @keydown.escape.window="mobileMenuOpen = false">
-<div class="min-h-screen flex flex-col">
+<div class="min-h-screen flex flex-col overflow-x-hidden min-w-0">
   <!-- Top Navigation Bar (glassy) -->
   <nav class="sticky top-0 z-40 border-b border-white/20 bg-white/60 backdrop-blur-xl shadow-[0_1px_0_0_rgba(255,255,255,0.5)_inset,0_4px_20px_-2px_rgba(0,0,0,0.08)]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-20 md:h-24">
+      <div class="flex items-center justify-between h-16 sm:h-20 md:h-24">
         <!-- Left: Logo + Brand -->
-        <a href="#home" class="flex items-center gap-1 shrink-0 group">
-          <span class="relative flex shrink-0 items-center" style="height:48px;width:auto;min-width:80px;max-width:130px">
-            <img src="image%20assets/lms-logo-top.png" alt="LCRC-eLMS" class="select-none" style="height:48px;width:auto;max-width:130px;object-fit:contain;object-position:center;display:block" loading="eager">
+        <a href="#home" class="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0 group">
+          <!-- Intrinsic logo files are large; inline dimensions work even when Tailwind utilities are missing from built CSS -->
+          <span class="relative flex shrink-0 items-center overflow-hidden" style="height:48px;width:auto;min-width:72px;max-width:130px;">
+            <img src="image%20assets/lms-logo-top.png" alt="LCRC-eLMS" class="select-none" width="130" height="48" style="height:48px;width:auto;max-width:130px;max-height:48px;object-fit:contain;object-position:left center;display:block;" loading="eager" decoding="async">
           </span>
-          <span class="text-xl font-extrabold tracking-tight">
+          <span class="text-lg sm:text-xl font-extrabold tracking-tight truncate">
             <span class="text-accent-blue">LCRC</span><span class="text-gray-400">-</span><span class="text-accent-orange">eLMS</span>
           </span>
         </a>
@@ -77,7 +78,7 @@ $pageTitle = 'Home';
         </div>
 
         <!-- Mobile: Hamburger -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition" aria-label="Menu">
+        <button type="button" @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition touch-manipulation" :aria-expanded="mobileMenuOpen" aria-label="Menu">
           <i class="bi text-2xl" :class="mobileMenuOpen ? 'bi-x-lg' : 'bi-list'"></i>
         </button>
       </div>
@@ -103,7 +104,7 @@ $pageTitle = 'Home';
   </nav>
 
   <!-- Hero Section: content builds up when section scrolls into view; class stays so content never vanishes -->
-  <section id="home" class="scroll-reveal relative py-20 sm:py-24 md:py-32 overflow-hidden bg-gray-100" x-data="{ slideIndex: 0, init() { setInterval(() => { this.slideIndex = (this.slideIndex + 1) % 5; }, 5500); } }" x-intersect.once="$el.classList.add('revealed')">
+  <section id="home" class="scroll-reveal relative py-14 sm:py-24 md:py-32 overflow-hidden bg-gray-100" x-data="{ slideIndex: 0, init() { setInterval(() => { this.slideIndex = (this.slideIndex + 1) % 5; }, 5500); } }">
     <!-- Image backdrop slideshow -->
     <?php
     $hero_slides = [
@@ -123,22 +124,22 @@ $pageTitle = 'Home';
     <div class="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/60 pointer-events-none z-[1]"></div>
     <div class="absolute inset-0 bg-[radial-gradient(900px_450px_at_100%_0%,rgba(245,158,11,0.06)_0%,transparent_50%)] pointer-events-none z-[1]"></div>
     <div class="absolute inset-0 bg-[radial-gradient(700px_350px_at_0%_60%,rgba(31,88,195,0.05)_0%,transparent_50%)] pointer-events-none z-[1]"></div>
-    <div class="absolute top-20 right-0 w-72 h-72 bg-accent-orange/5 rounded-full blur-3xl pointer-events-none z-[1]"></div>
-    <div class="absolute bottom-20 left-0 w-96 h-96 bg-accent-blue/5 rounded-full blur-3xl pointer-events-none z-[1]"></div>
+    <div class="absolute top-14 sm:top-20 right-0 w-36 h-36 sm:w-56 sm:h-56 md:w-72 md:h-72 bg-accent-orange/5 rounded-full blur-2xl sm:blur-3xl pointer-events-none z-[1]"></div>
+    <div class="absolute bottom-12 sm:bottom-20 left-0 w-44 h-44 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-accent-blue/5 rounded-full blur-2xl sm:blur-3xl pointer-events-none z-[1] origin-bottom-left"></div>
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-      <div class="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+      <div class="grid lg:grid-cols-2 gap-8 md:gap-14 lg:gap-20 items-center">
         <div class="reveal-content">
-          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-blue/5 border border-accent-blue/20 text-accent-blue text-sm font-semibold tracking-wide mb-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-accent-blue/5 border border-accent-blue/20 text-accent-blue text-xs sm:text-sm font-semibold tracking-wide mb-5 sm:mb-6">
             <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-orange opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-accent-orange"></span></span>
             CPA Review Platform
           </div>
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-gray-900 mb-6 leading-[1.1]">
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-gray-900 mb-5 sm:mb-6 leading-[1.12] sm:leading-[1.1]">
             Welcome to <span class="relative inline-block"><span class="text-accent-blue relative z-10">LCRC</span></span> <span class="relative inline-block"><span class="text-accent-orange relative z-10">eReview</span></span>
           </h1>
-          <p class="text-lg sm:text-xl text-gray-600 mb-10 max-w-xl leading-relaxed">
+          <p class="text-base sm:text-xl text-gray-600 mb-8 sm:mb-10 max-w-xl leading-relaxed">
             Empowering future CPAs through modern review programs, flexible modules, and dedicated support.
           </p>
-          <a href="#packages" class="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange shadow-lg shadow-accent-orange/25 hover:shadow-xl hover:shadow-accent-orange/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 ease-out">
+          <a href="#packages" class="group relative w-full sm:w-auto justify-center inline-flex items-center gap-3 px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl text-base sm:text-base font-bold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange shadow-lg shadow-accent-orange/25 hover:shadow-xl hover:shadow-accent-orange/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 ease-out touch-manipulation">
             <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></span>
             <span class="relative z-10">View Packages</span>
             <i class="bi bi-arrow-right text-lg relative z-10 group-hover:translate-x-1 transition-transform duration-300"></i>
@@ -156,7 +157,7 @@ $pageTitle = 'Home';
             </div>
           <?php endif; ?>
         </div>
-        <div class="grid grid-cols-2 gap-4 sm:gap-5 reveal-content reveal-delay-2">
+        <div class="grid grid-cols-2 gap-3 sm:gap-5 reveal-content reveal-delay-2 mt-10 lg:mt-0">
           <?php
           $features = [
             ['icon' => 'bi-person-check', 'title' => 'Verified Enrollment', 'desc' => 'Register with payment proof and get admin-verified access.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
@@ -167,12 +168,12 @@ $pageTitle = 'Home';
           foreach ($features as $i => $f):
             $delay = 50 + ($i * 75);
           ?>
-            <a href="#packages" class="feature-card group/card block p-5 sm:p-6 rounded-2xl bg-white border-2 border-gray-100 shadow-lg hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 <?php echo $f['border']; ?>" style="transition-delay: <?php echo $delay; ?>ms">
-              <div class="w-12 h-12 rounded-xl <?php echo $f['bg']; ?> <?php echo $f['text']; ?> flex items-center justify-center text-xl mb-3 group-hover/card:scale-110 transition-transform duration-300">
+            <a href="#packages" class="feature-card group/card block p-4 sm:p-6 rounded-2xl bg-white border-2 border-gray-100 shadow-lg hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 <?php echo $f['border']; ?>" style="transition-delay: <?php echo $delay; ?>ms">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl <?php echo $f['bg']; ?> <?php echo $f['text']; ?> flex items-center justify-center text-lg sm:text-xl mb-2 sm:mb-3 group-hover/card:scale-110 transition-transform duration-300">
                 <i class="bi <?php echo $f['icon']; ?>"></i>
               </div>
-              <div class="font-bold text-gray-900 <?php echo $f['hoverText']; ?> transition-colors duration-300"><?php echo h($f['title']); ?></div>
-              <div class="text-sm text-gray-500 mt-1"><?php echo h($f['desc']); ?></div>
+              <div class="font-bold text-sm sm:text-base text-gray-900 leading-snug <?php echo $f['hoverText']; ?> transition-colors duration-300"><?php echo h($f['title']); ?></div>
+              <div class="text-xs sm:text-sm text-gray-500 mt-1 leading-snug"><?php echo h($f['desc']); ?></div>
             </a>
           <?php endforeach; ?>
         </div>
@@ -181,18 +182,18 @@ $pageTitle = 'Home';
   </section>
 
   <!-- Free Sample Videos Section: content builds up when section scrolls into view -->
-  <section id="free-samples" class="scroll-reveal py-16 md:py-24 bg-white relative overflow-hidden" x-intersect.once="$el.classList.add('revealed')">
-    <div class="absolute top-0 right-0 w-96 h-96 bg-accent-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-    <div class="absolute bottom-0 left-0 w-80 h-80 bg-accent-blue/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+  <section id="free-samples" class="scroll-reveal py-12 md:py-24 bg-white relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-accent-orange/5 rounded-full blur-2xl sm:blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 w-44 h-44 sm:w-64 sm:h-80 md:w-80 md:h-80 bg-accent-blue/5 rounded-full blur-2xl sm:blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-      <div class="text-center mb-12 reveal-content">
+      <div class="text-center mb-10 md:mb-12 reveal-content">
         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-orange/10 border border-accent-orange/20 text-accent-orange text-xs font-semibold uppercase tracking-wider mb-4">
           <i class="bi bi-unlock-fill"></i> No sign-up required
         </span>
         <p class="text-accent-orange font-semibold text-sm uppercase tracking-wider mb-2">Free Preview</p>
         <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4">Free Sample Videos</h2>
         <div class="w-20 h-1 bg-gradient-to-r from-accent-orange to-accent-blue mx-auto rounded-full mb-4"></div>
-        <p class="text-gray-600 text-center max-w-2xl mx-auto text-lg">Experience our quality content with these free sample lectures. No registration required!</p>
+        <p class="text-gray-600 text-center max-w-2xl mx-auto text-base md:text-lg px-1">Experience our quality content with these free sample lectures. No registration required!</p>
       </div>
       <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
         <?php
@@ -258,11 +259,11 @@ $pageTitle = 'Home';
   </section>
 
   <!-- Packages Section: content builds up when section scrolls into view; class stays so content never vanishes -->
-  <section id="packages" class="scroll-reveal py-16 md:py-24 bg-gray-50 relative overflow-hidden" x-intersect.once="$el.classList.add('revealed')">
-    <div class="absolute top-0 left-0 w-80 h-80 bg-accent-orange/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-    <div class="absolute bottom-0 right-0 w-96 h-96 bg-accent-blue/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
+  <section id="packages" class="scroll-reveal py-12 md:py-24 bg-gray-50 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-44 h-44 sm:w-64 sm:h-64 md:w-80 md:h-80 bg-accent-orange/5 rounded-full blur-2xl sm:blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+    <div class="absolute bottom-0 right-0 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-accent-blue/5 rounded-full blur-2xl sm:blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-      <div class="text-center mb-12 reveal-content">
+      <div class="text-center mb-10 md:mb-12 reveal-content">
         <p class="text-accent-orange font-semibold text-sm uppercase tracking-wider mb-2">Packages</p>
         <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4">CPA Online Review Package</h2>
         <div class="w-20 h-1 bg-gradient-to-r from-accent-orange to-accent-blue mx-auto rounded-full mb-4"></div>
@@ -309,7 +310,7 @@ $pageTitle = 'Home';
         <?php endforeach; ?>
       </div>
       <div class="text-center mt-10 reveal-content reveal-delay-4">
-        <button @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light shadow-md overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]">
+        <button type="button" @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light shadow-md overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation max-w-md sm:max-w-none mx-auto">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></span>
           <i class="bi bi-box-arrow-in-right text-lg relative z-10 group-hover/btn:scale-110 transition-transform duration-300"></i>
           <span class="relative z-10">Enroll Now</span>
@@ -319,10 +320,10 @@ $pageTitle = 'Home';
   </section>
 
   <!-- About / Why Choose LCRC: content builds up when section scrolls into view; class stays so content never vanishes -->
-  <section id="about" class="scroll-reveal py-16 md:py-24 bg-white relative overflow-hidden" x-intersect.once="$el.classList.add('revealed')">
-    <div class="absolute top-0 right-0 w-96 h-96 bg-accent-blue/5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+  <section id="about" class="scroll-reveal py-12 md:py-24 bg-white relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-accent-blue/5 rounded-full blur-2xl sm:blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-      <div class="text-center mb-12 reveal-content">
+      <div class="text-center mb-10 md:mb-12 reveal-content">
         <p class="text-accent-blue font-semibold text-sm uppercase tracking-wider mb-2">About</p>
         <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4">Why Choose LCRC eReview</h2>
         <div class="w-20 h-1 bg-gradient-to-r from-accent-blue to-accent-orange mx-auto rounded-full mb-4"></div>
@@ -373,10 +374,10 @@ $pageTitle = 'Home';
   </section>
 
   <!-- FAQ Section: content builds up when section scrolls into view; class stays so content never vanishes -->
-  <section id="faqs" class="scroll-reveal py-16 md:py-24 bg-gray-50 relative overflow-hidden" x-data="{ open: 1 }" x-intersect.once="$el.classList.add('revealed')">
-    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent-orange/5 rounded-full blur-3xl translate-y-1/2 pointer-events-none"></div>
+  <section id="faqs" class="scroll-reveal py-12 md:py-24 bg-gray-50 relative overflow-hidden" x-data="{ open: 1 }">
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-accent-orange/5 rounded-full blur-2xl sm:blur-3xl translate-y-1/2 pointer-events-none"></div>
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-      <div class="text-center mb-10 reveal-content">
+      <div class="text-center mb-8 md:mb-10 reveal-content">
         <p class="text-accent-orange font-semibold text-sm uppercase tracking-wider mb-2">FAQs</p>
         <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-4">Frequently Asked Questions</h2>
         <div class="w-20 h-1 bg-gradient-to-r from-accent-orange to-accent-blue mx-auto rounded-full mb-4"></div>
@@ -384,7 +385,7 @@ $pageTitle = 'Home';
       </div>
       <div class="space-y-3 reveal-content reveal-delay-2">
         <div class="group/faq rounded-2xl border-2 border-gray-100 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:border-accent-blue/50 hover:shadow-[0_8px_24px_-8px_rgba(31,88,195,0.2)]">
-          <button @click="open = open === 1 ? 0 : 1" class="w-full px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-blue/5 transition-colors duration-300 group-hover/faq:bg-accent-blue/5">
+          <button type="button" @click="open = open === 1 ? 0 : 1" class="w-full min-h-[52px] px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-blue/5 transition-colors duration-300 group-hover/faq:bg-accent-blue/5 touch-manipulation">
             <span class="text-left">How do I register?</span>
             <i class="bi text-accent-blue text-lg shrink-0 transition-transform duration-300" :class="open === 1 ? 'bi-chevron-up rotate-0' : 'bi-chevron-down'"></i>
           </button>
@@ -393,7 +394,7 @@ $pageTitle = 'Home';
           </div>
         </div>
         <div class="group/faq rounded-2xl border-2 border-gray-100 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:border-accent-orange/50 hover:shadow-[0_8px_24px_-8px_rgba(245,158,11,0.2)]">
-          <button @click="open = open === 2 ? 0 : 2" class="w-full px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-orange/5 transition-colors duration-300 group-hover/faq:bg-accent-orange/5">
+          <button type="button" @click="open = open === 2 ? 0 : 2" class="w-full min-h-[52px] px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-orange/5 transition-colors duration-300 group-hover/faq:bg-accent-orange/5 touch-manipulation">
             <span class="text-left">Where can I see my status?</span>
             <i class="bi text-accent-orange text-lg shrink-0 transition-transform duration-300" :class="open === 2 ? 'bi-chevron-up rotate-0' : 'bi-chevron-down'"></i>
           </button>
@@ -402,7 +403,7 @@ $pageTitle = 'Home';
           </div>
         </div>
         <div class="group/faq rounded-2xl border-2 border-gray-100 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:border-accent-blue/50 hover:shadow-[0_8px_24px_-8px_rgba(31,88,195,0.2)]">
-          <button @click="open = open === 3 ? 0 : 3" class="w-full px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-blue/5 transition-colors duration-300 group-hover/faq:bg-accent-blue/5">
+          <button type="button" @click="open = open === 3 ? 0 : 3" class="w-full min-h-[52px] px-5 py-4 text-left font-semibold text-gray-900 flex justify-between items-center gap-4 hover:bg-accent-blue/5 transition-colors duration-300 group-hover/faq:bg-accent-blue/5 touch-manipulation">
             <span class="text-left">What files are accepted for proof?</span>
             <i class="bi text-accent-blue text-lg shrink-0 transition-transform duration-300" :class="open === 3 ? 'bi-chevron-up rotate-0' : 'bi-chevron-down'"></i>
           </button>
@@ -415,18 +416,18 @@ $pageTitle = 'Home';
   </section>
 
   <!-- Call-to-Action Section: content builds up when section scrolls into view; class stays so content never vanishes -->
-  <section class="scroll-reveal py-16 md:py-20 relative overflow-hidden bg-gradient-to-br from-accent-blue via-accent-blue to-[#1a3a6e]" x-intersect.once="$el.classList.add('revealed')">
+  <section class="scroll-reveal py-12 md:py-20 relative overflow-hidden bg-gradient-to-br from-accent-blue via-accent-blue to-[#1a3a6e]">
     <div class="absolute inset-0 bg-[radial-gradient(800px_400px_at_80%_20%,rgba(245,158,11,0.2)_0%,transparent_50%)] pointer-events-none"></div>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
       <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4 reveal-content">Ready to start your CPA journey?</h2>
-      <p class="text-blue-100 mb-8 max-w-xl mx-auto reveal-content reveal-delay-1">Join LCRC eReview today and get access to comprehensive review materials and support.</p>
-      <div class="flex flex-wrap justify-center gap-4 reveal-content reveal-delay-3">
-        <button @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light border-2 border-accent-orange shadow-lg overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]">
+      <p class="text-blue-100 mb-8 max-w-xl mx-auto reveal-content reveal-delay-1 px-1">Join LCRC eReview today and get access to comprehensive review materials and support.</p>
+      <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 reveal-content reveal-delay-3">
+        <button type="button" @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light border-2 border-accent-orange shadow-lg overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></span>
           <i class="bi bi-person-plus-fill text-lg relative z-10 group-hover/btn:scale-110 transition-transform duration-300"></i>
           <span class="relative z-10">Register Now</span>
         </button>
-        <a href="#packages" class="group/cta relative inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white border-2 border-white/80 overflow-hidden transition-all duration-300 hover:bg-white hover:text-accent-blue hover:shadow-[0_12px_24px_-8px_rgba(255,255,255,0.3)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]">
+        <a href="#packages" class="group/cta relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white border-2 border-white/80 overflow-hidden transition-all duration-300 hover:bg-white hover:text-accent-blue hover:shadow-[0_12px_24px_-8px_rgba(255,255,255,0.3)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/cta:translate-x-full transition-transform duration-500"></span>
           <span class="relative z-10">View Packages</span>
           <i class="bi bi-arrow-right text-lg relative z-10 group-hover/cta:translate-x-1 transition-transform duration-300"></i>
@@ -441,9 +442,14 @@ $pageTitle = 'Home';
       <style>
         .footer-card .footer-subscribe { background-color: #1F58C3; color: #fff; text-align: center; padding: 2rem 1.5rem; }
         .footer-card .footer-subscribe-title { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
-        .footer-card .footer-subscribe-form { display: inline-flex; max-width: 100%; }
+        .footer-card .footer-subscribe-form { display: inline-flex; max-width: 100%; flex-wrap: wrap; justify-content: center; }
         .footer-card .footer-subscribe-input { border: none; padding: 12px 20px; font-size: 14px; border-radius: 9999px 0 0 9999px; min-width: 200px; background: #f1f5f9; color: #334155; }
         .footer-card .footer-subscribe-btn { position: relative; overflow: hidden; background: linear-gradient(to right, #F59E0B, #FCD34D); color: #fff; border: none; padding: 12px 24px; font-weight: 600; font-size: 13px; border-radius: 0 9999px 9999px 0; cursor: pointer; transition: box-shadow 0.3s, transform 0.3s; box-shadow: 0 4px 14px -3px rgba(245,158,11,0.25); }
+        @media (max-width: 639px) {
+          .footer-card .footer-subscribe-form { flex-direction: column; width: 100%; align-items: stretch; gap: 0.75rem; }
+          .footer-card .footer-subscribe-input { border-radius: 9999px; min-width: 0; width: 100%; }
+          .footer-card .footer-subscribe-btn { border-radius: 9999px; width: 100%; }
+        }
         .footer-card .footer-subscribe-btn:hover { box-shadow: 0 10px 40px -10px rgba(245,158,11,0.35); transform: translateY(-2px); }
         .footer-card .footer-subscribe-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent); transform: translateX(-100%); transition: transform 0.5s; }
         .footer-card .footer-subscribe-btn:hover::after { transform: translateX(100%); }
@@ -516,8 +522,15 @@ $pageTitle = 'Home';
   </footer>
 </div>
 
+<style>
+  .chatbot--a11y .chatbot-input input[type="text"] { min-height: 3.25rem; font-size: 1.05rem; }
+  .chatbot--a11y .chatbot-input button { min-width: 3.5rem; min-height: 3.5rem; }
+  .chatbot--a11y .chatbot-messages button { min-height: 2.75rem; padding-left: 0.85rem; padding-right: 0.85rem; }
+  .chatbot-card-link { display: block; border-radius: 0.75rem; border: 1px solid #e5e7eb; padding: 0.65rem 0.75rem; background: #fafafa; text-align: left; transition: border-color 0.15s, background 0.15s; }
+  .chatbot-card-link:hover { border-color: #93c5fd; background: #f8fafc; }
+</style>
 <!-- Floating AI Chatbot (bottom right) -->
-<div id="chatbot-container" class="fixed bottom-6 right-6 z-[9999] chatbot-wrapper" x-data="chatbot()" x-init="init()" @keydown.escape.window="open = false" style="position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; z-index: 9999 !important; pointer-events: auto;">
+<div id="chatbot-container" class="fixed bottom-6 right-6 z-[9999] chatbot-wrapper" :class="a11yLarge ? 'chatbot--a11y' : ''" x-data="chatbot()" x-init="init()" @keydown.escape.window="open = false" style="position: fixed !important; bottom: 1.5rem !important; right: 1.5rem !important; z-index: 9999 !important; pointer-events: auto;">
   <!-- Chat panel -->
   <div x-show="open" 
        x-cloak
@@ -529,7 +542,7 @@ $pageTitle = 'Home';
         x-transition:leave="transition duration-250 ease-in" 
         x-transition:leave-start="opacity-100 translate-y-0 scale-100 rotate-0" 
         x-transition:leave-end="opacity-0 translate-y-4 scale-98 rotate-1" 
-       class="chatbot-panel absolute right-0 rounded-3xl overflow-hidden border border-gray-200/80 bg-white shadow-2xl backdrop-blur-sm" 
+       class="chatbot-panel absolute right-0 rounded-3xl overflow-hidden border border-gray-200/80 bg-white shadow-2xl backdrop-blur-sm flex flex-col" 
        :class="open ? 'anim-chat-open' : 'anim-chat-close'"
        style="bottom: calc(100% + 1rem); height: 600px; max-height: min(600px, calc(100vh - 8rem)); min-height: 420px;">
     <!-- Enhanced Header -->
@@ -549,9 +562,28 @@ $pageTitle = 'Home';
         </p>
       </div>
     </div>
+
+    <div class="shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/90 flex flex-wrap gap-x-4 gap-y-1 items-center text-xs text-gray-600">
+      <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+        <input type="checkbox" class="rounded border-gray-300" x-model="plainLanguage" @change="persistPrefs()">
+        <span>Plain language</span>
+      </label>
+      <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+        <input type="checkbox" class="rounded border-gray-300" x-model="a11yLarge" @change="persistPrefs()">
+        <span>Larger tap targets</span>
+      </label>
+      <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+        <input type="checkbox" class="rounded border-gray-300" x-model="ttsEnabled" @change="persistPrefs()">
+        <span>Read replies aloud</span>
+      </label>
+      <button type="button" x-show="speechSupported" @click="toggleMic()" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-800 font-medium"
+              :class="listening ? 'ring-2 ring-red-400' : ''">
+        <i class="bi bi-mic-fill"></i> Voice input
+      </button>
+    </div>
     
     <!-- Enhanced Messages Area -->
-    <div class="chatbot-messages flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50" style="min-height: 0; max-height: 100%; overflow-y: auto;" x-ref="messagesEl">
+    <div class="chatbot-messages flex-1 min-h-0 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50" x-ref="messagesEl">
       <template x-for="(msg, i) in messages" :key="i">
         <div class="message-wrapper" 
              :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
@@ -562,10 +594,45 @@ $pageTitle = 'Home';
              x-transition:enter-start="opacity-0 translate-y-2"
              x-transition:enter-end="opacity-100 translate-y-0">
           <div :class="msg.role === 'user' 
-            ? 'group/user max-w-[85%] px-5 py-3 rounded-2xl rounded-br-md text-white text-[15px] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200' 
-            : 'group/bot max-w-[85%] px-5 py-3 rounded-2xl rounded-bl-md bg-white border-2 border-gray-100 text-gray-800 text-[15px] shadow-md hover:shadow-lg hover:border-accent-blue/30 hover:scale-[1.01] transition-all duration-200'"
+            ? 'group/user max-w-[92%] sm:max-w-[85%] px-5 py-3 rounded-2xl rounded-br-md text-white text-[15px] shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200' 
+            : 'group/bot max-w-[92%] sm:max-w-[85%] px-5 py-3 rounded-2xl rounded-bl-md bg-white border-2 border-gray-100 text-gray-800 text-[15px] shadow-md hover:shadow-lg hover:border-accent-blue/30 hover:scale-[1.01] transition-all duration-200'"
             :style="msg.role === 'user' && 'background: linear-gradient(135deg, #1F58C3 0%, #1E40AF 100%);'">
             <p class="leading-relaxed" x-text="msg.text"></p>
+            <template x-if="msg.role !== 'user' && msg.next_step">
+              <p class="text-sm text-gray-600 mt-2 leading-snug border-l-2 border-amber-400 pl-2" x-text="msg.next_step"></p>
+            </template>
+            <template x-if="msg.role !== 'user' && msg.cards && msg.cards.length">
+              <div class="mt-3 grid gap-2 sm:grid-cols-1">
+                <template x-for="(card, ci) in msg.cards" :key="`card-${i}-${ci}`">
+                  <a :href="card.href" class="chatbot-card-link no-underline text-gray-800" @click.prevent="onAction({ type: 'link', value: card.href })">
+                    <span class="font-semibold block" x-text="card.title"></span>
+                    <span class="text-xs text-gray-600 block" x-text="card.subtitle"></span>
+                    <span class="text-sm text-[#1F58C3] font-semibold mt-0.5 block" x-text="card.price || card.cta_label"></span>
+                  </a>
+                </template>
+              </div>
+            </template>
+            <template x-if="msg.role !== 'user' && msg.quick_replies && msg.quick_replies.length">
+              <div class="mt-2 flex flex-wrap gap-2">
+                <template x-for="(qr, qi) in msg.quick_replies" :key="`qr-${i}-${qi}`">
+                  <button type="button" @click="onAction(qr)"
+                          class="px-2.5 py-1.5 rounded-full text-xs font-semibold border border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100 transition">
+                    <span x-text="qr.label"></span>
+                  </button>
+                </template>
+              </div>
+            </template>
+            <template x-if="msg.role !== 'user' && msg.actions && msg.actions.length">
+              <div class="mt-3 flex flex-wrap gap-2">
+                <template x-for="(action, actionIdx) in msg.actions" :key="`action-${i}-${actionIdx}`">
+                  <button type="button"
+                          @click="onAction(action)"
+                          class="px-3 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-gray-50 hover:bg-gray-100 transition">
+                    <span x-text="action.label"></span>
+                  </button>
+                </template>
+              </div>
+            </template>
           </div>
         </div>
       </template>
@@ -584,16 +651,26 @@ $pageTitle = 'Home';
         </div>
       </div>
     </div>
+
+    <div x-show="csatPrompt && !csatDone" x-cloak class="shrink-0 px-5 py-3 border-t border-amber-100 bg-amber-50/80">
+      <p class="text-sm font-semibold text-gray-800 m-0 mb-2">How helpful was this chat?</p>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="star in [5,4,3,2,1]" :key="star">
+          <button type="button" @click="submitCsat(star)" class="px-3 py-1.5 rounded-xl text-sm font-bold border border-amber-300 bg-white text-amber-900 hover:bg-amber-100 transition" x-text="star + ' ★'"></button>
+        </template>
+      </div>
+    </div>
     
     <!-- Enhanced Input Area -->
-    <div class="chatbot-input p-5 border-t border-gray-100/80 bg-gradient-to-r from-white via-gray-50/50 to-white">
+    <div class="chatbot-input shrink-0 p-5 border-t border-gray-100/80 bg-gradient-to-r from-white via-gray-50/50 to-white">
       <form @submit.prevent="send()" class="flex gap-3">
         <div class="flex-1 relative group/input min-w-0">
           <input type="text" 
                  x-model="input" 
-                 placeholder="Type your message..." 
+                 :placeholder="plainLanguage ? 'Type your question in simple words…' : 'Type your message…'" 
                  class="w-full px-5 py-3.5 rounded-2xl border-2 border-gray-200 bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-accent-orange/40 focus:border-accent-orange transition-all duration-200 placeholder:text-gray-400 group-hover/input:border-gray-300 shadow-sm" 
-                 maxlength="500">
+                 maxlength="500"
+                 autocomplete="off">
           <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent-orange/0 via-accent-orange/5 to-accent-orange/0 opacity-0 group-hover/input:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
         </div>
         <button type="submit" 
@@ -634,117 +711,250 @@ window.chatbot = function chatbot() {
     input: '',
     messages: [],
     typing: false,
+    sessionId: '',
+    plainLanguage: false,
+    a11yLarge: false,
+    ttsEnabled: false,
+    speechSupported: false,
+    listening: false,
+    recognition: null,
+    csatPrompt: false,
+    csatDone: false,
     init() {
-      // DEBUG: Log initial state
-      console.log('[Chatbot] Initializing with open =', this.open);
-      
-      // Force open to false on init
       this.open = false;
-      console.log('[Chatbot] Set open to false, current value:', this.open);
-      
-      this.messages = [{
-        role: 'bot',
-        text: 'Hi! 👋 I\'m here to help with LCRC eReview. Ask about packages, registration, or FAQs.'
-      }];
-      
-      // DEBUG: Check panel visibility
-      this.$nextTick(() => {
-        const panel = document.querySelector('.chatbot-panel');
-        if (panel) {
-          console.log('[Chatbot] Panel element found:', panel);
-          console.log('[Chatbot] Panel computed style display:', window.getComputedStyle(panel).display);
-          console.log('[Chatbot] Panel inline style:', panel.style.display);
-          console.log('[Chatbot] Panel has x-cloak:', panel.hasAttribute('x-cloak'));
-        }
-      });
-      
-      // Auto-scroll to bottom on init (only if open)
-      if (this.open) {
-        this.$nextTick(() => {
-          setTimeout(() => {
-            const el = this.$refs.messagesEl;
-            if (el) {
-              el.scrollTop = el.scrollHeight;
-            }
-          }, 100);
-        });
+      this.plainLanguage = localStorage.getItem('ereview_chat_plain_lang') === '1';
+      this.a11yLarge = localStorage.getItem('ereview_chat_a11y') === '1';
+      this.ttsEnabled = localStorage.getItem('ereview_chat_tts') === '1';
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.speechSupported = !!SR;
+      if (SR) {
+        this.recognition = new SR();
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        this.recognition.lang = 'en-PH';
+        this.recognition.onresult = (e) => {
+          const t = e.results[0] && e.results[0][0] ? e.results[0][0].transcript : '';
+          if (t) this.input = (this.input ? this.input + ' ' : '') + t.trim();
+          this.listening = false;
+        };
+        this.recognition.onerror = () => { this.listening = false; };
+        this.recognition.onend = () => { this.listening = false; };
       }
-      
-      // Watch for open state changes with debugging
+      this.bootstrapChat();
       this.$watch('open', (isOpen) => {
-        console.log('[Chatbot] open state changed to:', isOpen);
-        const panel = document.querySelector('.chatbot-panel');
-        if (panel) {
-          console.log('[Chatbot] Panel display after change:', window.getComputedStyle(panel).display);
-        }
-        
         if (isOpen) {
-          this.$nextTick(() => {
-            setTimeout(() => {
-              const el = this.$refs.messagesEl;
-              if (el) {
-                el.scrollTop = el.scrollHeight;
-              }
-            }, 300);
-          });
+          this.scrollToBottom(300);
+          this.postChatEvent('panel_open');
+        } else {
+          this.postChatEvent('panel_close');
         }
       });
     },
-    send() {
+    persistPrefs() {
+      localStorage.setItem('ereview_chat_plain_lang', this.plainLanguage ? '1' : '0');
+      localStorage.setItem('ereview_chat_a11y', this.a11yLarge ? '1' : '0');
+      localStorage.setItem('ereview_chat_tts', this.ttsEnabled ? '1' : '0');
+    },
+    csatStorageKey() {
+      return 'ereview_csat_done_' + (this.sessionId || 'none');
+    },
+    refreshCsatState() {
+      this.csatDone = localStorage.getItem(this.csatStorageKey()) === '1';
+    },
+    async postChatEvent(eventType) {
+      if (!this.sessionId) return;
+      try {
+        const fd = new FormData();
+        fd.append('session_id', this.sessionId);
+        fd.append('event_type', eventType);
+        await fetch('api/chat/event.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+      } catch (e) { /* non-fatal */ }
+    },
+    toggleMic() {
+      if (!this.recognition) return;
+      if (this.listening) {
+        try { this.recognition.stop(); } catch (e) {}
+        this.listening = false;
+        return;
+      }
+      this.listening = true;
+      try { this.recognition.start(); } catch (e) { this.listening = false; }
+    },
+    speak(text) {
+      if (!this.ttsEnabled || !window.speechSynthesis) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-PH';
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    },
+    mergeAssistantExtras(msg, extras) {
+      if (!extras || typeof extras !== 'object') return;
+      if (Array.isArray(extras.cards)) msg.cards = extras.cards;
+      if (Array.isArray(extras.quick_replies)) msg.quick_replies = extras.quick_replies;
+      if (extras.next_step) msg.next_step = extras.next_step;
+    },
+    async bootstrapChat() {
+      try {
+        const savedSession = localStorage.getItem('ereview_chat_session') || '';
+        const url = savedSession
+          ? `api/chat/bootstrap.php?session_id=${encodeURIComponent(savedSession)}`
+          : 'api/chat/bootstrap.php';
+        const res = await fetch(url, { credentials: 'same-origin' });
+        const data = await res.json();
+        if (data && data.ok) {
+          this.sessionId = data.session_id || '';
+          if (this.sessionId) {
+            localStorage.setItem('ereview_chat_session', this.sessionId);
+          }
+          this.refreshCsatState();
+          this.messages = Array.isArray(data.messages) ? data.messages : [];
+          if (this.messages.length > 0 && Array.isArray(data.quick_actions)) {
+            const lastIdx = this.messages.length - 1;
+            this.messages[lastIdx].actions = data.quick_actions;
+          }
+          if (data.assistant_extras && this.messages.length > 0) {
+            const lastIdx = this.messages.length - 1;
+            if (this.messages[lastIdx].role === 'assistant') {
+              this.mergeAssistantExtras(this.messages[lastIdx], data.assistant_extras);
+            }
+          }
+          this.scrollToBottom(50);
+        }
+      } catch (err) {
+        this.messages = [{
+          role: 'assistant',
+          text: 'Support chat is temporarily unavailable. Please email contact@ereview.ph.',
+          actions: [{ label: 'Email Support', type: 'link', value: 'mailto:contact@ereview.ph' }]
+        }];
+      }
+    },
+    async submitCsat(rating) {
+      if (!this.sessionId || this.csatDone) return;
+      try {
+        const fd = new FormData();
+        fd.append('session_id', this.sessionId);
+        fd.append('rating', String(rating));
+        const res = await fetch('api/chat/csat.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const data = await res.json();
+        if (data && data.ok) {
+          this.csatDone = true;
+          this.csatPrompt = false;
+          localStorage.setItem(this.csatStorageKey(), '1');
+        }
+      } catch (e) { /* ignore */ }
+    },
+    async send() {
       const text = (this.input || '').trim();
       if (!text || this.typing) return;
-      
-      // Add user message
+
       this.messages.push({ role: 'user', text });
       this.input = '';
-      
-      // Scroll to show user message
-      this.$nextTick(() => {
-        const el = this.$refs.messagesEl;
-        if (el) {
-          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-        }
-      });
-      
-      // Show typing indicator
+      this.scrollToBottom();
       this.typing = true;
-      const reply = this.getReply(text);
-      
-      // Simulate typing delay based on message length
-      const typingDelay = Math.min(800, Math.max(400, reply.length * 20));
-      
-      setTimeout(() => {
-        this.typing = false;
-        this.messages.push({ role: 'bot', text: reply });
-        // Ensure scroll to bottom after message is added
-        this.$nextTick(() => {
-          setTimeout(() => {
-            const el = this.$refs.messagesEl;
-            if (el) {
-              el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-            }
-          }, 100);
+
+      try {
+        const fd = new FormData();
+        fd.append('session_id', this.sessionId || '');
+        fd.append('message', text);
+        if (this.plainLanguage) fd.append('plain_language', '1');
+        const res = await fetch('api/chat/message.php', {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin'
         });
-      }, typingDelay);
+        const data = await res.json();
+        this.typing = false;
+        if (data && data.ok && data.reply) {
+          if (data.session_id) {
+            this.sessionId = data.session_id;
+            localStorage.setItem('ereview_chat_session', this.sessionId);
+            this.refreshCsatState();
+          }
+          const reply = {
+            role: data.reply.role || 'assistant',
+            text: data.reply.text || 'Thanks for your message.',
+            actions: Array.isArray(data.reply.actions) ? data.reply.actions : [],
+            cards: Array.isArray(data.reply.cards) ? data.reply.cards : [],
+            quick_replies: Array.isArray(data.reply.quick_replies) ? data.reply.quick_replies : [],
+            next_step: data.reply.next_step || '',
+            show_csat: !!data.reply.show_csat
+          };
+          this.messages.push(reply);
+          if (reply.show_csat && !this.csatDone) {
+            this.csatPrompt = true;
+          }
+          if (this.ttsEnabled && reply.text) {
+            this.$nextTick(() => this.speak(reply.text));
+          }
+        } else {
+          this.messages.push({
+            role: 'assistant',
+            text: 'I could not process that yet. Please try again or request live support.',
+            actions: [{ label: 'Talk to Human', type: 'handoff', value: 'handoff' }]
+          });
+        }
+      } catch (err) {
+        this.typing = false;
+        this.messages.push({
+          role: 'assistant',
+          text: 'Connection issue detected. Please retry in a moment.',
+          actions: [{ label: 'Email Support', type: 'link', value: 'mailto:contact@ereview.ph' }]
+        });
+      }
+      this.scrollToBottom(120);
     },
-    getReply(userText) {
-      const t = userText.toLowerCase();
-      if (/hello|hi|hey|good (morning|afternoon|evening)/.test(t)) {
-        return 'Hello! 👋 How can I help you today? You can ask about our CPA review packages, registration, or visit the FAQs section.';
+    async requestHandoff() {
+      const name = window.prompt('Enter your name (optional):', '') || '';
+      const email = window.prompt('Enter your email (optional):', '') || '';
+      const subject = window.prompt('Briefly describe your concern:', 'Need help with my concern') || '';
+      try {
+        const fd = new FormData();
+        fd.append('session_id', this.sessionId || '');
+        fd.append('name', name);
+        fd.append('email', email);
+        fd.append('subject', subject);
+        const res = await fetch('api/chat/handoff.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const data = await res.json();
+        if (data && data.ok) {
+          this.messages.push({
+            role: 'assistant',
+            text: `✅ Ticket #${data.ticket_id} created. Our support team will reach out soon.`,
+            actions: [{ label: 'Email Support', type: 'link', value: 'mailto:contact@ereview.ph' }]
+          });
+        } else {
+          this.messages.push({ role: 'assistant', text: 'Could not create a ticket right now. Please try again in a minute.' });
+        }
+      } catch (e) {
+        this.messages.push({ role: 'assistant', text: 'Network issue while creating a ticket. Please retry.' });
       }
-      if (/package|price|cost|fee|enroll|plan/.test(t)) {
-        return '📦 We offer 6-month (₱1,500), 9-month (₱2,000), and 14-month (₱2,500) packages. Click "View Packages" on the page or scroll to the Packages section for details.';
+      this.scrollToBottom(100);
+    },
+    onAction(action) {
+      if (!action || !action.type) return;
+      if (action.type === 'handoff') {
+        this.requestHandoff();
+        return;
       }
-      if (/register|sign up|account|how to join/.test(t)) {
-        return '✍️ Click the "Register" button at the top, fill out the form, and upload your payment proof. After admin approval, you\'ll get access to the platform.';
+      if (action.type === 'link' && action.value) {
+        const value = String(action.value);
+        if (value.startsWith('#')) {
+          const target = document.querySelector(value);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          this.open = false;
+          return;
+        }
+        window.location.href = value;
       }
-      if (/contact|email|support|help/.test(t)) {
-        return '📧 You can reach us at contact@ereview.ph. For quick answers, check the FAQs section on this page.';
-      }
-      if (/faq|question|where can i/.test(t)) {
-        return '❓ Scroll down to the "Frequently Asked Questions" section for common answers. You can also email contact@ereview.ph for specific queries.';
-      }
-      return '💬 For detailed support, email us at contact@ereview.ph or check the FAQs section on this page. Is there anything else I can help with?';
+    },
+    scrollToBottom(delay = 0) {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          const el = this.$refs.messagesEl;
+          if (el) {
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+          }
+        }, delay);
+      });
     }
   };
 }
@@ -889,7 +1099,7 @@ window.chatbot = function chatbot() {
           <i class="bi bi-x-lg text-lg"></i>
         </button>
 
-        <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="mx-auto h-20 w-auto max-h-24 select-none sm:h-24" loading="eager" decoding="async">
+        <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="select-none mx-auto" width="280" height="96" style="height:6rem;width:auto;max-height:6rem;max-width:min(280px,85vw);object-fit:contain;display:block;" loading="eager" decoding="async">
 
         <h2 id="login-title" class="mt-6 text-3xl font-extrabold tracking-[0.22em] text-brand-navy-dark uppercase">Login</h2>
         <p class="mt-3 text-lg font-bold text-gray-900">Welcome back</p>
@@ -978,7 +1188,7 @@ window.chatbot = function chatbot() {
           <i class="bi bi-x-lg text-lg"></i>
         </button>
 
-        <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="mx-auto h-20 w-auto max-h-24 select-none sm:h-24" loading="eager" decoding="async">
+        <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="select-none mx-auto" width="280" height="96" style="height:6rem;width:auto;max-height:6rem;max-width:min(280px,85vw);object-fit:contain;display:block;" loading="eager" decoding="async">
 
         <h2 id="register-title" class="mt-6 text-2xl font-bold text-gray-900 tracking-tight">Create your account</h2>
         <p class="mt-2 text-sm text-gray-600">Register to start your eReview journey.</p>

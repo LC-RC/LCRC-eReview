@@ -1,6 +1,83 @@
 <?php
 require_once 'auth.php';
 requireRole('admin');
+require_once __DIR__ . '/includes/profile_avatar.php';
+
+/**
+ * Remove saved subject cover files from disk (all extensions for this id).
+ */
+function ereview_subject_cover_delete_files(int $subjectId): void
+{
+    if ($subjectId <= 0) {
+        return;
+    }
+    $dir = __DIR__ . '/uploads/subject_covers';
+    foreach (glob($dir . '/subject_' . $subjectId . '.*') ?: [] as $f) {
+        if (is_file($f)) {
+            @unlink($f);
+        }
+    }
+}
+
+/**
+ * Validate and store an uploaded subject cover. Deletes any previous file for this subject.
+ *
+ * @return string|null Error message, or null on success
+ */
+function ereview_apply_subject_cover_upload(mysqli $conn, int $subjectId, array $file): ?string
+{
+    if ($subjectId <= 0) {
+        return 'Invalid subject.';
+    }
+    $size = (int)($file['size'] ?? 0);
+    if ($size <= 0 || $size > 5 * 1024 * 1024) {
+        return 'Cover image must be 5 MB or smaller.';
+    }
+    $tmp = (string)($file['tmp_name'] ?? '');
+    if ($tmp === '') {
+        return 'Invalid upload.';
+    }
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($tmp);
+    $extMap = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+    if (!isset($extMap[$mime])) {
+        return 'Use JPG, PNG, WebP, or GIF for the cover image.';
+    }
+    $dir = __DIR__ . '/uploads/subject_covers';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+        return 'Could not create cover upload directory.';
+    }
+    ereview_subject_cover_delete_files($subjectId);
+    $ext = $extMap[$mime];
+    $rel = 'uploads/subject_covers/subject_' . $subjectId . '.' . $ext;
+    $dest = __DIR__ . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    if (!@move_uploaded_file($tmp, $dest)) {
+        return 'Could not save cover image.';
+    }
+    $up = mysqli_prepare($conn, 'UPDATE subjects SET subject_cover = ? WHERE subject_id = ? LIMIT 1');
+    if (!$up) {
+        return 'Could not update cover path.';
+    }
+    mysqli_stmt_bind_param($up, 'si', $rel, $subjectId);
+    mysqli_stmt_execute($up);
+    mysqli_stmt_close($up);
+
+    return null;
+}
+
+$hasSubjectCover = false;
+$__scCol = @mysqli_query($conn, "SHOW COLUMNS FROM subjects LIKE 'subject_cover'");
+if ($__scCol && mysqli_fetch_assoc($__scCol)) {
+    $hasSubjectCover = true;
+}
+if ($__scCol) {
+    mysqli_free_result($__scCol);
+}
 
 $csrf = generateCSRFToken();
 
@@ -25,7 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $delId = sanitizeInt($_POST['subject_id'] ?? 0);
         if ($delId > 0) {
-            $stmt = mysqli_prepare($conn, "DELETE FROM subjects WHERE subject_id=?");
+            ereview_subject_cover_delete_files($delId);
+            $stmt = mysqli_prepare($conn, 'DELETE FROM subjects WHERE subject_id=?');
             mysqli_stmt_bind_param($stmt, 'i', $delId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
@@ -70,17 +148,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($subjectId > 0) {
-        $stmt = mysqli_prepare($conn, "UPDATE subjects SET subject_name=?, description=?, status=? WHERE subject_id=?");
+        $stmt = mysqli_prepare($conn, 'UPDATE subjects SET subject_name=?, description=?, status=? WHERE subject_id=?');
         mysqli_stmt_bind_param($stmt, 'sssi', $name, $desc, $status, $subjectId);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Subject updated.';
+        if ($hasSubjectCover) {
+            $removeCover = !empty($_POST['subject_cover_remove']);
+            $fileErr = (int)(($_FILES['subject_cover'] ?? [])['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($removeCover) {
+                ereview_subject_cover_delete_files($subjectId);
+                $clr = mysqli_prepare($conn, 'UPDATE subjects SET subject_cover = NULL WHERE subject_id = ? LIMIT 1');
+                if ($clr) {
+                    mysqli_stmt_bind_param($clr, 'i', $subjectId);
+                    mysqli_stmt_execute($clr);
+                    mysqli_stmt_close($clr);
+                }
+            } elseif ($fileErr === UPLOAD_ERR_OK) {
+                $err = ereview_apply_subject_cover_upload($conn, $subjectId, $_FILES['subject_cover']);
+                if ($err !== null) {
+                    unset($_SESSION['message']);
+                    $_SESSION['error'] = $err;
+                }
+            }
+        }
     } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO subjects (subject_name, description, status) VALUES (?, ?, ?)");
+        $stmt = mysqli_prepare($conn, 'INSERT INTO subjects (subject_name, description, status) VALUES (?, ?, ?)');
         mysqli_stmt_bind_param($stmt, 'sss', $name, $desc, $status);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        $newId = (int)mysqli_insert_id($conn);
         $_SESSION['message'] = 'Subject created.';
+        if ($hasSubjectCover && $newId > 0) {
+            $fileErr = (int)(($_FILES['subject_cover'] ?? [])['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($fileErr === UPLOAD_ERR_OK) {
+                $err = ereview_apply_subject_cover_upload($conn, $newId, $_FILES['subject_cover']);
+                if ($err !== null) {
+                    unset($_SESSION['message']);
+                    $_SESSION['error'] = $err;
+                }
+            }
+        }
     }
 
     header('Location: admin_subjects.php');
@@ -282,6 +390,12 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
             </tr>
           <?php else: ?>
             <?php while ($s = mysqli_fetch_assoc($subjects)): ?>
+              <?php
+                $rowCoverSrc = '';
+                if ($hasSubjectCover && !empty($s['subject_cover'])) {
+                    $rowCoverSrc = ereview_avatar_img_src((string)$s['subject_cover']);
+                }
+              ?>
               <tr class="border-b border-gray-100 hover:bg-gray-50/50">
                 <td class="px-5 py-3 text-center">
                   <div class="font-semibold text-gray-800"><?php echo h($s['subject_name']); ?></div>
@@ -316,7 +430,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
                               data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
                               data-description="<?php echo h($s['description'] ?? ''); ?>"
                               data-status="<?php echo h($s['status'] ?? 'active'); ?>"
-                              @click="expanded = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active')"
+                              data-cover-src="<?php echo h($rowCoverSrc); ?>"
+                              @click="expanded = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active', $el.dataset.coverSrc || '')"
                               class="admin-outline-btn flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-pencil"></i> Edit</button>
                       <button type="button"
                               data-id="<?php echo (int)$s['subject_id']; ?>"
@@ -368,7 +483,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
         <h2 class="text-xl font-bold text-gray-800 m-0" x-text="isEdit ? 'Edit Subject' : 'New Subject'"><i class="bi bi-bookmark-plus mr-2"></i></h2>
         <button type="button" @click="subjectModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_subjects.php" class="p-5">
+      <form method="POST" action="admin_subjects.php" enctype="multipart/form-data" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="subject_id" :value="subject_id">
@@ -391,6 +506,37 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea name="description" x-model="description" rows="4" placeholder="Optional notes for this subject" class="input-custom"></textarea>
           </div>
+          <?php if ($hasSubjectCover): ?>
+          <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 p-4 space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <label class="block text-sm font-semibold text-gray-800 mb-0.5">Card cover image</label>
+                <p class="text-xs text-gray-500 m-0">Shown as the top banner on each subject card for students. JPG, PNG, WebP, or GIF · max 5 MB · about 1200×480 or wider works best.</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative w-full max-w-[280px] aspect-[5/2] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#1665A0] to-[#143D59] shadow-inner">
+                <img x-show="coverPreview || existing_cover_src" :src="coverPreview || existing_cover_src" alt="" class="absolute inset-0 w-full h-full object-cover">
+                <div x-show="!coverPreview && !existing_cover_src" class="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-semibold px-3 text-center">No cover yet — students see a default blue banner</div>
+              </div>
+              <div class="flex-1 min-w-[12rem] space-y-2">
+                <input type="file" name="subject_cover" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1665A0] file:text-white hover:file:bg-[#145a8f] cursor-pointer" x-ref="coverFileInput" @change="
+                  cover_remove = false;
+                  const inp = $refs.coverFileInput;
+                  const f = inp && inp.files && inp.files[0];
+                  if (!f) { coverPreview = ''; return; }
+                  const r = new FileReader();
+                  r.onload = () => { coverPreview = r.result || ''; };
+                  r.readAsDataURL(f);
+                ">
+                <label x-show="isEdit && (existing_cover_src || coverPreview)" class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" name="subject_cover_remove" value="1" x-model="cover_remove" @change="if (cover_remove) { coverPreview = ''; if ($refs.coverFileInput) $refs.coverFileInput.value = ''; }" class="rounded border-gray-300 text-primary focus:ring-primary">
+                  <span>Remove cover from this subject</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <?php endif; ?>
           <div x-show="isEdit">
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select name="status" x-model="status" class="input-custom">
@@ -445,9 +591,28 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
         subject_name: '',
         description: '',
         status: 'active',
+        existing_cover_src: '',
+        coverPreview: '',
+        cover_remove: false,
         delete_id: 0,
         delete_name: '',
-        editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['subject_id'], 'name' => $edit['subject_name'] ?? '', 'description' => $edit['description'] ?? '', 'status' => $edit['status'] ?? 'active']) : 'null'; ?>,
+        editFromServer: <?php
+          $editJson = null;
+          if (!empty($edit)) {
+              $editCoverSrc = '';
+              if ($hasSubjectCover && !empty($edit['subject_cover'])) {
+                  $editCoverSrc = ereview_avatar_img_src((string)$edit['subject_cover']);
+              }
+              $editJson = [
+                  'id' => (int)$edit['subject_id'],
+                  'name' => $edit['subject_name'] ?? '',
+                  'description' => $edit['description'] ?? '',
+                  'status' => $edit['status'] ?? 'active',
+                  'coverSrc' => $editCoverSrc,
+              ];
+          }
+          echo json_encode($editJson);
+        ?>,
 
         openNewSubject() {
           this.isEdit = false;
@@ -455,14 +620,22 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
           this.subject_name = '';
           this.description = '';
           this.status = 'active';
+          this.existing_cover_src = '';
+          this.coverPreview = '';
+          this.cover_remove = false;
+          this.$nextTick(() => { if (this.$refs.coverFileInput) this.$refs.coverFileInput.value = ''; });
           this.subjectModalOpen = true;
         },
-        openEditSubject(id, name, description, status) {
+        openEditSubject(id, name, description, status, coverSrc) {
           this.isEdit = true;
           this.subject_id = id;
           this.subject_name = name || '';
           this.description = description || '';
           this.status = (status === 'inactive') ? 'inactive' : 'active';
+          this.existing_cover_src = coverSrc || '';
+          this.coverPreview = '';
+          this.cover_remove = false;
+          this.$nextTick(() => { if (this.$refs.coverFileInput) this.$refs.coverFileInput.value = ''; });
           this.subjectModalOpen = true;
         },
         openDeleteSubject(id, name) {
@@ -472,7 +645,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
         },
         initEditFromServer() {
           if (this.editFromServer) {
-            this.openEditSubject(this.editFromServer.id, this.editFromServer.name, this.editFromServer.description, this.editFromServer.status);
+            this.openEditSubject(
+              this.editFromServer.id,
+              this.editFromServer.name,
+              this.editFromServer.description,
+              this.editFromServer.status,
+              this.editFromServer.coverSrc || ''
+            );
           }
         }
       };
