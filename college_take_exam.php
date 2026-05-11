@@ -5,6 +5,10 @@ require_once __DIR__ . '/includes/college_schema.php';
 require_once __DIR__ . '/includes/college_exam_helpers.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
 
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
 $pageTitle = 'Take exam';
 $uid = getCurrentUserId();
 $examId = sanitizeInt($_GET['exam_id'] ?? 0);

@@ -585,7 +585,7 @@ $prefillSecs = $_rest % 60;
       </div>
     <?php endif; ?>
 
-    <form id="exam-edit-form" method="post" class="space-y-6 dash-anim delay-2" novalidate>
+    <form id="exam-edit-form" method="post" accept-charset="UTF-8" class="space-y-6 dash-anim delay-2" novalidate>
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
 
       <h2 class="section-title"><i class="bi bi-sliders"></i> Exam details</h2>
@@ -923,6 +923,7 @@ $prefillSecs = $_rest % 60;
           plugins: 'table lists link',
           toolbar: 'undo redo | bold italic underline | bullist numlist | table | removeformat',
           valid_elements: 'p,br,strong/b,em/i,u,sub,sup,ul,ol,li,table,thead,tbody,tfoot,tr,th[colspan|rowspan|scope],td[colspan|rowspan]',
+          entity_encoding: 'raw',
           forced_root_block: 'p',
           skin: 'oxide',
           content_css: false,
@@ -1509,7 +1510,7 @@ $prefillSecs = $_rest % 60;
             'choice_d' => $q['choice_d'] ?? '',
             'correct_answer' => $q['correct_answer'] ?? '',
         ];
-    }, $questions), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    }, $questions), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
 
     function validateMissingCorrect() {
       var missing = [];

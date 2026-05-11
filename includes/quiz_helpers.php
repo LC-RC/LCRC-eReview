@@ -49,8 +49,12 @@ function quiz_rich_clean_html_fragment(string $value): ?string {
   try {
     $dom = new DOMDocument();
     $previousUseInternalErrors = libxml_use_internal_errors(true);
-    $wrappedHtml = '<!DOCTYPE html><html><body>' . $value . '</body></html>';
-    $loaded = @$dom->loadHTML($wrappedHtml, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    // LibXML defaults to Latin-1 unless UTF-8 is declared — breaks ₱, em-dash, etc.
+    $wrappedHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' . $value . '</body></html>';
+    $loaded = @$dom->loadHTML(
+      '<?xml encoding="UTF-8">' . $wrappedHtml,
+      LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+    );
     libxml_clear_errors();
     libxml_use_internal_errors($previousUseInternalErrors);
     if (!$loaded) {
