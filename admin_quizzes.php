@@ -26,6 +26,19 @@ if (!in_array('time_limit_seconds', $quizCols, true)) {
     @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `time_limit_seconds` int(11) NOT NULL DEFAULT 1800 AFTER `time_limit_minutes`");
     @mysqli_query($conn, "UPDATE `quizzes` SET `time_limit_seconds` = `time_limit_minutes` * 60 WHERE `time_limit_seconds` = 0");
 }
+if (in_array('quiz_type', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` MODIFY COLUMN `quiz_type` ENUM('randomized','topical','pre-test','post-test','mock') NOT NULL DEFAULT 'topical'");
+    @mysqli_query($conn, "UPDATE `quizzes` SET `quiz_type`='topical' WHERE `quiz_type` IN ('randomized','pre-test','post-test','mock') OR `quiz_type` IS NULL OR `quiz_type`=''");
+}
+if (!in_array('shuffle_mcq_questions', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `shuffle_mcq_questions` tinyint(1) NOT NULL DEFAULT 0 AFTER `time_limit_seconds`");
+}
+if (!in_array('shuffle_mcq_choices', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `shuffle_mcq_choices` tinyint(1) NOT NULL DEFAULT 0 AFTER `shuffle_mcq_questions`");
+}
+if (!in_array('mcq_pick_count', $quizCols, true)) {
+    @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `mcq_pick_count` int(11) NOT NULL DEFAULT 0 AFTER `shuffle_mcq_choices`");
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -58,16 +71,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: admin_quizzes.php?subject_id='.$subjectId);
         exit;
     }
-    $quizType = 'pre-test'; // All quizzes go to Quizzers; Test Bank uses mock only
+    $quizType = 'topical';
+    $shuffleMcqQuestions = !empty($_POST['shuffle_mcq_questions']) ? 1 : 0;
+    $shuffleMcqChoices = !empty($_POST['shuffle_mcq_choices']) ? 1 : 0;
+    $mcqPickCount = max(0, (int)($_POST['mcq_pick_count'] ?? 0));
     if ($quizId > 0) {
-        $stmt = mysqli_prepare($conn, "UPDATE quizzes SET title=?, quiz_type=?, time_limit_minutes=?, time_limit_seconds=? WHERE quiz_id=? AND subject_id=?");
-        mysqli_stmt_bind_param($stmt, 'ssiiii', $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $quizId, $subjectId);
+        $stmt = mysqli_prepare($conn, "UPDATE quizzes SET title=?, quiz_type=?, time_limit_minutes=?, time_limit_seconds=?, shuffle_mcq_questions=?, shuffle_mcq_choices=?, mcq_pick_count=? WHERE quiz_id=? AND subject_id=?");
+        mysqli_stmt_bind_param($stmt, 'ssiiiiiii', $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount, $quizId, $subjectId);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Quiz updated.';
     } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds) VALUES (?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'issii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds);
+        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds, shuffle_mcq_questions, shuffle_mcq_choices, mcq_pick_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issiiiii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Quiz created.';
@@ -80,7 +96,7 @@ $edit = null;
 if (isset($_GET['edit'])) {
     $eid = sanitizeInt($_GET['edit']);
     if ($eid > 0) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM quizzes WHERE quiz_id=? AND subject_id=? LIMIT 1");
+        $stmt = mysqli_prepare($conn, "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE q.quiz_id=? AND q.subject_id=? LIMIT 1");
         mysqli_stmt_bind_param($stmt, 'ii', $eid, $subjectId);
         mysqli_stmt_execute($stmt);
         $r = mysqli_stmt_get_result($stmt);
@@ -94,12 +110,6 @@ $perPage = 15;
 $offset = ($page - 1) * $perPage;
 
 $searchQ = trim($_GET['q'] ?? '');
-$typeFilter = $_GET['type'] ?? '';
-$allowedQuizTypes = ['pre-test', 'post-test', 'mock'];
-if ($typeFilter !== '' && !in_array($typeFilter, $allowedQuizTypes, true)) {
-    $typeFilter = '';
-}
-
 $countParts = ['subject_id=?'];
 $countTypes = 'i';
 $countVals = [$subjectId];
@@ -107,11 +117,6 @@ if ($searchQ !== '') {
     $countParts[] = 'title LIKE ?';
     $countTypes .= 's';
     $countVals[] = '%' . $searchQ . '%';
-}
-if ($typeFilter !== '') {
-    $countParts[] = 'quiz_type=?';
-    $countTypes .= 's';
-    $countVals[] = $typeFilter;
 }
 $countSql = 'SELECT COUNT(*) AS total FROM quizzes WHERE ' . implode(' AND ', $countParts);
 $stmt = mysqli_prepare($conn, $countSql);
@@ -135,11 +140,6 @@ if ($searchQ !== '') {
     $listTypes .= 's';
     $listVals[] = '%' . $searchQ . '%';
 }
-if ($typeFilter !== '') {
-    $listParts[] = 'q.quiz_type=?';
-    $listTypes .= 's';
-    $listVals[] = $typeFilter;
-}
 $listSql = "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE " . implode(' AND ', $listParts) . " ORDER BY q.quiz_id DESC LIMIT ? OFFSET ?";
 $listTypes .= 'ii';
 $listVals[] = $perPage;
@@ -149,8 +149,8 @@ mysqli_stmt_bind_param($stmt, $listTypes, ...$listVals);
 mysqli_stmt_execute($stmt);
 $quizzes = mysqli_stmt_get_result($stmt);
 
-$quizTypeLabels = ['pre-test' => 'Pre-test', 'post-test' => 'Post-test', 'mock' => 'Mock Exam'];
-$quizTypeTitles = ['pre-test' => 'Before lessons', 'post-test' => 'After lessons', 'mock' => 'Full practice exam'];
+$quizTypeLabels = ['topical' => 'Topical'];
+$quizTypeTitles = ['topical' => 'Focused set grouped by topic'];
 
 $pageTitle = 'Quizzes - ' . $subject['subject_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($subject['subject_name']), 'admin_quizzes.php?subject_id=' . $subjectId ], ['Quizzes'] ];
@@ -200,18 +200,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
       <label for="quiz-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search</label>
       <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title…" class="input-custom w-full" autocomplete="off">
     </div>
-    <div class="w-full sm:w-44">
-      <label for="quiz-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Type</label>
-      <select id="quiz-search-type" name="type" class="input-custom w-full">
-        <option value=""<?php echo $typeFilter === '' ? ' selected' : ''; ?>>All types</option>
-        <option value="pre-test"<?php echo $typeFilter === 'pre-test' ? ' selected' : ''; ?>>Pre-test</option>
-        <option value="post-test"<?php echo $typeFilter === 'post-test' ? ' selected' : ''; ?>>Post-test</option>
-        <option value="mock"<?php echo $typeFilter === 'mock' ? ' selected' : ''; ?>>Mock exam</option>
-      </select>
-    </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-funnel"></i> Apply</button>
-      <?php if ($searchQ !== '' || $typeFilter !== ''): ?>
+      <?php if ($searchQ !== ''): ?>
         <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
@@ -244,9 +235,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         </thead>
         <tbody>
           <?php $hasAny = false; while ($qz = mysqli_fetch_assoc($quizzes)): $hasAny = true;
-            $qt = (string)$qz['quiz_type'];
-            $typeClass = $qt === 'mock' ? 'quiz-type-pill quiz-type-pill--mock' : ($qt === 'post-test' ? 'quiz-type-pill quiz-type-pill--post' : 'quiz-type-pill quiz-type-pill--pre');
-            $typeLabel = $quizTypeLabels[$qt] ?? ucfirst(str_replace('-', ' ', $qt));
+            $qt = 'topical';
+            $typeClass = 'quiz-type-pill quiz-type-pill--post';
+            $typeLabel = $quizTypeLabels[$qt] ?? 'Topical';
             $typeTitle = $quizTypeTitles[$qt] ?? '';
             $qCnt = (int)($qz['questions_cnt'] ?? 0);
             $questionsCellClass = $qCnt === 0 ? 'quiz-qcount quiz-qcount--empty' : 'quiz-qcount quiz-qcount--ok';
@@ -268,7 +259,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     </button>
                   </div>
                   <div x-show="expanded" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="flex flex-col gap-2 mt-2">
-                    <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-seconds="<?php echo (int)getQuizTimeLimitSeconds($qz); ?>" @click="expanded = false; openEditQuiz($el.dataset.id, $el.dataset.title || '', parseInt($el.dataset.seconds || '1800', 10))" class="quiz-admin-btn-secondary flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition"><i class="bi bi-pencil"></i> Edit</button>
+                    <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" data-seconds="<?php echo (int)getQuizTimeLimitSeconds($qz); ?>" data-qcount="<?php echo (int)$qCnt; ?>" data-shuffle-mcq="<?php echo !empty($qz['shuffle_mcq_questions']) ? '1' : '0'; ?>" data-shuffle-choices="<?php echo !empty($qz['shuffle_mcq_choices']) ? '1' : '0'; ?>" data-pick-count="<?php echo (int)($qz['mcq_pick_count'] ?? 0); ?>" @click="expanded = false; openEditQuiz($el.dataset.id, $el.dataset.title || '', parseInt($el.dataset.seconds || '1800', 10), parseInt($el.dataset.qcount || '0', 10), $el.dataset.shuffleMcq === '1', $el.dataset.shuffleChoices === '1', parseInt($el.dataset.pickCount || '0', 10))" class="quiz-admin-btn-secondary flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition"><i class="bi bi-pencil"></i> Edit</button>
                     <button type="button" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-title="<?php echo h($qz['title'] ?? ''); ?>" @click="expanded = false; openDeleteQuiz($el.dataset.id, $el.dataset.title || '')" class="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
                   </div>
                 </div>
@@ -296,9 +287,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
             $filterQs = [];
             if ($searchQ !== '') {
                 $filterQs['q'] = $searchQ;
-            }
-            if ($typeFilter !== '') {
-                $filterQs['type'] = $typeFilter;
             }
             $filterSuffix = $filterQs ? '&' . http_build_query($filterQs) : '';
             $baseUrl = 'admin_quizzes.php?subject_id=' . (int)$subjectId . $filterSuffix;
@@ -332,10 +320,46 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="quiz_id" :value="quiz_id">
+        <div x-effect="normalizePickCount()" class="hidden"></div>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Quiz Title</label>
             <input type="text" name="title" x-model="title" required placeholder="e.g., Chapter 1 Quiz" class="input-custom">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Quiz Type</label>
+            <div class="rounded-lg border border-white/15 bg-white/5 px-3 py-2">
+              <span class="inline-flex items-center gap-2 text-sm text-gray-200 font-medium">
+                <i class="bi bi-bookmarks-fill text-violet-300"></i> Topical (default)
+              </span>
+            </div>
+            <input type="hidden" name="quiz_type" value="topical">
+            <p class="text-xs text-gray-500 mt-1">This workflow uses topical quizzes only.</p>
+          </div>
+          <div class="rounded-xl border border-white/15 bg-white/5 p-3 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold text-gray-200 m-0 inline-flex items-center gap-2"><i class="bi bi-shuffle text-violet-300"></i> Shuffle configuration</h3>
+              <span class="text-xs text-gray-400">Questions in this quiz: <strong x-text="question_count"></strong></span>
+            </div>
+            <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer hover:bg-white/10 transition">
+              <input type="checkbox" name="shuffle_mcq_questions" x-model="shuffle_mcq_questions" class="accent-violet-500">
+              <span class="text-sm text-gray-200 font-medium">Shuffle MCQ questions</span>
+            </label>
+            <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 cursor-pointer hover:bg-white/10 transition">
+              <input type="checkbox" name="shuffle_mcq_choices" x-model="shuffle_mcq_choices" class="accent-violet-500">
+              <span class="text-sm text-gray-200 font-medium">Shuffle MCQ choices</span>
+            </label>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Pick random questions per attempt</label>
+              <select name="mcq_pick_count" x-model.number="mcq_pick_count" class="input-custom w-full" :disabled="pickOptions.length === 0 || !shuffle_mcq_questions">
+                <option value="0">Use all questions</option>
+                <template x-for="opt in pickOptions" :key="'pick-' + opt">
+                  <option :value="opt" x-text="'Per ' + opt"></option>
+                </template>
+              </select>
+              <p class="text-xs text-gray-500 mt-1" x-show="pickOptions.length === 0" x-cloak>Add at least 10 questions to enable per-set random pick.</p>
+              <p class="text-xs text-gray-500 mt-1" x-show="pickOptions.length > 0 && !shuffle_mcq_questions" x-cloak>Enable “Shuffle MCQ questions” to activate per-set picking.</p>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Time limit (how long to take the quiz)</label>
@@ -392,31 +416,64 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         isEdit: false,
         quiz_id: 0,
         title: '',
+        question_count: 0,
+        shuffle_mcq_questions: false,
+        shuffle_mcq_choices: false,
+        mcq_pick_count: 0,
         time_limit_hours: 0,
         time_limit_mins: 30,
         time_limit_secs: 0,
         delete_quiz_id: 0,
         delete_quiz_title: '',
-        editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['quiz_id'], 'title' => $edit['title'] ?? '', 'time_limit_seconds' => (int)getQuizTimeLimitSeconds($edit ?? [])]) : 'null'; ?>,
+        editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['quiz_id'], 'title' => $edit['title'] ?? '', 'time_limit_seconds' => (int)getQuizTimeLimitSeconds($edit ?? []), 'question_count' => (int)($edit['questions_cnt'] ?? 0), 'shuffle_mcq_questions' => !empty($edit['shuffle_mcq_questions']), 'shuffle_mcq_choices' => !empty($edit['shuffle_mcq_choices']), 'mcq_pick_count' => (int)($edit['mcq_pick_count'] ?? 0)]) : 'null'; ?>,
+        get pickOptions() {
+          var max = parseInt(this.question_count || 0, 10);
+          if (!max || max < 10) return [];
+          var out = [];
+          for (var n = 10; n < max; n += 10) out.push(n);
+          return out;
+        },
+        normalizePickCount() {
+          if (!this.shuffle_mcq_questions) {
+            this.mcq_pick_count = 0;
+            return;
+          }
+          var opts = this.pickOptions;
+          if (!opts.length) {
+            this.mcq_pick_count = 0;
+            return;
+          }
+          if (this.mcq_pick_count === 0) return;
+          if (opts.indexOf(this.mcq_pick_count) === -1) this.mcq_pick_count = 0;
+        },
         openNewQuiz() {
           this.isEdit = false;
           this.quiz_id = 0;
           this.title = '';
+          this.question_count = 0;
+          this.shuffle_mcq_questions = false;
+          this.shuffle_mcq_choices = false;
+          this.mcq_pick_count = 0;
           this.time_limit_hours = 0;
           this.time_limit_mins = 30;
           this.time_limit_secs = 0;
           this.quizModalOpen = true;
         },
-        openEditQuiz(id, title, totalSeconds) {
+        openEditQuiz(id, title, totalSeconds, questionCount, shuffleMcqQuestions, shuffleMcqChoices, mcqPickCount) {
           this.isEdit = true;
           this.quiz_id = id;
           this.title = title || '';
+          this.question_count = parseInt(questionCount || 0, 10) || 0;
+          this.shuffle_mcq_questions = !!shuffleMcqQuestions;
+          this.shuffle_mcq_choices = !!shuffleMcqChoices;
+          this.mcq_pick_count = parseInt(mcqPickCount || 0, 10) || 0;
           totalSeconds = parseInt(totalSeconds, 10);
           if (isNaN(totalSeconds) || totalSeconds <= 0) totalSeconds = 1800;
           totalSeconds = (totalSeconds > 0 && totalSeconds <= 86400) ? totalSeconds : 1800;
           this.time_limit_hours = Math.floor(totalSeconds / 3600);
           this.time_limit_mins = Math.floor((totalSeconds % 3600) / 60);
           this.time_limit_secs = totalSeconds % 60;
+          this.normalizePickCount();
           this.quizModalOpen = true;
         },
         openDeleteQuiz(id, title) {
@@ -425,7 +482,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           this.deleteModalOpen = true;
         },
         initEditFromServer() {
-          if (this.editFromServer) this.openEditQuiz(this.editFromServer.id, this.editFromServer.title, this.editFromServer.time_limit_seconds || 1800);
+          if (this.editFromServer) this.openEditQuiz(
+            this.editFromServer.id,
+            this.editFromServer.title,
+            this.editFromServer.time_limit_seconds || 1800,
+            this.editFromServer.question_count || 0,
+            !!this.editFromServer.shuffle_mcq_questions,
+            !!this.editFromServer.shuffle_mcq_choices,
+            this.editFromServer.mcq_pick_count || 0
+          );
         }
       };
     }

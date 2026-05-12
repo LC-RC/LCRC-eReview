@@ -101,7 +101,7 @@ $pageTitle = 'Subjects';
       border-radius: .75rem;
       border: 1px solid rgba(15, 23, 42, 0.12);
       box-shadow: 0 12px 32px -20px rgba(20, 61, 89, 0.55);
-      overflow: hidden;
+      overflow: visible;
       transition:
         transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
         box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1),
@@ -123,6 +123,8 @@ $pageTitle = 'Subjects';
       flex-direction: column;
       aspect-ratio: 2.55 / 1;
       min-height: 11rem;
+      border-radius: inherit;
+      overflow: hidden;
     }
     @supports not (aspect-ratio: 1) {
       .subject-catalog-card__fill { min-height: 13.5rem; }
@@ -155,7 +157,7 @@ $pageTitle = 'Subjects';
       min-height: 100%;
       height: 100%;
       box-sizing: border-box;
-      padding: .75rem 1rem .85rem;
+      padding: .75rem 1.12rem 2rem;
     }
     .subject-catalog-card__top {
       display: flex;
@@ -227,12 +229,13 @@ $pageTitle = 'Subjects';
       overflow: hidden;
     }
     .subject-catalog-card__footer {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
-      gap: .75rem;
+      column-gap: .85rem;
       margin-top: .65rem;
       padding-top: .75rem;
+      padding-bottom: .75rem;
       border-top: 1px solid rgba(255, 255, 255, 0.22);
       font-size: .875rem;
       font-weight: 600;
@@ -240,38 +243,66 @@ $pageTitle = 'Subjects';
       text-shadow: 0 1px 3px rgba(2, 6, 23, 0.85);
     }
     .subject-catalog-card__lessons {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.45rem;
+      min-width: 0;
+      line-height: 1.2;
     }
     .subject-catalog-card__lessons i {
-      font-size: 1.05rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 1.15rem;
+      height: 1.15rem;
+      font-size: 1rem;
+      line-height: 1;
       transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), color 0.25s ease;
     }
     .subject-catalog-card:hover .subject-catalog-card__lessons i {
       transform: translateY(-1px);
     }
     .subject-catalog-card .subject-btn {
+      justify-self: end;
+      align-self: center;
       flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       text-decoration: none;
       border-radius: 9999px;
       border: 1px solid rgba(255, 255, 255, 0.52);
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
       font-weight: 700;
-      padding: 0.45rem 0.95rem;
-      font-size: 0.8rem;
+      box-sizing: border-box;
+      min-height: 2.5rem;
+      padding: 0 1.1rem;
+      font-size: 0.8125rem;
+      letter-spacing: 0.01em;
+      gap: 0.45rem;
+      line-height: 1.15;
       backdrop-filter: blur(14px) saturate(140%);
       -webkit-backdrop-filter: blur(14px) saturate(140%);
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.38),
-        0 6px 18px -8px rgba(2, 6, 23, 0.55);
+        0 4px 14px -6px rgba(2, 6, 23, 0.45);
       transition:
         background 0.3s cubic-bezier(0.22, 1, 0.36, 1),
         border-color 0.3s ease,
         box-shadow 0.3s ease,
         transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
         filter 0.25s ease;
+    }
+    .subject-catalog-card .subject-btn i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      line-height: 1;
+      opacity: 0.95;
+      flex-shrink: 0;
     }
     .subject-catalog-card .subject-btn:hover {
       background: rgba(255, 255, 255, 0.3);
@@ -284,7 +315,7 @@ $pageTitle = 'Subjects';
     }
     .subject-catalog-card .subject-btn:focus-visible {
       outline: 2px solid rgba(191, 219, 254, 0.95);
-      outline-offset: 2px;
+      outline-offset: 3px;
     }
     @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
       .subject-catalog-card .subject-btn {

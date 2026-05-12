@@ -109,8 +109,65 @@ function quiz_rich_clean_html_fragment(string $value): ?string {
 }
 
 /**
+ * Remove trailing topic tag from question-sort stems before storing as quiz questions.
+ * Drops red parenthetical blocks matching the parsed topic name (not shown to students).
+ *
+ * @param string $stemHtml HTML from docx parser (may include ereview-qsort-font-red spans).
+ * @param string|null $topicLabel Parsed topic string, e.g. "Registrations and Administrative Requirements".
+ */
+function ereview_qsort_stem_html_for_quiz(string $stemHtml, ?string $topicLabel): string {
+  $stemHtml = trim((string)$stemHtml);
+  if ($stemHtml === '') {
+    return '';
+  }
+  if ($topicLabel !== null && $topicLabel !== '') {
+    $tl = trim($topicLabel);
+    // Flexible whitespace between words (Word vs parser normalization).
+    $parts = preg_split('/\s+/u', $tl, -1, PREG_SPLIT_NO_EMPTY);
+    $flexInner = implode('\\s+', array_map(static function ($w) {
+      return preg_quote($w, '#');
+    }, $parts));
+    $qtExact = preg_quote($tl, '#');
+    // Optional <br> chain before the red span (common when topic is on its own mini-line).
+    $stemHtml = preg_replace(
+      '#(?:\s*<br\s*/?>(?:\s|&nbsp;|\n)*)+\s*<span[^>]*class="[^"]*ereview-qsort-font-red[^"]*"[^>]*>\s*\(\s*(?:' . $flexInner . '|' . str_replace('\\ ', '\\s+', $qtExact) . ')\s*\)\s*</span>\s*$#ui',
+      '',
+      $stemHtml
+    );
+    $stemHtml = preg_replace(
+      '#\s*<span[^>]*class="[^"]*ereview-qsort-font-red[^"]*"[^>]*>\s*\(\s*(?:' . $flexInner . '|' . str_replace('\\ ', '\\s+', $qtExact) . ')\s*\)\s*</span>\s*$#ui',
+      '',
+      $stemHtml
+    );
+    // Plain trailing "(Topic)" if not wrapped in span
+    $stemHtml = preg_replace(
+      '#(?:\s*<br\s*/?>(?:\s|&nbsp;|\n)*)+\s*\(\s*(?:' . $flexInner . '|' . str_replace('\\ ', '\\s+', $qtExact) . ')\s*\)\s*$#ui',
+      '',
+      $stemHtml
+    );
+    $stemHtml = preg_replace(
+      '#\s*\(\s*(?:' . $flexInner . '|' . str_replace('\\ ', '\\s+', $qtExact) . ')\s*\)\s*$#ui',
+      '',
+      $stemHtml
+    );
+    // Fallback: remove trailing ereview-qsort-font-red span when its text equals "(topic)" (spacing-insensitive).
+    if (preg_match('#<span[^>]*class="[^"]*ereview-qsort-font-red[^"]*"[^>]*>([\s\S]*?)</span>\s*$#ui', $stemHtml, $sm)) {
+      $innerVis = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($sm[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+      $topicNorm = preg_replace('/\s+/u', ' ', $tl);
+      $expectParen = '(' . $topicNorm . ')';
+      if (strcasecmp($innerVis, $expectParen) === 0 || strcasecmp($innerVis, $topicNorm) === 0) {
+        $stemHtml = preg_replace('#(?:\s*<br\s*/?>(?:\s|&nbsp;|\n)*)*\s*<span[^>]*class="[^"]*ereview-qsort-font-red[^"]*"[^>]*>[\s\S]*?</span>\s*$#ui', '', $stemHtml);
+      }
+    }
+  }
+
+  return trim($stemHtml);
+}
+
+/**
  * Sanitize rich question HTML before storing in the database (same rules as quiz questions).
  */
+
 function sanitizeQuizRichHtmlForStorage(string $value): string {
   $value = trim($value);
   if ($value === '') {

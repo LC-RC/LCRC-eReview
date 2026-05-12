@@ -87,6 +87,10 @@ mysqli_stmt_execute($stmt);
 $quizzesAll = mysqli_stmt_get_result($stmt);
 mysqli_stmt_close($stmt);
 
+$normalizeQuizType = static function ($rawType) {
+    return 'topical';
+};
+
 // Load attempt data for Quizzers tab (in_progress + last score per quiz) for current student
 $userId = getCurrentUserId();
 $attemptsByQuiz = [];
@@ -139,9 +143,12 @@ $quizzesPassed = 0;
 $quizzesFailed = 0;
 $scoreSum = 0;
 $scoreCount = 0;
+$quizTypeCounts = ['topical' => 0];
 mysqli_data_seek($quizzesAll, 0);
 while ($q = mysqli_fetch_assoc($quizzesAll)) {
+    $qType = $normalizeQuizType($q['quiz_type'] ?? '');
     $totalQuizzes++;
+    $quizTypeCounts[$qType]++;
     $qid = (int)$q['quiz_id'];
     $lastScore = $lastScoreByQuiz[$qid] ?? null;
     if ($lastScore !== null && (int)($lastScore['total'] ?? 0) > 0) {
@@ -182,11 +189,16 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
     if ($notTaken) $rowStatus = 'not_taken';
     $statusBadgeClass = $rowStatus === 'passed' ? 'passed' : ($rowStatus === 'need_retake' ? 'failed' : ($rowStatus === 'in_progress' ? 'in-progress' : 'not-started'));
     $statusLabel = $rowStatus === 'need_retake' ? 'Failed' : ($rowStatus === 'not_taken' ? 'Not started' : ucfirst(str_replace('_', ' ', $rowStatus)));
+    $quizType = $normalizeQuizType($q['quiz_type'] ?? '');
+    $quizTypeLabel = 'Topical';
 
     $quizRows[] = [
         'qid' => $qid,
         'title' => (string)($q['title'] ?? ''),
+        'quiz_type' => $quizType,
+        'quiz_type_label' => $quizTypeLabel,
         'count' => $cnt,
+        'duration_seconds' => (int)$timeLimitSeconds,
         'duration' => formatTimeLimitSeconds($timeLimitSeconds),
         'in_progress_attempt_id' => $inProgressAttemptId ? (int)$inProgressAttemptId : null,
         'last_attempt_date' => $lastAttemptDate,
@@ -270,17 +282,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       box-shadow: 0 0 0 3px rgba(65, 84, 241, 0.15);
     }
 
-    /* Quizzers table: rows and buttons */
-    .quiz-table-row {
-      transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease;
-    }
-    .quiz-table-row:hover {
-      background-color: rgba(51, 147, 255, 0.04);
-      box-shadow:
-        0 0 0 1px rgba(51, 147, 255, 0.55),
-        0 10px 24px rgba(51, 147, 255, 0.5);
-      transform: translateY(-1px);
-    }
+    /* Quizzers list rows: hover lives on .qq-grid-row (grid layout, college_exams-inspired) */
     .quiz-action-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
       min-width: 8.5rem; height: 2.25rem; padding: 0 1rem; font-size: 0.8125rem; font-weight: 600;
@@ -367,9 +369,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .quiz-table-row:hover .quiz-score-badge {
-      transform: scale(1.05);
-    }
     /* Staggered fade-in for quiz rows when tab is shown */
     @keyframes quiz-row-fade-in {
       from { opacity: 0; transform: translateY(4px); }
@@ -384,84 +383,859 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quizzers-header { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(22, 101, 160, 0.15); background: rgba(232, 242, 250, 0.5); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .quizzers-header .quizzers-title { font-size: 1.25rem; font-weight: 700; color: #143D59; margin: 0 0 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
     .quizzers-header .quizzers-subtitle { font-size: 0.875rem; color: rgba(20, 61, 89, 0.7); margin: 0; width: 100%; }
-    .quiz-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; padding: 1rem 1.5rem; margin-bottom: 0; }
-    .quiz-summary-card {
-      /* Match student dashboard quick cards */
-      position: relative;
+    /* Triple-bar header: subtitle must not force full-width column break */
+    .quizzers-header.quizzers-header--triple .quizzers-header__lead .quizzers-subtitle {
+      width: auto;
+      max-width: 42rem;
+      line-height: 1.45;
+    }
+    /* Quizzers list: outer scroll + shell alignment (matches .quiz-control-panel side margins) */
+    .quizzers-section .quiz-table-view {
+      padding: 0 1rem 0.25rem;
+    }
+    @media (min-width: 640px) {
+      .quizzers-section .quiz-table-view {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+    }
+    .quizzers-section .quiz-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 0.75rem;
+    }
+    /* Matches college_exams.php dash-card + exam grid (tailored columns for subject quizzes) */
+    .quizzers-section .quiz-table-shell.qq-list-shell {
+      min-width: 920px;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(22, 101, 160, 0.18);
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 56%);
+      box-shadow:
+        0 10px 28px -22px rgba(20, 61, 89, 0.55),
+        0 1px 0 rgba(255, 255, 255, 0.85) inset;
       overflow: hidden;
-      border-radius: 1rem; /* ~rounded-2xl */
-      padding: 1rem 1.25rem;
-      text-align: left;
-      background-image: linear-gradient(to bottom right, #d4e8f7, #e8f2fa);
-      border: 1px solid rgba(22, 101, 160, 0.22);
-      box-shadow:
-        0 2px 8px rgba(20, 61, 89, 0.12),
-        0 4px 16px rgba(20, 61, 89, 0.08);
-      transition: box-shadow 0.25s ease, transform 0.18s ease, border-color 0.18s ease;
-      color: #143D59;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    .quiz-summary-card:hover {
-      transform: translateY(-2px);
-      box-shadow:
-        0 8px 24px rgba(20, 61, 89, 0.18),
-        0 10px 30px rgba(20, 61, 89, 0.24);
+    .quizzers-section .qq-grid-head,
+    .quizzers-section .qq-grid-row {
+      display: grid;
+      grid-template-columns:
+        minmax(11rem, 1.38fr)
+        minmax(6.5rem, 0.52fr)
+        minmax(10rem, 0.92fr)
+        minmax(7.5rem, 0.62fr)
+        minmax(4.25rem, 0.34fr)
+        minmax(11rem, 1fr);
+      gap: 0.5rem 0.75rem;
+      align-items: center;
     }
-    .quiz-summary-card .summary-value {
-      font-size: 1.4rem;
+    .quizzers-section .qq-grid-head {
+      padding: 0.72rem 1.1rem;
+      border-bottom: 1px solid #dbe7f5;
+      background: linear-gradient(180deg, #edf6ff 0%, #f7fbff 100%);
+      font-size: 0.75rem;
       font-weight: 800;
-      color: #143D59;
-    }
-    .quiz-summary-card .summary-label {
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(20, 61, 89, 0.75);
+      letter-spacing: 0.06em;
+      color: #143d59;
     }
-    .quiz-summary-card:hover {
-      box-shadow:
-        0 0 0 1px rgba(51, 147, 255, 0.45),
-        0 10px 24px rgba(51, 147, 255, 0.4);
-      transform: translateY(-2px);
-      border-color: rgba(51, 147, 255, 0.6);
+    .quizzers-section .qq-grid-head span:first-child {
+      text-align: left;
     }
-    .quiz-summary-card .summary-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; line-height: 1.2; display: block; }
-    .quiz-summary-card .summary-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.25rem; }
-    .quiz-summary-card.summary-passed .summary-value { color: #059669; }
-    .quiz-summary-card.summary-failed .summary-value { color: #dc2626; }
-    .quiz-summary-card.summary-avg .summary-value { color: #4154f1; }
-    .quiz-table-wrap { overflow-x: auto; border-radius: 0 0 12px 12px; }
-    .quiz-filter-pills { overflow-wrap: anywhere; }
-    .quiz-table { width: 100%; min-width: 860px; border-collapse: separate; border-spacing: 0; text-sm; }
-    .quiz-table thead th { padding: 0.75rem 1rem; font-weight: 600; color: #143D59; background: rgba(232, 242, 250, 0.6); border-bottom: 2px solid rgba(22, 101, 160, 0.2); white-space: nowrap; }
-    .quiz-table thead th:first-child { text-align: left; padding-left: 1.5rem; }
-    .quiz-table thead th:not(:first-child) { text-align: center; }
-    .quiz-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.18s ease; }
-    .quiz-table tbody tr:hover {
-      background-color: rgba(51, 147, 255, 0.04);
-      box-shadow:
-        0 0 0 1px rgba(51, 147, 255, 0.6),
-        0 10px 24px rgba(51, 147, 255, 0.5);
+    .quizzers-section .qq-grid-head span:not(:first-child) {
+      text-align: center;
+    }
+    .quizzers-section .qq-list-body .qq-grid-row {
+      padding: 0.85rem 1.1rem;
+      border-top: 1px solid #e8f0f8;
+      transition: background-color 0.2s ease;
+    }
+    .quizzers-section .qq-list-body .qq-grid-row:first-child {
+      border-top: none;
+    }
+    .quizzers-section .qq-list-body .qq-grid-row:hover {
+      background: #f8fbff;
+    }
+    .quizzers-section .qq-cell--title .qq-title-line {
+      display: block;
+      font-weight: 800;
+      color: #0f2f52;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+      font-size: 0.9rem;
+    }
+    .quizzers-section .qq-type-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      margin-top: 0.35rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid #dbe7f5;
+      background: #fff;
+      color: #0f3960;
+    }
+    .quizzers-section .qq-type-tag--topical {
+      border-color: rgba(124, 58, 237, 0.35);
+      color: #5b21b6;
+      background: rgba(245, 243, 255, 0.65);
+    }
+    .quizzers-section .qq-type-tag--randomized {
+      border-color: rgba(14, 165, 233, 0.45);
+      color: #0369a1;
+      background: rgba(240, 249, 255, 0.75);
+    }
+    .quizzers-section .qq-muted {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    /* Center column content under centered headers (duration, last attempt, status, attempts, action) */
+    .quizzers-section .qq-cell--title {
+      text-align: left;
+      align-self: center;
+    }
+    .quizzers-section .qq-cell--duration,
+    .quizzers-section .qq-cell--attempt,
+    .quizzers-section .qq-cell--status,
+    .quizzers-section .qq-cell--attempts {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      align-self: center;
+      text-align: center;
+      min-width: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .quizzers-section .qq-cell--duration {
+      flex-wrap: wrap;
+      gap: 0.28rem;
+    }
+    .quizzers-section .qq-inline-ico {
+      display: inline-flex;
+      margin-right: 0;
+      color: #1665a0;
+      opacity: 0.88;
+      flex-shrink: 0;
+    }
+    .quizzers-section .qq-date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.34rem;
+      padding: 0.2rem 0.52rem;
+      border-radius: 0.55rem;
+      border: 1px solid #cde2f4;
+      background: #f6fbff;
+      color: #0f3960;
+      font-size: 0.74rem;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.2;
+      max-width: 100%;
+    }
+    .quizzers-section .qq-date-chip.qq-date-chip--muted {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .quizzers-section .qq-last-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.22rem;
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+    }
+    .quizzers-section .qq-last-date {
+      font-size: 0.69rem;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .quizzers-section .qq-grid-row .quiz-score-badge-lg {
+      font-size: 0.78rem;
+      padding: 0.22rem 0.48rem;
+      min-width: 2.35rem;
+    }
+    .quizzers-section .qq-grid-row .quiz-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .quizzers-section .qq-grid-row .quiz-status-badge.passed {
+      color: #065f46;
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    .quizzers-section .qq-grid-row .quiz-status-badge.failed {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .quizzers-section .qq-grid-row .quiz-status-badge.in-progress {
+      color: #1d4ed8;
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .quizzers-section .qq-grid-row .quiz-status-badge.not-started {
+      color: #64748b;
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .quizzers-section .qq-cell--status .quiz-status-badge {
+      flex-shrink: 0;
+    }
+    .quizzers-section .qq-cell--action {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-right: 0.15rem;
+    }
+    .quizzers-section .qq-action-cluster {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .quizzers-section .qq-grid-row .quiz-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.44rem 0.82rem;
+      border-radius: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border: 1px solid #cde2f4;
+      transition: transform 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease, border-color 0.18s ease;
+      box-shadow: 0 6px 18px -16px rgba(20, 61, 89, 0.55);
+    }
+    .quizzers-section .qq-grid-row .quiz-btn:hover {
       transform: translateY(-1px);
     }
-    .quiz-table tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
-    .quiz-table tbody td:first-child { text-align: left; padding-left: 1.5rem; font-weight: 500; color: #1e293b; }
-    .quiz-table tbody td:not(:first-child) { text-align: center; color: #475569; }
-    .quiz-last-score-cell { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+    .quizzers-section .qq-grid-row .quiz-btn-primary,
+    .quizzers-section .qq-grid-row .quiz-take-again-btn {
+      background: linear-gradient(135deg, #1665a0 0%, #0d4f80 100%) !important;
+      color: #fff !important;
+      border-color: #1665a0 !important;
+      box-shadow: 0 10px 20px -16px rgba(13, 79, 128, 0.95);
+    }
+    .quizzers-section .qq-grid-row .quiz-btn-primary:hover,
+    .quizzers-section .qq-grid-row .quiz-take-again-btn:hover {
+      background: linear-gradient(135deg, #145a8f 0%, #0b436c 100%) !important;
+      border-color: #145a8f !important;
+    }
+    .quizzers-section .qq-grid-row .quiz-btn-outline {
+      background: #fff;
+      color: #1665a0;
+      border-color: #cde2f4;
+    }
+    .quizzers-section .qq-grid-row .quiz-btn-outline:hover {
+      background: #f4f9fe;
+      border-color: #8fc0e8;
+      color: #0a4f7e;
+    }
+    .quizzers-section .qq-grid-row .quiz-btn-amber {
+      border-color: rgba(245, 158, 11, 0.55);
+      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+      color: #b45309;
+    }
+    .quizzers-section .qq-empty-state {
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2.25rem 1.25rem;
+    }
+    .quizzers-section .qq-empty-state i {
+      color: #1665a0;
+      background: #eef6ff;
+      border: 1px solid #cde2f4;
+      border-radius: 9999px;
+      padding: 0.7rem;
+      font-size: 1.1rem;
+      margin-bottom: 0.65rem;
+    }
+    @media (max-width: 900px) {
+      .quizzers-section .qq-grid-head {
+        display: none;
+      }
+      .quizzers-section .qq-grid-row {
+        grid-template-columns: 1fr;
+        padding: 0.72rem 0.9rem;
+        align-items: start;
+      }
+      .quizzers-section .qq-cell::before {
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.2rem;
+      }
+      .quizzers-section .qq-cell--title::before { content: "Quiz title"; }
+      .quizzers-section .qq-cell--duration::before { content: "Duration"; }
+      .quizzers-section .qq-cell--attempt::before { content: "Last attempt"; }
+      .quizzers-section .qq-cell--status::before { content: "Status"; }
+      .quizzers-section .qq-cell--attempts::before { content: "Attempts"; }
+      .quizzers-section .qq-cell--action::before { content: "Action"; }
+      .quizzers-section .qq-cell--duration,
+      .quizzers-section .qq-cell--attempts {
+        text-align: left;
+      }
+      .quizzers-section .qq-cell--status {
+        text-align: left;
+      }
+      .quizzers-section .qq-cell--action {
+        justify-content: flex-start;
+      }
+      .quizzers-section .qq-last-stack {
+        align-items: flex-start;
+      }
+    }
+    .quiz-filter-pills { overflow-wrap: anywhere; }
+
+    /* Quizzers — unified control panel (search + sort + apply | status + counters), separate from list/cards */
+    .quizzers-section .quiz-control-panel {
+      margin: 0.65rem 1rem 0.85rem;
+      padding: 0.95rem 1rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(22, 101, 160, 0.11);
+      background: #fff;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 10px 32px -18px rgba(20, 61, 89, 0.14);
+    }
+    @media (min-width: 640px) {
+      .quizzers-section .quiz-control-panel {
+        margin-left: 1.5rem;
+        margin-right: 1.5rem;
+        padding: 1.05rem 1.15rem 1.05rem;
+      }
+    }
+    .quizzers-section .quiz-control-panel__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem 0.85rem;
+    }
+    .quizzers-section .quiz-control-panel__row + .quiz-control-panel__row {
+      margin-top: 0.95rem;
+      padding-top: 0.95rem;
+      border-top: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .quizzers-section .quiz-control-panel__row--top {
+      justify-content: space-between;
+    }
+    .quizzers-section .quiz-control-search {
+      position: relative;
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+    .quizzers-section .quiz-control-search .quiz-title-filter-input {
+      width: 100%;
+      border-radius: 0.62rem;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: #f8fafc;
+      padding: 0.56rem 0.85rem 0.56rem 2.45rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #0f172a;
+      transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .quizzers-section .quiz-control-search .quiz-title-filter-input::placeholder {
+      color: rgba(100, 116, 139, 0.75);
+    }
+    .quizzers-section .quiz-control-search .quiz-title-filter-input:hover {
+      border-color: rgba(22, 101, 160, 0.25);
+      background: #fff;
+    }
+    .quizzers-section .quiz-control-search .quiz-title-filter-input:focus {
+      outline: none;
+      border-color: #1665A0;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.11);
+    }
+    .quizzers-section .quiz-control-search > .bi {
+      position: absolute;
+      left: 0.78rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(100, 116, 139, 0.85);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .quizzers-section .quiz-control-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+    .quizzers-section .quiz-control-sort {
+      min-width: 9.75rem;
+      border-radius: 0.62rem;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: #fff;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .quizzers-section .quiz-control-sort:focus {
+      outline: none;
+      border-color: #1665A0;
+      box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.1);
+    }
+    .quizzers-section .quiz-control-apply {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding: 0.5rem 0.95rem;
+      border-radius: 0.62rem;
+      border: 1px solid #124a73;
+      background: #1665A0;
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px -10px rgba(22, 101, 160, 0.55);
+      transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    }
+    .quizzers-section .quiz-control-apply:hover {
+      background: #143D59;
+      border-color: #0f2d44;
+      transform: translateY(-1px);
+    }
+    .quizzers-section .quiz-control-panel__row--bottom {
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 0.85rem 1.1rem;
+    }
+    .quizzers-section .quiz-control-status {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+    .quizzers-section .quiz-control-panel__hint {
+      display: block;
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(100, 116, 139, 0.88);
+      margin: 0 0 0.4rem 0;
+    }
+    .quizzers-section .quiz-filter-pills--modern {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.38rem;
+    }
+    .quizzers-section button.quiz-status-filter-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-height: 2.35rem;
+      padding: 0.38rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #64748b;
+      transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+    .quizzers-section button.quiz-status-filter-pill i {
+      font-size: 0.95rem;
+      opacity: 0.88;
+    }
+    .quizzers-section button.quiz-status-filter-pill:hover {
+      border-color: #cbd5e1;
+      color: #334155;
+      transform: translateY(-1px);
+    }
+    .quizzers-section button.quiz-status-filter-pill.is-active {
+      background: #1665A0;
+      color: #fff;
+      border-color: #1665A0;
+    }
+    .quizzers-section button.quiz-status-filter-pill.is-active:hover {
+      color: #fff;
+      background: #143D59;
+      border-color: #143D59;
+    }
+    .quizzers-section button.quiz-filter-pill--passed:not(.is-active) {
+      border-color: rgba(167, 243, 208, 0.85);
+      background: #f0fdf4;
+      color: #15803d;
+    }
+    .quizzers-section button.quiz-filter-pill--failed:not(.is-active) {
+      border-color: rgba(254, 202, 202, 0.9);
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .quizzers-section button.quiz-filter-pill--progress:not(.is-active) {
+      border-color: rgba(253, 230, 138, 0.9);
+      background: #fffbeb;
+      color: #a16207;
+    }
+    .quizzers-section button.quiz-filter-pill--notstarted:not(.is-active) {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+      color: #64748b;
+    }
+    .quizzers-section .quiz-control-counters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.38rem;
+      max-width: 100%;
+    }
+    .quizzers-section .quiz-counter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      padding: 0.32rem 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+    .quizzers-section .quiz-counter-chip i {
+      font-size: 0.88rem;
+      color: #1665A0;
+      opacity: 0.88;
+    }
+    .quizzers-section .quiz-counter-chip b {
+      font-weight: 800;
+      color: #0f172a;
+      margin-left: 0.12rem;
+    }
+    @media (max-width: 768px) {
+      .quizzers-section .quiz-control-panel__row--bottom {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .quizzers-section .quiz-control-counters {
+        justify-content: flex-start;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .quizzers-section button.quiz-status-filter-pill:hover,
+      .quizzers-section .quiz-control-apply:hover,
+      .quizzers-section .quiz-card.quiz-card-item:hover {
+        transform: none;
+      }
+    }
+
+    /* Quizzers: main Randomized / Topical switch (header center) */
+    .quizzers-type-switch {
+      display: inline-flex;
+      align-items: stretch;
+      padding: 0.22rem;
+      border-radius: 9999px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(232, 242, 250, 0.92) 100%);
+      border: 1px solid rgba(22, 101, 160, 0.18);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 4px 14px rgba(20, 61, 89, 0.08),
+        0 1px 3px rgba(20, 61, 89, 0.05);
+      gap: 0.15rem;
+    }
+    .quizzers-type-switch__btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.95rem;
+      border: none;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition:
+        color 0.22s ease,
+        background 0.22s ease,
+        box-shadow 0.22s ease,
+        transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      color: rgba(20, 61, 89, 0.52);
+      background: transparent;
+      white-space: nowrap;
+    }
+    .quizzers-type-switch__btn:hover:not(.is-active) {
+      color: #1665A0;
+      background: rgba(232, 242, 250, 0.85);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(51, 147, 255, 0.18);
+    }
+    .quizzers-type-switch__btn:active:not(.is-active) {
+      transform: translateY(0);
+    }
+    .quizzers-type-switch__btn.is-active {
+      color: #fff;
+      background: linear-gradient(145deg, #1e7cc8 0%, #1665A0 52%, #124a73 100%);
+      box-shadow:
+        0 2px 10px rgba(22, 101, 160, 0.38),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+    .quizzers-type-switch__btn.is-active--topical {
+      background: linear-gradient(145deg, #7c3aed 0%, #6d28d9 52%, #5b21b6 100%);
+      box-shadow:
+        0 2px 10px rgba(109, 40, 217, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+    .quizzers-type-switch__btn i {
+      font-size: 1rem;
+      opacity: 0.92;
+    }
+    /* Left | center type | right view — grid from sm up so typical tablets/laptops stay horizontal */
+    .quizzers-header.quizzers-header--triple {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.875rem;
+      flex-wrap: nowrap;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(232, 242, 250, 0.65) 55%, rgba(240, 247, 252, 0.88) 100%);
+      border-bottom: 1px solid rgba(22, 101, 160, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    @media (min-width: 640px) {
+      .quizzers-header.quizzers-header--triple {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-rows: auto;
+        align-items: center;
+        column-gap: 1rem;
+        row-gap: 0.75rem;
+        padding-top: 1.125rem;
+        padding-bottom: 1.125rem;
+      }
+      .quizzers-header.quizzers-header--triple .quizzers-header__lead {
+        grid-column: 1;
+        justify-self: start;
+        align-self: center;
+        min-width: 0;
+        text-align: left;
+      }
+      .quizzers-header.quizzers-header--triple .quizzers-header__type {
+        grid-column: 2;
+        justify-self: center;
+        align-self: center;
+        width: auto;
+        max-width: 100%;
+      }
+      .quizzers-header.quizzers-header--triple .quizzers-header__view {
+        grid-column: 3;
+        justify-self: end;
+        align-self: center;
+        width: auto;
+        margin-left: auto;
+      }
+    }
+    @media (max-width: 639.98px) {
+      .quizzers-header.quizzers-header--triple .quizzers-header__lead { order: 1; }
+      .quizzers-header.quizzers-header--triple .quizzers-header__type {
+        order: 2;
+        justify-content: center;
+        width: 100%;
+      }
+      .quizzers-header.quizzers-header--triple .quizzers-header__view {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .quizzers-header__view .materials-view-toggle__label {
+      color: rgba(20, 61, 89, 0.42);
+      font-weight: 800;
+    }
+    .quizzers-header__view .materials-view-seg {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.98) inset,
+        0 4px 14px rgba(20, 61, 89, 0.07);
+    }
+
+    /* Quiz list/cards subtle fade when switching type (opacity-only avoids subpixel “blur” from scaled layers) */
+    .quiz-quizzers-page-body {
+      padding: 0.45rem 0 1.1rem;
+      transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .quiz-quizzers-page-body.is-fading {
+      opacity: 0;
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .quiz-quizzers-page-body,
+      .quiz-quizzers-page-body.is-fading {
+        transition: opacity 0.12s ease;
+        transform: none !important;
+      }
+      .quizzers-type-switch__btn {
+        transition: none;
+      }
+      .quizzers-type-switch__btn:hover:not(.is-active) {
+        transform: none;
+      }
+    }
+
+    /* No matches (search / status / type) — full-width flex so card is truly centered */
+    .quizzers-section .quiz-quizzers-filter-empty {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      padding: 0.5rem 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (min-width: 640px) {
+      .quizzers-section .quiz-quizzers-filter-empty {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+    }
+    .quizzers-section .quiz-quizzers-filter-empty[hidden] {
+      display: none !important;
+    }
+    .quizzers-section .quiz-quizzers-filter-empty.is-visible {
+      display: flex !important;
+      animation: quizQuizzersFilterEmptyIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes quizQuizzersFilterEmptyIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__card {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 26rem;
+      margin: 0;
+      padding: 1.65rem 1.4rem 1.5rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(22, 101, 160, 0.18);
+      background: linear-gradient(165deg, #ffffff 0%, rgba(232, 242, 250, 0.65) 48%, rgba(241, 245, 249, 0.5) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 18px 42px -30px rgba(20, 61, 89, 0.28),
+        0 4px 14px rgba(15, 23, 42, 0.06);
+      text-align: center;
+      align-self: center;
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__icon-wrap {
+      width: 3.25rem;
+      height: 3.25rem;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 1rem;
+      background: linear-gradient(145deg, rgba(22, 101, 160, 0.12) 0%, rgba(124, 58, 237, 0.1) 100%);
+      border: 1px solid rgba(22, 101, 160, 0.2);
+      color: #1665a0;
+      font-size: 1.35rem;
+      animation: quizQuizzersEmptyIconFloat 2.8s ease-in-out infinite;
+    }
+    @keyframes quizQuizzersEmptyIconFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__title {
+      margin: 0 0 0.45rem;
+      font-size: 1.0625rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f2f52;
+      line-height: 1.35;
+      text-align: center;
+      text-wrap: balance;
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__text {
+      margin: 0 0 1.15rem;
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: #64748b;
+      font-weight: 500;
+      text-align: center;
+      text-wrap: balance;
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.52rem 1.15rem;
+      border-radius: 0.65rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid rgba(22, 101, 160, 0.35);
+      background: linear-gradient(180deg, #ffffff 0%, #f4f9fe 100%);
+      color: #143d59;
+      box-shadow: 0 6px 18px -14px rgba(22, 101, 160, 0.55);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.2s ease, background 0.18s ease;
+    }
+    .quizzers-section .quiz-quizzers-filter-empty__btn:hover {
+      transform: translateY(-1px);
+      border-color: #1665a0;
+      background: #fff;
+      box-shadow: 0 10px 26px -18px rgba(22, 101, 160, 0.65);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .quizzers-section .quiz-quizzers-filter-empty.is-visible {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+      .quizzers-section .quiz-quizzers-filter-empty__icon-wrap {
+        animation: none;
+      }
+      .quizzers-section .quiz-quizzers-filter-empty__btn:hover {
+        transform: none;
+      }
+    }
+
     .quiz-last-score-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
     .quiz-score-badge-lg { display: inline-flex; align-items: center; justify-content: center; min-width: 3rem; padding: 0.35rem 0.65rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .quiz-score-badge-lg.pass {
       background: #dcfce7;
       color: #15803d;
-      box-shadow:
-        0 0 0 1px rgba(34, 197, 94, 0.35),
-        0 0 16px rgba(51, 147, 255, 0.45);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35);
     }
     .quiz-score-badge-lg.fail {
       background: #fee2e2;
       color: #b91c1c;
-      box-shadow:
-        0 0 0 1px rgba(239, 68, 68, 0.4),
-        0 0 16px rgba(51, 147, 255, 0.35);
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);
     }
     .quiz-status-badge { display: inline-flex; align-items: center; padding: 0.4rem 0.75rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; }
     .quiz-status-badge.passed { background: #dcfce7; color: #15803d; }
@@ -498,20 +1272,13 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     .quiz-empty-state .quiz-empty-icon { font-size: 3.5rem; color: rgba(22, 101, 160, 0.4); margin-bottom: 1rem; display: block; }
     .quiz-empty-state .quiz-empty-msg { font-size: 1rem; font-weight: 600; color: #143D59; margin: 0; }
     @media (max-width: 768px) {
-      .quiz-summary-grid { grid-template-columns: repeat(2, 1fr); }
-      .quiz-table thead th, .quiz-table tbody td { padding: 0.75rem 0.5rem; font-size: 0.8125rem; }
-      .quiz-table thead th:first-child, .quiz-table tbody td:first-child { padding-left: 1rem; }
       .quizzers-section .quizzers-header { padding: 1rem 1rem; }
       .quizzers-section .quizzers-title { font-size: 1.125rem; }
       .quizzers-section .quizzers-subtitle { font-size: 0.8125rem; }
     }
     @media (max-width: 480px) {
-      .quiz-table thead th, .quiz-table tbody td { padding: 0.5rem 0.375rem; font-size: 0.75rem; }
-      .quiz-table thead th:first-child, .quiz-table tbody td:first-child { padding-left: 0.75rem; }
       .quiz-btn { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
     }
-    .quiz-table-wrap { -webkit-overflow-scrolling: touch; }
-
     /* Row enter/leave when filtering (smooth expand/collapse) */
     .quiz-row-enter { opacity: 0; transform: translateX(-8px); }
     .quiz-row-enter-active { transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -1110,129 +1877,183 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       margin-bottom: 0.75rem;
     }
 
-    /* Quizzers cards/list switch (uniform with materials) */
-    .quiz-cards-wrap { padding: 1rem 1rem 1.25rem; }
+    /* Quizzers card grid — same horizontal gutter as .quiz-table-view / control panel */
+    .quizzers-section .quiz-cards-view {
+      padding: 0 1rem 0.25rem;
+    }
     @media (min-width: 640px) {
-      .quiz-cards-wrap { padding: 1.25rem 1.5rem 1.5rem; }
+      .quizzers-section .quiz-cards-view {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
     }
-    .quiz-cards-grid {
+    .quizzers-section .quiz-cards-wrap {
+      padding: 0.4rem 0 1.35rem;
+    }
+    .quizzers-section .quiz-cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
       gap: 1rem 1.125rem;
+      align-items: stretch;
     }
-    .quiz-card {
+    .quizzers-section .quiz-card.quiz-card-item {
       position: relative;
       display: flex;
       flex-direction: column;
       min-height: 100%;
-      padding: 1rem 1rem 1.1rem;
-      border-radius: 1rem;
+      padding: 1.05rem 1.1rem 1rem;
+      border-radius: 0.875rem;
       text-decoration: none;
       color: inherit;
-      background: linear-gradient(165deg, #ffffff 0%, #f5f9fd 55%, #eef5fb 100%);
-      border: 1px solid rgba(22, 101, 160, 0.14);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 4px 16px rgba(20, 61, 89, 0.07),
-        0 1px 3px rgba(20, 61, 89, 0.05);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-      overflow: hidden;
-    }
-    .quiz-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #1665A0, #3393ff, #1665A0);
-      opacity: 0.85;
-      transform: scaleX(0.35);
-      transform-origin: left;
-      transition: transform 0.28s ease;
-    }
-    .quiz-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(22, 101, 160, 0.32);
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, 0.28);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 1) inset,
-        0 12px 28px rgba(22, 101, 160, 0.14),
-        0 4px 12px rgba(20, 61, 89, 0.08);
+        0 14px 36px -26px rgba(15, 23, 42, 0.18),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+      transition:
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.22s ease,
+        border-color 0.2s ease;
+      overflow: hidden;
     }
-    .quiz-card:hover::before { transform: scaleX(1); }
-    .quiz-card__head {
+    .quizzers-section .quiz-card.quiz-card-item::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      border-radius: 0.875rem 0.875rem 0 0;
+      background: linear-gradient(90deg, #1665A0 0%, #3393ff 50%, #124a73 100%);
+      opacity: 0.92;
+      transform: scaleX(0.28);
+      transform-origin: left;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .quizzers-section .quiz-card.quiz-card-item[data-quiz-type="topical"]::before {
+      background: linear-gradient(90deg, #1665A0 0%, #7c3aed 55%, #1665A0 100%);
+    }
+    .quizzers-section .quiz-card.quiz-card-item[data-quiz-type="randomized"]::before {
+      background: linear-gradient(90deg, #0ea5e9 0%, #1665A0 50%, #0369a1 100%);
+    }
+    .quizzers-section .quiz-card.quiz-card-item:hover {
+      transform: translateY(-4px);
+      border-color: rgba(22, 101, 160, 0.35);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 22px 44px -28px rgba(22, 101, 160, 0.35),
+        0 8px 20px rgba(15, 23, 42, 0.07);
+    }
+    .quizzers-section .quiz-card.quiz-card-item:hover::before {
+      transform: scaleX(1);
+    }
+    .quizzers-section .quiz-card__head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.55rem;
+      gap: 0.65rem;
+      margin-bottom: 0.65rem;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.95);
     }
-    .quiz-card__title {
+    .quizzers-section .quiz-card__title {
       margin: 0;
-      font-size: 0.98rem;
+      flex: 1;
+      min-width: 0;
+      font-size: 1.02rem;
       font-weight: 700;
-      line-height: 1.4;
-      color: #143D59;
+      line-height: 1.38;
+      letter-spacing: -0.02em;
+      color: #0f172a;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .quiz-card__meta {
+    .quizzers-section .quiz-card__head .quiz-status-badge {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      padding: 0.32rem 0.6rem;
+      max-width: 42%;
+      text-align: center;
+      line-height: 1.25;
+    }
+    .quizzers-section .quiz-card__meta {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.5rem;
-      margin-top: 0.65rem;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.85rem;
     }
-    .quiz-card__chip {
+    .quizzers-section .quiz-card__chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      min-height: 3.35rem;
+      padding: 0.45rem 0.35rem;
       border-radius: 0.625rem;
-      padding: 0.4rem 0.45rem;
-      border: 1px solid rgba(22, 101, 160, 0.14);
-      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
       text-align: center;
     }
-    .quiz-card__k {
-      display: block;
-      font-size: 0.62rem;
+    .quizzers-section .quiz-card__chip--type {
+      border-color: rgba(22, 101, 160, 0.2);
+      background: linear-gradient(180deg, rgba(232, 242, 250, 0.65) 0%, rgba(241, 245, 249, 0.9) 100%);
+    }
+    .quizzers-section .quiz-card__k {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      font-size: 0.6rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: rgba(20, 61, 89, 0.45);
-      margin-bottom: 0.15rem;
+      color: #64748b;
+      margin: 0;
     }
-    .quiz-card__v {
+    .quizzers-section .quiz-card__k i {
+      font-size: 0.85rem;
+      color: #1665A0;
+      opacity: 0.85;
+    }
+    .quizzers-section .quiz-card__v {
       display: block;
-      font-size: 0.82rem;
+      font-size: 0.8125rem;
       font-weight: 700;
-      color: #143D59;
-      line-height: 1.2;
+      color: #1e293b;
+      line-height: 1.25;
+      font-variant-numeric: tabular-nums;
     }
-    .quiz-card__actions {
+    .quizzers-section .quiz-card__actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 0.45rem;
+      gap: 0.5rem;
       margin-top: auto;
-      padding-top: 0.8rem;
-      border-top: 1px solid rgba(22, 101, 160, 0.1);
+      padding-top: 0.75rem;
     }
-    .quiz-card-empty {
+    .quizzers-section .quiz-card__actions .quiz-btn {
+      border-radius: 0.625rem;
+    }
+    .quizzers-section .quiz-card-empty {
       grid-column: 1 / -1;
       text-align: center;
-      padding: 2.5rem 1.5rem;
-      border-radius: 1rem;
-      border: 1px dashed rgba(22, 101, 160, 0.25);
-      background: rgba(232, 242, 250, 0.45);
-      color: rgba(20, 61, 89, 0.65);
+      padding: 2.75rem 1.5rem;
+      border-radius: 0.875rem;
+      border: 1px dashed rgba(22, 101, 160, 0.28);
+      background: linear-gradient(165deg, rgba(248, 250, 252, 0.95) 0%, rgba(232, 242, 250, 0.5) 100%);
+      color: #475569;
       font-size: 0.9375rem;
-      font-weight: 500;
-      line-height: 1.5;
+      font-weight: 600;
+      line-height: 1.55;
     }
-    .quiz-card-empty i {
+    .quizzers-section .quiz-card-empty i {
       display: block;
-      font-size: 2.25rem;
-      color: rgba(22, 101, 160, 0.35);
-      margin-bottom: 0.75rem;
+      font-size: 2.35rem;
+      color: rgba(22, 101, 160, 0.38);
+      margin-bottom: 0.85rem;
     }
 </style>
 <style>
@@ -1676,7 +2497,23 @@ document.addEventListener('alpine:init', function() {
       materialsSearch: '',
       materialsSort: 'lesson_asc',
       quizzersView: 'list',
+      quizzersTypePage: 'topical',
+      quizzersContentFade: false,
       testBankView: 'cards',
+      switchQuizzersTypePage: function () {
+        var self = this;
+        this.quizzersContentFade = true;
+        window.setTimeout(function () {
+          self.quizzersTypePage = 'topical';
+          window.location.hash = '#quizzers-topical';
+          try {
+            document.dispatchEvent(new CustomEvent('ereview-quizzers-type', { detail: { type: 'topical' }, bubbles: true }));
+          } catch (e) {}
+          window.requestAnimationFrame(function () {
+            self.quizzersContentFade = false;
+          });
+        }, 120);
+      },
       persistPref: function(key, value) {
         try {
           localStorage.setItem(key, value);
@@ -1752,6 +2589,7 @@ document.addEventListener('alpine:init', function() {
         } catch (e) {}
         var h = window.location.hash;
         if (h === '#quizzers') this.activeTab = 'quizzers';
+        else if (h === '#quizzers-topical' || h === '#quizzers-randomized') { this.activeTab = 'quizzers'; this.quizzersTypePage = 'topical'; }
         else if (h === '#materials') this.activeTab = 'materials';
         else if (h === '#testbank') this.activeTab = 'testbank';
         try {
@@ -1774,6 +2612,11 @@ document.addEventListener('alpine:init', function() {
         } catch (e) {}
         var self = this;
         setTimeout(function() { self.hydrateVimeoThumbs(); }, 0);
+        setTimeout(function() {
+          try {
+            document.dispatchEvent(new CustomEvent('ereview-quizzers-type', { detail: { type: self.quizzersTypePage }, bubbles: true }));
+          } catch (e) {}
+        }, 0);
       }
     };
   });
@@ -1821,7 +2664,7 @@ document.addEventListener('alpine:init', function() {
   <!-- Tabs (active tab persisted via URL hash so refresh keeps same tab) -->
   <nav class="flex flex-wrap gap-2 mb-4 dash-anim delay-2" role="tablist">
     <button type="button" @click="activeTab = 'materials'; window.location.hash = '#materials'" :class="activeTab === 'materials' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-collection-play shrink-0"></i> <span class="sm:hidden">Materials</span><span class="hidden sm:inline">Materials (Videos + Handouts)</span></button>
-    <button type="button" @click="activeTab = 'quizzers'; window.location.hash = '#quizzers'" :class="activeTab === 'quizzers' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-question-circle shrink-0"></i> Quizzers</button>
+    <button type="button" @click="activeTab = 'quizzers'; window.location.hash = '#quizzers-topical'" :class="activeTab === 'quizzers' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-question-circle shrink-0"></i> Quizzers</button>
     <button type="button" @click="activeTab = 'testbank'; window.location.hash = '#testbank'" :class="activeTab === 'testbank' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-folder2-open shrink-0"></i> Test Bank</button>
   </nav>
 
@@ -1977,8 +2820,8 @@ document.addEventListener('alpine:init', function() {
        x-transition:leave-start="tab-panel-leave"
        x-transition:leave-end="tab-panel-leave-to"
        class="quizzers-section dash-anim delay-2 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
-    <div class="quizzers-header flex-col sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-3 min-w-0 flex-1">
+    <div class="quizzers-header quizzers-header--triple">
+      <div class="quizzers-header__lead flex items-center gap-3 min-w-0">
         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
           <i class="bi bi-question-circle-fill text-lg" aria-hidden="true"></i>
         </span>
@@ -1987,8 +2830,13 @@ document.addEventListener('alpine:init', function() {
           <p class="quizzers-subtitle">Take or review your quizzes. Passing score is 50%.</p>
         </div>
       </div>
+      <div class="quizzers-header__type flex justify-center w-full md:w-auto shrink-0 px-1">
+        <span class="quizzers-type-switch__btn is-active is-active--topical inline-flex items-center gap-2">
+          <i class="bi bi-bookmarks" aria-hidden="true"></i><span>Topical only</span>
+        </span>
+      </div>
       <?php if (!empty($quizRows)): ?>
-      <div class="materials-view-toggle" role="group" aria-label="Quizzers layout">
+      <div class="quizzers-header__view materials-view-toggle justify-center md:justify-end w-full md:w-auto" role="group" aria-label="Quizzers layout">
         <span class="materials-view-toggle__label">View</span>
         <div class="materials-view-seg">
           <button type="button"
@@ -2009,138 +2857,165 @@ document.addEventListener('alpine:init', function() {
       </div>
       <?php endif; ?>
     </div>
-    <?php if ($totalQuizzes > 0): ?>
-    <div class="quiz-summary-grid px-4 sm:px-6 pt-4 pb-2">
-      <div class="quiz-summary-card">
-        <span class="summary-value"><?php echo $totalQuizzes; ?></span>
-        <span class="summary-label">Total Quizzes</span>
+    <div class="quiz-control-panel" aria-label="Quiz search, sort, and filters">
+      <div class="quiz-control-panel__row quiz-control-panel__row--top">
+        <div class="quiz-control-search">
+          <label for="quizTitleFilter" class="sr-only">Search quizzes by title</label>
+          <input
+            type="text"
+            id="quizTitleFilter"
+            class="quiz-title-filter-input"
+            placeholder="Search by quiz title…"
+            autocomplete="off"
+          >
+          <i class="bi bi-search" aria-hidden="true"></i>
+        </div>
+        <div class="quiz-control-actions">
+          <label for="quizSortSelect" class="sr-only">Sort quizzes</label>
+          <select id="quizSortSelect" class="quiz-control-sort" title="Sort order">
+            <option value="default">Default order</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="title_asc">Title A–Z</option>
+            <option value="title_desc">Title Z–A</option>
+            <option value="duration_asc">Short duration first</option>
+            <option value="duration_desc">Long duration first</option>
+          </select>
+          <button type="button" class="quiz-control-apply" id="quizControlApplyBtn" title="Apply sort order">
+            <i class="bi bi-arrow-down-up" aria-hidden="true"></i><span>Apply</span>
+          </button>
+        </div>
       </div>
-      <div class="quiz-summary-card summary-passed">
-        <span class="summary-value"><?php echo $quizzesPassed; ?></span>
-        <span class="summary-label">Passed</span>
-      </div>
-      <div class="quiz-summary-card summary-failed">
-        <span class="summary-value"><?php echo $quizzesFailed; ?></span>
-        <span class="summary-label">Failed</span>
-      </div>
-      <div class="quiz-summary-card summary-avg">
-        <span class="summary-value"><?php echo $averageScore !== null ? $averageScore . '%' : '—'; ?></span>
-        <span class="summary-label">Average Score</span>
+      <div class="quiz-control-panel__row quiz-control-panel__row--bottom">
+        <div class="quiz-control-status">
+          <span class="quiz-control-panel__hint">Status</span>
+          <div class="quiz-filter-pills quiz-filter-pills--modern">
+            <button type="button" class="quiz-status-filter-pill quiz-filter-pill--all is-active shrink-0" data-status="">
+              <i class="bi bi-grid-1x2" aria-hidden="true"></i><span>All</span>
+            </button>
+            <button type="button" class="quiz-status-filter-pill quiz-filter-pill--passed shrink-0" data-status="passed">
+              <i class="bi bi-check2-circle" aria-hidden="true"></i><span>Passed</span>
+            </button>
+            <button type="button" class="quiz-status-filter-pill quiz-filter-pill--failed shrink-0" data-status="need_retake">
+              <i class="bi bi-exclamation-octagon" aria-hidden="true"></i><span>Failed</span>
+            </button>
+            <button type="button" class="quiz-status-filter-pill quiz-filter-pill--progress shrink-0" data-status="in_progress">
+              <i class="bi bi-hourglass-split" aria-hidden="true"></i><span>In Progress</span>
+            </button>
+            <button type="button" class="quiz-status-filter-pill quiz-filter-pill--notstarted shrink-0" data-status="not_taken">
+              <i class="bi bi-circle" aria-hidden="true"></i><span>Not Started</span>
+            </button>
+          </div>
+        </div>
+        <div class="quiz-control-counters" role="group" aria-label="Quiz counts">
+          <span class="quiz-counter-chip"><i class="bi bi-collection" aria-hidden="true"></i> Total<b><?php echo (int)$totalQuizzes; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-check-circle" aria-hidden="true"></i> Passed<b><?php echo (int)$quizzesPassed; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-x-circle" aria-hidden="true"></i> Failed<b><?php echo (int)$quizzesFailed; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Avg<b><?php echo $averageScore !== null ? (int)$averageScore . '%' : '—'; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-bookmarks" aria-hidden="true"></i> Topic<b><?php echo (int)($quizTypeCounts['topical'] ?? 0); ?></b></span>
+        </div>
       </div>
     </div>
-    <?php endif; ?>
-    <!-- Filters: status pills + search by title -->
-    <div class="px-4 pb-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:justify-between">
-      <div class="quiz-filter-pills w-full min-w-0 flex flex-wrap gap-1.5 text-xs sm:text-sm">
-        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border text-gray-700 bg-white shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill is-active shrink-0" data-status="">
-          All
-        </button>
-        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="passed">
-          Passed
-        </button>
-        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="need_retake">
-          Failed
-        </button>
-        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="in_progress">
-          In Progress
-        </button>
-        <button type="button" class="px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 shadow-sm text-[0.78rem] sm:text-xs quiz-status-filter-pill shrink-0" data-status="not_taken">
-          Not Started
-        </button>
-      </div>
-      <div class="relative w-full sm:max-w-xs">
-        <input
-          id="quizTitleFilter"
-          type="text"
-          class="w-full rounded-full border border-gray-300 bg-white/80 px-8 py-1.5 text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3393FF]/60 focus:border-[#3393FF]/70"
-          placeholder="Filter quizzes by title..."
-        >
-        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-      </div>
-    </div>
-    <div x-show="quizzersView === 'list'" x-cloak class="quiz-table-wrap overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
-      <table class="quiz-table" style="min-width: 860px;">
-        <thead>
-          <tr>
-            <th style="min-width: 180px;">Quiz Title</th>
-            <th class="w-24" style="min-width: 5rem;">Duration</th>
-            <th style="min-width: 110px;">Last Attempt</th>
-            <th class="w-28" style="min-width: 5.5rem;">Status</th>
-            <th class="w-24" style="min-width: 4rem;">Attempts</th>
-            <th style="min-width: 180px;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div class="quiz-quizzers-page-body" :class="{ 'is-fading': quizzersContentFade }" data-has-quizzes="<?php echo !empty($quizRows) ? '1' : '0'; ?>">
+    <div x-show="quizzersView === 'list'" x-cloak class="quiz-table-view">
+      <div class="quiz-table-scroll">
+        <div class="quiz-table-shell qq-list-shell">
+          <?php if (empty($quizRows)): ?>
+          <div class="qq-empty-state" role="status">
+            <i class="bi bi-journal-x" aria-hidden="true"></i>
+            <p class="m-0 font-semibold text-slate-600">No quizzes available yet.</p>
+            <p class="m-0 mt-1 text-sm text-slate-500">Check back later or ask your instructor.</p>
+          </div>
+          <?php else: ?>
+          <div class="qq-grid-head" role="row">
+            <span>Quiz title</span>
+            <span>Duration</span>
+            <span>Last attempt</span>
+            <span>Status</span>
+            <span>Attempts</span>
+            <span>Action</span>
+          </div>
+          <div class="qq-list-body">
           <?php foreach ($quizRows as $qr): ?>
-            <tr class="quiz-table-row" data-status="<?php echo h($qr['row_status']); ?>" data-title="<?php echo h(strtolower($qr['title'])); ?>">
-              <td class="break-words" style="min-width: 220px;"><?php echo h($qr['title']); ?></td>
-              <td><?php echo h($qr['duration']); ?></td>
-              <td>
+            <?php $qtype = 'topical'; ?>
+            <div class="qq-grid-row quiz-table-row" role="row" data-qid="<?php echo (int)$qr['qid']; ?>" data-duration-sec="<?php echo (int)($qr['duration_seconds'] ?? 0); ?>" data-status="<?php echo h($qr['row_status']); ?>" data-title="<?php echo h(function_exists('mb_strtolower') ? mb_strtolower((string)$qr['title'], 'UTF-8') : strtolower((string)$qr['title'])); ?>" data-quiz-type="<?php echo h($qr['quiz_type']); ?>">
+              <div class="qq-cell qq-cell--title" role="cell">
+                <span class="qq-title-line"><?php echo h($qr['title']); ?></span>
+                <span class="qq-type-tag qq-type-tag--<?php echo h($qtype); ?>">
+                  <i class="bi bi-bookmarks" aria-hidden="true"></i>
+                  <?php echo h($qr['quiz_type_label']); ?>
+                </span>
+              </div>
+              <div class="qq-cell qq-cell--duration qq-muted" role="cell">
+                <span class="qq-inline-ico" aria-hidden="true"><i class="bi bi-clock"></i></span><?php echo h($qr['duration']); ?>
+              </div>
+              <div class="qq-cell qq-cell--attempt" role="cell">
                 <?php if (!empty($qr['last_attempt_date'])): ?>
-                  <div class="quiz-last-score-cell">
+                  <div class="qq-last-stack">
                     <?php if ($qr['score_pct'] !== null): ?>
                       <span class="quiz-score-badge-lg <?php echo !empty($qr['passed']) ? 'pass' : 'fail'; ?>"><?php echo (int)$qr['score_pct']; ?>%</span>
                     <?php endif; ?>
-                    <span class="text-xs text-gray-500 whitespace-nowrap"><?php echo date('M j, Y', strtotime((string)$qr['last_attempt_date'])); ?></span>
+                    <span class="qq-date-chip"><i class="bi bi-calendar-event" aria-hidden="true"></i><?php echo date('M j, Y', strtotime((string)$qr['last_attempt_date'])); ?></span>
                   </div>
                 <?php else: ?>
-                  <span class="text-gray-400">—</span>
+                  <span class="qq-date-chip qq-date-chip--muted"><i class="bi bi-calendar-x" aria-hidden="true"></i> No attempt yet</span>
                 <?php endif; ?>
-              </td>
-              <td><span class="quiz-status-badge <?php echo h($qr['status_badge_class']); ?>"><?php echo h($qr['status_label']); ?></span></td>
-              <td><?php echo (int)$qr['attempt_count']; ?></td>
-              <td>
-                <div class="flex flex-nowrap justify-center items-center gap-2">
+              </div>
+              <div class="qq-cell qq-cell--status" role="cell">
+                <span class="quiz-status-badge <?php echo h($qr['status_badge_class']); ?>"><?php echo h($qr['status_label']); ?></span>
+              </div>
+              <div class="qq-cell qq-cell--attempts qq-muted" role="cell"><?php echo (int)$qr['attempt_count']; ?></div>
+              <div class="qq-cell qq-cell--action" role="cell">
+                <div class="qq-action-cluster">
                 <?php if ((int)$qr['count'] <= 0): ?>
-                  <span class="text-gray-400 text-xs">No questions yet</span>
+                  <span class="text-slate-400 text-xs font-semibold">No questions yet</span>
                 <?php elseif (!empty($qr['in_progress_attempt_id'])): ?>
                   <a href="<?php echo h($qr['take_url']); ?>&attempt_id=<?php echo (int)$qr['in_progress_attempt_id']; ?>" class="quiz-btn quiz-btn-amber quiz-resume-link shrink-0"><i class="bi bi-play-fill"></i> Resume</a>
                 <?php else: ?>
                   <?php if ((int)$qr['attempt_count'] > 0): ?>
-                    <a href="<?php echo h($qr['view_result_url']); ?>" class="quiz-btn quiz-btn-outline shrink-0"><i class="bi bi-search"></i> View Result</a>
+                    <a href="<?php echo h($qr['view_result_url']); ?>" class="quiz-btn quiz-btn-outline shrink-0"><i class="bi bi-eye"></i> View result</a>
                   <?php endif; ?>
                   <?php if (!empty($qr['passed'])): ?>
-                    <a href="<?php echo h($qr['take_url']); ?>&retake=1" class="quiz-btn quiz-btn-primary quiz-take-again-btn shrink-0"><i class="bi bi-arrow-repeat"></i> Take Again</a>
+                    <a href="<?php echo h($qr['take_url']); ?>&retake=1" class="quiz-btn quiz-btn-primary quiz-take-again-btn shrink-0"><i class="bi bi-arrow-repeat"></i> Take again</a>
                   <?php else: ?>
-                    <a href="<?php echo h($qr['take_url']); ?>" class="quiz-btn quiz-btn-primary quiz-take-again-btn shrink-0"><i class="bi bi-play-fill"></i> <?php echo (int)$qr['attempt_count'] > 0 ? 'Take Again' : 'Take Quiz'; ?></a>
+                    <a href="<?php echo h($qr['take_url']); ?>" class="quiz-btn quiz-btn-primary quiz-take-again-btn shrink-0"><i class="bi bi-play-fill"></i> <?php echo (int)$qr['attempt_count'] > 0 ? 'Take again' : 'Take quiz'; ?></a>
                   <?php endif; ?>
                 <?php endif; ?>
                 </div>
-              </td>
-            </tr>
+              </div>
+            </div>
           <?php endforeach; ?>
-          <?php if (empty($quizRows)): ?>
-            <tr>
-              <td colspan="6" class="quiz-empty-state">
-                <i class="bi bi-inbox quiz-empty-icon"></i>
-                <p class="quiz-empty-msg">No quizzes available yet.</p>
-              </td>
-            </tr>
+          </div>
           <?php endif; ?>
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
-    <div x-show="quizzersView === 'cards'" x-cloak class="quiz-cards-wrap">
+    <div x-show="quizzersView === 'cards'" x-cloak class="quiz-cards-view">
+      <div class="quiz-cards-wrap">
       <div class="quiz-cards-grid" role="list">
         <?php if (!empty($quizRows)): ?>
           <?php foreach ($quizRows as $qr): ?>
-            <article class="quiz-card quiz-card-item" role="listitem" data-status="<?php echo h($qr['row_status']); ?>" data-title="<?php echo h(strtolower($qr['title'])); ?>">
+            <?php
+              $qt = 'topical';
+              $typeIcon = 'bi-bookmarks-fill';
+            ?>
+            <article class="quiz-card quiz-card-item" role="listitem" data-qid="<?php echo (int)$qr['qid']; ?>" data-duration-sec="<?php echo (int)($qr['duration_seconds'] ?? 0); ?>" data-status="<?php echo h($qr['row_status']); ?>" data-title="<?php echo h(function_exists('mb_strtolower') ? mb_strtolower((string)$qr['title'], 'UTF-8') : strtolower((string)$qr['title'])); ?>" data-quiz-type="<?php echo h($qr['quiz_type']); ?>">
               <div class="quiz-card__head">
                 <h3 class="quiz-card__title"><?php echo h($qr['title']); ?></h3>
                 <span class="quiz-status-badge <?php echo h($qr['status_badge_class']); ?>"><?php echo h($qr['status_label']); ?></span>
               </div>
               <div class="quiz-card__meta">
+                <div class="quiz-card__chip quiz-card__chip--type">
+                  <span class="quiz-card__k"><i class="bi <?php echo h($typeIcon); ?>" aria-hidden="true"></i> Type</span>
+                  <span class="quiz-card__v"><?php echo h($qr['quiz_type_label']); ?></span>
+                </div>
                 <div class="quiz-card__chip">
-                  <span class="quiz-card__k">Duration</span>
+                  <span class="quiz-card__k"><i class="bi bi-clock" aria-hidden="true"></i> Duration</span>
                   <span class="quiz-card__v"><?php echo h($qr['duration']); ?></span>
                 </div>
                 <div class="quiz-card__chip">
-                  <span class="quiz-card__k">Attempts</span>
+                  <span class="quiz-card__k"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Attempts</span>
                   <span class="quiz-card__v"><?php echo (int)$qr['attempt_count']; ?></span>
-                </div>
-                <div class="quiz-card__chip">
-                  <span class="quiz-card__k">Last Score</span>
-                  <span class="quiz-card__v"><?php echo $qr['score_pct'] !== null ? ((int)$qr['score_pct'] . '%') : '—'; ?></span>
                 </div>
               </div>
               <div class="quiz-card__actions">
@@ -2168,6 +3043,22 @@ document.addEventListener('alpine:init', function() {
           </div>
         <?php endif; ?>
       </div>
+      </div>
+    </div>
+    <?php if (!empty($quizRows)): ?>
+    <div id="quizQuizzersFilterEmpty" class="quiz-quizzers-filter-empty" hidden role="status" aria-live="polite">
+      <div class="quiz-quizzers-filter-empty__card">
+        <div class="quiz-quizzers-filter-empty__icon-wrap" aria-hidden="true">
+          <i class="bi bi-search"></i>
+        </div>
+        <h3 class="quiz-quizzers-filter-empty__title">No quizzes match your search or filters</h3>
+        <p class="quiz-quizzers-filter-empty__text">Adjust your keywords or reset the status filters to see more topical quizzes.</p>
+        <button type="button" class="quiz-quizzers-filter-empty__btn" id="quizQuizzersClearFiltersBtn">
+          <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span>Clear search &amp; status</span>
+        </button>
+      </div>
+    </div>
+    <?php endif; ?>
     </div>
   </div>
 
@@ -2351,36 +3242,209 @@ document.addEventListener('alpine:init', function() {
 
   </script>
   <script>
-  // Client-side filtering for Quizzers table by quiz title + status
+  // Quizzers: search by title + status filters + sort (topical only)
   (function() {
     var input = document.getElementById('quizTitleFilter');
     var pills = document.querySelectorAll('.quiz-status-filter-pill');
+    var sortSelect = document.getElementById('quizSortSelect');
+    var applySortBtn = document.getElementById('quizControlApplyBtn');
     var activeStatus = '';
-    if (!input && !pills.length) return;
+    var activeQuizType = 'topical';
+    var SORT_STORAGE_KEY = 'ereview_quizzers_sort';
+    var defaultRowQids = [];
+    var defaultCardQids = [];
+    var allowedSort = {
+      default: 1,
+      newest: 1,
+      oldest: 1,
+      title_asc: 1,
+      title_desc: 1,
+      duration_asc: 1,
+      duration_desc: 1
+    };
+
+    if (!input && pills.length === 0) return;
+
+    function syncQuizTypeFromHash() {
+      var h = window.location.hash || '';
+      if (h === '#quizzers-topical' || h === '#quizzers-randomized') {
+        activeQuizType = 'topical';
+      }
+    }
+
+    function captureDefaultOrder() {
+      defaultRowQids = Array.prototype.map.call(
+        document.querySelectorAll('.qq-list-body .quiz-table-row'),
+        function (r) { return r.getAttribute('data-qid') || ''; }
+      );
+      defaultCardQids = Array.prototype.map.call(
+        document.querySelectorAll('.quiz-cards-grid .quiz-card-item'),
+        function (c) { return c.getAttribute('data-qid') || ''; }
+      );
+    }
+
+    function reorderTableByQids(orderedQids) {
+      var body = document.querySelector('.qq-list-body');
+      if (!body) return;
+      var map = {};
+      var tail = [];
+      Array.prototype.forEach.call(body.children, function (child) {
+        if (child.classList && child.classList.contains('quiz-table-row')) {
+          map[child.getAttribute('data-qid') || ''] = child;
+        } else {
+          tail.push(child);
+        }
+      });
+      orderedQids.forEach(function (qid) {
+        if (qid && map[qid]) body.appendChild(map[qid]);
+      });
+      tail.forEach(function (node) { body.appendChild(node); });
+    }
+
+    function reorderCardsByQids(orderedQids) {
+      var grid = document.querySelector('.quiz-cards-grid');
+      if (!grid) return;
+      var map = {};
+      var tail = [];
+      Array.prototype.forEach.call(grid.children, function (child) {
+        if (child.classList && child.classList.contains('quiz-card-item')) {
+          map[child.getAttribute('data-qid') || ''] = child;
+        } else {
+          tail.push(child);
+        }
+      });
+      orderedQids.forEach(function (qid) {
+        if (qid && map[qid]) grid.appendChild(map[qid]);
+      });
+      tail.forEach(function (node) { grid.appendChild(node); });
+    }
+
+    function cmpQid(a, b) {
+      return parseInt(a.getAttribute('data-qid') || '0', 10) - parseInt(b.getAttribute('data-qid') || '0', 10);
+    }
+
+    function cmpRows(mode, a, b) {
+      if (mode === 'newest') {
+        return parseInt(b.getAttribute('data-qid') || '0', 10) - parseInt(a.getAttribute('data-qid') || '0', 10);
+      }
+      if (mode === 'oldest') {
+        return parseInt(a.getAttribute('data-qid') || '0', 10) - parseInt(b.getAttribute('data-qid') || '0', 10);
+      }
+      var ta = (a.getAttribute('data-title') || '').toLowerCase();
+      var tb = (b.getAttribute('data-title') || '').toLowerCase();
+      if (mode === 'title_asc') {
+        if (ta !== tb) return ta < tb ? -1 : 1;
+        return cmpQid(a, b);
+      }
+      if (mode === 'title_desc') {
+        if (ta !== tb) return ta > tb ? -1 : 1;
+        return cmpQid(a, b);
+      }
+      if (mode === 'duration_asc') {
+        var da = parseInt(a.getAttribute('data-duration-sec') || '0', 10);
+        var db = parseInt(b.getAttribute('data-duration-sec') || '0', 10);
+        if (da !== db) return da - db;
+        return cmpQid(a, b);
+      }
+      if (mode === 'duration_desc') {
+        var d1 = parseInt(a.getAttribute('data-duration-sec') || '0', 10);
+        var d2 = parseInt(b.getAttribute('data-duration-sec') || '0', 10);
+        if (d1 !== d2) return d2 - d1;
+        return cmpQid(a, b);
+      }
+      return 0;
+    }
+
+    function applyQuizSort() {
+      if (!sortSelect) return;
+      var mode = sortSelect.value || 'default';
+      if (mode === 'default') {
+        reorderTableByQids(defaultRowQids);
+        reorderCardsByQids(defaultCardQids);
+        return;
+      }
+      var rows = Array.prototype.slice.call(document.querySelectorAll('.qq-list-body .quiz-table-row'));
+      rows.sort(function (a, b) { return cmpRows(mode, a, b); });
+      reorderTableByQids(rows.map(function (r) { return r.getAttribute('data-qid') || ''; }));
+      var cards = Array.prototype.slice.call(document.querySelectorAll('.quiz-cards-grid .quiz-card-item'));
+      cards.sort(function (a, b) { return cmpRows(mode, a, b); });
+      reorderCardsByQids(cards.map(function (c) { return c.getAttribute('data-qid') || ''; }));
+    }
 
     function applyFilters() {
-      var term = input ? (input.value || '').toLowerCase().trim() : '';
-      var rows = document.querySelectorAll('.quiz-table tbody tr.quiz-table-row');
+      var termNorm = input ? String(input.value || '').toLowerCase().trim().replace(/\s+/g, ' ') : '';
+      var rows = document.querySelectorAll('.qq-list-body .quiz-table-row');
       rows.forEach(function(row) {
         var text = (row.getAttribute('data-title') || '').toLowerCase();
         var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
-        var matchesTitle = !term || text.indexOf(term) !== -1;
+        var rowQuizType = (row.getAttribute('data-quiz-type') || 'topical').toLowerCase();
+        var matchesTitle = !termNorm || text.indexOf(termNorm) !== -1;
         var matchesStatus = !activeStatus || rowStatus === activeStatus;
-        row.style.display = (matchesTitle && matchesStatus) ? '' : 'none';
+        var matchesType = rowQuizType === activeQuizType;
+        row.style.display = (matchesTitle && matchesStatus && matchesType) ? '' : 'none';
       });
-      var cards = document.querySelectorAll('.quiz-card-item');
+      var cards = document.querySelectorAll('.quiz-cards-grid .quiz-card-item');
       cards.forEach(function(card) {
         var text = (card.getAttribute('data-title') || '').toLowerCase();
         var rowStatus = (card.getAttribute('data-status') || '').toLowerCase();
-        var matchesTitle = !term || text.indexOf(term) !== -1;
+        var rowQuizType = (card.getAttribute('data-quiz-type') || 'topical').toLowerCase();
+        var matchesTitle = !termNorm || text.indexOf(termNorm) !== -1;
         var matchesStatus = !activeStatus || rowStatus === activeStatus;
-        card.style.display = (matchesTitle && matchesStatus) ? '' : 'none';
+        var matchesType = rowQuizType === activeQuizType;
+        card.style.display = (matchesTitle && matchesStatus && matchesType) ? '' : 'none';
       });
+      updateFilterEmptyState();
+    }
+
+    function updateFilterEmptyState() {
+      var el = document.getElementById('quizQuizzersFilterEmpty');
+      var pageBody = document.querySelector('.quiz-quizzers-page-body');
+      if (!el || !pageBody || pageBody.getAttribute('data-has-quizzes') !== '1') {
+        if (el) {
+          el.hidden = true;
+          el.classList.remove('is-visible');
+          el.setAttribute('aria-hidden', 'true');
+        }
+        return;
+      }
+      var visible = 0;
+      document.querySelectorAll('.qq-list-body .quiz-table-row').forEach(function(row) {
+        if (row.style.display !== 'none') visible++;
+      });
+      if (visible === 0) {
+        el.hidden = false;
+        el.classList.add('is-visible');
+        el.setAttribute('aria-hidden', 'false');
+      } else {
+        el.classList.remove('is-visible');
+        el.hidden = true;
+        el.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function initQuizzersUi() {
+      syncQuizTypeFromHash();
+      captureDefaultOrder();
+      try {
+        var savedSort = localStorage.getItem(SORT_STORAGE_KEY);
+        if (savedSort && allowedSort[savedSort] && sortSelect) {
+          sortSelect.value = savedSort;
+        }
+      } catch (e) {}
+      applyQuizSort();
+      applyFilters();
     }
 
     if (input) {
       input.addEventListener('input', applyFilters);
+      input.addEventListener('keydown', function(e) {
+        if ((e.key || '') === 'Enter') {
+          e.preventDefault();
+          applyFilters();
+        }
+      });
     }
+
     pills.forEach(function(btn) {
       btn.addEventListener('click', function() {
         pills.forEach(function(p) { p.classList.remove('is-active'); });
@@ -2389,6 +3453,44 @@ document.addEventListener('alpine:init', function() {
         applyFilters();
       });
     });
+
+    document.addEventListener('ereview-quizzers-type', function(ev) {
+      var d = ev && ev.detail ? ev.detail : {};
+      activeQuizType = 'topical';
+      applyFilters();
+    });
+
+    window.addEventListener('hashchange', function() {
+      syncQuizTypeFromHash();
+      applyFilters();
+    });
+
+    syncQuizTypeFromHash();
+
+    if (applySortBtn && sortSelect) {
+      applySortBtn.addEventListener('click', function () {
+        try {
+          localStorage.setItem(SORT_STORAGE_KEY, sortSelect.value || 'default');
+        } catch (e2) {}
+        applyQuizSort();
+        applyFilters();
+      });
+    }
+
+    document.addEventListener('alpine:initialized', initQuizzersUi);
+    initQuizzersUi();
+
+    var clearFiltersBtn = document.getElementById('quizQuizzersClearFiltersBtn');
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', function() {
+        if (input) input.value = '';
+        activeStatus = '';
+        pills.forEach(function(p) { p.classList.remove('is-active'); });
+        var allPill = document.querySelector('.quiz-status-filter-pill[data-status=""]');
+        if (allPill) allPill.classList.add('is-active');
+        applyFilters();
+      });
+    }
   })();
   </script>
   <script>

@@ -129,6 +129,10 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
 
     <div class="admin-topbar-right">
       <nav class="admin-topbar-actions" aria-label="Quick actions">
+        <button type="button" aria-label="Messages" class="admin-topbar-action admin-topbar-action--message relative" title="Messages" data-message-toggle>
+          <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+          <span class="ere-msg-topbar-badge" aria-hidden="true"></span>
+        </button>
         <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
           <span class="ere-notif__badge is-empty" data-notification-badge aria-hidden="true"></span>
@@ -191,6 +195,7 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
 <?php
 $notificationTheme = $t === 'professor' ? 'professor' : 'admin';
 include __DIR__ . '/notification_component.php';
+include __DIR__ . '/messaging_component.php';
 ?>
 <style>[x-cloak]{display:none!important}</style>
 
@@ -251,7 +256,7 @@ include __DIR__ . '/notification_component.php';
     </div>
 
     <div class="student-topbar-right">
-      <?php if ($studentAccessEndMs !== null): ?>
+      <?php if ($studentAccessEndMs !== null && empty($appShellHideStudentAccessTopbar)): ?>
       <div class="student-topbar-access-wrap relative shrink-0">
         <button type="button"
           class="student-topbar-access<?php
@@ -340,6 +345,10 @@ include __DIR__ . '/notification_component.php';
         <button type="button" id="studentTopbarMoreBtn" aria-label="More actions" class="student-topbar-action student-topbar-action--more" title="More actions" aria-expanded="false" aria-controls="studentTopbarMobileActions">
           <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
         </button>
+        <button type="button" aria-label="Messages" class="student-topbar-action student-topbar-action--message relative" title="Messages" data-message-toggle>
+          <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+          <span class="ere-msg-topbar-badge" aria-hidden="true"></span>
+        </button>
         <button type="button" x-ref="mainNotifBtn" aria-label="Notifications" class="student-topbar-action student-topbar-action--notif student-topbar-action--notif-main has-unread" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
           <span class="student-topbar-badge ere-notif__badge is-empty" data-notification-badge aria-hidden="true"></span>
@@ -416,6 +425,10 @@ include __DIR__ . '/notification_component.php';
           <span class="student-topbar-mobile-actions-item__icon"><i class="bi bi-bell" aria-hidden="true"></i></span>
           <span class="student-topbar-mobile-actions-item__text">Notifications</span>
         </button>
+        <button type="button" class="student-topbar-mobile-actions-item" role="menuitem" data-mobile-action="messages">
+          <span class="student-topbar-mobile-actions-item__icon"><i class="bi bi-chat-left-text" aria-hidden="true"></i></span>
+          <span class="student-topbar-mobile-actions-item__text">Messages</span>
+        </button>
         <button type="button" class="student-topbar-mobile-actions-item student-topbar-mobile-actions-item--profile" role="menuitem" data-mobile-action="profile">
           <span class="student-topbar-mobile-actions-item__avatar">
             <?php if (!empty($appShellTopbarAvatarImage)): ?>
@@ -437,6 +450,7 @@ include __DIR__ . '/notification_component.php';
 <?php
 $notificationTheme = 'student';
 include __DIR__ . '/notification_component.php';
+include __DIR__ . '/messaging_component.php';
 ?>
 <style>[x-cloak]{display:none!important}</style>
 <script>
@@ -659,6 +673,7 @@ include __DIR__ . '/notification_component.php';
     if (!topbar || !moreBtn || !menu) return;
 
     var notifBtn = document.querySelector('.student-topbar-action--notif-main');
+    var msgBtn = document.querySelector('.student-topbar-action--message');
     var profileBtn = document.querySelector('.student-topbar-profile-btn');
 
     function setMenuOpen(open) {
@@ -696,6 +711,8 @@ include __DIR__ . '/notification_component.php';
         toggleSearch();
       } else if (action === 'notifications') {
         if (notifBtn) notifBtn.click();
+      } else if (action === 'messages') {
+        if (msgBtn) msgBtn.click();
       } else if (action === 'profile') {
         if (profileBtn) profileBtn.click();
       }

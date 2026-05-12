@@ -38,6 +38,9 @@ $userId = getCurrentUserId();
 $timeLimitSeconds = getQuizTimeLimitSeconds($quiz);
 if ($timeLimitSeconds < 1) $timeLimitSeconds = 1;
 if ($timeLimitSeconds > 86400) $timeLimitSeconds = 86400; // max 24 hours
+$shuffleMcqQuestions = !empty($quiz['shuffle_mcq_questions']);
+$shuffleMcqChoices = !empty($quiz['shuffle_mcq_choices']);
+$mcqPickCount = max(0, (int)($quiz['mcq_pick_count'] ?? 0));
 
 function get_question_choices($q) {
   $letters = ['A','B','C','D','E','F','G','H','I','J'];
@@ -49,6 +52,40 @@ function get_question_choices($q) {
     }
   }
   return $out;
+}
+
+/**
+ * Deterministic pseudo-random order key (stable across resume for same attempt).
+ */
+function ereview_quiz_stable_shuffle_key(int $attemptId, int $questionId, string $salt = ''): string {
+    return sha1($attemptId . ':' . $questionId . ':' . $salt);
+}
+
+/**
+ * Apply per-attempt MCQ question shuffle + per-set pick count.
+ *
+ * @param list<array<string,mixed>> $rows
+ * @return list<array<string,mixed>>
+ */
+function ereview_quiz_apply_attempt_question_selection(array $rows, int $attemptId, bool $shuffleQuestions, int $pickCount): array {
+    if ($attemptId <= 0 || $rows === []) {
+        return $rows;
+    }
+    if ($shuffleQuestions) {
+        usort($rows, static function (array $a, array $b) use ($attemptId): int {
+            $ka = ereview_quiz_stable_shuffle_key($attemptId, (int)($a['question_id'] ?? 0), 'q');
+            $kb = ereview_quiz_stable_shuffle_key($attemptId, (int)($b['question_id'] ?? 0), 'q');
+            if ($ka === $kb) {
+                return (int)($a['question_id'] ?? 0) <=> (int)($b['question_id'] ?? 0);
+            }
+            return $ka <=> $kb;
+        });
+    }
+    if ($pickCount > 0 && count($rows) > $pickCount) {
+        $rows = array_slice($rows, 0, $pickCount);
+    }
+
+    return $rows;
 }
 $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
 
@@ -66,10 +103,10 @@ $qIdsRes = mysqli_stmt_get_result($stmt);
 $questionIds = [];
 while ($r = mysqli_fetch_assoc($qIdsRes)) $questionIds[] = (int)$r['question_id'];
 mysqli_stmt_close($stmt);
-$totalQuestions = count($questionIds);
+$totalQuestionsBase = count($questionIds);
 
 // ----- Retake: create new attempt and redirect -----
-if (isset($_GET['retake']) && (int)$_GET['retake'] === 1 && $totalQuestions > 0) {
+if (isset($_GET['retake']) && (int)$_GET['retake'] === 1 && $totalQuestionsBase > 0) {
     $now = time();
     $startedAt = date('Y-m-d H:i:s', $now);
     $expiresAt = date('Y-m-d H:i:s', $now + $timeLimitSeconds);
@@ -85,7 +122,7 @@ if (isset($_GET['retake']) && (int)$_GET['retake'] === 1 && $totalQuestions > 0)
 }
 
 // ----- POST: Start attempt -----
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $totalQuestions > 0) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $totalQuestionsBase > 0) {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
@@ -186,7 +223,7 @@ if (isset($_GET['view_result']) && (int)$_GET['view_result'] === 1 && !$showResu
 
 // ----- Attempt in progress: redirect to resume if no attempt_id -----
 $attemptId = sanitizeInt($_GET['attempt_id'] ?? 0);
-if ($attemptId <= 0 && !$showResult && $totalQuestions > 0) {
+if ($attemptId <= 0 && !$showResult && $totalQuestionsBase > 0) {
     $stmt = mysqli_prepare($conn, "SELECT attempt_id FROM quiz_attempts WHERE user_id=? AND quiz_id=? AND status='in_progress' ORDER BY attempt_id DESC LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $userId, $quizId);
     mysqli_stmt_execute($stmt);
@@ -204,7 +241,7 @@ $expiresAt = null;
 $remainingSeconds = 0;
 $answeredCount = 0;
 
-if ($attemptId > 0 && $totalQuestions > 0) {
+if ($attemptId > 0 && $totalQuestionsBase > 0) {
     $stmt = mysqli_prepare($conn, "SELECT * FROM quiz_attempts WHERE attempt_id=? AND user_id=? AND quiz_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'iii', $attemptId, $userId, $quizId);
     mysqli_stmt_execute($stmt);
@@ -285,7 +322,7 @@ if ($attemptId > 0 && $totalQuestions > 0) {
 
 // Load all questions for single-page scroll view
 $allQuestions = [];
-if ($totalQuestions > 0) {
+if ($totalQuestionsBase > 0) {
     $stmt = mysqli_prepare($conn, "SELECT * FROM quiz_questions WHERE quiz_id=? ORDER BY question_id ASC");
     if (!$stmt) {
         error_log('student_take_quiz: prepare failed (all questions): ' . mysqli_error($conn));
@@ -298,6 +335,26 @@ if ($totalQuestions > 0) {
     $res = mysqli_stmt_get_result($stmt);
     while ($row = mysqli_fetch_assoc($res)) $allQuestions[] = $row;
     mysqli_stmt_close($stmt);
+}
+$activeQuestionIds = array_map(static function (array $q): int {
+    return (int)($q['question_id'] ?? 0);
+}, $allQuestions);
+
+$allQuestions = ereview_quiz_apply_attempt_question_selection(
+    $allQuestions,
+    (int)$attemptId,
+    $shuffleMcqQuestions,
+    $mcqPickCount
+);
+$activeQuestionIds = array_map(static function (array $q): int {
+    return (int)($q['question_id'] ?? 0);
+}, $allQuestions);
+$totalQuestions = count($activeQuestionIds);
+$answeredCount = 0;
+foreach ($activeQuestionIds as $aqid) {
+    if (isset($savedAnswers[$aqid]) && $savedAnswers[$aqid] !== '') {
+        $answeredCount++;
+    }
 }
 $allAnswered = ($totalQuestions > 0 && $answeredCount >= $totalQuestions);
 
@@ -312,6 +369,12 @@ if ($showResult && $result && getCurrentUserId()) {
     if ($aid > 0) {
         $qRes = mysqli_query($conn, "SELECT qq.*, qa.selected_answer, qa.is_correct FROM quiz_questions qq LEFT JOIN quiz_answers qa ON qa.question_id=qq.question_id AND qa.attempt_id=".$aid." WHERE qq.quiz_id=".(int)$quizId." ORDER BY qq.question_id ASC");
         if ($qRes) { while ($r = mysqli_fetch_assoc($qRes)) $reviewQuestions[] = $r; }
+        $reviewQuestions = ereview_quiz_apply_attempt_question_selection(
+            $reviewQuestions,
+            $aid,
+            $shuffleMcqQuestions,
+            $mcqPickCount
+        );
     }
 }
 
@@ -336,6 +399,12 @@ if ($userId) {
             $row['questions'] = [];
             $qRes = mysqli_query($conn, "SELECT qq.*, qa.selected_answer, qa.is_correct FROM quiz_questions qq LEFT JOIN quiz_answers qa ON qa.question_id=qq.question_id AND qa.attempt_id=".(int)$row['attempt_id']." WHERE qq.quiz_id=".(int)$quizId." ORDER BY qq.question_id ASC");
             if ($qRes) { while ($r = mysqli_fetch_assoc($qRes)) $row['questions'][] = $r; }
+            $row['questions'] = ereview_quiz_apply_attempt_question_selection(
+                $row['questions'],
+                (int)$row['attempt_id'],
+                $shuffleMcqQuestions,
+                $mcqPickCount
+            );
             $quizHistoryAttempts[] = $row;
         }
     }
@@ -1881,7 +1950,29 @@ if ($userId) {
         <div class="exam-question-label">Question <?php echo $num; ?> of <?php echo $totalQuestions; ?></div>
         <div class="exam-question-text mb-6"><?php echo renderQuizRichText($q['question_text']); ?></div>
         <div class="exam-choices">
-          <?php $choices = get_question_choices($q); foreach ($choices as $letter => $choiceText): ?>
+          <?php
+            $choices = get_question_choices($q);
+            if ($shuffleMcqChoices && $attemptId > 0 && count($choices) > 1) {
+                $choicePairs = [];
+                foreach ($choices as $letter0 => $text0) {
+                    $choicePairs[] = ['letter' => $letter0, 'text' => $text0];
+                }
+                usort($choicePairs, static function (array $a, array $b) use ($attemptId, $q): int {
+                    $qid = (int)($q['question_id'] ?? 0);
+                    $ka = ereview_quiz_stable_shuffle_key($attemptId, $qid, 'c:' . (string)$a['letter']);
+                    $kb = ereview_quiz_stable_shuffle_key($attemptId, $qid, 'c:' . (string)$b['letter']);
+                    if ($ka === $kb) {
+                        return strcmp((string)$a['letter'], (string)$b['letter']);
+                    }
+                    return $ka <=> $kb;
+                });
+                $choices = [];
+                foreach ($choicePairs as $cp) {
+                    $choices[$cp['letter']] = $cp['text'];
+                }
+            }
+          ?>
+          <?php foreach ($choices as $letter => $choiceText): ?>
             <?php $isSelected = (isset($savedAnswers[$q['question_id']]) && $savedAnswers[$q['question_id']] === $letter); ?>
             <label class="exam-choice <?php echo $isSelected ? 'selected' : ''; ?>">
               <input type="radio" name="answer_<?php echo (int)$q['question_id']; ?>" value="<?php echo $letter; ?>" class="sr-only" data-question-id="<?php echo (int)$q['question_id']; ?>"
@@ -1936,7 +2027,7 @@ if ($userId) {
               </button>
               <div class="exam-q-list">
                 <?php for ($n = 1; $n <= $totalQuestions; $n++): ?>
-                  <?php $qIdForN = $questionIds[$n - 1] ?? 0; $answered = isset($savedAnswers[$qIdForN]); ?>
+                  <?php $qIdForN = $activeQuestionIds[$n - 1] ?? 0; $answered = isset($savedAnswers[$qIdForN]); ?>
                   <a href="#q<?php echo $n; ?>" class="<?php echo $answered ? 'answered' : ''; ?>" data-question-id="<?php echo $qIdForN; ?>">
                     <span class="q-num"><?php echo $n; ?></span>
                     <span>Question <?php echo $n; ?></span>

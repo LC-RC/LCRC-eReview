@@ -371,6 +371,12 @@ if (!function_exists('ereview_docx_extract_paragraphs')) {
                 } elseif ($ln === 'tab') {
                     $plain .= "\t";
                     $html .= ' ';
+                } elseif ($ln === 'br' || $ln === 'cr') {
+                    // Soft line break inside a paragraph — without this, "b. …" and "c. …" glue as "…taxpayerc."
+                    $plain .= "\n";
+                    $html .= "<br>\n";
+                    // Keep runs aligned with plain text for downstream slicing (highlights / split segments).
+                    $runs[] = ['text' => "\n", 'highlight' => null, 'color' => null, 'is_red' => false];
                 }
             }
             if ($plain === '' && $runs === []) {
@@ -1408,6 +1414,31 @@ if (!function_exists('ereview_docx_filter_substantive_choice_paragraphs')) {
 }
 
 /**
+ * 0-based index of the choice line that carries Word's yellow highlight (answer key), or null.
+ *
+ * @param list<array{plain:string,html:string,runs?:array}> $filteredChoiceParas
+ */
+if (!function_exists('ereview_docx_detect_correct_choice_index')) {
+    function ereview_docx_detect_correct_choice_index(array $filteredChoiceParas): ?int {
+        foreach ($filteredChoiceParas as $i => $cp) {
+            $runs = $cp['runs'] ?? [];
+            foreach ($runs as $run) {
+                $hl = strtolower((string)($run['highlight'] ?? ''));
+                if ($hl !== '' && strpos($hl, 'yellow') !== false) {
+                    return (int)$i;
+                }
+            }
+            $html = (string)($cp['html'] ?? '');
+            if (preg_match('/ereview-qsort-hl--yellow|data-ereview-hl=[\'"]yellow[\'"]/i', $html)) {
+                return (int)$i;
+            }
+        }
+
+        return null;
+    }
+}
+
+/**
  * Strip source list / label prefix from choice HTML so we can show a. b. c. d. per question.
  *
  * @param string $html
@@ -1416,15 +1447,73 @@ if (!function_exists('ereview_docx_filter_substantive_choice_paragraphs')) {
 if (!function_exists('ereview_docx_strip_choice_label_prefix_from_html')) {
     function ereview_docx_strip_choice_label_prefix_from_html(string $html): string {
         $h = $html;
-        if (preg_match('#^<span class="ereview-qsort-list-marker">[^<]*</span>#u', $h)) {
-            $h = preg_replace('#^<span class="ereview-qsort-list-marker">[^<]*</span>#u', '', $h, 1);
+        // Strip repeatedly until visible text no longer starts with "a." / "b." / etc.
+        // Handles: "<mark>a.</mark> a. Partner", "<mark>a.</mark>" alone, "c. c. 60%", list markers, red spans.
+        // Note: require whitespace after "x." when more text follows so we do not strip "I.e. …".
+        for ($iter = 0; $iter < 32; $iter++) {
+            $flat = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+            $hasLeading = $flat !== ''
+                && (preg_match('/^([a-zA-Z])[\.\)]\s+/u', $flat) || preg_match('/^([a-zA-Z])[\.\)]\s*$/u', $flat));
+            if (!$hasLeading) {
+                break;
+            }
+            $before = $h;
+            // Word list numbering prefix injected as span
+            $h = preg_replace('#^\s*<span class="ereview-qsort-list-marker">[^<]*</span>\s*#u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            // Peel labels from inside a leading highlight (Word often wraps only "a." or the whole line in <mark>).
+            if (preg_match('#^\s*<mark\b[^>]*>#iu', $h)) {
+                $h2 = preg_replace_callback(
+                    '#^\s*(<mark\b[^>]*>)([\s\S]*?)(</mark>)\s*#iu',
+                    static function (array $m): string {
+                        $inner = ereview_docx_strip_choice_label_prefix_from_html($m[2]);
+                        $vis = trim(preg_replace(
+                            '/\s+/u',
+                            ' ',
+                            html_entity_decode(strip_tags($inner), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+                        ));
+
+                        return $vis === '' ? '' : ($m[1] . $inner . $m[3]);
+                    },
+                    $h,
+                    1
+                );
+                if ($h2 !== $h) {
+                    $h = $h2;
+                    continue;
+                }
+            }
+            // Leading <mark> whose visible text is only a letter label (e.g. nested runs inside highlight).
+            if (preg_match('#^\s*<mark\b[^>]*>([\s\S]*?)</mark>\s*#iu', $h, $mk)) {
+                $innerFlat = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($mk[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                if (preg_match('/^([a-zA-Z])[\.\)]\s*$/u', $innerFlat)) {
+                    $h = preg_replace('#^\s*<mark\b[^>]*>[\s\S]*?</mark>\s*#iu', '', $h, 1);
+                    continue;
+                }
+            }
+            // Publisher red span = single letter label
+            if (preg_match('#^\s*<span class="ereview-qsort-font-red">\s*[a-zA-Z][\.\)]\s*</span>\s*#u', $h)) {
+                $h = preg_replace('#^\s*<span class="ereview-qsort-font-red">\s*[a-zA-Z][\.\)]\s*</span>\s*#u', '', $h, 1);
+                continue;
+            }
+            // Bare "x. " or whole fragment "x." at HTML start
+            $h = preg_replace('/^\s*[a-zA-Z][\.\)]\s+/u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            $h = preg_replace('/^\s*[a-zA-Z][\.\)]\s*$/u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            // Hidden Word numbering / alternate list labels
+            $h = preg_replace('/^\s*\d{1,2}[\.\)]\s+/u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            break;
         }
-        // Letter run sometimes fully wrapped in red span (publisher styling).
-        if (preg_match('#^<span class="ereview-qsort-font-red">([a-zA-Z][\.\)]\s*)</span>#u', $h)) {
-            $h = preg_replace('#^<span class="ereview-qsort-font-red">([a-zA-Z][\.\)]\s*)</span>#u', '', $h, 1);
-        }
-        $h = preg_replace('/^[a-zA-Z][\.\)]\s+/u', '', $h, 1);
-        $h = preg_replace('/^\d{1,2}[\.\)]\s+/u', '', $h, 1);
 
         return $h;
     }
@@ -1745,12 +1834,94 @@ if (!function_exists('ereview_docx_build_question_blocks')) {
     }
 }
 
+/**
+ * When Word repeats the same item number on a later stem line (e.g. long case + "29. What is…?"),
+ * remove the duplicate "n." from visible text so the joined stem does not show two question numbers.
+ *
+ * @param array{plain:string,html:string} $vis From ereview_docx_with_visible_list_marker()
+ * @return array{plain:string,html:string}
+ */
+if (!function_exists('ereview_docx_vis_strip_duplicate_block_number_prefix')) {
+    function ereview_docx_vis_strip_duplicate_block_number_prefix(array $vis, string $blockNumber): array {
+        $plain = (string)($vis['plain'] ?? '');
+        $html = (string)($vis['html'] ?? '');
+        if ($blockNumber === '' || $blockNumber === '?' || !preg_match('/^\d{1,4}$/', $blockNumber)) {
+            return $vis;
+        }
+        $norm = trim(preg_replace('/\s+/u', ' ', $plain));
+        if ($norm === '') {
+            return $vis;
+        }
+        [$vn, $rest] = ereview_docx_extract_leading_question_number($norm);
+        if ($vn === null || (string)$vn !== (string)$blockNumber || $rest === '') {
+            return $vis;
+        }
+        $newPlain = preg_replace('/^\s*' . preg_quote($blockNumber, '/') . '[\.\)]\s*/u', '', $plain, 1);
+        $newHtml = ereview_docx_html_strip_leading_duplicate_item_number($html, $blockNumber);
+
+        return ['plain' => $newPlain, 'html' => $newHtml];
+    }
+}
+
+/**
+ * Strip one leading exam item number from choice HTML (list-marker span and/or typed "29. ").
+ */
+if (!function_exists('ereview_docx_html_strip_leading_duplicate_item_number')) {
+    function ereview_docx_html_strip_leading_duplicate_item_number(string $html, string $blockNumber): string {
+        $q = preg_quote($blockNumber, '#');
+        $h = $html;
+        for ($i = 0; $i < 8; $i++) {
+            $flat = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+            if ($flat === '') {
+                break;
+            }
+            [$vn, $rest] = ereview_docx_extract_leading_question_number($flat);
+            if ($vn === null || (string)$vn !== (string)$blockNumber || $rest === '') {
+                break;
+            }
+            $before = $h;
+            $h = preg_replace('#^\s*<span class="ereview-qsort-list-marker">\s*' . $q . '[\.\)]\s*</span>\s*#iu', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            $h = preg_replace('#^\s*<span class="ereview-qsort-qnum">\s*' . $q . '[\.\)]\s*</span>\s*#iu', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            $h = preg_replace('/^\s*' . $q . '[\.\)]\s+/u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            $h = preg_replace('/^\s*' . $q . '[\.\)](?=\S)/u', '', $h, 1);
+            if ($h !== $before) {
+                continue;
+            }
+            break;
+        }
+
+        return $h;
+    }
+}
+
 if (!function_exists('ereview_docx_finalize_question_block')) {
     function ereview_docx_finalize_question_block(array $block): array {
         $stemParts = [];
         $stemHtmlParts = [];
+        $numStr = (string)($block['number'] ?? '');
+        $seenStemLineLeadingWithItemNum = false;
         foreach ($block['stem_paragraphs'] as $sp) {
             $vis = ereview_docx_with_visible_list_marker($sp);
+            if ($numStr !== '' && $numStr !== '?' && preg_match('/^\d{1,4}$/', $numStr)) {
+                $norm = trim(preg_replace('/\s+/u', ' ', (string)($vis['plain'] ?? '')));
+                [$vn, $rest] = ereview_docx_extract_leading_question_number($norm);
+                $leadsWithItem = $vn !== null && (string)$vn === (string)$numStr && $rest !== '';
+                if ($leadsWithItem && $seenStemLineLeadingWithItemNum) {
+                    $vis = ereview_docx_vis_strip_duplicate_block_number_prefix($vis, $numStr);
+                }
+                if ($leadsWithItem) {
+                    $seenStemLineLeadingWithItemNum = true;
+                }
+            }
             $stemParts[] = $vis['plain'];
             $stemHtmlParts[] = $vis['html'];
         }
@@ -1789,7 +1960,20 @@ if (!function_exists('ereview_docx_finalize_question_block')) {
             $qi = !empty($block['started_by_list']) ? 0 : ereview_docx_find_question_paragraph_index($block['stem_paragraphs']);
             if ($qi !== null && isset($dispStemParts[$qi], $dispHtmlParts[$qi])) {
                 $p0 = trim((string)$dispStemParts[$qi]);
-                if ($p0 !== '' && preg_match('/^\s*(\d{1,4})[\.\)]/u', $p0) !== 1) {
+                $stemAlreadyShowsThisItemNum = false;
+                $nq = preg_quote($num, '/');
+                foreach ($dispStemParts as $dp) {
+                    $d = trim((string)$dp);
+                    if ($d !== '' && preg_match('/^\s*' . $nq . '[\.\)]/u', $d) === 1) {
+                        $stemAlreadyShowsThisItemNum = true;
+                        break;
+                    }
+                }
+                if (
+                    !$stemAlreadyShowsThisItemNum
+                    && $p0 !== ''
+                    && preg_match('/^\s*(\d{1,4})[\.\)]/u', $p0) !== 1
+                ) {
                     $pref = $num . '. ';
                     $dispStemParts[$qi] = $pref . $dispStemParts[$qi];
                     $dispHtmlParts[$qi] = '<span class="ereview-qsort-qnum">' . htmlspecialchars($pref, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '</span>' . $dispHtmlParts[$qi];
@@ -1799,6 +1983,11 @@ if (!function_exists('ereview_docx_finalize_question_block')) {
         $stemPlainDisplay = trim(preg_replace('/\s+/u', ' ', implode("\n", $dispStemParts)));
 
         $choiceParas = ereview_docx_filter_substantive_choice_paragraphs($block['choice_paragraphs']);
+        $correctIdx = ereview_docx_detect_correct_choice_index($choiceParas);
+        $correctLetter = null;
+        if ($correctIdx !== null && $correctIdx >= 0 && $correctIdx < 26) {
+            $correctLetter = chr(ord('A') + $correctIdx);
+        }
 
         return [
             'number' => (string)$block['number'],
@@ -1809,6 +1998,8 @@ if (!function_exists('ereview_docx_finalize_question_block')) {
             'stem_html_joined' => implode("<br>\n", $dispHtmlParts),
             'choices_html' => ereview_docx_build_choices_html_for_display($choiceParas),
             'topic_source' => $topicSource,
+            'correct_choice_index' => $correctIdx,
+            'correct_answer_letter' => $correctLetter,
         ];
     }
 }
@@ -2244,12 +2435,189 @@ if (!function_exists('ereview_docx_extract_general_problems_from_questions')) {
 }
 
 /**
+ * HTML fragment from run metadata (matches extraction markup; newline runs become &lt;br&gt;).
+ *
+ * @param list<array{text?:string,highlight?:?string,is_red?:bool}> $runs
+ */
+if (!function_exists('ereview_docx_html_from_runs')) {
+    function ereview_docx_html_from_runs(array $runs): string {
+        $html = '';
+        foreach ($runs as $run) {
+            $text = (string)($run['text'] ?? '');
+            if ($text === "\n") {
+                $html .= "<br>\n";
+                continue;
+            }
+            $esc = htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $hlKey = $run['highlight'] ?? null;
+            $isHl = $hlKey !== null && $hlKey !== '';
+            $isRed = !empty($run['is_red']);
+            if ($isHl) {
+                $k = htmlspecialchars((string)$hlKey, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $html .= '<mark class="ereview-qsort-hl ereview-qsort-hl--' . $k . '" data-ereview-hl="' . $k . '">' . $esc . '</mark>';
+            } elseif ($isRed) {
+                $html .= '<span class="ereview-qsort-font-red">' . $esc . '</span>';
+            } else {
+                $html .= $esc;
+            }
+        }
+
+        return $html;
+    }
+}
+
+/**
+ * Slice runs[] to match a UTF-8 character range in the original paragraph plain text.
+ *
+ * @param list<array<string,mixed>> $runs
+ */
+if (!function_exists('ereview_docx_slice_runs_for_plain_range')) {
+    function ereview_docx_slice_runs_for_plain_range(array $runs, int $charStart, int $charLen): array {
+        if ($charLen <= 0) {
+            return [];
+        }
+        $end = $charStart + $charLen;
+        $cur = 0;
+        $out = [];
+        foreach ($runs as $run) {
+            $text = (string)($run['text'] ?? '');
+            $tl = function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
+            $rs = $cur;
+            $re = $cur + $tl;
+            if ($re <= $charStart || $rs >= $end) {
+                $cur = $re;
+                continue;
+            }
+            $sub0 = max(0, $charStart - $rs);
+            $sub1 = min($tl, $end - $rs);
+            $sliceLen = $sub1 - $sub0;
+            if ($sliceLen <= 0) {
+                $cur = $re;
+                continue;
+            }
+            $piece = function_exists('mb_substr')
+                ? mb_substr($text, $sub0, $sliceLen, 'UTF-8')
+                : substr($text, $sub0, $sliceLen);
+            if ($piece !== '') {
+                $nr = $run;
+                $nr['text'] = $piece;
+                $out[] = $nr;
+            }
+            $cur = $re;
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('ereview_docx_para_contains_embedded_choice_boundary')) {
+    function ereview_docx_para_contains_embedded_choice_boundary(string $plain): bool {
+        return preg_match('/(?:(?<=\n)\s*(?=[a-zA-Z][\.\)]\s+\S)|(?<=[a-zA-Z0-9\)])(?=[a-zA-Z][\.\)]\s+\S))/u', $plain) === 1;
+    }
+}
+
+if (!function_exists('ereview_docx_should_expand_para_split_embedded_choices')) {
+    function ereview_docx_should_expand_para_split_embedded_choices(array $para): bool {
+        $plain = str_replace(["\r\n", "\r"], "\n", (string)($para['plain'] ?? ''));
+        if ($plain === '' || !ereview_docx_para_contains_embedded_choice_boundary($plain)) {
+            return false;
+        }
+        $trim = trim($plain);
+        $firstLine = preg_split("/\n+/u", $trim, 2)[0] ?? '';
+        if (preg_match('/^\s*\d{1,4}[\.\)]\s+/u', $firstLine) && !preg_match('/\n\s*[a-zA-Z][\.\)]\s+\S/u', $plain)) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+/**
+ * Split one OOXML paragraph that accidentally contains multiple MCQ rows (Word line breaks or glued "taxpayerc.").
+ *
+ * @param array<string,mixed> $para
+ * @return list<array<string,mixed>>
+ */
+if (!function_exists('ereview_docx_expand_single_para_embedded_mcq_rows')) {
+    function ereview_docx_expand_single_para_embedded_mcq_rows(array $para): array {
+        if (!ereview_docx_should_expand_para_split_embedded_choices($para)) {
+            return [$para];
+        }
+        $plain = str_replace(["\r\n", "\r"], "\n", (string)($para['plain'] ?? ''));
+        $parts = preg_split(
+            '/(?:(?<=\n)\s*(?=[a-zA-Z][\.\)]\s+\S)|(?<=[a-zA-Z0-9\)])(?=[a-zA-Z][\.\)]\s+\S))/u',
+            $plain,
+            -1,
+            PREG_SPLIT_NO_EMPTY
+        );
+        $parts = array_values(array_filter(array_map('trim', $parts), static function ($p) {
+            return $p !== '';
+        }));
+        if (count($parts) <= 1) {
+            return [$para];
+        }
+        $runs = $para['runs'] ?? [];
+        $out = [];
+        $cursor = 0;
+        foreach ($parts as $pi => $segment) {
+            if ($segment === '') {
+                continue;
+            }
+            $segLen = function_exists('mb_strlen') ? mb_strlen($segment, 'UTF-8') : strlen($segment);
+            $pos = function_exists('mb_strpos')
+                ? mb_strpos($plain, $segment, $cursor, 'UTF-8')
+                : strpos($plain, $segment, $cursor);
+            if ($pos === false) {
+                $pos = $cursor;
+            }
+            $sliceRuns = ereview_docx_slice_runs_for_plain_range($runs, $pos, $segLen);
+            $segmentPlain = function_exists('mb_substr')
+                ? mb_substr($plain, $pos, $segLen, 'UTF-8')
+                : substr($plain, $pos, $segLen);
+            $segmentPlain = ereview_docx_fix_glue_currency_spacing(str_replace(["\t", "\x0b"], ' ', $segmentPlain));
+            $segmentHtml = ereview_docx_fix_glue_currency_spacing(ereview_docx_html_from_runs($sliceRuns));
+            $out[] = [
+                'plain' => trim($segmentPlain),
+                'html' => $segmentHtml,
+                'runs' => $sliceRuns,
+                'is_list' => $pi === 0 ? ($para['is_list'] ?? false) : false,
+                'list_level' => $pi === 0 ? ($para['list_level'] ?? null) : null,
+                'list_num_id' => $pi === 0 ? ($para['list_num_id'] ?? null) : null,
+                'list_fmt' => $pi === 0 ? ($para['list_fmt'] ?? null) : null,
+                'list_ord' => $pi === 0 ? ($para['list_ord'] ?? null) : null,
+            ];
+            $cursor = $pos + $segLen;
+        }
+
+        return $out !== [] ? $out : [$para];
+    }
+}
+
+/**
+ * @param list<array<string,mixed>> $paragraphs
+ * @return list<array<string,mixed>>
+ */
+if (!function_exists('ereview_docx_expand_paragraphs_split_embedded_mcq_rows')) {
+    function ereview_docx_expand_paragraphs_split_embedded_mcq_rows(array $paragraphs): array {
+        $out = [];
+        foreach ($paragraphs as $para) {
+            foreach (ereview_docx_expand_single_para_embedded_mcq_rows($para) as $chunk) {
+                $out[] = $chunk;
+            }
+        }
+
+        return $out;
+    }
+}
+
+/**
  * @param list<array<string,mixed>>|null $traceOut Optional; filled with parse trace (paragraph decisions).
  * @return array{topics: array<string, list>, questions: list, general_problems: list, stats: array}
  */
 if (!function_exists('ereview_docx_parse_and_group')) {
     function ereview_docx_parse_and_group(string $docxPath, ?array &$traceOut = null): array {
         $paragraphs = ereview_docx_extract_paragraphs($docxPath);
+        $paragraphs = ereview_docx_expand_paragraphs_split_embedded_mcq_rows($paragraphs);
         $questions = ereview_docx_build_question_blocks($paragraphs, $traceOut);
         $questions = ereview_docx_apply_case_tail_merges($questions);
         [$questions, $generalProblems] = ereview_docx_extract_general_problems_from_questions($questions);

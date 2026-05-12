@@ -41,6 +41,14 @@ if ($hasWeeklyGoalCol && $uid) {
 $dashboardAvatarPath = '';
 $dashboardUseDefaultAvatar = 1;
 $dashboardAvatarInitial = ereview_avatar_initial($_SESSION['full_name'] ?? 'U');
+$dashboardAccessEndTs = null;
+$dashboardAccessStartTs = null;
+$dashboardAccessDaysLeft = null;
+$dashboardAccessLabel = '';
+$dashboardAccessStartLabel = '';
+$dashboardAccessRelative = '';
+$dashboardAccessState = '';
+$dashboardAccessProgressPct = null;
 
 $tableExists = static function (mysqli $conn, string $table): bool {
     $safe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
@@ -76,6 +84,8 @@ try {
                 if ($hasDefaultAvatar) {
                     $dashboardUseDefaultAvatar = !empty($row['use_default_avatar']) ? 1 : 0;
                 }
+                $dashboardAccessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : null;
+                $dashboardAccessEndTs = !empty($row['access_end']) ? strtotime((string)$row['access_end']) : null;
             }
         }
         mysqli_stmt_close($stmt);
@@ -88,6 +98,31 @@ require_once __DIR__ . '/includes/student_dashboard_aggregate.php';
 $dash = ereview_student_dashboard_aggregate($conn, $uid, $tableExists, $info, $weeklyActivityGoal);
 foreach ($dash as $_k => $_v) {
     ${$_k} = $_v;
+}
+
+if ($dashboardAccessEndTs) {
+    $nowTs = time();
+    $secsLeft = (int)$dashboardAccessEndTs - (int)$nowTs;
+    if ($secsLeft <= 0) {
+        $dashboardAccessState = 'expired';
+        $dashboardAccessRelative = 'Access ended';
+    } else {
+        $daysFloat = $secsLeft / 86400;
+        $daysLeft = (int)ceil($daysFloat);
+        $dashboardAccessDaysLeft = $daysLeft;
+        $dashboardAccessRelative = $daysLeft <= 1
+            ? 'Ends in less than 24 hours'
+            : ('Ends in ' . $daysLeft . ' days');
+        $dashboardAccessState = $daysLeft <= 1 ? 'urgent' : ($daysLeft <= 7 ? 'soon' : 'active');
+    }
+    if ($dashboardAccessStartTs && $dashboardAccessEndTs > $dashboardAccessStartTs) {
+        $progress = ((int)$nowTs - (int)$dashboardAccessStartTs) / ((int)$dashboardAccessEndTs - (int)$dashboardAccessStartTs);
+        $dashboardAccessProgressPct = (int)round(max(0, min(1, $progress)) * 100);
+    }
+    $dashboardAccessStartLabel = $dashboardAccessStartTs
+        ? date('M j, Y', (int)$dashboardAccessStartTs)
+        : 'Start';
+    $dashboardAccessLabel = date('M j, Y g:i A', (int)$dashboardAccessEndTs) . ' PHT';
 }
 
 $chartJsLocal = __DIR__ . '/assets/vendor/chart.js/4.4.1/chart.umd.min.js';
@@ -103,6 +138,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
 </head>
 <body class="font-sans antialiased dash-page dash-page--loading<?php echo $dashboardPrefetchJson ? ' dash-async-fetch' : ''; ?>" data-dashboard-data-url="<?php echo h($dashBase); ?>/api/student/dashboard_data.php">
+  <?php $appShellHideStudentAccessTopbar = true; ?>
   <?php include 'student_sidebar.php'; ?>
   <div class="student-dashboard-page min-h-full pb-8">
     <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7">
@@ -146,6 +182,37 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
           <?php endif; ?>
         </div>
           </div>
+          <?php if ($dashboardAccessEndTs): ?>
+          <aside class="dash-hero-access-col" aria-label="Enrollment access status">
+            <div class="dash-hero-access-card dash-hero-access-card--<?php echo h($dashboardAccessState); ?>"
+              data-access-start-ts="<?php echo (int)($dashboardAccessStartTs ?: 0); ?>"
+              data-access-end-ts="<?php echo (int)$dashboardAccessEndTs; ?>">
+              <div class="dash-hero-access-card__title">
+                <span class="dash-hero-access-card__hourglass" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                <span>Enrollment active through</span>
+              </div>
+              <div class="dash-hero-access-card__relative"><?php echo h($dashboardAccessRelative); ?></div>
+              <div class="dash-hero-access-card__date"><?php echo h($dashboardAccessLabel); ?></div>
+              <div class="dash-hero-access-timeline" aria-hidden="true">
+                <div class="dash-hero-access-timeline__track">
+                  <div class="dash-hero-access-timeline__fill"
+                    id="dashHeroAccessTimelineFill"
+                    style="width: <?php echo (int)($dashboardAccessProgressPct ?? 0); ?>%"></div>
+                </div>
+                <div class="dash-hero-access-timeline__labels">
+                  <span class="dash-hero-access-timeline__start"><?php echo h($dashboardAccessStartLabel); ?></span>
+                  <span class="dash-hero-access-timeline__percent" id="dashHeroAccessTimelinePct"><?php echo (int)($dashboardAccessProgressPct ?? 0); ?>% used</span>
+                  <span class="dash-hero-access-timeline__end"><?php echo h(date('M j, Y', (int)$dashboardAccessEndTs)); ?></span>
+                </div>
+              </div>
+              <?php if ($dashboardAccessDaysLeft !== null && $dashboardAccessDaysLeft > 0): ?>
+              <div class="dash-hero-access-card__hint">Renew early to avoid interruptions.</div>
+              <?php elseif ($dashboardAccessState === 'expired'): ?>
+              <div class="dash-hero-access-card__hint">Contact your administrator for renewal.</div>
+              <?php endif; ?>
+            </div>
+          </aside>
+          <?php endif; ?>
         </div>
       </div>
     </section>
@@ -513,31 +580,6 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
       </div>
     </div>
 
-    <?php if ($info && !empty($info['access_end'])): ?>
-      <?php
-      $daysLeft = (int)floor((strtotime((string)$info['access_end']) - time()) / 86400);
-      $startTs = !empty($info['access_start']) ? strtotime((string)$info['access_start']) : null;
-      $endTs = strtotime((string)$info['access_end']);
-      $pct = 0;
-      if ($startTs && $endTs && $endTs > $startTs) {
-          $pct = (int)round(((time() - $startTs) / ($endTs - $startTs)) * 100);
-          $pct = max(0, min(100, $pct));
-      }
-      ?>
-      <?php if ($daysLeft > 0): ?>
-      <div class="dash-card dash-anim delay-5 mt-6 p-5 flex flex-wrap items-center justify-between gap-3">
-        <p class="m-0 flex items-center gap-2 font-semibold text-[#143D59]"><i class="bi bi-calendar-check text-[#1665A0] text-lg"></i> Access active until <?php echo h(date('M j, Y', (int)$endTs)); ?> · <?php echo (int)$daysLeft; ?> day<?php echo $daysLeft === 1 ? '' : 's'; ?> left</p>
-        <div class="flex items-center gap-3">
-          <div class="w-40 h-2.5 rounded-full bg-[#e8f2fa] overflow-hidden border border-[#cde2f4]"><div class="h-full rounded-full bg-[#1665A0]" style="width:<?php echo (int)$pct; ?>%"></div></div>
-          <span class="text-sm font-bold text-[#1665A0]"><?php echo (int)$pct; ?>% used</span>
-        </div>
-      </div>
-      <?php else: ?>
-      <div class="dash-card dash-anim delay-5 mt-6 p-5 border-amber-300 bg-amber-50 text-amber-800 flex items-center gap-2">
-        <i class="bi bi-exclamation-triangle text-xl"></i> <span class="font-medium">Access expired. Contact admin to renew your access.</span>
-      </div>
-      <?php endif; ?>
-    <?php endif; ?>
   </div>
 </main>
 <style>
@@ -611,6 +653,141 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 }
 .dash-hero-copy-col { flex: 1; min-width: 0; }
 .dash-hero-title { text-shadow: 0 1px 2px rgba(15, 40, 70, 0.25); }
+.dash-hero-access-col {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+@media (min-width: 640px) {
+  .dash-hero-access-col {
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
+    align-self: flex-start;
+  }
+}
+.dash-hero-access-card {
+  width: min(100%, 20.5rem);
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255,255,255,0.38);
+  background: linear-gradient(145deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%);
+  box-shadow:
+    0 14px 28px -20px rgba(8, 26, 46, 0.75),
+    inset 0 1px 0 rgba(255,255,255,0.32);
+  backdrop-filter: blur(8px);
+  text-align: left;
+}
+.dash-hero-access-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(240, 249, 255, 0.92);
+}
+.dash-hero-access-card__hourglass {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.26);
+  animation: dashHeroHourglassSpin 1.8s linear infinite;
+}
+.dash-hero-access-card__hourglass i {
+  font-size: 0.72rem;
+}
+@keyframes dashHeroHourglassSpin {
+  0% { transform: rotate(0deg); opacity: 0.95; }
+  100% { transform: rotate(360deg); opacity: 1; }
+}
+.dash-hero-access-card__relative {
+  margin-top: 0.32rem;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.25;
+}
+.dash-hero-access-card__date {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(224, 242, 254, 0.95);
+}
+.dash-hero-access-timeline {
+  margin-top: 0.5rem;
+}
+.dash-hero-access-timeline__track {
+  position: relative;
+  width: 100%;
+  height: 0.42rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.22);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.dash-hero-access-timeline__fill {
+  position: relative;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6ee7ff 0%, #fcd34d 52%, #f97316 100%);
+  transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dash-hero-access-timeline__fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.75rem;
+  right: -0.9rem;
+  background: linear-gradient(90deg, rgba(255,255,255,0.0), rgba(255,255,255,0.58), rgba(255,255,255,0.0));
+  animation: dashHeroTimelineShimmer 2.2s linear infinite;
+}
+@keyframes dashHeroTimelineShimmer {
+  from { transform: translateX(-8px); opacity: 0.35; }
+  50% { opacity: 0.75; }
+  to { transform: translateX(8px); opacity: 0.35; }
+}
+.dash-hero-access-timeline__labels {
+  margin-top: 0.34rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: rgba(241, 245, 249, 0.92);
+}
+.dash-hero-access-timeline__start { text-align: left; }
+.dash-hero-access-timeline__percent { text-align: center; white-space: nowrap; }
+.dash-hero-access-timeline__end { text-align: right; }
+.dash-hero-access-card__hint {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.86);
+}
+.dash-hero-access-card--urgent {
+  border-color: rgba(251, 191, 36, 0.72);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.28) 0%, rgba(217, 119, 6, 0.18) 100%);
+}
+.dash-hero-access-card--soon {
+  border-color: rgba(125, 211, 252, 0.65);
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.24) 0%, rgba(14, 116, 144, 0.14) 100%);
+}
+.dash-hero-access-card--expired {
+  border-color: rgba(252, 165, 165, 0.75);
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.24) 0%, rgba(153, 27, 27, 0.16) 100%);
+}
+.dash-hero-access-card--expired .dash-hero-access-timeline__fill {
+  background: linear-gradient(90deg, rgba(252, 165, 165, 0.65), rgba(239, 68, 68, 0.82));
+}
 .hero-btn {
   border-radius: 9999px;
   transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
@@ -1808,6 +1985,35 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
       fetch(du, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).catch(function() {});
     }
   }
+
+  (function initHeroAccessTimeline() {
+    var card = document.querySelector('.dash-hero-access-card[data-access-end-ts]');
+    var fill = document.getElementById('dashHeroAccessTimelineFill');
+    var pct = document.getElementById('dashHeroAccessTimelinePct');
+    if (!card || !fill || !pct) return;
+    var startTs = parseInt(card.getAttribute('data-access-start-ts') || '0', 10);
+    var endTs = parseInt(card.getAttribute('data-access-end-ts') || '0', 10);
+    if (!endTs || !Number.isFinite(endTs)) return;
+
+    function update() {
+      var now = Math.floor(Date.now() / 1000);
+      var progress = 0;
+      if (startTs > 0 && endTs > startTs) {
+        progress = ((now - startTs) / (endTs - startTs)) * 100;
+      } else if (endTs > 0) {
+        var defaultWindow = 30 * 86400;
+        progress = ((defaultWindow - (endTs - now)) / defaultWindow) * 100;
+      }
+      if (!Number.isFinite(progress)) progress = 0;
+      progress = Math.max(0, Math.min(100, progress));
+      var val = Math.round(progress);
+      fill.style.width = val + '%';
+      pct.textContent = val + '% used';
+    }
+
+    update();
+    setInterval(update, 60000);
+  })();
 })();
 </script>
 </body>

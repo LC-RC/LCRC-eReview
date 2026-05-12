@@ -183,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     mysqli_commit($conn);
                     $_SESSION['message'] = count($batch) . ' question(s) added.';
+                    $_SESSION['clear_batch_draft'] = 1;
                 } catch (Exception $e) {
                     mysqli_rollback($conn);
                     $dbError = mysqli_error($conn);
@@ -249,6 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Question updated.';
+        $_SESSION['clear_batch_draft'] = 1;
     } else {
         $cols = array_merge(['quiz_id', 'question_text'], $choiceCols, ['correct_answer']);
         $placeholders = implode(', ', array_fill(0, count($cols), '?'));
@@ -261,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Question added.';
+        $_SESSION['clear_batch_draft'] = 1;
     }
     header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
     exit;
@@ -296,6 +299,8 @@ $questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Quiz Questions - ' . $quiz['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($quiz['subject_name']), 'admin_quizzes.php?subject_id=' . $subjectId ], [ h($quiz['title']), 'admin_quizzes.php?subject_id=' . $subjectId ], ['Questions'] ];
+$clearBatchDraftAfterSave = !empty($_SESSION['clear_batch_draft']);
+unset($_SESSION['clear_batch_draft']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -303,7 +308,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
-<body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="quizQuestionsApp()" x-init="initEditFromServer()">
+<body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="quizQuestionsApp()" x-init="initEditFromServer(); initBatchAutosave()">
   <?php include 'admin_sidebar.php'; ?>
 
   <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
@@ -553,6 +558,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 
   <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.6/tinymce.min.js" referrerpolicy="origin"></script>
   <script>
+    var QUIZ_BATCH_DRAFT_KEY = 'ereview_admin_quiz_batch_draft_<?php echo (int)$quizId; ?>';
+    var CLEAR_BATCH_DRAFT_AFTER_SAVE = <?php echo $clearBatchDraftAfterSave ? 'true' : 'false'; ?>;
+
     function initQuizRichEditors(scopeEl) {
       if (!window.tinymce) return;
       var root = scopeEl || document;
@@ -565,13 +573,75 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           menubar: false,
           height: 220,
           branding: false,
-          plugins: 'table lists link',
-          toolbar: 'undo redo | bold italic underline | bullist numlist | table | removeformat',
+          plugins: 'table lists advlist link',
+          toolbar: 'undo redo | bold italic underline | bullist numlist romanlist | alignleft aligncenter alignright alignjustify | table cellalign | removeformat',
           valid_elements: 'p,br,strong/b,em/i,u,sub,sup,ul,ol,li,table,thead,tbody,tfoot,tr,th[colspan|rowspan|scope],td[colspan|rowspan]',
+          content_style: 'ol.ol-roman-upper{list-style-type:upper-roman;} ol.ol-roman-lower{list-style-type:lower-roman;}',
           forced_root_block: 'p',
           setup: function (editor) {
+            function getSelectedTableCell() {
+              var node = editor.selection ? editor.selection.getNode() : null;
+              while (node && node.nodeType === 1) {
+                var tag = (node.nodeName || '').toLowerCase();
+                if (tag === 'td' || tag === 'th') return node;
+                node = node.parentNode;
+              }
+              return null;
+            }
+
+            function applyCellTextAlign(align) {
+              var cell = getSelectedTableCell();
+              if (!cell) return;
+              editor.undoManager.transact(function () {
+                editor.dom.setStyle(cell, 'text-align', align);
+              });
+              editor.nodeChanged();
+            }
+
+            function applyRomanList(mode) {
+              editor.undoManager.transact(function () {
+                editor.execCommand('InsertOrderedList');
+                var node = editor.selection ? editor.selection.getNode() : null;
+                var list = editor.dom.getParent(node, 'ol');
+                if (!list) return;
+                editor.dom.removeClass(list, 'ol-roman-upper');
+                editor.dom.removeClass(list, 'ol-roman-lower');
+                if (mode === 'upper') editor.dom.addClass(list, 'ol-roman-upper');
+                if (mode === 'lower') editor.dom.addClass(list, 'ol-roman-lower');
+              });
+              editor.nodeChanged();
+            }
+
+            editor.ui.registry.addMenuButton('romanlist', {
+              text: 'Roman',
+              tooltip: 'Roman numeral numbering',
+              fetch: function (callback) {
+                callback([
+                  { type: 'menuitem', text: 'Upper Roman (I, II, III)', onAction: function () { applyRomanList('upper'); } },
+                  { type: 'menuitem', text: 'Lower Roman (i, ii, iii)', onAction: function () { applyRomanList('lower'); } }
+                ]);
+              }
+            });
+
+            editor.ui.registry.addMenuButton('cellalign', {
+              text: 'Cell align',
+              tooltip: 'Align selected table cell',
+              fetch: function (callback) {
+                callback([
+                  { type: 'menuitem', text: 'Left', onAction: function () { applyCellTextAlign('left'); } },
+                  { type: 'menuitem', text: 'Middle', onAction: function () { applyCellTextAlign('center'); } },
+                  { type: 'menuitem', text: 'Right', onAction: function () { applyCellTextAlign('right'); } },
+                  { type: 'menuitem', text: 'Justify', onAction: function () { applyCellTextAlign('justify'); } }
+                ]);
+              }
+            });
+
             editor.on('change input undo redo keyup', function () {
               editor.save();
+              if (editor.targetElm) {
+                editor.targetElm.dispatchEvent(new Event('input', { bubbles: true }));
+                editor.targetElm.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             });
           }
         });
@@ -617,6 +687,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         batchOpen: false,
         batchError: '',
         batchQuestions: [ newBatchQuestion() ],
+        autosaveTimer: null,
         isEdit: false,
         question_id: 0,
         question_text: '',
@@ -666,7 +737,108 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
               return;
             }
           }
+          this.saveBatchDraft();
           ev.target.submit();
+        },
+        normalizeBatchQuestion(raw) {
+          var q = newBatchQuestion();
+          if (!raw || typeof raw !== 'object') return q;
+          q.text = String(raw.text || '');
+          q.explanation = String(raw.explanation || '');
+          var srcChoices = Array.isArray(raw.choices) ? raw.choices : [];
+          var normalized = [];
+          for (var i = 0; i < srcChoices.length && i < 10; i++) {
+            var src = srcChoices[i] || {};
+            var letter = String.fromCharCode(65 + i);
+            normalized.push({
+              letter: letter,
+              text: String(src.text || ''),
+              feedback: String(src.feedback || '')
+            });
+          }
+          if (normalized.length < 2) {
+            normalized = [
+              { letter: 'A', text: '', feedback: '' },
+              { letter: 'B', text: '', feedback: '' }
+            ];
+          }
+          q.choices = normalized;
+          var ca = String(raw.correct_answer || '').toUpperCase();
+          q.correct_answer = normalized.some(function (c) { return c.letter === ca; }) ? ca : '';
+          return q;
+        },
+        hasBatchDraftContent(list) {
+          var rows = Array.isArray(list) ? list : [];
+          return rows.some(function (q) {
+            var hasText = String((q && q.text) || '').replace(/\s+/g, '').length > 0;
+            var hasExplanation = String((q && q.explanation) || '').replace(/\s+/g, '').length > 0;
+            var hasChoices = Array.isArray(q && q.choices) && q.choices.some(function (c) {
+              return String((c && c.text) || '').replace(/\s+/g, '').length > 0;
+            });
+            return hasText || hasExplanation || hasChoices;
+          });
+        },
+        syncBatchRichTextFromDom() {
+          if (window.tinymce) tinymce.triggerSave();
+          var root = document.querySelector('.quiz-admin-batch-card');
+          if (!root) return;
+          var textareas = root.querySelectorAll('textarea[name^="questions["]');
+          var self = this;
+          textareas.forEach(function (ta) {
+            var m = ta.name.match(/^questions\[(\d+)\]\[(text|explanation)\]$/);
+            if (!m) return;
+            var idx = parseInt(m[1], 10);
+            var field = m[2];
+            if (!Number.isFinite(idx) || idx < 0 || !self.batchQuestions[idx]) return;
+            self.batchQuestions[idx][field] = ta.value || '';
+          });
+        },
+        saveBatchDraft() {
+          try {
+            this.syncBatchRichTextFromDom();
+            var payload = {
+              ts: Date.now(),
+              open: !!this.batchOpen,
+              batchQuestions: this.batchQuestions
+            };
+            localStorage.setItem(QUIZ_BATCH_DRAFT_KEY, JSON.stringify(payload));
+          } catch (e) {}
+        },
+        loadBatchDraft() {
+          try {
+            var raw = localStorage.getItem(QUIZ_BATCH_DRAFT_KEY);
+            if (!raw) return;
+            var parsed = JSON.parse(raw);
+            var src = Array.isArray(parsed && parsed.batchQuestions) ? parsed.batchQuestions : [];
+            if (src.length === 0) return;
+            var restored = src.slice(0, 50).map(this.normalizeBatchQuestion.bind(this));
+            if (restored.length === 0) return;
+            this.batchQuestions = restored;
+            if ((parsed && parsed.open) || this.hasBatchDraftContent(restored)) {
+              this.batchOpen = true;
+            }
+          } catch (e) {}
+        },
+        initBatchAutosave() {
+          if (CLEAR_BATCH_DRAFT_AFTER_SAVE) {
+            try { localStorage.removeItem(QUIZ_BATCH_DRAFT_KEY); } catch (e) {}
+            this.batchOpen = false;
+            this.batchQuestions = [ newBatchQuestion() ];
+          }
+          this.loadBatchDraft();
+          var self = this;
+          if (this.autosaveTimer) clearInterval(this.autosaveTimer);
+          this.autosaveTimer = setInterval(function () {
+            self.saveBatchDraft();
+          }, 1200);
+          window.addEventListener('beforeunload', function () {
+            self.saveBatchDraft();
+          });
+          this.$watch('batchOpen', function () { self.saveBatchDraft(); });
+          this.$watch('batchQuestions', function () { self.saveBatchDraft(); });
+          this.$nextTick(function () {
+            refreshQuizRichEditors();
+          });
         },
         editFromServer: <?php echo !empty($edit) ? json_encode(array_merge(
           ['id' => (int)$edit['question_id'], 'question_text' => $edit['question_text'] ?? '', 'correct_answer' => $edit['correct_answer'] ?? 'A'],

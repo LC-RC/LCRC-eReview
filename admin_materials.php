@@ -12,9 +12,22 @@ if (!$lesson) { header('Location: admin_subjects.php'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
 // Ensure modern thumbnail metadata columns exist on lesson_videos.
-@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_url TEXT NULL AFTER video_url");
-@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_source VARCHAR(32) NULL DEFAULT NULL AFTER thumbnail_url");
-@mysqli_query($conn, "ALTER TABLE lesson_videos ADD COLUMN thumbnail_updated_at DATETIME NULL DEFAULT NULL AFTER thumbnail_source");
+// PHP 8+ mysqli throws mysqli_sql_exception on duplicate column; @ does not suppress exceptions.
+foreach (
+    [
+        'ALTER TABLE lesson_videos ADD COLUMN thumbnail_url TEXT NULL AFTER video_url',
+        'ALTER TABLE lesson_videos ADD COLUMN thumbnail_source VARCHAR(32) NULL DEFAULT NULL AFTER thumbnail_url',
+        'ALTER TABLE lesson_videos ADD COLUMN thumbnail_updated_at DATETIME NULL DEFAULT NULL AFTER thumbnail_source',
+    ] as $alterSql
+) {
+    try {
+        mysqli_query($conn, $alterSql);
+    } catch (Throwable $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            throw $e;
+        }
+    }
+}
 
 if (!function_exists('admin_materials_list_url')) {
     function admin_materials_list_url(int $lessonId, int $subjectId): string {
@@ -385,23 +398,28 @@ if ($matType !== '' && !in_array($matType, ['videos', 'handouts'], true)) {
 $showVideos = ($matType === '' || $matType === 'videos');
 $showHandouts = ($matType === '' || $matType === 'handouts');
 
+// Avoid mysqli_stmt_get_result(): requires mysqlnd; VPS builds without it fatally error on search.
 if ($searchQ === '') {
     $videos = mysqli_query($conn, 'SELECT * FROM lesson_videos WHERE lesson_id=' . (int)$lessonId . ' ORDER BY video_id DESC');
 } else {
-    $like = '%' . $searchQ . '%';
-    $stmtV = mysqli_prepare($conn, 'SELECT * FROM lesson_videos WHERE lesson_id=? AND (video_title LIKE ? OR video_url LIKE ?) ORDER BY video_id DESC');
-    mysqli_stmt_bind_param($stmtV, 'iss', $lessonId, $like, $like);
-    mysqli_stmt_execute($stmtV);
-    $videos = mysqli_stmt_get_result($stmtV);
+    $likeEsc = mysqli_real_escape_string($conn, $searchQ);
+    $like = '%' . $likeEsc . '%';
+    $videos = mysqli_query(
+        $conn,
+        'SELECT * FROM lesson_videos WHERE lesson_id=' . (int)$lessonId
+        . " AND (video_title LIKE '" . $like . "' OR video_url LIKE '" . $like . "') ORDER BY video_id DESC"
+    );
 }
 if ($searchQ === '') {
     $handouts = mysqli_query($conn, 'SELECT * FROM lesson_handouts WHERE lesson_id=' . (int)$lessonId . ' ORDER BY handout_id DESC');
 } else {
-    $likeH = '%' . $searchQ . '%';
-    $stmtH = mysqli_prepare($conn, 'SELECT * FROM lesson_handouts WHERE lesson_id=? AND (handout_title LIKE ? OR IFNULL(file_name, \'\') LIKE ?) ORDER BY handout_id DESC');
-    mysqli_stmt_bind_param($stmtH, 'iss', $lessonId, $likeH, $likeH);
-    mysqli_stmt_execute($stmtH);
-    $handouts = mysqli_stmt_get_result($stmtH);
+    $likeEsc = mysqli_real_escape_string($conn, $searchQ);
+    $likeH = '%' . $likeEsc . '%';
+    $handouts = mysqli_query(
+        $conn,
+        'SELECT * FROM lesson_handouts WHERE lesson_id=' . (int)$lessonId
+        . " AND (handout_title LIKE '" . $likeH . "' OR IFNULL(file_name, '') LIKE '" . $likeH . "') ORDER BY handout_id DESC"
+    );
 }
 $pageTitle = 'Materials - ' . $lesson['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Materials'] ];
@@ -572,7 +590,12 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
               </tr>
             </thead>
             <tbody>
-              <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
+              <?php
+              $videosOk = $videos instanceof mysqli_result;
+              $videoN = $videosOk ? mysqli_num_rows($videos) : 0;
+              ?>
+              <?php if ($videosOk && $videoN > 0): ?>
+                <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
                 <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
                     <div class="font-semibold text-gray-100"><?php echo h($v['video_title']); ?></div>
@@ -594,9 +617,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     </div>
                   </td>
                 </tr>
-              <?php endwhile; ?>
-              <?php if (mysqli_num_rows($videos) == 0): ?>
+                <?php endwhile; ?>
+              <?php elseif ($videosOk): ?>
                 <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></td></tr>
+              <?php else: ?>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-red-300">Could not load videos (database error). Check that the <code class="text-xs">lesson_videos</code> table exists.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -636,7 +661,12 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
               </tr>
             </thead>
             <tbody>
-              <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
+              <?php
+              $handoutsOk = $handouts instanceof mysqli_result;
+              $handoutN = $handoutsOk ? mysqli_num_rows($handouts) : 0;
+              ?>
+              <?php if ($handoutsOk && $handoutN > 0): ?>
+                <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
                 <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
                     <div class="font-semibold text-gray-100"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
@@ -659,9 +689,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     </div>
                   </td>
                 </tr>
-              <?php endwhile; ?>
-              <?php if (mysqli_num_rows($handouts) == 0): ?>
+                <?php endwhile; ?>
+              <?php elseif ($handoutsOk): ?>
                 <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No handouts match your search.' : 'No handouts yet.'; ?></td></tr>
+              <?php else: ?>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-red-300">Could not load handouts (database error). Check that the <code class="text-xs">lesson_handouts</code> table exists.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
