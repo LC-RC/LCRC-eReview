@@ -61,6 +61,16 @@ $adminBreadcrumbs = [
       font-size: 0.95rem;
     }
     .sca-btn--sm { padding: 0.45rem 0.75rem; font-size: 0.78rem; }
+    .sca-select-all {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+      padding: 0.55rem 0.65rem; margin-bottom: 0.5rem;
+      border: 1px solid #e5e7eb; border-radius: 0.625rem; background: #f8fafc;
+    }
+    .sca-select-all__label {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.8rem; font-weight: 700; color: #334155; cursor: pointer; margin: 0;
+    }
+    .sca-select-all__hint { font-size: 0.7rem; color: #94a3b8; white-space: nowrap; }
     .sca-student-item__avatar {
       width: 2.25rem; height: 2.25rem; border-radius: 0.625rem; flex-shrink: 0;
       background: linear-gradient(135deg, #4154f1, #6d7bf7); color: #fff;
@@ -206,6 +216,7 @@ $adminBreadcrumbs = [
         panelMode: <?php echo $preselectId > 0 ? "'edit'" : "'idle'"; ?>,
         searchQ: '',
         searchResults: [],
+        searchTotal: 0,
         selectedId: <?php echo (int) $preselectId; ?>,
         selectedIds: [],
         selectedStudentsMeta: {},
@@ -249,6 +260,10 @@ $adminBreadcrumbs = [
         get allVisibleSelected() {
           if (!this.searchResults.length) return false;
           return this.searchResults.every(s => this.isSelected(s.user_id));
+        },
+        get someVisibleSelected() {
+          if (!this.searchResults.length) return false;
+          return this.searchResults.some(s => this.isSelected(s.user_id));
         },
         get panelLoading() {
           return this.loadingStudent || this.saveAction !== null;
@@ -329,6 +344,7 @@ $adminBreadcrumbs = [
             }
             this.selectedIds = [...this.selectedIds, num];
           }
+          this.$nextTick(() => this.syncSelectAllIndeterminate());
         },
         clearSelection() {
           this.selectedIds = [];
@@ -337,6 +353,7 @@ $adminBreadcrumbs = [
             this.panelMode = 'idle';
             this.bulkPermissions = [];
           }
+          this.$nextTick(() => this.syncSelectAllIndeterminate());
         },
         selectAllVisible() {
           const ids = this.searchResults.map(s => Number(s.user_id));
@@ -348,6 +365,27 @@ $adminBreadcrumbs = [
           });
           const merged = new Set([...this.selectedIds, ...ids]);
           this.selectedIds = Array.from(merged);
+          this.$nextTick(() => this.syncSelectAllIndeterminate());
+        },
+        toggleSelectAllVisible(on) {
+          if (on) {
+            this.selectAllVisible();
+            return;
+          }
+          const visibleSet = new Set(this.searchResults.map(s => Number(s.user_id)));
+          this.selectedIds = this.selectedIds.filter(id => !visibleSet.has(id));
+          visibleSet.forEach(id => delete this.selectedStudentsMeta[id]);
+          if (this.selectedIds.length === 0 && this.panelMode === 'bulk') {
+            this.panelMode = 'idle';
+            this.bulkPermissions = [];
+          }
+          this.$nextTick(() => this.syncSelectAllIndeterminate());
+        },
+        syncSelectAllIndeterminate() {
+          const el = this.$refs.selectAllCheckbox;
+          if (el) {
+            el.indeterminate = this.someVisibleSelected && !this.allVisibleSelected;
+          }
         },
         openBulkAssign() {
           if (this.selectedIds.length === 0) {
@@ -385,10 +423,12 @@ $adminBreadcrumbs = [
           try {
             const data = await this.apiGet('search', { q: this.searchQ });
             this.searchResults = data.students || [];
+            this.searchTotal = Number(data.total ?? this.searchResults.length);
           } catch (e) {
             this.showToast('Search failed', e.message, 'err');
           } finally {
             this.loadingSearch = false;
+            this.$nextTick(() => this.syncSelectAllIndeterminate());
           }
         },
         async loadStudent(id) {
@@ -589,11 +629,22 @@ $adminBreadcrumbs = [
 
       <div class="sca-bulk-bar" x-show="selectedIds.length > 0" x-cloak>
         <span class="sca-bulk-bar__count" x-text="selectedIds.length + ' selected'"></span>
-        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="selectAllVisible()" x-show="!allVisibleSelected">Select visible</button>
-        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="clearSelection()">Clear</button>
+        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="selectAllVisible()" x-show="!allVisibleSelected">Select all in list</button>
+        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="clearSelection()">Clear all</button>
         <button type="button" class="sca-btn sca-btn--primary sca-btn--sm ml-auto" @click="openBulkAssign()">
           <i class="bi bi-people-fill"></i> Assign access
         </button>
+      </div>
+
+      <div class="sca-select-all" x-show="!loadingSearch && searchResults.length > 0" x-cloak>
+        <label class="sca-select-all__label">
+          <input type="checkbox" class="sca-student-check" x-ref="selectAllCheckbox"
+                 :checked="allVisibleSelected"
+                 @change="toggleSelectAllVisible($event.target.checked)">
+          <span>Select all (<span x-text="searchResults.length"></span>)</span>
+        </label>
+        <span class="sca-select-all__hint" x-show="searchTotal > searchResults.length"
+              x-text="'Showing ' + searchResults.length + ' of ' + searchTotal"></span>
       </div>
 
       <div class="max-h-[28rem] overflow-y-auto sca-tree" x-show="!loadingSearch">

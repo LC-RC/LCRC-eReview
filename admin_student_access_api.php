@@ -72,7 +72,24 @@ if ($action === 'search') {
         $rows[] = $row;
     }
     mysqli_stmt_close($stmt);
-    sca_api_json(['ok' => true, 'students' => $rows]);
+
+    $total = 0;
+    $countStmt = mysqli_prepare(
+        $conn,
+        "SELECT COUNT(*) AS total FROM users WHERE role = 'student' AND (full_name LIKE ? OR email LIKE ?)"
+    );
+    if ($countStmt) {
+        mysqli_stmt_bind_param($countStmt, 'ss', $like, $like);
+        mysqli_stmt_execute($countStmt);
+        $countRes = mysqli_stmt_get_result($countStmt);
+        $countRow = $countRes ? mysqli_fetch_assoc($countRes) : null;
+        $total = (int) ($countRow['total'] ?? count($rows));
+        mysqli_stmt_close($countStmt);
+    } else {
+        $total = count($rows);
+    }
+
+    sca_api_json(['ok' => true, 'students' => $rows, 'total' => $total]);
 }
 
 if ($action === 'save_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
