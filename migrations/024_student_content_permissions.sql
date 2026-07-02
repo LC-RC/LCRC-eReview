@@ -39,5 +39,5 @@ WHERE u.role = 'student'
   AND u.status = 'approved'
   AND NOT EXISTS (
     SELECT 1 FROM `student_content_permissions` p
-    WHERE p.user_id = u.user_id AND p.content_type = 'full_lms' AND p.content_id = 0
+    WHERE p.user_id = u.user_id
   );

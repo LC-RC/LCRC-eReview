@@ -363,6 +363,11 @@ $adminBreadcrumbs = [
             this.showToast('Missing fields', 'Full name, email, and password are required.', 'err');
             return;
           }
+          const hasAccess = this.hasFullLms || this.newPermissions.length > 0;
+          if (!hasAccess) {
+            this.showToast('Select content access', 'Enable Full LMS or choose at least one subject, preboard, pre-week, or test bank item.', 'err');
+            return;
+          }
           this.saveAction = 'create';
           try {
             const grantFull = this.hasFullLms ? '1' : '0';
@@ -506,7 +511,7 @@ $adminBreadcrumbs = [
           <span class="sca-perm-count ml-auto" x-text="activePermCount"></span>
         </div>
         <p class="text-xs text-gray-500 mb-3">Choose specific subjects, lessons, preboards, pre-week, or test bank — or enable Full LMS for everything.</p>
-        <?php require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
+        <?php $scaTreeScope = 'create'; require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
       </div>
 
       <div class="sca-sticky-actions">
@@ -585,7 +590,7 @@ $adminBreadcrumbs = [
               <span class="flex items-center gap-2"><i class="bi bi-diagram-3"></i> LMS content access</span>
               <span class="sca-perm-count ml-auto" x-text="activePermCount"></span>
             </div>
-            <?php require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
+            <?php $scaTreeScope = 'edit'; require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
           </div>
 
           <div class="sca-sticky-actions">
@@ -616,7 +621,6 @@ $adminBreadcrumbs = [
       </button>
     </section>
   </div>
-</div>
 </div>
 </main>
 </body>

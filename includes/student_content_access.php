@@ -36,6 +36,70 @@ function sca_ensure_schema(mysqli $conn): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
     @mysqli_query($conn, $sql);
     $done = true;
+    sca_maybe_backfill_legacy_full_access($conn);
+}
+
+/**
+ * One-time backfill: approved students with no permissions row get full LMS (pre-granular behavior).
+ */
+function sca_maybe_backfill_legacy_full_access(mysqli $conn): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+    $table = @mysqli_query($conn, "SHOW TABLES LIKE 'student_content_permissions'");
+    if (!$table || !mysqli_fetch_row($table)) {
+        return;
+    }
+
+    @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `ereview_app_meta` (
+      `meta_key` varchar(64) NOT NULL,
+      `meta_value` varchar(255) NOT NULL DEFAULT '',
+      `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`meta_key`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+    $flag = @mysqli_query($conn, "SELECT meta_value FROM ereview_app_meta WHERE meta_key = 'sca_legacy_full_backfill' LIMIT 1");
+    $flagRow = $flag ? mysqli_fetch_assoc($flag) : null;
+    if ($flagRow && (string) ($flagRow['meta_value'] ?? '') === '1') {
+        return;
+    }
+
+    $sql = "INSERT INTO `student_content_permissions` (`user_id`, `content_type`, `content_id`, `access_level`, `granted_by`)
+        SELECT u.user_id, 'full_lms', 0, 'view', NULL
+        FROM `users` u
+        WHERE u.role = 'student'
+          AND u.status = 'approved'
+          AND NOT EXISTS (
+            SELECT 1 FROM `student_content_permissions` p
+            WHERE p.user_id = u.user_id
+          )";
+    @mysqli_query($conn, $sql);
+
+    @mysqli_query(
+        $conn,
+        "INSERT INTO `ereview_app_meta` (`meta_key`, `meta_value`) VALUES ('sca_legacy_full_backfill', '1')
+         ON DUPLICATE KEY UPDATE `meta_value` = '1'"
+    );
+}
+
+function sca_user_permission_row_count(mysqli $conn, int $userId): int
+{
+    if ($userId <= 0 || !sca_tables_ready($conn)) {
+        return 0;
+    }
+    $stmt = mysqli_prepare($conn, 'SELECT COUNT(*) AS cnt FROM student_content_permissions WHERE user_id = ?');
+    if (!$stmt) {
+        return 0;
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = $res ? mysqli_fetch_assoc($res) : null;
+    mysqli_stmt_close($stmt);
+    return (int) ($row['cnt'] ?? 0);
 }
 
 function sca_tables_ready(mysqli $conn): bool
@@ -578,12 +642,28 @@ function sca_admin_content_catalog(mysqli $conn): array
     $tb = @mysqli_query($conn, "SHOW TABLES LIKE 'preboards_subjects'");
     if ($tb && mysqli_num_rows($tb) > 0) {
         require_once __DIR__ . '/preboards_helpers.php';
+        $scheduleCols = false;
+        $scheduleCol = @mysqli_query($conn, "SHOW COLUMNS FROM preboards_sets LIKE 'use_schedule'");
+        if ($scheduleCol && mysqli_num_rows($scheduleCol) > 0) {
+            $scheduleCols = true;
+        }
+        $setSelect = $scheduleCols
+            ? 'preboards_set_id, set_label, is_open, use_schedule, opens_at, closes_at'
+            : 'preboards_set_id, set_label, is_open';
         $psq = mysqli_query($conn, "SELECT preboards_subject_id, subject_name FROM preboards_subjects WHERE status='active' ORDER BY subject_name");
         while ($psq && ($ps = mysqli_fetch_assoc($psq))) {
             $pbsid = (int) $ps['preboards_subject_id'];
             $sets = [];
-            $setQ = mysqli_query($conn, 'SELECT preboards_set_id, set_label, is_open, use_schedule, opens_at, closes_at FROM preboards_sets WHERE preboards_subject_id = ' . $pbsid . ' ORDER BY sort_order ASC, set_label ASC');
+            $setQ = mysqli_query(
+                $conn,
+                'SELECT ' . $setSelect . ' FROM preboards_sets WHERE preboards_subject_id = ' . $pbsid . ' ORDER BY sort_order ASC, set_label ASC'
+            );
             while ($setQ && ($st = mysqli_fetch_assoc($setQ))) {
+                if (!$scheduleCols) {
+                    $st['use_schedule'] = 0;
+                    $st['opens_at'] = null;
+                    $st['closes_at'] = null;
+                }
                 $accessMeta = preboards_set_access_meta($st);
                 $sets[] = [
                     'id' => (int) $st['preboards_set_id'],
@@ -635,6 +715,7 @@ function sca_admin_content_catalog(mysqli $conn): array
  */
 function sca_permissions_for_api(mysqli $conn, int $userId): array
 {
+    sca_maybe_backfill_legacy_full_access($conn);
     $perms = sca_load_permissions($conn, $userId);
     $list = [];
     if ($perms['full_lms']) {
