@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/student_content_access.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $action = (string) ($_GET['action'] ?? $_POST['action'] ?? '');
-$mutating = in_array($action, ['save_permissions', 'create_student', 'update_student'], true);
+$mutating = in_array($action, ['save_permissions', 'save_bulk_permissions', 'create_student', 'update_student'], true);
 if ($mutating) {
     if (!verifyCSRFToken((string) ($_POST['csrf_token'] ?? ''))) {
         http_response_code(403);
@@ -62,7 +62,7 @@ if ($action === 'search') {
         $conn,
         "SELECT user_id, full_name, email, status, access_end
          FROM users WHERE role = 'student' AND (full_name LIKE ? OR email LIKE ?)
-         ORDER BY full_name ASC LIMIT 30"
+         ORDER BY full_name ASC LIMIT 100"
     );
     mysqli_stmt_bind_param($stmt, 'ss', $like, $like);
     mysqli_stmt_execute($stmt);
@@ -100,6 +100,70 @@ if ($action === 'save_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         sca_api_json(['ok' => false, 'error' => 'Failed to save permissions.'], 500);
     }
     sca_api_json(['ok' => true, 'permissions' => sca_permissions_for_api($conn, $userId)]);
+}
+
+if ($action === 'save_bulk_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $rawIds = $_POST['user_ids'] ?? '[]';
+    if (is_string($rawIds)) {
+        $decodedIds = json_decode($rawIds, true);
+        $userIds = is_array($decodedIds) ? $decodedIds : [];
+    } else {
+        $userIds = is_array($rawIds) ? $rawIds : [];
+    }
+    $raw = $_POST['permissions'] ?? '[]';
+    if (is_string($raw)) {
+        $decoded = json_decode($raw, true);
+        $permissions = is_array($decoded) ? $decoded : [];
+    } else {
+        $permissions = is_array($raw) ? $raw : [];
+    }
+
+    $normalizedIds = [];
+    foreach ($userIds as $uid) {
+        $id = (int) $uid;
+        if ($id > 0) {
+            $normalizedIds[$id] = $id;
+        }
+    }
+    $normalizedIds = array_values($normalizedIds);
+
+    if ($normalizedIds === []) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+    if (count($normalizedIds) > 100) {
+        sca_api_json(['ok' => false, 'error' => 'You can assign access to at most 100 students at once.'], 400);
+    }
+
+    $adminId = getCurrentUserId();
+    $updated = 0;
+    $failed = [];
+    foreach ($normalizedIds as $userId) {
+        $chk = mysqli_prepare($conn, "SELECT user_id FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
+        mysqli_stmt_bind_param($chk, 'i', $userId);
+        mysqli_stmt_execute($chk);
+        $exists = mysqli_fetch_assoc(mysqli_stmt_get_result($chk));
+        mysqli_stmt_close($chk);
+        if (!$exists) {
+            $failed[] = $userId;
+            continue;
+        }
+        if (sca_save_user_permissions($conn, $userId, $permissions, $adminId)) {
+            $updated++;
+        } else {
+            $failed[] = $userId;
+        }
+    }
+
+    if ($updated === 0) {
+        sca_api_json(['ok' => false, 'error' => 'Failed to update any student.'], 500);
+    }
+
+    sca_api_json([
+        'ok' => true,
+        'updated' => $updated,
+        'failed' => $failed,
+        'total' => count($normalizedIds),
+    ]);
 }
 
 if ($action === 'create_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {

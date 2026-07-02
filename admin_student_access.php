@@ -26,10 +26,41 @@ $adminBreadcrumbs = [
       display: flex; align-items: flex-start; gap: 0.65rem; width: 100%; text-align: left;
       border: 1px solid #e5e7eb; border-radius: 0.75rem;
       padding: 0.75rem 0.85rem; margin-bottom: 0.5rem;
-      background: #fff; cursor: pointer; transition: all .18s ease;
+      background: #fff; transition: all .18s ease;
     }
     .sca-student-item:hover { border-color: #c7d2fe; background: #f8faff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(65,84,241,.08); }
     .sca-student-item.active { border-color: #4154f1; background: linear-gradient(135deg, #eef2ff 0%, #f5f7ff 100%); box-shadow: 0 4px 14px rgba(65,84,241,.12); }
+    .sca-student-item--picked { border-color: #34d399; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); }
+    .sca-student-item--picked.active { border-color: #4154f1; }
+    .sca-student-item__main {
+      display: flex; align-items: flex-start; gap: 0.65rem; flex: 1; min-width: 0;
+      background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+    }
+    .sca-student-check {
+      width: 1rem; height: 1rem; margin-top: 0.35rem; flex-shrink: 0;
+      accent-color: #10b981; cursor: pointer;
+    }
+    .sca-bulk-bar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+      padding: 0.65rem 0.75rem; margin-bottom: 0.65rem;
+      border: 1px solid #a7f3d0; border-radius: 0.75rem;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    }
+    .sca-bulk-bar__count { font-size: 0.78rem; font-weight: 800; color: #047857; }
+    .sca-bulk-chips {
+      display: flex; flex-wrap: wrap; gap: 0.45rem; max-height: 7rem; overflow-y: auto;
+      padding: 0.15rem 0;
+    }
+    .sca-bulk-chip {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.55rem; border-radius: 999px;
+      background: #eef2ff; color: #3730a3; font-size: 0.75rem; font-weight: 700;
+    }
+    .sca-bulk-chip button {
+      background: none; border: none; color: #6366f1; cursor: pointer; padding: 0; line-height: 1;
+      font-size: 0.95rem;
+    }
+    .sca-btn--sm { padding: 0.45rem 0.75rem; font-size: 0.78rem; }
     .sca-student-item__avatar {
       width: 2.25rem; height: 2.25rem; border-radius: 0.625rem; flex-shrink: 0;
       background: linear-gradient(135deg, #4154f1, #6d7bf7); color: #fff;
@@ -176,11 +207,14 @@ $adminBreadcrumbs = [
         searchQ: '',
         searchResults: [],
         selectedId: <?php echo (int) $preselectId; ?>,
+        selectedIds: [],
+        selectedStudentsMeta: {},
         student: null,
         edit: { full_name: '', email: '', school: '', status: 'approved', password: '', extend_months: 0 },
         catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
         permissions: [],
         newPermissions: [],
+        bulkPermissions: [],
         toasts: [],
         toastSeq: 0,
         loadingSearch: false,
@@ -189,15 +223,32 @@ $adminBreadcrumbs = [
         saveAction: null,
         newStudent: { full_name: '', email: '', password: '', school: 'Manual enrollment', months: 6 },
 
+        get permissionListKey() {
+          if (this.panelMode === 'create') return 'newPermissions';
+          if (this.panelMode === 'bulk') return 'bulkPermissions';
+          return 'permissions';
+        },
+        get activePermissionList() {
+          return this[this.permissionListKey] || [];
+        },
         get hasFullLms() {
-          const list = this.panelMode === 'create' ? this.newPermissions : this.permissions;
-          return list.some(p => p.content_type === 'full_lms' && Number(p.content_id) === 0);
+          return this.activePermissionList.some(p => p.content_type === 'full_lms' && Number(p.content_id) === 0);
         },
         get activePermCount() {
-          const list = this.panelMode === 'create' ? this.newPermissions : this.permissions;
-          if (list.some(p => p.content_type === 'full_lms')) return 'Full LMS';
-          const n = list.length;
+          if (this.activePermissionList.some(p => p.content_type === 'full_lms')) return 'Full LMS';
+          const n = this.activePermissionList.length;
           return n === 0 ? 'None selected' : n + ' item' + (n === 1 ? '' : 's');
+        },
+        get selectedStudents() {
+          return this.selectedIds.map(id => ({
+            user_id: id,
+            full_name: this.selectedStudentsMeta[id]?.full_name || ('Student #' + id),
+            email: this.selectedStudentsMeta[id]?.email || ''
+          }));
+        },
+        get allVisibleSelected() {
+          if (!this.searchResults.length) return false;
+          return this.searchResults.every(s => this.isSelected(s.user_id));
         },
         get panelLoading() {
           return this.loadingStudent || this.saveAction !== null;
@@ -206,6 +257,7 @@ $adminBreadcrumbs = [
           if (this.saveAction === 'create') return 'Creating student account…';
           if (this.saveAction === 'account') return 'Saving account details…';
           if (this.saveAction === 'permissions') return 'Saving content access…';
+          if (this.saveAction === 'bulk') return 'Applying access to selected students…';
           if (this.loadingStudent) return 'Loading student data…';
           return 'Please wait…';
         },
@@ -252,6 +304,8 @@ $adminBreadcrumbs = [
         startCreate() {
           this.panelMode = 'create';
           this.selectedId = 0;
+          this.selectedIds = [];
+          this.selectedStudentsMeta = {};
           this.student = null;
           this.newPermissions = [];
           this.newStudent = { full_name: '', email: '', password: '', school: 'Manual enrollment', months: 6 };
@@ -259,6 +313,63 @@ $adminBreadcrumbs = [
         cancelCreate() {
           this.panelMode = 'idle';
           this.newPermissions = [];
+        },
+        isSelected(id) {
+          return this.selectedIds.includes(Number(id));
+        },
+        toggleSelected(id) {
+          const num = Number(id);
+          if (this.isSelected(num)) {
+            this.selectedIds = this.selectedIds.filter(v => v !== num);
+            delete this.selectedStudentsMeta[num];
+          } else {
+            const row = this.searchResults.find(s => Number(s.user_id) === num);
+            if (row) {
+              this.selectedStudentsMeta[num] = { full_name: row.full_name, email: row.email };
+            }
+            this.selectedIds = [...this.selectedIds, num];
+          }
+        },
+        clearSelection() {
+          this.selectedIds = [];
+          this.selectedStudentsMeta = {};
+          if (this.panelMode === 'bulk') {
+            this.panelMode = 'idle';
+            this.bulkPermissions = [];
+          }
+        },
+        selectAllVisible() {
+          const ids = this.searchResults.map(s => Number(s.user_id));
+          ids.forEach(num => {
+            const row = this.searchResults.find(s => Number(s.user_id) === num);
+            if (row) {
+              this.selectedStudentsMeta[num] = { full_name: row.full_name, email: row.email };
+            }
+          });
+          const merged = new Set([...this.selectedIds, ...ids]);
+          this.selectedIds = Array.from(merged);
+        },
+        openBulkAssign() {
+          if (this.selectedIds.length === 0) {
+            this.showToast('No students selected', 'Check at least one student from the list.', 'err');
+            return;
+          }
+          this.panelMode = 'bulk';
+          this.selectedId = 0;
+          this.student = null;
+          this.bulkPermissions = [];
+        },
+        cancelBulk() {
+          this.panelMode = 'idle';
+          this.bulkPermissions = [];
+        },
+        removeFromBulk(id) {
+          const num = Number(id);
+          this.selectedIds = this.selectedIds.filter(v => v !== num);
+          delete this.selectedStudentsMeta[num];
+          if (this.selectedIds.length === 0) {
+            this.cancelBulk();
+          }
         },
 
         async loadCatalog() {
@@ -283,6 +394,9 @@ $adminBreadcrumbs = [
         async loadStudent(id) {
           this.panelMode = 'edit';
           this.selectedId = id;
+          this.selectedIds = [];
+          this.selectedStudentsMeta = {};
+          this.bulkPermissions = [];
           this.loadingStudent = true;
           this.student = null;
           try {
@@ -305,16 +419,15 @@ $adminBreadcrumbs = [
         },
 
         isChecked(type, id) {
-          const list = this.panelMode === 'create' ? this.newPermissions : this.permissions;
-          return list.some(p => p.content_type === type && Number(p.content_id) === Number(id));
+          return this.activePermissionList.some(p => p.content_type === type && Number(p.content_id) === Number(id));
         },
         toggle(type, id, on) {
-          const key = this.panelMode === 'create' ? 'newPermissions' : 'permissions';
+          const key = this.permissionListKey;
           this[key] = this[key].filter(p => !(p.content_type === type && Number(p.content_id) === Number(id)));
           if (on) this[key].push({ content_type: type, content_id: Number(id) });
         },
         toggleFullLms(on) {
-          const key = this.panelMode === 'create' ? 'newPermissions' : 'permissions';
+          const key = this.permissionListKey;
           this[key] = this[key].filter(p => p.content_type !== 'full_lms');
           if (on) this[key].push({ content_type: 'full_lms', content_id: 0 });
         },
@@ -354,6 +467,40 @@ $adminBreadcrumbs = [
             await this.loadStudent(this.selectedId);
           } catch (e) {
             this.showToast('Save failed', e.message, 'err');
+          } finally {
+            this.saveAction = null;
+          }
+        },
+        async saveBulkPermissions() {
+          if (this.selectedIds.length === 0) {
+            this.showToast('No students selected', 'Check at least one student from the list.', 'err');
+            return;
+          }
+          const hasAccess = this.hasFullLms || this.bulkPermissions.length > 0;
+          if (!hasAccess) {
+            this.showToast('Select content access', 'Enable Full LMS or choose at least one content item to assign.', 'err');
+            return;
+          }
+          if (!confirm('Apply the selected access to ' + this.selectedIds.length + ' student(s)? This replaces their current content permissions.')) {
+            return;
+          }
+          this.saveAction = 'bulk';
+          try {
+            const data = await this.apiPost('save_bulk_permissions', {
+              user_ids: JSON.stringify(this.selectedIds),
+              permissions: JSON.stringify(this.bulkPermissions)
+            });
+            const failed = (data.failed || []).length;
+            const msg = failed > 0
+              ? data.updated + ' updated, ' + failed + ' failed.'
+              : 'The same content access was applied to ' + data.updated + ' student(s).';
+            this.showToast('Bulk assign complete', msg, failed > 0 ? 'err' : 'ok');
+            this.selectedIds = [];
+            this.selectedStudentsMeta = {};
+            this.bulkPermissions = [];
+            this.panelMode = 'idle';
+          } catch (e) {
+            this.showToast('Bulk assign failed', e.message, 'err');
           } finally {
             this.saveAction = null;
           }
@@ -404,7 +551,7 @@ $adminBreadcrumbs = [
     <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
     Student Access Management
   </h1>
-  <p class="text-gray-400 mt-2 mb-0">Add students, manage account status, expiration, and granular LMS content permissions.</p>
+  <p class="text-gray-400 mt-2 mb-0">Add students, manage account status, and assign LMS content access to one or many students at once.</p>
 </div>
 
 <div x-data="studentAccessAdmin()" x-init="init()">
@@ -440,16 +587,32 @@ $adminBreadcrumbs = [
         <input type="search" class="input-custom w-full pl-9" placeholder="Name or email…" x-model="searchQ" @input.debounce.300ms="searchStudents()">
       </div>
 
+      <div class="sca-bulk-bar" x-show="selectedIds.length > 0" x-cloak>
+        <span class="sca-bulk-bar__count" x-text="selectedIds.length + ' selected'"></span>
+        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="selectAllVisible()" x-show="!allVisibleSelected">Select visible</button>
+        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="clearSelection()">Clear</button>
+        <button type="button" class="sca-btn sca-btn--primary sca-btn--sm ml-auto" @click="openBulkAssign()">
+          <i class="bi bi-people-fill"></i> Assign access
+        </button>
+      </div>
+
       <div class="max-h-[28rem] overflow-y-auto sca-tree" x-show="!loadingSearch">
         <template x-for="s in searchResults" :key="s.user_id">
-          <button type="button" class="sca-student-item" :class="selectedId == s.user_id && panelMode === 'edit' ? 'active' : ''" @click="loadStudent(s.user_id)">
-            <span class="sca-student-item__avatar" x-text="initials(s.full_name)"></span>
-            <span class="min-w-0 flex-1">
-              <span class="font-semibold text-gray-100 text-sm block truncate" x-text="s.full_name"></span>
-              <span class="text-xs text-gray-500 block truncate" x-text="s.email"></span>
-              <span class="sca-badge mt-1" :class="'sca-badge--' + (s.status || 'pending')" x-text="(s.status || 'pending').toUpperCase()"></span>
-            </span>
-          </button>
+          <div class="sca-student-item"
+               :class="{
+                 active: selectedId == s.user_id && panelMode === 'edit',
+                 'sca-student-item--picked': isSelected(s.user_id)
+               }">
+            <input type="checkbox" class="sca-student-check" :checked="isSelected(s.user_id)" @click.stop="toggleSelected(s.user_id)" :aria-label="'Select ' + s.full_name">
+            <button type="button" class="sca-student-item__main" @click="loadStudent(s.user_id)">
+              <span class="sca-student-item__avatar" x-text="initials(s.full_name)"></span>
+              <span class="min-w-0 flex-1">
+                <span class="font-semibold text-gray-100 text-sm block truncate" x-text="s.full_name"></span>
+                <span class="text-xs text-gray-500 block truncate" x-text="s.email"></span>
+                <span class="sca-badge mt-1" :class="'sca-badge--' + (s.status || 'pending')" x-text="(s.status || 'pending').toUpperCase()"></span>
+              </span>
+            </button>
+          </div>
         </template>
         <p class="text-sm text-gray-400 text-center py-6 m-0" x-show="searchResults.length === 0">
           <i class="bi bi-inbox text-2xl block mb-2"></i>
@@ -520,6 +683,54 @@ $adminBreadcrumbs = [
           <span x-text="saveAction === 'create' ? 'Creating…' : 'Create student'"></span>
         </button>
         <button type="button" class="sca-btn sca-btn--outline" @click="cancelCreate()" :disabled="saveAction !== null">Cancel</button>
+      </div>
+    </section>
+
+    <!-- Bulk assign panel -->
+    <section class="sca-panel rounded-xl shadow-card border p-5" x-show="panelMode === 'bulk'" x-cloak>
+      <div x-show="panelLoading" class="sca-panel-loading" x-cloak>
+        <span class="sca-spinner"></span>
+        <span class="text-sm font-semibold text-gray-600" x-text="panelLoadingLabel"></span>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100">
+        <div>
+          <h2 class="text-lg font-bold text-gray-100 m-0 flex items-center gap-2">
+            <i class="bi bi-people-fill text-emerald-400"></i> Bulk assign access
+          </h2>
+          <p class="text-xs text-gray-500 m-0 mt-1">Give the same LMS content access to multiple students in one save.</p>
+        </div>
+        <button type="button" class="sca-btn sca-btn--ghost" @click="cancelBulk()"><i class="bi bi-x-lg"></i> Cancel</button>
+      </div>
+
+      <div class="sca-section">
+        <div class="sca-section__head"><i class="bi bi-people"></i> Selected students (<span x-text="selectedIds.length"></span>)</div>
+        <div class="sca-bulk-chips">
+          <template x-for="s in selectedStudents" :key="'bulk-chip-' + s.user_id">
+            <span class="sca-bulk-chip">
+              <span x-text="s.full_name"></span>
+              <button type="button" @click="removeFromBulk(s.user_id)" title="Remove">&times;</button>
+            </span>
+          </template>
+        </div>
+        <p class="text-xs text-gray-500 m-0 mt-2">Tip: use the checkboxes in the student list to add or remove students.</p>
+      </div>
+
+      <div class="sca-section mb-0">
+        <div class="sca-section__head flex-wrap">
+          <span class="flex items-center gap-2"><i class="bi bi-diagram-3"></i> LMS content access to apply</span>
+          <span class="sca-perm-count ml-auto" x-text="activePermCount"></span>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">This replaces the current content permissions for every selected student.</p>
+        <?php $scaTreeScope = 'bulk'; require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
+      </div>
+
+      <div class="sca-sticky-actions">
+        <button type="button" class="sca-btn sca-btn--primary" @click="saveBulkPermissions()" :disabled="saveAction !== null || selectedIds.length === 0">
+          <i class="bi" :class="saveAction === 'bulk' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-shield-check'"></i>
+          <span x-text="saveAction === 'bulk' ? 'Applying…' : ('Apply to ' + selectedIds.length + ' student' + (selectedIds.length === 1 ? '' : 's'))"></span>
+        </button>
+        <button type="button" class="sca-btn sca-btn--outline" @click="cancelBulk()" :disabled="saveAction !== null">Cancel</button>
       </div>
     </section>
 
@@ -615,7 +826,7 @@ $adminBreadcrumbs = [
     <section class="sca-panel rounded-xl shadow-card border sca-idle" x-show="panelMode === 'idle'" x-cloak>
       <div class="sca-idle__icon"><i class="bi bi-shield-lock"></i></div>
       <h2 class="text-lg font-bold text-gray-100 m-0 mb-2">Manage student access</h2>
-      <p class="text-sm text-gray-500 m-0 mb-5 max-w-sm mx-auto">Select a student from the list to edit their account and permissions, or create a new student.</p>
+      <p class="text-sm text-gray-500 m-0 mb-5 max-w-sm mx-auto">Select a student to edit one account, check multiple students for bulk assign, or create a new student.</p>
       <button type="button" class="sca-btn sca-btn--primary" @click="startCreate()">
         <i class="bi bi-person-plus"></i> Add new student
       </button>
