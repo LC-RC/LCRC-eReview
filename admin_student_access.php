@@ -257,13 +257,17 @@ $adminBreadcrumbs = [
             email: this.selectedStudentsMeta[id]?.email || ''
           }));
         },
-        get allVisibleSelected() {
-          if (!this.searchResults.length) return false;
-          return this.searchResults.every(s => this.isSelected(s.user_id));
+        get allMatchingSelected() {
+          if (this.searchTotal <= 0) return false;
+          return this.selectedInFilterCount === this.searchTotal;
         },
-        get someVisibleSelected() {
-          if (!this.searchResults.length) return false;
-          return this.searchResults.some(s => this.isSelected(s.user_id));
+        get someMatchingSelected() {
+          return this.selectedInFilterCount > 0 && !this.allMatchingSelected;
+        },
+        get selectedInFilterCount() {
+          if (!this.searchResults.length || !this.selectedIds.length) return 0;
+          const filterIds = new Set(this.searchResults.map(s => Number(s.user_id)));
+          return this.selectedIds.filter(id => filterIds.has(id)).length;
         },
         get panelLoading() {
           return this.loadingStudent || this.saveAction !== null;
@@ -355,36 +359,44 @@ $adminBreadcrumbs = [
           }
           this.$nextTick(() => this.syncSelectAllIndeterminate());
         },
-        selectAllVisible() {
-          const ids = this.searchResults.map(s => Number(s.user_id));
-          ids.forEach(num => {
-            const row = this.searchResults.find(s => Number(s.user_id) === num);
-            if (row) {
-              this.selectedStudentsMeta[num] = { full_name: row.full_name, email: row.email };
-            }
+        selectAllMatching() {
+          const filterSet = new Set(this.searchResults.map(s => Number(s.user_id)));
+          const keptIds = this.selectedIds.filter(id => !filterSet.has(id));
+          const keptMeta = {};
+          keptIds.forEach(id => {
+            if (this.selectedStudentsMeta[id]) keptMeta[id] = this.selectedStudentsMeta[id];
           });
-          const merged = new Set([...this.selectedIds, ...ids]);
-          this.selectedIds = Array.from(merged);
+          const newIds = this.searchResults.map(s => Number(s.user_id));
+          const newMeta = { ...keptMeta };
+          this.searchResults.forEach(s => {
+            const num = Number(s.user_id);
+            newMeta[num] = { full_name: s.full_name, email: s.email };
+          });
+          this.selectedIds = [...keptIds, ...newIds];
+          this.selectedStudentsMeta = newMeta;
           this.$nextTick(() => this.syncSelectAllIndeterminate());
         },
-        toggleSelectAllVisible(on) {
-          if (on) {
-            this.selectAllVisible();
-            return;
-          }
-          const visibleSet = new Set(this.searchResults.map(s => Number(s.user_id)));
-          this.selectedIds = this.selectedIds.filter(id => !visibleSet.has(id));
-          visibleSet.forEach(id => delete this.selectedStudentsMeta[id]);
+        deselectAllMatching() {
+          const filterSet = new Set(this.searchResults.map(s => Number(s.user_id)));
+          this.selectedIds = this.selectedIds.filter(id => !filterSet.has(id));
+          filterSet.forEach(id => delete this.selectedStudentsMeta[id]);
           if (this.selectedIds.length === 0 && this.panelMode === 'bulk') {
             this.panelMode = 'idle';
             this.bulkPermissions = [];
           }
           this.$nextTick(() => this.syncSelectAllIndeterminate());
         },
+        toggleSelectAllMatching(on) {
+          if (on) {
+            this.selectAllMatching();
+            return;
+          }
+          this.deselectAllMatching();
+        },
         syncSelectAllIndeterminate() {
           const el = this.$refs.selectAllCheckbox;
           if (el) {
-            el.indeterminate = this.someVisibleSelected && !this.allVisibleSelected;
+            el.indeterminate = this.someMatchingSelected;
           }
         },
         openBulkAssign() {
@@ -629,7 +641,7 @@ $adminBreadcrumbs = [
 
       <div class="sca-bulk-bar" x-show="selectedIds.length > 0" x-cloak>
         <span class="sca-bulk-bar__count" x-text="selectedIds.length + ' selected'"></span>
-        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="selectAllVisible()" x-show="!allVisibleSelected">Select all in list</button>
+        <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="selectAllMatching()" x-show="!allMatchingSelected && searchTotal > 0">Select all</button>
         <button type="button" class="sca-btn sca-btn--outline sca-btn--sm" @click="clearSelection()">Clear all</button>
         <button type="button" class="sca-btn sca-btn--primary sca-btn--sm ml-auto" @click="openBulkAssign()">
           <i class="bi bi-people-fill"></i> Assign access
@@ -639,15 +651,15 @@ $adminBreadcrumbs = [
       <div class="sca-select-all" x-show="!loadingSearch && searchResults.length > 0" x-cloak>
         <label class="sca-select-all__label">
           <input type="checkbox" class="sca-student-check" x-ref="selectAllCheckbox"
-                 :checked="allVisibleSelected"
-                 @change="toggleSelectAllVisible($event.target.checked)">
-          <span>Select all (<span x-text="searchResults.length"></span>)</span>
+                 :checked="allMatchingSelected"
+                 @change="toggleSelectAllMatching($event.target.checked)">
+          <span>Select all students (<span x-text="searchTotal"></span>)</span>
         </label>
-        <span class="sca-select-all__hint" x-show="searchTotal > searchResults.length"
-              x-text="'Showing ' + searchResults.length + ' of ' + searchTotal"></span>
+        <span class="sca-select-all__hint" x-show="selectedInFilterCount > 0 && !allMatchingSelected"
+              x-text="selectedInFilterCount + ' of ' + searchTotal + ' selected'"></span>
       </div>
 
-      <div class="max-h-[28rem] overflow-y-auto sca-tree" x-show="!loadingSearch">
+      <div class="max-h-[32rem] overflow-y-auto sca-tree" x-show="!loadingSearch">
         <template x-for="s in searchResults" :key="s.user_id">
           <div class="sca-student-item"
                :class="{

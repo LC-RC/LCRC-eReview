@@ -62,7 +62,7 @@ if ($action === 'search') {
         $conn,
         "SELECT user_id, full_name, email, status, access_end
          FROM users WHERE role = 'student' AND (full_name LIKE ? OR email LIKE ?)
-         ORDER BY full_name ASC LIMIT 100"
+         ORDER BY full_name ASC"
     );
     mysqli_stmt_bind_param($stmt, 'ss', $like, $like);
     mysqli_stmt_execute($stmt);
@@ -73,23 +73,7 @@ if ($action === 'search') {
     }
     mysqli_stmt_close($stmt);
 
-    $total = 0;
-    $countStmt = mysqli_prepare(
-        $conn,
-        "SELECT COUNT(*) AS total FROM users WHERE role = 'student' AND (full_name LIKE ? OR email LIKE ?)"
-    );
-    if ($countStmt) {
-        mysqli_stmt_bind_param($countStmt, 'ss', $like, $like);
-        mysqli_stmt_execute($countStmt);
-        $countRes = mysqli_stmt_get_result($countStmt);
-        $countRow = $countRes ? mysqli_fetch_assoc($countRes) : null;
-        $total = (int) ($countRow['total'] ?? count($rows));
-        mysqli_stmt_close($countStmt);
-    } else {
-        $total = count($rows);
-    }
-
-    sca_api_json(['ok' => true, 'students' => $rows, 'total' => $total]);
+    sca_api_json(['ok' => true, 'students' => $rows, 'total' => count($rows)]);
 }
 
 if ($action === 'save_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -146,9 +130,6 @@ if ($action === 'save_bulk_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST'
 
     if ($normalizedIds === []) {
         sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
-    }
-    if (count($normalizedIds) > 100) {
-        sca_api_json(['ok' => false, 'error' => 'You can assign access to at most 100 students at once.'], 400);
     }
 
     $adminId = getCurrentUserId();
