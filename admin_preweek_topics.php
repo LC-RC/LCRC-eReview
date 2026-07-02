@@ -157,8 +157,7 @@ $preweekNavUnitTitle = $unitTitle;
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=10">
-  <style>
+<style>
     [x-cloak] { display: none !important; }
     .admin-preweek-lectures-page .preweek-lecture-modal-overlay {
       position: fixed;
@@ -294,19 +293,14 @@ $preweekNavUnitTitle = $unitTitle;
                   <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
                 </td>
                 <td class="px-5 py-3 align-middle text-center">
-                  <div class="inline-block text-left w-full max-w-[220px]" x-data="{ expanded: false }">
-                    <div class="flex flex-nowrap items-stretch justify-center gap-2">
-                      <a href="admin_preweek_materials.php?preweek_topic_id=<?php echo (int)$tid; ?>" class="preweek-materials-link flex items-center justify-center gap-1.5 min-w-0 flex-1 px-2.5 py-2 rounded-lg text-sm font-semibold transition">
-                        <i class="bi bi-collection-play shrink-0" aria-hidden="true"></i><span class="truncate">Materials</span>
-                      </a>
-                      <button type="button" @click="expanded = !expanded" class="quiz-admin-more-btn flex items-center justify-center gap-1 shrink-0 px-2.5 py-2 rounded-md text-xs border transition" :aria-expanded="expanded" title="More actions">
-                        <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                        <span class="opacity-80 hidden sm:inline">More</span>
-                      </button>
-                    </div>
-                    <div x-show="expanded" x-cloak class="flex flex-col gap-2 mt-2 w-full">
-                      <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&edit=<?php echo (int)$tid; ?>" @click="expanded = false" class="quiz-admin-btn-secondary flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition no-underline"><i class="bi bi-pencil"></i> Edit</a>
-                      <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&delete_topic=<?php echo (int)$tid; ?>" onclick="return confirm('Delete this lecture and all videos and handouts inside it? This cannot be undone.');" class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium border-2 border-red-500/50 text-red-400 hover:bg-red-950/30 transition no-underline"><i class="bi bi-trash"></i> Delete</a>
+                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <a href="admin_preweek_materials.php?preweek_topic_id=<?php echo (int)$tid; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-collection-play"></i><span class="sr-only">Materials</span></a>
+                    <div class="admin-row-menu-wrap">
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                        <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&edit=<?php echo (int)$tid; ?>" @click="menuOpen = false" class="admin-row-menu__item"><i class="bi bi-pencil"></i> Edit</a>
+                        <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&delete_topic=<?php echo (int)$tid; ?>" onclick="return confirm('Delete this lecture and all videos and handouts inside it? This cannot be undone.');" class="admin-row-menu__item admin-row-menu__item--danger"><i class="bi bi-trash"></i> Delete</a>
+                      </div>
                     </div>
                   </div>
                 </td>

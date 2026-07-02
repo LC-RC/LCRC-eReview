@@ -149,6 +149,161 @@ if (!function_exists('notifications_create_admin_pending_registration_notificati
     }
 }
 
+if (!function_exists('notifications_get_admin_user_ids')) {
+    /** @return list<int> */
+    function notifications_get_admin_user_ids(mysqli $conn): array
+    {
+        $admins = [];
+        $ar = @mysqli_query($conn, "SELECT user_id FROM users WHERE role='admin' AND status='approved'");
+        while ($ar && ($row = mysqli_fetch_assoc($ar))) {
+            $admins[] = (int) $row['user_id'];
+        }
+        if ($ar) {
+            mysqli_free_result($ar);
+        }
+        return $admins;
+    }
+}
+
+if (!function_exists('notifications_create_admin_preboards_request_notifications')) {
+    function notifications_create_admin_preboards_request_notifications(
+        mysqli $conn,
+        int $studentUserId,
+        int $preboardsSubjectId,
+        string $subjectName,
+        string $setLabel,
+        string $requestType
+    ): void {
+        if ($studentUserId <= 0 || $preboardsSubjectId <= 0) {
+            return;
+        }
+        if (!notifications_ensure_table($conn)) {
+            return;
+        }
+
+        $studentName = 'A student';
+        $stmt = mysqli_prepare($conn, 'SELECT full_name, email FROM users WHERE user_id = ? LIMIT 1');
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'i', $studentUserId);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $student = $res ? mysqli_fetch_assoc($res) : null;
+            mysqli_stmt_close($stmt);
+            if ($student) {
+                $studentName = trim((string) ($student['full_name'] ?? '')) ?: trim((string) ($student['email'] ?? '')) ?: $studentName;
+            }
+        }
+
+        $setLabel = trim($setLabel) !== '' ? trim($setLabel) : 'Set';
+        $subjectName = trim($subjectName) !== '' ? trim($subjectName) : 'Preboards';
+        $isRetake = $requestType === 'retake';
+        $title = $isRetake ? 'Preboards retake request' : 'Preboards access request';
+        $msg = $studentName . ' requested ' . ($isRetake ? 'a retake' : 'access') . ' for Set ' . $setLabel . ' (' . $subjectName . ').';
+        $link = 'admin_preboards_sets.php?preboards_subject_id=' . (int) $preboardsSubjectId;
+        $role = 'admin';
+        $category = $isRetake ? 'preboards_request_retake' : 'preboards_request_access';
+        $isRead = 0;
+        $toastShown = 0;
+
+        $admins = notifications_get_admin_user_ids($conn);
+        if (empty($admins)) {
+            return;
+        }
+
+        $hasCategory = notifications_column_exists($conn, 'notifications', 'category');
+        $hasActor = notifications_column_exists($conn, 'notifications', 'actor_user_id');
+        $hasToast = notifications_column_exists($conn, 'notifications', 'toast_shown');
+        if ($hasCategory && $hasActor && $hasToast) {
+            $ins = mysqli_prepare($conn, 'INSERT INTO notifications (user_id, role, title, message, link_url, category, actor_user_id, is_read, toast_shown) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        } else {
+            $ins = mysqli_prepare($conn, 'INSERT INTO notifications (user_id, role, title, message, link_url, is_read) VALUES (?, ?, ?, ?, ?, ?)');
+        }
+        if (!$ins) {
+            return;
+        }
+
+        foreach ($admins as $adminId) {
+            if ($hasCategory && $hasActor && $hasToast) {
+                mysqli_stmt_bind_param($ins, 'isssssiii', $adminId, $role, $title, $msg, $link, $category, $studentUserId, $isRead, $toastShown);
+            } else {
+                mysqli_stmt_bind_param($ins, 'issssi', $adminId, $role, $title, $msg, $link, $isRead);
+            }
+            mysqli_stmt_execute($ins);
+        }
+        mysqli_stmt_close($ins);
+    }
+}
+
+if (!function_exists('notifications_sync_admin_preboards_pending_reminder')) {
+    function notifications_sync_admin_preboards_pending_reminder(mysqli $conn, int $adminUserId): void
+    {
+        if ($adminUserId <= 0) {
+            return;
+        }
+        if (!notifications_ensure_table($conn)) {
+            return;
+        }
+
+        require_once __DIR__ . '/preboards_helpers.php';
+        $counts = preboards_pending_request_counts($conn);
+        if ($counts['total'] <= 0) {
+            return;
+        }
+
+        $stmt = mysqli_prepare(
+            $conn,
+            "SELECT notification_id FROM notifications
+             WHERE user_id = ? AND category = 'preboards_pending_digest' AND is_read = 0
+               AND created_at > DATE_SUB(NOW(), INTERVAL 12 HOUR)
+             LIMIT 1"
+        );
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'i', $adminUserId);
+            mysqli_stmt_execute($stmt);
+            $existing = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+            mysqli_stmt_close($stmt);
+            if ($existing) {
+                return;
+            }
+        }
+
+        $parts = [];
+        if ($counts['access'] > 0) {
+            $parts[] = $counts['access'] . ' access';
+        }
+        if ($counts['retake'] > 0) {
+            $parts[] = $counts['retake'] . ' retake';
+        }
+        $detail = implode(' and ', $parts);
+        $title = 'Pending preboards requests';
+        $msg = 'You have ' . $counts['total'] . ' pending student request(s)' . ($detail !== '' ? ' (' . $detail . ')' : '') . '. Review them under Preboards sets.';
+        $link = 'admin_preboards_subjects.php';
+        $role = 'admin';
+        $category = 'preboards_pending_digest';
+        $isRead = 0;
+        $toastShown = 0;
+
+        $hasCategory = notifications_column_exists($conn, 'notifications', 'category');
+        $hasActor = notifications_column_exists($conn, 'notifications', 'actor_user_id');
+        $hasToast = notifications_column_exists($conn, 'notifications', 'toast_shown');
+        if ($hasCategory && $hasActor && $hasToast) {
+            $ins = mysqli_prepare($conn, 'INSERT INTO notifications (user_id, role, title, message, link_url, category, actor_user_id, is_read, toast_shown) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)');
+            if ($ins) {
+                mysqli_stmt_bind_param($ins, 'isssssii', $adminUserId, $role, $title, $msg, $link, $category, $isRead, $toastShown);
+                mysqli_stmt_execute($ins);
+                mysqli_stmt_close($ins);
+            }
+        } else {
+            $ins = mysqli_prepare($conn, 'INSERT INTO notifications (user_id, role, title, message, link_url, is_read) VALUES (?, ?, ?, ?, ?, ?)');
+            if ($ins) {
+                mysqli_stmt_bind_param($ins, 'issssi', $adminUserId, $role, $title, $msg, $link, $isRead);
+                mysqli_stmt_execute($ins);
+                mysqli_stmt_close($ins);
+            }
+        }
+    }
+}
+
 if (!function_exists('notifications_time_label')) {
     function notifications_time_label(?string $dt): string {
         if (!$dt) return 'Just now';

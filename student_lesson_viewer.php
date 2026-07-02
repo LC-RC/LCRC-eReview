@@ -3,7 +3,11 @@
  * Full-page Lesson Materials viewer (videos + handouts). Same flow as Test Bank: list on subject, open here on click.
  */
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
 $subjectId = (int)($_GET['subject_id'] ?? 0);
@@ -23,6 +27,13 @@ if (!$lesson) {
     exit;
 }
 $subjectId = $subjectId > 0 ? $subjectId : (int)$lesson['subject_id'];
+
+$userId = getCurrentUserId();
+if (!sca_has_access($conn, (int)$userId, 'lesson', $lessonId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_subject.php?subject_id=' . (int)$subjectId);
+    exit;
+}
 
 $videosResult = mysqli_query($conn, "SELECT video_id, video_title, video_url FROM lesson_videos WHERE lesson_id = " . (int)$lessonId . " ORDER BY video_id ASC");
 $handoutsResult = mysqli_query($conn, "SELECT handout_id, handout_title, file_path, file_name, file_size, allow_download FROM lesson_handouts WHERE lesson_id = " . (int)$lessonId . " ORDER BY handout_id DESC");

@@ -135,7 +135,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
 <body class="font-sans antialiased admin-app admin-lessons-page" x-data="lessonsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
@@ -233,17 +232,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                 <span class="inline-flex min-w-[2.25rem] justify-center px-2.5 py-1 rounded-md text-sm font-bold tabular-nums <?php echo $hClass; ?>"><?php echo $hCnt; ?></span>
               </td>
               <td class="px-5 py-3 text-center">
-                <div class="inline-block text-left w-[200px]" x-data="{ expanded: false }">
-                  <div class="flex flex-col gap-2">
-                    <a href="admin_materials.php?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-link-primary lesson-materials-link flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition"><i class="bi bi-grid"></i> Materials</a>
-                    <button type="button" @click="expanded = !expanded" class="quiz-admin-more-btn flex items-center justify-center gap-1 w-full py-1.5 rounded-md text-xs border transition" :aria-expanded="expanded" title="More actions">
-                      <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                      <span class="opacity-80">More</span>
-                    </button>
-                  </div>
-                  <div x-show="expanded" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="flex flex-col gap-2 mt-2">
-                    <button type="button" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" data-description="<?php echo h($l['description'] ?? ''); ?>" @click="expanded = false; openEditLesson($el.dataset.id, $el.dataset.title || '', $el.dataset.description || '')" class="quiz-admin-btn-secondary flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition"><i class="bi bi-pencil"></i> Edit</button>
-                    <button type="button" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" @click="expanded = false; openDeleteLesson($el.dataset.id, $el.dataset.title || '')" class="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-400 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
+                <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                  <a href="admin_materials.php?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-grid"></i><span class="sr-only">Materials</span></a>
+                  <div class="admin-row-menu-wrap">
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                      <button type="button" class="admin-row-menu__item" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" data-description="<?php echo h($l['description'] ?? ''); ?>" @click="menuOpen = false; openEditLesson($el.dataset.id, $el.dataset.title || '', $el.dataset.description || '')"><i class="bi bi-pencil"></i> Edit</button>
+                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" @click="menuOpen = false; openDeleteLesson($el.dataset.id, $el.dataset.title || '')"><i class="bi bi-trash"></i> Delete</button>
+                    </div>
                   </div>
                 </div>
               </td>

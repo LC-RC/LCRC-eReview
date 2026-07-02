@@ -272,8 +272,7 @@ if ($qsortHasResults) {
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=13">
-  <style>
+<style>
     /* Local layout tweaks; chrome matches pre-week materials via admin-quiz-ui + .admin-question-sort-page */
     .ereview-qsort-upload-zone {
       border: 2px dashed rgba(148, 163, 184, 0.28);

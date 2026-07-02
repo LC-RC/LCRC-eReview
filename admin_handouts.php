@@ -89,12 +89,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-file-earmark-pdf"></i> Handouts - <?php echo h($lesson['title']); ?> (<span class="admin-subject-text"><?php echo h($lesson['subject_name']); ?></span>)
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
+      Handouts — <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
-    <p class="text-gray-500 mt-1">Upload PDFs or documents and control download access per handout.</p>
+    <p class="text-gray-400 mt-2 mb-0">Upload PDFs or documents and control download access per handout.</p>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
@@ -107,7 +108,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
     <div class="lg:col-span-5">
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-bold text-gray-800 mb-4"><?php echo $edit ? 'Edit Handout' : 'Add Handout'; ?></h2>
         <form method="POST" enctype="multipart/form-data" class="space-y-4">
           <?php if ($edit): ?><input type="hidden" name="handout_id" value="<?php echo (int)$edit['handout_id']; ?>"><?php endif; ?>
@@ -134,7 +135,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
       </div>
     </div>
     <div class="lg:col-span-7">
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+      <div class="rounded-xl shadow-card border overflow-hidden page-table">
         <div class="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">All Handouts</div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">

@@ -1,6 +1,10 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $pageTitle = 'Test Bank';
 
@@ -24,6 +28,7 @@ $list = mysqli_query($conn, "SELECT id, title, description, question_file_path, 
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
     .student-protected {
       -webkit-user-select: none;
@@ -62,8 +67,12 @@ $list = mysqli_query($conn, "SELECT id, title, description, question_file_path, 
     <section class="space-y-4" aria-label="Available materials">
       <?php if ($list && mysqli_num_rows($list) > 0): ?>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <?php while ($row = mysqli_fetch_assoc($list)): ?>
-            <article class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_8px_24px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
+          <?php while ($row = mysqli_fetch_assoc($list)):
+            $tbId = (int)($row['id'] ?? 0);
+            $tbOpen = sca_has_access($conn, (int)($_SESSION['user_id'] ?? 0), 'test_bank', $tbId);
+          ?>
+            <article class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden transition-shadow duration-300 hover:shadow-[0_8px_24px_rgba(20,61,89,0.14)] bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]<?php echo $tbOpen ? '' : ' lms-locked-card'; ?>" style="position:relative;">
+              <?php if (!$tbOpen): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span><?php endif; ?>
               <div class="px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex items-center gap-3">
                 <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1665A0] text-white shadow-lg shadow-[#1665A0]/25">
                   <i class="bi bi-file-earmark-text text-lg" aria-hidden="true"></i>
@@ -74,9 +83,13 @@ $list = mysqli_query($conn, "SELECT id, title, description, question_file_path, 
               </div>
               <div class="p-4 sm:p-6 space-y-3 sm:space-y-4 bg-white/50">
                 <div class="flex flex-wrap gap-3">
-                  <a href="student_test_bank_viewer.php?id=<?php echo (int)$row['id']; ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.3)]">
+                  <?php if ($tbOpen): ?>
+                  <a href="student_test_bank_viewer.php?id=<?php echo $tbId; ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.3)]">
                     <i class="bi bi-eye"></i> View files
                   </a>
+                  <?php else: ?>
+                  <span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-slate-400 text-white"><i class="bi bi-lock-fill"></i> Locked</span>
+                  <?php endif; ?>
                 </div>
               </div>
             </article>

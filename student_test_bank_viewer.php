@@ -4,6 +4,7 @@
  * Uses same layout as student subject: sidebar + topbar + title card.
  */
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireLogin();
 if (!hasRole('student') && !hasRole('admin')) {
     $_SESSION['error'] = 'Access denied.';
@@ -28,6 +29,17 @@ if (!$row) {
     $_SESSION['error'] = 'Test bank entry not found.';
     header('Location: student_subjects.php');
     exit;
+}
+
+if (hasRole('student')) {
+    sca_ensure_schema($conn);
+    sca_enforce_student_session($conn);
+    $uid = getCurrentUserId();
+    if (!sca_has_access($conn, (int)$uid, 'test_bank', $id)) {
+        $_SESSION['error'] = SCA_DENIED_MESSAGE;
+        header('Location: student_test_bank.php');
+        exit;
+    }
 }
 
 $hasQuestion = !empty(trim($row['question_file_path'] ?? ''));

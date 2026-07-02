@@ -103,13 +103,13 @@ function ereview_chat_is_account_sensitive(string $message): bool
 function ereview_chat_infer_package_interest(string $message): ?string
 {
     $t = mb_strtolower($message);
-    if (preg_match('/\b(14[\s-]*month|14\s*mos?|2500|2\s*,?\s*500)\b/u', $t)) {
+    if (preg_match('/\b(14[\s-]*months?|14\s*mos?|3000|3\s*,?\s*000)\b/u', $t)) {
         return '14-month';
     }
-    if (preg_match('/\b(9[\s-]*month|9\s*mos?|2000|2\s*,?\s*000)\b/u', $t)) {
+    if (preg_match('/\b(9[\s-]*months?|9\s*mos?|2500|2\s*,?\s*500)\b/u', $t)) {
         return '9-month';
     }
-    if (preg_match('/\b(6[\s-]*month|6\s*mos?|1500|1\s*,?\s*500)\b/u', $t)) {
+    if (preg_match('/\b(6[\s-]*months?|6\s*mos?|2000|2\s*,?\s*000)\b/u', $t)) {
         return '6-month';
     }
     return null;
@@ -358,6 +358,17 @@ function ereview_chat_openai_grounded_reply(
 function ereview_chat_generate_reply(mysqli $conn, string $message, string $sessionId, bool $plainLanguage = false): array
 {
     [$intent, $intentConfidence] = ereview_chat_detect_intent($message);
+    $pkgInterest = ereview_chat_infer_package_interest($message);
+    if ($pkgInterest !== null) {
+        $intent = 'packages';
+        $intentConfidence = max($intentConfidence, 0.9);
+    }
+    if (function_exists('ereview_chat_try_package_price_reply')) {
+        $pkgQuick = ereview_chat_try_package_price_reply($message, $pkgInterest);
+        if ($pkgQuick !== null) {
+            return $pkgQuick;
+        }
+    }
     $retrieved = ereview_chat_retrieve_best_doc($conn, $message);
     $doc = $retrieved['doc'];
     $ragScore = (float) ($retrieved['score'] ?? 0.0);
@@ -407,7 +418,9 @@ function ereview_chat_generate_reply(mysqli $conn, string $message, string $sess
     $lang = ereview_chat_detect_language_code($message);
     $flow = ereview_chat_detect_conversation_flow($message, $intent);
     $accountSensitive = ereview_chat_is_account_sensitive($message);
-    $pkgInterest = ereview_chat_infer_package_interest($message);
+    if ($pkgInterest === null) {
+        $pkgInterest = ereview_chat_infer_package_interest($message);
+    }
     $topic = ereview_chat_topic_from_intent($intent);
 
     $mem = ereview_chat_session_load_memory($conn, $sessionId);

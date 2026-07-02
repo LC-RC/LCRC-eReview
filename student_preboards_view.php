@@ -1,7 +1,14 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preboards_migrate.php';
+require_once __DIR__ . '/includes/preboards_helpers.php';
+require_once __DIR__ . '/includes/notification_helpers.php';
+require_once __DIR__ . '/includes/quiz_helpers.php';
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $id = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
 if ($id <= 0) {
@@ -24,6 +31,11 @@ if (!$subject) {
 }
 
 $userId = getCurrentUserId();
+if (!sca_preboard_subject_has_any_access($conn, (int)$userId, $id)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_preboards.php');
+    exit;
+}
 $csrf = generateCSRFToken();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
@@ -50,6 +62,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
 
     if ($action === 'request_open' || $action === 'request_retake') {
       $type = $action === 'request_open' ? 'open' : 'retake';
+      $setStmt = mysqli_prepare($conn, "SELECT * FROM preboards_sets WHERE preboards_set_id=? AND preboards_subject_id=? LIMIT 1");
+      mysqli_stmt_bind_param($setStmt, 'ii', $setIdPost, $id);
+      mysqli_stmt_execute($setStmt);
+      $setRowReq = mysqli_fetch_assoc(mysqli_stmt_get_result($setStmt));
+      mysqli_stmt_close($setStmt);
+      if (!$setRowReq) {
+        $_SESSION['error'] = 'Invalid set.';
+        header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+        exit;
+      }
+      if (!sca_preboard_set_granted($conn, (int)$userId, $setIdPost, (int)$id)) {
+        $_SESSION['error'] = 'You do not have access to this set.';
+        header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+        exit;
+      }
+
+      if ($type === 'open') {
+        if (preboards_set_is_open_for_students($setRowReq)) {
+          $_SESSION['error'] = 'This set is already open.';
+          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          exit;
+        }
+        $accChk = mysqli_prepare($conn, "SELECT preboards_set_access_id FROM preboards_set_access WHERE user_id=? AND preboards_set_id=? AND used_at IS NULL AND revoked_at IS NULL LIMIT 1");
+        mysqli_stmt_bind_param($accChk, 'ii', $userId, $setIdPost);
+        mysqli_stmt_execute($accChk);
+        $hasUnusedGrant = (bool)mysqli_fetch_assoc(mysqli_stmt_get_result($accChk));
+        mysqli_stmt_close($accChk);
+        if ($hasUnusedGrant) {
+          $_SESSION['message'] = 'You already have approved access for this set.';
+          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          exit;
+        }
+        $attChk = mysqli_prepare($conn, "SELECT status FROM preboards_attempts WHERE user_id=? AND preboards_set_id=? ORDER BY attempt_no DESC, preboards_attempt_id DESC LIMIT 1");
+        mysqli_stmt_bind_param($attChk, 'ii', $userId, $setIdPost);
+        mysqli_stmt_execute($attChk);
+        $lastAttReq = mysqli_fetch_assoc(mysqli_stmt_get_result($attChk));
+        mysqli_stmt_close($attChk);
+        if ($lastAttReq && ($lastAttReq['status'] ?? '') === 'in_progress') {
+          $_SESSION['error'] = 'You already have an attempt in progress for this set.';
+          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          exit;
+        }
+      } else {
+        $attChk = mysqli_prepare($conn, "SELECT status FROM preboards_attempts WHERE user_id=? AND preboards_set_id=? ORDER BY attempt_no DESC, preboards_attempt_id DESC LIMIT 1");
+        mysqli_stmt_bind_param($attChk, 'ii', $userId, $setIdPost);
+        mysqli_stmt_execute($attChk);
+        $lastAttReq = mysqli_fetch_assoc(mysqli_stmt_get_result($attChk));
+        mysqli_stmt_close($attChk);
+        if (!$lastAttReq || ($lastAttReq['status'] ?? '') !== 'submitted') {
+          $_SESSION['error'] = 'You can only request a retake after completing this set.';
+          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          exit;
+        }
+      }
+
       // Avoid duplicate pending requests for same type
       $dup = mysqli_prepare($conn, "SELECT preboards_request_id FROM preboards_requests WHERE user_id=? AND preboards_set_id=? AND request_type=? AND status='pending' LIMIT 1");
       mysqli_stmt_bind_param($dup, 'iis', $userId, $setIdPost, $type);
@@ -63,7 +130,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
         mysqli_stmt_bind_param($ins, 'iis', $userId, $setIdPost, $type);
         mysqli_stmt_execute($ins);
         mysqli_stmt_close($ins);
-        $_SESSION['message'] = 'Request submitted.';
+        notifications_create_admin_preboards_request_notifications(
+            $conn,
+            (int) $userId,
+            (int) $id,
+            (string) ($subject['subject_name'] ?? 'Preboards'),
+            (string) ($setRowReq['set_label'] ?? ''),
+            $type
+        );
+        $_SESSION['message'] = 'Request submitted. An admin will be notified.';
       }
       header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
       exit;
@@ -71,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
   }
 }
 
-$sets = mysqli_query($conn, "SELECT s.preboards_set_id, s.set_label, s.title, s.time_limit_seconds, s.is_open,
+$sets = mysqli_query($conn, "SELECT s.preboards_set_id, s.set_label, s.title, s.time_limit_seconds, s.is_open, s.use_schedule, s.opens_at, s.closes_at,
   (SELECT COUNT(*) FROM preboards_questions q WHERE q.preboards_set_id=s.preboards_set_id) AS questions_cnt
   FROM preboards_sets s WHERE s.preboards_subject_id=" . (int)$id . " ORDER BY s.sort_order ASC, s.set_label ASC");
 
@@ -121,6 +196,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
     .preboards-view-page .rounded-2xl { border-radius: 0.75rem !important; }
     .preboards-view-page .rounded-xl { border-radius: 0.625rem !important; }
@@ -178,13 +254,31 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
             $submitted = $att && ($att['status'] ?? '') === 'submitted';
             $inProgress = $att && ($att['status'] ?? '') === 'in_progress';
             $attemptId = $att ? (int)($att['preboards_attempt_id'] ?? 0) : 0;
-            $isOpen = (int)($set['is_open'] ?? 0) === 1;
-            $hasAccess = $isOpen || isset($accessBySet[$setId]);
+            $hasGrant = isset($accessBySet[$setId]);
+            $scaGranted = sca_preboard_set_granted($conn, (int)$userId, $setId, (int)$id);
+            $hasAccess = sca_preboard_set_can_enter($conn, (int)$userId, $setId, (int)$id, $set, $hasGrant);
+            $accessMeta = preboards_set_access_meta($set, true);
+            $effectiveOpen = preboards_set_is_open_for_students($set);
+            $durationSecs = preboards_set_effective_time_limit_seconds($set);
+            $durationLabel = formatTimeLimitSeconds($durationSecs);
+            $statusIcon = match ($accessMeta['key'] ?? 'locked') {
+                'open' => 'bi-unlock',
+                'upcoming' => 'bi-calendar-event',
+                'closed' => 'bi-calendar-x',
+                default => 'bi-lock-fill',
+            };
+            $statusClass = match ($accessMeta['key'] ?? 'locked') {
+                'open' => 'text-emerald-700',
+                'upcoming' => 'text-sky-700',
+                'closed' => 'text-gray-600',
+                default => 'text-amber-700',
+            };
             $openPending = isset($pendingOpenReqBySet[$setId]);
             $retakePending = isset($pendingRetakeReqBySet[$setId]);
             $retakeReady = isset($retakeReadyBySet[$setId]);
         ?>
-        <article class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_26px_rgba(15,23,42,0.16)] transition-all duration-300 flex flex-col overflow-hidden">
+        <article class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_26px_rgba(15,23,42,0.16)] transition-all duration-300 flex flex-col overflow-hidden<?php echo !$scaGranted ? ' lms-locked-card' : ''; ?>" style="position:relative;">
+          <?php if (!$scaGranted): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> No access</span><?php endif; ?>
           <div class="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
             <div class="flex items-start gap-3">
               <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#143D59] text-white shadow-md">
@@ -198,8 +292,21 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
           </div>
           <div class="px-5 pb-4 flex-1">
             <p class="text-sm text-[#143D59]/80 m-0">
-              <?php echo $qCount; ?> question<?php echo $qCount === 1 ? '' : 's'; ?>. One attempt per set — no retake once submitted.
+              <?php echo $qCount; ?> question<?php echo $qCount === 1 ? '' : 's'; ?> · <?php echo h($durationLabel); ?> exam window.
+              One attempt per set — no retake once submitted.
             </p>
+            <?php if ($scaGranted): ?>
+              <p class="text-xs mt-2 mb-0 flex items-center gap-1.5 <?php echo h($statusClass); ?>">
+                <i class="bi <?php echo h($statusIcon); ?>" aria-hidden="true"></i>
+                <span><?php echo h($accessMeta['label']); ?></span>
+              </p>
+              <?php if ($hasGrant && !$effectiveOpen): ?>
+                <p class="text-xs text-emerald-700 mt-1.5 mb-0 flex items-center gap-1.5">
+                  <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                  <span>Admin approved your access — you may take this set once.</span>
+                </p>
+              <?php endif; ?>
+            <?php endif; ?>
           </div>
           <div class="px-5 pb-5 flex items-center justify-between gap-3 text-sm border-t border-[#1665A0]/10 bg-white/70">
             <?php if ($submitted): ?>
@@ -232,10 +339,16 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
                   </button>
                 <?php endif; ?>
               </div>
-            <?php elseif (!$hasAccess): ?>
+            <?php elseif (!$scaGranted): ?>
               <div class="flex items-center gap-2 text-gray-500">
                 <i class="bi bi-lock-fill" aria-hidden="true"></i>
-                <span>Locked</span>
+                <span>Not included in your access</span>
+              </div>
+              <span class="text-gray-400 text-sm">Contact admin</span>
+            <?php elseif (!$hasAccess): ?>
+              <div class="flex items-center gap-2 text-amber-700">
+                <i class="bi <?php echo h($statusIcon); ?>" aria-hidden="true"></i>
+                <span><?php echo h($accessMeta['label']); ?></span>
               </div>
               <?php if ($openPending): ?>
                 <span class="text-gray-400 text-sm">Request pending</span>

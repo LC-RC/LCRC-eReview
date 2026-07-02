@@ -1,8 +1,12 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 
-// Keep dashboard pages read-only: do not create tables during render.
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
+
+$uid = (int)$_SESSION['user_id'];
 $preboardsTableExists = false;
 $tb = @mysqli_query($conn, "SHOW TABLES LIKE 'preboards_subjects'");
 if ($tb && mysqli_num_rows($tb) > 0) {
@@ -18,16 +22,6 @@ if ($ts && mysqli_num_rows($ts) > 0) {
     $preboardsSetsHasPublished = (bool)($colPub && mysqli_num_rows($colPub) > 0);
     $colSid = @mysqli_query($conn, "SHOW COLUMNS FROM preboards_sets LIKE 'preboards_subject_id'");
     $preboardsSetsHasSubjectId = (bool)($colSid && mysqli_num_rows($colSid) > 0);
-}
-
-// Optional: enforce access_end check on every page load (same as student_subjects.php)
-$uid = (int)$_SESSION['user_id'];
-$ur = mysqli_query($conn, "SELECT access_end FROM users WHERE user_id=" . $uid . " LIMIT 1");
-$u = $ur ? mysqli_fetch_assoc($ur) : null;
-if ($u && !empty($u['access_end']) && strtotime($u['access_end']) < time()) {
-    $_SESSION['error'] = 'Your access has expired.';
-    header('Location: index.php');
-    exit;
 }
 
 $subjectsResult = $preboardsTableExists
@@ -49,6 +43,7 @@ $pageTitle = 'Preboards';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
     .student-dashboard-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
     .student-hero {
@@ -146,8 +141,10 @@ $pageTitle = 'Preboards';
                   $sr = @mysqli_query($conn, $subjectCountSql);
                   if ($sr && ($srow = mysqli_fetch_assoc($sr))) $setsCount = (int)($srow['c'] ?? 0);
               }
+              $pbsOpen = sca_preboard_subject_has_any_access($conn, $uid, $sid);
             ?>
-            <article class="dash-card dash-anim delay-2 flex flex-col overflow-hidden">
+            <article class="dash-card dash-anim delay-2 flex flex-col overflow-hidden<?php echo $pbsOpen ? '' : ' lms-locked-card'; ?>" style="position:relative;">
+              <?php if (!$pbsOpen): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span><?php endif; ?>
               <div class="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
                 <div class="flex items-start gap-3">
                   <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#143D59] text-white shadow-md">
@@ -170,10 +167,14 @@ $pageTitle = 'Preboards';
                   <i class="bi bi-info-circle" aria-hidden="true"></i>
                   <span><?php echo (int)$setsCount; ?> set<?php echo $setsCount === 1 ? '' : 's'; ?></span>
                 </div>
-                <a href="student_preboards_view.php?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="subject-btn">
+                <?php if ($pbsOpen): ?>
+                <a href="student_preboards_view.php?preboards_subject_id=<?php echo $sid; ?>" class="subject-btn">
                   <span>Open</span>
                   <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
                 </a>
+                <?php else: ?>
+                <span class="subject-btn" style="background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;"><span>Locked</span><i class="bi bi-lock-fill"></i></span>
+                <?php endif; ?>
               </div>
             </article>
           <?php endwhile; ?>

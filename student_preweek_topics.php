@@ -3,8 +3,12 @@
  * Items inside a pre-week (DB: preweek_topics) — student picks one, then opens viewer.
  */
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preweek_migrate.php';
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $legacySubject = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($legacySubject > 0) {
@@ -27,6 +31,13 @@ if (!$unit) {
 
 $unitTitle = trim((string)($unit['title'] ?? 'Preweek')) ?: 'Preweek';
 
+$userId = getCurrentUserId();
+if (!sca_has_access($conn, (int)$userId, 'preweek_unit', $unitId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_preweek.php');
+    exit;
+}
+
 $listQ = mysqli_query($conn, '
   SELECT t.preweek_topic_id, t.title, t.description,
     (SELECT COUNT(*) FROM preweek_videos v WHERE v.preweek_topic_id = t.preweek_topic_id) AS videos_cnt,
@@ -45,13 +56,15 @@ if ($listQ) {
 $itemsForAlpine = [];
 foreach ($topicRows as $row) {
     $tid = (int)$row['preweek_topic_id'];
+    $topicOpen = sca_has_access($conn, (int)$userId, 'preweek_topic', $tid);
     $itemsForAlpine[] = [
         'id' => $tid,
         'title' => trim((string)($row['title'] ?? '')) ?: 'Untitled',
         'desc' => trim((string)($row['description'] ?? '')),
-        'href' => 'student_preweek_viewer.php?preweek_topic_id=' . $tid,
+        'href' => $topicOpen ? 'student_preweek_viewer.php?preweek_topic_id=' . $tid : '#',
         'videos' => (int)($row['videos_cnt'] ?? 0),
         'handouts' => (int)($row['handouts_cnt'] ?? 0),
+        'locked' => !$topicOpen,
     ];
 }
 
@@ -62,6 +75,7 @@ $pageTitle = $unitTitle . ' — Materials';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <?php require_once __DIR__ . '/includes/student_materials_list_styles.php'; ?>
   <style>
     .preweek-inner-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
@@ -246,7 +260,8 @@ $pageTitle = $unitTitle . ' — Materials';
       <div x-show="materialsView === 'cards'" x-cloak class="lesson-cards-wrap">
         <div class="lesson-cards-grid" role="list">
           <template x-for="(it, idx) in materialsFiltered" :key="it.id">
-            <a :href="it.href" class="lesson-card" role="listitem">
+            <a :href="it.locked ? '#' : it.href" @click="it.locked && $event.preventDefault()" class="lesson-card" :class="it.locked ? 'lms-locked-card' : ''" role="listitem">
+              <span class="lms-lock-badge" x-show="it.locked"><i class="bi bi-lock-fill"></i> Locked</span>
               <div class="lesson-card__top">
                 <span class="lesson-card__badge" aria-hidden="true" x-text="idx + 1"></span>
                 <span class="lesson-card__icon" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
@@ -272,7 +287,7 @@ $pageTitle = $unitTitle . ' — Materials';
         <ul class="lesson-list" role="list">
           <template x-for="(it, idx) in materialsFiltered" :key="it.id">
             <li class="lesson-list__item" role="listitem">
-              <a :href="it.href" class="lesson-list__link">
+              <a :href="it.locked ? '#' : it.href" @click="it.locked && $event.preventDefault()" class="lesson-list__link" :class="it.locked ? 'lms-locked-card' : ''">
                 <span class="lesson-list__idx" aria-hidden="true" x-text="idx + 1"></span>
                 <div class="lesson-list__body">
                   <h3 class="lesson-list__title" x-text="it.title"></h3>

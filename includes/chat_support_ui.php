@@ -12,7 +12,7 @@ function ereview_chat_package_cards(): array
             'id' => 'pkg-6',
             'title' => '6-month access',
             'subtitle' => 'Structured review track + materials',
-            'price' => 'PHP 1,500',
+            'price' => 'PHP 2,000',
             'cta_label' => 'See details',
             'href' => '#packages',
         ],
@@ -20,7 +20,7 @@ function ereview_chat_package_cards(): array
             'id' => 'pkg-9',
             'title' => '9-month access',
             'subtitle' => 'Extended runway for busy schedules',
-            'price' => 'PHP 2,000',
+            'price' => 'PHP 2,500',
             'cta_label' => 'See details',
             'href' => '#packages',
         ],
@@ -28,10 +28,62 @@ function ereview_chat_package_cards(): array
             'id' => 'pkg-14',
             'title' => '14-month access',
             'subtitle' => 'Maximum flexibility',
-            'price' => 'PHP 2,500',
+            'price' => 'PHP 3,000',
             'cta_label' => 'See details',
             'href' => '#packages',
         ],
+    ];
+}
+
+/**
+ * Direct pricing answer when the user asks about package cost/duration.
+ *
+ * @return array<string, mixed>|null
+ */
+function ereview_chat_try_package_price_reply(string $message, ?string $pkgInterest): ?array
+{
+    $asksPrice = (bool) preg_match(
+        '/\b(how\s+(much|many|munch)|magkano|presyo|price|pricing|cost|fee|hm)\b/i',
+        $message
+    );
+    $cards = ereview_chat_package_cards();
+    $byInterest = [
+        '6-month' => $cards[0] ?? null,
+        '9-month' => $cards[1] ?? null,
+        '14-month' => $cards[2] ?? null,
+    ];
+
+    if ($pkgInterest !== null && isset($byInterest[$pkgInterest]) && $byInterest[$pkgInterest]) {
+        $card = $byInterest[$pkgInterest];
+        $text = 'The ' . $card['title'] . ' package is ' . $card['price']
+            . '. You can view full package details on the homepage Packages section or start enrollment from Register.';
+        return [
+            'text' => $text,
+            'intent' => 'packages',
+            'confidence' => 0.94,
+            'matched_article_id' => 0,
+            'needs_human' => 0,
+            'actions' => ereview_chat_quick_actions('packages'),
+            'auto_create_ticket' => false,
+        ];
+    }
+
+    if (!$asksPrice && $pkgInterest === null) {
+        return null;
+    }
+
+    $lines = [];
+    foreach ($cards as $card) {
+        $lines[] = $card['title'] . ': ' . $card['price'];
+    }
+    return [
+        'text' => 'LCRC eReview package prices: ' . implode('; ', $lines) . '. See the Packages section on the homepage for full inclusions.',
+        'intent' => 'packages',
+        'confidence' => 0.92,
+        'matched_article_id' => 0,
+        'needs_human' => 0,
+        'actions' => ereview_chat_quick_actions('packages'),
+        'auto_create_ticket' => false,
     ];
 }
 

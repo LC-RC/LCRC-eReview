@@ -184,8 +184,7 @@ $preweekNavTheme = 'dark';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=10">
-  <style>
+<style>
     /* Modal sits above #main; match admin dark chrome */
     .admin-preweek-page .preweek-modal-overlay {
       position: fixed;
@@ -331,33 +330,25 @@ $preweekNavTheme = 'dark';
                   <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
                 </td>
                 <td class="px-5 py-3 align-top">
-                  <div class="flex flex-wrap items-center justify-end gap-2">
-                    <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-action-btn admin-action-btn--preweek inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 transition no-underline">
-                      <i class="bi bi-folder2-open" aria-hidden="true"></i> Open lectures
-                    </a>
-                    <button type="button" class="quiz-admin-btn-secondary inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition preweek-edit-open"
-                      data-id="<?php echo (int)$pid; ?>"
-                      data-title="<?php echo h($ptitle); ?>">
-                      <i class="bi bi-pencil" aria-hidden="true"></i> Edit
-                    </button>
-                    <?php if ($hasPreweekContent): ?>
-                      <button type="button" class="preweek-delete-blocked-btn inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 border-red-500/40 text-red-400 hover:bg-red-950/25 transition"
-                        data-tc="<?php echo (int)$tc; ?>"
-                        data-vc="<?php echo (int)$vc; ?>"
-                        data-hc="<?php echo (int)$hc; ?>">
-                        <i class="bi bi-trash" aria-hidden="true"></i> Delete
-                      </button>
-                    <?php else: ?>
-                      <form method="post" action="admin_preweek.php" class="inline m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
-                        <input type="hidden" name="delete_preweek" value="1">
-                        <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$pid; ?>">
-                        <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">
-                        <input type="hidden" name="return_sort" value="<?php echo h($sort); ?>">
-                        <button type="submit" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border-2 border-red-500/40 text-red-400 hover:bg-red-950/25 transition">
-                          <i class="bi bi-trash" aria-hidden="true"></i> Delete
-                        </button>
-                      </form>
-                    <?php endif; ?>
+                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-row-action admin-row-action--materials" title="Open lectures"><i class="bi bi-folder2-open"></i><span class="sr-only">Open lectures</span></a>
+                    <div class="admin-row-menu-wrap">
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                        <button type="button" class="admin-row-menu__item preweek-edit-open" data-id="<?php echo (int)$pid; ?>" data-title="<?php echo h($ptitle); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
+                        <?php if ($hasPreweekContent): ?>
+                        <button type="button" class="admin-row-menu__item admin-row-menu__item--danger preweek-delete-blocked-btn" data-tc="<?php echo (int)$tc; ?>" data-vc="<?php echo (int)$vc; ?>" data-hc="<?php echo (int)$hc; ?>" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
+                        <?php else: ?>
+                        <form method="post" action="admin_preweek.php" class="m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
+                          <input type="hidden" name="delete_preweek" value="1">
+                          <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$pid; ?>">
+                          <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">
+                          <input type="hidden" name="return_sort" value="<?php echo h($sort); ?>">
+                          <button type="submit" class="admin-row-menu__item admin-row-menu__item--danger w-full" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
+                        </form>
+                        <?php endif; ?>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>

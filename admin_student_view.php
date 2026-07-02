@@ -253,13 +253,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-6 py-5 mb-5 flex flex-wrap justify-between items-center gap-4">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero flex flex-wrap justify-between items-center gap-4">
     <div>
       <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-      <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-        <i class="bi bi-person-badge"></i> Student Details
+      <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+        <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+        Student Details
       </h1>
-      <p class="text-gray-500 mt-1">View registration, approve or reject, and manage access. ID: <?php echo (int)$user['user_id']; ?></p>
+      <p class="text-gray-400 mt-2 mb-0">View registration, approve or reject, and manage access. ID: <?php echo (int)$user['user_id']; ?></p>
     </div>
     <div class="flex gap-2">
       <a href="admin_students.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to list</a>
@@ -270,13 +271,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-2 text-green-800">
+    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
+    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
       <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
@@ -284,7 +285,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
     <div class="lg:col-span-7">
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-card-text"></i> Registration Info</h2>
         <div class="student-profile-hero">
           <button
@@ -374,7 +375,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
       </div>
     </div>
     <div class="lg:col-span-5">
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Access</h2>
         <div class="space-y-2 mb-4">
           <div><span class="text-gray-500 text-sm">Start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '-'; ?></span></div>
@@ -400,6 +401,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
             <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend</button>
           </form>
+          <a href="admin_student_access.php?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manage LMS content access</a>
         <?php endif; ?>
       </div>
     </div>

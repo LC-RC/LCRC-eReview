@@ -2,6 +2,7 @@
 require_once 'auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/preboards_migrate.php';
+require_once __DIR__ . '/includes/preboards_helpers.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
 
 $subjectId = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
@@ -49,11 +50,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $setId = sanitizeInt($_POST['preboards_set_id'] ?? 0);
         $newVal = isset($_POST['is_open']) && (int)$_POST['is_open'] === 1 ? 1 : 0;
         if ($setId > 0) {
-            $stmt = mysqli_prepare($conn, "UPDATE preboards_sets SET is_open=? WHERE preboards_set_id=? AND preboards_subject_id=?");
+            $stmt = mysqli_prepare($conn, "UPDATE preboards_sets SET is_open=?, use_schedule=0, opens_at=NULL, closes_at=NULL WHERE preboards_set_id=? AND preboards_subject_id=?");
             mysqli_stmt_bind_param($stmt, 'iii', $newVal, $setId, $subjectId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
-            $_SESSION['message'] = $newVal ? 'Set opened.' : 'Set locked.';
+            $_SESSION['message'] = $newVal ? 'Set opened manually.' : 'Set locked.';
+        }
+        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        exit;
+    }
+
+    if ($action === 'save_schedule') {
+        $setId = sanitizeInt($_POST['preboards_set_id'] ?? 0);
+        $useSchedule = isset($_POST['use_schedule']) && (int)$_POST['use_schedule'] === 1 ? 1 : 0;
+        $opensAt = preboards_datetime_local_to_sql($_POST['opens_at'] ?? '');
+        $closesAt = preboards_datetime_local_to_sql($_POST['closes_at'] ?? '');
+        if ($setId > 0) {
+            if ($useSchedule && $opensAt === null) {
+                $_SESSION['error'] = 'Set an open date/time when scheduling is enabled.';
+            } elseif ($useSchedule && $closesAt === null) {
+                $_SESSION['error'] = 'Set a close date/time — exam duration is based on the open and close window.';
+            } elseif ($opensAt !== null && $closesAt !== null && strtotime($closesAt) <= strtotime($opensAt)) {
+                $_SESSION['error'] = 'Close time must be after open time.';
+            } else {
+                if ($useSchedule) {
+                    $windowSeconds = max(60, min(86400, strtotime($closesAt) - strtotime($opensAt)));
+                    $stmt = mysqli_prepare($conn, "UPDATE preboards_sets SET use_schedule=1, opens_at=?, closes_at=?, is_open=0, time_limit_seconds=? WHERE preboards_set_id=? AND preboards_subject_id=?");
+                    mysqli_stmt_bind_param($stmt, 'ssiii', $opensAt, $closesAt, $windowSeconds, $setId, $subjectId);
+                } else {
+                    $stmt = mysqli_prepare($conn, "UPDATE preboards_sets SET use_schedule=0, opens_at=NULL, closes_at=NULL WHERE preboards_set_id=? AND preboards_subject_id=?");
+                    mysqli_stmt_bind_param($stmt, 'ii', $setId, $subjectId);
+                }
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+                $_SESSION['message'] = $useSchedule ? 'Schedule saved for this set.' : 'Schedule removed. Use Open/Locked for manual control.';
+            }
         }
         header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
         exit;
@@ -258,7 +289,6 @@ $adminBreadcrumbs = [
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
 <body class="font-sans antialiased admin-app admin-preboards-sets-page" x-data="preboardsSetsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
@@ -279,6 +309,7 @@ $adminBreadcrumbs = [
         <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back to sets</a>
       <?php else: ?>
         <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>&completion=1<?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">View completion report</a>
+        <a href="admin_preboards_monitor.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-bar-chart-line"></i> Full monitoring</a>
         <button type="button"
                 @click="openNewSet()"
                 :disabled="!nextSetLabelFromServer"
@@ -378,13 +409,21 @@ $adminBreadcrumbs = [
             <th class="px-5 py-3 font-semibold">Title</th>
             <th class="px-5 py-3 font-semibold w-28">Time limit</th>
             <th class="px-5 py-3 font-semibold">Questions</th>
-            <th class="px-5 py-3 font-semibold w-[320px]">Actions</th>
+            <th class="px-5 py-3 font-semibold w-52">Access</th>
+            <th class="px-5 py-3 font-semibold w-[120px]">Actions</th>
           </tr>
         </thead>
         <tbody>
           <?php $hasAny = false;
           while ($row = mysqli_fetch_assoc($sets)): $hasAny = true;
-              $timeSecs = (int)($row['time_limit_seconds'] ?? 3600);
+              $timeSecs = preboards_set_effective_time_limit_seconds($row);
+              $accessMeta = preboards_set_access_meta($row);
+              $accessClass = match ($accessMeta['key']) {
+                  'open' => 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35',
+                  'upcoming' => 'bg-sky-500/15 text-sky-300 border-sky-500/35',
+                  'closed' => 'bg-gray-500/15 text-gray-300 border-gray-500/35',
+                  default => 'bg-amber-500/15 text-amber-200 border-amber-500/35',
+              };
           ?>
             <tr class="quiz-admin-row">
               <td class="px-5 py-3 font-semibold text-gray-100"><?php echo h($row['set_label']); ?></td>
@@ -392,27 +431,51 @@ $adminBreadcrumbs = [
               <td class="px-5 py-3 text-gray-400"><?php echo formatTimeLimitSeconds($timeSecs); ?></td>
               <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-sm bg-white/10 text-gray-200 border border-white/10"><?php echo (int)($row['questions_cnt'] ?? 0); ?></span></td>
               <td class="px-5 py-3">
-                <div class="flex flex-wrap gap-2">
-                  <a href="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$row['preboards_set_id']; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-link-primary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition"><i class="bi bi-list-check"></i> Questions</a>
-                  <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
-                    <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                    <input type="hidden" name="action" value="toggle_open">
-                    <input type="hidden" name="preboards_set_id" value="<?php echo (int)$row['preboards_set_id']; ?>">
-                    <input type="hidden" name="is_open" value="<?php echo ((int)($row['is_open'] ?? 0) === 1) ? 0 : 1; ?>">
-                    <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 <?php echo ((int)($row['is_open'] ?? 0) === 1) ? 'border-emerald-500/55 text-emerald-300 hover:bg-emerald-600' : 'border-amber-500/55 text-amber-200 hover:bg-amber-600'; ?> hover:text-white transition">
-                      <i class="bi <?php echo ((int)($row['is_open'] ?? 0) === 1) ? 'bi-unlock' : 'bi-lock'; ?>"></i>
-                      <?php echo ((int)($row['is_open'] ?? 0) === 1) ? 'Open' : 'Locked'; ?>
-                    </button>
-                  </form>
-                  <button type="button" data-id="<?php echo (int)$row['preboards_set_id']; ?>" data-label="<?php echo h($row['set_label']); ?>" data-title="<?php echo h($row['title'] ?? ''); ?>" data-secs="<?php echo $timeSecs; ?>" @click="openEditSet($el.dataset.id, $el.dataset.label || '', $el.dataset.title || '', parseInt($el.dataset.secs) || 3600)" class="quiz-admin-btn-secondary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition"><i class="bi bi-pencil"></i> Edit</button>
-                  <button type="button" data-id="<?php echo (int)$row['preboards_set_id']; ?>" data-label="<?php echo h($row['set_label']); ?>" @click="openDeleteSet($el.dataset.id, $el.dataset.label || '')" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</button>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border <?php echo $accessClass; ?>">
+                  <i class="bi <?php echo $accessMeta['key'] === 'open' ? 'bi-unlock' : ($accessMeta['key'] === 'upcoming' ? 'bi-calendar-event' : 'bi-lock'); ?>"></i>
+                  <?php echo h($accessMeta['label']); ?>
+                </span>
+              </td>
+              <td class="px-5 py-3 text-center">
+                <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                  <a href="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$row['preboards_set_id']; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--quizzes" title="Questions"><i class="bi bi-list-check"></i><span class="sr-only">Questions</span></a>
+                  <button type="button"
+                          class="admin-row-action admin-row-action--schedule"
+                          title="Schedule"
+                          data-id="<?php echo (int)$row['preboards_set_id']; ?>"
+                          data-label="<?php echo h($row['set_label']); ?>"
+                          data-use-schedule="<?php echo (int)($row['use_schedule'] ?? 0); ?>"
+                          data-opens-at="<?php echo h(preboards_datetime_sql_to_local($row['opens_at'] ?? '')); ?>"
+                          data-closes-at="<?php echo h(preboards_datetime_sql_to_local($row['closes_at'] ?? '')); ?>"
+                          @click="openScheduleSet($el.dataset.id, $el.dataset.label || '', $el.dataset.useSchedule === '1', $el.dataset.opensAt || '', $el.dataset.closesAt || '')">
+                    <i class="bi bi-calendar-range"></i><span class="sr-only">Schedule</span>
+                  </button>
+                  <div class="admin-row-menu-wrap">
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                      <?php if (!preboards_set_uses_schedule($row)): ?>
+                      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
+                        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                        <input type="hidden" name="action" value="toggle_open">
+                        <input type="hidden" name="preboards_set_id" value="<?php echo (int)$row['preboards_set_id']; ?>">
+                        <input type="hidden" name="is_open" value="<?php echo ((int)($row['is_open'] ?? 0) === 1) ? 0 : 1; ?>">
+                        <button type="submit" class="admin-row-menu__item" @click="menuOpen = false">
+                          <i class="bi <?php echo ((int)($row['is_open'] ?? 0) === 1) ? 'bi-lock' : 'bi-unlock'; ?>"></i>
+                          <?php echo ((int)($row['is_open'] ?? 0) === 1) ? 'Lock set' : 'Open set'; ?>
+                        </button>
+                      </form>
+                      <?php endif; ?>
+                      <button type="button" class="admin-row-menu__item" data-id="<?php echo (int)$row['preboards_set_id']; ?>" data-label="<?php echo h($row['set_label']); ?>" data-title="<?php echo h($row['title'] ?? ''); ?>" data-secs="<?php echo $timeSecs; ?>" @click="menuOpen = false; openEditSet($el.dataset.id, $el.dataset.label || '', $el.dataset.title || '', parseInt($el.dataset.secs) || 3600)"><i class="bi bi-pencil"></i> Edit</button>
+                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$row['preboards_set_id']; ?>" data-label="<?php echo h($row['set_label']); ?>" @click="menuOpen = false; openDeleteSet($el.dataset.id, $el.dataset.label || '')"><i class="bi bi-trash"></i> Delete</button>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>
           <?php endwhile; ?>
           <?php if (!$hasAny): ?>
             <tr>
-              <td colspan="5" class="px-5 py-12 text-center quiz-admin-empty">
+              <td colspan="6" class="px-5 py-12 text-center quiz-admin-empty">
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
                 <div class="font-semibold text-gray-200"><?php echo $searchQ !== '' ? 'No sets match your search' : 'No sets yet'; ?></div>
                 <p class="text-sm mt-1 text-gray-500"><?php echo $searchQ !== '' ? 'Try different keywords or clear the filter.' : 'Add sets (A, B, C, D) so students can take one preboard per set.'; ?></p>
@@ -444,7 +507,7 @@ $adminBreadcrumbs = [
               <th class="px-5 py-3 font-semibold">Set</th>
               <th class="px-5 py-3 font-semibold">Type</th>
               <th class="px-5 py-3 font-semibold">Requested</th>
-              <th class="px-5 py-3 font-semibold w-[260px]">Actions</th>
+              <th class="px-5 py-3 font-semibold w-[120px]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -463,21 +526,21 @@ $adminBreadcrumbs = [
                   <?php endif; ?>
                 </td>
                 <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : '—'; ?></td>
-                <td class="px-5 py-3">
-                  <div class="flex flex-wrap gap-2">
+                <td class="px-5 py-3 text-center">
+                  <div class="admin-row-actions">
                     <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
                       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                       <input type="hidden" name="action" value="decide_request">
                       <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
                       <input type="hidden" name="decision" value="approved">
-                      <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-emerald-500/55 text-emerald-300 hover:bg-emerald-600 hover:text-white transition"><i class="bi bi-check-lg"></i> Approve</button>
+                      <button type="submit" class="admin-row-action admin-row-action--approve" title="Approve"><i class="bi bi-check-lg"></i><span class="sr-only">Approve</span></button>
                     </form>
                     <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
                       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                       <input type="hidden" name="action" value="decide_request">
                       <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
                       <input type="hidden" name="decision" value="denied">
-                      <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-x-lg"></i> Deny</button>
+                      <button type="submit" class="admin-row-action admin-row-action--deny" title="Deny"><i class="bi bi-x-lg"></i><span class="sr-only">Deny</span></button>
                     </form>
                   </div>
                 </td>
@@ -518,7 +581,7 @@ $adminBreadcrumbs = [
             <input type="text" name="title" x-model="title" placeholder="e.g. Preboard Set A" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Time limit (how long students can take this set)</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Time limit (manual open only)</label>
             <div class="flex flex-wrap items-center gap-2">
               <input type="number" x-model.number="time_limit_hours" min="0" max="24" class="input-custom w-20" placeholder="1">
               <span class="text-gray-400">hour(s)</span>
@@ -528,12 +591,56 @@ $adminBreadcrumbs = [
               <span class="text-gray-400">sec(s)</span>
             </div>
             <input type="hidden" name="time_limit_seconds" :value="Math.max(60, time_limit_hours * 3600 + time_limit_mins * 60 + time_limit_secs)">
-            <p class="text-xs text-gray-500 mt-1">Same format as quiz time limits. Minimum is 60 seconds, max is 24 hours.</p>
+            <p class="text-xs text-gray-500 mt-1">Used when the set is manually opened. If a schedule is set, duration comes from the open → close window instead.</p>
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
           <button type="button" @click="setModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-200 hover:bg-white/10 transition">Cancel</button>
           <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-violet-600 text-white hover:bg-violet-500 transition inline-flex items-center gap-2 shadow-lg shadow-violet-900/30"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Add'"></span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Schedule Set Modal -->
+  <div x-show="scheduleModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="scheduleModalOpen = false">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="scheduleModalOpen = false"></div>
+    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" @click.stop>
+      <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head">
+        <h2 class="text-xl font-bold text-gray-100 m-0"><i class="bi bi-calendar-range text-sky-300 mr-2"></i> Schedule access</h2>
+        <button type="button" @click="scheduleModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="p-5">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="action" value="save_schedule">
+        <input type="hidden" name="preboards_set_id" :value="schedule_set_id">
+        <p class="text-sm text-gray-400 mb-4">Set <span class="font-semibold text-gray-200" x-text="schedule_set_label"></span> — students can take this preboard only between the open and close times (Philippines time). The exam timer uses that window (e.g. 1:00 AM – 2:00 AM = 1 hour).</p>
+        <div class="space-y-4">
+          <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-white/10 bg-white/5">
+            <input type="checkbox" name="use_schedule" value="1" class="mt-1" x-model="schedule_enabled">
+            <span>
+              <span class="block font-semibold text-gray-100">Enable scheduled window</span>
+              <span class="block text-xs text-gray-500 mt-0.5">Overrides manual Open/Locked. Duration is computed from open → close.</span>
+            </span>
+          </label>
+          <div x-show="schedule_enabled" x-cloak class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Opens at <span class="text-red-400">*</span></label>
+              <input type="datetime-local" name="opens_at" x-model="schedule_opens_at" class="input-custom w-full" :required="schedule_enabled" @change="updateScheduleDurationPreview()">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Closes at <span class="text-red-400">*</span></label>
+              <input type="datetime-local" name="closes_at" x-model="schedule_closes_at" class="input-custom w-full" :required="schedule_enabled" @change="updateScheduleDurationPreview()">
+              <p class="text-xs text-gray-500 mt-1">Required. Students must submit before this time; timer counts down to close.</p>
+            </div>
+            <p class="text-sm text-sky-200/90 m-0 px-3 py-2 rounded-lg bg-sky-500/10 border border-sky-500/25" x-show="schedule_duration_label" x-cloak>
+              <i class="bi bi-clock-history mr-1"></i> Exam duration: <strong x-text="schedule_duration_label"></strong>
+            </p>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end gap-2">
+          <button type="button" @click="scheduleModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-200 hover:bg-white/10 transition">Cancel</button>
+          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-sky-600 text-white hover:bg-sky-500 transition inline-flex items-center gap-2"><i class="bi bi-save"></i> Save schedule</button>
         </div>
       </form>
     </div>
@@ -567,6 +674,7 @@ $adminBreadcrumbs = [
     function preboardsSetsApp() {
       return {
         setModalOpen: false,
+        scheduleModalOpen: false,
         deleteModalOpen: false,
         isEdit: false,
         preboards_set_id: 0,
@@ -577,6 +685,12 @@ $adminBreadcrumbs = [
         time_limit_secs: 0,
         delete_set_id: 0,
         delete_set_label: '',
+        schedule_set_id: 0,
+        schedule_set_label: '',
+        schedule_enabled: false,
+        schedule_opens_at: '',
+        schedule_closes_at: '',
+        schedule_duration_label: '',
         nextSetLabelFromServer: <?php echo json_encode($nextSetLabel ?: ''); ?>,
         editFromServer: <?php echo !empty($edit) ? json_encode(['id' => (int)$edit['preboards_set_id'], 'label' => $edit['set_label'] ?? '', 'title' => $edit['title'] ?? '', 'time_limit_seconds' => (int)($edit['time_limit_seconds'] ?? 3600)]) : 'null'; ?>,
         openNewSet() {
@@ -604,6 +718,39 @@ $adminBreadcrumbs = [
           this.delete_set_id = id;
           this.delete_set_label = label || '';
           this.deleteModalOpen = true;
+        },
+        openScheduleSet(id, label, enabled, opensAt, closesAt) {
+          this.schedule_set_id = id;
+          this.schedule_set_label = label || '';
+          this.schedule_enabled = !!enabled;
+          this.schedule_opens_at = opensAt || '';
+          this.schedule_closes_at = closesAt || '';
+          this.updateScheduleDurationPreview();
+          this.scheduleModalOpen = true;
+        },
+        updateScheduleDurationPreview() {
+          const open = this.schedule_opens_at;
+          const close = this.schedule_closes_at;
+          if (!open || !close) {
+            this.schedule_duration_label = '';
+            return;
+          }
+          const start = new Date(open);
+          const end = new Date(close);
+          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+            this.schedule_duration_label = '';
+            return;
+          }
+          let secs = Math.floor((end - start) / 1000);
+          const h = Math.floor(secs / 3600);
+          secs %= 3600;
+          const m = Math.floor(secs / 60);
+          const s = secs % 60;
+          const parts = [];
+          if (h > 0) parts.push(h + ' hour' + (h !== 1 ? 's' : ''));
+          if (m > 0) parts.push(m + ' min' + (m !== 1 ? 's' : ''));
+          if (s > 0) parts.push(s + ' second' + (s !== 1 ? 's' : ''));
+          this.schedule_duration_label = parts.join(' ') || '0 seconds';
         },
         initEditFromServer() {
           if (this.editFromServer) this.openEditSet(this.editFromServer.id, this.editFromServer.label, this.editFromServer.title, this.editFromServer.time_limit_seconds || 3600);

@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `support_analytics_events` (
 
 INSERT INTO `support_kb_articles` (`title`, `content`, `keywords`, `status`)
 SELECT 'Packages and pricing',
-       'LCRC eReview packages: 6-month access (PHP 1,500), 9-month access (PHP 2,000), and 14-month access (PHP 2,500). You can view details in the Packages section and start enrollment from the Register page.',
+       'LCRC eReview packages: 6-month access (PHP 2,000), 9-month access (PHP 2,500), and 14-month access (PHP 3,000). You can view details in the Packages section and start enrollment from the Register page.',
        'package,packages,pricing,price,plan,cost,enroll',
        'active'
 WHERE NOT EXISTS (

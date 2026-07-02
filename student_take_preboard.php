@@ -7,9 +7,14 @@
  * - Answers saved server-side via preboards_ajax.php
  */
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preboards_migrate.php';
+require_once __DIR__ . '/includes/preboards_helpers.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $setId = sanitizeInt($_GET['preboards_set_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
@@ -31,11 +36,16 @@ if (!$setRow) {
 if (!$subjectId) $subjectId = (int)$setRow['preboards_subject_id'];
 
 $userId = getCurrentUserId();
+if (!sca_has_access($conn, (int)$userId, 'preboard_set', $setId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$subjectId);
+    exit;
+}
 
-// Enforce lock: set must be open OR student has a one-time access grant OR an existing in-progress/submitted attempt (for resume/review).
-$isOpen = (int)($setRow['is_open'] ?? 0) === 1;
+// Enforce lock: effective open window, one-time grant, or existing attempt.
+$effectiveOpen = preboards_set_is_open_for_students($setRow);
 $hasUnusedAccessGrant = false;
-if (!$isOpen && $userId) {
+if (!$effectiveOpen && $userId) {
     // Allow review/finish for existing attempts even when locked
     $stmt = mysqli_prepare($conn, "SELECT status FROM preboards_attempts WHERE user_id=? AND preboards_set_id=? ORDER BY attempt_no DESC, preboards_attempt_id DESC LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $userId, $setId);
@@ -83,8 +93,7 @@ if (!$isOpen && $userId) {
         }
     }
 }
-$timeLimitSeconds = (int)($setRow['time_limit_seconds'] ?? 3600);
-if ($timeLimitSeconds < 1) $timeLimitSeconds = 3600;
+$timeLimitSeconds = preboards_set_effective_time_limit_seconds($setRow);
 
 // Load questions
 $questions = [];
@@ -96,14 +105,31 @@ if ($qRes) {
 }
 $totalQuestions = count($questions);
 
-// Compute remaining seconds from attempt row
-function preboards_remaining_seconds($attemptRow, $timeLimitSeconds) {
+// Compute remaining seconds from attempt row (respects scheduled close time)
+function preboards_remaining_seconds($attemptRow, $setRow, $timeLimitSeconds) {
     if (!$attemptRow) return 0;
+    $now = time();
+    $candidates = [];
     if (!empty($attemptRow['expires_at'])) {
-        return max(0, strtotime($attemptRow['expires_at']) - time());
+        $exp = strtotime($attemptRow['expires_at']);
+        if ($exp !== false) {
+            $candidates[] = $exp;
+        }
+    }
+    if (preboards_set_uses_schedule($setRow)) {
+        $closesRaw = trim((string)($setRow['closes_at'] ?? ''));
+        if ($closesRaw !== '') {
+            $closesTs = strtotime($closesRaw);
+            if ($closesTs !== false) {
+                $candidates[] = $closesTs;
+            }
+        }
+    }
+    if ($candidates !== []) {
+        return max(0, min($candidates) - $now);
     }
     $started = !empty($attemptRow['started_at']) ? strtotime($attemptRow['started_at']) : time();
-    return max(0, ($started + (int)$timeLimitSeconds) - time());
+    return max(0, ($started + (int)$timeLimitSeconds) - $now);
 }
 
 // ----- POST: Submit preboard -----
@@ -257,7 +283,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
         $newNo = max(1, $lastNo + 1);
         $now = time();
         $startedAt = date('Y-m-d H:i:s', $now);
-        $expiresAt = date('Y-m-d H:i:s', $now + $timeLimitSeconds);
+        $expiresAt = preboards_attempt_compute_expires_at($setRow, $now);
         mysqli_begin_transaction($conn);
         try {
             $useAt = date('Y-m-d H:i:s');
@@ -291,9 +317,9 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
     if (!$attempt) {
         $now = time();
         $startedAt = date('Y-m-d H:i:s', $now);
-        $expiresAt = date('Y-m-d H:i:s', $now + $timeLimitSeconds);
+        $expiresAt = preboards_attempt_compute_expires_at($setRow, $now);
         // If set is locked and access was granted, consume the one-time grant atomically with attempt creation.
-        $isOpenNow = (int)($setRow['is_open'] ?? 0) === 1;
+        $isOpenNow = preboards_set_is_open_for_students($setRow);
         if (!$isOpenNow) {
             mysqli_begin_transaction($conn);
             try {
@@ -333,7 +359,13 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
         }
     } else {
         $attemptId = (int)$attempt['preboards_attempt_id'];
-        $remainingSeconds = preboards_remaining_seconds($attempt, $timeLimitSeconds);
+        preboards_attempt_sync_expires_at($conn, $setRow, $attempt);
+        $stmt = mysqli_prepare($conn, "SELECT * FROM preboards_attempts WHERE preboards_attempt_id=? AND user_id=? AND preboards_set_id=? LIMIT 1");
+        mysqli_stmt_bind_param($stmt, 'iii', $attemptId, $userId, $setId);
+        mysqli_stmt_execute($stmt);
+        $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        mysqli_stmt_close($stmt);
+        $remainingSeconds = preboards_remaining_seconds($attempt, $setRow, $timeLimitSeconds);
         // Auto-submit if time expired (server side)
         if ($remainingSeconds <= 0 && $attempt['status'] === 'in_progress') {
             $countRes = mysqli_query($conn, "SELECT COUNT(DISTINCT preboards_question_id) AS cnt FROM preboards_answers WHERE preboards_attempt_id=".(int)$attemptId);
@@ -376,6 +408,26 @@ $pageTitle = 'Preboard - ' . ($setRow['subject_name'] ?? '') . ' Set ' . ($setRo
 $csrf = generateCSRFToken();
 $backUrl = 'student_preboards_view.php?preboards_subject_id=' . $subjectId;
 $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
+$preboardScheduleWindowLabel = '';
+if (preboards_set_uses_schedule($setRow)) {
+    $opensRaw = trim((string)($setRow['opens_at'] ?? ''));
+    $closesRaw = trim((string)($setRow['closes_at'] ?? ''));
+    if ($opensRaw !== '' && $closesRaw !== '') {
+        $opensTs = strtotime($opensRaw);
+        $closesTs = strtotime($closesRaw);
+        if ($opensTs && $closesTs) {
+            $preboardScheduleWindowLabel = date('M j, g:i A', $opensTs) . ' – ' . date('g:i A', $closesTs);
+        }
+    }
+}
+$preboardExamActive = (
+    $totalQuestions > 0
+    && $attemptId > 0
+    && !$showResult
+    && !$reviewMode
+    && !empty($attempt)
+    && ($attempt['status'] ?? '') === 'in_progress'
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -412,13 +464,220 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
       background: #f8fafc;
       font-weight: 700;
     }
+    body.preboard-exam-locked #app-sidebar {
+      pointer-events: none !important;
+      user-select: none;
+      filter: saturate(0.88);
+    }
+    body.preboard-exam-locked #app-sidebar::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--app-shell-sidebar-collapsed);
+      height: 100vh;
+      z-index: 1001;
+      background: rgba(15, 23, 42, 0.14);
+      cursor: not-allowed;
+      border-right: 2px solid rgba(248, 113, 113, 0.35);
+      pointer-events: auto;
+    }
+    body.preboard-exam-locked.sidebar-expanded #app-sidebar::after {
+      width: var(--app-shell-sidebar-expanded);
+    }
+    body.preboard-exam-locked #app-sidebar .app-shell-nav-link,
+    body.preboard-exam-locked #app-sidebar a,
+    body.preboard-exam-locked #app-sidebar button {
+      cursor: not-allowed !important;
+    }
+    body.preboard-exam-locked #studentTopbarRoot {
+      pointer-events: none !important;
+      user-select: none;
+      opacity: 0.92;
+    }
+    body.preboard-exam-locked #sidebar-backdrop {
+      pointer-events: none !important;
+    }
+    .preboard-shell-locked-note {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0 1rem 0.75rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 0.65rem;
+      border: 1px dashed rgba(248, 113, 113, 0.45);
+      background: rgba(254, 242, 242, 0.75);
+      color: #b91c1c;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .preboard-motivation-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin: 0 1rem 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(59, 130, 246, 0.28);
+      background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 55%, #ecfeff 100%);
+      color: #1e3a8a;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.45;
+      box-shadow: 0 8px 24px -16px rgba(37, 99, 235, 0.45);
+      transform: translateY(8px);
+      opacity: 0;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .preboard-motivation-banner.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .preboard-motivation-banner__icon {
+      flex-shrink: 0;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.65);
+    }
+    .preboard-motivation-banner--urgent {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      color: #92400e;
+    }
+    .preboard-motivation-banner--urgent .preboard-motivation-banner__icon {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+    }
+    .preboard-motivation-banner--final {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: #065f46;
+    }
+    .preboard-motivation-banner--final .preboard-motivation-banner__icon {
+      background: linear-gradient(135deg, #059669, #10b981);
+    }
+    .preboard-privacy-shield {
+      position: fixed;
+      inset: 0;
+      z-index: 1350;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .preboard-privacy-shield.is-active {
+      display: flex;
+    }
+    .preboard-privacy-shield__card {
+      max-width: 26rem;
+      width: 100%;
+      text-align: center;
+      padding: 1.5rem 1.25rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+      color: #f8fafc;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    }
+    .preboard-privacy-shield__card i {
+      font-size: 2rem;
+      color: #f87171;
+      margin-bottom: 0.65rem;
+    }
+    .preboard-privacy-shield__card h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+    .preboard-privacy-shield__card p {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: rgba(226, 232, 240, 0.9);
+    }
+    .preboard-exam-watermark {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      overflow: hidden;
+    }
+    .preboard-exam-watermark span {
+      position: absolute;
+      font-weight: 800;
+      color: rgba(15, 23, 42, 0.06);
+      white-space: nowrap;
+      user-select: none;
+      font-size: clamp(0.95rem, 2.2vw, 1.35rem);
+      transform: rotate(-22deg);
+    }
+    .preboard-exam-watermark span:nth-child(1) { left: 8%; top: 18%; }
+    .preboard-exam-watermark span:nth-child(2) { left: 38%; top: 42%; }
+    .preboard-exam-watermark span:nth-child(3) { left: 68%; top: 66%; }
+    .preboard-exam-watermark span:nth-child(4) { left: 22%; top: 72%; }
+    .preboard-exam-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin: 0 1rem 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #fecaca;
+      background: linear-gradient(135deg, #fff1f2 0%, #fef2f2 100%);
+      color: #991b1b;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .preboard-exam-notice i {
+      font-size: 1.1rem;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+    .preboard-exam-lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(254, 226, 226, 0.22);
+      border: 1px solid rgba(254, 202, 202, 0.55);
+      color: #fecaca;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .quiz-submit-overlay.preboard-rules-overlay {
+      z-index: 1450;
+    }
+    .quiz-submit-overlay.preboard-security-overlay {
+      z-index: 1500;
+    }
+    .quiz-submit-card .preboard-security-list {
+      text-align: left;
+      margin: 0.75rem 0 0;
+      padding-left: 1.1rem;
+      color: rgba(226, 232, 240, 0.9);
+      font-size: 0.875rem;
+      line-height: 1.55;
+    }
   </style>
 </head>
-<body class="font-sans antialiased exam-protected">
+<body class="font-sans antialiased exam-protected student-shell-page<?php echo $preboardExamActive ? ' preboard-exam-locked' : ''; ?>">
   <?php include 'student_sidebar.php'; ?>
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
-  <div class="w-full">
+  <div class="w-full ereview-shell-no-fade<?php echo $preboardExamActive ? ' preboard-exam-page-wrap' : ''; ?>">
     <?php if (isset($_SESSION['error'])): ?>
       <div class="mb-5 mx-4 sm:mx-6 mt-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -431,9 +690,15 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
     <section class="mb-4 sm:mb-5 mx-4 sm:mx-6 mt-5">
       <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
+          <?php if ($preboardExamActive): ?>
+          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md" aria-hidden="true">
+            <i class="bi bi-shield-lock text-lg sm:text-xl"></i>
+          </span>
+          <?php else: ?>
           <a href="<?php echo htmlspecialchars($backUrl); ?>" class="exam-leave-link flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back">
             <i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i>
           </a>
+          <?php endif; ?>
           <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
             <i class="bi bi-clipboard-check text-lg sm:text-xl" aria-hidden="true"></i>
           </span>
@@ -443,13 +708,28 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
               <span class="inline-flex items-center gap-1"><i class="bi bi-book" aria-hidden="true"></i><?php echo h($setRow['subject_name']); ?></span>
               <span class="inline-flex items-center gap-2 text-white/80 text-[0.75rem] sm:text-xs">
                 <span class="inline-flex items-center gap-1"><i class="bi bi-list-ol"></i> <?php echo (int)$totalQuestions; ?> questions</span>
-                <span class="inline-flex items-center gap-1"><i class="bi bi-clock"></i> <?php echo h($timeLimitLabel); ?></span>
+                <span class="inline-flex items-center gap-1"><i class="bi bi-clock"></i> <?php echo h($timeLimitLabel); ?><?php if ($preboardScheduleWindowLabel !== ''): ?> <span class="text-white/70">(<?php echo h($preboardScheduleWindowLabel); ?>)</span><?php endif; ?></span>
               </span>
             </p>
           </div>
         </div>
+        <?php if ($preboardExamActive): ?>
+        <span class="preboard-exam-lock-badge"><i class="bi bi-lock-fill" aria-hidden="true"></i> Exam locked</span>
+        <?php endif; ?>
       </div>
     </section>
+
+    <?php if ($preboardExamActive): ?>
+    <div class="preboard-shell-locked-note" role="note"><i class="bi bi-lock-fill" aria-hidden="true"></i> Menu and navigation are locked while your preboard is in progress.</div>
+    <div class="preboard-exam-notice" role="note">
+      <i class="bi bi-camera-video-off" aria-hidden="true"></i>
+      <span>Exam mode is on. Screenshots and screen recording are not allowed. If you switch apps (e.g. Snipping Tool), the exam will blur until you return.</span>
+    </div>
+    <div class="preboard-motivation-banner" id="preboardMotivationBanner" role="status" aria-live="polite">
+      <span class="preboard-motivation-banner__icon" id="preboardMotivationIcon"><i class="bi bi-stars" aria-hidden="true"></i></span>
+      <span id="preboardMotivationText">You've got this — treat this like the real CPA board exam.</span>
+    </div>
+    <?php endif; ?>
 
     <?php if ($showResult && $result): ?>
       <?php
@@ -657,7 +937,13 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
                 <span class="exam-timer-circle-label">MM : SS</span>
               </div>
             </div>
-            <p class="text-center text-xs text-[#64748b] px-3 pb-3">Limit: <?php echo h(formatTimeLimitSeconds($timeLimitSeconds)); ?></p>
+            <p class="text-center text-xs text-[#64748b] px-3 pb-3">
+              <?php if ($preboardScheduleWindowLabel !== ''): ?>
+                Window: <?php echo h($preboardScheduleWindowLabel); ?>
+              <?php else: ?>
+                Limit: <?php echo h(formatTimeLimitSeconds($timeLimitSeconds)); ?>
+              <?php endif; ?>
+            </p>
           </div>
           <div class="exam-sidebar-card">
             <div class="exam-sidebar-title flex items-center justify-between flex-wrap gap-1">
@@ -688,7 +974,48 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
       <div class="exam-saved-toast" id="examSavedToast" aria-live="polite"><i class="bi bi-check-circle-fill mr-1"></i> Answer saved</div>
       <div class="exam-time-warning-toast" id="examTimeWarningToast" aria-live="assertive" role="alert"></div>
 
-      <!-- Global submit loader (match quiz) -->
+      <?php if ($preboardExamActive): ?>
+      <div class="preboard-exam-watermark" aria-hidden="true">
+        <span>LCRC eReview — Confidential</span>
+        <span>LCRC eReview — Confidential</span>
+        <span>LCRC eReview — Confidential</span>
+        <span>LCRC eReview — Confidential</span>
+      </div>
+      <div class="preboard-privacy-shield" id="preboardPrivacyShield" aria-hidden="true">
+        <div class="preboard-privacy-shield__card">
+          <i class="bi bi-eye-slash" aria-hidden="true"></i>
+          <h2>Exam content hidden</h2>
+          <p>Content is blurred while this window is not active. Return here to continue your preboard. Screenshots are not allowed.</p>
+        </div>
+      </div>
+      <div class="quiz-submit-overlay preboard-rules-overlay show" id="preboardExamRulesOverlay" aria-live="assertive" aria-modal="true" role="dialog">
+        <div class="quiz-submit-card">
+          <div class="quiz-submit-spinner" style="animation:none;border-color:#f87171 transparent #fca5a5 transparent;box-shadow:none;"></div>
+          <div class="quiz-submit-title"><i class="bi bi-shield-lock mr-1"></i> Preboard exam rules</div>
+          <p class="quiz-submit-text">This simulates a board exam. Please read carefully before you begin.</p>
+          <ul class="preboard-security-list">
+            <li>Screenshots and screen recording are <strong>not allowed</strong>.</li>
+            <li>You cannot go back or leave this page until you submit.</li>
+            <li>Switching tabs, windows, or apps is monitored.</li>
+            <li>Your timer keeps running — submit before time expires.</li>
+          </ul>
+          <button type="button" id="preboardExamRulesContinue" class="exam-btn-submit w-full justify-center mt-4">
+            <i class="bi bi-check-circle-fill"></i> I understand — begin exam
+          </button>
+        </div>
+      </div>
+      <div class="quiz-submit-overlay preboard-security-overlay" id="examSecurityOverlay" aria-live="assertive" aria-modal="true" role="alertdialog">
+        <div class="quiz-submit-card">
+          <div class="quiz-submit-spinner" style="animation:none;border-color:#f87171 transparent #fca5a5 transparent;box-shadow:none;"></div>
+          <div class="quiz-submit-title" id="examSecurityTitle">Security notice</div>
+          <p class="quiz-submit-text" id="examSecurityMessage">Screenshots and leaving the exam are not allowed during preboards.</p>
+          <button type="button" id="examSecurityContinue" class="exam-btn-submit w-full justify-center mt-4">
+            <i class="bi bi-shield-check"></i> Return to exam
+          </button>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <div class="quiz-submit-overlay" id="quizSubmitOverlay" aria-live="assertive" aria-busy="true">
         <div class="quiz-submit-card">
           <div class="quiz-submit-spinner"></div>
@@ -697,7 +1024,8 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
         </div>
       </div>
 
-      <!-- Leave confirm modal (match quiz) -->
+      <?php if (!$preboardExamActive): ?>
+      <!-- Leave confirm modal (only when exam is not active) -->
       <div class="quiz-confirm-overlay" id="examLeaveConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="examLeaveConfirmTitle" aria-describedby="examLeaveConfirmMessage">
         <div class="quiz-confirm-card">
           <div class="quiz-confirm-icon-wrap warning">
@@ -713,39 +1041,220 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
           </div>
         </div>
       </div>
+      <?php endif; ?>
 
       <script>
       (function() {
+        var PREBOARD_EXAM_LOCKED = <?php echo $preboardExamActive ? 'true' : 'false'; ?>;
+        var LEAVE_MSG = PREBOARD_EXAM_LOCKED
+          ? 'You cannot leave during an active preboard exam. Submit your answers first.'
+          : 'Are you sure you want to leave? Your progress is saved.';
         function setLeavingAllowed(allow) { window.__examLeavingAllowed = !!allow; }
         setLeavingAllowed(false);
         window.addEventListener('beforeunload', function(e) {
           if (window.__examLeavingAllowed) return;
           e.preventDefault();
-          e.returnValue = 'Are you sure you want to leave? Your progress is saved.';
-          return e.returnValue;
+          e.returnValue = LEAVE_MSG;
+          return LEAVE_MSG;
         });
 
-        // Leave confirmation (use custom modal, not browser dialog)
-        var leaveOverlay = document.getElementById('examLeaveConfirmOverlay');
-        var leaveCancelBtn = document.getElementById('examLeaveConfirmCancel');
-        var leaveLeaveBtn = document.getElementById('examLeaveConfirmLeave');
-        var leaveUrl = '';
-        function hideLeaveModal() { if (leaveOverlay) leaveOverlay.classList.remove('show'); }
-        function showLeaveModal(url) { leaveUrl = url || ''; if (leaveOverlay) leaveOverlay.classList.add('show'); }
-        document.addEventListener('click', function(e) {
-          var link = e.target.closest('a.exam-leave-link');
-          if (!link || !link.href) return;
-          e.preventDefault();
-          showLeaveModal(link.getAttribute('href'));
-        });
-        if (leaveCancelBtn) leaveCancelBtn.addEventListener('click', hideLeaveModal);
-        if (leaveLeaveBtn) leaveLeaveBtn.addEventListener('click', function() {
-          setLeavingAllowed(true);
-          hideLeaveModal();
-          if (leaveUrl) window.location.href = leaveUrl;
-        });
-        if (leaveOverlay) leaveOverlay.addEventListener('click', function(e) { if (e.target === leaveOverlay) hideLeaveModal(); });
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && leaveOverlay && leaveOverlay.classList.contains('show')) hideLeaveModal(); });
+        var securityOverlay = document.getElementById('examSecurityOverlay');
+        var securityTitle = document.getElementById('examSecurityTitle');
+        var securityMessage = document.getElementById('examSecurityMessage');
+        var securityContinue = document.getElementById('examSecurityContinue');
+        var rulesOverlay = document.getElementById('preboardExamRulesOverlay');
+        var rulesContinue = document.getElementById('preboardExamRulesContinue');
+        var privacyShield = document.getElementById('preboardPrivacyShield');
+        var motivationBanner = document.getElementById('preboardMotivationBanner');
+        var motivationText = document.getElementById('preboardMotivationText');
+        var motivationIcon = document.getElementById('preboardMotivationIcon');
+        var motivationShown = {};
+        function setPrivacyShield(on) {
+          if (!privacyShield) return;
+          privacyShield.classList.toggle('is-active', !!on);
+          privacyShield.setAttribute('aria-hidden', on ? 'false' : 'true');
+        }
+        function showMotivation(key, text, tone, iconClass) {
+          if (!PREBOARD_EXAM_LOCKED || motivationShown[key] || !motivationBanner || !motivationText) return;
+          motivationShown[key] = true;
+          motivationText.textContent = text;
+          motivationBanner.classList.remove('preboard-motivation-banner--urgent', 'preboard-motivation-banner--final', 'is-visible');
+          if (tone) motivationBanner.classList.add(tone);
+          if (motivationIcon && iconClass) {
+            motivationIcon.innerHTML = '<i class="bi ' + iconClass + '" aria-hidden="true"></i>';
+          }
+          requestAnimationFrame(function() { motivationBanner.classList.add('is-visible'); });
+        }
+        var securityMessages = {
+          screenshot: {
+            title: 'Screenshots are not allowed',
+            message: 'Screen capture tools (including Snipping Tool) are not allowed. Exam content has been hidden. Return to the exam window to continue.'
+          },
+          visibility: {
+            title: 'Stay on the exam page',
+            message: 'You left the preboard exam window. Switching tabs or apps is not allowed while the timer is running.'
+          },
+          blur: {
+            title: 'Stay focused on your exam',
+            message: 'The exam window lost focus. Please remain on this page until you submit your preboard.'
+          },
+          navigation: {
+            title: 'Navigation blocked',
+            message: 'You cannot go back or leave during an active preboard exam. Submit your answers when you are finished.'
+          },
+          devtools: {
+            title: 'Developer tools blocked',
+            message: 'Developer tools are not allowed during the preboard exam.'
+          },
+          copy: {
+            title: 'Copying is not allowed',
+            message: 'Copying exam content is prohibited during preboards.'
+          }
+        };
+        function showSecurityOverlay(reason) {
+          if (!securityOverlay) return;
+          var meta = securityMessages[reason] || securityMessages.visibility;
+          if (securityTitle) securityTitle.textContent = meta.title;
+          if (securityMessage) securityMessage.textContent = meta.message;
+          securityOverlay.classList.add('show');
+          window.__examTimerPaused = true;
+          if (reason === 'screenshot' || reason === 'blur' || reason === 'visibility') {
+            setPrivacyShield(true);
+          }
+        }
+        function hideSecurityOverlay() {
+          if (!securityOverlay) return;
+          securityOverlay.classList.remove('show');
+          if (!rulesOverlay || !rulesOverlay.classList.contains('show')) {
+            window.__examTimerPaused = false;
+          }
+          if (document.hasFocus() && !document.hidden) {
+            setPrivacyShield(false);
+          }
+        }
+        function securityChecksEnabled() {
+          return PREBOARD_EXAM_LOCKED && (!rulesOverlay || !rulesOverlay.classList.contains('show'));
+        }
+        if (securityContinue) securityContinue.addEventListener('click', hideSecurityOverlay);
+        if (rulesContinue) {
+          rulesContinue.addEventListener('click', function() {
+            if (rulesOverlay) rulesOverlay.classList.remove('show');
+            window.__examTimerPaused = false;
+            showMotivation('start', 'You\'ve got this. Stay calm, read carefully, and treat this like CPA board exam day.', '', 'bi-stars');
+          });
+        }
+        if (PREBOARD_EXAM_LOCKED) {
+          window.__examTimerPaused = true;
+          history.pushState({ preboardExamLock: true }, '', location.href);
+          window.addEventListener('popstate', function() {
+            history.pushState({ preboardExamLock: true }, '', location.href);
+            showSecurityOverlay('navigation');
+          });
+          document.addEventListener('click', function(e) {
+            var link = e.target.closest('a');
+            var btn = e.target.closest('button');
+            if (link && link.getAttribute('href')) {
+              var href = link.getAttribute('href');
+              if (href.charAt(0) === '#') return;
+              e.preventDefault();
+              showSecurityOverlay('navigation');
+              return;
+            }
+            if (btn && (btn.closest('#app-sidebar') || btn.closest('#studentTopbarRoot'))) {
+              e.preventDefault();
+              showSecurityOverlay('navigation');
+            }
+          }, true);
+          document.addEventListener('visibilitychange', function() {
+            if (!securityChecksEnabled()) return;
+            if (document.hidden) {
+              setPrivacyShield(true);
+              showSecurityOverlay('visibility');
+            } else if (document.hasFocus()) {
+              setPrivacyShield(false);
+            }
+          });
+          window.addEventListener('blur', function() {
+            if (!securityChecksEnabled()) return;
+            setPrivacyShield(true);
+            showSecurityOverlay('blur');
+          });
+          window.addEventListener('focus', function() {
+            if (!securityChecksEnabled()) return;
+            if (!securityOverlay || !securityOverlay.classList.contains('show')) {
+              setPrivacyShield(false);
+            }
+          });
+          setInterval(function() {
+            if (!securityChecksEnabled()) return;
+            if (!document.hasFocus() || document.hidden) {
+              setPrivacyShield(true);
+            }
+          }, 350);
+          window.addEventListener('keydown', function(e) {
+            var key = (e.key || '').toLowerCase();
+            var ctrlLike = e.ctrlKey || e.metaKey;
+            if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+              setPrivacyShield(true);
+              showSecurityOverlay('screenshot');
+              return;
+            }
+            if (ctrlLike && e.shiftKey && (key === 's' || key === '3' || key === '4' || key === '5')) {
+              e.preventDefault();
+              setPrivacyShield(true);
+              showSecurityOverlay('screenshot');
+              return;
+            }
+            if (e.shiftKey && e.metaKey && key === 's') {
+              e.preventDefault();
+              setPrivacyShield(true);
+              showSecurityOverlay('screenshot');
+              return;
+            }
+            var devToolsCombo = key === 'f12' || (ctrlLike && e.shiftKey && (key === 'i' || key === 'j' || key === 'c'));
+            if (devToolsCombo) {
+              e.preventDefault();
+              showSecurityOverlay('devtools');
+            }
+          }, true);
+          window.addEventListener('keyup', function(e) {
+            if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+              setPrivacyShield(true);
+              showSecurityOverlay('screenshot');
+            }
+          }, true);
+          function detectDevToolsOnce() {
+            var threshold = 160;
+            var widthDiff = Math.abs((window.outerWidth || 0) - (window.innerWidth || 0));
+            var heightDiff = Math.abs((window.outerHeight || 0) - (window.innerHeight || 0));
+            if (widthDiff > threshold || heightDiff > threshold) {
+              showSecurityOverlay('devtools');
+            }
+          }
+          window.addEventListener('resize', detectDevToolsOnce);
+        } else {
+          // Leave confirmation (resume mode only)
+          var leaveOverlay = document.getElementById('examLeaveConfirmOverlay');
+          var leaveCancelBtn = document.getElementById('examLeaveConfirmCancel');
+          var leaveLeaveBtn = document.getElementById('examLeaveConfirmLeave');
+          var leaveUrl = '';
+          function hideLeaveModal() { if (leaveOverlay) leaveOverlay.classList.remove('show'); }
+          function showLeaveModal(url) { leaveUrl = url || ''; if (leaveOverlay) leaveOverlay.classList.add('show'); }
+          document.addEventListener('click', function(e) {
+            var link = e.target.closest('a.exam-leave-link');
+            if (!link || !link.href) return;
+            e.preventDefault();
+            showLeaveModal(link.getAttribute('href'));
+          });
+          if (leaveCancelBtn) leaveCancelBtn.addEventListener('click', hideLeaveModal);
+          if (leaveLeaveBtn) leaveLeaveBtn.addEventListener('click', function() {
+            setLeavingAllowed(true);
+            hideLeaveModal();
+            if (leaveUrl) window.location.href = leaveUrl;
+          });
+          if (leaveOverlay) leaveOverlay.addEventListener('click', function(e) { if (e.target === leaveOverlay) hideLeaveModal(); });
+          document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && leaveOverlay && leaveOverlay.classList.contains('show')) hideLeaveModal(); });
+        }
 
         var form = document.getElementById('submitForm');
         var submitBtn = document.getElementById('submitQuizBtn');
@@ -777,7 +1286,7 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
         var expires = new Date(Date.now() + (isNaN(serverRemaining) ? 0 : serverRemaining) * 1000);
         var lastSyncAt = Date.now();
         var SYNC_INTERVAL_MS = 30000;
-        var timeWarned = { 300: false, 60: false, 30: false };
+        var timeWarned = { 300: false, 600: false, 900: false, 60: false, 30: false, quarter: false };
         var timeWarningToast = document.getElementById('examTimeWarningToast');
         function showTimeWarning(text, isDanger) {
           if (!timeWarningToast) return;
@@ -816,8 +1325,24 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
           circleTimer.classList.remove('warning', 'danger');
           if (rem <= 60) circleTimer.classList.add('danger');
           else if (rem <= 300) circleTimer.classList.add('warning');
-          if (rem === 300 && !timeWarned[300]) { timeWarned[300] = true; showTimeWarning('5 minutes remaining.', false); }
-          if (rem === 60 && !timeWarned[60]) { timeWarned[60] = true; showTimeWarning('1 minute remaining!', true); }
+          if (rem === 300 && !timeWarned[300]) {
+            timeWarned[300] = true;
+            showTimeWarning('5 minutes remaining.', false);
+            showMotivation('t5', 'Final stretch — keep it up! You\'re almost there.', 'preboard-motivation-banner--final', 'bi-lightning-charge-fill');
+          }
+          if (rem === 600 && !timeWarned[600]) {
+            timeWarned[600] = true;
+            showMotivation('t10', '10 minutes left. Stay steady and trust your review.', 'preboard-motivation-banner--urgent', 'bi-hourglass-split');
+          }
+          if (rem === 900 && !timeWarned[900]) {
+            timeWarned[900] = true;
+            showMotivation('t15', '15 minutes to go — pace yourself and stay focused.', '', 'bi-bullseye');
+          }
+          if (totalSec > 0 && rem <= Math.floor(totalSec * 0.25) && !timeWarned.quarter) {
+            timeWarned.quarter = true;
+            showMotivation('tq25', 'Last quarter of your time. Keep it up — finish strong!', 'preboard-motivation-banner--final', 'bi-trophy-fill');
+          }
+          if (rem === 60 && !timeWarned[60]) { timeWarned[60] = true; showTimeWarning('1 minute remaining!', true); showMotivation('t1', 'One minute left! Submit when you\'re ready — you\'ve got this.', 'preboard-motivation-banner--urgent', 'bi-flag-fill'); }
           if (rem === 30 && !timeWarned[30]) { timeWarned[30] = true; showTimeWarning('30 seconds left! Submit soon.', true); }
           if (rem <= 0) { setLeavingAllowed(true); form && form.submit(); return; }
           setTimeout(updateTimer, 1000);
@@ -850,6 +1375,13 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
           if (progressBar) progressBar.style.width = Math.round((answered / total) * 100) + '%';
           if (progressEl) progressEl.textContent = answered + ' of ' + total + ' answered';
           if (answeredCountEl) answeredCountEl.textContent = answered;
+          if (PREBOARD_EXAM_LOCKED && total > 0) {
+            var pct = answered / total;
+            if (pct >= 0.25 && pct < 0.5) showMotivation('p25', 'Good start — 25% answered. Keep going, future CPA!', '', 'bi-graph-up-arrow');
+            if (pct >= 0.5 && pct < 0.75) showMotivation('p50', 'Halfway there! Stay sharp — every item counts.', '', 'bi-award-fill');
+            if (pct >= 0.75 && pct < 1) showMotivation('p75', 'Almost done with all questions. Review if you have time.', 'preboard-motivation-banner--final', 'bi-emoji-smile-fill');
+            if (pct >= 1) showMotivation('p100', 'All questions answered! Review once more, then submit confidently.', 'preboard-motivation-banner--final', 'bi-check-circle-fill');
+          }
           if (submitBtn && answered >= total) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class=\"bi bi-check-circle-fill\"></i> Submit preboard';
@@ -903,7 +1435,13 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
           window.addEventListener('keydown', function(e) {
             var ctrlLike = e.ctrlKey || e.metaKey;
             var key = (e.key || '').toLowerCase();
-            if (ctrlLike && ['c','x','s','p','u','a'].indexOf(key) !== -1 && !isInputLike(e.target)) e.preventDefault();
+            if (ctrlLike && ['c','x','s','p','u','a'].indexOf(key) !== -1 && !isInputLike(e.target)) {
+              e.preventDefault();
+              if (PREBOARD_EXAM_LOCKED && (key === 'c' || key === 'x' || key === 'p' || (key === 's' && e.shiftKey))) {
+                if (key === 's' && e.shiftKey) setPrivacyShield(true);
+                showSecurityOverlay(key === 's' && e.shiftKey ? 'screenshot' : 'copy');
+              }
+            }
           }, true);
         })();
       })();
@@ -917,6 +1455,5 @@ $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
     <?php endif; ?>
   </div>
 </main>
-</div>
 </body>
 </html>

@@ -1048,6 +1048,416 @@ body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.q
 }
 
 /* =============================================================================
+   Preboards monitoring — scores, leaderboard, attempt log
+   ============================================================================= */
+
+body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(52, 211, 153, 0.28) 0%, rgba(16, 185, 129, 0.18) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #a7f3d0;
+  font-size: 1.15rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-shell {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111214;
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 1024px) {
+  body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.15;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.85rem 1rem;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row {
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.7);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table .col-num {
+  width: 3rem;
+  text-align: center;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table .col-student {
+  min-width: 220px;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.35), rgba(79, 70, 229, 0.25));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-name {
+  font-weight: 600;
+  color: #f3f4f6;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-email {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.1rem;
+  word-break: break-all;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-set-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ddd6fe;
+  background: rgba(167, 139, 250, 0.14);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  white-space: nowrap;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-set-title {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-subject {
+  font-size: 0.8125rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-attempt-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-correct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-correct small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-top: 0.15rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--high {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--mid {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--low {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.32);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--pending {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--submitted {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--progress {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--submitted::before,
+body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--progress::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime {
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime strong {
+  display: block;
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime span {
+  display: block;
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-duration {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--1 {
+  background: linear-gradient(145deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #fbbf24;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--2 {
+  background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--3 {
+  background: linear-gradient(145deg, #ffedd5, #fed7aa);
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--n {
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-empty {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-empty i {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn:hover {
+  color: #ecfdf5;
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+body.admin-app.admin-preboards-monitor-page #main .pb-monitor-id {
+  font-size: 0.7rem;
+  color: #4b5563;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================================================
    Pre-week hub — list, lectures, materials (admin_preweek*)
    ============================================================================= */
 
@@ -1339,3 +1749,1158 @@ body.admin-app.admin-question-sort-page #main .quiz-admin-empty {
 body.admin-app.admin-question-sort-page #main .quiz-admin-empty-icon {
   color: rgba(251, 191, 36, 0.35);
 }
+
+/* =============================================================================
+   Global admin unified UI — all admin pages (Preboards monitoring style)
+   ============================================================================= */
+
+body.admin-app #main .quiz-admin-hero,
+body.admin-app #main .page-hero,
+body.admin-app #main .admin-dashboard-hero {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%) !important;
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+body.admin-app #main .quiz-admin-hero-icon,
+body.admin-app #main .page-hero h1 > .bi:first-child,
+body.admin-app #main .page-hero .admin-section-icon,
+body.admin-app #main .admin-dashboard-hero h1 > .bi:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, rgba(52, 211, 153, 0.28) 0%, rgba(16, 185, 129, 0.18) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #a7f3d0;
+  font-size: 1.15rem;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+
+body.admin-app #main .quiz-admin-hero-icon--preweek {
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.16) 100%);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+}
+
+body.admin-app #main .quiz-admin-table-shell,
+body.admin-app #main .page-table,
+body.admin-app #main .page-trashlog {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #111214 !important;
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
+  overflow: hidden;
+}
+
+body.admin-app #main .quiz-admin-table-head,
+body.admin-app #main .page-table > .px-5.py-4.border-b,
+body.admin-app #main .page-section-title {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%) !important;
+  color: #f3f4f6 !important;
+}
+
+body.admin-app #main .page-section-title i {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #a7f3d0 !important;
+}
+
+body.admin-app #main .quiz-admin-filter,
+body.admin-app #main .page-filter {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(20, 20, 20, 0.92) !important;
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
+}
+
+body.admin-app #main .quiz-admin-filter-btn {
+  background: rgba(52, 211, 153, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  color: #a7f3d0;
+}
+body.admin-app #main .quiz-admin-filter-btn:hover {
+  background: rgba(52, 211, 153, 0.28);
+  color: #ecfdf5;
+}
+
+body.admin-app #main .quiz-admin-filter-clear {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #d1d5db;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+body.admin-app #main .quiz-admin-filter-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+body.admin-app #main .quiz-admin-alert,
+body.admin-app #main .admin-flash {
+  border-radius: 0.75rem;
+}
+body.admin-app #main .quiz-admin-alert--success,
+body.admin-app #main .admin-flash--success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  color: #a7f3d0 !important;
+}
+body.admin-app #main .quiz-admin-alert--error,
+body.admin-app #main .admin-flash--error {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: #fecaca !important;
+}
+
+body.admin-app #main .pb-monitor-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 1024px) {
+  body.admin-app #main .pb-monitor-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+body.admin-app #main .pb-monitor-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+body.admin-app #main .pb-monitor-stat-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+body.admin-app #main .pb-monitor-stat-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.15;
+}
+
+body.admin-app #main .pb-monitor-stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+body.admin-app #main .pb-monitor-table-wrap,
+body.admin-app #main .page-table .overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.admin-app #main .pb-monitor-table,
+body.admin-app #main .quiz-admin-data-table,
+body.admin-app #main .page-table table,
+body.admin-app #main .admin-students-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+body.admin-app #main .pb-monitor-table {
+  min-width: 960px;
+}
+
+body.admin-app #main .pb-monitor-table thead th,
+body.admin-app #main .quiz-admin-data-table thead th,
+body.admin-app #main .page-table thead th,
+body.admin-app #main .admin-students-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #9ca3af !important;
+  background: #1a1a1a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 0.85rem 1rem;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+body.admin-app #main .pb-monitor-table tbody td,
+body.admin-app #main .quiz-admin-data-table tbody td,
+body.admin-app #main .page-table tbody td,
+body.admin-app #main .admin-students-table tbody td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row,
+body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row,
+body.admin-app #main .page-table tbody tr,
+body.admin-app #main .admin-students-table tbody tr {
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even),
+body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:nth-child(even),
+body.admin-app #main .page-table tbody tr:nth-child(even),
+body.admin-app #main .admin-students-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:hover,
+body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
+body.admin-app #main .page-table tbody tr:hover,
+body.admin-app #main .admin-students-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.65);
+  transform: none !important;
+}
+
+body.admin-app #main .pb-monitor-student {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+body.admin-app #main .pb-monitor-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.35), rgba(79, 70, 229, 0.25));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+}
+
+body.admin-app #main .pb-monitor-student-name {
+  font-weight: 600;
+  color: #f3f4f6;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+body.admin-app #main .pb-monitor-student-email {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.1rem;
+  word-break: break-all;
+}
+
+body.admin-app #main .pb-monitor-set-badge,
+body.admin-app #main .table-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ddd6fe;
+  background: rgba(167, 139, 250, 0.14);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  white-space: nowrap;
+}
+
+body.admin-app #main .pb-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app #main .pb-score-pill--high {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+body.admin-app #main .pb-score-pill--mid {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+body.admin-app #main .pb-score-pill--low {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.32);
+}
+
+body.admin-app #main .pb-score-pill--pending {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+body.admin-app #main .pb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body.admin-app #main .pb-status-pill--submitted {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+body.admin-app #main .pb-status-pill--progress {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+body.admin-app #main .pb-status-pill--submitted::before,
+body.admin-app #main .pb-status-pill--progress::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+body.admin-app #main .pb-monitor-review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+body.admin-app #main .pb-monitor-review-btn:hover {
+  color: #ecfdf5;
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(52, 211, 153, 0.45);
+}
+
+body.admin-app #main .pb-monitor-empty {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+body.admin-app #main .quiz-admin-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: rgba(52, 211, 153, 0.14);
+  color: #a7f3d0;
+  border: 1px solid rgba(52, 211, 153, 0.32);
+}
+
+body.admin-app #main .quiz-admin-empty {
+  color: #9ca3af;
+}
+
+body.admin-app #main .quiz-admin-pagination,
+body.admin-app #main .page-table nav {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body.admin-app #main .quiz-admin-page-link,
+body.admin-app #main .page-table nav a {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #d1d5db !important;
+}
+
+body.admin-app #main .quiz-admin-page-link:hover,
+body.admin-app #main .page-table nav a:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+body.admin-app #main .quiz-admin-page-link.is-active,
+body.admin-app #main .page-table nav a.bg-primary {
+  background: rgba(52, 211, 153, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.45) !important;
+  color: #fff !important;
+}
+
+/* Student Access — dark theme */
+body.admin-app #main .sca-student-item {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(20, 20, 20, 0.9) !important;
+  color: #e5e7eb;
+}
+body.admin-app #main .sca-student-item:hover {
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 0 8px 24px -16px rgba(0, 0, 0, 0.8) !important;
+  transform: translateY(-1px);
+}
+body.admin-app #main .sca-student-item.active {
+  border-color: rgba(52, 211, 153, 0.5) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(20, 20, 20, 0.95) 100%) !important;
+  box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.75);
+}
+body.admin-app #main .sca-student-item__avatar {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.35), rgba(16, 185, 129, 0.25)) !important;
+}
+body.admin-app #main .sca-panel-loading {
+  background: rgba(10, 10, 10, 0.82) !important;
+}
+body.admin-app #main .sca-section {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(20, 20, 20, 0.85) !important;
+}
+body.admin-app #main .sca-section__head {
+  color: #f3f4f6 !important;
+}
+body.admin-app #main .sca-perm-row {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+body.admin-app #main .sca-perm-row:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+/* Dashboard cards keep semantic accents; hero matches unified shell */
+body.admin-app #main .admin-dashboard-page .page-card {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: #141414 !important;
+  box-shadow: none !important;
+}
+
+body.admin-app #main .admin-dashboard-kpi-strip {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800,
+body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
+  color: #f3f4f6 !important;
+}
+
+/* All admin cards / panels */
+body.admin-app #main .bg-white.rounded-xl.shadow-card,
+body.admin-app #main .bg-white.rounded-xl.shadow-card.border {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #111214 !important;
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
+}
+
+body.admin-app #main .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Student Access — full dark shell */
+body.admin-app #main .sca-sidebar,
+body.admin-app #main .sca-panel.bg-white {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #111214 !important;
+  box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
+}
+
+body.admin-app #main .sca-tree details {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+body.admin-app #main .sca-tree summary {
+  color: #e5e7eb !important;
+}
+
+body.admin-app #main .sca-tree label {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .sca-tree label:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.admin-app #main .sca-tree input[type=checkbox] {
+  accent-color: #34d399;
+}
+
+body.admin-app #main .sca-pb-hint {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .sca-pb-set-label {
+  align-items: flex-start !important;
+}
+
+body.admin-app #main .sca-pb-set-label__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+body.admin-app #main .sca-pb-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.3;
+  border: 1px solid transparent;
+}
+
+body.admin-app #main .sca-pb-status--open {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.28);
+}
+
+body.admin-app #main .sca-pb-status--upcoming {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.28);
+}
+
+body.admin-app #main .sca-pb-status--closed {
+  background: rgba(107, 114, 128, 0.16);
+  color: #d1d5db;
+  border-color: rgba(156, 163, 175, 0.28);
+}
+
+body.admin-app #main .sca-pb-status--locked {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+body.admin-app #main .sca-section__head i {
+  color: #6ee7b7 !important;
+}
+
+body.admin-app #main .sca-badge--approved {
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+
+body.admin-app #main .sca-badge--pending {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+}
+
+body.admin-app #main .sca-badge--rejected {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+
+body.admin-app #main .sca-form-grid label.field-label {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .sca-access-pill {
+  background: rgba(52, 211, 153, 0.12);
+  color: #a7f3d0;
+}
+
+body.admin-app #main .sca-sticky-actions {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  background: linear-gradient(to top, #111214 85%, rgba(17, 18, 20, 0.96)) !important;
+}
+
+body.admin-app #main .sca-btn--primary {
+  background: rgba(16, 185, 129, 0.85) !important;
+  color: #ecfdf5 !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+body.admin-app #main .sca-btn--primary:hover:not(:disabled) {
+  background: rgba(5, 150, 105, 0.95) !important;
+}
+
+body.admin-app #main .sca-btn--outline {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #d1d5db !important;
+}
+
+body.admin-app #main .sca-btn--outline:hover:not(:disabled) {
+  border-color: rgba(52, 211, 153, 0.45) !important;
+  color: #a7f3d0 !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+}
+
+body.admin-app #main .sca-btn--ghost {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .sca-btn--ghost:hover:not(:disabled) {
+  color: #e5e7eb !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.admin-app #main .sca-idle__icon {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #6ee7b7 !important;
+}
+
+body.admin-app #main .sca-toast--ok {
+  background: #141414 !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+}
+
+body.admin-app #main .sca-toast--err {
+  background: #141414 !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+}
+
+body.admin-app #main .sca-toast--ok .sca-toast__icon {
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+
+body.admin-app #main .sca-toast--err .sca-toast__icon {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+
+body.admin-app #main .sca-toast__title {
+  color: #f3f4f6 !important;
+}
+
+body.admin-app #main .sca-toast__msg {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .sca-perm-count {
+  color: #a7f3d0 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+
+body.admin-app #main .sca-spinner {
+  border-color: rgba(52, 211, 153, 0.15) !important;
+  border-top-color: #34d399 !important;
+}
+
+/* Students page tabs & filters */
+body.admin-app #main .page-filter .student-filter-tab {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #d1d5db !important;
+}
+
+body.admin-app #main .page-filter .student-filter-tab.bg-primary {
+  background: rgba(52, 211, 153, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.45) !important;
+  color: #ecfdf5 !important;
+}
+
+body.admin-app #main .page-filter .bg-gray-100.border-gray-200 {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Support hub */
+body.admin-app #main .admin-support-hub-tabs-wrap {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app #main .admin-support-hub-tab {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main .admin-support-hub-tab:hover {
+  color: #e5e7eb !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.admin-app #main .admin-support-hub-tab.is-active {
+  color: #a7f3d0 !important;
+  background: #111214 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 -2px 0 #34d399 !important;
+}
+
+/* Legacy flash on students page */
+body.admin-app #main .bg-green-50.border-green-200 {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  color: #a7f3d0 !important;
+}
+
+body.admin-app #main .bg-red-50.border-red-200 {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  color: #fecaca !important;
+}
+
+body.admin-app #main .text-green-800 { color: #a7f3d0 !important; }
+body.admin-app #main .text-red-800 { color: #fecaca !important; }
+
+/* Compact table row actions — icon bar + dropdown menu */
+body.admin-app #main .admin-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  position: relative;
+}
+
+body.admin-app #main td:has(.admin-row-actions),
+body.admin-app #main th:has(.admin-row-actions) {
+  overflow: visible;
+}
+
+body.admin-app #main .admin-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 1.05rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  flex-shrink: 0;
+}
+
+body.admin-app #main .admin-row-action[title]::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 0.45rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  z-index: 80;
+  padding: 0.42rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.08s ease, transform 0.08s ease, visibility 0.08s;
+}
+
+body.admin-app #main .admin-row-action[title]:hover::after,
+body.admin-app #main .admin-row-action[title]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+body.admin-app #main .admin-row-action.admin-row-action--more.is-open::after {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.admin-app #main a.admin-row-action:hover,
+body.admin-app #main button.admin-row-action:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+body.admin-app #main a.admin-row-action:active,
+body.admin-app #main button.admin-row-action:active {
+  transform: scale(0.94);
+}
+
+body.admin-app #main .admin-row-action--lessons:hover {
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.1);
+}
+
+body.admin-app #main .admin-row-action--quizzes:hover {
+  border-color: rgba(167, 139, 250, 0.45);
+  color: #ddd6fe;
+  background: rgba(167, 139, 250, 0.12);
+}
+
+body.admin-app #main .admin-row-action--testbank:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+body.admin-app #main .admin-row-action--sets:hover,
+body.admin-app #main .admin-row-action--materials:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+body.admin-app #main .admin-row-action--monitor:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+body.admin-app #main .admin-row-action--open:hover {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+body.admin-app #main .admin-row-action--schedule:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+body.admin-app #main .admin-row-action--refresh:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+body.admin-app #main .admin-row-action--lock:hover {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+body.admin-app #main .admin-row-action--approve:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+body.admin-app #main .admin-row-action--deny:hover {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+body.admin-app #main .admin-row-action--more.is-open,
+body.admin-app #main .admin-row-action--more[aria-expanded="true"] {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+}
+
+body.admin-app #main .admin-row-menu-wrap {
+  position: relative;
+}
+
+body.admin-app #main .admin-row-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 70;
+  min-width: 12.5rem;
+  padding: 0.45rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1c1d22;
+  box-shadow: 0 18px 44px -10px rgba(0, 0, 0, 0.8);
+  animation: admin-row-menu-pop 0.1s ease-out;
+  transform-origin: top right;
+}
+
+@keyframes admin-row-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+body.admin-app #main .admin-row-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #f3f4f6;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease, transform 0.1s ease;
+}
+
+body.admin-app #main .admin-row-menu__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+body.admin-app #main .admin-row-menu__item:active {
+  transform: scale(0.98);
+}
+
+body.admin-app #main .admin-row-menu__item--danger {
+  color: #fca5a5;
+}
+
+body.admin-app #main .admin-row-menu__item--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+body.admin-app #main .admin-row-menu__item .bi {
+  width: 1.125rem;
+  font-size: 1.05rem;
+  text-align: center;
+  opacity: 0.95;
+  flex-shrink: 0;
+}
+
+body.admin-app #main .page-table thead.bg-gray-50 {
+  background: #1a1a1a !important;
+}
+
+body.admin-app #main .page-table .border-gray-200,
+body.admin-app #main .page-table .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app #main .page-table tbody tr:hover {
+  transform: none !important;
+}
+
+body.admin-app #main .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Support hub tab layout */
+body.admin-app #main .admin-support-hub-tabs-wrap {
+  margin-top: 0.75rem;
+}
+
+body.admin-app #main .admin-support-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+body.admin-app #main .admin-support-hub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+body.admin-app #main .admin-support-hub-tab.is-active {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
+}
+
+body.admin-app #main .admin-support-hub-tab .bi {
+  font-size: 1rem;
+  opacity: 0.85;
+}
+
+/* Stat / KPI cards (dashboard, support, etc.) */
+body.admin-app #main .admin-stat-card {
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82)) !important;
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.8);
+}
+
+body.admin-app #main .admin-stat-card__value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.15;
+  margin-top: 0.25rem;
+}
+
+body.admin-app #main .admin-stat-card__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin: 0;
+}
+
+body.admin-app #main .admin-stat-card__meta {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin: 0.35rem 0 0;
+}
+
+body.admin-app #main .text-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+body.admin-app #main .border-gray-100,
+body.admin-app #main .border-b.border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.admin-app #main .bg-green-100.text-green-800 {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #6ee7b7 !important;
+}
+
+body.admin-app #main .bg-red-100.text-red-800 {
+  background: rgba(239, 68, 68, 0.14) !important;
+  color: #fca5a5 !important;
+}
+
+body.admin-app #main .bg-amber-100.text-amber-800 {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fcd34d !important;
+}
+
+body.admin-app #main .bg-amber-50.border-amber-200.text-amber-900 {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  color: #fde68a !important;
+}
+
+body.admin-app #main .bg-red-50.border-red-200.text-red-900 {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  color: #fecaca !important;
+}
+
+body.admin-app #main .border-indigo-100.bg-indigo-50\/50,
+body.admin-app #main label.border-indigo-100 {
+  border-color: rgba(52, 211, 153, 0.28) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  color: #e5e7eb !important;
+}
+
+body.admin-app #main label.border-indigo-100:hover {
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+
+body.admin-app #main .sca-panel .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+body.admin-app #main code {
+  background: rgba(255, 255, 255, 0.06);
+  color: #a7f3d0;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+  font-size: 0.85em;
+}
+
+body.admin-app #main .bg-gray-50.border-gray-200.text-gray-700 {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #9ca3af !important;
+}
+
+/* Modals */
+body.admin-app .shadow-modal,
+body.admin-app #main .quiz-modal-panel {
+  background: #141414 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e5e7eb;
+}
+
+body.admin-app .shadow-modal .text-gray-800,
+body.admin-app .shadow-modal h2,
+body.admin-app #main .quiz-modal-panel .text-gray-800,
+body.admin-app #main .quiz-modal-panel h2 {
+  color: #f3f4f6 !important;
+}
+
+body.admin-app .shadow-modal .border-gray-200,
+body.admin-app #main .quiz-modal-panel .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Pre-week context nav */
+body.admin-app .admin-preweek-context-nav--light {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: #111214 !important;
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.8) !important;
+}
+
+body.admin-app .admin-preweek-context-nav--light a {
+  color: #a7f3d0 !important;
+}
+
+body.admin-app .admin-preweek-context-nav--light .text-gray-800 {
+  color: #f3f4f6 !important;
+}
+
+body.admin-app .admin-preweek-context-nav--light .text-gray-300 {
+  color: #6b7280 !important;
+}
+

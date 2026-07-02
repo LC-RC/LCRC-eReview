@@ -260,48 +260,17 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <style>
-    .admin-subjects-page .page-hero {
-      border: 1px solid #dbeafe;
-      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%);
-      box-shadow: 0 12px 30px -22px rgba(37, 99, 235, 0.35);
-    }
-    .admin-subjects-page .page-hero h1 { color: #0f2f6b; }
-    .admin-subjects-page .page-filter,
-    .admin-subjects-page .page-table {
-      border: 1px solid #dbeafe;
-      box-shadow: 0 12px 28px -24px rgba(30, 64, 175, 0.3);
-    }
-    .admin-subjects-page .page-table thead th {
-      text-transform: uppercase;
-      letter-spacing: .02em;
-      font-size: .78rem;
-    }
-    .admin-subjects-page .page-table tbody tr { transition: background-color .2s ease, transform .2s ease; }
-    .admin-subjects-page .page-table tbody tr:hover { background: #f8fbff; transform: translateY(-1px); }
-    .admin-subjects-page .table-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: .2rem .55rem;
-      border-radius: 9999px;
-      font-size: .72rem;
-      font-weight: 700;
-      border: 1px solid #bfdbfe;
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-  </style>
 </head>
 <body class="font-sans antialiased admin-app admin-subjects-page" x-data="adminSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-5 py-5 mb-5 page-hero">
+  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-book admin-section-icon"></i> Content Hub
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-book"></i></span>
+      Content Hub
     </h1>
-    <p class="text-gray-500 mt-1">Manage subjects, lessons, materials, handouts, and quizzes.</p>
+    <p class="text-gray-400 mt-2 mb-0">Manage subjects, lessons, materials, handouts, and quizzes.</p>
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
@@ -319,7 +288,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
     </div>
   <?php endif; ?>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5 page-filter">
+  <div class="rounded-xl shadow-card border p-5 mb-5 page-filter">
     <form method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
       <div class="lg:col-span-5">
         <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -350,7 +319,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
     </form>
   </div>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden page-table">
+  <div class="rounded-xl shadow-card border overflow-hidden page-table">
     <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
         <span class="font-semibold text-gray-800">Subjects</span>
@@ -373,7 +342,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Lessons</th>
             <th class="px-5 py-3 font-semibold text-gray-700 text-center">Quizzes</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[280px]">Actions</th>
+            <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[120px]">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -414,30 +383,31 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
                   <span class="admin-count-pill admin-count-pill--quizzes inline-block px-2.5 py-1 rounded-full text-sm font-medium tabular-nums"><?php echo (int)($s['quizzes_cnt'] ?? 0); ?></span>
                 </td>
                 <td class="px-5 py-3 text-center">
-                  <div class="inline-block text-left w-[200px]" x-data="{ expanded: false }">
-                    <div class="flex flex-col gap-2">
-                      <a href="admin_lessons.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--lessons flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-file-text"></i> Lessons</a>
-                      <a href="admin_quizzes.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--quizzes flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-question-circle"></i> Quizzes</a>
-                      <a href="admin_test_bank.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-action-btn admin-action-btn--testbank flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-folder2-open"></i> Test Bank</a>
-                      <button type="button" @click="expanded = !expanded" class="flex items-center justify-center gap-1 w-full py-1 rounded-md text-xs text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition" :aria-expanded="expanded" title="More actions">
-                        <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                        <span class="opacity-80">More</span>
-                      </button>
-                    </div>
-                    <div x-show="expanded" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="flex flex-col gap-2 mt-2">
-                      <button type="button"
-                              data-id="<?php echo (int)$s['subject_id']; ?>"
-                              data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
-                              data-description="<?php echo h($s['description'] ?? ''); ?>"
-                              data-status="<?php echo h($s['status'] ?? 'active'); ?>"
-                              data-cover-src="<?php echo h($rowCoverSrc); ?>"
-                              @click="expanded = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active', $el.dataset.coverSrc || '')"
-                              class="admin-outline-btn flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-pencil"></i> Edit</button>
-                      <button type="button"
-                              data-id="<?php echo (int)$s['subject_id']; ?>"
-                              data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
-                              @click="expanded = false; openDeleteSubject($el.dataset.id, $el.dataset.name || '')"
-                              class="admin-action-btn admin-action-btn--danger flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition"><i class="bi bi-trash"></i> Delete</button>
+                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <a href="admin_lessons.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--lessons" title="Lessons"><i class="bi bi-file-text"></i><span class="sr-only">Lessons</span></a>
+                    <a href="admin_quizzes.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--quizzes" title="Quizzes"><i class="bi bi-question-circle"></i><span class="sr-only">Quizzes</span></a>
+                    <a href="admin_test_bank.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--testbank" title="Test Bank"><i class="bi bi-folder2-open"></i><span class="sr-only">Test Bank</span></a>
+                    <div class="admin-row-menu-wrap">
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                        <button type="button"
+                                class="admin-row-menu__item"
+                                data-id="<?php echo (int)$s['subject_id']; ?>"
+                                data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
+                                data-description="<?php echo h($s['description'] ?? ''); ?>"
+                                data-status="<?php echo h($s['status'] ?? 'active'); ?>"
+                                data-cover-src="<?php echo h($rowCoverSrc); ?>"
+                                @click="menuOpen = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active', $el.dataset.coverSrc || '')">
+                          <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button type="button"
+                                class="admin-row-menu__item admin-row-menu__item--danger"
+                                data-id="<?php echo (int)$s['subject_id']; ?>"
+                                data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
+                                @click="menuOpen = false; openDeleteSubject($el.dataset.id, $el.dataset.name || '')">
+                          <i class="bi bi-trash"></i> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </td>

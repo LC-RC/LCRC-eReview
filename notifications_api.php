@@ -19,6 +19,9 @@ if ($userId <= 0) {
 notifications_seed_defaults($conn, (int)$userId, $role);
 
 if ($action === 'list') {
+    if ($role === 'admin') {
+        notifications_sync_admin_preboards_pending_reminder($conn, (int) $userId);
+    }
     $items = notifications_list_for_user($conn, (int)$userId, 30);
     $unread = notifications_unread_count($conn, (int)$userId);
     echo json_encode([

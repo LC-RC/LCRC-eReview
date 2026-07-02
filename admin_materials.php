@@ -488,7 +488,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
       box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
     }
   </style>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
 <body class="font-sans antialiased admin-app admin-materials-page" x-data="{ uploadType: 'url' }">
   <?php include 'admin_sidebar.php'; ?>
@@ -586,7 +585,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                 <th class="px-5 py-3 font-semibold text-center">Title</th>
                 <th class="px-5 py-3 font-semibold text-center">URL</th>
                 <th class="px-5 py-3 font-semibold text-center">Thumbnail</th>
-                <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -611,9 +610,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
-                    <div class="flex flex-wrap gap-2 items-center justify-center">
-                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_video_thumb=<?php echo (int)$v['video_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-sky-500/55 text-sky-200 hover:bg-sky-600 hover:text-white transition"><i class="bi bi-arrow-repeat"></i> Refresh</a>
-                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                    <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_video_thumb=<?php echo (int)$v['video_id']; ?>" class="admin-row-action admin-row-action--refresh" title="Refresh thumbnail"><i class="bi bi-arrow-repeat"></i><span class="sr-only">Refresh thumbnail</span></a>
+                      <div class="admin-row-menu-wrap">
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                          <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -657,7 +661,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                 <th class="px-5 py-3 font-semibold text-center">Title</th>
                 <th class="px-5 py-3 font-semibold text-center">File</th>
                 <th class="px-5 py-3 font-semibold text-center">Downloads</th>
-                <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -683,9 +687,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                     <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-gray-400 border border-white/15">Locked</span><?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
-                    <div class="flex flex-wrap gap-2 items-center justify-center">
-                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-amber-500/55 text-amber-200 hover:bg-amber-500 hover:text-white transition"><i class="bi bi-lock"></i> <?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
-                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500/55 text-red-300 hover:bg-red-600 hover:text-white transition"><i class="bi bi-trash"></i> Delete</a>
+                    <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                      <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="admin-row-action admin-row-action--lock" title="<?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?>"><i class="bi bi-<?php echo !empty($h['allow_download']) ? 'lock' : 'unlock'; ?>"></i><span class="sr-only"><?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?></span></a>
+                      <div class="admin-row-menu-wrap">
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                          <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </tr>

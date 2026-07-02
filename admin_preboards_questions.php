@@ -214,7 +214,6 @@ $adminBreadcrumbs = [
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
 <body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="preboardsQuestionsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>

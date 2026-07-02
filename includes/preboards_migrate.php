@@ -140,6 +140,18 @@ if ($sr) { while ($r = mysqli_fetch_assoc($sr)) { $setCols[] = $r['Field']; } }
 if (!in_array('is_open', $setCols, true)) {
   @mysqli_query($conn, "ALTER TABLE preboards_sets ADD COLUMN is_open TINYINT(1) NOT NULL DEFAULT 0 AFTER title");
 }
+if (!in_array('use_schedule', $setCols, true)) {
+  @mysqli_query($conn, "ALTER TABLE preboards_sets ADD COLUMN use_schedule TINYINT(1) NOT NULL DEFAULT 0 AFTER is_open");
+}
+$setCols = [];
+$sr = @mysqli_query($conn, "SHOW COLUMNS FROM preboards_sets");
+if ($sr) { while ($r = mysqli_fetch_assoc($sr)) { $setCols[] = $r['Field']; } }
+if (!in_array('opens_at', $setCols, true)) {
+  @mysqli_query($conn, "ALTER TABLE preboards_sets ADD COLUMN opens_at DATETIME NULL DEFAULT NULL AFTER use_schedule");
+}
+if (!in_array('closes_at', $setCols, true)) {
+  @mysqli_query($conn, "ALTER TABLE preboards_sets ADD COLUMN closes_at DATETIME NULL DEFAULT NULL AFTER opens_at");
+}
 
 $accCols = [];
 $acr = @mysqli_query($conn, "SHOW COLUMNS FROM preboards_set_access");

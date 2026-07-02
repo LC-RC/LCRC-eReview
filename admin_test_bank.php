@@ -147,8 +147,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
-  <style>
+<style>
     @media (max-width: 768px) {
       .admin-tb-table th, .admin-tb-table td { padding: 0.5rem 0.5rem !important; font-size: 0.8125rem; }
       .admin-tb-table th:first-child, .admin-tb-table td:first-child { padding-left: 1rem !important; }

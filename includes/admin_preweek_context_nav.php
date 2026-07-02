@@ -22,7 +22,7 @@ if ($__tt === '') {
     $__tt = 'Lecture';
 }
 
-$__theme = $preweekNavTheme ?? ($__pws === 'list' ? 'light' : 'dark');
+$__theme = $preweekNavTheme ?? 'dark';
 $__wrap = $__theme === 'light'
     ? 'admin-preweek-context-nav admin-preweek-context-nav--light mb-5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm'
     : 'admin-preweek-context-nav admin-preweek-context-nav--dark mb-5 rounded-xl border border-white/10 bg-[#141414] px-4 py-2.5';

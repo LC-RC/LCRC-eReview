@@ -3,10 +3,21 @@ require_once 'auth.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
 require_once __DIR__ . '/includes/vimeo_helpers.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) { header('Location: student_subjects.php'); exit; }
+
+$userId = getCurrentUserId();
+if (!sca_subject_has_any_access($conn, (int)$userId, $subjectId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_subjects.php');
+    exit;
+}
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -34,6 +45,12 @@ if ($lessons) {
 $thumbByLesson = [];
 $vimeoOembedUrlByLesson = [];
 if (!empty($lessonsRows)) {
+    $hasThumbnailUrlColumn = false;
+    $thumbColRes = @mysqli_query($conn, "SHOW COLUMNS FROM lesson_videos LIKE 'thumbnail_url'");
+    if ($thumbColRes && mysqli_num_rows($thumbColRes) > 0) {
+        $hasThumbnailUrlColumn = true;
+    }
+
     $lessonIds = [];
     foreach ($lessonsRows as $row) {
         $lessonIds[] = (int)($row['lesson_id'] ?? 0);
@@ -41,7 +58,8 @@ if (!empty($lessonsRows)) {
     $lessonIds = array_values(array_unique(array_filter($lessonIds)));
     if (!empty($lessonIds)) {
         $in = implode(',', array_map('intval', $lessonIds));
-        $tv = @mysqli_query($conn, "SELECT lesson_id, video_url, thumbnail_url FROM lesson_videos WHERE lesson_id IN ($in) ORDER BY lesson_id ASC, video_id ASC");
+        $thumbSelect = $hasThumbnailUrlColumn ? "thumbnail_url" : "NULL AS thumbnail_url";
+        $tv = @mysqli_query($conn, "SELECT lesson_id, video_url, {$thumbSelect} FROM lesson_videos WHERE lesson_id IN ($in) ORDER BY lesson_id ASC, video_id ASC");
         if ($tv) {
             while ($tr = mysqli_fetch_assoc($tv)) {
                 $lid = (int)($tr['lesson_id'] ?? 0);
@@ -71,13 +89,15 @@ if (!empty($lessonsRows)) {
 $lessonsForAlpine = [];
 foreach ($lessonsRows as $l) {
     $lid = (int)($l['lesson_id'] ?? 0);
+    $lessonOpen = sca_has_access($conn, (int)$userId, 'lesson', $lid);
     $lessonsForAlpine[] = [
         'id' => $lid,
         'title' => (string)($l['title'] ?? ''),
         'desc' => (string)($l['description'] ?? ''),
-        'href' => 'student_lesson_viewer.php?lesson_id=' . $lid . '&subject_id=' . (int)$subjectId,
+        'href' => $lessonOpen ? 'student_lesson_viewer.php?lesson_id=' . $lid . '&subject_id=' . (int)$subjectId : '#',
         'thumb' => (string)($thumbByLesson[$lid] ?? ''),
         'vimeoOembedUrl' => (string)($vimeoOembedUrlByLesson[$lid] ?? ''),
+        'locked' => !$lessonOpen,
     ];
 }
 
@@ -184,6 +204,7 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
     $passed = $scorePct !== null && $scorePct >= 50;
     $takeUrl = 'student_take_quiz.php?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId;
     $viewResultUrl = 'student_take_quiz.php?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId . '&view_result=1';
+    $quizOpen = sca_has_access($conn, (int)$userId, 'quiz', $qid);
     $rowStatus = ($cnt <= 0) ? 'no_questions' : ($inProgressAttemptId ? 'in_progress' : ($passed ? 'passed' : 'need_retake'));
     $notTaken = ($cnt > 0 && !$inProgressAttemptId && $attemptCount === 0);
     if ($notTaken) $rowStatus = 'not_taken';
@@ -205,8 +226,9 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
         'attempt_count' => $attemptCount,
         'score_pct' => $scorePct,
         'passed' => $passed,
-        'take_url' => $takeUrl,
-        'view_result_url' => $viewResultUrl,
+        'take_url' => $quizOpen ? $takeUrl : '#',
+        'view_result_url' => $quizOpen ? $viewResultUrl : '#',
+        'locked' => !$quizOpen,
         'row_status' => $rowStatus,
         'status_badge_class' => $statusBadgeClass,
         'status_label' => $statusLabel,
@@ -250,6 +272,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
     .video-embed { aspect-ratio: 16/9; width: 100%; border: 0; border-radius: 8px; background: #000; }
     .separate-view.hidden { display: none !important; }
@@ -2761,7 +2784,8 @@ document.addEventListener('alpine:init', function() {
       <div x-show="materialsView === 'cards'" x-cloak class="lesson-cards-wrap">
         <div class="lesson-cards-grid" role="list">
           <template x-for="(lesson, idx) in materialsFiltered" :key="lesson.id">
-            <a :href="lesson.href" class="lesson-card" role="listitem">
+            <a :href="lesson.locked ? '#' : lesson.href" @click="lesson.locked && $event.preventDefault()" class="lesson-card" :class="lesson.locked ? 'lms-locked-card' : ''" role="listitem">
+              <span class="lms-lock-overlay lms-lock-badge" x-show="lesson.locked"><i class="bi bi-lock-fill"></i> Locked</span>
               <div class="lesson-card__media">
                 <img class="lesson-card__thumb-img" x-show="lesson.thumb" x-bind:src="lesson.thumb || null" alt="" loading="lazy" decoding="async" width="640" height="360" />
                 <div class="lesson-card__media-fallback" x-show="!lesson.thumb" aria-hidden="true"><i class="bi bi-play-circle"></i></div>
@@ -2786,7 +2810,8 @@ document.addEventListener('alpine:init', function() {
         <ul class="lesson-list" role="list">
           <template x-for="(lesson, idx) in materialsFiltered" :key="lesson.id">
             <li class="lesson-list__item" role="listitem">
-              <a :href="lesson.href" class="lesson-list__link">
+              <a :href="lesson.locked ? '#' : lesson.href" @click="lesson.locked && $event.preventDefault()" class="lesson-list__link" :class="lesson.locked ? 'lms-locked-card' : ''">
+                <span class="lms-lock-badge" x-show="lesson.locked" style="margin-left:auto;"><i class="bi bi-lock-fill"></i> Locked</span>
                 <span class="lesson-list__idx" aria-hidden="true" x-text="idx + 1"></span>
                 <div class="lesson-list__thumb-wrap">
                   <img class="lesson-list__thumb" x-show="lesson.thumb" x-bind:src="lesson.thumb || null" alt="" loading="lazy" decoding="async" width="160" height="90" />
@@ -2967,7 +2992,9 @@ document.addEventListener('alpine:init', function() {
               <div class="qq-cell qq-cell--attempts qq-muted" role="cell"><?php echo (int)$qr['attempt_count']; ?></div>
               <div class="qq-cell qq-cell--action" role="cell">
                 <div class="qq-action-cluster">
-                <?php if ((int)$qr['count'] <= 0): ?>
+                <?php if (!empty($qr['locked'])): ?>
+                  <span class="lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span>
+                <?php elseif ((int)$qr['count'] <= 0): ?>
                   <span class="text-slate-400 text-xs font-semibold">No questions yet</span>
                 <?php elseif (!empty($qr['in_progress_attempt_id'])): ?>
                   <a href="<?php echo h($qr['take_url']); ?>&attempt_id=<?php echo (int)$qr['in_progress_attempt_id']; ?>" class="quiz-btn quiz-btn-amber quiz-resume-link shrink-0"><i class="bi bi-play-fill"></i> Resume</a>
@@ -3019,7 +3046,9 @@ document.addEventListener('alpine:init', function() {
                 </div>
               </div>
               <div class="quiz-card__actions">
-                <?php if ((int)$qr['count'] <= 0): ?>
+                <?php if (!empty($qr['locked'])): ?>
+                  <span class="lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span>
+                <?php elseif ((int)$qr['count'] <= 0): ?>
                   <span class="text-gray-400 text-xs">No questions yet</span>
                 <?php elseif (!empty($qr['in_progress_attempt_id'])): ?>
                   <a href="<?php echo h($qr['take_url']); ?>&attempt_id=<?php echo (int)$qr['in_progress_attempt_id']; ?>" class="quiz-btn quiz-btn-amber quiz-resume-link"><i class="bi bi-play-fill"></i> Resume</a>

@@ -250,36 +250,20 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 <html lang="en">
 <head>
     <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <style>
-    .admin-support-hub-tabs-wrap { border-bottom: 1px solid #e5e7eb; margin-top: 0.75rem; }
-    .admin-support-hub-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: flex-end; }
-    .admin-support-hub-tab {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      padding: 0.65rem 1rem; font-size: 0.875rem; font-weight: 600;
-      color: #64748b; text-decoration: none; border-radius: 0.5rem 0.5rem 0 0;
-      border: 1px solid transparent; border-bottom: none;
-      transition: color .15s ease, background .15s ease, border-color .15s ease;
-    }
-    .admin-support-hub-tab:hover { color: #012970; background: rgba(1,41,112,.06); }
-    .admin-support-hub-tab.is-active {
-      color: #012970; background: #fff; border-color: #e5e7eb;
-      box-shadow: 0 1px 0 #fff; position: relative; z-index: 1; margin-bottom: -1px;
-    }
-    .admin-support-hub-tab .bi { font-size: 1rem; opacity: .85; }
-  </style>
 </head>
 <body class="font-sans antialiased admin-app admin-support-hub-page">
   <?php include __DIR__ . '/admin_sidebar.php'; ?>
 
-  <div class="bg-white rounded-xl shadow-card px-5 pt-5 pb-0 mb-5 border border-gray-100">
+  <div class="quiz-admin-hero rounded-xl px-5 pt-5 pb-0 mb-5 page-hero">
     <?php
     $adminBreadcrumbs = [['Dashboard', 'admin_dashboard.php'], ['Support Analytics']];
     include __DIR__ . '/includes/admin_breadcrumb.php';
     ?>
-    <h1 class="text-2xl font-bold text-[#012970] m-0 flex items-center gap-2">
-      <i class="bi bi-robot"></i> Support Analytics
+    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
+      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-robot"></i></span>
+      Support Analytics
     </h1>
-    <p class="text-gray-500 mt-1 mb-0">Use the tabs below for overview metrics, KB backlog, the knowledge base editor, and staff enrollment lookup.</p>
+    <p class="text-gray-400 mt-2 mb-0">Use the tabs below for overview metrics, KB backlog, the knowledge base editor, and staff enrollment lookup.</p>
 
     <div class="admin-support-hub-tabs-wrap">
       <nav class="admin-support-hub-tabs" aria-label="Support sections">
@@ -305,7 +289,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
   <?php if ($tab === 'overview'): ?>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5">
+  <div class="rounded-xl shadow-card border p-5 mb-5 page-filter">
     <form method="GET" class="flex flex-wrap items-center gap-3">
       <input type="hidden" name="tab" value="overview">
       <label for="days" class="text-sm font-semibold text-gray-700">Date range</label>
@@ -324,49 +308,49 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
   <?php endif; ?>
 
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Chat sessions</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo (int) $sessions; ?></p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Chat sessions</p>
+      <p class="admin-stat-card__value"><?php echo (int) $sessions; ?></p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Messages</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo (int) $messages; ?></p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Messages</p>
+      <p class="admin-stat-card__value"><?php echo (int) $messages; ?></p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Handoff rate (handoffs ÷ sessions)</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo h((string) $handoffRate); ?></p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Handoff rate (handoffs ÷ sessions)</p>
+      <p class="admin-stat-card__value"><?php echo h((string) $handoffRate); ?></p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Unanswered detections</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo (int) $unanswered; ?></p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Unanswered detections</p>
+      <p class="admin-stat-card__value"><?php echo (int) $unanswered; ?></p>
     </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">CSAT average (1–5)</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo $csatAvg !== null ? h((string) $csatAvg) : '—'; ?></p>
-      <p class="text-xs text-gray-500 m-0 mt-1"><?php echo (int) $csatN; ?> responses</p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">CSAT average (1–5)</p>
+      <p class="admin-stat-card__value"><?php echo $csatAvg !== null ? h((string) $csatAvg) : '—'; ?></p>
+      <p class="admin-stat-card__meta"><?php echo (int) $csatN; ?> responses</p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Panel opens / closes</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo (int) $panelOpens; ?> / <?php echo (int) $panelCloses; ?></p>
-      <p class="text-xs text-gray-500 m-0 mt-1">Logged from the homepage widget</p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Panel opens / closes</p>
+      <p class="admin-stat-card__value"><?php echo (int) $panelOpens; ?> / <?php echo (int) $panelCloses; ?></p>
+      <p class="admin-stat-card__meta">Logged from the homepage widget</p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">Drop-off estimate</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo $dropoffRate !== null ? h((string) $dropoffRate) : '—'; ?></p>
-      <p class="text-xs text-gray-500 m-0 mt-1">(opens − closes) ÷ opens</p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">Drop-off estimate</p>
+      <p class="admin-stat-card__value"><?php echo $dropoffRate !== null ? h((string) $dropoffRate) : '—'; ?></p>
+      <p class="admin-stat-card__meta">(opens − closes) ÷ opens</p>
     </div>
-    <div class="bg-white border border-gray-100 rounded-xl shadow-card p-4">
-      <p class="text-gray-500 text-sm m-0">KB backlog (pending)</p>
-      <p class="text-3xl font-bold text-[#012970] mt-1"><?php echo (int) $backlogPending; ?></p>
+    <div class="admin-stat-card">
+      <p class="admin-stat-card__label">KB backlog (pending)</p>
+      <p class="admin-stat-card__value"><?php echo (int) $backlogPending; ?></p>
       <p class="text-xs m-0 mt-1"><a href="<?php echo h($tabQs('backlog')); ?>" class="text-primary font-semibold underline">Open backlog tab</a></p>
     </div>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-4">
+    <div class="rounded-xl shadow-card border p-4 page-table">
       <h2 class="m-0 text-lg font-semibold text-gray-800 mb-3">Top assistant intents</h2>
       <?php if (!$topIntents): ?>
         <p class="text-gray-500 text-sm m-0">No data for this range.</p>
@@ -378,7 +362,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
         </ul>
       <?php endif; ?>
     </div>
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-4">
+    <div class="rounded-xl shadow-card border p-4 page-table">
       <h2 class="m-0 text-lg font-semibold text-gray-800 mb-3">Top repeated user messages</h2>
       <?php if (!$topUserMsgs): ?>
         <p class="text-gray-500 text-sm m-0">No data for this range.</p>
@@ -392,7 +376,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
     </div>
   </div>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden mb-5">
+  <div class="rounded-xl shadow-card border overflow-hidden mb-5 page-table">
     <div class="px-5 py-4 border-b border-gray-100">
       <h2 class="m-0 text-lg font-semibold text-gray-800">Latest support tickets</h2>
     </div>
@@ -426,7 +410,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
     </div>
   </div>
 
-  <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+  <div class="rounded-xl shadow-card border overflow-hidden page-table">
     <div class="px-5 py-4 border-b border-gray-100">
       <h2 class="m-0 text-lg font-semibold text-gray-800">Unanswered question report</h2>
     </div>
@@ -458,7 +442,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
         <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-900 text-sm">Saved.</div>
       <?php endif; ?>
 
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+      <div class="rounded-xl shadow-card border overflow-hidden page-table">
         <div class="overflow-x-auto p-4">
           <table class="w-full text-left text-sm">
             <thead>
@@ -524,7 +508,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
     <?php if ($v2): ?>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-semibold text-gray-800 m-0 mb-3">Global banned topics</h2>
         <p class="text-sm text-gray-500 m-0 mb-3">If a user message contains these phrases (one per line), the bot will refuse and direct to staff.</p>
         <form method="post" action="admin_support_analytics.php">
@@ -535,7 +519,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
           <button type="submit" class="mt-3 px-4 py-2 rounded-lg bg-primary text-white font-semibold">Save global settings</button>
         </form>
       </div>
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5">
+      <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-semibold text-gray-800 m-0 mb-2">Articles</h2>
         <p class="text-sm text-gray-500 m-0 mb-3">
           <a href="<?php echo h($tabQs('kb') . '&edit=0'); ?>" class="text-primary font-semibold">+ New article</a>
@@ -554,7 +538,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-8">
+    <div class="rounded-xl shadow-card border p-5 mb-8 page-table">
       <h2 class="text-lg font-semibold text-gray-800 m-0 mb-4"><?php echo $editRow ? 'Edit article' : 'New article'; ?></h2>
       <form method="post" action="admin_support_analytics.php" class="space-y-4">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -622,7 +606,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
       <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-900 text-sm"><?php echo h($lookupError); ?></div>
     <?php endif; ?>
 
-    <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 mb-5 max-w-xl">
+    <div class="rounded-xl shadow-card border p-5 mb-5 max-w-xl page-table">
       <form method="post" action="admin_support_analytics.php" class="space-y-3">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="hub_tab" value="lookup">
@@ -635,7 +619,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
     <?php if ($lookupError === '' && $lookupEmail !== '' && $lookupResult === null): ?>
       <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-700">No user found with that email.</div>
     <?php elseif ($lookupResult): ?>
-      <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 max-w-2xl">
+      <div class="rounded-xl shadow-card border p-5 max-w-2xl page-table">
         <h2 class="text-lg font-semibold text-gray-800 m-0 mb-3">Match</h2>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <dt class="text-gray-500">User ID</dt><dd class="font-mono"><?php echo (int) $lookupResult['user_id']; ?></dd>

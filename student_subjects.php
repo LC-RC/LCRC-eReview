@@ -1,17 +1,13 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 
-// Optional: enforce access_end check on every page load
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
+
 $uid = (int)$_SESSION['user_id'];
-$ur = mysqli_query($conn, "SELECT access_end FROM users WHERE user_id=" . $uid . " LIMIT 1");
-$u = $ur ? mysqli_fetch_assoc($ur) : null;
-if ($u && !empty($u['access_end']) && strtotime($u['access_end']) < time()) {
-    $_SESSION['error'] = 'Your access has expired.';
-    header('Location: index.php');
-    exit;
-}
 
 $subjectsResult = mysqli_query($conn, "SELECT * FROM subjects WHERE status='active' ORDER BY subject_name ASC");
 $lessonCounts = [];
@@ -50,6 +46,7 @@ $pageTitle = 'Subjects';
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
+  <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
     .student-dashboard-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
     .student-hero {
@@ -485,8 +482,11 @@ $pageTitle = 'Subjects';
                   $coverImgSrc = ereview_avatar_img_src($rawCover);
               }
               $cardTheme = ereview_subject_card_theme((string)($s['subject_name'] ?? ''));
+              $subjectIdRow = (int)($s['subject_id'] ?? 0);
+              $subjectOpen = sca_has_access($conn, $uid, 'subject', $subjectIdRow);
             ?>
-            <article class="subject-catalog-card dash-anim delay-2" data-subject-theme="<?php echo h($cardTheme); ?>">
+            <article class="subject-catalog-card dash-anim delay-2<?php echo $subjectOpen ? '' : ' lms-locked-card'; ?>" data-subject-theme="<?php echo h($cardTheme); ?>">
+              <?php if (!$subjectOpen): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span><?php endif; ?>
               <div class="subject-catalog-card__fill">
                 <?php if ($coverImgSrc !== ''): ?>
                   <img src="<?php echo h($coverImgSrc); ?>" alt="" class="subject-catalog-card__bg" width="640" height="400" loading="lazy" decoding="async">
@@ -510,10 +510,14 @@ $pageTitle = 'Subjects';
                         <i class="bi bi-file-text" aria-hidden="true"></i>
                         <span><?php echo $cnt; ?> lesson<?php echo $cnt === 1 ? '' : 's'; ?></span>
                       </div>
-                      <a href="student_subject.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="subject-btn">
+                      <?php if ($subjectOpen): ?>
+                      <a href="student_subject.php?subject_id=<?php echo $subjectIdRow; ?>" class="subject-btn">
                         <span>Open subject</span>
                         <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
                       </a>
+                      <?php else: ?>
+                      <span class="subject-btn" style="background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;"><span>Locked</span><i class="bi bi-lock-fill" aria-hidden="true"></i></span>
+                      <?php endif; ?>
                     </div>
                   </div>
                 </div>

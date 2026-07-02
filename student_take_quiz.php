@@ -6,7 +6,11 @@
 require_once __DIR__ . '/includes/quiz_http_debug.php';
 require_once 'auth.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 // PHP 8.1+ mysqli can throw mysqli_sql_exception on failed execute; this project checks return codes manually.
 if (function_exists('mysqli_report')) {
@@ -35,6 +39,12 @@ if (!$quiz) { header('Location: student_subjects.php'); exit; }
 if (!$subjectId && !empty($quiz['subject_id'])) $subjectId = (int)$quiz['subject_id'];
 
 $userId = getCurrentUserId();
+if (!sca_has_access($conn, (int)$userId, 'quiz', $quizId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id=' . $subjectId : 'student_subjects.php'));
+    exit;
+}
+
 $timeLimitSeconds = getQuizTimeLimitSeconds($quiz);
 if ($timeLimitSeconds < 1) $timeLimitSeconds = 1;
 if ($timeLimitSeconds > 86400) $timeLimitSeconds = 86400; // max 24 hours

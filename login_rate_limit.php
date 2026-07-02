@@ -15,7 +15,7 @@ const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5;
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 900; // 15 minutes
 
 /** Lockout duration (seconds) after exceeding max attempts */
-const LOGIN_RATE_LIMIT_LOCKOUT_SECONDS = 900; // 15 minutes
+const LOGIN_RATE_LIMIT_LOCKOUT_SECONDS = 120; // 2 minutes
 
 /** Require CAPTCHA after this many failed attempts (within the window) */
 const LOGIN_CAPTCHA_AFTER_ATTEMPTS = 2;
@@ -63,7 +63,45 @@ function getLoginClientIp() {
 }
 
 /**
- * Check if the current client is rate limited.
+ * Human-readable time until lockout ends (for flash messages).
+ */
+function formatLoginLockoutRemaining(int $lockedUntilTs): string {
+    $secs = max(0, $lockedUntilTs - time());
+    if ($secs < 60) {
+        return $secs . ' second' . ($secs === 1 ? '' : 's');
+    }
+    $mins = (int) ceil($secs / 60);
+    return $mins . ' minute' . ($mins === 1 ? '' : 's');
+}
+
+/**
+ * Enforce current lockout duration cap (migrates legacy 15-minute rows).
+ */
+function login_rate_limit_normalize_locked_until(int $lockedUntilTs, bool $persist = true): int
+{
+    $now = time();
+    if ($lockedUntilTs <= $now) {
+        return $lockedUntilTs;
+    }
+    $maxUntil = $now + LOGIN_RATE_LIMIT_LOCKOUT_SECONDS;
+    if ($lockedUntilTs <= $maxUntil) {
+        return $lockedUntilTs;
+    }
+    if ($persist) {
+        global $conn;
+        $ip = getLoginClientIp();
+        $lockoutEnd = date('Y-m-d H:i:s', $maxUntil);
+        $stmt = @mysqli_prepare($conn, 'UPDATE login_attempts SET locked_until = ? WHERE ip_address = ? LIMIT 1');
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'ss', $lockoutEnd, $ip);
+            @mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+    }
+    return $maxUntil;
+}
+
+/**
  * @return array{0: bool, 1: int|null} [ is_rate_limited, locked_until_timestamp or null ]
  */
 function isLoginRateLimited() {
@@ -93,7 +131,8 @@ function isLoginRateLimited() {
     $lockedUntil = $row['locked_until'] ? strtotime($row['locked_until']) : null;
 
     if ($lockedUntil !== null && $lockedUntil > $now) {
-        return [true, (int) $lockedUntil];
+        $lockedUntil = login_rate_limit_normalize_locked_until((int) $lockedUntil, true);
+        return [true, $lockedUntil];
     }
 
     return [false, null];
@@ -158,7 +197,7 @@ function recordFailedLoginAttempt() {
         @mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
     }
-    return $lockedUntil ? strtotime($lockedUntil) : null;
+    return $lockedUntil ? login_rate_limit_normalize_locked_until(strtotime($lockedUntil), false) : null;
 }
 
 /**

@@ -3,8 +3,12 @@
  * Full-page Preweek materials viewer (videos + handouts) — same UI/behavior as student_lesson_viewer.php.
  */
 require_once 'auth.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preweek_migrate.php';
+
+sca_ensure_schema($conn);
+sca_enforce_student_session($conn);
 
 $topicId = (int)($_GET['preweek_topic_id'] ?? 0);
 $preweekUnitId = (int)($_GET['preweek_unit_id'] ?? 0);
@@ -43,6 +47,13 @@ if ($topicId > 0) {
 if (!$topicRow || $preweekUnitId <= 0) {
     $_SESSION['error'] = 'Pre-week materials were not found.';
     header('Location: student_preweek.php');
+    exit;
+}
+
+$userId = getCurrentUserId();
+if (!sca_has_access($conn, (int)$userId, 'preweek_topic', $topicId)) {
+    $_SESSION['error'] = SCA_DENIED_MESSAGE;
+    header('Location: student_preweek_topics.php?preweek_unit_id=' . (int)$preweekUnitId);
     exit;
 }
 

@@ -97,7 +97,7 @@ function ereview_chat_detect_intent(string $message): array
         'meta_language' => '/\b(tagalog|filipino|pilipino|bisaya|cebuano|ilocano|taglish|filipino language)\b|\b(in|using|speak|talk)\s+(tagalog|filipino|pilipino)\b|\b(tagalog|filipino)\s*(please|po|ba)\b|\b(mag-?tagalog|salitang filipino)\b/i',
         'human_handoff' => '/\b(talk to (a )?human|speak to (a )?human|live agent|representative|live support|customer service|open (a )?ticket|create (a )?ticket|support ticket|escalate|handoff)\b/i',
         'learning_content' => '/\b(video|videos|lecture|lectures|lesson|lessons|handout|handouts|study materials|course materials|streaming|mock exam|mock exams|quiz|quizzes|test bank|preboard|pre-week|sample videos|free sample|samples)\b|is\s+there\s+(a\s+)?(video|videos)\b/i',
-        'packages' => '/\b(package|packages|price|pricing|cost|fee|plan|plans|promo)\b/',
+        'packages' => '/\b(package|packages|price|pricing|cost|fee|plan|plans|promo|magkano|presyo)\b|\bhow\s+(much|many|munch)\b|\b\d+\s*months?\b.*\b(access|package|plan)?\b|\b(access|package|plan)\b.*\b\d+\s*months?\b/i',
         'registration' => '/\b(register|registration|sign up|signup|enroll|enrollment|how to join)\b/',
         'payment' => '/\b(payment|pay|gcash|bank|proof of payment|receipt|invoice)\b/',
         'account_issue' => '/\b(login|password|locked|forgot|lost access|no access|access issue|cannot access|cant access)\b/i',
@@ -289,7 +289,7 @@ function ereview_chat_fetch_kb_documents(mysqli $conn): array
         $docs[] = [
             'article_id' => 0,
             'title' => 'Packages',
-            'content' => 'LCRC eReview packages: 6-month ₱1,500, 9-month ₱2,000, 14-month ₱2,500.',
+            'content' => 'LCRC eReview packages: 6-month ₱2,000, 9-month ₱2,500, 14-month ₱3,000.',
             'keywords' => 'package,price,plan,enroll',
             'short_answer' => '',
             'approved_phrases' => '',

@@ -6,6 +6,7 @@
 require_once 'auth.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preboards_migrate.php';
+require_once __DIR__ . '/includes/preboards_helpers.php';
 
 header('Content-Type: application/json');
 
@@ -51,6 +52,15 @@ if ($action === 'save_answer') {
         echo json_encode(['ok' => false, 'error' => 'Time expired']);
         exit;
     }
+    $setStmt = mysqli_prepare($conn, 'SELECT use_schedule, closes_at FROM preboards_sets WHERE preboards_set_id=? LIMIT 1');
+    mysqli_stmt_bind_param($setStmt, 'i', $attempt['preboards_set_id']);
+    mysqli_stmt_execute($setStmt);
+    $setRow = mysqli_fetch_assoc(mysqli_stmt_get_result($setStmt));
+    mysqli_stmt_close($setStmt);
+    if ($setRow && preboards_set_uses_schedule($setRow) && !empty($setRow['closes_at']) && strtotime($setRow['closes_at']) < time()) {
+        echo json_encode(['ok' => false, 'error' => 'Time expired']);
+        exit;
+    }
 
     $stmt = mysqli_prepare($conn, "SELECT preboards_question_id, correct_answer FROM preboards_questions WHERE preboards_question_id=? AND preboards_set_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $questionId, $attempt['preboards_set_id']);
@@ -77,7 +87,10 @@ if ($action === 'save_answer') {
 
 if ($action === 'get_time') {
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
-    $stmt = mysqli_prepare($conn, "SELECT expires_at, status FROM preboards_attempts WHERE preboards_attempt_id=? AND user_id=? LIMIT 1");
+    $stmt = mysqli_prepare($conn, "SELECT a.expires_at, a.status, a.preboards_set_id, s.use_schedule, s.closes_at, s.opens_at, s.time_limit_seconds
+      FROM preboards_attempts a
+      INNER JOIN preboards_sets s ON s.preboards_set_id = a.preboards_set_id
+      WHERE a.preboards_attempt_id=? AND a.user_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -86,7 +99,24 @@ if ($action === 'get_time') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
         exit;
     }
-    $remaining = !empty($row['expires_at']) ? max(0, strtotime($row['expires_at']) - time()) : 0;
+    $remaining = 0;
+    $now = time();
+    $candidates = [];
+    if (!empty($row['expires_at'])) {
+        $exp = strtotime($row['expires_at']);
+        if ($exp !== false) {
+            $candidates[] = $exp;
+        }
+    }
+    if (preboards_set_uses_schedule($row) && !empty($row['closes_at'])) {
+        $closesTs = strtotime($row['closes_at']);
+        if ($closesTs !== false) {
+            $candidates[] = $closesTs;
+        }
+    }
+    if ($candidates !== []) {
+        $remaining = max(0, min($candidates) - $now);
+    }
     echo json_encode(['ok' => true, 'remaining_seconds' => $remaining]);
     exit;
 }

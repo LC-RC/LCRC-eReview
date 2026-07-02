@@ -272,9 +272,9 @@ $pageTitle = 'Home';
       <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
         <?php
         $plans = [
-          ['name' => '6 MONTHS', 'price' => '₱1,500', 'bar' => 'bg-accent-orange', 'accent' => 'orange'],
-          ['name' => '9 MONTHS', 'price' => '₱2,000', 'bar' => 'bg-accent-blue', 'accent' => 'blue'],
-          ['name' => '14 MONTHS', 'price' => '₱2,500', 'bar' => 'bg-accent-orange', 'accent' => 'orange'],
+          ['name' => '6 MONTHS', 'price' => '₱2,000', 'bar' => 'bg-accent-orange', 'accent' => 'orange'],
+          ['name' => '9 MONTHS', 'price' => '₱2,500', 'bar' => 'bg-accent-blue', 'accent' => 'blue'],
+          ['name' => '14 MONTHS', 'price' => '₱3,000', 'bar' => 'bg-accent-orange', 'accent' => 'orange'],
         ];
         $features_list = [
           '1,000+ Hours of Lecture videos',

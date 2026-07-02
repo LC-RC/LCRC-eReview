@@ -87,6 +87,16 @@ $errorType = $_SESSION['error_type'] ?? 'invalid_credentials';
 $rateLimitUntil = isset($_SESSION['rate_limit_until']) ? (int) $_SESSION['rate_limit_until'] : null;
 unset($_SESSION['error'], $_SESSION['error_type']);
 
+// DB is source of truth; clamp any legacy 15-minute lockouts down to 2 minutes.
+list($dbRateLimited, $dbLockedUntil) = isLoginRateLimited();
+if ($dbRateLimited && $dbLockedUntil !== null) {
+    $rateLimitUntil = $dbLockedUntil;
+    $_SESSION['rate_limit_until'] = $dbLockedUntil;
+} elseif ($rateLimitUntil !== null && $rateLimitUntil > time()) {
+    $rateLimitUntil = login_rate_limit_normalize_locked_until($rateLimitUntil, false);
+    $_SESSION['rate_limit_until'] = $rateLimitUntil;
+}
+
 // Clear expired rate limit so we don't show the block on next load
 if ($rateLimitUntil !== null && time() >= $rateLimitUntil) {
     unset($_SESSION['rate_limit_until']);
@@ -1148,7 +1158,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
           <h2 class="login-ratelimit-block-title">Too many login attempts</h2>
           <p class="login-ratelimit-block-desc">For your security, we've temporarily limited sign-in from this device. You can try again when the timer below reaches zero.</p>
           <div class="login-ratelimit-countdown" id="login-ratelimit-countdown" role="timer" aria-live="polite">—</div>
-          <p class="mt-3 text-xs text-amber-700/80">Attempts are limited to 5 in 15 minutes. Lockout lasts 15 minutes.</p>
+          <p class="mt-3 text-xs text-amber-700/80">Attempts are limited to <?php echo LOGIN_RATE_LIMIT_MAX_ATTEMPTS; ?> in <?php echo (int) (LOGIN_RATE_LIMIT_WINDOW_SECONDS / 60); ?> minutes. Lockout lasts <?php echo (int) (LOGIN_RATE_LIMIT_LOCKOUT_SECONDS / 60); ?> minutes.</p>
           <p class="mt-2 text-xs"><a href="forgot_password.php" class="text-amber-600 hover:underline font-medium">Reset your password</a> to unlock sooner.</p>
         </div>
         <?php endif; ?>

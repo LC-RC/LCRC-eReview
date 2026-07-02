@@ -306,7 +306,6 @@ unset($_SESSION['clear_batch_draft']);
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=3">
 </head>
 <body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="quizQuestionsApp()" x-init="initEditFromServer(); initBatchAutosave()">
   <?php include 'admin_sidebar.php'; ?>

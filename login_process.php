@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     list($rateLimited, $lockedUntilTs) = isLoginRateLimited();
     if ($rateLimited && $lockedUntilTs !== null) {
         $_SESSION['rate_limit_until'] = $lockedUntilTs;
-        $_SESSION['error'] = 'Too many login attempts. Try again in ' . max(1, (int) ceil(($lockedUntilTs - time()) / 60)) . ' minutes.';
+        $_SESSION['error'] = 'Too many login attempts. Try again in ' . formatLoginLockoutRemaining($lockedUntilTs) . '.';
         $_SESSION['error_type'] = 'rate_limit';
         header('Location: login.php');
         exit;
@@ -183,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $lockTs = recordFailedLoginAttempt();
         if ($lockTs !== null) {
             $_SESSION['rate_limit_until'] = $lockTs;
-            $_SESSION['error'] = 'Too many login attempts. Try again in ' . max(1, (int) ceil(($lockTs - time()) / 60)) . ' minutes.';
+            $_SESSION['error'] = 'Too many login attempts. Try again in ' . formatLoginLockoutRemaining($lockTs) . '.';
             $_SESSION['error_type'] = 'rate_limit';
         } else {
             $_SESSION['error'] = 'Invalid email or password.';

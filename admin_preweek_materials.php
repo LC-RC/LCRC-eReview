@@ -763,7 +763,6 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
       gap: 1.5rem;
     }
   </style>
-  <link rel="stylesheet" href="assets/css/admin-quiz-ui.css?v=10">
 </head>
 <body class="font-sans antialiased admin-app admin-materials-page admin-preweek-materials-page">
   <?php include 'admin_sidebar.php'; ?>
@@ -898,19 +897,14 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
                     <?php endif; ?>
                   </td>
                   <td class="px-4 py-3 align-middle text-center">
-                    <div class="inline-block w-full max-w-[240px] mx-auto text-left" x-data="{ expanded: false }">
-                      <div class="flex flex-nowrap items-stretch justify-center gap-2">
-                        <a href="<?php echo h($vurl); ?>" target="_blank" rel="noopener" class="preweek-materials-link flex items-center justify-center gap-1.5 min-w-0 flex-1 px-2.5 py-2 rounded-lg text-sm font-semibold transition no-underline">
-                          <i class="bi bi-box-arrow-up-right shrink-0" aria-hidden="true"></i><span class="truncate">Open</span>
-                        </a>
-                        <button type="button" @click="expanded = !expanded" class="quiz-admin-more-btn flex items-center justify-center gap-1 shrink-0 px-2.5 py-2 rounded-md text-xs border transition" :aria-expanded="expanded" title="More actions">
-                          <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                          <span class="opacity-80 hidden sm:inline">More</span>
-                        </button>
-                      </div>
-                      <div x-show="expanded" x-cloak class="flex flex-col gap-2 mt-2 w-full">
-                        <button type="button" class="preweek-btn-edit flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg" data-video="<?php echo h(json_encode($videoEditPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)); ?>" @click="expanded = false"><i class="bi bi-pencil"></i> Edit</button>
-                        <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&delete_video=<?php echo (int)$v['preweek_video_id']; ?>" onclick="return confirm('Remove this video from preweek? This cannot be undone.');" class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium border-2 border-red-500/50 text-red-400 hover:bg-red-950/30 transition no-underline" @click="expanded = false"><i class="bi bi-trash"></i> Delete</a>
+                    <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                      <a href="<?php echo h($vurl); ?>" target="_blank" rel="noopener" class="admin-row-action admin-row-action--open" title="Open"><i class="bi bi-box-arrow-up-right"></i><span class="sr-only">Open</span></a>
+                      <div class="admin-row-menu-wrap">
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                          <button type="button" class="admin-row-menu__item preweek-btn-edit" data-video="<?php echo h(json_encode($videoEditPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
+                          <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&delete_video=<?php echo (int)$v['preweek_video_id']; ?>" onclick="return confirm('Remove this video from preweek? This cannot be undone.');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -983,22 +977,17 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
                     <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-gray-400 border border-white/15">Locked</span><?php endif; ?>
                   </td>
                   <td class="px-4 py-3 align-middle text-center">
-                    <div class="inline-block w-full max-w-[260px] mx-auto text-left" x-data="{ expanded: false }">
-                      <div class="flex flex-nowrap items-stretch <?php echo $fp !== '' ? 'justify-center gap-2' : 'justify-center'; ?>">
-                        <?php if ($fp !== ''): ?>
-                        <a href="<?php echo h($fp); ?>" target="_blank" rel="noopener" class="preweek-materials-link flex items-center justify-center gap-1.5 min-w-0 flex-1 px-2.5 py-2 rounded-lg text-sm font-semibold transition no-underline">
-                          <i class="bi bi-download shrink-0" aria-hidden="true"></i><span class="truncate">Download</span>
-                        </a>
-                        <?php endif; ?>
-                        <button type="button" @click="expanded = !expanded" class="quiz-admin-more-btn flex items-center justify-center gap-1 shrink-0 px-2.5 py-2 rounded-md text-xs border transition" :aria-expanded="expanded" title="More actions">
-                          <i class="bi text-sm" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-                          <span class="opacity-80 hidden sm:inline">More</span>
-                        </button>
-                      </div>
-                      <div x-show="expanded" x-cloak class="flex flex-col gap-2 mt-2 w-full">
-                        <button type="button" class="preweek-btn-edit flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg" data-handout="<?php echo h(json_encode($handoutEditPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)); ?>" @click="expanded = false"><i class="bi bi-pencil"></i> Edit</button>
-                        <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&toggle_handout=<?php echo (int)$h['preweek_handout_id']; ?>" class="quiz-admin-btn-secondary flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-semibold transition no-underline" @click="expanded = false"><i class="bi bi-<?php echo !empty($h['allow_download']) ? 'lock' : 'unlock'; ?>"></i> <?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?></a>
-                        <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&delete_handout=<?php echo (int)$h['preweek_handout_id']; ?>" onclick="return confirm('Remove this handout? Files cannot be recovered after deletion.');" class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium border-2 border-red-500/50 text-red-400 hover:bg-red-950/30 transition no-underline" @click="expanded = false"><i class="bi bi-trash"></i> Delete</a>
+                    <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                      <?php if ($fp !== ''): ?>
+                      <a href="<?php echo h($fp); ?>" target="_blank" rel="noopener" class="admin-row-action admin-row-action--open" title="Download"><i class="bi bi-download"></i><span class="sr-only">Download</span></a>
+                      <?php endif; ?>
+                      <div class="admin-row-menu-wrap">
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                          <button type="button" class="admin-row-menu__item preweek-btn-edit" data-handout="<?php echo h(json_encode($handoutEditPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
+                          <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&toggle_handout=<?php echo (int)$h['preweek_handout_id']; ?>" class="admin-row-menu__item" @click="menuOpen = false"><i class="bi bi-<?php echo !empty($h['allow_download']) ? 'lock' : 'unlock'; ?>"></i> <?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?></a>
+                          <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>&delete_handout=<?php echo (int)$h['preweek_handout_id']; ?>" onclick="return confirm('Remove this handout? Files cannot be recovered after deletion.');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
+                        </div>
                       </div>
                     </div>
                   </td>
