@@ -92,7 +92,7 @@ $pageTitle = 'Subjects';
     /* Subject catalog cards — modern course-card layout */
     .subject-catalog-card {
       --subject-accent: #5b9fd4;
-      --subject-overlay: rgba(91, 159, 212, 0.24);
+      --subject-overlay: rgba(91, 159, 212, 0.12);
       --subject-fallback: linear-gradient(135deg, #f4f9fe 0%, #eaf3fb 100%);
       position: relative;
       height: 100%;
@@ -238,37 +238,37 @@ $pageTitle = 'Subjects';
 
     .subject-catalog-card[data-subject-theme="afar"] {
       --subject-accent: #a78bfa;
-      --subject-overlay: rgba(167, 139, 250, 0.26);
+      --subject-overlay: rgba(167, 139, 250, 0.11);
       --subject-fallback: linear-gradient(135deg, #f5f0ff 0%, #ede4ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-prob"] {
       --subject-accent: #60a5fa;
-      --subject-overlay: rgba(96, 165, 250, 0.26);
+      --subject-overlay: rgba(96, 165, 250, 0.11);
       --subject-fallback: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-theories"] {
       --subject-accent: #7b8fa3;
-      --subject-overlay: rgba(123, 143, 163, 0.28);
+      --subject-overlay: rgba(123, 143, 163, 0.12);
       --subject-fallback: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     }
     .subject-catalog-card[data-subject-theme="far"] {
       --subject-accent: #f47288;
-      --subject-overlay: rgba(244, 114, 136, 0.24);
+      --subject-overlay: rgba(244, 114, 136, 0.1);
       --subject-fallback: linear-gradient(135deg, #fff1f3 0%, #ffe4e8 100%);
     }
     .subject-catalog-card[data-subject-theme="mas"] {
       --subject-accent: #5cb87a;
-      --subject-overlay: rgba(92, 184, 122, 0.24);
+      --subject-overlay: rgba(92, 184, 122, 0.1);
       --subject-fallback: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
     }
     .subject-catalog-card[data-subject-theme="rfbt"] {
       --subject-accent: #b85c5c;
-      --subject-overlay: rgba(184, 92, 92, 0.26);
+      --subject-overlay: rgba(184, 92, 92, 0.11);
       --subject-fallback: linear-gradient(135deg, #fef2f2 0%, #fde8e8 100%);
     }
     .subject-catalog-card[data-subject-theme="tax"] {
       --subject-accent: #e8b339;
-      --subject-overlay: rgba(232, 179, 57, 0.28);
+      --subject-overlay: rgba(232, 179, 57, 0.12);
       --subject-fallback: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
     }
 
