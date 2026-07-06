@@ -123,9 +123,10 @@ $pageTitle = 'Subjects';
 
     /* Subject catalog — crisp, modern course cards */
     .subject-catalog-card {
-      --subject-accent: #1F58C3;
-      --subject-accent-soft: rgba(31, 88, 195, 0.1);
-      --subject-fallback: linear-gradient(145deg, #eff6ff 0%, #dbeafe 55%, #bfdbfe 100%);
+      --subject-accent: #1665A0;
+      --subject-accent-soft: rgba(22, 101, 160, 0.1);
+      --subject-tint: rgba(22, 101, 160, 0.08);
+      --subject-fallback: linear-gradient(145deg, #f4f9fe 0%, #eaf3fb 100%);
       position: relative;
       height: 100%;
       border-radius: 1rem;
@@ -175,11 +176,7 @@ $pageTitle = 'Subjects';
       position: absolute;
       inset: 0;
       z-index: 1;
-      background: linear-gradient(
-        180deg,
-        transparent 35%,
-        rgba(15, 23, 42, 0.08) 100%
-      );
+      background: var(--subject-tint);
       pointer-events: none;
     }
     .subject-catalog-card__bg {
@@ -187,7 +184,7 @@ $pageTitle = 'Subjects';
       height: 100%;
       object-fit: cover;
       display: block;
-      filter: saturate(1.08) contrast(1.04);
+      filter: none;
       transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     .subject-catalog-card:hover .subject-catalog-card__bg {
@@ -301,37 +298,44 @@ $pageTitle = 'Subjects';
     .subject-catalog-card[data-subject-theme="afar"] {
       --subject-accent: #7c3aed;
       --subject-accent-soft: rgba(124, 58, 237, 0.1);
-      --subject-fallback: linear-gradient(145deg, #f5f3ff 0%, #ede9fe 55%, #ddd6fe 100%);
+      --subject-tint: rgba(124, 58, 237, 0.1);
+      --subject-fallback: linear-gradient(145deg, #faf8ff 0%, #f3eeff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-prob"] {
       --subject-accent: #2563eb;
       --subject-accent-soft: rgba(37, 99, 235, 0.1);
-      --subject-fallback: linear-gradient(145deg, #eff6ff 0%, #dbeafe 55%, #bfdbfe 100%);
+      --subject-tint: rgba(37, 99, 235, 0.1);
+      --subject-fallback: linear-gradient(145deg, #f5f9ff 0%, #edf4ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-theories"] {
-      --subject-accent: #475569;
-      --subject-accent-soft: rgba(71, 85, 105, 0.1);
-      --subject-fallback: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 55%, #cbd5e1 100%);
+      --subject-accent: #64748b;
+      --subject-accent-soft: rgba(100, 116, 139, 0.1);
+      --subject-tint: rgba(100, 116, 139, 0.1);
+      --subject-fallback: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
     }
     .subject-catalog-card[data-subject-theme="far"] {
       --subject-accent: #e11d48;
       --subject-accent-soft: rgba(225, 29, 72, 0.1);
-      --subject-fallback: linear-gradient(145deg, #fff1f2 0%, #ffe4e6 55%, #fecdd3 100%);
+      --subject-tint: rgba(225, 29, 72, 0.08);
+      --subject-fallback: linear-gradient(145deg, #fff8f9 0%, #fff1f3 100%);
     }
     .subject-catalog-card[data-subject-theme="mas"] {
       --subject-accent: #059669;
       --subject-accent-soft: rgba(5, 150, 105, 0.1);
-      --subject-fallback: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 55%, #a7f3d0 100%);
+      --subject-tint: rgba(5, 150, 105, 0.1);
+      --subject-fallback: linear-gradient(145deg, #f4fdf8 0%, #ecfdf5 100%);
     }
     .subject-catalog-card[data-subject-theme="rfbt"] {
-      --subject-accent: #b91c1c;
-      --subject-accent-soft: rgba(185, 28, 28, 0.1);
-      --subject-fallback: linear-gradient(145deg, #fef2f2 0%, #fee2e2 55%, #fecaca 100%);
+      --subject-accent: #991b1b;
+      --subject-accent-soft: rgba(153, 27, 27, 0.1);
+      --subject-tint: rgba(153, 27, 27, 0.1);
+      --subject-fallback: linear-gradient(145deg, #fff8f8 0%, #fef2f2 100%);
     }
     .subject-catalog-card[data-subject-theme="tax"] {
       --subject-accent: #d97706;
       --subject-accent-soft: rgba(217, 119, 6, 0.12);
-      --subject-fallback: linear-gradient(145deg, #fffbeb 0%, #fef3c7 55%, #fde68a 100%);
+      --subject-tint: rgba(217, 119, 6, 0.1);
+      --subject-fallback: linear-gradient(145deg, #fffdf5 0%, #fffbeb 100%);
     }
 
     .subject-catalog-card.lms-locked-card {
