@@ -91,23 +91,23 @@ $pageTitle = 'Subjects';
 
     /* Subject catalog cards — modern course-card layout */
     .subject-catalog-card {
-      --subject-accent: #1665A0;
-      --subject-tint: rgba(22, 101, 160, 0.06);
-      --subject-fallback: linear-gradient(135deg, #e8f2fa 0%, #dbeafe 100%);
+      --subject-accent: #7eb3d8;
+      --subject-tint: rgba(255, 255, 255, 0.42);
+      --subject-fallback: linear-gradient(135deg, #f8fbff 0%, #f1f6fc 100%);
       position: relative;
       height: 100%;
-      border-radius: 12px;
+      border-radius: 10px;
       background: #fff;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #eef2f6;
       border-top: 3px solid var(--subject-accent);
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
       overflow: hidden;
       transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
     .subject-catalog-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.14);
-      border-color: #d1d5db;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px -10px rgba(15, 23, 42, 0.1);
+      border-color: #e2e8f0;
     }
     .subject-catalog-card__link {
       display: flex;
@@ -131,7 +131,10 @@ $pageTitle = 'Subjects';
       content: '';
       position: absolute;
       inset: 0;
-      background: var(--subject-tint);
+      z-index: 1;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.52) 100%),
+        var(--subject-tint);
       pointer-events: none;
     }
     .subject-catalog-card__bg {
@@ -139,10 +142,12 @@ $pageTitle = 'Subjects';
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.35s ease;
+      filter: brightness(1.14) contrast(0.9) saturate(0.78);
+      transition: transform 0.35s ease, filter 0.35s ease;
     }
     .subject-catalog-card:hover .subject-catalog-card__bg {
-      transform: scale(1.04);
+      transform: scale(1.03);
+      filter: brightness(1.18) contrast(0.88) saturate(0.82);
     }
     .subject-catalog-card__bg-fallback {
       width: 100%;
@@ -161,23 +166,24 @@ $pageTitle = 'Subjects';
       position: absolute;
       top: -1.15rem;
       left: 1rem;
-      width: 2.25rem;
-      height: 2.25rem;
+      z-index: 2;
+      width: 2.15rem;
+      height: 2.15rem;
       border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--subject-accent);
       color: #fff;
-      font-size: 0.95rem;
-      box-shadow: 0 4px 10px -4px rgba(15, 23, 42, 0.35);
+      font-size: 0.88rem;
+      box-shadow: 0 2px 8px -3px rgba(15, 23, 42, 0.18);
       border: 2px solid #fff;
     }
     .subject-catalog-card__title {
       margin: 0;
-      font-size: 1.125rem;
+      font-size: 1.0625rem;
       font-weight: 800;
-      color: #143D59;
+      color: #1e3a5f;
       letter-spacing: -0.02em;
       line-height: 1.2;
     }
@@ -186,7 +192,7 @@ $pageTitle = 'Subjects';
       font-size: 0.8125rem;
       line-height: 1.45;
       font-weight: 500;
-      color: #64748b;
+      color: #7b8da0;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -200,10 +206,10 @@ $pageTitle = 'Subjects';
       gap: 0.75rem;
       margin-top: 0.85rem;
       padding-top: 0.75rem;
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid #f3f6f9;
       font-size: 0.8125rem;
       font-weight: 600;
-      color: #64748b;
+      color: #8b9aab;
     }
     .subject-catalog-card__lessons {
       display: inline-flex;
@@ -212,17 +218,18 @@ $pageTitle = 'Subjects';
       min-width: 0;
     }
     .subject-catalog-card__lessons i {
-      color: #94a3b8;
+      color: #b0bec8;
       font-size: 0.95rem;
     }
     .subject-catalog-card__arrow {
       flex-shrink: 0;
-      font-size: 1.1rem;
-      color: var(--subject-accent);
-      transition: transform 0.22s ease;
+      font-size: 1.05rem;
+      color: #5a6f85;
+      transition: transform 0.22s ease, color 0.22s ease;
     }
     .subject-catalog-card:hover .subject-catalog-card__arrow {
       transform: translateX(3px);
+      color: var(--subject-accent);
     }
     .subject-catalog-card.lms-locked-card .subject-catalog-card__arrow {
       color: #94a3b8;
@@ -234,39 +241,39 @@ $pageTitle = 'Subjects';
     }
 
     .subject-catalog-card[data-subject-theme="afar"] {
-      --subject-accent: #9333ea;
-      --subject-tint: rgba(147, 51, 234, 0.08);
-      --subject-fallback: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+      --subject-accent: #c4b5fd;
+      --subject-tint: rgba(196, 181, 253, 0.14);
+      --subject-fallback: linear-gradient(135deg, #faf8ff 0%, #f5f3ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-prob"] {
-      --subject-accent: #2563eb;
-      --subject-tint: rgba(37, 99, 235, 0.08);
-      --subject-fallback: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+      --subject-accent: #93c5fd;
+      --subject-tint: rgba(147, 197, 253, 0.14);
+      --subject-fallback: linear-gradient(135deg, #f8fbff 0%, #eff6ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-theories"] {
-      --subject-accent: #64748b;
-      --subject-tint: rgba(100, 116, 139, 0.08);
-      --subject-fallback: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      --subject-accent: #b8c4d4;
+      --subject-tint: rgba(184, 196, 212, 0.16);
+      --subject-fallback: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     }
     .subject-catalog-card[data-subject-theme="far"] {
-      --subject-accent: #e11d48;
-      --subject-tint: rgba(225, 29, 72, 0.08);
-      --subject-fallback: linear-gradient(135deg, #ffe4e6 0%, #fff1f2 100%);
+      --subject-accent: #fda4af;
+      --subject-tint: rgba(253, 164, 175, 0.14);
+      --subject-fallback: linear-gradient(135deg, #fffafb 0%, #fff5f7 100%);
     }
     .subject-catalog-card[data-subject-theme="mas"] {
-      --subject-accent: #16a34a;
-      --subject-tint: rgba(22, 163, 74, 0.08);
-      --subject-fallback: linear-gradient(135deg, #dcfce7 0%, #ecfdf5 100%);
+      --subject-accent: #86efac;
+      --subject-tint: rgba(134, 239, 172, 0.14);
+      --subject-fallback: linear-gradient(135deg, #f7fef9 0%, #f0fdf4 100%);
     }
     .subject-catalog-card[data-subject-theme="rfbt"] {
-      --subject-accent: #7f1d1d;
-      --subject-tint: rgba(127, 29, 29, 0.08);
-      --subject-fallback: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+      --subject-accent: #d4a0a8;
+      --subject-tint: rgba(212, 160, 168, 0.14);
+      --subject-fallback: linear-gradient(135deg, #fefafa 0%, #fdf5f6 100%);
     }
     .subject-catalog-card[data-subject-theme="tax"] {
-      --subject-accent: #d97706;
-      --subject-tint: rgba(217, 119, 6, 0.08);
-      --subject-fallback: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+      --subject-accent: #fcd34d;
+      --subject-tint: rgba(252, 211, 77, 0.16);
+      --subject-fallback: linear-gradient(135deg, #fffef8 0%, #fffbeb 100%);
     }
 
     @media (prefers-reduced-motion: reduce) {
