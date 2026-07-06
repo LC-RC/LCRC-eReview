@@ -74,8 +74,8 @@ foreach ($migrations as $label => $sql) {
         </ul>
 
         <div class="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-          <a href="admin_quizzes.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition"><i class="bi bi-list-ul"></i> Back to Quizzes</a>
-          <a href="admin_subjects.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition"><i class="bi bi-folder"></i> Subjects</a>
+          <a href="admin_quizzes" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition"><i class="bi bi-list-ul"></i> Back to Quizzes</a>
+          <a href="admin_subjects" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition"><i class="bi bi-folder"></i> Subjects</a>
         </div>
       </div>
     </div>

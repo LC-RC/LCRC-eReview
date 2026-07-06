@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['weekly_activity_goal_
             $_SESSION['success'] = $g > 0 ? 'Weekly goal saved.' : 'Weekly goal cleared.';
         }
     }
-    header('Location: student_dashboard.php');
+    header('Location: student_dashboard');
     exit;
 }
 
@@ -137,7 +137,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
 </head>
-<body class="font-sans antialiased dash-page dash-page--loading<?php echo $dashboardPrefetchJson ? ' dash-async-fetch' : ''; ?>" data-dashboard-data-url="<?php echo h($dashBase); ?>/api/student/dashboard_data.php">
+<body class="font-sans antialiased dash-page dash-page--loading<?php echo $dashboardPrefetchJson ? ' dash-async-fetch' : ''; ?>" data-dashboard-data-url="<?php echo h($dashBase); ?>/api/student/dashboard_data">
   <?php $appShellHideStudentAccessTopbar = true; ?>
   <?php include 'student_sidebar.php'; ?>
   <div class="student-dashboard-page min-h-full pb-8">
@@ -227,7 +227,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
             <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$subjectsCount; ?></p>
           </div>
         </div>
-        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Manage subjects</a>
+        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Manage subjects</a>
       </article>
       <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--lessons dash-anim delay-2 p-5">
         <div class="flex items-center gap-4">
@@ -237,7 +237,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
             <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$lessonsCount; ?></p>
           </div>
         </div>
-        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Continue learning</a>
+        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Continue learning</a>
       </article>
       <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--quizzes dash-anim delay-3 p-5">
         <div class="flex items-center gap-4">
@@ -247,7 +247,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
             <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$quizSubmittedCount; ?></p>
           </div>
         </div>
-        <a href="student_subjects.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View quizzes</a>
+        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View quizzes</a>
       </article>
       <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--preboards dash-anim delay-3 p-5">
         <div class="flex items-center gap-4">
@@ -257,7 +257,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
             <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$preboardsSubmittedCount; ?></p>
           </div>
         </div>
-        <a href="student_preboards.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Open preboards</a>
+        <a href="student_preboards" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Open preboards</a>
       </article>
     </section>
 
@@ -384,7 +384,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
           <?php endif; ?>
 
           <?php if ($hasWeeklyGoalCol): ?>
-          <form method="post" class="insight-goal-form mt-4 p-3 rounded-xl border border-[#d6e8f7] bg-[#f8fbff]" action="student_dashboard.php">
+          <form method="post" class="insight-goal-form mt-4 p-3 rounded-xl border border-[#d6e8f7] bg-[#f8fbff]" action="student_dashboard">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="weekly_activity_goal_save" value="1">
             <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-2" for="weekly_activity_goal">Weekly submission goal</label>
@@ -415,10 +415,10 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
               ?>
               <li class="insight-subject-row flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#e2eef9] bg-white px-3 py-2">
                 <div class="min-w-0">
-                  <a href="student_subject.php?subject_id=<?php echo $sid; ?>" class="insight-subject-name font-bold text-[#143D59] text-sm truncate block hover:underline"><?php echo h((string)($hint['subject_name'] ?? '')); ?></a>
+                  <a href="student_subject?subject_id=<?php echo $sid; ?>" class="insight-subject-name font-bold text-[#143D59] text-sm truncate block hover:underline"><?php echo h((string)($hint['subject_name'] ?? '')); ?></a>
                   <span class="text-xs text-slate-500"><?php echo (int)($hint['quiz_done'] ?? 0); ?>/<?php echo (int)($hint['quiz_total'] ?? 0); ?> quizzes · <?php echo $cov; ?>% coverage<?php if ($quiet): ?> · <strong class="text-amber-700">No quiz this month</strong><?php endif; ?></span>
                 </div>
-                <a href="student_subject.php?subject_id=<?php echo $sid; ?>" class="insight-subject-go shrink-0 text-xs font-bold text-[#1665A0]">Open <i class="bi bi-arrow-right"></i></a>
+                <a href="student_subject?subject_id=<?php echo $sid; ?>" class="insight-subject-go shrink-0 text-xs font-bold text-[#1665A0]">Open <i class="bi bi-arrow-right"></i></a>
               </li>
               <?php endforeach; ?>
             </ul>
@@ -431,8 +431,8 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
               <span class="chart-empty-icon"><i class="bi bi-bar-chart-line"></i></span>
               <p class="m-0 text-base font-bold text-[#143D59]">No activity in the last 8 weeks yet</p>
               <p class="m-0 mt-2 text-sm text-slate-600 max-w-md">Start your first quiz from any subject. Submissions will populate this chart and your streaks.</p>
-              <a href="student_subjects.php" class="chart-empty-cta mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1665A0] text-white text-sm font-bold no-underline shadow-md"><i class="bi bi-journal-bookmark"></i> Start your first quiz in Subjects</a>
-              <a href="student_preboards.php" class="mt-3 text-sm font-bold text-[#1665A0]">Or try a preboard set →</a>
+              <a href="student_subjects" class="chart-empty-cta mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1665A0] text-white text-sm font-bold no-underline shadow-md"><i class="bi bi-journal-bookmark"></i> Start your first quiz in Subjects</a>
+              <a href="student_preboards" class="mt-3 text-sm font-bold text-[#1665A0]">Or try a preboard set →</a>
             </div>
             <?php else: ?>
             <div class="p-2 min-h-[280px] h-[min(320px,50vh)]">
@@ -495,9 +495,9 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
               </summary>
               <p class="progress-detail-hint m-0"><?php echo (int)$quizzesSubmittedDistinct; ?> of <?php echo (int)$quizzesCount; ?> active quiz<?php echo $quizzesCount === 1 ? '' : 'zes'; ?> submitted at least once.</p>
               <p class="progress-detail-actions mt-2 mb-0">
-                <a href="student_subjects.php" class="progress-inline-link"><i class="bi bi-journal-bookmark"></i> Browse subjects &amp; quizzes</a>
+                <a href="student_subjects" class="progress-inline-link"><i class="bi bi-journal-bookmark"></i> Browse subjects &amp; quizzes</a>
                 <?php if ($quizSubmittedCount > 0): ?>
-                  <a href="student_quiz_history.php" class="progress-inline-link"><i class="bi bi-clock-history"></i> Quiz history</a>
+                  <a href="student_quiz_history" class="progress-inline-link"><i class="bi bi-clock-history"></i> Quiz history</a>
                 <?php endif; ?>
               </p>
               <div class="progress-track progress-track--lg mt-2" role="presentation">
@@ -512,7 +512,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
               </summary>
               <p class="progress-detail-hint m-0"><?php echo (int)$preboardsSetsSubmittedDistinct; ?> of <?php echo (int)$preboardsSetsCount; ?> active preboard set<?php echo $preboardsSetsCount === 1 ? '' : 's'; ?> completed.</p>
               <p class="progress-detail-actions mt-2 mb-0">
-                <a href="student_preboards.php" class="progress-inline-link"><i class="bi bi-clipboard-check"></i> Open preboards library</a>
+                <a href="student_preboards" class="progress-inline-link"><i class="bi bi-clipboard-check"></i> Open preboards library</a>
               </p>
               <div class="progress-track progress-track--lg mt-2" role="presentation">
                 <div class="progress-fill progress-fill--animated progress-fill--amber" data-progress-width="<?php echo (int)$preboardCoverage; ?>"></div>

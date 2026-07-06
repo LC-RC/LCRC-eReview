@@ -5,6 +5,7 @@
  */
 
 require_once 'db.php';
+require_once __DIR__ . '/includes/url_helpers.php';
 
 // Restore session from Remember Me cookie if not logged in
 if (!isset($_SESSION['user_id']) && isset($_COOKIE['ereview_rm'])) {
@@ -41,14 +42,14 @@ function isStaffRole($role) {
 function dashboardUrlForRole($role) {
     switch ($role) {
         case 'admin':
-            return 'admin_dashboard.php';
+            return ereview_url('admin_dashboard');
         case 'professor_admin':
-            return 'professor_admin_dashboard.php';
+            return ereview_url('professor_admin_dashboard');
         case 'college_student':
-            return 'college_student_dashboard.php';
+            return ereview_url('college_student_dashboard');
         case 'student':
         default:
-            return 'student_dashboard.php';
+            return ereview_url('student_dashboard');
     }
 }
 
@@ -67,8 +68,7 @@ function hasRole($role) {
 function requireLogin() {
     if (!isLoggedIn()) {
         $_SESSION['error'] = 'Please login to access this page.';
-        header('Location: index.php');
-        exit;
+        ereview_redirect('index');
     }
 }
 
@@ -80,7 +80,7 @@ function requireRole($role) {
     requireLogin();
     if (!hasRole($role)) {
         $_SESSION['error'] = 'You do not have permission to access this page.';
-        header('Location: index.php');
+        ereview_redirect('index');
         exit;
     }
 }

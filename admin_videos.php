@@ -4,11 +4,11 @@ requireRole('admin');
 
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
-if ($lessonId <= 0) { header('Location: admin_subjects.php'); exit; }
+if ($lessonId <= 0) { header('Location: admin_subjects'); exit; }
 
 $lessonRes = mysqli_query($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=".$lessonId." LIMIT 1");
 $lesson = $lessonRes ? mysqli_fetch_assoc($lessonRes) : null;
-if (!$lesson) { header('Location: admin_subjects.php'); exit; }
+if (!$lesson) { header('Location: admin_subjects'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_execute($stmt);
         }
     }
-    header('Location: admin_videos.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: admin_videos?lesson_id='.$lessonId.'&subject_id='.$subjectId);
     exit;
 }
 
@@ -52,7 +52,7 @@ if (isset($_GET['delete'])) {
         unlink($delVideo['video_url']);
     }
     mysqli_query($conn, "DELETE FROM lesson_videos WHERE video_id=".$delId." AND lesson_id=".$lessonId);
-    header('Location: admin_videos.php?lesson_id='.$lessonId.'&subject_id='.$subjectId);
+    header('Location: admin_videos?lesson_id='.$lessonId.'&subject_id='.$subjectId);
     exit;
 }
 
@@ -65,7 +65,7 @@ if (isset($_GET['edit'])) {
 
 $videos = mysqli_query($conn, "SELECT * FROM lesson_videos WHERE lesson_id=".$lessonId." ORDER BY video_id DESC");
 $pageTitle = 'Videos - ' . $lesson['title'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Videos'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Videos'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -87,8 +87,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
     <div></div>
     <div class="flex gap-2">
-      <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
-      <a href="admin_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">New Video</a>
+      <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
+      <a href="admin_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">New Video</a>
     </div>
   </div>
 
@@ -122,7 +122,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           </div>
           <div class="flex gap-2">
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition"><?php echo $edit ? 'Update' : 'Add'; ?></button>
-            <?php if ($edit): ?><a href="admin_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</a><?php endif; ?>
+            <?php if ($edit): ?><a href="admin_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</a><?php endif; ?>
           </div>
         </form>
       </div>
@@ -145,8 +145,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
                   <td class="px-5 py-3"><?php echo h($v['video_title']); ?></td>
                   <td class="px-5 py-3 max-w-[260px] truncate"><a href="<?php echo h($v['video_url']); ?>" target="_blank" class="text-primary hover:underline">Open</a></td>
                   <td class="px-5 py-3">
-                    <a href="admin_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$v['video_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Edit</a>
-                    <a href="admin_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">Delete</a>
+                    <a href="admin_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$v['video_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Edit</a>
+                    <a href="admin_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">Delete</a>
                   </td>
                 </tr>
               <?php endwhile; ?>

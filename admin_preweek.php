@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/preweek_migrate.php';
 
 $subjectIdLegacy = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectIdLegacy > 0) {
-    header('Location: admin_preweek.php');
+    header('Location: admin_preweek');
     exit;
 }
 
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_preweek'])) {
         if ($newId <= 0) {
             $_SESSION['admin_preweek_flash_error'] = 'Could not create preweek. Use a shorter name (max 255 characters).';
         } else {
-            header('Location: admin_preweek_topics.php?preweek_unit_id=' . $newId);
+            header('Location: admin_preweek_topics?preweek_unit_id=' . $newId);
             exit;
         }
     }
@@ -42,7 +42,7 @@ $preweekListRedirect = function () use ($returnQ, $returnSort): string {
     }
     $qs = http_build_query($p);
 
-    return 'admin_preweek.php' . ($qs !== '' ? '?' . $qs : '');
+    return 'admin_preweek' . ($qs !== '' ? '?' . $qs : '');
 };
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_preweek'])) {
@@ -254,7 +254,7 @@ $preweekNavTheme = 'dark';
     <?php endif; ?>
   </div>
 
-  <form method="get" action="admin_preweek.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preweek" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
       <label for="preweek-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search entries</label>
       <div class="relative">
@@ -272,7 +272,7 @@ $preweekNavTheme = 'dark';
     <div class="flex flex-wrap gap-2 shrink-0">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search" aria-hidden="true"></i> Apply</button>
       <?php if ($preweekFiltersActive): ?>
-        <a href="admin_preweek.php" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_preweek" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -331,7 +331,7 @@ $preweekNavTheme = 'dark';
                 </td>
                 <td class="px-5 py-3 align-top">
                   <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-row-action admin-row-action--materials" title="Open lectures"><i class="bi bi-folder2-open"></i><span class="sr-only">Open lectures</span></a>
+                    <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-row-action admin-row-action--materials" title="Open lectures"><i class="bi bi-folder2-open"></i><span class="sr-only">Open lectures</span></a>
                     <div class="admin-row-menu-wrap">
                       <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
@@ -339,7 +339,7 @@ $preweekNavTheme = 'dark';
                         <?php if ($hasPreweekContent): ?>
                         <button type="button" class="admin-row-menu__item admin-row-menu__item--danger preweek-delete-blocked-btn" data-tc="<?php echo (int)$tc; ?>" data-vc="<?php echo (int)$vc; ?>" data-hc="<?php echo (int)$hc; ?>" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
                         <?php else: ?>
-                        <form method="post" action="admin_preweek.php" class="m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
+                        <form method="post" action="admin_preweek" class="m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
                           <input type="hidden" name="delete_preweek" value="1">
                           <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$pid; ?>">
                           <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">
@@ -366,7 +366,7 @@ $preweekNavTheme = 'dark';
         <button type="button" class="text-gray-400 hover:text-white text-2xl leading-none p-1 rounded-lg" id="preweekCloseAddModal" aria-label="Close">&times;</button>
       </div>
       <div class="preweek-modal-body">
-        <form method="post" action="admin_preweek.php">
+        <form method="post" action="admin_preweek">
           <input type="hidden" name="add_preweek" value="1">
           <div class="space-y-4">
             <div>
@@ -393,7 +393,7 @@ $preweekNavTheme = 'dark';
         <button type="button" class="text-gray-400 hover:text-white text-2xl leading-none p-1 rounded-lg" id="preweekCloseEditModal" aria-label="Close">&times;</button>
       </div>
       <div class="preweek-modal-body">
-        <form method="post" action="admin_preweek.php">
+        <form method="post" action="admin_preweek">
           <input type="hidden" name="update_preweek" value="1">
           <input type="hidden" name="preweek_unit_id" id="edit_preweek_unit_id" value="">
           <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">

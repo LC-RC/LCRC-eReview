@@ -65,7 +65,7 @@ $pageTitle = 'Quiz History';
             <p class="text-sm sm:text-base text-white/90 mt-1 mb-0">Your submitted quiz attempts and scores.</p>
           </div>
         </div>
-        <a href="student_subjects.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-white/15 hover:bg-white/25 border border-white/20 transition">
+        <a href="student_subjects" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-white/15 hover:bg-white/25 border border-white/20 transition">
           <i class="bi bi-arrow-left-circle" aria-hidden="true"></i>
           <span>Back to Subjects</span>
         </a>
@@ -122,7 +122,7 @@ $pageTitle = 'Quiz History';
             </div>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
               <span class="text-xs text-[#64748b]"><?php echo !empty($row['submitted_at']) ? date('M j, Y g:i A', strtotime($row['submitted_at'])) : '—'; ?></span>
-              <a href="student_take_quiz.php?quiz_id=<?php echo (int)$row['quiz_id']; ?>&view_result=1&subject_id=<?php echo (int)($row['subject_id'] ?? 0); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1665A0] text-white hover:bg-[#0f4d7a] transition">
+              <a href="student_take_quiz?quiz_id=<?php echo (int)$row['quiz_id']; ?>&view_result=1&subject_id=<?php echo (int)($row['subject_id'] ?? 0); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1665A0] text-white hover:bg-[#0f4d7a] transition">
                 <i class="bi bi-eye"></i> Open Result
               </a>
             </div>

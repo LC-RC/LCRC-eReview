@@ -87,7 +87,7 @@ function createPasswordResetToken($email) {
     // Use hex for the validator in the URL (no I/l/1, O/0) so email/AVG don't corrupt the link
     $validatorHex = bin2hex($validator);
     $tokenParam = $selector . '.' . $validatorHex;
-    return getPasswordResetBaseUrl() . '/reset_password.php?token=' . $tokenParam;
+    return getPasswordResetBaseUrl() . '/reset_password?token=' . $tokenParam;
 }
 
 /**
@@ -189,7 +189,7 @@ function deletePasswordResetToken($tokenId) {
 
 /**
  * Send password reset email. Returns true if sent, false on failure.
- * Uses SMTP (Gmail etc.) when config/mail_config.php is set; otherwise falls back to PHP mail().
+ * Uses SMTP (Gmail etc.) when config/mail_config is set; otherwise falls back to PHP mail().
  */
 function sendPasswordResetEmail($toEmail, $resetUrl) {
     $subject = 'Reset your password – LCRC eReview';

@@ -2,7 +2,7 @@
 /**
  * Admin breadcrumb (admin only).
  * Set $adminBreadcrumbs before including. Each item: [ 'Label', 'url' ] or [ 'Label' ] for current page.
- * Example: $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students'] ];
+ * Example: $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students'] ];
  */
 if (empty($adminBreadcrumbs) || !is_array($adminBreadcrumbs)) {
   return;

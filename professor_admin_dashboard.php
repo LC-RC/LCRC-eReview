@@ -9,7 +9,7 @@ $csrf = generateCSRFToken();
 $uid = getCurrentUserId();
 $nowTs = time();
 
-// --- Students (from professor_college_students.php) ---
+// --- Students (from professor_college_students) ---
 $collegeStudents = 0;
 $studentStatus = [
   'pending' => 0,
@@ -35,7 +35,7 @@ if ($qStudents) {
   mysqli_free_result($qStudents);
 }
 
-// --- Exams (from professor_exams.php) ---
+// --- Exams (from professor_exams) ---
 $examCount = 0;
 $examPublishedCount = 0;
 $examOpenCount = 0;
@@ -76,7 +76,7 @@ if ($qNextExams) {
   mysqli_free_result($qNextExams);
 }
 
-// --- Upload tasks (from professor_upload_tasks.php) ---
+// --- Upload tasks (from professor_upload_tasks) ---
 $taskCount = 0;
 $taskOpenCount = 0;
 $taskDueSoonCount = 0;
@@ -122,7 +122,7 @@ if ($qNextTasks) {
   mysqli_free_result($qNextTasks);
 }
 
-// --- Recent activity (from professor_monitor.php) ---
+// --- Recent activity (from professor_monitor) ---
 $attemptRows = [];
 $recentAttempts = @mysqli_query($conn, "
   SELECT a.attempt_id, a.score, a.submitted_at, a.status,
@@ -777,13 +777,13 @@ $trendText = function (int $current, int $previous): string {
             </div>
           </div>
           <div class="flex flex-wrap gap-3">
-        <a href="professor_college_students.php" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm hover:shadow-lg">
+        <a href="professor_college_students" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm hover:shadow-lg">
           <i class="bi bi-person-plus-fill"></i> Add student
         </a>
-        <a href="professor_exams.php" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold border border-white/35 bg-white/15 text-white hover:bg-white/25">
+        <a href="professor_exams" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold border border-white/35 bg-white/15 text-white hover:bg-white/25">
           <i class="bi bi-journal-check"></i> Manage exams
         </a>
-        <a href="professor_upload_tasks.php" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold border border-white/35 bg-white/15 text-white hover:bg-white/25">
+        <a href="professor_upload_tasks" class="saas-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold border border-white/35 bg-white/15 text-white hover:bg-white/25">
           <i class="bi bi-cloud-arrow-up"></i> Upload tasks
         </a>
           </div>
@@ -826,14 +826,14 @@ $trendText = function (int $current, int $previous): string {
             </div>
             <span class="kpi-trend <?php echo $studentsNew7 === $studentsPrev7 ? 'is-flat' : ''; ?>"><?php echo h($trendText($studentsNew7, $studentsPrev7)); ?></span>
             <?php if ($collegeStudents === 0): ?>
-              <a href="professor_college_students.php" class="quick-cta"><i class="bi bi-plus-circle"></i> Add your first student</a>
+              <a href="professor_college_students" class="quick-cta"><i class="bi bi-plus-circle"></i> Add your first student</a>
             <?php endif; ?>
           </div>
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-green-50 to-white border border-green-100 flex items-center justify-center shrink-0">
             <i class="bi bi-people text-green-700 text-2xl"></i>
           </div>
         </div>
-        <a href="professor_college_students.php" class="kpi-action-btn">
+        <a href="professor_college_students" class="kpi-action-btn">
           <i class="bi bi-arrow-right"></i> View students
         </a>
       </div>
@@ -846,14 +846,14 @@ $trendText = function (int $current, int $previous): string {
             <p class="kpi-meta">Published: <?php echo (int)$examPublishedCount; ?> · Open: <?php echo (int)$examOpenCount; ?></p>
             <span class="kpi-trend <?php echo $examsNew7 === $examsPrev7 ? 'is-flat' : ''; ?>"><?php echo h($trendText($examsNew7, $examsPrev7)); ?></span>
             <?php if ($examCount === 0): ?>
-              <a href="professor_exams.php" class="quick-cta"><i class="bi bi-plus-circle"></i> Create your first exam</a>
+              <a href="professor_exams" class="quick-cta"><i class="bi bi-plus-circle"></i> Create your first exam</a>
             <?php endif; ?>
           </div>
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-green-50 to-white border border-green-100 flex items-center justify-center shrink-0">
             <i class="bi bi-journal-text text-green-700 text-2xl"></i>
           </div>
         </div>
-        <a href="professor_exams.php" class="kpi-action-btn">
+        <a href="professor_exams" class="kpi-action-btn">
           <i class="bi bi-arrow-right"></i> Manage exams
         </a>
       </div>
@@ -866,14 +866,14 @@ $trendText = function (int $current, int $previous): string {
             <p class="kpi-meta">Open: <?php echo (int)$taskOpenCount; ?> · Due soon: <?php echo (int)$taskDueSoonCount; ?></p>
             <span class="kpi-trend <?php echo $tasksNew7 === $tasksPrev7 ? 'is-flat' : ''; ?>"><?php echo h($trendText($tasksNew7, $tasksPrev7)); ?></span>
             <?php if ($taskCount === 0): ?>
-              <a href="professor_upload_tasks.php" class="quick-cta"><i class="bi bi-plus-circle"></i> Publish first upload task</a>
+              <a href="professor_upload_tasks" class="quick-cta"><i class="bi bi-plus-circle"></i> Publish first upload task</a>
             <?php endif; ?>
           </div>
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-b from-green-50 to-white border border-green-100 flex items-center justify-center shrink-0">
             <i class="bi bi-folder-plus text-green-700 text-2xl"></i>
           </div>
         </div>
-        <a href="professor_upload_tasks.php" class="kpi-action-btn">
+        <a href="professor_upload_tasks" class="kpi-action-btn">
           <i class="bi bi-arrow-right"></i> Manage upload tasks
         </a>
       </div>
@@ -890,7 +890,7 @@ $trendText = function (int $current, int $previous): string {
             <i class="bi bi-activity text-green-700 text-2xl"></i>
           </div>
         </div>
-        <a href="professor_monitor.php" class="kpi-action-btn">
+        <a href="professor_monitor" class="kpi-action-btn">
           <i class="bi bi-arrow-right"></i> Open monitor
         </a>
       </div>
@@ -931,7 +931,7 @@ $trendText = function (int $current, int $previous): string {
             <h2 class="text-lg font-bold text-green-800 m-0">Recent exam results</h2>
             <p class="text-sm text-gray-500 m-0 mt-1">Latest scores from your exams</p>
           </div>
-          <a href="professor_monitor.php" class="text-green-700 font-semibold hover:underline inline-flex items-center gap-1">
+          <a href="professor_monitor" class="text-green-700 font-semibold hover:underline inline-flex items-center gap-1">
             View monitor <i class="bi bi-arrow-right"></i>
           </a>
         </div>
@@ -976,7 +976,7 @@ $trendText = function (int $current, int $previous): string {
             <h2 class="text-lg font-bold text-green-800 m-0">Latest file uploads</h2>
             <p class="text-sm text-gray-500 m-0 mt-1">Quick upload overview and latest submission activity.</p>
           </div>
-          <a href="professor_upload_tasks.php" class="text-green-700 font-semibold hover:underline inline-flex items-center gap-1">
+          <a href="professor_upload_tasks" class="text-green-700 font-semibold hover:underline inline-flex items-center gap-1">
             Manage uploads <i class="bi bi-arrow-right"></i>
           </a>
         </div>
@@ -1031,7 +1031,7 @@ $trendText = function (int $current, int $previous): string {
           <?php endif; ?>
         </div>
         <div class="table-footer-action">
-          <a href="professor_monitor.php"><i class="bi bi-eye"></i> View all file activity</a>
+          <a href="professor_monitor"><i class="bi bi-eye"></i> View all file activity</a>
         </div>
       </div>
     </section>
@@ -1049,7 +1049,7 @@ $trendText = function (int $current, int $previous): string {
             <div class="text-center py-12 empty-state">
               <i class="bi bi-calendar-week"></i>
               <div class="font-medium">No upcoming exams scheduled.</div>
-              <a href="professor_exams.php" class="quick-cta justify-center"><i class="bi bi-plus-circle"></i> Create an exam</a>
+              <a href="professor_exams" class="quick-cta justify-center"><i class="bi bi-plus-circle"></i> Create an exam</a>
             </div>
           <?php else: ?>
             <div class="space-y-3">
@@ -1058,7 +1058,7 @@ $trendText = function (int $current, int $previous): string {
                   $examDeadlineTs = !empty($e['deadline']) ? strtotime((string)$e['deadline']) : null;
                   $isExamDueSoon = $examDeadlineTs !== false && $examDeadlineTs !== null && $examDeadlineTs >= $nowTs && $examDeadlineTs <= ($nowTs + (2 * 86400));
                 ?>
-                <a href="professor_exam_edit.php?id=<?php echo (int)($e['exam_id'] ?? 0); ?>" class="list-tile group flex items-center justify-between gap-3 p-4">
+                <a href="professor_exam_edit?id=<?php echo (int)($e['exam_id'] ?? 0); ?>" class="list-tile group flex items-center justify-between gap-3 p-4">
                   <div class="min-w-0 flex items-start gap-3">
                     <div class="w-10 h-10 rounded-xl bg-green-100 border border-green-200 text-green-700 flex items-center justify-center shrink-0 mt-0.5">
                       <i class="bi bi-journal-richtext"></i>
@@ -1094,7 +1094,7 @@ $trendText = function (int $current, int $previous): string {
             <div class="text-center py-12 empty-state">
               <i class="bi bi-calendar2-check"></i>
               <div class="font-medium">No upcoming upload tasks.</div>
-              <a href="professor_upload_tasks.php" class="quick-cta justify-center"><i class="bi bi-plus-circle"></i> Create an upload task</a>
+              <a href="professor_upload_tasks" class="quick-cta justify-center"><i class="bi bi-plus-circle"></i> Create an upload task</a>
             </div>
           <?php else: ?>
             <div class="space-y-3">
@@ -1103,7 +1103,7 @@ $trendText = function (int $current, int $previous): string {
                   $taskDeadlineTs = !empty($t['deadline']) ? strtotime((string)$t['deadline']) : null;
                   $isTaskDueSoon = $taskDeadlineTs !== false && $taskDeadlineTs !== null && $taskDeadlineTs >= $nowTs && $taskDeadlineTs <= ($nowTs + (2 * 86400));
                 ?>
-                <a href="professor_upload_tasks.php?edit=<?php echo (int)($t['task_id'] ?? 0); ?>" class="list-tile group flex items-center justify-between gap-3 p-4">
+                <a href="professor_upload_tasks?edit=<?php echo (int)($t['task_id'] ?? 0); ?>" class="list-tile group flex items-center justify-between gap-3 p-4">
                   <div class="min-w-0 flex items-start gap-3">
                     <div class="w-10 h-10 rounded-xl bg-green-100 border border-green-200 text-green-700 flex items-center justify-center shrink-0 mt-0.5">
                       <i class="bi bi-folder2"></i>

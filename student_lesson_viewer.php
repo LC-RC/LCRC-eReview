@@ -12,7 +12,7 @@ sca_enforce_student_session($conn);
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 if ($lessonId <= 0) {
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 
@@ -23,7 +23,7 @@ $lesson = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$lesson) {
     $_SESSION['error'] = 'Lesson not found.';
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 $subjectId = $subjectId > 0 ? $subjectId : (int)$lesson['subject_id'];
@@ -31,7 +31,7 @@ $subjectId = $subjectId > 0 ? $subjectId : (int)$lesson['subject_id'];
 $userId = getCurrentUserId();
 if (!sca_has_access($conn, (int)$userId, 'lesson', $lessonId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_subject.php?subject_id=' . (int)$subjectId);
+    header('Location: student_subject?subject_id=' . (int)$subjectId);
     exit;
 }
 
@@ -61,7 +61,7 @@ if (!$selectedVideo && count($videos) > 0) {
 }
 
 $lessonTitle = $lesson['title'] ?: 'Lesson';
-$backUrl = $subjectId > 0 ? 'student_subject.php?subject_id=' . $subjectId . '#materials' : 'student_subjects.php';
+$backUrl = $subjectId > 0 ? 'student_subject?subject_id=' . $subjectId . '#materials' : 'student_subjects';
 $pageTitle = $lessonTitle . ' - Materials';
 ?>
 <!DOCTYPE html>
@@ -212,7 +212,7 @@ $pageTitle = $lessonTitle . ' - Materials';
           </select>
         </div>
         <div class="flex-1 min-h-0 relative">
-          <iframe x-show="selectedHandoutId" :src="selectedHandoutId ? ('handout_viewer.php?handout_id=' + selectedHandoutId) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" title="Handout"></iframe>
+          <iframe x-show="selectedHandoutId" :src="selectedHandoutId ? ('handout_viewer?handout_id=' + selectedHandoutId) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" title="Handout"></iframe>
           <div x-show="!selectedHandoutId" class="absolute inset-0 flex items-center justify-center flex-col text-[#143D59]/60 bg-[#f8fafc]">
             <i class="bi bi-file-earmark-pdf text-4xl block mb-2"></i>
             <p>Select a handout to view</p>
@@ -259,7 +259,7 @@ $pageTitle = $lessonTitle . ' - Materials';
           <div class="px-4 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-list"></i> Playlist</div>
           <div class="divide-y divide-[#1665A0]/10">
             <?php foreach ($videos as $v): $isActive = $selectedVideo && (int)$v['video_id'] === (int)$selectedVideo['video_id']; ?>
-              <a href="student_lesson_viewer.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
+              <a href="student_lesson_viewer?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
                 <i class="bi bi-play-circle"></i> <?php echo h($v['video_title'] ?: 'Untitled Video'); ?>
               </a>
             <?php endforeach; ?>
@@ -296,7 +296,7 @@ $pageTitle = $lessonTitle . ' - Materials';
                 <?php endif; ?>
                 <div class="flex flex-wrap gap-2 mt-2">
                   <?php if (!empty($h['file_path'])): ?>
-                    <a href="handout_viewer.php?handout_id=<?php echo (int)$h['handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
+                    <a href="handout_viewer?handout_id=<?php echo (int)$h['handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
                     <?php if (!empty($h['allow_download'])): ?>
                       <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
                     <?php endif; ?>

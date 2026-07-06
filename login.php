@@ -28,13 +28,13 @@ if (!empty($_GET['magic'])) {
             if ($examBlock !== null) {
                 $_SESSION['error'] = $examBlock;
                 $_SESSION['error_type'] = 'exam_session_active';
-                header('Location: login.php');
+                header('Location: login');
                 exit;
             }
             if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
                 $_SESSION['error'] = 'Your account is not approved yet.';
                 $_SESSION['error_type'] = 'not_approved';
-                header('Location: login.php');
+                header('Location: login');
                 exit;
             }
             if (!isStaffRole($user['role'])) {
@@ -44,7 +44,7 @@ if (!empty($_GET['magic'])) {
                     if ($now > $end) {
                         $_SESSION['error'] = 'Your access has expired.';
                         $_SESSION['error_type'] = 'access_expired';
-                        header('Location: login.php');
+                        header('Location: login');
                         exit;
                     }
                 }
@@ -77,7 +77,7 @@ if (!empty($_GET['magic'])) {
     }
     $_SESSION['error'] = 'This sign-in link is invalid or has expired.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -133,7 +133,7 @@ if ($errorType === 'google_not_configured' || (strpos($error ?? '', 'Google') !=
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $base = $scheme . '://' . $host . dirname($_SERVER['SCRIPT_NAME'] ?? '');
     $base = str_replace('\\', '/', $base);
-    $googleRedirectUri = rtrim($base, '/') . '/google_callback.php';
+    $googleRedirectUri = rtrim($base, '/') . '/google_callback';
 }
 if (isset($_SESSION['google_redirect_uri'])) {
     $googleRedirectUri = $_SESSION['google_redirect_uri'];
@@ -1147,7 +1147,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
         <div class="text-center login-piece login-piece-2 login-welcome">
           <p class="login-value-statement">Track your scores, drills, and mock exams in one place.</p>
           <h1 class="text-xl font-bold tracking-tight">Welcome Back</h1>
-          <p class="subtext login-signup-line">Don't have an account yet? <a href="registration.php">Sign up</a></p>
+          <p class="subtext login-signup-line">Don't have an account yet? <a href="registration">Sign up</a></p>
         </div>
 
         <?php if ($showRateLimitBlock): ?>
@@ -1159,12 +1159,12 @@ if (isset($_SESSION['google_redirect_uri'])) {
           <p class="login-ratelimit-block-desc">For your security, we've temporarily limited sign-in from this device. You can try again when the timer below reaches zero.</p>
           <div class="login-ratelimit-countdown" id="login-ratelimit-countdown" role="timer" aria-live="polite">—</div>
           <p class="mt-3 text-xs text-amber-700/80">Attempts are limited to <?php echo LOGIN_RATE_LIMIT_MAX_ATTEMPTS; ?> in <?php echo (int) (LOGIN_RATE_LIMIT_WINDOW_SECONDS / 60); ?> minutes. Lockout lasts <?php echo (int) (LOGIN_RATE_LIMIT_LOCKOUT_SECONDS / 60); ?> minutes.</p>
-          <p class="mt-2 text-xs"><a href="forgot_password.php" class="text-amber-600 hover:underline font-medium">Reset your password</a> to unlock sooner.</p>
+          <p class="mt-2 text-xs"><a href="forgot_password" class="text-amber-600 hover:underline font-medium">Reset your password</a> to unlock sooner.</p>
         </div>
         <?php endif; ?>
 
         <div class="login-form-wrap" id="login-form-wrap"<?php if ($showRateLimitBlock): ?> style="display: none;"<?php endif; ?>>
-        <form action="login_process.php" method="POST" class="login-form-fields space-y-4" novalidate id="login-form"<?php if ($showRecaptcha): ?> data-recaptcha="1" data-recaptcha-key="<?php echo h($recaptchaSiteKey); ?>"<?php endif; ?>>
+        <form action="login_process" method="POST" class="login-form-fields space-y-4" novalidate id="login-form"<?php if ($showRecaptcha): ?> data-recaptcha="1" data-recaptcha-key="<?php echo h($recaptchaSiteKey); ?>"<?php endif; ?>>
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <?php if ($showRecaptcha): ?>
           <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value="">
@@ -1221,7 +1221,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
                 <i class="bi bi-shield-lock text-slate-500" aria-hidden="true"></i>
                 <span>Secure sign-in. We never share your data.</span>
               </p>
-              <a href="forgot_password.php" class="login-forgot-link text-xs font-medium">Forgot password?</a>
+              <a href="forgot_password" class="login-forgot-link text-xs font-medium">Forgot password?</a>
             </div>
           </div>
 
@@ -1252,11 +1252,11 @@ if (isset($_SESSION['google_redirect_uri'])) {
 
           <div class="login-piece login-piece-8">
             <div class="login-social-actions">
-              <a href="google_auth.php" class="login-google-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Continue with Google">
+              <a href="google_auth" class="login-google-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Continue with Google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" class="login-google-icon w-4 h-4" aria-hidden="true">
                 <span>Google Sign-In</span>
               </a>
-              <a href="request_magic_link.php" class="login-magic-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Email me a sign-in link">
+              <a href="request_magic_link" class="login-magic-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Email me a sign-in link">
                 <i class="bi bi-envelope-paper-fill" aria-hidden="true"></i>
                 <span>Sign-in Link</span>
               </a>
@@ -1293,7 +1293,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
       <p class="text-xs text-gray-300 mb-2 login-error-text" id="login-error-message" role="alert" aria-live="assertive">
         The email or password you entered is incorrect. Please check your credentials and try again.
       </p>
-      <div id="login-error-hint" class="text-xs text-gray-400 mb-4">Check your email and password, or <a href="forgot_password.php" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.</div>
+      <div id="login-error-hint" class="text-xs text-gray-400 mb-4">Check your email and password, or <a href="forgot_password" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.</div>
       <button id="login-error-close" class="btn-shine inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1F58C3] shadow-md shadow-[#1F58C3]/30 transition-all duration-200 hover:bg-[#1E40AF] hover:-translate-y-0.5 active:translate-y-0">
         <span>OK, try again</span>
       </button>
@@ -1483,7 +1483,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
         var backdrop = document.querySelector('.login-error-backdrop');
         var card = document.querySelector('.login-error-card');
         var info = {
-          page: 'login.php',
+          page: 'login',
           bodyData: {
             loginError: document.body.dataset.loginError,
             loginErrorMessage: (document.body.dataset.loginErrorMessage || '').substring(0, 80),
@@ -1517,13 +1517,13 @@ if (isset($_SESSION['google_redirect_uri'])) {
         }
         if (errorHint) {
           if (serverErrorType === 'google_no_account') {
-            errorHint.innerHTML = 'Create an account with your email first, then you can <a href="google_auth.php" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">sign in with Google</a>. <a href="registration.php" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded ml-1">Register here</a>.';
+            errorHint.innerHTML = 'Create an account with your email first, then you can <a href="google_auth" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">sign in with Google</a>. <a href="registration" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded ml-1">Register here</a>.';
           } else if (serverErrorType === 'not_approved') {
             errorHint.textContent = 'An admin must approve your account before you can sign in. Please try again later or contact support.';
           } else if (serverErrorType === 'exam_session_active') {
             errorHint.textContent = 'Finish or submit the exam in the browser where you started it, or log out there first. Starting the same exam on two devices is not allowed.';
           } else {
-            errorHint.innerHTML = 'Check your email and password, or <a href="forgot_password.php" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.';
+            errorHint.innerHTML = 'Check your email and password, or <a href="forgot_password" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.';
           }
         }
         if (errorModal) errorModal.classList.add('is-active');

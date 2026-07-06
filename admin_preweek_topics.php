@@ -9,14 +9,14 @@ require_once __DIR__ . '/includes/preweek_migrate.php';
 
 $unitId = (int)($_GET['preweek_unit_id'] ?? 0);
 if ($unitId <= 0) {
-    header('Location: admin_preweek.php');
+    header('Location: admin_preweek');
     exit;
 }
 
 $unitRes = mysqli_query($conn, 'SELECT * FROM preweek_units WHERE preweek_unit_id=' . $unitId . ' AND subject_id=0 LIMIT 1');
 $unit = $unitRes ? mysqli_fetch_assoc($unitRes) : null;
 if (!$unit) {
-    header('Location: admin_preweek.php');
+    header('Location: admin_preweek');
     exit;
 }
 
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_topic'])) {
             $_SESSION['message'] = 'Lecture added. Open Materials to upload files.';
         }
     }
-    header('Location: admin_preweek_topics.php?preweek_unit_id=' . $unitId);
+    header('Location: admin_preweek_topics?preweek_unit_id=' . $unitId);
     exit;
 }
 
@@ -91,7 +91,7 @@ if (isset($_GET['delete_topic'])) {
             }
         }
     }
-    header('Location: admin_preweek_topics.php?preweek_unit_id=' . $unitId);
+    header('Location: admin_preweek_topics?preweek_unit_id=' . $unitId);
     exit;
 }
 
@@ -206,7 +206,7 @@ $preweekNavUnitTitle = $unitTitle;
   </div>
 
   <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-    <a href="admin_preweek.php" class="text-sm font-medium text-gray-400 hover:text-amber-200/90 inline-flex items-center gap-2 no-underline transition-colors">
+    <a href="admin_preweek" class="text-sm font-medium text-gray-400 hover:text-amber-200/90 inline-flex items-center gap-2 no-underline transition-colors">
       <i class="bi bi-arrow-left" aria-hidden="true"></i> Pre-week home
     </a>
     <?php if ($filterQ !== ''): ?>
@@ -214,7 +214,7 @@ $preweekNavUnitTitle = $unitTitle;
     <?php endif; ?>
   </div>
 
-  <form method="get" action="admin_preweek_topics.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preweek_topics" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$unitId; ?>">
     <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
       <label for="lecture-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
@@ -226,7 +226,7 @@ $preweekNavUnitTitle = $unitTitle;
     <div class="flex flex-wrap gap-2 shrink-0">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search" aria-hidden="true"></i> Apply</button>
       <?php if ($filterQ !== ''): ?>
-        <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -294,12 +294,12 @@ $preweekNavUnitTitle = $unitTitle;
                 </td>
                 <td class="px-5 py-3 align-middle text-center">
                   <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_preweek_materials.php?preweek_topic_id=<?php echo (int)$tid; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-collection-play"></i><span class="sr-only">Materials</span></a>
+                    <a href="admin_preweek_materials?preweek_topic_id=<?php echo (int)$tid; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-collection-play"></i><span class="sr-only">Materials</span></a>
                     <div class="admin-row-menu-wrap">
                       <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
-                        <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&edit=<?php echo (int)$tid; ?>" @click="menuOpen = false" class="admin-row-menu__item"><i class="bi bi-pencil"></i> Edit</a>
-                        <a href="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>&delete_topic=<?php echo (int)$tid; ?>" onclick="return confirm('Delete this lecture and all videos and handouts inside it? This cannot be undone.');" class="admin-row-menu__item admin-row-menu__item--danger"><i class="bi bi-trash"></i> Delete</a>
+                        <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>&edit=<?php echo (int)$tid; ?>" @click="menuOpen = false" class="admin-row-menu__item"><i class="bi bi-pencil"></i> Edit</a>
+                        <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>&delete_topic=<?php echo (int)$tid; ?>" onclick="return confirm('Delete this lecture and all videos and handouts inside it? This cannot be undone.');" class="admin-row-menu__item admin-row-menu__item--danger"><i class="bi bi-trash"></i> Delete</a>
                       </div>
                     </div>
                   </div>
@@ -320,7 +320,7 @@ $preweekNavUnitTitle = $unitTitle;
       </div>
       <div class="preweek-lecture-modal-body">
         <p class="text-xs text-gray-500 m-0 mb-4">Students see these lectures before opening materials.</p>
-        <form method="post" action="admin_preweek_topics.php?preweek_unit_id=<?php echo (int)$unitId; ?>" id="lectureModalForm">
+        <form method="post" action="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>" id="lectureModalForm">
           <input type="hidden" name="save_topic" value="1">
           <input type="hidden" name="topic_id" id="lecture_topic_id" value="<?php echo $edit ? (int)$edit['preweek_topic_id'] : 0; ?>">
           <div class="space-y-4">
@@ -355,7 +355,7 @@ $preweekNavUnitTitle = $unitTitle;
   var titleIn = document.getElementById('lecture_topic_title');
   var descIn = document.getElementById('lecture_topic_description');
   var submitLabel = document.getElementById('lectureModalSubmitLabel');
-  var unitListUrl = <?php echo json_encode('admin_preweek_topics.php?preweek_unit_id=' . (int)$unitId, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+  var unitListUrl = <?php echo json_encode('admin_preweek_topics?preweek_unit_id=' . (int)$unitId, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
   function openAdd() {
     if (!modal || !form) return;

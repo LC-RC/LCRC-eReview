@@ -1,7 +1,7 @@
 <?php
 /**
  * Inner content for student dashboard Focus panel (included twice: mobile <details> + desktop <aside>).
- * Expects variables from student_dashboard.php scope.
+ * Expects variables from student_dashboard scope.
  */
 $fpQuizInProgress = (int)($quizInProgressCount ?? 0);
 $fpPreSubjects = (int)($preboardsSubjectsCount ?? 0);
@@ -38,7 +38,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
     <?php if ($fpAccessPct !== null): ?>
     <div class="focus-access-inline-track mt-2"><div class="focus-access-inline-fill" style="width:<?php echo (int)max(0, min(100, $fpAccessPct)); ?>%"></div></div>
     <?php endif; ?>
-    <a href="student_access_ics.php" class="focus-access-inline-ics" download><i class="bi bi-calendar-plus"></i> Add end date to calendar</a>
+    <a href="student_access_ics" class="focus-access-inline-ics" download><i class="bi bi-calendar-plus"></i> Add end date to calendar</a>
   </div>
   <?php endif; ?>
 
@@ -72,7 +72,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
                     }
                 }
             }
-            $href = 'student_take_quiz.php?quiz_id=' . $qid . '&subject_id=' . $sid;
+            $href = 'student_take_quiz?quiz_id=' . $qid . '&subject_id=' . $sid;
         ?>
         <li class="focus-action-item">
           <div class="focus-action-meta">
@@ -86,7 +86,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
     <?php else: ?>
       <div class="focus-empty mt-2">
         <p class="focus-empty-copy m-0">No quizzes in progress. Start one from any subject.</p>
-        <a href="student_subjects.php" class="focus-empty-link"><i class="bi bi-journal-bookmark"></i> Go to subjects</a>
+        <a href="student_subjects" class="focus-empty-link"><i class="bi bi-journal-bookmark"></i> Go to subjects</a>
       </div>
     <?php endif; ?>
   </div>
@@ -100,7 +100,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
         <?php foreach ($focusPreboardRows as $row):
             $pset = (int)($row['preboards_set_id'] ?? 0);
             $psub = (int)($row['preboards_subject_id'] ?? 0);
-            $phref = 'student_take_preboard.php?preboards_set_id=' . $pset . '&preboards_subject_id=' . $psub;
+            $phref = 'student_take_preboard?preboards_set_id=' . $pset . '&preboards_subject_id=' . $psub;
         ?>
         <li class="focus-action-item">
           <div class="focus-action-meta">
@@ -112,7 +112,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
         <?php endforeach; ?>
       </ul>
     <?php endif; ?>
-    <a href="student_preboards.php" class="focus-library-btn"><i class="bi bi-grid-3x3-gap"></i> Browse all preboards</a>
+    <a href="student_preboards" class="focus-library-btn"><i class="bi bi-grid-3x3-gap"></i> Browse all preboards</a>
   </div>
 
   <div class="focus-card focus-card--soft">
@@ -130,10 +130,10 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
     </div>
     <div class="focus-detail-actions">
       <?php if ($fpQuizSub > 0): ?>
-        <a href="student_quiz_history.php" class="focus-inline-link"><i class="bi bi-clock-history"></i> Quiz history</a>
+        <a href="student_quiz_history" class="focus-inline-link"><i class="bi bi-clock-history"></i> Quiz history</a>
       <?php endif; ?>
       <?php if ($fpPreSub > 0): ?>
-        <a href="student_preboards.php" class="focus-inline-link"><i class="bi bi-clipboard-data"></i> Review preboards</a>
+        <a href="student_preboards" class="focus-inline-link"><i class="bi bi-clipboard-data"></i> Review preboards</a>
       <?php endif; ?>
     </div>
   </div>

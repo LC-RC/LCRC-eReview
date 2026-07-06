@@ -281,7 +281,7 @@ if (!function_exists('ereview_profile_activity_rows')) {
         $t2 = @mysqli_query($conn, "SHOW TABLES LIKE 'preboards_attempts'");
         if ($t2 && mysqli_fetch_assoc($t2)) {
             mysqli_free_result($t2);
-            // Column is preboards_set_id (see preboards_schema.sql / student_take_preboard.php).
+            // Column is preboards_set_id (see preboards_schema.sql / student_take_preboard).
             $q2 = "
               SELECT submitted_at, preboards_set_id, status
               FROM preboards_attempts

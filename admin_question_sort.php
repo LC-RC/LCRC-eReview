@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ereview_qsort_upload'
                     $parseError = 'Could not save parse result (temp directory not writable).';
                 } else {
                     $_SESSION[$sessionKey] = ['path' => $cachePath, 'name' => $name];
-                    header('Location: admin_question_sort.php?ok=1');
+                    header('Location: admin_question_sort?ok=1');
                     exit;
                 }
             } catch (Throwable $e) {
@@ -679,7 +679,7 @@ if ($qsortHasResults) {
       <div class="flex flex-col gap-3">
         <label class="inline-flex items-start gap-2.5 cursor-pointer text-sm text-gray-400 max-w-2xl">
           <input type="checkbox" name="ereview_qsort_debug" value="1" class="mt-1 rounded border-gray-600 text-amber-500 focus:ring-amber-500/40">
-          <span><strong class="text-gray-300">Capture parser trace</strong> — logs every paragraph decision (list metadata, <code class="text-gray-500">in_choices</code>, split-after-choices flags). Use when a question sticks to the wrong item or topic. After upload, open <a class="text-sky-400 hover:underline" href="admin_question_sort.php?qsort_debug=1">Parser debug</a> or download <code class="text-gray-500">.parse-trace.json</code>.</span>
+          <span><strong class="text-gray-300">Capture parser trace</strong> — logs every paragraph decision (list metadata, <code class="text-gray-500">in_choices</code>, split-after-choices flags). Use when a question sticks to the wrong item or topic. After upload, open <a class="text-sky-400 hover:underline" href="admin_question_sort?qsort_debug=1">Parser debug</a> or download <code class="text-gray-500">.parse-trace.json</code>.</span>
         </label>
         <div class="flex flex-wrap gap-2 items-center">
         <button type="submit" class="admin-materials-submit-btn inline-flex items-center gap-2" id="ereviewQsortSubmit">
@@ -812,7 +812,7 @@ if ($qsortHasResults) {
             var fd = new FormData();
             fd.append('csrf_token', this.csrfToken);
             fd.append('subject_id', this.deploySubjectId);
-            var res = await fetch('api/question_sort_quiz_options.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            var res = await fetch('api/question_sort_quiz_options', { method: 'POST', body: fd, credentials: 'same-origin' });
             var data = await res.json().catch(function () { return {}; });
             if (data.ok && Array.isArray(data.quizzes)) {
               this.existingQuizzes = data.quizzes;
@@ -876,7 +876,7 @@ if ($qsortHasResults) {
             if (this.deployTargetQuizId) {
               fd.append('quiz_id', String(this.deployTargetQuizId));
             }
-            var res = await fetch('api/question_sort_deploy.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            var res = await fetch('api/question_sort_deploy', { method: 'POST', body: fd, credentials: 'same-origin' });
             var data = await res.json().catch(function () { return {}; });
             if (!data.ok) {
               var code = data.error_code || '';
@@ -917,12 +917,12 @@ if ($qsortHasResults) {
         <span class="text-sm text-gray-300 font-semibold tabular-nums" title="Parsed counts for this document"><?php echo $__qc; ?> questions<?php if ($__gpc > 0): ?> · <?php echo $__gpc; ?> general problem<?php echo $__gpc === 1 ? '' : 's'; ?><?php endif; ?></span>
         <?php endif; ?>
         <div class="flex flex-wrap items-center gap-2">
-          <a href="admin_question_sort.php?download=json" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-filetype-json text-sky-400"></i> JSON</a>
-          <a href="admin_question_sort.php?download=parse_trace" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline<?php echo $parseTraceForView === null ? ' opacity-40 pointer-events-none' : ''; ?>" title="<?php echo $parseTraceForView === null ? 'Re-upload with Capture parser trace enabled' : 'Download paragraph-by-paragraph parser log'; ?>"><i class="bi bi-bug text-amber-400"></i> Parse trace</a>
-          <a href="admin_question_sort.php?download=html" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-file-earmark-code text-emerald-400"></i> HTML</a>
-          <a href="admin_question_sort.php?download=docx" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-file-earmark-word text-blue-400"></i> Word</a>
+          <a href="admin_question_sort?download=json" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-filetype-json text-sky-400"></i> JSON</a>
+          <a href="admin_question_sort?download=parse_trace" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline<?php echo $parseTraceForView === null ? ' opacity-40 pointer-events-none' : ''; ?>" title="<?php echo $parseTraceForView === null ? 'Re-upload with Capture parser trace enabled' : 'Download paragraph-by-paragraph parser log'; ?>"><i class="bi bi-bug text-amber-400"></i> Parse trace</a>
+          <a href="admin_question_sort?download=html" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-file-earmark-code text-emerald-400"></i> HTML</a>
+          <a href="admin_question_sort?download=docx" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-file-earmark-word text-blue-400"></i> Word</a>
           <?php if ($parseTraceForView !== null): ?>
-          <a href="admin_question_sort.php?qsort_debug=1" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-table text-violet-400"></i> Parser debug</a>
+          <a href="admin_question_sort?qsort_debug=1" class="quiz-admin-btn-secondary inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-semibold text-sm no-underline"><i class="bi bi-table text-violet-400"></i> Parser debug</a>
           <?php endif; ?>
         </div>
         <div class="w-full sm:flex-1 sm:max-w-md sm:ml-auto min-w-0">
@@ -1245,7 +1245,7 @@ if ($qsortHasResults) {
             </tbody>
           </table>
         </div>
-        <p class="text-xs text-gray-500 mt-3 mb-0">Download full JSON: <a class="text-sky-400 hover:underline" href="admin_question_sort.php?download=parse_trace">parse_trace</a> (includes <code class="text-gray-500">list_fmt</code>, <code class="text-gray-500">lead_text_num</code>, flags).</p>
+        <p class="text-xs text-gray-500 mt-3 mb-0">Download full JSON: <a class="text-sky-400 hover:underline" href="admin_question_sort?download=parse_trace">parse_trace</a> (includes <code class="text-gray-500">list_fmt</code>, <code class="text-gray-500">lead_text_num</code>, flags).</p>
       <?php endif; ?>
     </div>
   </div>

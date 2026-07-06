@@ -1,7 +1,7 @@
 <?php
 /**
  * Professor-only JSON API for optional AI-assisted question authoring.
- * Requires OPENAI_API_KEY (see includes/ai_config.php) for live suggestions;
+ * Requires OPENAI_API_KEY (see includes/ai_config) for live suggestions;
  * otherwise returns a structured offline fallback.
  */
 require_once __DIR__ . '/auth.php';

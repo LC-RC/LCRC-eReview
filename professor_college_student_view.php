@@ -8,7 +8,7 @@ $pageTitle = 'College student';
 $csrf = generateCSRFToken();
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
@@ -23,7 +23,7 @@ $u = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$u) {
     $_SESSION['message'] = 'Student not found.';
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
@@ -114,7 +114,7 @@ if (!empty($u['created_at'])) {
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
   <main class="dashboard-shell w-full max-w-none px-1 pb-8">
     <div class="mb-4">
-      <a href="professor_college_students.php" class="inline-flex items-center gap-2 text-sm font-semibold text-[#15803d] hover:underline">
+      <a href="professor_college_students" class="inline-flex items-center gap-2 text-sm font-semibold text-[#15803d] hover:underline">
         <i class="bi bi-arrow-left"></i> Back to directory
       </a>
     </div>
@@ -168,7 +168,7 @@ if (!empty($u['created_at'])) {
     </div>
 
     <h2 class="text-lg font-extrabold text-[#14532d] mb-3 mt-6">Official student number</h2>
-    <form method="post" action="professor_college_student_view.php?id=<?php echo (int)$userId; ?>" class="max-w-xl rounded-lg border border-slate-200 bg-white p-4">
+    <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" class="max-w-xl rounded-lg border border-slate-200 bg-white p-4">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <input type="hidden" name="action" value="save_student_number">
       <label class="block text-sm font-semibold text-green-800 mb-1">Student number (for reports)</label>

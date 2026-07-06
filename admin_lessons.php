@@ -4,7 +4,7 @@ requireRole('admin');
 
 $csrf = generateCSRFToken();
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($subjectId <= 0) { header('Location: admin_subjects.php'); exit; }
+if ($subjectId <= 0) { header('Location: admin_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -12,13 +12,13 @@ mysqli_stmt_execute($stmt);
 $subRes = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($subRes);
 mysqli_stmt_close($stmt);
-if (!$subject) { header('Location: admin_subjects.php'); exit; }
+if (!$subject) { header('Location: admin_subjects'); exit; }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_lessons.php?subject_id='.$subjectId);
+        header('Location: admin_lessons?subject_id='.$subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Lesson deleted.';
         }
-        header('Location: admin_lessons.php?subject_id='.$subjectId);
+        header('Location: admin_lessons?subject_id='.$subjectId);
         exit;
     }
     $lessonId = sanitizeInt($_POST['lesson_id'] ?? 0);
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $desc = trim($_POST['description'] ?? '');
     if ($title === '') {
         $_SESSION['error'] = 'Lesson title is required.';
-        header('Location: admin_lessons.php?subject_id='.$subjectId);
+        header('Location: admin_lessons?subject_id='.$subjectId);
         exit;
     }
     if ($lessonId > 0) {
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Lesson created.';
     }
-    header('Location: admin_lessons.php?subject_id='.$subjectId);
+    header('Location: admin_lessons?subject_id='.$subjectId);
     exit;
 }
 
@@ -129,7 +129,7 @@ mysqli_stmt_execute($stmt);
 $lessons = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Lessons - ' . $subject['subject_name'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($subject['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Lessons'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($subject['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], ['Lessons'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,8 +151,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div></div>
     <div class="flex flex-wrap gap-2">
-      <a href="admin_subjects.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
-      <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
+      <a href="admin_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
+      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
       <button type="button" @click="openNewLesson()" class="admin-content-btn admin-content-btn--lessons px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Lesson</button>
     </div>
   </div>
@@ -170,7 +170,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_lessons.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_lessons" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[200px]">
       <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
@@ -179,7 +179,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -233,7 +233,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
               </td>
               <td class="px-5 py-3 text-center">
                 <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                  <a href="admin_materials.php?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-grid"></i><span class="sr-only">Materials</span></a>
+                  <a href="admin_materials?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-grid"></i><span class="sr-only">Materials</span></a>
                   <div class="admin-row-menu-wrap">
                     <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                     <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
@@ -267,7 +267,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
           <?php
             $filterQs = $searchQ !== '' ? ['q' => $searchQ] : [];
             $filterSuffix = $filterQs ? '&' . http_build_query($filterQs) : '';
-            $baseUrl = 'admin_lessons.php?subject_id=' . (int)$subjectId . $filterSuffix;
+            $baseUrl = 'admin_lessons?subject_id=' . (int)$subjectId . $filterSuffix;
             $mk = function ($p) use ($baseUrl) { return $baseUrl . ($p > 1 ? '&page=' . $p : ''); };
           ?>
           <?php if ($page > 1): ?>
@@ -294,7 +294,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         <h2 class="text-xl font-bold text-gray-100 m-0" x-text="isEdit ? 'Edit Lesson' : 'New Lesson'"></h2>
         <button type="button" @click="lessonModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="p-5">
+      <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="lesson_id" :value="lesson_id">
@@ -324,7 +324,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         <h2 class="text-xl font-bold text-gray-100 m-0"><i class="bi bi-trash text-red-400 mr-2"></i> Delete Lesson</h2>
         <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>">
+      <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="lesson_id" :value="delete_lesson_id">

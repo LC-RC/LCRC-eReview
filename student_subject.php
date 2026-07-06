@@ -10,12 +10,12 @@ sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($subjectId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($subjectId <= 0) { header('Location: student_subjects'); exit; }
 
 $userId = getCurrentUserId();
 if (!sca_subject_has_any_access($conn, (int)$userId, $subjectId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 
@@ -25,7 +25,7 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
-if (!$subject) { header('Location: student_subjects.php'); exit; }
+if (!$subject) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM lessons WHERE subject_id=? ORDER BY lesson_id ASC");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -94,7 +94,7 @@ foreach ($lessonsRows as $l) {
         'id' => $lid,
         'title' => (string)($l['title'] ?? ''),
         'desc' => (string)($l['description'] ?? ''),
-        'href' => $lessonOpen ? 'student_lesson_viewer.php?lesson_id=' . $lid . '&subject_id=' . (int)$subjectId : '#',
+        'href' => $lessonOpen ? 'student_lesson_viewer?lesson_id=' . $lid . '&subject_id=' . (int)$subjectId : '#',
         'thumb' => (string)($thumbByLesson[$lid] ?? ''),
         'vimeoOembedUrl' => (string)($vimeoOembedUrlByLesson[$lid] ?? ''),
         'locked' => !$lessonOpen,
@@ -202,8 +202,8 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
     $attemptCount = (int)($attemptCountByQuiz[$qid] ?? 0);
     $scorePct = $lastScore !== null && (int)($lastScore['total'] ?? 0) > 0 ? round(100 * (int)$lastScore['correct'] / (int)$lastScore['total']) : null;
     $passed = $scorePct !== null && $scorePct >= 50;
-    $takeUrl = 'student_take_quiz.php?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId;
-    $viewResultUrl = 'student_take_quiz.php?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId . '&view_result=1';
+    $takeUrl = 'student_take_quiz?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId;
+    $viewResultUrl = 'student_take_quiz?quiz_id=' . $qid . '&subject_id=' . (int)$subjectId . '&view_result=1';
     $quizOpen = sca_has_access($conn, (int)$userId, 'quiz', $qid);
     $rowStatus = ($cnt <= 0) ? 'no_questions' : ($inProgressAttemptId ? 'in_progress' : ($passed ? 'passed' : 'need_retake'));
     $notTaken = ($cnt > 0 && !$inProgressAttemptId && $attemptCount === 0);
@@ -427,7 +427,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       -webkit-overflow-scrolling: touch;
       border-radius: 0.75rem;
     }
-    /* Matches college_exams.php dash-card + exam grid (tailored columns for subject quizzes) */
+    /* Matches college_exams dash-card + exam grid (tailored columns for subject quizzes) */
     .quizzers-section .quiz-table-shell.qq-list-shell {
       min-width: 920px;
       border-radius: 0.75rem;
@@ -2661,7 +2661,7 @@ document.addEventListener('alpine:init', function() {
       <?php endif; ?>
       <div class="student-hero__body flex-1">
         <div class="student-hero__nav">
-          <a href="student_subjects.php" class="btn-back-subjects">
+          <a href="student_subjects" class="btn-back-subjects">
             <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Subjects
           </a>
         </div>
@@ -3154,7 +3154,7 @@ document.addEventListener('alpine:init', function() {
             $tbId = (int)$tb['id'];
             $tbTitle = h($tb['title']);
         ?>
-          <a href="student_test_bank_viewer.php?id=<?php echo $tbId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="testbank-card" role="listitem">
+          <a href="student_test_bank_viewer?id=<?php echo $tbId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="testbank-card" role="listitem">
             <div class="testbank-card__top">
               <span class="testbank-card__badge" aria-hidden="true"><?php echo (int)$tbOrdinal; ?></span>
               <span class="testbank-card__icon" aria-hidden="true"><i class="bi bi-folder2-open"></i></span>
@@ -3178,7 +3178,7 @@ document.addEventListener('alpine:init', function() {
             $tbTitle = h($tb['title']);
         ?>
         <li class="lesson-list__item" role="listitem">
-          <a href="student_test_bank_viewer.php?id=<?php echo $tbId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="lesson-list__link">
+          <a href="student_test_bank_viewer?id=<?php echo $tbId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="lesson-list__link">
             <span class="lesson-list__idx" aria-hidden="true"><?php echo (int)$tbOrdinal; ?></span>
             <div class="lesson-list__body">
               <h3 class="lesson-list__title"><?php echo $tbTitle; ?></h3>
@@ -3228,7 +3228,7 @@ document.addEventListener('alpine:init', function() {
         <button type="button" @click="$store.handoutViewer && ($store.handoutViewer.open = false, $store.handoutViewer.id = '')" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="flex-1 min-h-0 relative" style="aspect-ratio: 4/3;">
-        <iframe x-show="$store.handoutViewer && $store.handoutViewer.id" :src="($store.handoutViewer && $store.handoutViewer.id) ? ('handout_viewer.php?handout_id=' + $store.handoutViewer.id) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" allowfullscreen></iframe>
+        <iframe x-show="$store.handoutViewer && $store.handoutViewer.id" :src="($store.handoutViewer && $store.handoutViewer.id) ? ('handout_viewer?handout_id=' + $store.handoutViewer.id) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" allowfullscreen></iframe>
       </div>
     </div>
   </div>

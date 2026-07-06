@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <?php if ($sent): ?>
             <p class="auth-success-msg text-center mb-4">If an account exists for that address, we've sent a sign-in link. Check your email and use the link to sign in (valid for <?php echo MAGIC_LINK_EXPIRY_MINUTES; ?> minutes).</p>
             <p class="text-center mt-4">
-              <a href="login.php" class="auth-back-link text-sm font-semibold">Back to login</a>
+              <a href="login" class="auth-back-link text-sm font-semibold">Back to login</a>
             </p>
           <?php else: ?>
             <?php if ($error): ?>
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span class="auth-alert-text"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></span>
               </div>
             <?php endif; ?>
-            <form method="POST" action="request_magic_link.php" class="space-y-4">
+            <form method="POST" action="request_magic_link" class="space-y-4">
               <div class="space-y-2">
                 <label for="magic-email" class="block text-sm font-medium">Email</label>
                 <div class="relative">
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </button>
             </form>
             <p class="mt-8 text-center subtext">
-              <a href="login.php" class="auth-back-link font-semibold">Back to login</a>
+              <a href="login" class="auth-back-link font-semibold">Back to login</a>
             </p>
           <?php endif; ?>
         </div>

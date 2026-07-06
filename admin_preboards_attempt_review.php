@@ -7,14 +7,14 @@ require_once __DIR__ . '/includes/quiz_helpers.php';
 
 $attemptId = sanitizeInt($_GET['preboards_attempt_id'] ?? 0);
 if ($attemptId <= 0) {
-    header('Location: admin_preboards_monitor.php');
+    header('Location: admin_preboards_monitor');
     exit;
 }
 
 $attempt = preboards_admin_fetch_attempt($conn, $attemptId);
 if (!$attempt) {
     $_SESSION['error'] = 'Attempt not found.';
-    header('Location: admin_preboards_monitor.php');
+    header('Location: admin_preboards_monitor');
     exit;
 }
 
@@ -26,12 +26,12 @@ $history = preboards_admin_student_attempt_history($conn, $userId, $setId);
 
 $isSubmitted = ($attempt['status'] ?? '') === 'submitted';
 $score = isset($attempt['score']) ? (float) $attempt['score'] : null;
-$monitorUrl = 'admin_preboards_monitor.php?preboards_subject_id=' . $subjectId;
+$monitorUrl = 'admin_preboards_monitor?preboards_subject_id=' . $subjectId;
 
 $pageTitle = 'Preboard Review — ' . ($attempt['full_name'] ?? 'Student');
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Preboards', 'admin_preboards_subjects.php'],
+    ['Dashboard', 'admin_dashboard'],
+    ['Preboards', 'admin_preboards_subjects'],
     ['Monitoring', $monitorUrl],
     ['Attempt review'],
 ];
@@ -152,7 +152,7 @@ $adminBreadcrumbs = [
               <td class="px-5 py-2 text-gray-400"><?php echo h(preboards_format_datetime($h['submitted_at'] ?? null)); ?></td>
               <td class="px-5 py-2 text-right">
                 <?php if (!$current): ?>
-                  <a href="admin_preboards_attempt_review.php?preboards_attempt_id=<?php echo $hid; ?>" class="admin-quiz-btn admin-quiz-btn-sm">View</a>
+                  <a href="admin_preboards_attempt_review?preboards_attempt_id=<?php echo $hid; ?>" class="admin-quiz-btn admin-quiz-btn-sm">View</a>
                 <?php endif; ?>
               </td>
             </tr>

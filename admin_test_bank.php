@@ -4,7 +4,7 @@ requireRole('admin');
 
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) {
-    header('Location: admin_subjects.php');
+    header('Location: admin_subjects');
     exit;
 }
 
@@ -16,15 +16,15 @@ $subjectRes = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($subjectRes);
 mysqli_stmt_close($stmt);
 if (!$subject) {
-    header('Location: admin_subjects.php');
+    header('Location: admin_subjects');
     exit;
 }
 
 $pageTitle = 'Test Bank - ' . $subject['subject_name'];
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Content Hub', 'admin_subjects.php'],
-    [h($subject['subject_name']), 'admin_test_bank.php?subject_id=' . $subjectId],
+    ['Dashboard', 'admin_dashboard'],
+    ['Content Hub', 'admin_subjects'],
+    [h($subject['subject_name']), 'admin_test_bank?subject_id=' . $subjectId],
     ['Test Bank'],
 ];
 $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'test_bank';
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($id > 0) {
         $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT question_file_path, question_file_name, solution_file_path, solution_file_name FROM test_bank WHERE id=" . $id . " AND subject_id=" . $subjectId . " LIMIT 1"));
-        if (!$row) { header('Location: admin_test_bank.php?subject_id=' . $subjectId); exit; }
+        if (!$row) { header('Location: admin_test_bank?subject_id=' . $subjectId); exit; }
         $oldQPath = $row['question_file_path'] ?? '';
         $oldSPath = $row['solution_file_path'] ?? '';
         $qPath = $qPath ?: $oldQPath;
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['message'] = 'Test bank entry added.';
         }
     }
-    header('Location: admin_test_bank.php?subject_id=' . $subjectId);
+    header('Location: admin_test_bank?subject_id=' . $subjectId);
     exit;
 }
 
@@ -113,7 +113,7 @@ if (isset($_GET['delete'])) {
     }
     mysqli_query($conn, "DELETE FROM test_bank WHERE id=" . $delId . " AND subject_id=" . $subjectId);
     $_SESSION['message'] = 'Test bank entry deleted.';
-    header('Location: admin_test_bank.php?subject_id=' . $subjectId);
+    header('Location: admin_test_bank?subject_id=' . $subjectId);
     exit;
 }
 
@@ -173,10 +173,10 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div></div>
     <div class="flex flex-wrap gap-2">
-      <a href="admin_subjects.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
-      <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--lessons px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-file-text"></i> Lessons for <?php echo h($subject['subject_name']); ?></a>
-      <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
-      <a href="admin_preweek.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-lightning-charge"></i> Preweek</a>
+      <a href="admin_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
+      <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--lessons px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-file-text"></i> Lessons for <?php echo h($subject['subject_name']); ?></a>
+      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
+      <a href="admin_preweek" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-lightning-charge"></i> Preweek</a>
     </div>
   </div>
 
@@ -195,7 +195,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_test_bank.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_test_bank" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <?php if (isset($_GET['edit'])): ?><input type="hidden" name="edit" value="<?php echo (int)$_GET['edit']; ?>"><?php endif; ?>
     <div class="flex-1 min-w-[200px]">
@@ -205,7 +205,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?><?php echo isset($_GET['edit']) ? '&edit=' . (int)$_GET['edit'] : ''; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?><?php echo isset($_GET['edit']) ? '&edit=' . (int)$_GET['edit'] : ''; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -242,7 +242,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
           <p class="text-xs text-gray-500">Max 20 MB per file. Allowed: <?php echo implode(', ', $allowedExtensions); ?></p>
           <div class="flex flex-wrap gap-2">
             <button type="submit" class="admin-content-btn admin-content-btn--testbank px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-<?php echo $edit ? 'check-lg' : 'plus-circle'; ?>"></i> <?php echo $edit ? 'Update entry' : 'Add entry'; ?></button>
-            <?php if ($edit): ?><a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Cancel</a><?php endif; ?>
+            <?php if ($edit): ?><a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Cancel</a><?php endif; ?>
           </div>
         </form>
       </div>
@@ -289,8 +289,8 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
                     </td>
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-400 whitespace-nowrap"><?php echo $row['updated_at'] ? date('M j, Y', strtotime($row['updated_at'])) : '—'; ?></td>
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3">
-                      <a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" class="tb-action-link inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition mr-1">Edit</a>
-                      <a href="admin_test_bank.php?subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" onclick="return confirm('Delete this test bank entry?');" class="tb-action-link tb-action-link--danger inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition">Delete</a>
+                      <a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" class="tb-action-link inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition mr-1">Edit</a>
+                      <a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" onclick="return confirm('Delete this test bank entry?');" class="tb-action-link tb-action-link--danger inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition">Delete</a>
                     </td>
                   </tr>
                 <?php endwhile; ?>

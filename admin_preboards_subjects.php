@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_preboards_subjects.php');
+        header('Location: admin_preboards_subjects');
         exit;
     }
 
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Preboards deleted.';
         }
-        header('Location: admin_preboards_subjects.php');
+        header('Location: admin_preboards_subjects');
         exit;
     }
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($name === '') {
         $_SESSION['error'] = 'Subject name is required.';
-        header('Location: admin_preboards_subjects.php' . ($id > 0 ? ('?edit=' . $id) : ''));
+        header('Location: admin_preboards_subjects' . ($id > 0 ? ('?edit=' . $id) : ''));
         exit;
     }
 
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_close($dupStmt);
     if ($dupRow) {
         $_SESSION['error'] = 'This preboards subject already exists.';
-        header('Location: admin_preboards_subjects.php' . ($id > 0 ? ('?edit=' . $id) : ''));
+        header('Location: admin_preboards_subjects' . ($id > 0 ? ('?edit=' . $id) : ''));
         exit;
     }
 
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = 'Preboards created.';
     }
 
-    header('Location: admin_preboards_subjects.php');
+    header('Location: admin_preboards_subjects');
     exit;
 }
 
@@ -141,7 +141,7 @@ mysqli_stmt_execute($stmt);
 $subjects = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Preboards';
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -255,8 +255,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
                 </td>
                 <td class="px-5 py-3 text-center">
                   <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--sets" title="Manage sets"><i class="bi bi-collection"></i><span class="sr-only">Manage sets</span></a>
-                    <a href="admin_preboards_monitor.php?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--monitor" title="Monitoring"><i class="bi bi-bar-chart-line"></i><span class="sr-only">Monitoring</span></a>
+                    <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--sets" title="Manage sets"><i class="bi bi-collection"></i><span class="sr-only">Manage sets</span></a>
+                    <a href="admin_preboards_monitor?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--monitor" title="Monitoring"><i class="bi bi-bar-chart-line"></i><span class="sr-only">Monitoring</span></a>
                     <div class="admin-row-menu-wrap">
                       <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
@@ -295,7 +295,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
             $mk = function ($p) use ($baseParams) {
               $params = $baseParams;
               $params['page'] = $p;
-              return 'admin_preboards_subjects.php?' . http_build_query($params);
+              return 'admin_preboards_subjects?' . http_build_query($params);
             };
           ?>
           <?php if ($page > 1): ?>
@@ -322,7 +322,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
         <h2 class="text-xl font-bold text-gray-800 m-0" x-text="isEdit ? 'Edit Preboards' : 'New Preboards'"><i class="bi bi-clipboard-check mr-2"></i></h2>
         <button type="button" @click="subjectModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_subjects.php" class="p-5">
+      <form method="POST" action="admin_preboards_subjects" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="preboards_subject_id" :value="preboards_subject_id">
@@ -373,7 +373,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Preboards'] ];
         <h2 class="text-xl font-bold text-gray-800 m-0"><i class="bi bi-trash text-red-500 mr-2"></i> Delete Preboards</h2>
         <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_subjects.php">
+      <form method="POST" action="admin_preboards_subjects">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="preboards_subject_id" :value="delete_id">

@@ -121,7 +121,7 @@ if (!function_exists('notifications_create_admin_pending_registration_notificati
 
         $title = 'New registration pending approval';
         $msg = 'A newly verified student registration is now waiting in the Pending tab for your review.';
-        $link = 'admin_students.php?tab=pending&q=&page=1';
+        $link = 'admin_students?tab=pending&q=&page=1';
         $role = 'admin';
         $category = 'pending_registration';
         $isRead = 0;
@@ -199,7 +199,7 @@ if (!function_exists('notifications_create_admin_preboards_request_notifications
         $isRetake = $requestType === 'retake';
         $title = $isRetake ? 'Preboards retake request' : 'Preboards access request';
         $msg = $studentName . ' requested ' . ($isRetake ? 'a retake' : 'access') . ' for Set ' . $setLabel . ' (' . $subjectName . ').';
-        $link = 'admin_preboards_sets.php?preboards_subject_id=' . (int) $preboardsSubjectId;
+        $link = 'admin_preboards_sets?preboards_subject_id=' . (int) $preboardsSubjectId;
         $role = 'admin';
         $category = $isRetake ? 'preboards_request_retake' : 'preboards_request_access';
         $isRead = 0;
@@ -277,7 +277,7 @@ if (!function_exists('notifications_sync_admin_preboards_pending_reminder')) {
         $detail = implode(' and ', $parts);
         $title = 'Pending preboards requests';
         $msg = 'You have ' . $counts['total'] . ' pending student request(s)' . ($detail !== '' ? ' (' . $detail . ')' : '') . '. Review them under Preboards sets.';
-        $link = 'admin_preboards_subjects.php';
+        $link = 'admin_preboards_subjects';
         $role = 'admin';
         $category = 'preboards_pending_digest';
         $isRead = 0;

@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <span class="auth-alert-text"><?php echo h($error); ?></span>
             </div>
           <?php endif; ?>
-          <form method="POST" action="forgot_password.php" class="space-y-4" id="forgot-form">
+          <form method="POST" action="forgot_password" class="space-y-4" id="forgot-form">
             <div class="space-y-2">
               <label for="forgot-email" class="block text-sm font-medium">Email</label>
               <div class="relative">
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
           </form>
           <p class="mt-8 text-center subtext">
-            <a href="login.php" class="auth-back-link font-semibold">Back to login</a>
+            <a href="login" class="auth-back-link font-semibold">Back to login</a>
           </p>
         </div>
       </div>
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
       <h2 id="forgot-success-title" class="forgot-success-title">Check your email</h2>
       <p class="forgot-success-text">If an account exists for that email, we've sent a link to reset your password.</p>
-      <a href="login.php" class="forgot-success-btn btn-shine inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1F58C3]">Back to login</a>
+      <a href="login" class="forgot-success-btn btn-shine inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1F58C3]">Back to login</a>
     </div>
   </div>
 

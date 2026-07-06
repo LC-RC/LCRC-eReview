@@ -1,7 +1,7 @@
 <?php
 /**
  * Shared styles: Materials list UI (cards/list toggle, toolbar, lesson cards & list).
- * Included by student_subject.php (Materials tab) and student_preweek.php.
+ * Included by student_subject (Materials tab) and student_preweek.php.
  */
 if (!defined('EREVIEW_MATERIALS_LIST_STYLES')) {
 define('EREVIEW_MATERIALS_LIST_STYLES', true);

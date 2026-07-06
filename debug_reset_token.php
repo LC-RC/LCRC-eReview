@@ -127,7 +127,7 @@ if ($is64Hex) {
         step($log, '16_direct_hash_match', $directMatch);
         if ($directMatch) {
             $log['result'] = 'valid';
-            $log['result_reason'] = 'Token is valid (direct match). reset_password.php should show the form.';
+            $log['result_reason'] = 'Token is valid (direct match). reset_password should show the form.';
             echo json_encode($log, JSON_PRETTY_PRINT);
             exit;
         }

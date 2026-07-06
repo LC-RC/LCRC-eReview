@@ -7,7 +7,7 @@ require_once __DIR__ . '/session_config.php';
 require_once __DIR__ . '/auth.php';
 
 if (!isLoggedIn() || !verifySession()) {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 

@@ -17,7 +17,7 @@ $configFile = __DIR__ . '/config/google_oauth_config.php';
 if (!file_exists($configFile)) {
     $_SESSION['error'] = 'Google Sign-In is not configured.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -27,7 +27,7 @@ $clientSecret = is_array($config) ? trim($config['client_secret'] ?? '') : '';
 if ($clientId === '' || $clientSecret === '') {
     $_SESSION['error'] = 'Google Sign-In is not configured.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -39,7 +39,7 @@ unset($_SESSION['google_oauth_state']);
 if ($code === '' || $state === '' || !hash_equals($storedState, $state)) {
     $_SESSION['error'] = 'Invalid or expired Google sign-in request. Please try again.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -47,7 +47,7 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' :
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $base = $scheme . '://' . $host . dirname($_SERVER['SCRIPT_NAME'] ?? '');
 $base = str_replace('\\', '/', $base);
-$redirectUri = rtrim($base, '/') . '/google_callback.php';
+$redirectUri = rtrim($base, '/') . '/google_callback';
 
 $tokenUrl = 'https://oauth2.googleapis.com/token';
 $tokenPost = http_build_query([
@@ -72,7 +72,7 @@ $accessToken = is_array($tokenData) ? ($tokenData['access_token'] ?? '') : '';
 if ($accessToken === '') {
     $_SESSION['error'] = 'Google sign-in failed. Please try again.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -90,7 +90,7 @@ $email = is_array($userInfo) ? trim($userInfo['email'] ?? '') : '';
 if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $_SESSION['error'] = 'Could not get your email from Google. Please try again or use email and password.';
     $_SESSION['error_type'] = 'invalid_credentials';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -104,7 +104,7 @@ mysqli_stmt_close($stmt);
 if (!$user) {
     $_SESSION['error'] = 'This Google account is not linked to any LCRC eReview account. Please register first using the same email, then you can sign in with Google.';
     $_SESSION['error_type'] = 'google_no_account';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -121,7 +121,7 @@ if ($hasEmailVerifiedCol) {
     if ($row && (int)($row['email_verified'] ?? 1) === 0) {
         $_SESSION['error'] = 'Your account has not been verified yet. Please confirm your email before signing in.';
         $_SESSION['error_type'] = 'google_not_verified';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
@@ -129,7 +129,7 @@ if ($hasEmailVerifiedCol) {
 if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
     $_SESSION['error'] = 'Your account is pending approval. An admin must approve your account before you can sign in. Please try again later or contact support.';
     $_SESSION['error_type'] = 'not_approved';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 if (!isStaffRole($user['role']) && !empty($user['access_end'])) {
@@ -138,7 +138,7 @@ if (!isStaffRole($user['role']) && !empty($user['access_end'])) {
     if ($now > $end) {
         $_SESSION['error'] = 'Your access has expired.';
         $_SESSION['error_type'] = 'access_expired';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
@@ -147,7 +147,7 @@ $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user
 if ($examBlock !== null) {
     $_SESSION['error'] = $examBlock;
     $_SESSION['error_type'] = 'exam_session_active';
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -173,5 +173,5 @@ setUserPresenceStatus($uid, true);
 $target = dashboardUrlForRole($user['role']);
 $fullName = trim($user['full_name'] ?? '');
 $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
-header('Location: auth_success.php?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));
+header('Location: auth_success?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));
 exit;

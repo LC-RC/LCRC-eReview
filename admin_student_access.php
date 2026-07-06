@@ -8,8 +8,8 @@ $csrf = generateCSRFToken();
 $preselectId = (int) ($_GET['user_id'] ?? 0);
 $pageTitle = 'Student Access Management';
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Students', 'admin_students.php'],
+    ['Dashboard', 'admin_dashboard'],
+    ['Students', 'admin_students'],
     ['Student Access'],
 ];
 ?>
@@ -304,7 +304,7 @@ $adminBreadcrumbs = [
 
         async apiGet(action, params) {
           const qs = new URLSearchParams({ action, ...(params || {}) });
-          const res = await fetch('admin_student_access_api.php?' + qs.toString());
+          const res = await fetch('admin_student_access_api?' + qs.toString());
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.ok) throw new Error(data.error || 'Request failed');
           return data;
@@ -314,7 +314,7 @@ $adminBreadcrumbs = [
           fd.append('action', action);
           fd.append('csrf_token', this.csrf);
           Object.entries(fields || {}).forEach(([k, v]) => fd.append(k, v == null ? '' : v));
-          const res = await fetch('admin_student_access_api.php', { method: 'POST', body: fd });
+          const res = await fetch('admin_student_access_api', { method: 'POST', body: fd });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.ok) throw new Error(data.error || 'Request failed');
           return data;
@@ -872,7 +872,7 @@ $adminBreadcrumbs = [
               <i class="bi" :class="saveAction === 'permissions' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-shield-check'"></i>
               <span x-text="saveAction === 'permissions' ? 'Saving…' : 'Save content access'"></span>
             </button>
-            <a class="sca-btn sca-btn--outline no-underline" :href="'admin_student_view.php?id=' + selectedId">
+            <a class="sca-btn sca-btn--outline no-underline" :href="'admin_student_view?id=' + selectedId">
               <i class="bi bi-person-lines-fill"></i> View profile
             </a>
           </div>

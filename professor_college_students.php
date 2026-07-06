@@ -204,7 +204,7 @@ unset($_SESSION['message']);
               <p class="text-white/90 mt-1 mb-0">Accounts with the college student role.</p>
             </div>
           </div>
-          <a href="professor_create_college_student.php" class="prof-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
+          <a href="professor_create_college_student" class="prof-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
             <i class="bi bi-person-plus"></i> Add student
           </a>
         </div>
@@ -318,7 +318,7 @@ unset($_SESSION['message']);
               <td class="px-4 py-3 text-gray-600"><?php echo h(date('M j, Y', strtotime($u['created_at']))); ?></td>
               <td class="px-4 py-3 text-right">
                 <div class="action-btns justify-end">
-                  <a class="btn-view-prof" href="professor_college_student_view.php?id=<?php echo (int)$u['user_id']; ?>"><i class="bi bi-eye"></i> View</a>
+                  <a class="btn-view-prof" href="professor_college_student_view?id=<?php echo (int)$u['user_id']; ?>"><i class="bi bi-eye"></i> View</a>
                   <button type="button" class="btn-del-prof js-open-delete-student"
                     data-user-id="<?php echo (int)$u['user_id']; ?>"
                     data-student-name="<?php echo h($u['full_name']); ?>"><i class="bi bi-trash"></i> Delete</button>
@@ -335,7 +335,7 @@ unset($_SESSION['message']);
       <div class="modal-del-panel">
         <h3 id="deleteStudentTitle">Remove college student?</h3>
         <p>This permanently deletes the account for <strong id="deleteStudentNameDisplay"></strong>. Exam attempts and uploads linked to this account may be removed by the database. This cannot be undone.</p>
-        <form method="post" action="professor_college_student_delete.php" id="deleteStudentForm">
+        <form method="post" action="professor_college_student_delete" id="deleteStudentForm">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="user_id" id="deleteStudentUserId" value="">
           <div class="modal-del-actions">

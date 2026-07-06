@@ -112,14 +112,14 @@ $mkUrl = static function (array $overrides = []) use ($subjectId, $setId, $searc
         'page' => $page > 1 ? $page : null,
     ], static fn($v) => $v !== null && $v !== '');
     $params = array_merge($params, $overrides);
-    return 'admin_preboards_monitor.php?' . http_build_query($params);
+    return 'admin_preboards_monitor?' . http_build_query($params);
 };
 
 $subjectName = $subject['subject_name'] ?? 'Preboards';
 $pageTitle = 'Preboards Monitoring — ' . $subjectName;
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Preboards', 'admin_preboards_subjects.php'],
+    ['Dashboard', 'admin_dashboard'],
+    ['Preboards', 'admin_preboards_subjects'],
     ['Monitoring'],
 ];
 ?>
@@ -145,11 +145,11 @@ $adminBreadcrumbs = [
       <i class="bi bi-inbox text-4xl block mb-2"></i>
       <div class="font-semibold text-gray-200">No preboards subjects yet</div>
       <p class="text-sm mt-1 mb-4">Create a preboards subject first.</p>
-      <a href="admin_preboards_subjects.php" class="admin-content-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Manage preboards</a>
+      <a href="admin_preboards_subjects" class="admin-content-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Manage preboards</a>
     </div>
   <?php else: ?>
 
-  <form method="get" action="admin_preboards_monitor.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preboards_monitor" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <div class="min-w-[180px]">
       <label for="pb-mon-subject" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Subject</label>
       <select id="pb-mon-subject" name="preboards_subject_id" class="input-custom w-full" onchange="this.form.querySelector('[name=preboards_set_id]').value=''; this.form.submit();">
@@ -329,7 +329,7 @@ $adminBreadcrumbs = [
               $startedDt = preboards_format_datetime_short($att['started_at'] ?? null);
               $submittedDt = preboards_format_datetime_short($att['submitted_at'] ?? null);
               $duration = preboards_format_duration($att['started_at'] ?? null, $isSubmitted ? ($att['submitted_at'] ?? null) : null);
-              $reviewUrl = 'admin_preboards_attempt_review.php?preboards_attempt_id=' . (int) $att['preboards_attempt_id'];
+              $reviewUrl = 'admin_preboards_attempt_review?preboards_attempt_id=' . (int) $att['preboards_attempt_id'];
               $attemptId = (int) ($att['preboards_attempt_id'] ?? 0);
             ?>
               <tr class="pb-monitor-row">

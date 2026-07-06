@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * POST handlers for Support hub (admin_support_analytics.php tabs).
+ * POST handlers for Support hub (admin_support_analytics tabs).
  * Expects: $conn (mysqli), verifyCSRFToken, ereview_chat_* helpers, getCurrentUserId.
  */
 
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $token = (string)($_POST['csrf_token'] ?? '');
 if (!verifyCSRFToken($token)) {
-    header('Location: admin_support_analytics.php?tab=' . urlencode($_POST['hub_tab'] ?? 'overview') . '&err=csrf');
+    header('Location: admin_support_analytics?tab=' . urlencode($_POST['hub_tab'] ?? 'overview') . '&err=csrf');
     exit;
 }
 
@@ -42,7 +42,7 @@ if ($hub === 'backlog') {
             mysqli_stmt_close($st);
         }
     }
-    header('Location: admin_support_analytics.php?tab=backlog&saved=1');
+    header('Location: admin_support_analytics?tab=backlog&saved=1');
     exit;
 }
 
@@ -81,14 +81,14 @@ if ($hub === 'lookup') {
         'error' => $error,
         'email' => $email,
     ];
-    header('Location: admin_support_analytics.php?tab=lookup');
+    header('Location: admin_support_analytics?tab=lookup');
     exit;
 }
 
 if ($hub === 'kb') {
     $v2 = ereview_chat_v2_ready($conn);
     if (!$v2) {
-        header('Location: admin_support_analytics.php?tab=kb');
+        header('Location: admin_support_analytics?tab=kb');
         exit;
     }
 
@@ -104,7 +104,7 @@ if ($hub === 'kb') {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['support_hub_kb_flash_ok'] = 'Global settings saved.';
-        header('Location: admin_support_analytics.php?tab=kb');
+        header('Location: admin_support_analytics?tab=kb');
         exit;
     }
 
@@ -122,7 +122,7 @@ if ($hub === 'kb') {
 
         if ($title === '' || $content === '') {
             $_SESSION['support_hub_kb_flash_err'] = 'Title and main content are required.';
-            header('Location: admin_support_analytics.php?tab=kb&edit=' . $aid);
+            header('Location: admin_support_analytics?tab=kb&edit=' . $aid);
             exit;
         }
 
@@ -152,7 +152,7 @@ if ($hub === 'kb') {
             mysqli_stmt_execute($up);
             mysqli_stmt_close($up);
             $_SESSION['support_hub_kb_flash_ok'] = 'Article updated.';
-            header('Location: admin_support_analytics.php?tab=kb&edit=' . $aid);
+            header('Location: admin_support_analytics?tab=kb&edit=' . $aid);
             exit;
         }
 
@@ -185,11 +185,11 @@ if ($hub === 'kb') {
             mysqli_stmt_close($vins);
         }
         $_SESSION['support_hub_kb_flash_ok'] = 'Article created.';
-        header('Location: admin_support_analytics.php?tab=kb&edit=' . $newId);
+        header('Location: admin_support_analytics?tab=kb&edit=' . $newId);
         exit;
     }
 
-    header('Location: admin_support_analytics.php?tab=kb');
+    header('Location: admin_support_analytics?tab=kb');
     exit;
 }
 

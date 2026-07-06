@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/quiz_helpers.php';
 requireRole('student');
 
 // Quizzers are inside each subject; redirect to Subjects
-header('Location: student_subjects.php');
+header('Location: student_subjects');
 exit;
 
 // Load attempt state per quiz (in_progress + last submitted) for this user
@@ -14,7 +14,7 @@ if ($userId) {
     try {
         $ar = mysqli_query($conn, "SELECT attempt_id, quiz_id, status, score, correct_count, total_count FROM quiz_attempts WHERE user_id=".(int)$userId." ORDER BY attempt_id DESC");
     } catch (mysqli_sql_exception $e) {
-        $ar = false; // table may not exist yet; run run_once_migration_quiz.php or quiz_schema_migration.sql
+        $ar = false; // table may not exist yet; run run_once_migration_quiz or quiz_schema_migration.sql
     }
     if ($ar) {
         while ($row = mysqli_fetch_assoc($ar)) {
@@ -97,11 +97,11 @@ $pageTitle = 'Quizzers';
               <td class="px-4 py-3 text-right">
                 <?php if ($hasQuestions): ?>
                   <?php if ($inProgressAttemptId): ?>
-                    <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&attempt_id=<?php echo $inProgressAttemptId; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition">
+                    <a href="student_take_quiz?quiz_id=<?php echo $quizId; ?>&attempt_id=<?php echo $inProgressAttemptId; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition">
                       <i class="bi bi-play-fill"></i> Resume
                     </a>
                   <?php else: ?>
-                    <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?><?php echo $lastResult ? '&retake=1' : ''; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition">
+                    <a href="student_take_quiz?quiz_id=<?php echo $quizId; ?><?php echo $lastResult ? '&retake=1' : ''; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition">
                       <i class="bi bi-play-circle"></i> <?php echo $lastResult ? 'Take Again' : 'Take Quiz'; ?>
                     </a>
                   <?php endif; ?>

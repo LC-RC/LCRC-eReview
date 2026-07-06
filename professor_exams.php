@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: professor_exams.php');
+        header('Location: professor_exams');
         exit;
     }
     $action = $_POST['action'] ?? '';
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (!$canDelete) {
             $_SESSION['delete_feedback'] = ['ok' => false, 'text' => 'Deletion is not allowed while this exam is running.'];
-            header('Location: professor_exams.php');
+            header('Location: professor_exams');
             exit;
         }
         $passInput = trim((string)($_POST['delete_password'] ?? ''));
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (!$passOk) {
             $_SESSION['delete_feedback'] = ['ok' => false, 'text' => 'Wrong password. Please try again.'];
-            header('Location: professor_exams.php');
+            header('Location: professor_exams');
             exit;
         }
         mysqli_query($conn, "DELETE FROM college_exams WHERE exam_id=" . $eid . " AND created_by=" . (int)$uid);
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_query($conn, "UPDATE college_exams SET is_published=1-is_published WHERE exam_id=" . $eid . " AND created_by=" . (int)$uid);
         $_SESSION['message'] = 'Publication updated.';
     }
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
@@ -405,7 +405,7 @@ unset($_SESSION['delete_feedback']);
               <p class="text-white/90 mt-1 mb-0">Create timed assessments for college students.</p>
             </div>
           </div>
-          <a href="professor_exam_edit.php" class="prof-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
+          <a href="professor_exam_edit" class="prof-btn inline-flex items-center gap-2 px-4 py-2.5 font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
             <i class="bi bi-plus-lg"></i> New exam
           </a>
         </div>
@@ -514,10 +514,10 @@ unset($_SESSION['delete_feedback']);
                   </button>
                   <div class="action-menu" data-action-menu-list>
                     <?php if (!empty($e['is_published'])): ?>
-                      <a class="action-item" href="professor_exam_monitor.php?exam_id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-speedometer2"></i> Monitor</a>
+                      <a class="action-item" href="professor_exam_monitor?exam_id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-speedometer2"></i> Monitor</a>
                     <?php endif; ?>
-                    <a class="action-item" href="professor_exam_edit.php?id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-pencil"></i> Edit</a>
-                    <a class="action-item" href="professor_exam_edit.php?duplicate_from=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-copy"></i> Duplicate</a>
+                    <a class="action-item" href="professor_exam_edit?id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-pencil"></i> Edit</a>
+                    <a class="action-item" href="professor_exam_edit?duplicate_from=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-copy"></i> Duplicate</a>
                     <form method="post" onsubmit="return confirm('Delete this exam?');">
                       <button type="button" class="action-item-btn action-danger" data-open-delete-modal data-exam-id="<?php echo (int)$e['exam_id']; ?>" data-exam-title="<?php echo h((string)$e['title']); ?>"><i class="bi bi-trash"></i> Delete</button>
                     </form>
@@ -575,10 +575,10 @@ unset($_SESSION['delete_feedback']);
                 </div>
                 <div class="card-actions">
                   <?php if (!empty($e['is_published'])): ?>
-                    <a class="card-action-btn monitor" href="professor_exam_monitor.php?exam_id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-speedometer2"></i> Monitor</a>
+                    <a class="card-action-btn monitor" href="professor_exam_monitor?exam_id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-speedometer2"></i> Monitor</a>
                   <?php endif; ?>
-                  <a class="card-action-btn" href="professor_exam_edit.php?id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-pencil"></i> Edit</a>
-                  <a class="card-action-btn" href="professor_exam_edit.php?duplicate_from=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-copy"></i> Duplicate</a>
+                  <a class="card-action-btn" href="professor_exam_edit?id=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-pencil"></i> Edit</a>
+                  <a class="card-action-btn" href="professor_exam_edit?duplicate_from=<?php echo (int)$e['exam_id']; ?>"><i class="bi bi-copy"></i> Duplicate</a>
                   <form method="post" class="inline" onsubmit="return confirm('Delete this exam?');">
                     <button type="button" class="card-action-btn delete" data-open-delete-modal data-exam-id="<?php echo (int)$e['exam_id']; ?>" data-exam-title="<?php echo h((string)$e['title']); ?>"><i class="bi bi-trash"></i> Delete</button>
                   </form>

@@ -67,12 +67,12 @@ $pageTitle = $success ? 'Email verified' : 'Verification failed';
       <div class="icon-wrap success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i></div>
       <h1>Email verified</h1>
       <p><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
-      <a href="login.php" class="btn">Sign in</a>
+      <a href="login" class="btn">Sign in</a>
     <?php else: ?>
       <div class="icon-wrap error"><i class="bi bi-x-circle-fill" aria-hidden="true"></i></div>
       <h1>Verification failed</h1>
       <p><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
-      <a href="registration.php" class="btn">Register again</a>
+      <a href="registration" class="btn">Register again</a>
     <?php endif; ?>
   </div>
 </body>

@@ -470,7 +470,7 @@ function sca_preboard_has_granular_grant(mysqli $conn, int $userId, int $setId, 
     return !$perms['full_lms'];
 }
 
-function sca_enforce_student_session(mysqli $conn, string $redirect = 'index.php'): void
+function sca_enforce_student_session(mysqli $conn, string $redirect = 'index'): void
 {
     $uid = (int) ($_SESSION['user_id'] ?? 0);
     if ($uid <= 0) {
@@ -494,7 +494,7 @@ function sca_enforce_student_session(mysqli $conn, string $redirect = 'index.php
     }
 }
 
-function sca_require_access(mysqli $conn, int $userId, string $type, int $contentId, string $fallback = 'student_dashboard.php'): void
+function sca_require_access(mysqli $conn, int $userId, string $type, int $contentId, string $fallback = 'student_dashboard'): void
 {
     sca_ensure_schema($conn);
     if (!sca_has_access($conn, $userId, $type, $contentId)) {

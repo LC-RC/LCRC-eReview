@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * LCRC Support AI v2: grounded LLM, session memory, flows, language, escalation.
- * Loaded at end of chat_support_helpers.php (depends on functions defined there).
+ * Loaded at end of chat_support_helpers (depends on functions defined there).
  */
 
 function ereview_chat_get_setting(mysqli $conn, string $key, string $default = ''): string

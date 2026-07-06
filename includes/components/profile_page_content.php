@@ -2,7 +2,7 @@
 /**
  * Shared profile page body: hero, sticky section nav, overview/account/security/enrollment/activity.
  *
- * Required variables (set by student_profile.php / staff_profile.php):
+ * Required variables (set by student_profile / staff_profile):
  * @var string $ereviewProfileTheme        'student' | 'staff'
  * @var string $ereviewProfileVariant      '' | 'professor'
  * @var string $ereviewProfileEditBtnId
@@ -66,7 +66,7 @@ if ($schoolDisplay === '') {
 }
 $paymentProofRaw = trim((string)($row['payment_proof'] ?? ''));
 $hasPaymentProof = $paymentProofRaw !== '';
-$paymentProofUrl = 'student_payment_proof.php';
+$paymentProofUrl = 'student_payment_proof';
 $headerMetaBadges = [];
 if ($reviewTypeDisplay !== 'Not set') {
     $headerMetaBadges[] = $reviewTypeDisplay;
@@ -126,7 +126,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
             <?php endif; ?>
           </div>
           <div class="ere-prof__student-dash-overlay" aria-hidden="true"></div>
-          <form class="ere-prof__student-dash-upload" method="post" enctype="multipart/form-data" action="student_profile.php">
+          <form class="ere-prof__student-dash-upload" method="post" enctype="multipart/form-data" action="student_profile">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="profile_cover_upload" value="1">
             <input type="file" name="profile_cover" accept="image/jpeg,image/png,image/webp,image/gif" class="sr-only" data-ere-cover-input>

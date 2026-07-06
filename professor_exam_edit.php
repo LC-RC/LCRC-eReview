@@ -39,7 +39,7 @@ if ($examId > 0) {
     mysqli_stmt_close($stmt);
     if (!$exam) {
         $_SESSION['error'] = 'Exam not found.';
-        header('Location: professor_exams.php');
+        header('Location: professor_exams');
         exit;
     }
 }
@@ -238,11 +238,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mysqli_commit($conn);
                     if ($isDraft) {
                         $_SESSION['draft_saved_message'] = 1;
-                        header('Location: professor_exam_edit.php?id=' . $examId);
+                        header('Location: professor_exam_edit?id=' . $examId);
                         exit;
                     }
                     $_SESSION['message'] = 'Exam saved.';
-                    header('Location: professor_exams.php');
+                    header('Location: professor_exams');
                     exit;
                 }
             } catch (Throwable $e) {
@@ -554,7 +554,7 @@ $prefillSecs = $_rest % 60;
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2 shrink-0 lg:pt-0.5">
-            <a href="professor_exams.php" class="prof-btn-outline inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold">
+            <a href="professor_exams" class="prof-btn-outline inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold">
               <i class="bi bi-arrow-left"></i> Library
             </a>
             <button type="submit" form="exam-edit-form" name="save_action" value="final" class="prof-btn inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold bg-white text-green-800 hover:bg-green-50 shadow-sm">
@@ -727,7 +727,7 @@ $prefillSecs = $_rest % 60;
         <button type="submit" name="save_action" value="draft" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold border border-green-600 text-green-800 bg-white hover:bg-green-50">
           <i class="bi bi-save"></i> Draft
         </button>
-        <a href="professor_exams.php" class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900">Cancel</a>
+        <a href="professor_exams" class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900">Cancel</a>
       </div>
     </form>
 
@@ -1120,7 +1120,7 @@ $prefillSecs = $_rest % 60;
         fd.append('csrf_token', aiCsrf);
         fd.append('action', 'generate_options');
         fd.append('stem', stem);
-        fetch('professor_exam_ai.php', { method: 'POST', body: fd })
+        fetch('professor_exam_ai', { method: 'POST', body: fd })
           .then(function (r) { return r.json(); })
           .then(function (data) {
             btn.disabled = false;
@@ -1175,7 +1175,7 @@ $prefillSecs = $_rest % 60;
         }
         var btn = block.querySelector('.js-ai-dist');
         btn.disabled = true;
-        fetch('professor_exam_ai.php', { method: 'POST', body: fd })
+        fetch('professor_exam_ai', { method: 'POST', body: fd })
           .then(function (r) { return r.json(); })
           .then(function (data) {
             btn.disabled = false;

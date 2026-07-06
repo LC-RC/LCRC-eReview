@@ -192,7 +192,7 @@ if ($hasUpload) {
             'orig_name' => $orig,
             'mime_type' => $mime,
             'size_bytes' => $size,
-            'download_url' => 'api/messages/attachment_download.php?token=' . urlencode($token),
+            'download_url' => 'api/messages/attachment_download?token=' . urlencode($token),
         ];
     }
 }

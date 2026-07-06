@@ -413,10 +413,10 @@ foreach ($tasks as $tr) {
               </div>
               <?php endif; ?>
               <div class="cu-hero-actions">
-                <a href="college_student_dashboard.php" class="cu-hero-btn inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-[#124a78] font-bold text-xs shadow-md w-full sm:w-auto">
+                <a href="college_student_dashboard" class="cu-hero-btn inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white text-[#124a78] font-bold text-xs shadow-md w-full sm:w-auto">
                   <i class="bi bi-house-door"></i> Dashboard
                 </a>
-                <a href="college_exams.php" class="cu-hero-btn inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/40 bg-white/12 text-white font-bold text-xs w-full sm:w-auto">
+                <a href="college_exams" class="cu-hero-btn inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-white/40 bg-white/12 text-white font-bold text-xs w-full sm:w-auto">
                   <i class="bi bi-journal-text"></i> Exams
                 </a>
               </div>
@@ -446,7 +446,7 @@ foreach ($tasks as $tr) {
             $tileClass .= ' cu-tile--muted';
         }
         ?>
-      <a href="college_upload_task.php?id=<?php echo (int)$t['task_id']; ?>" class="<?php echo h($tileClass); ?>">
+      <a href="college_upload_task?id=<?php echo (int)$t['task_id']; ?>" class="<?php echo h($tileClass); ?>">
         <div class="cu-tile-top">
           <span class="cu-tile-icon" aria-hidden="true"><i class="bi bi-file-earmark-arrow-up"></i></span>
           <?php if (!empty($t['submission_id'])): ?>
@@ -475,7 +475,7 @@ foreach ($tasks as $tr) {
           </div>
           <p class="text-slate-700 font-bold text-base m-0">No upload tasks yet</p>
           <p class="text-slate-500 text-xs mt-1.5 mb-4 leading-relaxed">When your instructor publishes a task, it will appear here as a tile.</p>
-          <a href="college_student_dashboard.php" class="cu-hint-btn text-xs py-2 px-4"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
+          <a href="college_student_dashboard" class="cu-hint-btn text-xs py-2 px-4"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
         </div>
       <?php endif; ?>
     </div>

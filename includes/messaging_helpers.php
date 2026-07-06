@@ -26,7 +26,7 @@ function ereview_msg_is_reviewee_role(string $role): bool
 }
 
 /**
- * Optional users columns for avatars + presence (same detection pattern as admin_students.php).
+ * Optional users columns for avatars + presence (same detection pattern as admin_students).
  *
  * @return array<string,bool>
  */
@@ -85,7 +85,7 @@ function ereview_msg_filter_ids_for_presence_query(mysqli $conn, string $role, a
 }
 
 /**
- * Session-active map (same rules as admin_students_presence.php / ereview_msg_compute_session_active).
+ * Session-active map (same rules as admin_students_presence / ereview_msg_compute_session_active).
  *
  * @param list<int> $ids
  * @return array<string,bool> user_id string => active
@@ -601,7 +601,7 @@ function ereview_msg_attachment_map_for_messages(mysqli $conn, array $messageIds
             'orig_name' => (string)($row['orig_name'] ?? ''),
             'mime_type' => (string)($row['mime_type'] ?? ''),
             'size_bytes' => (int)($row['size_bytes'] ?? 0),
-            'download_url' => 'api/messages/attachment_download.php?token=' . urlencode((string)($row['storage_token'] ?? '')),
+            'download_url' => 'api/messages/attachment_download?token=' . urlencode((string)($row['storage_token'] ?? '')),
         ];
     }
     return $map;

@@ -165,7 +165,7 @@
   window.addEventListener('ereview-profile-updated', function (ev) {
     if (ev.detail && ev.detail.ereviewStayOpen) return;
     root.classList.add('is-loading');
-    fetch('api/profile/get_profile.php', { credentials: 'same-origin' })
+    fetch('api/profile/get_profile', { credentials: 'same-origin' })
       .then(function (r) {
         return r.json();
       })
@@ -187,7 +187,7 @@
 
   (function installProfileDebugTools() {
     if (root.getAttribute('data-ere-profile-theme') !== 'student') return;
-    var debugUrl = root.getAttribute('data-ere-debug-url') || 'api/profile/debug_student_profile.php';
+    var debugUrl = root.getAttribute('data-ere-debug-url') || 'api/profile/debug_student_profile';
     if (!debugUrl) return;
     function syncVisibleStudentFields(data) {
       if (!data || !data.ok || !data.debug || !data.debug.display) return;
@@ -207,7 +207,7 @@
           var link = document.createElement('a');
           link.className = 'ere-prof__proof-link';
           link.id = 'ereProfProofLink';
-          link.href = 'student_payment_proof.php';
+          link.href = 'student_payment_proof';
           link.target = '_blank';
           link.rel = 'noopener';
           link.innerHTML = '<i class="bi bi-receipt-cutoff" aria-hidden="true"></i> View file';

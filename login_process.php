@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['rate_limit_until'] = $lockedUntilTs;
         $_SESSION['error'] = 'Too many login attempts. Try again in ' . formatLoginLockoutRemaining($lockedUntilTs) . '.';
         $_SESSION['error_type'] = 'rate_limit';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 
@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
         $_SESSION['error_type'] = 'csrf';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($recaptchaToken === '') {
                 $_SESSION['error'] = 'Please complete the security check and try again.';
                 $_SESSION['error_type'] = 'invalid_credentials';
-                header('Location: login.php');
+                header('Location: login');
                 exit;
             }
             $verify = @file_get_contents('https://www.google.com/recaptcha/api/siteverify?' . http_build_query([
@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (!is_array($verify) || empty($verify['success']) || (isset($verify['score']) && $verify['score'] < 0.3)) {
                 $_SESSION['error'] = 'Security check failed. Please try again.';
                 $_SESSION['error_type'] = 'invalid_credentials';
-                header('Location: login.php');
+                header('Location: login');
                 exit;
             }
         }
@@ -67,14 +67,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['error'] = 'Invalid email or password.';
         $_SESSION['error_type'] = 'invalid_credentials';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 
     if ($password === '') {
         $_SESSION['error'] = 'Please enter your password.';
         $_SESSION['error_type'] = 'password_required';
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 
@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($evRow && (int)($evRow['email_verified'] ?? 1) === 0) {
                 $_SESSION['error'] = 'Your account has not been verified yet. Please confirm your email before signing in.';
                 $_SESSION['error_type'] = 'google_not_verified';
-                header('Location: login.php');
+                header('Location: login');
                 exit;
             }
         }
@@ -116,7 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
             $_SESSION['error'] = 'Your account is not approved yet.';
             $_SESSION['error_type'] = 'not_approved';
-            header('Location: login.php');
+            header('Location: login');
             exit;
         }
         if (!isStaffRole($user['role'])) {
@@ -126,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($now > $end) {
                     $_SESSION['error'] = 'Your access has expired.';
                     $_SESSION['error_type'] = 'access_expired';
-                    header('Location: login.php');
+                    header('Location: login');
                     exit;
                 }
             }
@@ -136,7 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($examBlock !== null) {
             $_SESSION['error'] = $examBlock;
             $_SESSION['error_type'] = 'exam_session_active';
-            header('Location: login.php');
+            header('Location: login');
             exit;
         }
 
@@ -166,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             session_destroy();
             $_SESSION['error'] = 'Session verification failed. Please try again.';
             $_SESSION['error_type'] = 'session_failed';
-            header('Location: login.php');
+            header('Location: login');
             exit;
         }
 
@@ -177,7 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $target = dashboardUrlForRole($user['role']);
         $fullName = trim($user['full_name'] ?? '');
         $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
-        header('Location: auth_success.php?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));
+        header('Location: auth_success?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));
         exit;
     } else {
         $lockTs = recordFailedLoginAttempt();
@@ -189,7 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['error'] = 'Invalid email or password.';
             $_SESSION['error_type'] = 'invalid_credentials';
         }
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }

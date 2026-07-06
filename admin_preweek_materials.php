@@ -1,6 +1,6 @@
 <?php
 /**
- * Preweek materials admin — same UX and upload rules as admin_materials.php
+ * Preweek materials admin — same UX and upload rules as admin_materials
  * (video URL or file upload, handout file, allow download toggle, search/filter).
  * Data: preweek_topics → preweek_videos / preweek_handouts (under preweek_units).
  */
@@ -15,7 +15,7 @@ $unitTitle = 'Preweek';
 $topicTitle = 'Lecture';
 
 if ($topicId <= 0) {
-    header('Location: admin_preweek.php');
+    header('Location: admin_preweek');
     exit;
 }
 
@@ -29,7 +29,7 @@ $topicRes = mysqli_query(
 );
 $topicRow = $topicRes ? mysqli_fetch_assoc($topicRes) : null;
 if (!$topicRow) {
-    header('Location: admin_preweek.php');
+    header('Location: admin_preweek');
     exit;
 }
 $unitId = (int)$topicRow['preweek_unit_id'];
@@ -37,7 +37,7 @@ $unitTitle = trim((string)($topicRow['unit_title'] ?? 'Preweek')) ?: 'Preweek';
 $topicTitle = trim((string)($topicRow['topic_title'] ?? '')) ?: 'Untitled';
 
 if ($subjectIdLegacy > 0) {
-    header('Location: admin_preweek_materials.php?' . http_build_query(['preweek_topic_id' => $topicId]));
+    header('Location: admin_preweek_materials?' . http_build_query(['preweek_topic_id' => $topicId]));
     exit;
 }
 
@@ -54,7 +54,7 @@ if (!function_exists('admin_preweek_materials_list_url')) {
                 $qs['type'] = $t;
             }
         }
-        return 'admin_preweek_materials.php?' . http_build_query($qs);
+        return 'admin_preweek_materials?' . http_build_query($qs);
     }
 }
 
@@ -534,7 +534,7 @@ if ($searchQ === '') {
     $handouts = mysqli_stmt_get_result($stmtH);
 }
 $pageTitle = 'Preweek materials — ' . h($topicTitle);
-$topicsListUrl = 'admin_preweek_topics.php?' . http_build_query(['preweek_unit_id' => $unitId]);
+$topicsListUrl = 'admin_preweek_topics?' . http_build_query(['preweek_unit_id' => $unitId]);
 $preweekNavStep = 'materials';
 $preweekNavUnitId = $unitId;
 $preweekNavUnitTitle = $unitTitle;
@@ -818,7 +818,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
     <?php endif; ?>
   </div>
 
-  <form method="get" action="admin_preweek_materials.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-3 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preweek_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-3 flex flex-wrap items-end gap-3">
     <input type="hidden" name="preweek_topic_id" value="<?php echo (int)$topicId; ?>">
     <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
       <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>

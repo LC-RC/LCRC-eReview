@@ -36,7 +36,7 @@ if (!function_exists('ereview_web_base_path')) {
      * URL path prefix for this app (e.g. '' or '/ereview') so assets work when not deployed at domain root.
      *
      * Entry scripts under /api/messages/ or /api/chat/ are not the public asset root; uploads live under
-     * the same app root as admin_*.php pages. Without this, avatar URLs become /api/messages/uploads/... (404).
+     * the same app root as admin_* pages. Without this, avatar URLs become /api/messages/uploads/... (404).
      */
     function ereview_web_base_path(): string
     {

@@ -1,7 +1,7 @@
 <?php
 /**
  * One-time migration: create login_attempts table for rate limiting.
- * Run once via browser (http://localhost/Ereview/migrate_login_attempts.php) or CLI: php migrate_login_attempts.php
+ * Run once via browser (http://localhost/Ereview/migrate_login_attempts) or CLI: php migrate_login_attempts
  * Delete this file after use for security.
  */
 

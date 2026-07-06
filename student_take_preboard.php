@@ -4,7 +4,7 @@
  * Security model mirrors student_take_quiz.php:
  * - One attempt per user per set
  * - Server-side expires_at timer
- * - Answers saved server-side via preboards_ajax.php
+ * - Answers saved server-side via preboards_ajax
  */
 require_once 'auth.php';
 require_once __DIR__ . '/includes/student_content_access.php';
@@ -20,7 +20,7 @@ $setId = sanitizeInt($_GET['preboards_set_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
 $attemptId = sanitizeInt($_GET['attempt_id'] ?? 0);
 if ($setId <= 0) {
-    header('Location: student_preboards.php');
+    header('Location: student_preboards');
     exit;
 }
 
@@ -30,7 +30,7 @@ mysqli_stmt_execute($stmt);
 $setRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$setRow) {
-    header('Location: student_preboards.php');
+    header('Location: student_preboards');
     exit;
 }
 if (!$subjectId) $subjectId = (int)$setRow['preboards_subject_id'];
@@ -38,7 +38,7 @@ if (!$subjectId) $subjectId = (int)$setRow['preboards_subject_id'];
 $userId = getCurrentUserId();
 if (!sca_has_access($conn, (int)$userId, 'preboard_set', $setId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$subjectId);
+    header('Location: student_preboards_view?preboards_subject_id=' . (int)$subjectId);
     exit;
 }
 
@@ -75,7 +75,7 @@ if (!$effectiveOpen && $userId) {
                 $aidRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
                 mysqli_stmt_close($stmt);
                 $aid = $aidRow ? (int)$aidRow['preboards_attempt_id'] : 0;
-                header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $aid . '&review=1');
+                header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $aid . '&review=1');
                 exit;
             }
         }
@@ -88,7 +88,7 @@ if (!$effectiveOpen && $userId) {
         mysqli_stmt_close($acc);
         if (!$hasUnusedAccessGrant) {
             $_SESSION['error'] = 'This set is currently locked.';
-            header('Location: student_preboards_view.php?preboards_subject_id=' . $subjectId);
+            header('Location: student_preboards_view?preboards_subject_id=' . $subjectId);
             exit;
         }
     }
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_preboard']) &&
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $attemptId);
+        header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $attemptId);
         exit;
     }
     $aid = sanitizeInt($_POST['attempt_id'] ?? 0);
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_preboard']) &&
     mysqli_stmt_close($stmt);
     if (!$att || $att['status'] !== 'in_progress') {
         $_SESSION['error'] = 'Attempt not found or already submitted.';
-        header('Location: student_preboards_view.php?preboards_subject_id=' . $subjectId);
+        header('Location: student_preboards_view?preboards_subject_id=' . $subjectId);
         exit;
     }
     $attemptId = (int)$att['preboards_attempt_id'];
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_preboard']) &&
     mysqli_stmt_execute($upd);
     mysqli_stmt_close($upd);
     $_SESSION['preboard_result'] = ['set_id' => $setId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'answered' => $answered];
-    header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&result=1');
+    header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&result=1');
     exit;
 }
 
@@ -194,7 +194,7 @@ if ($reviewMode && $userId) {
         ];
     } else {
         $_SESSION['error'] = 'Review not available.';
-        header('Location: student_preboards_view.php?preboards_subject_id=' . $subjectId);
+        header('Location: student_preboards_view?preboards_subject_id=' . $subjectId);
         exit;
     }
 }
@@ -248,7 +248,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
         $resume = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
         mysqli_stmt_close($stmt);
         if ($resume) {
-            header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . (int)$resume['preboards_attempt_id']);
+            header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . (int)$resume['preboards_attempt_id']);
             exit;
         }
     }
@@ -275,7 +275,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
         $tokenRow = mysqli_fetch_assoc(mysqli_stmt_get_result($tok));
         mysqli_stmt_close($tok);
         if (!$tokenRow) {
-            header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . (int)$attempt['preboards_attempt_id'] . '&review=1');
+            header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . (int)$attempt['preboards_attempt_id'] . '&review=1');
             exit;
         }
         // token exists: create a new attempt (attempt_no = last + 1) and mark token used
@@ -304,12 +304,12 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             mysqli_stmt_close($ins);
 
             mysqli_commit($conn);
-            header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $newAttemptId);
+            header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $newAttemptId);
             exit;
         } catch (Exception $e) {
             mysqli_rollback($conn);
             $_SESSION['error'] = 'Could not start retake. Please try again.';
-            header('Location: student_preboards_view.php?preboards_subject_id=' . $subjectId);
+            header('Location: student_preboards_view?preboards_subject_id=' . $subjectId);
             exit;
         }
     }
@@ -343,7 +343,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             } catch (Exception $e) {
                 mysqli_rollback($conn);
                 $_SESSION['error'] = 'This set is currently locked.';
-                header('Location: student_preboards_view.php?preboards_subject_id=' . $subjectId);
+                header('Location: student_preboards_view?preboards_subject_id=' . $subjectId);
                 exit;
             }
         } else {
@@ -354,7 +354,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             mysqli_stmt_close($stmt);
         }
         if ($attemptId > 0) {
-            header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $attemptId);
+            header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $attemptId);
             exit;
         }
     } else {
@@ -380,7 +380,7 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             mysqli_stmt_execute($upd);
             mysqli_stmt_close($upd);
             $_SESSION['preboard_result'] = ['set_id' => $setId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'answered' => $answered];
-            header('Location: student_take_preboard.php?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&result=1');
+            header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&result=1');
             exit;
         }
         $ar = mysqli_query($conn, "SELECT preboards_question_id, selected_answer FROM preboards_answers WHERE preboards_attempt_id=".(int)$attemptId);
@@ -406,7 +406,7 @@ function get_preboard_choices($q) {
 
 $pageTitle = 'Preboard - ' . ($setRow['subject_name'] ?? '') . ' Set ' . ($setRow['set_label'] ?? '');
 $csrf = generateCSRFToken();
-$backUrl = 'student_preboards_view.php?preboards_subject_id=' . $subjectId;
+$backUrl = 'student_preboards_view?preboards_subject_id=' . $subjectId;
 $timeLimitLabel = formatTimeLimitSeconds($timeLimitSeconds);
 $preboardScheduleWindowLabel = '';
 if (preboards_set_uses_schedule($setRow)) {
@@ -436,7 +436,7 @@ $preboardExamActive = (
   <style>
     <?php
       // Reuse the exact exam UI styles from the quiz page for pixel-identical layout.
-      // (Kept inline like student_take_quiz.php to avoid path/version drift.)
+      // (Kept inline like student_take_quiz to avoid path/version drift.)
       include __DIR__ . '/includes/_exam_ui_styles_inline.php';
     ?>
   </style>
@@ -778,7 +778,7 @@ $preboardExamActive = (
                         $hscore = number_format((float)($h['score'] ?? 0), 0) . '%';
                         $isCurrent = $hid === (int)($result['attempt_id'] ?? 0);
                       ?>
-                      <a href="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo $subjectId; ?>&attempt_id=<?php echo $hid; ?>&review=1"
+                      <a href="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo $subjectId; ?>&attempt_id=<?php echo $hid; ?>&review=1"
                          class="px-3 py-2 rounded-xl border text-sm font-semibold transition <?php echo $isCurrent ? 'bg-[#1665A0] border-[#1665A0] text-white' : 'bg-white border-gray-200 text-[#143D59] hover:bg-gray-50'; ?>">
                         Attempt <?php echo $hno; ?> · <?php echo $hscore; ?>
                       </a>
@@ -911,7 +911,7 @@ $preboardExamActive = (
       <?php endforeach; ?>
 
       <div class="exam-nav-card">
-        <form method="POST" id="submitForm" action="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo $subjectId; ?>" class="w-full">
+        <form method="POST" id="submitForm" action="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo $subjectId; ?>" class="w-full">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="submit_preboard" value="1">
           <input type="hidden" name="attempt_id" value="<?php echo $attemptId; ?>">
@@ -1305,7 +1305,7 @@ $preboardExamActive = (
           var fd = new FormData();
           fd.append('action', 'get_time');
           fd.append('attempt_id', <?php echo (int)$attemptId; ?>);
-          fetch('preboards_ajax.php', { method: 'POST', body: fd })
+          fetch('preboards_ajax', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(data) {
               if (data.ok && typeof data.remaining_seconds === 'number' && data.remaining_seconds >= 0) {
@@ -1400,7 +1400,7 @@ $preboardExamActive = (
             fd.append('attempt_id', attemptId);
             fd.append('question_id', qId);
             fd.append('selected_answer', val);
-            fetch('preboards_ajax.php', { method: 'POST', body: fd })
+            fetch('preboards_ajax', { method: 'POST', body: fd })
               .then(function(r) { return r.json(); })
               .then(function(data) {
                 if (data.ok && typeof data.answered_count !== 'undefined') {

@@ -356,8 +356,8 @@ usort($list, static function ($a, $b) use ($sort) {
             <p class="text-white/90 mt-2 mb-0 max-w-2xl">Open assessments, status, and quick actions in one view.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <a href="college_student_dashboard.php" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#145a8f] font-semibold"><i class="bi bi-house-door"></i> Dashboard</a>
-            <a href="college_uploads.php" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 border border-white/35 bg-white/10 text-white font-semibold"><i class="bi bi-cloud-upload"></i> Upload tasks</a>
+            <a href="college_student_dashboard" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#145a8f] font-semibold"><i class="bi bi-house-door"></i> Dashboard</a>
+            <a href="college_uploads" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 border border-white/35 bg-white/10 text-white font-semibold"><i class="bi bi-cloud-upload"></i> Upload tasks</a>
           </div>
         </div>
       </div>
@@ -462,11 +462,11 @@ usort($list, static function ($a, $b) use ($sort) {
 
           $actionHtml = '<span class="action-closed-pill" role="status"><i class="bi bi-slash-circle"></i> Closed</span>';
           if ($st === 'submitted') {
-              $actionHtml = '<a class="action-btn action-review" href="college_take_exam.php?exam_id=' . $eid . '&review=1"><i class="bi bi-eye"></i> Review result</a>';
+              $actionHtml = '<a class="action-btn action-review" href="college_take_exam?exam_id=' . $eid . '&review=1"><i class="bi bi-eye"></i> Review result</a>';
           } elseif ($st === 'in_progress') {
-              $actionHtml = '<a class="action-btn action-start" href="college_take_exam.php?exam_id=' . $eid . '"><i class="bi bi-arrow-right-circle"></i> Continue</a>';
+              $actionHtml = '<a class="action-btn action-start" href="college_take_exam?exam_id=' . $eid . '"><i class="bi bi-arrow-right-circle"></i> Continue</a>';
           } elseif ($bucket === 'open') {
-              $actionHtml = '<a class="action-btn action-start" href="college_take_exam.php?exam_id=' . $eid . '"><i class="bi bi-play-fill"></i> Start now</a>';
+              $actionHtml = '<a class="action-btn action-start" href="college_take_exam?exam_id=' . $eid . '"><i class="bi bi-play-fill"></i> Start now</a>';
           } elseif ($bucket === 'upcoming') {
               $actionHtml = '<span class="text-slate-500">Not yet available</span>';
           }
@@ -549,11 +549,11 @@ usort($list, static function ($a, $b) use ($sort) {
 
               $actionHtml = '<span class="action-closed-pill" role="status"><i class="bi bi-slash-circle"></i> Closed</span>';
               if ($st === 'submitted') {
-                  $actionHtml = '<a class="action-btn action-review" href="college_take_exam.php?exam_id=' . $eid . '&review=1"><i class="bi bi-eye"></i> Review result</a>';
+                  $actionHtml = '<a class="action-btn action-review" href="college_take_exam?exam_id=' . $eid . '&review=1"><i class="bi bi-eye"></i> Review result</a>';
               } elseif ($st === 'in_progress') {
-                  $actionHtml = '<a class="action-btn action-start" href="college_take_exam.php?exam_id=' . $eid . '"><i class="bi bi-arrow-right-circle"></i> Continue</a>';
+                  $actionHtml = '<a class="action-btn action-start" href="college_take_exam?exam_id=' . $eid . '"><i class="bi bi-arrow-right-circle"></i> Continue</a>';
               } elseif ($bucket === 'open') {
-                  $actionHtml = '<a class="action-btn action-start" href="college_take_exam.php?exam_id=' . $eid . '"><i class="bi bi-play-fill"></i> Start now</a>';
+                  $actionHtml = '<a class="action-btn action-start" href="college_take_exam?exam_id=' . $eid . '"><i class="bi bi-play-fill"></i> Start now</a>';
               } elseif ($bucket === 'upcoming') {
                   $actionHtml = '<span class="text-slate-500">Not yet available</span>';
               }

@@ -1380,7 +1380,7 @@ unset($_SESSION['error']);
         <h1 class="reg-frame8-title">Create your Account</h1>
         <p class="reg-frame8-subtitle">One step closer to your CPA journey.</p>
 
-        <form action="register_process.php" method="POST" enctype="multipart/form-data" novalidate id="reg-form">
+        <form action="register_process" method="POST" enctype="multipart/form-data" novalidate id="reg-form">
           <div class="reg-form-progress" aria-hidden="true" id="reg-form-progress">
             <div class="reg-form-progress-bar" id="reg-form-progress-bar"></div>
           </div>
@@ -1554,13 +1554,13 @@ unset($_SESSION['error']);
               <i class="bi bi-arrow-right text-lg" id="reg-submit-arrow" aria-hidden="true"></i>
             </button>
             <p class="text-center text-xs subtext mt-3">
-              Already have an account? <a href="login.php">Login</a>
+              Already have an account? <a href="login">Login</a>
             </p>
           </div>
         </form>
       </main>
       <footer class="reg-frame8-footer">
-        <p class="reg-frame8-footer-terms">By continuing, you agree to LCRC <a href="terms_of_service.php" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="privacy_policy.php" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
+        <p class="reg-frame8-footer-terms">By continuing, you agree to LCRC <a href="terms_of_service" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="privacy_policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
         <p class="reg-frame8-footer-copy">© Copyright 2026 <strong>LCRC eReview</strong>. All rights reserved. Built for aspiring CPAs</p>
       </footer>
     </div>
@@ -1598,7 +1598,7 @@ unset($_SESSION['error']);
       <div class="reg-success-check"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
       <h2>Account Created Successfully</h2>
       <p>Your LCRC eReview account has been successfully verified and created. You may now sign in to access the system.</p>
-      <a href="login.php" class="btn-primary">Sign in</a>
+      <a href="login" class="btn-primary">Sign in</a>
     </div>
   </div>
 
@@ -1982,7 +1982,7 @@ unset($_SESSION['error']);
           if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
           if (emailCheckTimeout) clearTimeout(emailCheckTimeout);
           emailCheckTimeout = setTimeout(function () {
-            fetch('check_email.php?email=' + encodeURIComponent(em))
+            fetch('check_email?email=' + encodeURIComponent(em))
               .then(function (r) { return r.json(); })
               .then(function (data) {
                 if (data.available === false && data.message) {
@@ -2361,7 +2361,7 @@ unset($_SESSION['error']);
                 emailSentOk.removeEventListener('click', goNext);
                 if (emailSentModal) emailSentModal.classList.remove('is-active');
                 if (waitingModal) waitingModal.classList.add('is-active');
-                var pollUrl = 'check_verification.php?email=' + encodeURIComponent(pendingEmail);
+                var pollUrl = 'check_verification?email=' + encodeURIComponent(pendingEmail);
                 var pollInterval = setInterval(function () {
                   fetch(pollUrl).then(function (r) { return r.json(); }).then(function (res) {
                     if (res.verified) {

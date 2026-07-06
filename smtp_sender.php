@@ -1,7 +1,7 @@
 <?php
 /**
  * Pure-PHP SMTP sender (no Composer). Supports TLS for Gmail.
- * Used for password reset, verification, and magic-link emails when config/mail_config.php is set.
+ * Used for password reset, verification, and magic-link emails when config/mail_config is set.
  */
 
 /**

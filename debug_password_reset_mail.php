@@ -1,7 +1,7 @@
 <?php
 /**
  * DEBUG: Password reset email – run this in the browser to see exactly where sending fails.
- * Open: http://localhost/Ereview/debug_password_reset_mail.php?email=monzalesvinceivan@gmail.com
+ * Open: http://localhost/Ereview/debug_password_reset_mail?email=monzalesvinceivan@gmail.com
  * DELETE this file after fixing the issue (security).
  */
 error_reporting(E_ALL);
@@ -24,7 +24,7 @@ $log[] = ['ts' => date('H:i:s'), 'msg' => 'Recipient: ' . ($email ?: '(none)'), 
 // 1. Config
 $configFile = __DIR__ . '/config/mail_config.php';
 if (!file_exists($configFile)) {
-    debugLog('FAIL: config/mail_config.php not found.', true);
+    debugLog('FAIL: config/mail_config not found.', true);
 } else {
     debugLog('OK: config file found.');
     $config = require $configFile;
@@ -70,7 +70,7 @@ if ($resetUrl && file_exists($configFile)) {
         $fromName = $config['from_name'] ?? 'LCRC eReview';
 
         if ($host === '' || $password === '') {
-            debugLog('SKIP SMTP: smtp_host or smtp_password is empty. Fix config/mail_config.php', true);
+            debugLog('SKIP SMTP: smtp_host or smtp_password is empty. Fix config/mail_config', true);
         } else {
             require_once __DIR__ . '/smtp_sender.php';
             $subject = 'Reset your password – LCRC eReview (debug test)';

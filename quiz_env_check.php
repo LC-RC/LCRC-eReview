@@ -3,7 +3,7 @@
  * One-off environment check for quiz HTTP 500 debugging.
  *
  * 1) Edit $QUIZ_DEBUG_KEY below to a long random string.
- * 2) Open: https://yoursite.com/quiz_env_check.php?key=YOUR_KEY
+ * 2) Open: https://yoursite.com/quiz_env_check?key=YOUR_KEY
  * 3) Delete this file when done (security).
  */
 $QUIZ_DEBUG_KEY = 'change-this-to-a-long-random-string-before-use';

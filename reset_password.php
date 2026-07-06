@@ -44,7 +44,7 @@ if ($pasteLink !== '' && strpos($pasteLink, 'token=') !== false) {
         parse_str($query, $q);
         $extracted = trim($q['token'] ?? '');
         if ($extracted !== '') {
-            header('Location: reset_password.php?token=' . rawurlencode($extracted));
+            header('Location: reset_password?token=' . rawurlencode($extracted));
             exit;
         }
     }
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_stmt_execute($stmt)) {
             deletePasswordResetToken($tokenValid['token_id']);
             mysqli_stmt_close($stmt);
-            header('Location: login.php');
+            header('Location: login');
             exit;
         }
         mysqli_stmt_close($stmt);
@@ -171,13 +171,13 @@ $showForm = $tokenValid !== null;
               <span class="auth-alert-text"><?php echo h($error); ?></span>
             </div>
             <p class="auth-success-msg text-sm mb-3">If you clicked the link from your email, security software may have changed it. Try pasting the <strong>full link</strong> from the email here:</p>
-            <form method="post" action="reset_password.php" class="mb-4 space-y-2">
+            <form method="post" action="reset_password" class="mb-4 space-y-2">
               <input type="text" name="paste_link" placeholder="Paste the full reset link from your email" class="auth-input w-full rounded-xl px-4 py-3 text-sm" value="">
               <button type="submit" class="auth-secondary-btn w-full">Use this link</button>
             </form>
             <div class="flex flex-col gap-3">
-              <a href="forgot_password.php" class="auth-submit-btn btn-shine w-full text-center">Request new reset link</a>
-              <p class="text-center"><a href="login.php" class="auth-back-link font-semibold">Back to login</a></p>
+              <a href="forgot_password" class="auth-submit-btn btn-shine w-full text-center">Request new reset link</a>
+              <p class="text-center"><a href="login" class="auth-back-link font-semibold">Back to login</a></p>
             </div>
           <?php endif; ?>
 
@@ -188,7 +188,7 @@ $showForm = $tokenValid !== null;
                 <span class="auth-alert-text"><?php echo h($error); ?></span>
               </div>
             <?php endif; ?>
-            <form method="POST" action="reset_password.php" class="space-y-4" id="reset-form">
+            <form method="POST" action="reset_password" class="space-y-4" id="reset-form">
               <input type="hidden" name="token" value="<?php echo h($tokenRaw); ?>">
               <div class="space-y-2">
                 <label for="reset-password" class="block text-sm font-medium">New password</label>
@@ -239,17 +239,17 @@ $showForm = $tokenValid !== null;
               <span class="auth-alert-text">This link is invalid or has expired.</span>
             </div>
             <p class="auth-success-msg text-sm mb-3">If you clicked the link from your email, try pasting the <strong>full link</strong> here:</p>
-            <form method="post" action="reset_password.php" class="mb-4 space-y-2">
+            <form method="post" action="reset_password" class="mb-4 space-y-2">
               <input type="text" name="paste_link" placeholder="Paste the full reset link from your email" class="auth-input w-full rounded-xl px-4 py-3 text-sm" value="">
               <button type="submit" class="auth-secondary-btn w-full">Use this link</button>
             </form>
-            <a href="forgot_password.php" class="auth-submit-btn btn-shine w-full text-center block">Request new reset link</a>
+            <a href="forgot_password" class="auth-submit-btn btn-shine w-full text-center block">Request new reset link</a>
           <?php else: ?>
-            <a href="forgot_password.php" class="auth-submit-btn btn-shine w-full text-center block">Get reset link</a>
+            <a href="forgot_password" class="auth-submit-btn btn-shine w-full text-center block">Get reset link</a>
           <?php endif; ?>
 
           <p class="mt-8 text-center subtext">
-            <a href="login.php" class="auth-back-link font-semibold">Back to login</a>
+            <a href="login" class="auth-back-link font-semibold">Back to login</a>
           </p>
         </div>
       </div>
@@ -306,7 +306,7 @@ $showForm = $tokenValid !== null;
         return;
       }
       var base = window.location.origin + window.location.pathname.replace(/[^/]+$/, '');
-      var url = base + 'debug_reset_token.php?token=' + encodeURIComponent(token);
+      var url = base + 'debug_reset_token?token=' + encodeURIComponent(token);
       console.log('[Reset token debug] Fetching: ' + url);
       fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         console.log('[Reset token debug] Result:', data.result, data.result_reason);

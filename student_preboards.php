@@ -168,7 +168,7 @@ $pageTitle = 'Preboards';
                   <span><?php echo (int)$setsCount; ?> set<?php echo $setsCount === 1 ? '' : 's'; ?></span>
                 </div>
                 <?php if ($pbsOpen): ?>
-                <a href="student_preboards_view.php?preboards_subject_id=<?php echo $sid; ?>" class="subject-btn">
+                <a href="student_preboards_view?preboards_subject_id=<?php echo $sid; ?>" class="subject-btn">
                   <span>Open</span>
                   <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
                 </a>

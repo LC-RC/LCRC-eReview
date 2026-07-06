@@ -1,7 +1,7 @@
 <?php
 /**
  * Preboards AJAX API: save answer, get remaining time.
- * Mirrors quiz_ajax.php behavior (server-side timer + state).
+ * Mirrors quiz_ajax behavior (server-side timer + state).
  */
 require_once 'auth.php';
 requireRole('student');

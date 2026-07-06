@@ -5,7 +5,7 @@ $role = (string)($_SESSION['role'] ?? '');
 $pageTitle = 'Preferences';
 
 if (!in_array($role, ['student', 'college_student', 'admin', 'professor_admin'], true)) {
-    header('Location: index.php');
+    header('Location: index');
     exit;
 }
 
@@ -39,7 +39,7 @@ if ($role === 'student') {
     </section>
     <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
       <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
-      <p class="mt-6 mb-0"><a href="student_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
 </main>
@@ -74,7 +74,7 @@ if ($role === 'college_student') {
     </section>
     <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
       <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
-      <p class="mt-6 mb-0"><a href="college_student_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="college_student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
 </main>
@@ -110,7 +110,7 @@ if ($role === 'admin') {
     </section>
     <div class="px-6 py-6 rounded-2xl border border-white/10 bg-[#111] text-slate-200 shadow-xl">
       <p class="m-0 text-sm leading-relaxed text-slate-300"><?php echo h($blurb); ?></p>
-      <p class="mt-6 mb-0"><a href="admin_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-sky-400 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-sky-400 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
   </div>
@@ -152,7 +152,7 @@ requireRole('professor_admin');
       </section>
       <div class="ereview-static-card-prof px-6 py-6 text-slate-800">
         <p class="m-0 text-sm leading-relaxed text-slate-600"><?php echo h($blurb); ?></p>
-        <p class="mt-6 mb-0"><a href="professor_admin_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+        <p class="mt-6 mb-0"><a href="professor_admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
       </div>
     </div>
   </main>

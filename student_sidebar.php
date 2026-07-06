@@ -1,8 +1,9 @@
 <?php
 /**
- * Student shell entry — unified sidebar + topbar + main open (see includes/components/app_shell_sidebar.php).
+ * Student shell entry — unified sidebar + topbar + main open (see includes/components/app_shell_sidebar).
  */
-$currentPage = basename($_SERVER['PHP_SELF']);
+require_once __DIR__ . '/includes/url_helpers.php';
+$currentPage = ereview_page_basename();
 require_once __DIR__ . '/includes/format_display_name.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
 $fullName = trim($_SESSION['full_name'] ?? 'User');
@@ -46,7 +47,7 @@ $appShellCurrentScript = $currentPage;
 $appShellSidebarHeader = 'brand';
 $appShellProfileInitial = $avatarInitial;
 $appShellProfileName = $studentShortName;
-$appShellProfileHref = 'student_dashboard.php';
+$appShellProfileHref = 'student_dashboard';
 $appShellProfileImage = ($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath : '';
 $appShellTopbarAvatarImage = $appShellProfileImage;
 $appShellTopbarAvatarInitial = $avatarInitial;
@@ -55,15 +56,15 @@ $appShellNavConfig = [
     [
         'label' => 'My learning',
         'items' => [
-            ['label' => 'Dashboard', 'href' => 'student_dashboard.php', 'icon' => 'bi-speedometer2', 'active' => ['student_dashboard.php']],
-            ['label' => 'Subjects', 'href' => 'student_subjects.php', 'icon' => 'bi-journal-bookmark', 'active' => ['student_subjects.php']],
+            ['label' => 'Dashboard', 'href' => 'student_dashboard', 'icon' => 'bi-speedometer2', 'active' => ['student_dashboard']],
+            ['label' => 'Subjects', 'href' => 'student_subjects', 'icon' => 'bi-journal-bookmark', 'active' => ['student_subjects']],
         ],
     ],
     [
         'label' => 'Modules',
         'items' => [
-            ['label' => 'Preboards', 'href' => 'student_preboards.php', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards.php', 'student_preboards_view.php']],
-            ['label' => 'Preweek', 'href' => 'student_preweek.php', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek.php', 'student_preweek_topics.php', 'student_preweek_viewer.php']],
+            ['label' => 'Preboards', 'href' => 'student_preboards', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards', 'student_preboards_view']],
+            ['label' => 'Preweek', 'href' => 'student_preweek', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek', 'student_preweek_topics', 'student_preweek_viewer']],
         ],
     ],
 ];

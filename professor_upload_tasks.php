@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: professor_upload_tasks.php');
+        header('Location: professor_upload_tasks');
         exit;
     }
     $action = $_POST['action'] ?? '';
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-    header('Location: professor_upload_tasks.php');
+    header('Location: professor_upload_tasks');
     exit;
 }
 
@@ -360,7 +360,7 @@ foreach ($list as $row) {
             <div class="flex flex-wrap items-center gap-3 pt-2">
               <button type="submit" class="put-save"><i class="bi bi-check2-circle"></i> <?php echo $edit ? 'Update task' : 'Publish task'; ?></button>
               <?php if ($edit): ?>
-                <a href="professor_upload_tasks.php" class="text-sm font-bold text-slate-500 hover:text-slate-800">Cancel edit</a>
+                <a href="professor_upload_tasks" class="text-sm font-bold text-slate-500 hover:text-slate-800">Cancel edit</a>
               <?php endif; ?>
             </div>
           </form>
@@ -399,7 +399,7 @@ foreach ($list as $row) {
                   ?>
                   <tr>
                     <td>
-                      <a href="professor_upload_task_monitor.php?task_id=<?php echo (int)$t['task_id']; ?>" class="block group">
+                      <a href="professor_upload_task_monitor?task_id=<?php echo (int)$t['task_id']; ?>" class="block group">
                         <div class="font-bold text-slate-900 group-hover:text-emerald-800 transition-colors"><?php echo h($t['title']); ?></div>
                       </a>
                       <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -420,7 +420,7 @@ foreach ($list as $row) {
                     </td>
                     <td class="hidden sm:table-cell">
                       <?php if ($subc > 0): ?>
-                        <a href="professor_upload_task_monitor.php?task_id=<?php echo (int)$t['task_id']; ?>" class="font-bold text-emerald-800 hover:text-emerald-950 hover:underline">
+                        <a href="professor_upload_task_monitor?task_id=<?php echo (int)$t['task_id']; ?>" class="font-bold text-emerald-800 hover:text-emerald-950 hover:underline">
                           <?php echo (int)$subc; ?> <span class="text-slate-400 text-xs font-semibold">submissions</span>
                         </a>
                       <?php else: ?>
@@ -429,8 +429,8 @@ foreach ($list as $row) {
                       <?php endif; ?>
                     </td>
                     <td class="text-right whitespace-nowrap">
-                      <a href="professor_upload_task_monitor.php?task_id=<?php echo (int)$t['task_id']; ?>" class="put-link mr-3">Monitor</a>
-                      <a href="professor_upload_tasks.php?edit=<?php echo (int)$t['task_id']; ?>" class="put-link mr-3">Edit</a>
+                      <a href="professor_upload_task_monitor?task_id=<?php echo (int)$t['task_id']; ?>" class="put-link mr-3">Monitor</a>
+                      <a href="professor_upload_tasks?edit=<?php echo (int)$t['task_id']; ?>" class="put-link mr-3">Edit</a>
                       <form method="post" class="inline" onsubmit="return confirm('Delete this task and all <?php echo (int)$subc; ?> submission record(s)? Files on disk will be removed.');">
                         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                         <input type="hidden" name="action" value="delete">

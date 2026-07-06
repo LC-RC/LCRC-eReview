@@ -68,10 +68,10 @@ $pageTitle = 'Home';
 
         <!-- Right: Login + Register -->
         <div class="hidden md:flex items-center gap-3">
-          <a href="login.php" class="group relative px-6 py-2.5 rounded-xl font-semibold text-accent-blue border-2 border-accent-blue bg-transparent hover:bg-accent-blue hover:text-white hover:shadow-[0_8px_25px_-5px_rgba(31,88,195,0.25)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-accent-blue/40 focus:ring-offset-2 transition-all duration-300 ease-out">
+          <a href="login" class="group relative px-6 py-2.5 rounded-xl font-semibold text-accent-blue border-2 border-accent-blue bg-transparent hover:bg-accent-blue hover:text-white hover:shadow-[0_8px_25px_-5px_rgba(31,88,195,0.25)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-accent-blue/40 focus:ring-offset-2 transition-all duration-300 ease-out">
             <span class="relative z-10">Login</span>
           </a>
-          <a href="registration.php" class="group relative px-6 py-2.5 rounded-xl font-semibold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_10px_40px_-10px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-accent-orange/40 focus:ring-offset-2 transition-all duration-300 ease-out shadow-lg shadow-[0_4px_14px_-3px_rgba(245,158,11,0.25)]">
+          <a href="registration" class="group relative px-6 py-2.5 rounded-xl font-semibold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_10px_40px_-10px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-accent-orange/40 focus:ring-offset-2 transition-all duration-300 ease-out shadow-lg shadow-[0_4px_14px_-3px_rgba(245,158,11,0.25)]">
             <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></span>
             <span class="relative z-10">Register</span>
           </a>
@@ -93,8 +93,8 @@ $pageTitle = 'Home';
         <a href="#about" @click="mobileMenuOpen = false" class="block px-4 py-3 rounded-xl text-gray-700 font-bold tracking-wide hover:bg-accent-orange/15 hover:text-accent-orange transition-all duration-200 active:scale-[0.98] border-l-2 border-transparent hover:border-accent-orange">About</a>
         <a href="#faqs" @click="mobileMenuOpen = false" class="block px-4 py-3 rounded-xl text-gray-700 font-bold tracking-wide hover:bg-accent-blue/15 hover:text-accent-blue transition-all duration-200 active:scale-[0.98] border-l-2 border-transparent hover:border-accent-blue">FAQs</a>
         <div class="pt-3 mt-3 border-t border-gray-200 flex gap-2">
-          <a href="login.php" @click="mobileMenuOpen = false" class="flex-1 text-center py-3 rounded-xl font-semibold text-accent-blue border-2 border-accent-blue hover:bg-accent-blue hover:text-white transition-all duration-200 active:scale-[0.98]">Login</a>
-          <a href="registration.php" @click="mobileMenuOpen = false" class="group relative flex-1 py-3 rounded-xl font-semibold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange shadow-lg shadow-accent-orange/25 hover:shadow-[0_10px_40px_-10px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 ease-out">
+          <a href="login" @click="mobileMenuOpen = false" class="flex-1 text-center py-3 rounded-xl font-semibold text-accent-blue border-2 border-accent-blue hover:bg-accent-blue hover:text-white transition-all duration-200 active:scale-[0.98]">Login</a>
+          <a href="registration" @click="mobileMenuOpen = false" class="group relative flex-1 py-3 rounded-xl font-semibold text-white overflow-hidden bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange shadow-lg shadow-accent-orange/25 hover:shadow-[0_10px_40px_-10px_rgba(245,158,11,0.35)] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 ease-out">
             <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></span>
             <span class="relative z-10">Register</span>
           </a>
@@ -498,7 +498,7 @@ $pageTitle = 'Home';
               <li><a href="#packages" class="footer-link">Packages</a></li>
               <li><a href="#about" class="footer-link">About</a></li>
               <li><a href="#faqs" class="footer-link">FAQs</a></li>
-              <li><a href="login.php" class="footer-link">Login</a></li>
+              <li><a href="login" class="footer-link">Login</a></li>
               <li><a href="#" @click.prevent="$dispatch('open-modal', 'registerModal')" class="footer-link" style="color:#F59E0B;">Register</a></li>
             </ul>
           </div>
@@ -767,7 +767,7 @@ window.chatbot = function chatbot() {
         const fd = new FormData();
         fd.append('session_id', this.sessionId);
         fd.append('event_type', eventType);
-        await fetch('api/chat/event.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        await fetch('api/chat/event', { method: 'POST', body: fd, credentials: 'same-origin' });
       } catch (e) { /* non-fatal */ }
     },
     toggleMic() {
@@ -797,8 +797,8 @@ window.chatbot = function chatbot() {
       try {
         const savedSession = localStorage.getItem('ereview_chat_session') || '';
         const url = savedSession
-          ? `api/chat/bootstrap.php?session_id=${encodeURIComponent(savedSession)}`
-          : 'api/chat/bootstrap.php';
+          ? `api/chat/bootstrap?session_id=${encodeURIComponent(savedSession)}`
+          : 'api/chat/bootstrap';
         const res = await fetch(url, { credentials: 'same-origin' });
         const data = await res.json();
         if (data && data.ok) {
@@ -834,7 +834,7 @@ window.chatbot = function chatbot() {
         const fd = new FormData();
         fd.append('session_id', this.sessionId);
         fd.append('rating', String(rating));
-        const res = await fetch('api/chat/csat.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const res = await fetch('api/chat/csat', { method: 'POST', body: fd, credentials: 'same-origin' });
         const data = await res.json();
         if (data && data.ok) {
           this.csatDone = true;
@@ -857,7 +857,7 @@ window.chatbot = function chatbot() {
         fd.append('session_id', this.sessionId || '');
         fd.append('message', text);
         if (this.plainLanguage) fd.append('plain_language', '1');
-        const res = await fetch('api/chat/message.php', {
+        const res = await fetch('api/chat/message', {
           method: 'POST',
           body: fd,
           credentials: 'same-origin'
@@ -913,7 +913,7 @@ window.chatbot = function chatbot() {
         fd.append('name', name);
         fd.append('email', email);
         fd.append('subject', subject);
-        const res = await fetch('api/chat/handoff.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const res = await fetch('api/chat/handoff', { method: 'POST', body: fd, credentials: 'same-origin' });
         const data = await res.json();
         if (data && data.ok) {
           this.messages.push({
@@ -1131,7 +1131,7 @@ window.chatbot = function chatbot() {
             <span class="font-semibold"><?php echo h($errorMsg); ?></span>
           </div>
         <?php endif; ?>
-        <form action="login_process.php" method="POST" class="space-y-6" novalidate @submit="loginSubmit($event)">
+        <form action="login_process" method="POST" class="space-y-6" novalidate @submit="loginSubmit($event)">
           <div class="animate-slide-up-fade-1">
             <label for="login-email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
             <input id="login-email" x-ref="login_email" x-model.trim="login.values.email" @blur="login.touched.email = true"
@@ -1206,7 +1206,7 @@ window.chatbot = function chatbot() {
             <span class="font-semibold"><?php echo h($errorMsg); ?></span>
           </div>
         <?php endif; ?>
-        <form action="register_process.php" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate @submit="registerSubmit($event)">
+        <form action="register_process" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate @submit="registerSubmit($event)">
           <div class="grid sm:grid-cols-2 gap-6">
             <div class="animate-slide-up-fade-1">
               <label for="reg-fullname" class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
@@ -1319,7 +1319,7 @@ window.chatbot = function chatbot() {
           </button>
           </div>
         </form>
-        <p class="text-center mt-6 text-sm text-gray-600 animate-slide-up-fade-9">Already have an account? <a href="login.php" class="text-accent-blue font-semibold hover:text-accent-blue-dark hover:underline underline-offset-2 transition-all duration-200">Sign in</a></p>
+        <p class="text-center mt-6 text-sm text-gray-600 animate-slide-up-fade-9">Already have an account? <a href="login" class="text-accent-blue font-semibold hover:text-accent-blue-dark hover:underline underline-offset-2 transition-all duration-200">Sign in</a></p>
       </div>
     </div>
   </div>

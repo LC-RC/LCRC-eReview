@@ -4,7 +4,7 @@ requireRole('student');
 
 $lessonId = sanitizeInt($_GET['lesson_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($lessonId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($lessonId <= 0) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $lessonId);
@@ -12,7 +12,7 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $lesson = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
-if (!$lesson) { header('Location: student_subjects.php'); exit; }
+if (!$lesson) { header('Location: student_subjects'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
 $selectedVideoId = sanitizeInt($_GET['video'] ?? 0);
@@ -86,7 +86,7 @@ $pageTitle = $lesson['subject_name'] . ' - ' . $lesson['title'] . ' - Videos';
         <div class="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800 flex items-center gap-2"><i class="bi bi-list"></i> Playlist</div>
         <div class="divide-y divide-gray-100">
           <?php mysqli_data_seek($videosResult, 0); while ($v = mysqli_fetch_assoc($videosResult)): $isActive = ($selectedVideo && $v['video_id'] == $selectedVideo['video_id']); ?>
-            <a href="student_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-5 py-3 text-left transition <?php echo $isActive ? 'bg-primary/10 text-primary font-semibold border-l-4 border-primary' : 'hover:bg-gray-50 text-gray-700'; ?>">
+            <a href="student_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-5 py-3 text-left transition <?php echo $isActive ? 'bg-primary/10 text-primary font-semibold border-l-4 border-primary' : 'hover:bg-gray-50 text-gray-700'; ?>">
               <i class="bi bi-play-circle"></i> <?php echo h($v['video_title'] ?: 'Untitled Video'); ?>
             </a>
           <?php endwhile; ?>

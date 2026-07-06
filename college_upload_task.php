@@ -20,13 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_task_id'])) {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: college_upload_task.php?id=' . (int)$taskId);
+        header('Location: college_upload_task?id=' . (int)$taskId);
         exit;
     }
     $postTid = sanitizeInt($_POST['upload_task_id'] ?? 0);
     if ($postTid !== $taskId || $taskId <= 0) {
         $_SESSION['error'] = 'Invalid task.';
-        header('Location: college_uploads.php');
+        header('Location: college_uploads');
         exit;
     }
 
@@ -38,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_task_id'])) {
 
     if (!$taskPost || college_upload_deadline_has_passed($taskPost['deadline'] ?? null)) {
         $_SESSION['error'] = 'This task is closed or past deadline.';
-        header('Location: college_upload_task.php?id=' . (int)$taskId);
+        header('Location: college_upload_task?id=' . (int)$taskId);
         exit;
     }
 
     if (empty($_FILES['file'])) {
         $_SESSION['error'] = 'Please choose a valid file.';
-        header('Location: college_upload_task.php?id=' . (int)$taskId);
+        header('Location: college_upload_task?id=' . (int)$taskId);
         exit;
     }
 
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_task_id'])) {
     $valid = college_upload_validate_file($f, $maxBytes);
     if (!$valid['ok']) {
         $_SESSION['error'] = $valid['error'] ?? 'Upload rejected.';
-        header('Location: college_upload_task.php?id=' . (int)$taskId);
+        header('Location: college_upload_task?id=' . (int)$taskId);
         exit;
     }
 
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_task_id'])) {
     $dest = $subDir . DIRECTORY_SEPARATOR . $safeName;
     if (!move_uploaded_file($f['tmp_name'], $dest)) {
         $_SESSION['error'] = 'Upload failed.';
-        header('Location: college_upload_task.php?id=' . (int)$taskId);
+        header('Location: college_upload_task?id=' . (int)$taskId);
         exit;
     }
 
@@ -99,13 +99,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_task_id'])) {
     }
 
     $_SESSION['message'] = 'File submitted successfully.';
-    header('Location: college_upload_task.php?id=' . (int)$taskId);
+    header('Location: college_upload_task?id=' . (int)$taskId);
     exit;
 }
 
 if ($taskId <= 0) {
     $_SESSION['error'] = 'Task not found.';
-    header('Location: college_uploads.php');
+    header('Location: college_uploads');
     exit;
 }
 
@@ -125,7 +125,7 @@ mysqli_stmt_close($stmt);
 
 if (!$task) {
     $_SESSION['error'] = 'This task is not available.';
-    header('Location: college_uploads.php');
+    header('Location: college_uploads');
     exit;
 }
 
@@ -134,7 +134,7 @@ $fileViewUrl = '';
 $fileDownloadUrl = '';
 $viewKind = '';
 if (!empty($task['submission_id']) && trim((string)($task['file_path'] ?? '')) !== '') {
-    $fileViewUrl = 'college_upload_file.php?s=' . (int)$task['submission_id'];
+    $fileViewUrl = 'college_upload_file?s=' . (int)$task['submission_id'];
     $fileDownloadUrl = $fileViewUrl . '&download=1';
     $viewKind = college_upload_view_kind_from_filename((string)($task['submitted_file'] ?? ''));
 }
@@ -559,7 +559,7 @@ unset($_SESSION['message'], $_SESSION['error']);
   <div class="college-upload-task-page ereview-shell-no-fade pt-2">
     <section class="cut-hero-banner dash-anim delay-1 px-5 py-6 sm:px-6 sm:py-7">
       <div class="relative z-10 text-white w-full">
-        <a href="college_uploads.php" class="cut-back"><i class="bi bi-arrow-left"></i> All upload tasks</a>
+        <a href="college_uploads" class="cut-back"><i class="bi bi-arrow-left"></i> All upload tasks</a>
         <div class="cut-hero-row">
           <div class="min-w-0 flex-1 pr-2">
             <p class="text-[0.65rem] font-extrabold uppercase tracking-wider text-white/60 m-0 mb-1">Assignment task</p>
@@ -681,10 +681,10 @@ unset($_SESSION['message'], $_SESSION['error']);
           </div>
 
           <div class="flex flex-wrap gap-2 dash-anim delay-2">
-            <a href="college_uploads.php" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#cde2f4] bg-white text-[#1665a0] font-bold text-sm hover:bg-[#f4f9fe] transition-colors w-full sm:w-auto">
+            <a href="college_uploads" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#cde2f4] bg-white text-[#1665a0] font-bold text-sm hover:bg-[#f4f9fe] transition-colors w-full sm:w-auto">
               <i class="bi bi-grid-3x3-gap"></i> All tasks
             </a>
-            <a href="college_student_dashboard.php" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#cde2f4] bg-white text-[#1665a0] font-bold text-sm hover:bg-[#f4f9fe] transition-colors w-full sm:w-auto">
+            <a href="college_student_dashboard" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[#cde2f4] bg-white text-[#1665a0] font-bold text-sm hover:bg-[#f4f9fe] transition-colors w-full sm:w-auto">
               <i class="bi bi-house-door"></i> Dashboard
             </a>
           </div>

@@ -5,7 +5,7 @@ require_once __DIR__ . '/includes/profile_avatar.php';
 
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
-    header('Location: admin_dashboard.php');
+    header('Location: admin_dashboard');
     exit;
 }
 
@@ -28,7 +28,7 @@ $user = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 
 if (!$user || $user['role'] !== 'student') {
-    header('Location: admin_dashboard.php');
+    header('Location: admin_dashboard');
     exit;
 }
 
@@ -37,13 +37,13 @@ $avatarPath = ereview_avatar_public_path($user['profile_picture'] ?? '');
 $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($user['use_default_avatar']) : true;
 $avatarInitial = ereview_avatar_initial($user['full_name'] ?? 'U');
 $hasPaymentProof = !empty($user['payment_proof']);
-$paymentProofUrl = 'admin_payment_proof.php?user_id=' . (int)$user['user_id'];
+$paymentProofUrl = 'admin_payment_proof?user_id=' . (int)$user['user_id'];
 $paymentProofExt = $hasPaymentProof ? strtolower((string)pathinfo((string)$user['payment_proof'], PATHINFO_EXTENSION)) : '';
 $isProofImage = in_array($paymentProofExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], true);
 $isProofPdf = ($paymentProofExt === 'pdf');
 $csrf = generateCSRFToken();
 $pageTitle = 'Student Details - ' . $user['full_name'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_students.php'], [ h($user['full_name']) ] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_students'], [ h($user['full_name']) ] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -263,7 +263,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
       <p class="text-gray-400 mt-2 mb-0">View registration, approve or reject, and manage access. ID: <?php echo (int)$user['user_id']; ?></p>
     </div>
     <div class="flex gap-2">
-      <a href="admin_students.php" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to list</a>
+      <a href="admin_students" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to list</a>
       <?php if ($hasPaymentProof): ?>
         <a href="#payment-proof-section" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-receipt"></i> View Proof</a>
       <?php endif; ?>
@@ -383,25 +383,25 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students', 'admin_
           <div><span class="text-gray-500 text-sm">Months:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '-'; ?></span></div>
         </div>
         <?php if (strtolower((string)$user['status']) !== 'approved'): ?>
-          <form class="flex flex-wrap gap-2" action="activate_user.php" method="POST">
+          <form class="flex flex-wrap gap-2" action="activate_user" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="Months" required>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-check2-circle"></i> Approve</button>
           </form>
-          <form class="mt-2" action="reject.php" method="POST" onsubmit="return confirm('Reject this student?');">
+          <form class="mt-2" action="reject" method="POST" onsubmit="return confirm('Reject this student?');">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <button type="submit" class="w-full px-4 py-2.5 rounded-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition inline-flex items-center justify-center gap-2"><i class="bi bi-x-circle"></i> Reject</button>
           </form>
         <?php else: ?>
-          <form class="flex flex-wrap gap-2" action="extend_access.php" method="POST">
+          <form class="flex flex-wrap gap-2" action="extend_access" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend</button>
           </form>
-          <a href="admin_student_access.php?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manage LMS content access</a>
+          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manage LMS content access</a>
         <?php endif; ?>
       </div>
     </div>

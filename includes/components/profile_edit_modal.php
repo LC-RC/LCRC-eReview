@@ -12,7 +12,7 @@ $___peditRole = function_exists('getCurrentUserRole') ? (string) getCurrentUserR
 $ereviewPeditSaveStayOpen = function_exists('isStaffRole') && isStaffRole($___peditRole);
 $ereviewPeditEmailLocked = ($___peditRole === 'student' || $___peditRole === 'college_student');
 $ereviewPeditUiTheme = $ereviewPeditSaveStayOpen ? 'staff' : 'student';
-$ereviewPeditHelpHref = $ereviewHelpHref ?? 'help_center.php';
+$ereviewPeditHelpHref = $ereviewHelpHref ?? 'help_center';
 $ereviewPeditBoot = [
     'userId' => $ereviewPeditUserId,
     'saveStayOpen' => $ereviewPeditSaveStayOpen,
@@ -1490,10 +1490,10 @@ $ereviewPeditBoot = [
   var draftUseServerBtn = document.getElementById('erePeditDraftUseServer');
   var draftDismissBtn = document.getElementById('erePeditDraftDismiss');
 
-  var apiGet = 'api/profile/get_profile.php';
-  var apiPost = 'api/profile/update_profile.php';
-  var apiEmail = 'api/profile/check_email.php';
-  var apiLog = 'api/profile/log_event.php';
+  var apiGet = 'api/profile/get_profile';
+  var apiPost = 'api/profile/update_profile';
+  var apiEmail = 'api/profile/check_email';
+  var apiLog = 'api/profile/log_event';
 
   var lastLoadedUser = null;
   var formSnapshot = null;

@@ -68,7 +68,7 @@ function createMagicLinkToken($email) {
 
     $validatorHex = bin2hex($validator);
     $tokenParam = $selector . '.' . $validatorHex;
-    return getMagicLinkBaseUrl() . '/login.php?magic=' . rawurlencode($tokenParam);
+    return getMagicLinkBaseUrl() . '/login?magic=' . rawurlencode($tokenParam);
 }
 
 /**

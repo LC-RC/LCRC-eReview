@@ -4,7 +4,7 @@ requireRole('student');
 
 $lessonId = sanitizeInt($_GET['lesson_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($lessonId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($lessonId <= 0) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $lessonId);
@@ -12,7 +12,7 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $lesson = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
-if (!$lesson) { header('Location: student_subjects.php'); exit; }
+if (!$lesson) { header('Location: student_subjects'); exit; }
 
 $handoutsResult = mysqli_query($conn, "SELECT * FROM lesson_handouts WHERE lesson_id=".$lessonId." ORDER BY handout_id DESC");
 $pageTitle = $lesson['title'] . ' - Handouts';
@@ -67,7 +67,7 @@ $pageTitle = $lesson['title'] . ' - Handouts';
           </div>
           <div class="mt-auto space-y-2">
             <?php if (!empty($h['file_path'])): ?>
-              <button type="button" data-handout-id="<?php echo (int)$h['handout_id']; ?>" data-handout-title="<?php echo h($h['handout_title'] ?: 'Handout'); ?>" @click="handoutModalTitle = $el.dataset.handoutTitle || 'Handout'; handoutModalSrc = 'handout_viewer.php?handout_id=' + $el.dataset.handoutId; handoutModalOpen = true" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
+              <button type="button" data-handout-id="<?php echo (int)$h['handout_id']; ?>" data-handout-title="<?php echo h($h['handout_title'] ?: 'Handout'); ?>" @click="handoutModalTitle = $el.dataset.handoutTitle || 'Handout'; handoutModalSrc = 'handout_viewer?handout_id=' + $el.dataset.handoutId; handoutModalOpen = true" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
                 <i class="bi bi-eye"></i> View
               </button>
             <?php endif; ?>
@@ -88,7 +88,7 @@ $pageTitle = $lesson['title'] . ' - Handouts';
         <div class="bg-white rounded-xl shadow-card border border-gray-100 p-12 text-center text-gray-500">
           <i class="bi bi-inbox text-5xl block mb-3"></i>
           <p class="text-lg font-semibold">No handouts available yet.</p>
-          <a href="student_lessons.php?subject_id=<?php echo (int)$lesson['subject_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
+          <a href="student_lessons?subject_id=<?php echo (int)$lesson['subject_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
         </div>
       </div>
     <?php endif; ?>

@@ -12,20 +12,20 @@ sca_enforce_student_session($conn);
 
 $legacySubject = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($legacySubject > 0) {
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
 $unitId = (int)($_GET['preweek_unit_id'] ?? 0);
 if ($unitId <= 0) {
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
 $unitRes = mysqli_query($conn, 'SELECT preweek_unit_id, title FROM preweek_units WHERE preweek_unit_id=' . $unitId . ' AND subject_id=0 LIMIT 1');
 $unit = $unitRes ? mysqli_fetch_assoc($unitRes) : null;
 if (!$unit) {
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
@@ -34,7 +34,7 @@ $unitTitle = trim((string)($unit['title'] ?? 'Preweek')) ?: 'Preweek';
 $userId = getCurrentUserId();
 if (!sca_has_access($conn, (int)$userId, 'preweek_unit', $unitId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
@@ -61,7 +61,7 @@ foreach ($topicRows as $row) {
         'id' => $tid,
         'title' => trim((string)($row['title'] ?? '')) ?: 'Untitled',
         'desc' => trim((string)($row['description'] ?? '')),
-        'href' => $topicOpen ? 'student_preweek_viewer.php?preweek_topic_id=' . $tid : '#',
+        'href' => $topicOpen ? 'student_preweek_viewer?preweek_topic_id=' . $tid : '#',
         'videos' => (int)($row['videos_cnt'] ?? 0),
         'handouts' => (int)($row['handouts_cnt'] ?? 0),
         'locked' => !$topicOpen,
@@ -153,7 +153,7 @@ $pageTitle = $unitTitle . ' — Materials';
     <section class="student-hero-pw dash-anim delay-1 relative overflow-hidden mb-5 px-6 py-7 text-white">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="min-w-0">
-          <a href="student_preweek.php" class="inline-flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold mb-3 no-underline"><i class="bi bi-arrow-left"></i> All pre-weeks</a>
+          <a href="student_preweek" class="inline-flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold mb-3 no-underline"><i class="bi bi-arrow-left"></i> All pre-weeks</a>
           <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 border border-white/30"><i class="bi bi-collection-play"></i></span>
             <?php echo h($unitTitle); ?>

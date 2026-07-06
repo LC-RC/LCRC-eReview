@@ -15,9 +15,9 @@ if ($t === 'admin' || $t === 'professor') {
 
 $displayNameTopbar = ereview_format_topbar_display_name($displayNameFull);
 
-$ereviewHelpHref = 'help_center.php';
-$ereviewPrefsHref = 'account_preferences.php';
-$ereviewProfilePageHref = $ereviewProfilePageHref ?? ($t === 'student' ? 'student_profile.php' : 'staff_profile.php');
+$ereviewHelpHref = 'help_center';
+$ereviewPrefsHref = 'account_preferences';
+$ereviewProfilePageHref = $ereviewProfilePageHref ?? ($t === 'student' ? 'student_profile' : 'staff_profile');
 $ereviewProfileMenuTone = ($t === 'admin') ? 'dark' : 'light';
 $ereviewStaffSubtitle = ($t === 'professor') ? 'Professor workspace' : 'System administrator';
 
@@ -183,7 +183,7 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
             </a>
           </div>
           <div class="ereview-profile-menu__divider" role="presentation"></div>
-          <a href="logout.php" class="ereview-profile-menu__link ereview-profile-menu__link--danger ereview-logout-trigger" role="menuitem" @click="userMenuOpen = false">
+          <a href="logout" class="ereview-profile-menu__link ereview-profile-menu__link--danger ereview-logout-trigger" role="menuitem" @click="userMenuOpen = false">
             <span class="ereview-profile-menu__link-icon"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span>
             <span class="ereview-profile-menu__link-text">Log out</span>
           </a>
@@ -242,11 +242,11 @@ include __DIR__ . '/messaging_component.php';
           <i class="bi bi-arrow-right"></i>
         </span>
       </button>
-      <a href="student_dashboard.php" class="student-topbar-mobile-brand" aria-label="Go to dashboard">
+      <a href="student_dashboard" class="student-topbar-mobile-brand" aria-label="Go to dashboard">
         <span class="student-topbar-mobile-brand__icon" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></span>
         <span class="student-topbar-mobile-brand__text">LCRC eReview</span>
       </a>
-      <div class="student-topbar-search-host relative flex-1 min-w-0" data-student-subject-search="api/student/subject_search.php">
+      <div class="student-topbar-search-host relative flex-1 min-w-0" data-student-subject-search="api/student/subject_search">
         <div class="student-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
           <i class="bi bi-search student-topbar-search-icon" aria-hidden="true"></i>
           <input type="search" id="studentTopbarSubjectSearch" autocomplete="off" placeholder="Search courses, subjects..." aria-label="Search subjects" class="student-topbar-search" @focus="searchFocused = true" @blur="searchFocused = false">
@@ -331,7 +331,7 @@ include __DIR__ . '/messaging_component.php';
               </div>
             </dl>
             <div class="student-topbar-access-popover__actions">
-              <a href="student_access_ics.php" class="student-topbar-access-popover__link student-topbar-access-popover__link--ics" download="lcrc-ereview-access-end.ics" @click.stop>
+              <a href="student_access_ics" class="student-topbar-access-popover__link student-topbar-access-popover__link--ics" download="lcrc-ereview-access-end.ics" @click.stop>
                 <i class="bi bi-calendar-plus" aria-hidden="true"></i>
                 Add to calendar (.ics)
               </a>
@@ -410,7 +410,7 @@ include __DIR__ . '/messaging_component.php';
             </a>
           </div>
           <div class="ereview-profile-menu__divider" role="presentation"></div>
-          <a href="logout.php" class="ereview-profile-menu__link ereview-profile-menu__link--danger ereview-logout-trigger" role="menuitem" @click="userMenuOpen = false">
+          <a href="logout" class="ereview-profile-menu__link ereview-profile-menu__link--danger ereview-logout-trigger" role="menuitem" @click="userMenuOpen = false">
             <span class="ereview-profile-menu__link-icon"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span>
             <span class="ereview-profile-menu__link-text">Log out</span>
           </a>
@@ -586,7 +586,7 @@ include __DIR__ . '/messaging_component.php';
   var input = document.getElementById('studentTopbarSubjectSearch');
   var panel = document.getElementById('studentTopbarSearchPanel');
   if (!host || !input || !panel) return;
-  var endpoint = host.getAttribute('data-student-subject-search') || 'api/student/subject_search.php';
+  var endpoint = host.getAttribute('data-student-subject-search') || 'api/student/subject_search';
   var t = null;
   var lastQ = '';
 
@@ -608,7 +608,7 @@ include __DIR__ . '/messaging_component.php';
       return;
     }
     var html = items.map(function (it) {
-      var href = 'student_subject.php?subject_id=' + encodeURIComponent(String(it.id));
+      var href = 'student_subject?subject_id=' + encodeURIComponent(String(it.id));
       return '<a role="option" class="student-topbar-search-panel__item" href="' + href + '">' +
         '<span class="student-topbar-search-panel__icon"><i class="bi bi-journal-bookmark" aria-hidden="true"></i></span>' +
         '<span class="student-topbar-search-panel__text">' + esc(it.name) + '</span>' +

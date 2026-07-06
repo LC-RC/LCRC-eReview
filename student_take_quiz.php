@@ -19,13 +19,13 @@ if (function_exists('mysqli_report')) {
 
 $quizId = sanitizeInt($_GET['quiz_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($quizId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($quizId <= 0) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT q.*, s.subject_name FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE q.quiz_id=? LIMIT 1");
 if (!$stmt) {
     error_log('student_take_quiz: prepare failed (load quiz): ' . mysqli_error($conn));
     $_SESSION['error'] = 'Unable to load this quiz. Please try again.';
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
@@ -34,14 +34,14 @@ $result = mysqli_stmt_get_result($stmt);
 $quiz = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 
-if (!$quiz) { header('Location: student_subjects.php'); exit; }
+if (!$quiz) { header('Location: student_subjects'); exit; }
 
 if (!$subjectId && !empty($quiz['subject_id'])) $subjectId = (int)$quiz['subject_id'];
 
 $userId = getCurrentUserId();
 if (!sca_has_access($conn, (int)$userId, 'quiz', $quizId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id=' . $subjectId : 'student_subjects.php'));
+    header('Location: ' . ($subjectId > 0 ? 'student_subject?subject_id=' . $subjectId : 'student_subjects'));
     exit;
 }
 
@@ -104,7 +104,7 @@ $stmt = mysqli_prepare($conn, "SELECT question_id FROM quiz_questions WHERE quiz
 if (!$stmt) {
     error_log('student_take_quiz: prepare failed (question ids): ' . mysqli_error($conn));
     $_SESSION['error'] = 'Unable to load quiz questions.';
-    header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id=' . (int)$subjectId : 'student_subjects.php'));
+    header('Location: ' . ($subjectId > 0 ? 'student_subject?subject_id=' . (int)$subjectId : 'student_subjects'));
     exit;
 }
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
@@ -126,7 +126,7 @@ if (isset($_GET['retake']) && (int)$_GET['retake'] === 1 && $totalQuestionsBase 
     $attemptId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
     if ($attemptId > 0) {
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
         exit;
     }
 }
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     $stmt = mysqli_prepare($conn, "SELECT attempt_id FROM quiz_attempts WHERE user_id=? AND quiz_id=? AND status='in_progress' ORDER BY attempt_id DESC LIMIT 1");
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $
     $existing = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
     mysqli_stmt_close($stmt);
     if ($existing) {
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&attempt_id='.(int)$existing['attempt_id'].'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.(int)$existing['attempt_id'].'&subject_id='.$subjectId);
         exit;
     }
     $now = time();
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $
     $attemptId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
     if ($attemptId > 0) {
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
         exit;
     }
 }
@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_quiz'])) {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId : 'student_subjects.php'));
+        header('Location: ' . ($subjectId > 0 ? 'student_subject?subject_id='.(int)$subjectId : 'student_subjects'));
         exit;
     }
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
@@ -178,12 +178,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_quiz'])) {
     mysqli_stmt_close($stmt);
     if (!$attemptRow || (int)$attemptRow['quiz_id'] !== $quizId) {
         $_SESSION['error'] = 'Invalid attempt.';
-        header('Location: ' . ($subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId : 'student_subjects.php'));
+        header('Location: ' . ($subjectId > 0 ? 'student_subject?subject_id='.(int)$subjectId : 'student_subjects'));
         exit;
     }
     if ($attemptRow['status'] === 'submitted') {
         $_SESSION['quiz_result'] = ['quiz_id' => $quizId, 'score' => (float)$attemptRow['score'] ?? 0, 'correct' => (int)($attemptRow['correct_count'] ?? 0), 'total' => (int)($attemptRow['total_count'] ?? 0), 'attempt_id' => $attemptId];
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
         exit;
     }
     $total = 0;
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_quiz'])) {
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     $_SESSION['quiz_result'] = ['quiz_id' => $quizId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'attempt_id' => $attemptId];
-    header('Location: student_take_quiz.php?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
+    header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
     exit;
 }
 
@@ -226,7 +226,7 @@ if (isset($_GET['view_result']) && (int)$_GET['view_result'] === 1 && !$showResu
             'total' => (int)$lastAttempt['total_count'],
             'attempt_id' => (int)$lastAttempt['attempt_id']
         ];
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
         exit;
     }
 }
@@ -240,7 +240,7 @@ if ($attemptId <= 0 && !$showResult && $totalQuestionsBase > 0) {
     $resume = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
     mysqli_stmt_close($stmt);
     if ($resume) {
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&attempt_id='.(int)$resume['attempt_id'].'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.(int)$resume['attempt_id'].'&subject_id='.$subjectId);
         exit;
     }
 }
@@ -261,10 +261,10 @@ if ($attemptId > 0 && $totalQuestionsBase > 0) {
     if (!$attempt || $attempt['status'] !== 'in_progress') {
         if ($attempt && $attempt['status'] === 'submitted') {
             $_SESSION['quiz_result'] = ['quiz_id' => $quizId, 'score' => (float)$attempt['score'], 'correct' => (int)$attempt['correct_count'], 'total' => (int)$attempt['total_count'], 'attempt_id' => $attemptId];
-            header('Location: student_take_quiz.php?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
+            header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
             exit;
         }
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
 
@@ -317,7 +317,7 @@ if ($attemptId > 0 && $totalQuestionsBase > 0) {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['quiz_result'] = ['quiz_id' => $quizId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'attempt_id' => $attemptId];
-        header('Location: student_take_quiz.php?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
+        header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
         exit;
     }
 
@@ -337,7 +337,7 @@ if ($totalQuestionsBase > 0) {
     if (!$stmt) {
         error_log('student_take_quiz: prepare failed (all questions): ' . mysqli_error($conn));
         $_SESSION['error'] = 'Unable to load quiz questions.';
-        header('Location: student_take_quiz.php?quiz_id=' . $quizId . '&subject_id=' . $subjectId);
+        header('Location: student_take_quiz?quiz_id=' . $quizId . '&subject_id=' . $subjectId);
         exit;
     }
     mysqli_stmt_bind_param($stmt, 'i', $quizId);
@@ -369,7 +369,7 @@ foreach ($activeQuestionIds as $aqid) {
 $allAnswered = ($totalQuestions > 0 && $answeredCount >= $totalQuestions);
 
 $pageTitle = 'Take Quiz - ' . ($quiz['title'] ?? '');
-$headerBackUrl = $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php';
+$headerBackUrl = $subjectId > 0 ? 'student_subject?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects';
 $csrf = generateCSRFToken();
 
 // For result view: load review questions (with answers from submitted attempt)
@@ -1503,7 +1503,7 @@ if ($userId) {
       $score = (float)$result['score'];
       $resultClass = $score >= 50 ? 'result-pass' : 'result-fail';
       $resultLabel = $score >= 50 ? 'Passed' : 'Failed';
-      $backUrl = $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php';
+      $backUrl = $subjectId > 0 ? 'student_subject?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects';
       // Personal best + time insight (compare with previous attempts)
       $currentAttemptId = (int)($result['attempt_id'] ?? 0);
       $bestBefore = null;
@@ -1624,7 +1624,7 @@ if ($userId) {
             </div>
             <!-- Section 2: primary actions neatly attached under summary -->
             <div class="result-actions-bar mt-4 pt-3 border-t border-[#dbeafe]">
-              <a href="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="result-actions-primary">
+              <a href="student_take_quiz?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>&retake=1" class="result-actions-primary">
                 <i class="bi bi-arrow-repeat"></i>
                 Take Again
               </a>
@@ -1772,7 +1772,7 @@ if ($userId) {
             </div>
             <?php endforeach; ?>
           </div>
-          <p class="text-[#64748b] text-xs mt-3 text-center"><a href="student_quiz_history.php?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
+          <p class="text-[#64748b] text-xs mt-3 text-center"><a href="student_quiz_history?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
         </div>
       </div>
       </div><!-- end exam-result-inner -->
@@ -1787,7 +1787,7 @@ if ($userId) {
         <div class="exam-question-card w-full text-center py-12">
           <i class="bi bi-inbox text-5xl text-[#cbd5e1] block mb-4"></i>
           <p class="text-lg font-semibold text-[#64748b]">No questions available for this quiz.</p>
-          <a href="<?php echo $subjectId > 0 ? 'student_subject.php?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects.php'; ?>" class="mt-4 inline-flex items-center gap-2 exam-btn-prev">Back to Subject</a>
+          <a href="<?php echo $subjectId > 0 ? 'student_subject?subject_id='.(int)$subjectId.'#quizzers' : 'student_subjects'; ?>" class="mt-4 inline-flex items-center gap-2 exam-btn-prev">Back to Subject</a>
         </div>
       </div>
 
@@ -1821,7 +1821,7 @@ if ($userId) {
             </div>
           <?php endif; ?>
           <div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
-            <form method="POST" action="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>" class="w-full sm:max-w-xs">
+            <form method="POST" action="student_take_quiz?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>" class="w-full sm:max-w-xs">
               <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
               <input type="hidden" name="start_attempt" value="1">
               <button type="submit" class="exam-btn-submit bg-[#4154f1] hover:bg-[#2d3fc7] w-full justify-center py-3 text-lg"><i class="bi bi-play-circle-fill"></i> Start Exam</button>
@@ -1909,7 +1909,7 @@ if ($userId) {
             </div>
             <?php endforeach; ?>
           </div>
-          <p class="text-[#64748b] text-xs mt-4 text-center"><a href="student_quiz_history.php?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
+          <p class="text-[#64748b] text-xs mt-4 text-center"><a href="student_quiz_history?quiz_id=<?php echo (int)$quizId; ?>" class="text-[#4154f1] font-medium hover:underline">View full quiz history</a></p>
         </div>
       </div>
       <?php endif; ?>
@@ -1997,7 +1997,7 @@ if ($userId) {
       <?php endforeach; ?>
 
       <div class="exam-nav-card">
-        <form method="POST" id="submitForm" action="student_take_quiz.php?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>" class="w-full">
+        <form method="POST" id="submitForm" action="student_take_quiz?quiz_id=<?php echo $quizId; ?>&subject_id=<?php echo $subjectId; ?>" class="w-full">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="submit_quiz" value="1">
           <input type="hidden" name="attempt_id" value="<?php echo $attemptId; ?>">
@@ -2238,7 +2238,7 @@ if ($userId) {
         var progressBar = document.getElementById('progressBar');
         var totalQs = <?php echo (int)$totalQuestions; ?>;
         var answeredCountEl = document.getElementById('answeredCountNum');
-        var quizAjaxUrl = 'quiz_ajax.php';
+        var quizAjaxUrl = 'quiz_ajax';
 
         function countAnsweredInDom() {
           var seen = Object.create(null);
@@ -2394,7 +2394,7 @@ if ($userId) {
           var fd = new FormData();
           fd.append('action', 'get_time');
           fd.append('attempt_id', attemptId);
-          fetch('quiz_ajax.php', { method: 'POST', body: fd })
+          fetch('quiz_ajax', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(data) {
               if (data.ok && typeof data.remaining_seconds === 'number' && data.remaining_seconds >= 0) {

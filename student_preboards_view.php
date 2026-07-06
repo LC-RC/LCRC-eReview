@@ -13,7 +13,7 @@ sca_enforce_student_session($conn);
 $id = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
 if ($id <= 0) {
   $_SESSION['error'] = 'Invalid preboards subject.';
-  header('Location: student_preboards.php');
+  header('Location: student_preboards');
   exit;
 }
 
@@ -26,14 +26,14 @@ mysqli_stmt_close($stmt);
 
 if (!$subject) {
   $_SESSION['error'] = 'Preboards subject not found or inactive.';
-  header('Location: student_preboards.php');
+  header('Location: student_preboards');
   exit;
 }
 
 $userId = getCurrentUserId();
 if (!sca_preboard_subject_has_any_access($conn, (int)$userId, $id)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_preboards.php');
+    header('Location: student_preboards');
     exit;
 }
 $csrf = generateCSRFToken();
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
   $token = $_POST['csrf_token'] ?? '';
   if (!verifyCSRFToken($token)) {
     $_SESSION['error'] = 'Invalid request. Please try again.';
-    header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+    header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
     exit;
   }
   $action = $_POST['action'] ?? '';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
     mysqli_stmt_close($chk);
     if (!$ok) {
       $_SESSION['error'] = 'Invalid set.';
-      header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+      header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
       exit;
     }
 
@@ -69,19 +69,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
       mysqli_stmt_close($setStmt);
       if (!$setRowReq) {
         $_SESSION['error'] = 'Invalid set.';
-        header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+        header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
         exit;
       }
       if (!sca_preboard_set_granted($conn, (int)$userId, $setIdPost, (int)$id)) {
         $_SESSION['error'] = 'You do not have access to this set.';
-        header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+        header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
         exit;
       }
 
       if ($type === 'open') {
         if (preboards_set_is_open_for_students($setRowReq)) {
           $_SESSION['error'] = 'This set is already open.';
-          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
           exit;
         }
         $accChk = mysqli_prepare($conn, "SELECT preboards_set_access_id FROM preboards_set_access WHERE user_id=? AND preboards_set_id=? AND used_at IS NULL AND revoked_at IS NULL LIMIT 1");
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
         mysqli_stmt_close($accChk);
         if ($hasUnusedGrant) {
           $_SESSION['message'] = 'You already have approved access for this set.';
-          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
           exit;
         }
         $attChk = mysqli_prepare($conn, "SELECT status FROM preboards_attempts WHERE user_id=? AND preboards_set_id=? ORDER BY attempt_no DESC, preboards_attempt_id DESC LIMIT 1");
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
         mysqli_stmt_close($attChk);
         if ($lastAttReq && ($lastAttReq['status'] ?? '') === 'in_progress') {
           $_SESSION['error'] = 'You already have an attempt in progress for this set.';
-          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
           exit;
         }
       } else {
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
         mysqli_stmt_close($attChk);
         if (!$lastAttReq || ($lastAttReq['status'] ?? '') !== 'submitted') {
           $_SESSION['error'] = 'You can only request a retake after completing this set.';
-          header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+          header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
           exit;
         }
       }
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
         );
         $_SESSION['message'] = 'Request submitted. An admin will be notified.';
       }
-      header('Location: student_preboards_view.php?preboards_subject_id=' . (int)$id);
+      header('Location: student_preboards_view?preboards_subject_id=' . (int)$id);
       exit;
     }
   }
@@ -219,7 +219,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
             <p class="text-sm sm:text-base text-white/90 mt-1 mb-0"><?php echo h($subject['description'] ?: 'Preboards preparation for this subject.'); ?></p>
           </div>
         </div>
-        <a href="student_preboards.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-white/15 hover:bg-white/25 border border-white/20 transition">
+        <a href="student_preboards" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-white/15 hover:bg-white/25 border border-white/20 transition">
           <i class="bi bi-arrow-left-circle" aria-hidden="true"></i>
           <span>Back</span>
         </a>
@@ -315,14 +315,14 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
                 <span>Completed <?php echo number_format((float)($att['score'] ?? 0), 0); ?>% (<?php echo (int)($att['correct_count'] ?? 0); ?>/<?php echo (int)($att['total_count'] ?? 0); ?>)</span>
               </div>
               <div class="flex flex-wrap items-center justify-end gap-2">
-                <a href="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>&attempt_id=<?php echo $attemptId; ?>&review=1"
+                <a href="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>&attempt_id=<?php echo $attemptId; ?>&review=1"
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-[#1665A0] hover:bg-[#0f4d7a] shadow-[0_2px_8px_rgba(22,101,160,0.45)] active:scale-[0.97] transition-all duration-200">
                   <i class="bi bi-journal-text" aria-hidden="true"></i>
                   <span>Review</span>
                 </a>
 
                 <?php if ($retakeReady): ?>
-                  <a href="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>"
+                  <a href="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>"
                      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-[0_2px_8px_rgba(245,158,11,0.35)] active:scale-[0.97] transition-all duration-200">
                     <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                     <span>Retake</span>
@@ -353,7 +353,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
               <?php if ($openPending): ?>
                 <span class="text-gray-400 text-sm">Request pending</span>
               <?php else: ?>
-                <form method="POST" action="student_preboards_view.php?preboards_subject_id=<?php echo (int)$id; ?>" class="m-0">
+                <form method="POST" action="student_preboards_view?preboards_subject_id=<?php echo (int)$id; ?>" class="m-0">
                   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                   <input type="hidden" name="action" value="request_open">
                   <input type="hidden" name="preboards_set_id" value="<?php echo $setId; ?>">
@@ -368,7 +368,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
                 <i class="bi bi-hourglass-split" aria-hidden="true"></i>
                 <span>In progress</span>
               </div>
-              <a href="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>&attempt_id=<?php echo $attemptId; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600 shadow-[0_2px_8px_rgba(245,158,11,0.4)] active:scale-[0.97] transition-all duration-200">
+              <a href="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>&attempt_id=<?php echo $attemptId; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600 shadow-[0_2px_8px_rgba(245,158,11,0.4)] active:scale-[0.97] transition-all duration-200">
                 <i class="bi bi-play-fill" aria-hidden="true"></i>
                 <span>Continue</span>
               </a>
@@ -377,7 +377,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
                 <i class="bi bi-list-check" aria-hidden="true"></i>
                 <span><?php echo $qCount; ?> questions</span>
               </div>
-              <a href="student_take_preboard.php?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-[#1665A0] hover:bg-[#0f4d7a] shadow-[0_2px_8px_rgba(22,101,160,0.45)] active:scale-[0.97] transition-all duration-200">
+              <a href="student_take_preboard?preboards_set_id=<?php echo $setId; ?>&preboards_subject_id=<?php echo (int)$id; ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-[#1665A0] hover:bg-[#0f4d7a] shadow-[0_2px_8px_rgba(22,101,160,0.45)] active:scale-[0.97] transition-all duration-200">
                 <span>Take set</span>
                 <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
               </a>
@@ -421,7 +421,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
         <div class="font-semibold">Set <span id="retakeModalSetLabel"></span></div>
         <div class="text-sm mt-1">Submit a retake request for this set?</div>
       </div>
-      <form method="POST" action="student_preboards_view.php?preboards_subject_id=<?php echo (int)$id; ?>" class="m-0">
+      <form method="POST" action="student_preboards_view?preboards_subject_id=<?php echo (int)$id; ?>" class="m-0">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="request_retake">
         <input type="hidden" name="preboards_set_id" id="retakeModalSetId" value="0">

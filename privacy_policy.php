@@ -12,7 +12,7 @@ if (!function_exists('h')) { function h($s) { return htmlspecialchars((string)$s
     <h1 class="text-2xl font-bold text-slate-900 mb-4">Privacy Policy</h1>
     <p class="text-slate-600 mb-4">LCRC eReview respects your privacy. This policy describes how we collect and use your information.</p>
     <p class="text-slate-600 mb-6">This page will be updated with the full policy. Please contact us for the complete document.</p>
-    <a href="registration.php" class="text-[#1F58C3] font-semibold hover:underline">← Back to Registration</a>
+    <a href="registration" class="text-[#1F58C3] font-semibold hover:underline">← Back to Registration</a>
   </div>
 </body>
 </html>

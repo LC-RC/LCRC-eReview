@@ -34,16 +34,16 @@ $__current = $__theme === 'light'
     : 'text-gray-100 font-semibold';
 $__sep = '<span class="' . ($__theme === 'light' ? 'text-gray-300' : 'text-gray-600') . ' px-1.5 select-none" aria-hidden="true">/</span>';
 
-$lecturesUrl = $__uid > 0 ? 'admin_preweek_topics.php?preweek_unit_id=' . $__uid : 'admin_preweek.php';
+$lecturesUrl = $__uid > 0 ? 'admin_preweek_topics?preweek_unit_id=' . $__uid : 'admin_preweek';
 ?>
 <nav class="<?php echo h($__wrap); ?>" aria-label="Pre-week location">
   <div class="flex flex-wrap items-center gap-y-1 text-sm leading-snug">
-    <a href="admin_dashboard.php" class="<?php echo h($__link); ?>">Dashboard</a>
+    <a href="admin_dashboard" class="<?php echo h($__link); ?>">Dashboard</a>
     <?php echo $__sep; ?>
     <?php if ($__pws === 'list'): ?>
       <span class="<?php echo h($__current); ?>" aria-current="page">Pre-week</span>
     <?php else: ?>
-      <a href="admin_preweek.php" class="<?php echo h($__link); ?>">Pre-week</a>
+      <a href="admin_preweek" class="<?php echo h($__link); ?>">Pre-week</a>
       <?php echo $__sep; ?>
       <?php if ($__pws === 'lectures'): ?>
         <span class="<?php echo h($__current); ?>" aria-current="page"><?php echo h($__ut); ?> · Lectures</span>

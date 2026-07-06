@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_subjects.php');
+        header('Location: admin_subjects');
         exit;
     }
 
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Subject deleted.';
         }
-        header('Location: admin_subjects.php');
+        header('Location: admin_subjects');
         exit;
     }
 
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($name === '' || !in_array($name, $allowedSubjects, true)) {
         $_SESSION['error'] = 'Please select a valid subject.';
-        header('Location: admin_subjects.php' . ($subjectId > 0 ? ('?edit=' . $subjectId) : ''));
+        header('Location: admin_subjects' . ($subjectId > 0 ? ('?edit=' . $subjectId) : ''));
         exit;
     }
 
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_close($dupStmt);
     if ($dupRow) {
         $_SESSION['error'] = 'This subject already exists.';
-        header('Location: admin_subjects.php' . ($subjectId > 0 ? ('?edit=' . $subjectId) : ''));
+        header('Location: admin_subjects' . ($subjectId > 0 ? ('?edit=' . $subjectId) : ''));
         exit;
     }
 
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    header('Location: admin_subjects.php');
+    header('Location: admin_subjects');
     exit;
 }
 
@@ -254,7 +254,7 @@ mysqli_stmt_execute($stmt);
 $subjects = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Content Hub';
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -384,9 +384,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
                 </td>
                 <td class="px-5 py-3 text-center">
                   <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_lessons.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--lessons" title="Lessons"><i class="bi bi-file-text"></i><span class="sr-only">Lessons</span></a>
-                    <a href="admin_quizzes.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--quizzes" title="Quizzes"><i class="bi bi-question-circle"></i><span class="sr-only">Quizzes</span></a>
-                    <a href="admin_test_bank.php?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--testbank" title="Test Bank"><i class="bi bi-folder2-open"></i><span class="sr-only">Test Bank</span></a>
+                    <a href="admin_lessons?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--lessons" title="Lessons"><i class="bi bi-file-text"></i><span class="sr-only">Lessons</span></a>
+                    <a href="admin_quizzes?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--quizzes" title="Quizzes"><i class="bi bi-question-circle"></i><span class="sr-only">Quizzes</span></a>
+                    <a href="admin_test_bank?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--testbank" title="Test Bank"><i class="bi bi-folder2-open"></i><span class="sr-only">Test Bank</span></a>
                     <div class="admin-row-menu-wrap">
                       <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
@@ -426,7 +426,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
             $mk = function ($p) use ($baseParams) {
               $params = $baseParams;
               $params['page'] = $p;
-              return 'admin_subjects.php?' . http_build_query($params);
+              return 'admin_subjects?' . http_build_query($params);
             };
           ?>
           <?php if ($page > 1): ?>
@@ -453,7 +453,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
         <h2 class="text-xl font-bold text-gray-800 m-0" x-text="isEdit ? 'Edit Subject' : 'New Subject'"><i class="bi bi-bookmark-plus mr-2"></i></h2>
         <button type="button" @click="subjectModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_subjects.php" enctype="multipart/form-data" class="p-5">
+      <form method="POST" action="admin_subjects" enctype="multipart/form-data" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="subject_id" :value="subject_id">
@@ -535,7 +535,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub'] ];
         <h2 class="text-xl font-bold text-gray-800 m-0"><i class="bi bi-trash text-red-500 mr-2"></i> Delete Subject</h2>
         <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_subjects.php">
+      <form method="POST" action="admin_subjects">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="subject_id" :value="delete_id">

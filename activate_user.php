@@ -15,15 +15,15 @@ if (!verifyCSRFToken($token)) {
         exit;
     }
     $_SESSION['error'] = 'Invalid request. Please try again.';
-    header('Location: admin_students.php?tab=pending&q=&page=1');
+    header('Location: admin_students?tab=pending&q=&page=1');
     exit;
 }
 
 $userId = (int)($_POST['user_id'] ?? 0);
 $months = (int)($_POST['months'] ?? 0);
-$returnTo = trim((string)($_POST['return_to'] ?? 'admin_dashboard.php'));
+$returnTo = trim((string)($_POST['return_to'] ?? 'admin_dashboard'));
 if ($returnTo === '' || strpos($returnTo, '://') !== false || strpos($returnTo, '//') === 0 || strpos($returnTo, '/') === 0) {
-    $returnTo = 'admin_students.php?tab=enrolled&q=&page=1';
+    $returnTo = 'admin_students?tab=enrolled&q=&page=1';
 }
 if ($userId <= 0 || $months <= 0) {
     if ($isAjax) {
@@ -32,7 +32,7 @@ if ($userId <= 0 || $months <= 0) {
         echo json_encode(['ok' => false, 'error' => 'Invalid user or months value.']);
         exit;
     }
-    header('Location: admin_students.php?tab=pending&q=&page=1');
+    header('Location: admin_students?tab=pending&q=&page=1');
     exit;
 }
 
@@ -60,7 +60,7 @@ if ($studentRole !== 'student' || $studentEmail === '') {
         exit;
     }
     $_SESSION['error'] = 'Unable to approve student: account/email not found.';
-    header('Location: admin_students.php?tab=pending&q=&page=1');
+    header('Location: admin_students?tab=pending&q=&page=1');
     exit;
 }
 
@@ -97,8 +97,8 @@ if (file_exists($mailConfigFile)) {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $base = rtrim($scheme . '://' . $host . dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
-        $dashboardUrl = $base . '/student_dashboard.php';
-        $loginUrl = $base . '/login.php';
+        $dashboardUrl = $base . '/student_dashboard';
+        $loginUrl = $base . '/login';
 
         $subject = 'Your LCRC eReview account has been approved';
         $body = "Dear " . ($studentName !== '' ? $studentName : 'Student') . ",\r\n\r\n";
@@ -132,7 +132,7 @@ if ($isAjax) {
         'message' => $emailSent
             ? 'Student approved and notification email sent.'
             : 'Student approved successfully. Email was not sent.',
-        'redirect_url' => 'admin_students.php?tab=enrolled&q=&page=1',
+        'redirect_url' => 'admin_students?tab=enrolled&q=&page=1',
     ]);
     exit;
 }
@@ -142,7 +142,7 @@ if ($emailSent) {
 } else {
     $_SESSION['message'] = 'Student approved successfully.';
 }
-header('Location: admin_students.php?tab=enrolled&q=&page=1');
+header('Location: admin_students?tab=enrolled&q=&page=1');
 exit;
 ?>
 

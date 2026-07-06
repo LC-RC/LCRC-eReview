@@ -175,9 +175,9 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
 
   <div class="admin-dashboard-quick-actions mb-5 flex flex-wrap items-center gap-2 text-sm">
     <span class="text-gray-500 mr-1">Quick actions:</span>
-    <a href="admin_students.php" class="quick-action-btn quick-action-btn--students inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Students</a>
-    <a href="admin_subjects.php" class="quick-action-btn quick-action-btn--subject inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Content Hub</a>
-    <a href="admin_students.php?tab=pending" class="quick-action-btn quick-action-btn--pending inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Pending approvals</a>
+    <a href="admin_students" class="quick-action-btn quick-action-btn--students inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Students</a>
+    <a href="admin_subjects" class="quick-action-btn quick-action-btn--subject inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Content Hub</a>
+    <a href="admin_students?tab=pending" class="quick-action-btn quick-action-btn--pending inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium border-2 transition">Pending approvals</a>
   </div>
 
   <?php if ($pendingCount > 0): ?>
@@ -189,7 +189,7 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
           <div class="text-gray-500 text-sm"><?php echo (int)$pendingCount; ?> registration<?php echo $pendingCount === 1 ? '' : 's'; ?> pending approval</div>
         </div>
       </div>
-      <a href="admin_students.php?tab=pending" class="admin-alert-btn ml-auto px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
+      <a href="admin_students?tab=pending" class="admin-alert-btn ml-auto px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
         <i class="bi bi-hourglass-split"></i> Review pending
       </a>
     </div>
@@ -218,21 +218,21 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
     <div class="dashboard-card dashboard-card--enrolled page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-check2-circle"></i> Enrolled</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $enrolledCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$enrolledCount; ?></div>
-      <a href="admin_students.php?tab=enrolled" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_students?tab=enrolled" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> View enrolled
       </a>
     </div>
     <div class="dashboard-card dashboard-card--pending page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-hourglass-split"></i> Pending approvals</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $pendingCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$pendingCount; ?></div>
-      <a href="admin_students.php?tab=pending" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_students?tab=pending" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Review pending
       </a>
     </div>
     <div class="dashboard-card dashboard-card--expired page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-calendar-x"></i> Expired access</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo $expiredCount === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$expiredCount; ?></div>
-      <a href="admin_students.php?tab=expired" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_students?tab=expired" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> View expired
       </a>
     </div>
@@ -247,21 +247,21 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
     <div class="dashboard-card dashboard-card--subjects page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-book"></i> Subjects</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$subjectsRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$subjectsRow['cnt']; ?></div>
-      <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_subjects" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Manage content
       </a>
     </div>
     <div class="dashboard-card dashboard-card--lessons page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-file-text"></i> Lessons</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$lessonsRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$lessonsRow['cnt']; ?></div>
-      <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_subjects" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Open Content Hub
       </a>
     </div>
     <div class="dashboard-card dashboard-card--quizzes page-card bg-white rounded-xl shadow-card border p-5 h-full flex flex-col">
       <div class="dashboard-card__title text-sm flex items-center gap-1"><i class="bi bi-question-circle"></i> Quizzes</div>
       <div class="text-3xl font-bold text-gray-800 mt-1 mb-3" <?php echo (int)$quizzesRow['cnt'] === 0 ? ' data-zero="true"' : ''; ?>><?php echo (int)$quizzesRow['cnt']; ?></div>
-      <a href="admin_subjects.php" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
+      <a href="admin_subjects" class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2">
         <i class="bi bi-arrow-right"></i> Open Content Hub
       </a>
     </div>
@@ -291,14 +291,14 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
           <?php foreach ($recentStudents as $rs): ?>
             <li class="flex items-center justify-between gap-2 py-2 border-b border-gray-100 last:border-0">
               <div class="min-w-0">
-                <a href="admin_student_view.php?id=<?php echo (int)$rs['user_id']; ?>" class="admin-link font-medium text-gray-800 truncate block"><?php echo h($rs['full_name']); ?></a>
+                <a href="admin_student_view?id=<?php echo (int)$rs['user_id']; ?>" class="admin-link font-medium text-gray-800 truncate block"><?php echo h($rs['full_name']); ?></a>
                 <span class="text-gray-500 text-xs"><?php echo date('M j, Y', strtotime($rs['created_at'])); ?></span>
               </div>
               <span class="admin-badge px-2 py-0.5 rounded-full text-xs font-medium"><?php echo h($rs['status']); ?></span>
             </li>
           <?php endforeach; ?>
         </ul>
-        <a href="admin_students.php" class="mt-4 block text-center text-sm font-medium admin-link hover:underline">View all students →</a>
+        <a href="admin_students" class="mt-4 block text-center text-sm font-medium admin-link hover:underline">View all students →</a>
       <?php endif; ?>
     </div>
   </div>
@@ -316,14 +316,14 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
           <?php foreach ($expiringSoon as $es): ?>
             <li class="flex items-center justify-between gap-2 py-2 border-b border-gray-100 last:border-0">
               <div class="min-w-0">
-                <a href="admin_student_view.php?id=<?php echo (int)$es['user_id']; ?>" class="admin-link font-medium text-gray-800 truncate block"><?php echo h($es['full_name']); ?></a>
+                <a href="admin_student_view?id=<?php echo (int)$es['user_id']; ?>" class="admin-link font-medium text-gray-800 truncate block"><?php echo h($es['full_name']); ?></a>
                 <span class="text-gray-500 text-xs">Ends <?php echo date('M j, Y', strtotime($es['access_end'])); ?></span>
               </div>
-              <a href="admin_student_view.php?id=<?php echo (int)$es['user_id']; ?>" class="admin-outline-btn shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition">View</a>
+              <a href="admin_student_view?id=<?php echo (int)$es['user_id']; ?>" class="admin-outline-btn shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition">View</a>
             </li>
           <?php endforeach; ?>
         </ul>
-        <a href="admin_students.php?tab=enrolled" class="mt-4 block text-center text-sm font-medium admin-link hover:underline">View enrolled →</a>
+        <a href="admin_students?tab=enrolled" class="mt-4 block text-center text-sm font-medium admin-link hover:underline">View enrolled →</a>
       <?php endif; ?>
     </div>
     <div class="page-card bg-white rounded-xl shadow-card border border-gray-100 p-5">
@@ -335,7 +335,7 @@ if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
         <span class="text-3xl font-bold text-gray-800"><?php echo (int)$quizAttemptsLast30; ?></span>
         <span class="text-gray-500 text-sm">answers</span>
       </div>
-      <a href="admin_subjects.php" class="mt-4 inline-flex items-center gap-2 text-sm font-medium admin-link hover:underline"><i class="bi bi-book"></i> Manage quizzes in Content Hub</a>
+      <a href="admin_subjects" class="mt-4 inline-flex items-center gap-2 text-sm font-medium admin-link hover:underline"><i class="bi bi-book"></i> Manage quizzes in Content Hub</a>
     </div>
   </div>
 

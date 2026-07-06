@@ -9,24 +9,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id']) && isse
     $ref = mysqli_real_escape_string($conn, trim($_POST['reference'] ?? ''));
     $notes = mysqli_real_escape_string($conn, trim($_POST['notes'] ?? ''));
     if ($qty <= 0) {
-        header('Location: stock.php?msg=' . urlencode('Quantity must be greater than 0.'));
+        header('Location: stock?msg=' . urlencode('Quantity must be greater than 0.'));
         exit;
     }
     $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT quantity FROM products WHERE id = $product_id"));
     if (!$row) {
-        header('Location: stock.php?msg=' . urlencode('Product not found.'));
+        header('Location: stock?msg=' . urlencode('Product not found.'));
         exit;
     }
     $current = (int) $row['quantity'];
     if ($type === 'out' && $qty > $current) {
-        header('Location: stock.php?msg=' . urlencode('Not enough stock. Current: ' . $current));
+        header('Location: stock?msg=' . urlencode('Not enough stock. Current: ' . $current));
         exit;
     }
     $new_qty = $type === 'in' ? $current + $qty : ($type === 'out' ? $current - $qty : $qty);
     if ($type === 'adjust') {
         $qty = $new_qty - $current;
         if ($qty == 0) {
-            header('Location: stock.php?msg=' . urlencode('No change.'));
+            header('Location: stock?msg=' . urlencode('No change.'));
             exit;
         }
         $type = $qty > 0 ? 'in' : 'out';
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id']) && isse
     }
     mysqli_query($conn, "UPDATE products SET quantity = $new_qty WHERE id = $product_id");
     mysqli_query($conn, "INSERT INTO stock_log (product_id, type, quantity, reference, notes) VALUES ($product_id, '$type', $qty, '$ref', '$notes')");
-    header('Location: stock.php?msg=' . urlencode('Stock updated successfully.'));
+    header('Location: stock?msg=' . urlencode('Stock updated successfully.'));
     exit;
 }
 

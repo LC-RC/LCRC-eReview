@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/student_content_access.php';
 requireLogin();
 if (!hasRole('student') && !hasRole('admin')) {
     $_SESSION['error'] = 'Access denied.';
-    header('Location: index.php');
+    header('Location: index');
     exit;
 }
 require_once __DIR__ . '/db.php';
@@ -16,7 +16,7 @@ require_once __DIR__ . '/db.php';
 $id = (int)($_GET['id'] ?? 0);
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 if ($id <= 0) {
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 
@@ -27,7 +27,7 @@ $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$row) {
     $_SESSION['error'] = 'Test bank entry not found.';
-    header('Location: student_subjects.php');
+    header('Location: student_subjects');
     exit;
 }
 
@@ -37,7 +37,7 @@ if (hasRole('student')) {
     $uid = getCurrentUserId();
     if (!sca_has_access($conn, (int)$uid, 'test_bank', $id)) {
         $_SESSION['error'] = SCA_DENIED_MESSAGE;
-        header('Location: student_test_bank.php');
+        header('Location: student_test_bank');
         exit;
     }
 }
@@ -53,11 +53,11 @@ if (!in_array($viewMode, ['split', 'questions', 'solutions'], true)) {
 
 $title = $row['title'] ?: 'Test Bank';
 $description = $row['description'] ?? '';
-$backUrl = $subjectId > 0 ? 'student_subject.php?subject_id=' . $subjectId . '#testbank' : 'student_subjects.php';
+$backUrl = $subjectId > 0 ? 'student_subject?subject_id=' . $subjectId . '#testbank' : 'student_subjects';
 
 $fileUrl = function ($type) use ($id) {
     $t = ($type === 'solution') ? '2' : '1';
-    return 'test_bank_file.php?id=' . (int)$id . '&type=' . $t . '#toolbar=0&navpanes=0';
+    return 'test_bank_file?id=' . (int)$id . '&type=' . $t . '#toolbar=0&navpanes=0';
 };
 
 $overviewLabel = ($hasQuestion && $hasSolution) ? 'Questions + Answers' : ($hasQuestion ? 'Questions only' : 'Answers only');

@@ -3,7 +3,7 @@ require_once __DIR__ . '/auth.php';
 requireLogin();
 $staffRole = getCurrentUserRole();
 if (!isStaffRole($staffRole)) {
-    header('Location: student_dashboard.php');
+    header('Location: student_dashboard');
     exit;
 }
 

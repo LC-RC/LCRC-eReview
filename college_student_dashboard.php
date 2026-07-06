@@ -277,8 +277,8 @@ if ($r8) {
             <p class="text-white/90 mt-2 mb-0 max-w-2xl">Quizzes, exams, and assignment uploads for your courses.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <a href="college_exams.php" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#145a8f] font-semibold">Open exams</a>
-            <a href="college_uploads.php" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 border border-white/35 bg-white/10 text-white font-semibold">Upload tasks</a>
+            <a href="college_exams" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 bg-white text-[#145a8f] font-semibold">Open exams</a>
+            <a href="college_uploads" class="cstu-hero-btn inline-flex items-center gap-2 px-4 py-2.5 border border-white/35 bg-white/10 text-white font-semibold">Upload tasks</a>
           </div>
         </div>
         <div class="cstu-kpi-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
@@ -303,7 +303,7 @@ if ($r8) {
           <p class="text-2xl font-bold text-[#143D59] m-0"><?php echo (int)$activeExams; ?></p>
         </div>
         </div>
-        <a href="college_exams.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Go to exams</a>
+        <a href="college_exams" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Go to exams</a>
       </div>
       <div class="kpi-card dash-anim delay-2 p-5 flex flex-col justify-between">
         <div class="flex items-center gap-4">
@@ -313,7 +313,7 @@ if ($r8) {
           <p class="text-2xl font-bold text-[#143D59] m-0"><?php echo (int)$pendingUploads; ?></p>
         </div>
         </div>
-        <a href="college_uploads.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Go to uploads</a>
+        <a href="college_uploads" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Go to uploads</a>
       </div>
       <div class="kpi-card dash-anim delay-3 p-5 flex flex-col justify-between">
         <div class="flex items-center gap-4">
@@ -323,7 +323,7 @@ if ($r8) {
           <p class="text-2xl font-bold text-[#143D59] m-0"><?php echo (int)$completedExams; ?></p>
         </div>
         </div>
-        <a href="college_exams.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View history</a>
+        <a href="college_exams" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View history</a>
       </div>
       <div class="kpi-card dash-anim delay-3 p-5 flex flex-col justify-between">
         <div class="flex items-center gap-4">
@@ -333,7 +333,7 @@ if ($r8) {
             <p class="text-2xl font-bold text-[#143D59] m-0"><?php echo (int)($dueSoonExams + $dueSoonUploads); ?></p>
           </div>
         </div>
-        <a href="college_exams.php" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Review deadlines</a>
+        <a href="college_exams" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Review deadlines</a>
       </div>
     </div>
 
@@ -365,12 +365,12 @@ if ($r8) {
       <article class="overview-card dash-anim delay-4 overflow-hidden">
         <div class="px-5 py-4 border-b border-[#d6e8f7] bg-gradient-to-r from-[#f0f7fc] to-white flex items-center justify-between">
           <h2 class="text-lg font-bold text-[#143D59] m-0 flex items-center gap-2"><i class="bi bi-alarm"></i> Exam deadlines</h2>
-          <a href="college_exams.php" class="text-sm font-semibold text-[#1665A0] hover:underline">View all</a>
+          <a href="college_exams" class="text-sm font-semibold text-[#1665A0] hover:underline">View all</a>
         </div>
         <div class="p-5">
           <?php if (empty($upcoming)): ?>
             <p class="text-gray-500 m-0">No upcoming deadlines.</p>
-            <a href="college_exams.php" class="inline-flex items-center gap-1 text-sm font-semibold text-[#1665A0] mt-2 hover:underline">Browse exams <i class="bi bi-arrow-right"></i></a>
+            <a href="college_exams" class="inline-flex items-center gap-1 text-sm font-semibold text-[#1665A0] mt-2 hover:underline">Browse exams <i class="bi bi-arrow-right"></i></a>
           <?php else: ?>
             <ul class="m-0 p-0 list-none space-y-2">
               <?php foreach ($upcoming as $u): ?>
@@ -387,12 +387,12 @@ if ($r8) {
       <article class="overview-card dash-anim delay-4 overflow-hidden">
         <div class="px-5 py-4 border-b border-[#d6e8f7] bg-gradient-to-r from-[#f0f7fc] to-white flex items-center justify-between">
           <h2 class="text-lg font-bold text-[#143D59] m-0 flex items-center gap-2"><i class="bi bi-upload"></i> Upload due</h2>
-          <a href="college_uploads.php" class="text-sm font-semibold text-[#1665A0] hover:underline">View all</a>
+          <a href="college_uploads" class="text-sm font-semibold text-[#1665A0] hover:underline">View all</a>
         </div>
         <div class="p-5">
           <?php if (empty($uploadDue)): ?>
             <p class="text-gray-500 m-0">No pending uploads.</p>
-            <a href="college_uploads.php" class="inline-flex items-center gap-1 text-sm font-semibold text-[#1665A0] mt-2 hover:underline">Open upload center <i class="bi bi-arrow-right"></i></a>
+            <a href="college_uploads" class="inline-flex items-center gap-1 text-sm font-semibold text-[#1665A0] mt-2 hover:underline">Open upload center <i class="bi bi-arrow-right"></i></a>
           <?php else: ?>
             <ul class="m-0 p-0 list-none space-y-2">
               <?php foreach ($uploadDue as $u): ?>

@@ -1,7 +1,7 @@
 <?php
 /**
  * Logs PHP fatal errors (parse, core, compile) to help debug HTTP 500 on quiz pages.
- * Safe to include at the top of student_take_quiz.php / quiz_ajax.php.
+ * Safe to include at the top of student_take_quiz / quiz_ajax.php.
  *
  * Log file: uploads/quiz_http_errors.log (created if uploads/ is writable).
  */

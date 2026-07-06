@@ -1,10 +1,10 @@
 <?php
 /**
  * Optional OpenAI key for professor exam AI assist.
- * Copy to ai_config.local.php and set OPENAI_API_KEY, or set env var.
+ * Copy to ai_config.local and set OPENAI_API_KEY, or set env var.
  */
 if (!defined('OPENAI_API_KEY')) {
-    $local = __DIR__ . '/ai_config.local.php';
+    $local = __DIR__ . '/ai_config.local';
     if (is_readable($local)) {
         require_once $local;
     }

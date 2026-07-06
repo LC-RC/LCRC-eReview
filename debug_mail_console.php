@@ -1,8 +1,8 @@
 <?php
-// debug_mail_console.php
+// debug_mail_console
 // Opens in browser and logs detailed SMTP/mail debug info to the JavaScript console.
 // Usage:
-//   http(s)://your-domain/debug_mail_console.php?to=test@example.com&url=https://your-domain/verify_email.php?token=TEST
+//   http(s)://your-domain/debug_mail_console?to=test@example.com&url=https://your-domain/verify_email?token=TEST
 
 header('Content-Type: text/html; charset=UTF-8');
 
@@ -26,7 +26,7 @@ if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
 if ($verificationUrl === '') {
   $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
   $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-  $verificationUrl = $scheme . '://' . $host . '/verify_email.php?token=TEST';
+  $verificationUrl = $scheme . '://' . $host . '/verify_email?token=TEST';
 }
 
 require_once __DIR__ . '/smtp_sender.php';
@@ -52,7 +52,7 @@ $result = [
 
 if (!file_exists($configFile)) {
   $result['ok'] = false;
-  $result['error'] = 'Missing config/mail_config.php';
+  $result['error'] = 'Missing config/mail_config';
 } else {
   $config = require $configFile;
   $result['configLoaded'] = true;

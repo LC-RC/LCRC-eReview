@@ -7,7 +7,7 @@ $csrf = generateCSRFToken();
 $setId = sanitizeInt($_GET['preboards_set_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
 if ($setId <= 0 || $subjectId <= 0) {
-    header('Location: admin_preboards_subjects.php');
+    header('Location: admin_preboards_subjects');
     exit;
 }
 
@@ -17,7 +17,7 @@ mysqli_stmt_execute($stmt);
 $setRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$setRow) {
-    header('Location: admin_preboards_subjects.php');
+    header('Location: admin_preboards_subjects');
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+        header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Question deleted.';
         }
-        header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+        header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
         exit;
     }
 
@@ -63,13 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $correct = trim($q['correct_answer'] ?? '');
             if (!in_array($correct, $validCorrectLetters, true)) {
                 $_SESSION['error'] = 'Please select the correct answer for every question.';
-                header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+                header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
                 exit;
             }
             $correctCol = 'choice_' . strtolower($correct);
             if (!isset($choices[$correctCol]) || $choices[$correctCol] === '') {
                 $_SESSION['error'] = 'Correct answer must be one of the filled choices.';
-                header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+                header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
                 exit;
             }
             $batch[] = [
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['error'] = 'Could not save questions.';
             }
         }
-        header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+        header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
         exit;
     }
 
@@ -128,13 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $filled = array_filter($choiceVals);
     if (count($filled) < 2) {
         $_SESSION['error'] = 'At least 2 choices required.';
-        header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId.'&edit='.$qid);
+        header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId.'&edit='.$qid);
         exit;
     }
     $correctAnswer = trim($_POST['correct_answer'] ?? '');
     if (!in_array($correctAnswer, $validCorrectLetters, true)) {
         $_SESSION['error'] = 'Please select the correct answer.';
-        header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId.'&edit='.$qid);
+        header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId.'&edit='.$qid);
         exit;
     }
     $explanation = trim($_POST['explanation'] ?? '');
@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Question added.';
     }
-    header('Location: admin_preboards_questions.php?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
+    header('Location: admin_preboards_questions?preboards_set_id='.$setId.'&preboards_subject_id='.$subjectId);
     exit;
 }
 
@@ -203,10 +203,10 @@ $questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Preboards Questions - Set ' . $setRow['set_label'];
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Preboards', 'admin_preboards_subjects.php'],
-    [($setRow['subject_name'] ?? 'Subject'), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
-    ['Set ' . ($setRow['set_label'] ?? ''), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Dashboard', 'admin_dashboard'],
+    ['Preboards', 'admin_preboards_subjects'],
+    [($setRow['subject_name'] ?? 'Subject'), 'admin_preboards_sets?preboards_subject_id=' . (int)$subjectId],
+    ['Set ' . ($setRow['set_label'] ?? ''), 'admin_preboards_sets?preboards_subject_id=' . (int)$subjectId],
     ['Questions'],
 ];
 ?>
@@ -230,7 +230,7 @@ $adminBreadcrumbs = [
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div>
-      <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to sets</a>
+      <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to sets</a>
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="button" @click="batchOpen = !batchOpen; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
@@ -250,7 +250,7 @@ $adminBreadcrumbs = [
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_preboards_questions.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preboards_questions" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="preboards_set_id" value="<?php echo (int)$setId; ?>">
     <input type="hidden" name="preboards_subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[220px]">
@@ -260,7 +260,7 @@ $adminBreadcrumbs = [
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_preboards_questions?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -272,7 +272,7 @@ $adminBreadcrumbs = [
         <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
         <button type="button" @click="batchOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
+      <form method="POST" action="admin_preboards_questions?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="add_batch">
         <p x-show="batchError" x-text="batchError" class="admin-quiz-alert admin-quiz-alert-error mb-5"></p>
@@ -393,7 +393,7 @@ $adminBreadcrumbs = [
         <h2 class="m-0 text-lg font-bold text-gray-100">Edit Question</h2>
         <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
+      <form method="POST" action="admin_preboards_questions?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="preboards_question_id" :value="question_id">
@@ -443,7 +443,7 @@ $adminBreadcrumbs = [
         <h2 class="m-0 text-lg font-bold text-gray-100 flex items-center gap-2"><i class="bi bi-trash text-red-400"></i> Delete Question</h2>
         <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
+      <form method="POST" action="admin_preboards_questions?preboards_set_id=<?php echo (int)$setId; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="preboards_question_id" :value="delete_question_id">

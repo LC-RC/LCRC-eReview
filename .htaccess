@@ -1,0 +1,27 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 301 redirect: external *.php requests -> extensionless URLs (preserve query string)
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{THE_REQUEST} \s/+([^\s?]*/)index\.php(\S*)\s [NC]
+    RewriteRule ^ /%1%2 [R=301,L,NE]
+
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{THE_REQUEST} \s/+index\.php(\S*)\s [NC]
+    RewriteRule ^ /%1 [R=301,L,NE]
+
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteCond %{THE_REQUEST} \s/+([^?\s]*?)\.php(\S*)\s [NC]
+    RewriteRule ^ /%1%2 [R=301,L,NE]
+
+    # Serve real files and directories (assets, uploads, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Extensionless URL -> matching .php script when it exists
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.+?)/?$ $1.php [L]
+</IfModule>
+
+DirectoryIndex index.php

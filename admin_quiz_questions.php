@@ -4,7 +4,7 @@ requireRole('admin');
 
 $csrf = generateCSRFToken();
 $quizId = sanitizeInt($_GET['quiz_id'] ?? 0);
-if ($quizId <= 0) { header('Location: admin_subjects.php'); exit; }
+if ($quizId <= 0) { header('Location: admin_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT q.*, s.subject_name FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE q.quiz_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
@@ -12,7 +12,7 @@ mysqli_stmt_execute($stmt);
 $quizRes = mysqli_stmt_get_result($stmt);
 $quiz = mysqli_fetch_assoc($quizRes);
 mysqli_stmt_close($stmt);
-if (!$quiz) { header('Location: admin_subjects.php'); exit; }
+if (!$quiz) { header('Location: admin_subjects'); exit; }
 $subjectId = (int)$quiz['subject_id'];
 
 $questionColumns = [];
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Question deleted.';
         }
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     if ($action === 'add_batch') {
@@ -66,13 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $correct = trim($q['correct_answer'] ?? '');
             if (!in_array($correct, $validCorrectLetters, true)) {
                 $_SESSION['error'] = 'Please select the correct answer for every question (Question ' . ($batchIndex + 1) . ').';
-                header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+                header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
                 exit;
             }
             $correctCol = 'choice_' . strtolower($correct);
             if (!isset($choices[$correctCol]) || $choices[$correctCol] === '') {
                 $_SESSION['error'] = 'Correct answer must be one of the filled choices (Question ' . ($batchIndex + 1) . ').';
-                header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+                header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
                 exit;
             }
             if ($correct !== 'A' && $correct !== 'B' && $correct !== 'C' && $correct !== 'D') $needsExtendedChoices = true;
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
@@ -212,27 +212,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Require at least 2 active choices overall
     if (count($activeCols) < 2) {
         $_SESSION['error'] = 'Please provide at least 2 choices.';
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     // All active choices (those shown in the UI) must be non-empty
     foreach ($activeCols as $ac) {
         if ($choiceVals[$ac] === '') {
             $_SESSION['error'] = 'All visible choices must be filled in. Please remove any unused choice rows or enter text for them.';
-            header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+            header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
             exit;
         }
     }
     $correctAnswer = trim($_POST['correct_answer'] ?? '');
     if ($correctAnswer === '' || !in_array($correctAnswer, $validCorrectLetters, true)) {
         $_SESSION['error'] = 'Please select the correct answer.';
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     $correctCol = 'choice_' . strtolower($correctAnswer);
     if (!isset($choiceVals[$correctCol]) || $choiceVals[$correctCol] === '') {
         $_SESSION['error'] = 'Correct answer must be one of the filled choices.';
-        header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+        header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
         exit;
     }
     if ($questionId > 0) {
@@ -265,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = 'Question added.';
         $_SESSION['clear_batch_draft'] = 1;
     }
-    header('Location: admin_quiz_questions.php?quiz_id='.$quizId.'&subject_id='.$subjectId);
+    header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
     exit;
 }
 
@@ -298,7 +298,7 @@ mysqli_stmt_execute($stmt);
 $questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Quiz Questions - ' . $quiz['title'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($quiz['subject_name']), 'admin_quizzes.php?subject_id=' . $subjectId ], [ h($quiz['title']), 'admin_quizzes.php?subject_id=' . $subjectId ], ['Questions'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($quiz['subject_name']), 'admin_quizzes?subject_id=' . $subjectId ], [ h($quiz['title']), 'admin_quizzes?subject_id=' . $subjectId ], ['Questions'] ];
 $clearBatchDraftAfterSave = !empty($_SESSION['clear_batch_draft']);
 unset($_SESSION['clear_batch_draft']);
 ?>
@@ -323,7 +323,7 @@ unset($_SESSION['clear_batch_draft']);
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div></div>
     <div class="flex flex-wrap gap-2">
-      <a href="admin_quizzes.php?subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to Quizzes</a>
+      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to Quizzes</a>
       <button type="button" @click="batchOpen = !batchOpen; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
     </div>
   </div>
@@ -341,7 +341,7 @@ unset($_SESSION['clear_batch_draft']);
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_quiz_questions.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_quiz_questions" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="quiz_id" value="<?php echo (int)$quizId; ?>">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[220px]">
@@ -351,7 +351,7 @@ unset($_SESSION['clear_batch_draft']);
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -363,7 +363,7 @@ unset($_SESSION['clear_batch_draft']);
         <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
         <button type="button" @click="batchOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
+      <form method="POST" action="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="add_batch">
         <p x-show="batchError" x-text="batchError" class="admin-quiz-alert admin-quiz-alert-error mb-5"></p>
@@ -492,7 +492,7 @@ unset($_SESSION['clear_batch_draft']);
         <h2 class="m-0 text-lg font-bold text-gray-100">Edit Question</h2>
         <button type="button" @click="questionModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
+      <form method="POST" action="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6 quiz-modal-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="question_id" :value="question_id">
@@ -539,7 +539,7 @@ unset($_SESSION['clear_batch_draft']);
         <h2 class="m-0 text-lg font-bold text-gray-100 flex items-center gap-2"><i class="bi bi-trash text-red-400"></i> Delete Question</h2>
         <button type="button" @click="deleteModalOpen = false" class="admin-quiz-close-btn quiz-modal-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_quiz_questions.php?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
+      <form method="POST" action="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="question_id" :value="delete_question_id">

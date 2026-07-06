@@ -42,7 +42,7 @@ function sendJson($data) {
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid request.']);
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -70,7 +70,7 @@ if ($school !== 'Other') {
         sendJson(['success' => false, 'error' => 'School name is too long. Please shorten it.']);
     }
     $_SESSION['error'] = 'School name is too long. Please shorten it.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -79,14 +79,14 @@ if (!ereview_registration_school_is_submitted_value_allowed($conn, $school, $sch
         sendJson(['success' => false, 'error' => 'Please choose a valid school from the list. If you pick “Other”, enter your school name.']);
     }
     $_SESSION['error'] = 'Please choose a valid school from the list. If you pick “Other”, enter your school name.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
 if ($full_name === '' || $email === '' || $password === '' || $password_confirm === '' || $school === '') {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Please complete all required fields.']);
     $_SESSION['error'] = 'Please complete all required fields.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -94,7 +94,7 @@ if ($full_name === '' || $email === '' || $password === '' || $password_confirm 
 if (!preg_match('/^[A-Za-z\.\s]+$/', $full_name) || preg_match('/\.\./', $full_name) || $full_name !== trim($full_name)) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Full name can only contain letters, single spaces, and single dots. No leading or double spaces.']);
     $_SESSION['error'] = 'Full name can only contain letters, single spaces, and single dots. No leading or double spaces.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -104,13 +104,13 @@ $local_part = $at_pos !== false ? substr($email, 0, $at_pos) : '';
 if (trim($local_part) === '' || preg_match('/^\s+$/', $local_part)) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Please enter a valid email address.']);
     $_SESSION['error'] = 'Please enter a valid email address.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Please enter a valid email address.']);
     $_SESSION['error'] = 'Please enter a valid email address.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -118,13 +118,13 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 if (preg_match('/^\s+$/', $password_raw) || $password === '') {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Password cannot be empty or only spaces.']);
     $_SESSION['error'] = 'Password cannot be empty or only spaces.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 if ($password !== $password_confirm) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Passwords do not match.']);
     $_SESSION['error'] = 'Passwords do not match.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -136,7 +136,7 @@ $hasSymbol = preg_match('/[^A-Za-z0-9]/', $password);
 if ($pwLen < 8 || !$hasNumber || !$hasUpper || !$hasLower || !$hasSymbol) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Password must be at least 8 characters and include a number, uppercase, lowercase, and symbol.']);
     $_SESSION['error'] = 'Password must be at least 8 characters and include a number, uppercase letter, lowercase letter, and symbol.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -168,7 +168,7 @@ if ($hasEmailVerifiedCol) {
         } else {
             if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered. Please use another email or sign in instead.']);
             $_SESSION['error'] = 'This email is already registered. Please use another email or sign in instead.';
-            header('Location: registration.php');
+            header('Location: registration');
             exit;
         }
     }
@@ -182,7 +182,7 @@ if ($hasEmailVerifiedCol) {
         mysqli_stmt_close($checkStmt);
         if ($isAjax) sendJson(['success' => false, 'error' => 'This email is already registered. Please use another email or sign in instead.']);
         $_SESSION['error'] = 'This email is already registered. Please use another email or sign in instead.';
-        header('Location: registration.php');
+        header('Location: registration');
         exit;
     }
     mysqli_stmt_close($checkStmt);
@@ -199,7 +199,7 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
     if (!in_array($mime, $allowed_mimes) || !in_array($ext, $allowed_ext)) {
         if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid file type. Please upload an image (JPG, PNG) or PDF for payment verification.']);
         $_SESSION['error'] = 'Invalid file type. Please upload an image (JPG, PNG) or PDF for payment verification.';
-        header('Location: registration.php');
+        header('Location: registration');
         exit;
     }
     $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
@@ -212,14 +212,14 @@ if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPL
     if (!move_uploaded_file($_FILES['payment_proof']['tmp_name'], $target)) {
         if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload payment proof.']);
         $_SESSION['error'] = 'Failed to upload payment proof.';
-        header('Location: registration.php');
+        header('Location: registration');
         exit;
     }
     $uploadedPath = 'uploads/' . $filename;
 } else {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Payment proof is required.']);
     $_SESSION['error'] = 'Payment proof is required.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -229,13 +229,13 @@ $allowed_avatar_ext = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 if (!isset($_FILES['profile_picture']) || $_FILES['profile_picture']['error'] === UPLOAD_ERR_NO_FILE) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Profile picture is required. Please upload JPG, PNG, WEBP, or GIF.']);
     $_SESSION['error'] = 'Profile picture is required. Please upload JPG, PNG, WEBP, or GIF.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 if ($_FILES['profile_picture']['error'] !== UPLOAD_ERR_OK) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
     $_SESSION['error'] = 'Failed to upload profile picture.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -245,7 +245,7 @@ $ext = strtolower(pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSIO
 if (!in_array($mime, $allowed_avatar_mimes, true) || !in_array($ext, $allowed_avatar_ext, true)) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.']);
     $_SESSION['error'] = 'Invalid profile picture type. Upload JPG, PNG, WEBP, or GIF only.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'avatars';
@@ -258,7 +258,7 @@ $target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
 if (!move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target)) {
     if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload profile picture.']);
     $_SESSION['error'] = 'Failed to upload profile picture.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 $profilePicturePath = 'uploads/avatars/' . $filename;
@@ -292,7 +292,7 @@ if ($verificationUrl === null) {
     }
     if ($isAjax) sendJson(['success' => false, 'error' => $msg]);
     $_SESSION['error'] = 'Registration could not be created. Please try again.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -308,7 +308,7 @@ if (!$emailSent) {
         ]);
     }
     $_SESSION['error'] = 'Registration was saved, but we could not send the verification email right now. Please try again in a moment.';
-    header('Location: registration.php');
+    header('Location: registration');
     exit;
 }
 
@@ -323,5 +323,5 @@ if ($isAjax) {
 
 $_SESSION['success'] = 'Verification email sent. Please check your email.';
 $_SESSION['pending_email'] = $email;
-header('Location: registration.php');
+header('Location: registration');
 exit;

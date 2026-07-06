@@ -10,7 +10,7 @@ $taskId = sanitizeInt($_GET['task_id'] ?? 0);
 
 if ($taskId <= 0) {
     $_SESSION['error'] = 'Invalid task.';
-    header('Location: professor_upload_tasks.php');
+    header('Location: professor_upload_tasks');
     exit;
 }
 
@@ -22,7 +22,7 @@ mysqli_stmt_close($stmt);
 
 if (!$task) {
     $_SESSION['error'] = 'Task not found.';
-    header('Location: professor_upload_tasks.php');
+    header('Location: professor_upload_tasks');
     exit;
 }
 
@@ -124,7 +124,7 @@ foreach ($subs as $sx) {
 }
 $shownCount = count($subsFiltered);
 $putMonQs = static function (array $over = []) use ($taskId, $searchQ, $sortOpt, $typeFilter): string {
-    return 'professor_upload_task_monitor.php?' . http_build_query(array_merge([
+    return 'professor_upload_task_monitor?' . http_build_query(array_merge([
         'task_id' => $taskId,
         'q' => $searchQ,
         'sort' => $sortOpt,
@@ -485,7 +485,7 @@ function put_monitor_fmt_dt(?string $raw): string
           <div class="flex items-start gap-4 min-w-0">
             <div class="put-hero-icon shrink-0"><i class="bi bi-people-fill"></i></div>
             <div class="min-w-0">
-              <a href="professor_upload_tasks.php" class="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white font-bold mb-2">
+              <a href="professor_upload_tasks" class="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white font-bold mb-2">
                 <i class="bi bi-arrow-left"></i> Back to upload tasks
               </a>
               <h1 class="text-xl sm:text-2xl font-black text-white m-0 tracking-tight leading-tight"><?php echo h($task['title']); ?></h1>
@@ -525,13 +525,13 @@ function put_monitor_fmt_dt(?string $raw): string
     <div class="put-card overflow-hidden dash-anim delay-2">
       <div class="px-5 py-4 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/90 to-white flex flex-wrap items-center justify-between gap-3">
         <h2 class="put-section-title m-0"><i class="bi bi-inboxes"></i> Student files</h2>
-        <a href="professor_upload_tasks.php?edit=<?php echo (int)$task['task_id']; ?>" class="put-link text-sm"><i class="bi bi-pencil-square"></i> Edit task</a>
+        <a href="professor_upload_tasks?edit=<?php echo (int)$task['task_id']; ?>" class="put-link text-sm"><i class="bi bi-pencil-square"></i> Edit task</a>
       </div>
       <?php if (!empty($subs)): ?>
       <div class="put-toolbar-table-card put-toolbar-sticky px-4 py-4 sm:px-5">
         <div class="put-toolbar-wrap">
           <div class="put-toolbar-top">
-            <form method="get" class="put-search-sort-form" action="professor_upload_task_monitor.php">
+            <form method="get" class="put-search-sort-form" action="professor_upload_task_monitor">
               <input type="hidden" name="task_id" value="<?php echo (int)$taskId; ?>">
               <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
               <input type="search" name="q" value="<?php echo h($searchQ); ?>" class="put-search-input" placeholder="Search student, email, or filename…" autocomplete="off">
@@ -593,7 +593,7 @@ function put_monitor_fmt_dt(?string $raw): string
             <tbody>
               <?php foreach ($subsFiltered as $s):
                 $sid = (int)$s['submission_id'];
-                $viewUrl = 'college_upload_file.php?s=' . $sid;
+                $viewUrl = 'college_upload_file?s=' . $sid;
                 $dlUrl = $viewUrl . '&download=1';
                 $kind = college_upload_view_kind_from_filename((string)$s['file_name']);
                 $sz = (int)($s['file_size'] ?? 0);

@@ -12,7 +12,7 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
         mysqli_query($conn, "DELETE FROM categories WHERE id = $id");
         $msg = 'Category deleted.';
     }
-    header('Location: categories.php?msg=' . urlencode($msg));
+    header('Location: categories?msg=' . urlencode($msg));
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         mysqli_query($conn, "INSERT INTO categories (name, description) VALUES ('$name','$desc')");
         $msg = 'Category added.';
     }
-    header('Location: categories.php?msg=' . urlencode($msg));
+    header('Location: categories?msg=' . urlencode($msg));
     exit;
 }
 
@@ -58,7 +58,7 @@ if (isset($_GET['edit'])) {
                         <textarea name="description" class="form-control" rows="2" placeholder="Optional"><?php echo $edit ? htmlspecialchars($edit['description']) : ''; ?></textarea>
                     </div>
                     <button type="submit" class="btn btn-teal"><?php echo $edit ? 'Update' : 'Add Category'; ?></button>
-                    <?php if ($edit): ?><a href="categories.php" class="btn btn-outline-secondary">Cancel</a><?php endif; ?>
+                    <?php if ($edit): ?><a href="categories" class="btn btn-outline-secondary">Cancel</a><?php endif; ?>
                 </form>
             </div>
         </div>
@@ -82,8 +82,8 @@ if (isset($_GET['edit'])) {
                                 <td class="text-muted"><?php echo htmlspecialchars($row['description'] ?: '-'); ?></td>
                                 <td><?php echo (int)$row['product_count']; ?></td>
                                 <td>
-                                    <a href="categories.php?edit=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                    <?php if ($row['product_count'] == 0): ?><a href="categories.php?delete=1&id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this category?');"><i class="bi bi-trash"></i></a><?php endif; ?>
+                                    <a href="categories?edit=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <?php if ($row['product_count'] == 0): ?><a href="categories?delete=1&id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this category?');"><i class="bi bi-trash"></i></a><?php endif; ?>
                                 </td>
                             </tr>
                         <?php endwhile; ?>

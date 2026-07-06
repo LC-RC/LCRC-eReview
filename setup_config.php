@@ -1,13 +1,13 @@
 <?php
 /**
  * One-time setup: create config files from samples if they don't exist.
- * Run after cloning the repo (e.g. php setup_config.php or open in browser once).
+ * Run after cloning the repo (e.g. php setup_config or open in browser once).
  * Safe: does not overwrite existing config files.
  */
 $configDir = __DIR__ . '/config';
 $pairs = [
-    'google_oauth_config.sample.php' => 'google_oauth_config.php',
-    'mail_config.sample.php'         => 'mail_config.php',
+    'google_oauth_config.sample' => 'google_oauth_config',
+    'mail_config.sample'         => 'mail_config',
 ];
 
 $created = [];
@@ -44,9 +44,9 @@ if ($isCli) {
         echo "Errors: " . implode('; ', $errors) . "\n";
     }
     if (empty($created) && empty($errors)) {
-        echo "Config files already exist. Edit config/google_oauth_config.php and config/mail_config.php with your credentials.\n";
+        echo "Config files already exist. Edit config/google_oauth_config and config/mail_config with your credentials.\n";
     } elseif (!empty($created)) {
-        echo "Next: Edit config/google_oauth_config.php (Google Client ID/Secret) and config/mail_config.php (SMTP) with your credentials.\n";
+        echo "Next: Edit config/google_oauth_config (Google Client ID/Secret) and config/mail_config (SMTP) with your credentials.\n";
     }
 } else {
     header('Content-Type: text/html; charset=UTF-8');
@@ -66,5 +66,5 @@ if ($isCli) {
     } elseif (empty($errors)) {
         echo '<p>Config files already exist. Add your credentials to enable Google Sign-In and email (forgot password, registration verification).</p>';
     }
-    echo '<p><a href="login.php">Go to login</a></p></body></html>';
+    echo '<p><a href="login">Go to login</a></p></body></html>';
 }

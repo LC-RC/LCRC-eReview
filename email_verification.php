@@ -165,7 +165,7 @@ function createPendingRegistration($data) {
 
     $validatorHex = bin2hex($validator);
     $tokenParam = $selector . '.' . $validatorHex;
-    return getVerificationBaseUrl() . '/verify_email.php?token=' . urlencode($tokenParam);
+    return getVerificationBaseUrl() . '/verify_email?token=' . urlencode($tokenParam);
 }
 
 /**

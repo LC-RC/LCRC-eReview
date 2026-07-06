@@ -4,11 +4,11 @@ require_once __DIR__ . '/includes/vimeo_helpers.php';
 requireRole('admin');
 
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
-if ($lessonId <= 0) { header('Location: admin_subjects.php'); exit; }
+if ($lessonId <= 0) { header('Location: admin_subjects'); exit; }
 
 $lessonRes = mysqli_query($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=".$lessonId." LIMIT 1");
 $lesson = $lessonRes ? mysqli_fetch_assoc($lessonRes) : null;
-if (!$lesson) { header('Location: admin_subjects.php'); exit; }
+if (!$lesson) { header('Location: admin_subjects'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
 // Ensure modern thumbnail metadata columns exist on lesson_videos.
@@ -40,7 +40,7 @@ if (!function_exists('admin_materials_list_url')) {
         if ($t !== '' && in_array($t, ['videos', 'handouts'], true)) {
             $qs['type'] = $t;
         }
-        return 'admin_materials.php?' . http_build_query($qs);
+        return 'admin_materials?' . http_build_query($qs);
     }
 }
 
@@ -422,7 +422,7 @@ if ($searchQ === '') {
     );
 }
 $pageTitle = 'Materials - ' . $lesson['title'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'admin_subjects.php'], [ h($lesson['subject_name']), 'admin_lessons.php?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons.php?subject_id=' . $subjectId ], ['Materials'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Materials'] ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -521,7 +521,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">Videos and handouts for this lesson — add, edit, or manage download access.</p>
   </div>
 
-  <form method="get" action="admin_materials.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="lesson_id" value="<?php echo (int)$lessonId; ?>">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[200px]">
@@ -539,7 +539,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-funnel"></i> Apply</button>
       <?php if ($searchQ !== '' || $matType !== ''): ?>
-        <a href="admin_materials.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_materials?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -551,7 +551,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Content Hub', 'adm
         <span class="font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-play-circle text-sky-400"></i> Videos</span>
         <div class="flex flex-wrap items-center gap-2">
           <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_all_thumbs=1" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-sky-400/45 text-sky-200 hover:bg-sky-500/20 hover:text-white transition"><i class="bi bi-arrow-repeat mr-1"></i> Refresh Thumbnails</a>
-          <a href="admin_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
+          <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
         </div>
       </div>
       <div class="p-5 materials-panel-inner">

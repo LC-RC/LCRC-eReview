@@ -8,7 +8,7 @@ declare(strict_types=1);
  * which exhausts the pool and makes normal page navigations queue for minutes.
  *
  * The messaging UI uses short polling only while the messages panel is open (see
- * messaging_component.php). Do not re-enable blocking loops here without a dedicated
+ * messaging_component). Do not re-enable blocking loops here without a dedicated
  * async worker or reverse-proxy SSE offload.
  */
 require_once __DIR__ . '/../../auth.php';

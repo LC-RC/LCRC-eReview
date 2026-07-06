@@ -4,7 +4,7 @@ requireRole('student');
 
 $lessonId = sanitizeInt($_GET['lesson_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($lessonId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($lessonId <= 0) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $lessonId);
@@ -12,7 +12,7 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $lesson = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
-if (!$lesson) { header('Location: student_subjects.php'); exit; }
+if (!$lesson) { header('Location: student_subjects'); exit; }
 $subjectId = (int)$lesson['subject_id'];
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM lesson_videos WHERE lesson_id=? ORDER BY video_id ASC");
@@ -52,7 +52,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
         <button type="button" @click="viewMode = 'separate'" :class="viewMode === 'separate' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600'" class="px-3 py-1.5 rounded-md text-sm font-medium transition"><i class="bi bi-layout-split"></i> Separate</button>
         <button type="button" @click="viewMode = 'split'" :class="viewMode === 'split' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600'" class="px-3 py-1.5 rounded-md text-sm font-medium transition"><i class="bi bi-columns"></i> Split View</button>
       </div>
-      <a href="student_lessons.php?subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
+      <a href="student_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
     </div>
   </div>
 
@@ -85,7 +85,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
     <div class="flex-1 min-w-0 bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden flex flex-col" style="border-left: 2px solid #e5e7eb;">
       <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center flex-wrap gap-2">
         <span class="font-semibold text-gray-800"><i class="bi bi-file-earmark-pdf mr-2"></i> Handout</span>
-        <select x-model="splitHandoutId" @change="if ($event.target.value) { handoutModalSrc = 'handout_viewer.php?handout_id=' + $event.target.value; handoutModalOpen = true; handoutModalTitle = $event.target.options[$event.target.selectedIndex].text; }" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm w-auto min-w-[200px]">
+        <select x-model="splitHandoutId" @change="if ($event.target.value) { handoutModalSrc = 'handout_viewer?handout_id=' + $event.target.value; handoutModalOpen = true; handoutModalTitle = $event.target.options[$event.target.selectedIndex].text; }" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm w-auto min-w-[200px]">
           <option value="">Select Handout...</option>
           <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): if (!empty($h['file_path'])): ?>
             <option value="<?php echo (int)$h['handout_id']; ?>"><?php echo h($h['handout_title'] ?: 'Untitled Handout'); ?></option>
@@ -94,7 +94,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
       </div>
       <div class="flex-1 min-h-0 relative bg-gray-100">
         <template x-if="splitHandoutId">
-          <iframe :src="'handout_viewer.php?handout_id=' + splitHandoutId" class="absolute inset-0 w-full h-full border-0 rounded-b-xl bg-white"></iframe>
+          <iframe :src="'handout_viewer?handout_id=' + splitHandoutId" class="absolute inset-0 w-full h-full border-0 rounded-b-xl bg-white"></iframe>
         </template>
         <div x-show="!splitHandoutId" class="absolute inset-0 flex items-center justify-center flex-col text-gray-500">
           <i class="bi bi-file-earmark-pdf text-4xl block mb-2"></i>
@@ -146,7 +146,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
                 </div>
                 <div class="flex flex-wrap gap-2 mt-3">
                   <?php if (!empty($h['file_path'])): ?>
-                    <button type="button" data-handout-id="<?php echo (int)$h['handout_id']; ?>" data-handout-title="<?php echo h($h['handout_title'] ?: 'Handout'); ?>" @click="handoutModalTitle = $el.dataset.handoutTitle || 'Handout'; handoutModalSrc = 'handout_viewer.php?handout_id=' + $el.dataset.handoutId; handoutModalOpen = true" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition"><i class="bi bi-eye"></i> View</button>
+                    <button type="button" data-handout-id="<?php echo (int)$h['handout_id']; ?>" data-handout-title="<?php echo h($h['handout_title'] ?: 'Handout'); ?>" @click="handoutModalTitle = $el.dataset.handoutTitle || 'Handout'; handoutModalSrc = 'handout_viewer?handout_id=' + $el.dataset.handoutId; handoutModalOpen = true" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition"><i class="bi bi-eye"></i> View</button>
                   <?php endif; ?>
                   <?php if (!empty($h['allow_download']) && !empty($h['file_path'])): ?>
                     <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-download"></i> Download</a>
@@ -167,7 +167,7 @@ $firstVideo = $videos ? mysqli_fetch_assoc($videos) : null;
           <div class="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800"><i class="bi bi-list mr-2"></i> Playlist</div>
           <div class="divide-y divide-gray-100">
             <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
-              <a href="student_videos.php?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-5 py-3 hover:bg-gray-50 text-gray-700 transition">
+              <a href="student_videos?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-5 py-3 hover:bg-gray-50 text-gray-700 transition">
                 <i class="bi bi-play-circle"></i> <?php echo h($v['video_title'] ?: 'Untitled Video'); ?>
               </a>
             <?php endwhile; ?>

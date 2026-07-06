@@ -1,7 +1,7 @@
 <?php
 /**
  * Login rate limiting – tracks failed attempts by IP and enforces lockout.
- * Requires $conn (mysqli) and db.php to be loaded.
+ * Requires $conn (mysqli) and db to be loaded.
  */
 
 if (!isset($conn) || !($conn instanceof mysqli)) {

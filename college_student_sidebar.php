@@ -2,7 +2,8 @@
 /**
  * College student app shell — same visual system as student_sidebar.
  */
-$currentPage = basename($_SERVER['PHP_SELF']);
+require_once __DIR__ . '/includes/url_helpers.php';
+$currentPage = ereview_page_basename();
 require_once __DIR__ . '/includes/format_display_name.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
 $fullName = trim($_SESSION['full_name'] ?? 'User');
@@ -54,7 +55,7 @@ $appShellCurrentScript = $currentPage;
 $appShellSidebarHeader = 'brand';
 $appShellProfileInitial = $avatarInitial;
 $appShellProfileName = $studentShortName;
-$appShellProfileHref = 'college_student_dashboard.php';
+$appShellProfileHref = 'college_student_dashboard';
 $appShellProfileImage = ($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath : '';
 $appShellTopbarAvatarImage = $appShellProfileImage;
 $appShellTopbarAvatarInitial = $avatarInitial;
@@ -63,9 +64,9 @@ $appShellNavConfig = [
     [
         'label' => 'College portal',
         'items' => [
-            ['label' => 'Dashboard', 'href' => 'college_student_dashboard.php', 'icon' => 'bi-speedometer2', 'active' => ['college_student_dashboard.php']],
-            ['label' => 'Exams', 'href' => 'college_exams.php', 'icon' => 'bi-journal-text', 'active' => ['college_exams.php', 'college_take_exam.php']],
-            ['label' => 'Uploads', 'href' => 'college_uploads.php', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads.php', 'college_upload_task.php']],
+            ['label' => 'Dashboard', 'href' => 'college_student_dashboard', 'icon' => 'bi-speedometer2', 'active' => ['college_student_dashboard']],
+            ['label' => 'Exams', 'href' => 'college_exams', 'icon' => 'bi-journal-text', 'active' => ['college_exams', 'college_take_exam']],
+            ['label' => 'Uploads', 'href' => 'college_uploads', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads', 'college_upload_task']],
         ],
     ],
 ];

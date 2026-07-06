@@ -23,7 +23,7 @@ $ereviewLogoutModalThemeClass = $ereviewLogoutModalVariant === 'student'
       <p id="ereviewLogoutDesc" class="ereview-logout-desc">Are you sure you want to log out of your account? You will need to sign in again to continue.</p>
       <div class="ereview-logout-actions">
         <button type="button" class="ereview-logout-btn ereview-logout-btn--cancel" data-ereview-logout-dismiss>Cancel</button>
-        <a href="logout.php" class="ereview-logout-btn ereview-logout-btn--confirm">Log out</a>
+        <a href="logout" class="ereview-logout-btn ereview-logout-btn--confirm">Log out</a>
       </div>
     </div>
   </div>

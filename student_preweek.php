@@ -11,7 +11,7 @@ $uid = (int)($_SESSION['user_id'] ?? 0);
 
 $legacySubject = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($legacySubject > 0) {
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
@@ -37,7 +37,7 @@ foreach ($preweekRows as $row) {
     $itemsForAlpine[] = [
         'id' => $pid,
         'title' => trim((string)($row['title'] ?? '')) ?: 'Pre-week',
-        'href' => $unitOpen ? 'student_preweek_topics.php?preweek_unit_id=' . $pid : '#',
+        'href' => $unitOpen ? 'student_preweek_topics?preweek_unit_id=' . $pid : '#',
         'topics' => (int)($row['topics_cnt'] ?? 0),
         'videos' => (int)($row['videos_cnt'] ?? 0),
         'handouts' => (int)($row['handouts_cnt'] ?? 0),

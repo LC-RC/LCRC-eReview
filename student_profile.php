@@ -7,7 +7,7 @@ $ur = mysqli_query($conn, 'SELECT access_end FROM users WHERE user_id=' . $uid .
 $u = $ur ? mysqli_fetch_assoc($ur) : null;
 if ($u && !empty($u['access_end']) && strtotime($u['access_end']) < time()) {
     $_SESSION['error'] = 'Your access has expired.';
-    header('Location: index.php');
+    header('Location: index');
     exit;
 }
 
@@ -70,14 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_cover_upload'
             }
         }
     }
-    header('Location: student_profile.php');
+    header('Location: student_profile');
     exit;
 }
 
 $row = ereview_profile_fetch_row($conn, $uid);
 if (!$row) {
     $_SESSION['error'] = 'Your profile could not be loaded.';
-    header('Location: student_dashboard.php');
+    header('Location: student_dashboard');
     exit;
 }
 $cols = ereview_profile_users_columns($conn);
@@ -164,7 +164,7 @@ $ereviewProfileEditBtnId = 'ereviewProfilePageEditBtn';
 $ereviewProfilePwBtnId = 'ereviewProfilePageEditPwBtn';
 
 $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-$ereviewProfileDebugUrl = $base . '/api/profile/debug_student_profile.php';
+$ereviewProfileDebugUrl = $base . '/api/profile/debug_student_profile';
 $profileCss = __DIR__ . '/assets/css/profile-page.css';
 $profileJs = __DIR__ . '/assets/js/profile-page.js';
 $profileCssV = file_exists($profileCss) ? filemtime($profileCss) : 0;

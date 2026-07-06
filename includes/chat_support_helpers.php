@@ -362,9 +362,9 @@ function ereview_chat_kb_match_is_strong_enough(string $intent, array $retrieved
 
 /**
  * OpenAI credentials for support chat. PHP does NOT inherit `export` from an SSH shell.
- * Use one of: Apache SetEnv / php-fpm Environment= / includes/chat_openai.local.php
+ * Use one of: Apache SetEnv / php-fpm Environment= / includes/chat_openai.local
  *
- * chat_openai.local.php must return: array{ openai_api_key?: string, api_key?: string, model?: string }
+ * chat_openai.local must return: array{ openai_api_key?: string, api_key?: string, model?: string }
  */
 function ereview_chat_get_openai_settings(): array
 {
@@ -397,7 +397,7 @@ function ereview_chat_get_openai_settings(): array
         $model = 'gpt-4o-mini';
     }
 
-    $local = __DIR__ . '/chat_openai.local.php';
+    $local = __DIR__ . '/chat_openai.local';
     if (is_readable($local)) {
         $cfg = include $local;
         if (is_array($cfg)) {
@@ -421,7 +421,7 @@ function ereview_chat_quick_actions(string $intent = 'general'): array
     $base = [
         ['label' => 'View Packages', 'type' => 'link', 'value' => '#packages'],
         ['label' => 'FAQs', 'type' => 'link', 'value' => '#faqs'],
-        ['label' => 'How to Register', 'type' => 'link', 'value' => 'registration.php'],
+        ['label' => 'How to Register', 'type' => 'link', 'value' => 'registration'],
         ['label' => 'Talk to Human', 'type' => 'handoff', 'value' => 'handoff'],
     ];
     if ($intent === 'learning_content') {
@@ -437,7 +437,7 @@ function ereview_chat_quick_actions(string $intent = 'general'): array
     if ($intent === 'packages') {
         return [
             ['label' => 'See Packages', 'type' => 'link', 'value' => '#packages'],
-            ['label' => 'Enroll Now', 'type' => 'link', 'value' => 'registration.php'],
+            ['label' => 'Enroll Now', 'type' => 'link', 'value' => 'registration'],
             ['label' => 'Ask Human Advisor', 'type' => 'handoff', 'value' => 'handoff'],
         ];
     }

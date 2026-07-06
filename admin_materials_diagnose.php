@@ -1,15 +1,15 @@
 <?php
 /**
- * admin_materials_diagnose.php — TEMPORARY ONE-OFF SERVER DIAGNOSTIC
+ * admin_materials_diagnose — TEMPORARY ONE-OFF SERVER DIAGNOSTIC
  *
  * Chrome DevTools Console CANNOT show PHP errors. A 500 means the server crashed
  * before sending HTML; the Console only shows net::ERR_HTTP_RESPONSE_CODE_FAILURE.
  *
  * How to use:
  * 1. Edit DIAG_TOKEN below to a long random secret (not the placeholder).
- * 2. Upload this file next to admin_materials.php on the VPS.
+ * 2. Upload this file next to admin_materials on the VPS.
  * 3. In the SAME browser where you are logged in as admin, open:
- *    https://lcrc-ereview.com/admin_materials_diagnose.php?token=YOUR_SECRET&lesson_id=37
+ *    https://lcrc-ereview.com/admin_materials_diagnose?token=YOUR_SECRET&lesson_id=37
  * 4. Read the plain-text output on the page (or use curl — see bottom of this file).
  * 5. DELETE this file from the server when done (anyone with the URL can run it).
  */
@@ -23,7 +23,7 @@ header('Content-Type: text/plain; charset=utf-8');
 if (DIAG_TOKEN === 'CHANGE-ME-to-a-long-random-secret-string' || ($_GET['token'] ?? '') !== DIAG_TOKEN) {
     http_response_code(403);
     echo "403 Forbidden.\n\n";
-    echo "Edit DIAG_TOKEN in admin_materials_diagnose.php on the server, then call:\n";
+    echo "Edit DIAG_TOKEN in admin_materials_diagnose on the server, then call:\n";
     echo "  ?token=YOUR_SECRET&lesson_id=37\n";
     exit;
 }
@@ -58,7 +58,7 @@ echo 'mysqli: ' . (extension_loaded('mysqli') ? 'yes' : 'NO') . "\n";
 echo 'curl: ' . (extension_loaded('curl') ? 'yes' : 'no') . "\n";
 echo 'json: ' . (extension_loaded('json') ? 'yes' : 'no') . "\n\n";
 
-echo "--- [1] db.php ---\n";
+echo "--- [1] db ---\n";
 require_once __DIR__ . '/db.php';
 /** @var mysqli $conn */
 global $conn;
@@ -68,7 +68,7 @@ if (empty($conn) || !($conn instanceof mysqli)) {
 }
 echo 'OK: connected — ' . mysqli_get_host_info($conn) . "\n\n";
 
-echo "--- [2] Lesson + subject (same SQL as admin_materials.php) ---\n";
+echo "--- [2] Lesson + subject (same SQL as admin_materials) ---\n";
 $lessonSql = 'SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=' . (int)$lessonId . ' LIMIT 1';
 $lessonRes = mysqli_query($conn, $lessonSql);
 if (!$lessonRes) {
@@ -112,11 +112,11 @@ if (!$hq) {
     echo 'lesson_handouts OK, rows (sample max 5): ' . mysqli_num_rows($hq) . "\n";
 }
 
-echo "\n--- [5] includes/vimeo_helpers.php ---\n";
+echo "\n--- [5] includes/vimeo_helpers ---\n";
 require_once __DIR__ . '/includes/vimeo_helpers.php';
 echo "OK: loaded\n";
 
-echo "\n--- [6] auth.php + admin role ---\n";
+echo "\n--- [6] auth + admin role ---\n";
 require_once __DIR__ . '/auth.php';
 if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     echo "WARN: Not logged in in this session. Log in as admin in this browser, then reload this diagnose URL.\n";
@@ -129,7 +129,7 @@ if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     }
 }
 
-echo "--- [7] includes/head_admin.php (needs \$pageTitle, h() from auth) ---\n";
+echo "--- [7] includes/head_admin (needs \$pageTitle, h() from auth) ---\n";
 $pageTitle = 'Diagnose';
 ob_start();
 try {
@@ -141,7 +141,7 @@ try {
     echo 'FAIL: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n";
 }
 
-echo "\n--- [8] admin_sidebar.php (full shell: sidebar + main open + topbar + messaging + notifications) ---\n";
+echo "\n--- [8] admin_sidebar (full shell: sidebar + main open + topbar + messaging + notifications) ---\n";
 try {
     ob_start();
     require __DIR__ . '/admin_sidebar.php';
@@ -153,14 +153,14 @@ try {
 }
 
 echo "\n=== End diagnose ===\n";
-echo "\nIf admin_materials.php still returns 500 but this script reaches [8] OK, the fault is in admin_materials.php body after the sidebar include.\n";
+echo "\nIf admin_materials still returns 500 but this script reaches [8] OK, the fault is in admin_materials body after the sidebar include.\n";
 echo "Check VPS error log, e.g.: tail -n 80 /var/log/apache2/error.log\n";
 echo "Or: journalctl -u php*-fpm -n 50\n";
 
 /*
  * curl (from your PC, after setting DIAG_TOKEN on server):
  *
- * curl -sS "https://lcrc-ereview.com/admin_materials_diagnose.php?token=YOUR_SECRET&lesson_id=37"
+ * curl -sS "https://lcrc-ereview.com/admin_materials_diagnose?token=YOUR_SECRET&lesson_id=37"
  *
  * (Add -b "PHPSESSID=..." copied from browser if steps 7–8 need login.)
  */

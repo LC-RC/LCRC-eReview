@@ -4,14 +4,14 @@ requireRole('professor_admin');
 require_once __DIR__ . '/includes/college_schema.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
 $token = (string)($_POST['csrf_token'] ?? '');
 if (!verifyCSRFToken($token)) {
     $_SESSION['message'] = 'Invalid request. Student was not removed.';
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
@@ -19,7 +19,7 @@ $targetId = sanitizeInt($_POST['user_id'] ?? 0);
 $profId = (int)getCurrentUserId();
 if ($targetId <= 0 || $targetId === $profId) {
     $_SESSION['message'] = 'Invalid student selected.';
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
@@ -31,7 +31,7 @@ mysqli_stmt_close($stmt);
 
 if (!$row || (string)($row['role'] ?? '') !== 'college_student') {
     $_SESSION['message'] = 'That college student could not be found.';
-    header('Location: professor_college_students.php');
+    header('Location: professor_college_students');
     exit;
 }
 
@@ -57,5 +57,5 @@ try {
     $_SESSION['message'] = 'Could not remove student (they may still have linked records).';
 }
 
-header('Location: professor_college_students.php');
+header('Location: professor_college_students');
 exit;

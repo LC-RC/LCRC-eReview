@@ -84,7 +84,7 @@ $list = mysqli_query($conn, "SELECT id, title, description, question_file_path, 
               <div class="p-4 sm:p-6 space-y-3 sm:space-y-4 bg-white/50">
                 <div class="flex flex-wrap gap-3">
                   <?php if ($tbOpen): ?>
-                  <a href="student_test_bank_viewer.php?id=<?php echo $tbId; ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.3)]">
+                  <a href="student_test_bank_viewer?id=<?php echo $tbId; ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.3)]">
                     <i class="bi bi-eye"></i> View files
                   </a>
                   <?php else: ?>

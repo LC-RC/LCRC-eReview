@@ -26,7 +26,7 @@ $tabQs = static function (string $t) use ($days): string {
     if ($t === 'overview') {
         $q['days'] = $days;
     }
-    return 'admin_support_analytics.php?' . http_build_query($q);
+    return 'admin_support_analytics?' . http_build_query($q);
 };
 
 // ——— Overview metrics (tab: overview) ———
@@ -256,7 +256,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
   <div class="quiz-admin-hero rounded-xl px-5 pt-5 pb-0 mb-5 page-hero">
     <?php
-    $adminBreadcrumbs = [['Dashboard', 'admin_dashboard.php'], ['Support Analytics']];
+    $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Support Analytics']];
     include __DIR__ . '/includes/admin_breadcrumb.php';
     ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
@@ -467,7 +467,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
                     <td class="py-3 pr-2"><?php echo h($row['status'] ?? ''); ?></td>
                     <td class="py-3 pr-2 font-mono text-xs"><?php echo h(substr((string) ($row['session_id'] ?? ''), 0, 12)); ?>…</td>
                     <td class="py-3">
-                      <form method="post" action="admin_support_analytics.php" class="flex flex-col gap-2 items-start">
+                      <form method="post" action="admin_support_analytics" class="flex flex-col gap-2 items-start">
                         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                         <input type="hidden" name="hub_tab" value="backlog">
                         <input type="hidden" name="backlog_id" value="<?php echo (int) $row['backlog_id']; ?>">
@@ -511,7 +511,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
       <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 class="text-lg font-semibold text-gray-800 m-0 mb-3">Global banned topics</h2>
         <p class="text-sm text-gray-500 m-0 mb-3">If a user message contains these phrases (one per line), the bot will refuse and direct to staff.</p>
-        <form method="post" action="admin_support_analytics.php">
+        <form method="post" action="admin_support_analytics">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="hub_tab" value="kb">
           <input type="hidden" name="action" value="save_settings">
@@ -540,7 +540,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
     <div class="rounded-xl shadow-card border p-5 mb-8 page-table">
       <h2 class="text-lg font-semibold text-gray-800 m-0 mb-4"><?php echo $editRow ? 'Edit article' : 'New article'; ?></h2>
-      <form method="post" action="admin_support_analytics.php" class="space-y-4">
+      <form method="post" action="admin_support_analytics" class="space-y-4">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="hub_tab" value="kb">
         <input type="hidden" name="action" value="save_article">
@@ -607,7 +607,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
     <?php endif; ?>
 
     <div class="rounded-xl shadow-card border p-5 mb-5 max-w-xl page-table">
-      <form method="post" action="admin_support_analytics.php" class="space-y-3">
+      <form method="post" action="admin_support_analytics" class="space-y-3">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="hub_tab" value="lookup">
         <label for="lookup-email" class="block text-sm font-semibold text-gray-700">Email</label>

@@ -15,12 +15,12 @@ $preweekUnitId = (int)($_GET['preweek_unit_id'] ?? 0);
 $yearGet = (int)($_GET['year'] ?? 0);
 
 if ($topicId <= 0 && $yearGet >= 2000 && $yearGet <= 2100) {
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
 if ($topicId <= 0 && $preweekUnitId > 0) {
-    header('Location: student_preweek_topics.php?preweek_unit_id=' . $preweekUnitId);
+    header('Location: student_preweek_topics?preweek_unit_id=' . $preweekUnitId);
     exit;
 }
 
@@ -46,14 +46,14 @@ if ($topicId > 0) {
 
 if (!$topicRow || $preweekUnitId <= 0) {
     $_SESSION['error'] = 'Pre-week materials were not found.';
-    header('Location: student_preweek.php');
+    header('Location: student_preweek');
     exit;
 }
 
 $userId = getCurrentUserId();
 if (!sca_has_access($conn, (int)$userId, 'preweek_topic', $topicId)) {
     $_SESSION['error'] = SCA_DENIED_MESSAGE;
-    header('Location: student_preweek_topics.php?preweek_unit_id=' . (int)$preweekUnitId);
+    header('Location: student_preweek_topics?preweek_unit_id=' . (int)$preweekUnitId);
     exit;
 }
 
@@ -87,7 +87,7 @@ if (!$selectedVideo && count($videos) > 0) {
 $topicTitle = trim((string)($topicRow['topic_title'] ?? '')) ?: 'Lecture';
 $unitTitle = trim((string)($topicRow['unit_title'] ?? '')) ?: 'Preweek';
 $lessonTitle = $topicTitle;
-$backUrl = 'student_preweek_topics.php?preweek_unit_id=' . (int)$preweekUnitId;
+$backUrl = 'student_preweek_topics?preweek_unit_id=' . (int)$preweekUnitId;
 $pageTitle = $topicTitle . ' — ' . $unitTitle;
 ?>
 <!DOCTYPE html>
@@ -238,7 +238,7 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
           </select>
         </div>
         <div class="flex-1 min-h-0 relative">
-          <iframe x-show="selectedHandoutId" :src="selectedHandoutId ? ('handout_viewer.php?preweek_handout_id=' + selectedHandoutId) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" title="Handout"></iframe>
+          <iframe x-show="selectedHandoutId" :src="selectedHandoutId ? ('handout_viewer?preweek_handout_id=' + selectedHandoutId) : ''" class="absolute inset-0 w-full h-full border-0 rounded-b-xl" title="Handout"></iframe>
           <div x-show="!selectedHandoutId" class="absolute inset-0 flex items-center justify-center flex-col text-[#143D59]/60 bg-[#f8fafc]">
             <i class="bi bi-file-earmark-pdf text-4xl block mb-2"></i>
             <p>Select a handout to view</p>
@@ -285,7 +285,7 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
           <div class="px-4 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-list"></i> Playlist</div>
           <div class="divide-y divide-[#1665A0]/10">
             <?php foreach ($videos as $v): $isActive = $selectedVideo && (int)$v['preweek_video_id'] === (int)$selectedVideo['preweek_video_id']; ?>
-              <a href="student_preweek_viewer.php?<?php echo h(http_build_query(array_merge($viewerQueryBase, ['video' => (int)$v['preweek_video_id']]))); ?>" class="flex items-center gap-2 px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
+              <a href="student_preweek_viewer?<?php echo h(http_build_query(array_merge($viewerQueryBase, ['video' => (int)$v['preweek_video_id']]))); ?>" class="flex items-center gap-2 px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
                 <i class="bi bi-play-circle"></i> <?php echo h($v['video_title'] ?: 'Untitled Video'); ?>
               </a>
             <?php endforeach; ?>
@@ -322,7 +322,7 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
                 <?php endif; ?>
                 <div class="flex flex-wrap gap-2 mt-2">
                   <?php if (!empty($h['file_path'])): ?>
-                    <a href="handout_viewer.php?preweek_handout_id=<?php echo (int)$h['preweek_handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
+                    <a href="handout_viewer?preweek_handout_id=<?php echo (int)$h['preweek_handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
                     <?php if (!empty($h['allow_download'])): ?>
                       <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
                     <?php endif; ?>

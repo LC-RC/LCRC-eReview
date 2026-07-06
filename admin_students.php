@@ -160,10 +160,10 @@ if ($hasDeletedLogTable) {
 }
 
 $pageTitle = 'Students';
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard.php'], ['Students'] ];
+$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students'] ];
 $mk = function(string $t, int $p = 1) use ($q) : string {
   $params = ['tab' => $t, 'q' => $q, 'page' => $p];
-  return 'admin_students.php?' . http_build_query($params);
+  return 'admin_students?' . http_build_query($params);
 };
 ?>
 <!DOCTYPE html>
@@ -1026,7 +1026,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
         </div>
         <button type="submit" class="student-apply-btn px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2" title="Apply filters"><i class="bi bi-funnel"></i> Apply</button>
         <?php if ($q !== ''): ?>
-          <a href="admin_students.php?tab=<?php echo h($tab); ?>&page=1" class="text-gray-500 text-sm hover:text-gray-700 hover:underline">Clear search</a>
+          <a href="admin_students?tab=<?php echo h($tab); ?>&page=1" class="text-gray-500 text-sm hover:text-gray-700 hover:underline">Clear search</a>
         <?php endif; ?>
       </form>
     </div>
@@ -1076,7 +1076,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                 <div class="font-semibold text-gray-600">No students found</div>
                 <p class="text-sm mt-1 max-w-sm mx-auto"><?php echo h($emptyHint); ?></p>
                 <?php if ($q !== ''): ?>
-                  <a href="admin_students.php?tab=<?php echo h($tab); ?>&page=1" class="inline-block mt-4 px-4 py-2 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition">Clear search</a>
+                  <a href="admin_students?tab=<?php echo h($tab); ?>&page=1" class="inline-block mt-4 px-4 py-2 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition">Clear search</a>
                 <?php endif; ?>
               </td>
             </tr>
@@ -1254,29 +1254,29 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
                       <i class="bi bi-three-dots" aria-hidden="true"></i> Actions
                     </button>
                     <div class="admin-student-action-menu" data-action-menu-list role="menu">
-                      <a role="menuitem" class="admin-student-action-item" href="admin_student_view.php?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
+                      <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
                       <?php if ($hasProof): ?>
-                        <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof.php?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Proof</a>
+                        <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Proof</a>
                       <?php else: ?>
                         <span class="admin-student-action-item admin-student-action-item--disabled" aria-disabled="true"><i class="bi bi-receipt" aria-hidden="true"></i> Proof (none)</span>
                       <?php endif; ?>
 
                       <?php if ($row['status'] !== 'approved'): ?>
-                        <form class="student-pending-form js-approve-form" action="activate_user.php" method="POST" data-student-name="<?php echo h($row['full_name']); ?>">
+                        <form class="student-pending-form js-approve-form" action="activate_user" method="POST" data-student-name="<?php echo h($row['full_name']); ?>">
                           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                           <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                          <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students.php'); ?>">
+                          <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students'); ?>">
                           <label class="sr-only" for="pending-months-<?php echo (int)$row['user_id']; ?>">Months of access</label>
                           <input id="pending-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" class="student-pending-month-input" placeholder="+ Months" required>
                           <button type="submit" class="admin-student-action-item admin-student-action-item--approve" role="menuitem"><i class="bi bi-check2-circle" aria-hidden="true"></i> Approve</button>
                         </form>
-                        <form class="admin-student-action-menu-reject-form" action="reject.php" method="POST">
+                        <form class="admin-student-action-menu-reject-form" action="reject" method="POST">
                           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                           <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
                           <button type="submit" class="admin-student-action-item admin-student-action-item--reject" role="menuitem"><i class="bi bi-x-circle" aria-hidden="true"></i> Reject</button>
                         </form>
                       <?php else: ?>
-                        <form class="student-extend-form" action="extend_access.php" method="POST">
+                        <form class="student-extend-form" action="extend_access" method="POST">
                           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                           <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
                           <label class="sr-only" for="extend-months-<?php echo (int)$row['user_id']; ?>">Months to extend</label>
@@ -1538,7 +1538,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     function pollOnce() {
       var idList = ids();
       if (!idList.length) return;
-      fetch('admin_students_presence.php?ids=' + encodeURIComponent(idList.join(',')), {
+      fetch('admin_students_presence?ids=' + encodeURIComponent(idList.join(',')), {
         method: 'GET',
         credentials: 'same-origin',
         cache: 'no-store'
@@ -1571,7 +1571,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     var loadingTitle = document.getElementById('actionLoadingTitle');
     var loadingMessage = document.getElementById('actionLoadingMessage');
     var currentForm = null;
-    var redirectUrl = 'admin_students.php?tab=enrolled&q=&page=1';
+    var redirectUrl = 'admin_students?tab=enrolled&q=&page=1';
 
     if (!confirmOverlay || !confirmSubmit) return;
 
@@ -1633,7 +1633,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       var formData = new FormData(currentForm);
       formData.append('ajax', '1');
 
-      fetch(currentForm.action || 'activate_user.php', {
+      fetch(currentForm.action || 'activate_user', {
         method: 'POST',
         credentials: 'same-origin',
         body: formData,
@@ -1665,7 +1665,7 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
 
   (function () {
     var csrf = <?php echo json_encode($csrf); ?>;
-    var deleteUrl = 'admin_student_delete.php';
+    var deleteUrl = 'admin_student_delete';
     var modalOverlay = document.getElementById('deleteStudentModalOverlay');
     var feedbackOverlay = document.getElementById('deleteFeedbackModalOverlay');
     var nameEl = document.getElementById('deleteStudentModalName');

@@ -338,7 +338,7 @@ $pageTitle = 'Subjects';
             <article class="subject-catalog-card dash-anim delay-2<?php echo $subjectOpen ? '' : ' lms-locked-card'; ?>" data-subject-theme="<?php echo h($cardTheme); ?>">
               <?php if (!$subjectOpen): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span><?php endif; ?>
               <?php if ($subjectOpen): ?>
-              <a href="student_subject.php?subject_id=<?php echo $subjectIdRow; ?>" class="subject-catalog-card__link">
+              <a href="student_subject?subject_id=<?php echo $subjectIdRow; ?>" class="subject-catalog-card__link">
               <?php else: ?>
               <div class="subject-catalog-card__link subject-catalog-card__link--locked" aria-disabled="true">
               <?php endif; ?>

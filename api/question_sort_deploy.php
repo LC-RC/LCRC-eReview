@@ -111,7 +111,7 @@ if (!$subject) {
     ereview_qsort_deploy_json(['ok' => false, 'error' => 'Subject not found.'], 400);
 }
 
-// Mirror admin_quizzes.php column checks
+// Mirror admin_quizzes column checks
 $quizCols = [];
 $qc = @mysqli_query($conn, 'SHOW COLUMNS FROM quizzes');
 if ($qc) {
@@ -454,8 +454,8 @@ try {
 }
 
 // Same-directory URLs so redirects work from app roots like /Ereview/
-$qqUrl = 'admin_quiz_questions.php?quiz_id=' . $quizId . '&subject_id=' . $subjectId;
-$qzUrl = 'admin_quizzes.php?subject_id=' . $subjectId;
+$qqUrl = 'admin_quiz_questions?quiz_id=' . $quizId . '&subject_id=' . $subjectId;
+$qzUrl = 'admin_quizzes?subject_id=' . $subjectId;
 
 if ($mergedIntoExisting) {
     $_SESSION['message'] = count($batch) . ' new question(s) appended to existing quiz "' . $resolvedTitle . '" (' . h($subject['subject_name']) . ').';

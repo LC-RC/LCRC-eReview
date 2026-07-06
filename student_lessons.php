@@ -3,7 +3,7 @@ require_once 'auth.php';
 requireRole('student');
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($subjectId <= 0) { header('Location: student_subjects.php'); exit; }
+if ($subjectId <= 0) { header('Location: student_subjects'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -11,7 +11,7 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
-if (!$subject) { header('Location: student_subjects.php'); exit; }
+if (!$subject) { header('Location: student_subjects'); exit; }
 
 $lessonsResult = mysqli_query($conn, "SELECT * FROM lessons WHERE subject_id=".$subjectId." ORDER BY lesson_id DESC");
 $pageTitle = $subject['subject_name'] . ' - Lessons';
@@ -49,7 +49,7 @@ $pageTitle = $subject['subject_name'] . ' - Lessons';
             <span><i class="bi bi-play-circle"></i> <?php echo (int)$videosRow['cnt']; ?> Videos</span>
             <span><i class="bi bi-file-earmark-pdf"></i> <?php echo (int)$handoutsRow['cnt']; ?> Handouts</span>
           </div>
-          <a href="student_lesson.php?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
+          <a href="student_lesson?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
             <i class="bi bi-collection-play"></i> Open Lesson Materials
           </a>
         </div>

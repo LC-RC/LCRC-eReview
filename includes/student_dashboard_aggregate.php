@@ -1,6 +1,6 @@
 <?php
 /**
- * Consolidated DB reads for student_dashboard.php (fewer round-trips, no per-subject N+1).
+ * Consolidated DB reads for student_dashboard (fewer round-trips, no per-subject N+1).
  *
  * @param callable(mysqli,string):bool $tableExists
  * @param array|null $info users row (access_start/access_end) for focus access strip
@@ -180,7 +180,7 @@ function ereview_student_dashboard_aggregate(mysqli $conn, int $uid, callable $t
         ");
         if ($nex && ($nr = mysqli_fetch_assoc($nex))) {
             $nextExpireQuizRow = $nr;
-            $nextExpireQuizRow['href'] = 'student_take_quiz.php?quiz_id=' . (int)$nr['quiz_id'] . '&subject_id=' . (int)$nr['subject_id'];
+            $nextExpireQuizRow['href'] = 'student_take_quiz?quiz_id=' . (int)$nr['quiz_id'] . '&subject_id=' . (int)$nr['subject_id'];
             $ex = strtotime((string)($nr['expires_at'] ?? ''));
             if ($ex !== false) {
                 $remain = $ex - time();
@@ -343,7 +343,7 @@ function ereview_student_dashboard_aggregate(mysqli $conn, int $uid, callable $t
                     'sub' => (string)($dr['subject_name'] ?? ''),
                     'at' => (string)($dr['submitted_at'] ?? ''),
                     'score' => $dr['score'] !== null ? (float)$dr['score'] : null,
-                    'href' => 'student_subject.php?subject_id=' . (int)($dr['subject_id'] ?? 0),
+                    'href' => 'student_subject?subject_id=' . (int)($dr['subject_id'] ?? 0),
                 ];
             }
         }
@@ -372,7 +372,7 @@ function ereview_student_dashboard_aggregate(mysqli $conn, int $uid, callable $t
                     'sub' => (string)($dr['subject_name'] ?? ''),
                     'at' => (string)($dr['submitted_at'] ?? ''),
                     'score' => $dr['score'] !== null ? (float)$dr['score'] : null,
-                    'href' => $psid > 0 ? ('student_preboards_view.php?preboards_subject_id=' . $psid) : 'student_preboards.php',
+                    'href' => $psid > 0 ? ('student_preboards_view?preboards_subject_id=' . $psid) : 'student_preboards',
                 ];
             }
         }

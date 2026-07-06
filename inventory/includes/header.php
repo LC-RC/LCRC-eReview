@@ -65,11 +65,11 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
         <h1><i class="bi bi-box-seam"></i> Office Supplies</h1>
     </div>
     <nav class="sidebar-nav">
-        <a class="nav-link <?php echo $current_page === 'index' || $current_page === 'dashboard' ? 'active' : ''; ?>" href="index.php"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-        <a class="nav-link <?php echo $current_page === 'products' ? 'active' : ''; ?>" href="products.php"><i class="bi bi-boxes"></i> Products</a>
-        <a class="nav-link <?php echo $current_page === 'categories' ? 'active' : ''; ?>" href="categories.php"><i class="bi bi-tags"></i> Categories</a>
-        <a class="nav-link <?php echo $current_page === 'stock' ? 'active' : ''; ?>" href="stock.php"><i class="bi bi-arrow-left-right"></i> Stock In / Out</a>
-        <a class="nav-link <?php echo $current_page === 'movements' ? 'active' : ''; ?>" href="movements.php"><i class="bi bi-clock-history"></i> Movement Log</a>
+        <a class="nav-link <?php echo $current_page === 'index' || $current_page === 'dashboard' ? 'active' : ''; ?>" href="index"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+        <a class="nav-link <?php echo $current_page === 'products' ? 'active' : ''; ?>" href="products"><i class="bi bi-boxes"></i> Products</a>
+        <a class="nav-link <?php echo $current_page === 'categories' ? 'active' : ''; ?>" href="categories"><i class="bi bi-tags"></i> Categories</a>
+        <a class="nav-link <?php echo $current_page === 'stock' ? 'active' : ''; ?>" href="stock"><i class="bi bi-arrow-left-right"></i> Stock In / Out</a>
+        <a class="nav-link <?php echo $current_page === 'movements' ? 'active' : ''; ?>" href="movements"><i class="bi bi-clock-history"></i> Movement Log</a>
     </nav>
 </aside>
 <main id="main">

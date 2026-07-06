@@ -95,7 +95,7 @@ function ereview_chat_payment_hint_cards(): array
             'title' => 'Payment proof',
             'subtitle' => 'Upload proof after registering so admin can approve access.',
             'cta_label' => 'Registration',
-            'href' => 'registration.php',
+            'href' => 'registration',
         ],
         [
             'id' => 'pay-contact',
@@ -113,7 +113,7 @@ function ereview_chat_default_quick_links(): array
     return [
         ['label' => 'Packages', 'type' => 'link', 'value' => '#packages'],
         ['label' => 'FAQs', 'type' => 'link', 'value' => '#faqs'],
-        ['label' => 'Register', 'type' => 'link', 'value' => 'registration.php'],
+        ['label' => 'Register', 'type' => 'link', 'value' => 'registration'],
         ['label' => 'Free samples', 'type' => 'link', 'value' => '#free-samples'],
     ];
 }
@@ -133,7 +133,7 @@ function ereview_chat_enrich_reply_ui(array $reply, string $intent): array
         $reply['quick_replies'] = [
             ['label' => 'Compare packages', 'type' => 'link', 'value' => '#packages'],
             ['label' => 'FAQs', 'type' => 'link', 'value' => '#faqs'],
-            ['label' => 'Start registration', 'type' => 'link', 'value' => 'registration.php'],
+            ['label' => 'Start registration', 'type' => 'link', 'value' => 'registration'],
         ];
     } elseif ($intent === 'payment') {
         $reply['cards'] = array_merge($reply['cards'], ereview_chat_payment_hint_cards());

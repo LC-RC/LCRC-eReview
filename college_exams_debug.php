@@ -84,7 +84,7 @@ if ($rr) {
 }
 $out['recent_exams'] = $recent;
 
-// Same SELECT as college_exams.php (list step)
+// Same SELECT as college_exams (list step)
 $listErr = null;
 $examRows = [];
 $pw = college_exam_where_published_sql();
@@ -108,7 +108,7 @@ $out['list_query_titles'] = array_map(static function ($r) {
     return (string)($r['title'] ?? '');
 }, $examRows);
 
-// Render-probe: execute the same row computations as college_exams.php and capture any fatal/warning source.
+// Render-probe: execute the same row computations as college_exams and capture any fatal/warning source.
 $renderProbe = [
     'ok' => true,
     'row_count' => 0,

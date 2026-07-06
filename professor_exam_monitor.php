@@ -33,7 +33,7 @@ $now = date('Y-m-d H:i:s');
 
 if ($examId <= 0) {
     $_SESSION['message'] = 'Invalid exam selected.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
@@ -45,19 +45,19 @@ $exam = $res ? mysqli_fetch_assoc($res) : null;
 mysqli_stmt_close($stmt);
 if (!$exam) {
     $_SESSION['message'] = 'Exam not found.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_review_access') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $_SESSION['message'] = 'Invalid security token.';
-        header('Location: professor_exam_monitor.php?exam_id=' . (int)$exam['exam_id']);
+        header('Location: professor_exam_monitor?exam_id=' . (int)$exam['exam_id']);
         exit;
     }
     $eidPost = (int)($_POST['exam_id'] ?? 0);
     if ($eidPost !== (int)$exam['exam_id']) {
-        header('Location: professor_exams.php');
+        header('Location: professor_exams');
         exit;
     }
     if (!empty($_POST['clear_review_schedule'])) {
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             $_SESSION['message'] = 'Review sheet schedule saved.';
         }
     }
-    header('Location: professor_exam_monitor.php?exam_id=' . $eidPost);
+    header('Location: professor_exam_monitor?exam_id=' . $eidPost);
     exit;
 }
 
@@ -329,7 +329,7 @@ $monitorCsrf = generateCSRFToken();
       <div class="prof-hero overflow-hidden">
         <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <a href="professor_exams.php" class="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white font-semibold"><i class="bi bi-arrow-left"></i> Back to Exam Library</a>
+            <a href="professor_exams" class="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white font-semibold"><i class="bi bi-arrow-left"></i> Back to Exam Library</a>
             <h1 class="text-2xl font-bold text-white m-0 mt-2"><?php echo h((string)$exam['title']); ?></h1>
             <p class="text-white/90 mt-1 mb-0">Live monitoring dashboard for this exam.</p>
           </div>
@@ -380,7 +380,7 @@ $monitorCsrf = generateCSRFToken();
           <span class="review-sched-pill" style="border-color:#fecaca;background:#fef2f2;color:#991b1b;"><i class="bi bi-lock-fill"></i> Window ended</span>
         <?php endif; ?>
       </p>
-      <form method="post" action="professor_exam_monitor.php?exam_id=<?php echo (int)$examIdSafe; ?>" class="space-y-3">
+      <form method="post" action="professor_exam_monitor?exam_id=<?php echo (int)$examIdSafe; ?>" class="space-y-3">
         <input type="hidden" name="csrf_token" value="<?php echo h($monitorCsrf); ?>">
         <input type="hidden" name="action" value="save_review_access">
         <input type="hidden" name="exam_id" value="<?php echo (int)$examIdSafe; ?>">
@@ -442,10 +442,10 @@ $monitorCsrf = generateCSRFToken();
       <h2 class="section-title"><i class="bi bi-people"></i> Student Progress</h2>
       <?php if ($isFinished): ?>
         <div class="pem-export-btns">
-          <a href="professor_exam_monitor_pdf.php?exam_id=<?php echo (int)$examIdSafe; ?>" class="pem-pdf-btn" title="Download PDF (finished exams only)">
+          <a href="professor_exam_monitor_pdf?exam_id=<?php echo (int)$examIdSafe; ?>" class="pem-pdf-btn" title="Download PDF (finished exams only)">
             <i class="bi bi-file-earmark-pdf"></i> Download PDF report
           </a>
-          <a href="professor_exam_monitor_xlsx.php?exam_id=<?php echo (int)$examIdSafe; ?>" class="pem-xlsx-btn" title="Download Excel (finished exams only)">
+          <a href="professor_exam_monitor_xlsx?exam_id=<?php echo (int)$examIdSafe; ?>" class="pem-xlsx-btn" title="Download Excel (finished exams only)">
             <i class="bi bi-file-earmark-spreadsheet"></i> Download Excel report
           </a>
         </div>
@@ -584,7 +584,7 @@ $monitorCsrf = generateCSRFToken();
                 </td>
                 <td class="px-4 py-3">
                   <?php if ($canReviewSheet): ?>
-                    <a href="professor_exam_review_sheet.php?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="pem-review-btn" title="Open this student’s full examination sheet (questions, choices, explanations)">
+                    <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="pem-review-btn" title="Open this student’s full examination sheet (questions, choices, explanations)">
                       <i class="bi bi-layout-text-window-reverse"></i> Review
                     </a>
                   <?php elseif ($attemptStatus === 'in_progress'): ?>
@@ -616,7 +616,7 @@ $monitorCsrf = generateCSRFToken();
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     }
     function tick() {
-      fetch('professor_exam_monitor_live.php?exam_id=' + examId, { credentials: 'same-origin' })
+      fetch('professor_exam_monitor_live?exam_id=' + examId, { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (!data || !data.ok) throw new Error('poll');

@@ -19,7 +19,7 @@ $reviewMode = $reviewParam !== null
 $csrf = generateCSRFToken();
 
 if ($examId <= 0) {
-    header('Location: college_exams.php');
+    header('Location: college_exams');
     exit;
 }
 
@@ -31,7 +31,7 @@ $exam = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$exam) {
     $_SESSION['error'] = 'Exam not found.';
-    header('Location: college_exams.php');
+    header('Location: college_exams');
     exit;
 }
 
@@ -74,26 +74,26 @@ $examClosedAllSubmitted = college_exam_finished_all_submitted_no_deadline($conn,
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_exam'])) {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $_SESSION['error'] = 'Invalid request.';
-        header('Location: college_take_exam.php?exam_id=' . $examId);
+        header('Location: college_take_exam?exam_id=' . $examId);
         exit;
     }
     if ($attempt && $attemptSubmitted) {
-        header('Location: college_take_exam.php?exam_id=' . $examId . '&review=1');
+        header('Location: college_take_exam?exam_id=' . $examId . '&review=1');
         exit;
     }
     if ($examClosedAllSubmitted && (!$attempt || $attemptStatusNorm !== 'in_progress')) {
         $_SESSION['error'] = 'This exam has closed because everyone on the roster has submitted.';
-        header('Location: college_exams.php');
+        header('Location: college_exams');
         exit;
     }
     if (!empty($exam['available_from']) && $exam['available_from'] > $now) {
         $_SESSION['error'] = 'This exam is not available yet.';
-        header('Location: college_exams.php');
+        header('Location: college_exams');
         exit;
     }
     if (!empty($exam['deadline']) && $exam['deadline'] < $now) {
         $_SESSION['error'] = 'The deadline has passed.';
-        header('Location: college_exams.php');
+        header('Location: college_exams');
         exit;
     }
 
@@ -113,14 +113,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_exam'])) {
         mysqli_stmt_execute($upd);
         mysqli_stmt_close($upd);
     }
-    header('Location: college_take_exam.php?exam_id=' . $examId);
+    header('Location: college_take_exam?exam_id=' . $examId);
     exit;
 }
 
 if ($examClosedAllSubmitted) {
     if (!$attempt || ($attemptStatusNorm !== 'in_progress' && !$attemptSubmitted)) {
         $_SESSION['error'] = 'This exam has closed because everyone on the roster has submitted.';
-        header('Location: college_exams.php');
+        header('Location: college_exams');
         exit;
     }
 }
@@ -149,7 +149,7 @@ if ($attempt) {
 }
 
 if ($attempt && $attemptSubmitted && !$reviewMode) {
-    header('Location: college_take_exam.php?exam_id=' . $examId . '&review=1');
+    header('Location: college_take_exam?exam_id=' . $examId . '&review=1');
     exit;
 }
 
@@ -220,7 +220,7 @@ if (!empty($examSessionBlock)) {
     <div class="exam-lock-icon"><i class="bi bi-shield-lock"></i></div>
     <h1 class="text-xl font-bold text-slate-900 m-0">This exam is open elsewhere</h1>
     <p class="mt-3 mb-0 text-sm text-slate-600 leading-relaxed">This attempt is tied to the browser where you started. You cannot continue in this window. Close other tabs or use the same device and browser, or log out and sign in again only after finishing the exam.</p>
-    <p class="mt-4 mb-0"><a href="college_exams.php" class="inline-flex items-center gap-2 text-sm font-semibold text-[#1665A0] hover:underline">Back to exams</a></p>
+    <p class="mt-4 mb-0"><a href="college_exams" class="inline-flex items-center gap-2 text-sm font-semibold text-[#1665A0] hover:underline">Back to exams</a></p>
   </div>
 </body>
 </html>
@@ -535,7 +535,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
 
   <div class="exam-shell ereview-shell-no-fade pt-2">
     <section class="exam-hero dash-anim delay-1 px-5 py-5 mb-5">
-      <a href="college_exams.php" class="focus-ring back-link inline-flex items-center gap-1 text-sm font-semibold mb-3"><i class="bi bi-arrow-left"></i> Back to exams</a>
+      <a href="college_exams" class="focus-ring back-link inline-flex items-center gap-1 text-sm font-semibold mb-3"><i class="bi bi-arrow-left"></i> Back to exams</a>
       <h1 class="exam-title text-[1.9rem] font-extrabold m-0"><?php echo h($exam['title']); ?></h1>
       <?php if (!empty($exam['description'])): ?>
         <div class="exam-subtitle mt-2 prose prose-sm max-w-none"><?php echo ereview_render_exam_description($exam['description'], !empty($exam['description_markdown'])); ?></div>
@@ -571,13 +571,13 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
       <div class="review-locked-gate">
         <div class="review-locked-icon"><i class="bi bi-hourglass-split"></i></div>
         <h2 class="review-locked-title">Results not ready to view</h2>
-        <p class="review-locked-text">Your attempt is not marked as submitted yet. Return to your <a class="text-[#1665A0] font-bold underline" href="college_exams.php">exam list</a> and open the exam from there, or finish submitting if you still have time.</p>
+        <p class="review-locked-text">Your attempt is not marked as submitted yet. Return to your <a class="text-[#1665A0] font-bold underline" href="college_exams">exam list</a> and open the exam from there, or finish submitting if you still have time.</p>
       </div>
     <?php elseif ($reviewMode && !$attempt): ?>
       <div class="review-locked-gate">
         <div class="review-locked-icon"><i class="bi bi-journal-x"></i></div>
         <h2 class="review-locked-title">No attempt on file</h2>
-        <p class="review-locked-text">We could not find an exam attempt for your account. Open this exam from your <a class="text-[#1665A0] font-bold underline" href="college_exams.php">exam list</a> to start or continue.</p>
+        <p class="review-locked-text">We could not find an exam attempt for your account. Open this exam from your <a class="text-[#1665A0] font-bold underline" href="college_exams">exam list</a> to start or continue.</p>
       </div>
     <?php elseif ($showIntro): ?>
       <div class="mt-3 intro-card dash-anim delay-2 p-6">
@@ -779,7 +779,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
       (function () {
         var form = document.getElementById('examForm');
         if (!form) return;
-        var ajaxUrl = 'college_exam_ajax.php';
+        var ajaxUrl = 'college_exam_ajax';
         var attemptId = parseInt(form.getAttribute('data-attempt-id'), 10);
         var csrf = form.getAttribute('data-csrf');
         var examId = parseInt(form.getAttribute('data-exam-id'), 10);
@@ -972,7 +972,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           request('submit', { csrf_token: csrf, attempt_id: attemptId }).then(function(data){
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
             window.onbeforeunload = null;
-            window.location.href = 'college_take_exam.php?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
+            window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
           }).catch(function(err){
             state.submitting = false;
             closeTimeUpModal();

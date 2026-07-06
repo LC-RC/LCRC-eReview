@@ -2,6 +2,7 @@
 /**
  * Admin shell entry — sidebar, topbar, and main wrapper are rendered by the unified component.
  */
+require_once __DIR__ . '/includes/url_helpers.php';
 $adminPendingCount = 0;
 $adminPreboardsPendingCount = 0;
 if (!empty($conn)) {
@@ -18,26 +19,26 @@ if (!empty($conn)) {
     }
 }
 
-$appShellCurrentScript = basename($_SERVER['PHP_SELF']);
+$appShellCurrentScript = ereview_page_basename();
 $appShellTheme = 'admin';
 $appShellSidebarHeader = 'brand';
 $appShellNavConfig = [
     [
         'label' => 'Manage',
         'items' => [
-            ['label' => 'Dashboard', 'href' => 'admin_dashboard.php', 'icon' => 'bi-speedometer2', 'title' => 'Overview and key numbers', 'active' => ['admin_dashboard.php']],
-            ['label' => 'Students', 'href' => 'admin_students.php', 'icon' => 'bi-people', 'title' => 'Enrollments, approvals, and access', 'active' => ['admin_students.php', 'admin_student_view.php'], 'badge' => $adminPendingCount],
-            ['label' => 'Student Access', 'href' => 'admin_student_access.php', 'icon' => 'bi-shield-lock', 'title' => 'Manage per-student LMS content permissions', 'active' => ['admin_student_access.php']],
-            ['label' => 'Support Analytics', 'href' => 'admin_support_analytics.php', 'icon' => 'bi-headset', 'title' => 'Analytics, KB backlog, knowledge base, and enrollment lookup', 'active' => ['admin_support_analytics.php', 'admin_support_backlog.php', 'admin_support_kb.php', 'admin_support_lookup.php']],
+            ['label' => 'Dashboard', 'href' => 'admin_dashboard', 'icon' => 'bi-speedometer2', 'title' => 'Overview and key numbers', 'active' => ['admin_dashboard']],
+            ['label' => 'Students', 'href' => 'admin_students', 'icon' => 'bi-people', 'title' => 'Enrollments, approvals, and access', 'active' => ['admin_students', 'admin_student_view'], 'badge' => $adminPendingCount],
+            ['label' => 'Student Access', 'href' => 'admin_student_access', 'icon' => 'bi-shield-lock', 'title' => 'Manage per-student LMS content permissions', 'active' => ['admin_student_access']],
+            ['label' => 'Support Analytics', 'href' => 'admin_support_analytics', 'icon' => 'bi-headset', 'title' => 'Analytics, KB backlog, knowledge base, and enrollment lookup', 'active' => ['admin_support_analytics', 'admin_support_backlog', 'admin_support_kb', 'admin_support_lookup']],
         ],
     ],
     [
         'label' => 'Content',
         'items' => [
-            ['label' => 'Content', 'href' => 'admin_subjects.php', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, materials, quizzes, test bank', 'active' => ['admin_subjects.php', 'admin_lessons.php', 'admin_videos.php', 'admin_handouts.php', 'admin_materials.php', 'admin_quizzes.php', 'admin_quiz_questions.php', 'admin_test_bank.php']],
-            ['label' => 'Preboards', 'href' => 'admin_preboards_subjects.php', 'icon' => 'bi-clipboard-check', 'title' => 'Preboards: subjects, sets, questions, monitoring', 'active' => ['admin_preboards_subjects.php', 'admin_preboards_sets.php', 'admin_preboards_questions.php', 'admin_preboards_monitor.php', 'admin_preboards_attempt_review.php'], 'badge' => $adminPreboardsPendingCount],
-            ['label' => 'Pre-week', 'href' => 'admin_preweek.php', 'icon' => 'bi-lightning-charge', 'title' => 'Pre-week: list entries → lectures → materials (per lecture)', 'active' => ['admin_preweek.php', 'admin_preweek_topics.php', 'admin_preweek_materials.php']],
-            ['label' => 'Question sorting', 'href' => 'admin_question_sort.php', 'icon' => 'bi-diagram-3', 'title' => 'Upload .docx MCQs; group by topic in parentheses; export JSON / HTML / Word', 'active' => ['admin_question_sort.php']],
+            ['label' => 'Content', 'href' => 'admin_subjects', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, materials, quizzes, test bank', 'active' => ['admin_subjects', 'admin_lessons', 'admin_videos', 'admin_handouts', 'admin_materials', 'admin_quizzes', 'admin_quiz_questions', 'admin_test_bank']],
+            ['label' => 'Preboards', 'href' => 'admin_preboards_subjects', 'icon' => 'bi-clipboard-check', 'title' => 'Preboards: subjects, sets, questions, monitoring', 'active' => ['admin_preboards_subjects', 'admin_preboards_sets', 'admin_preboards_questions', 'admin_preboards_monitor', 'admin_preboards_attempt_review'], 'badge' => $adminPreboardsPendingCount],
+            ['label' => 'Pre-week', 'href' => 'admin_preweek', 'icon' => 'bi-lightning-charge', 'title' => 'Pre-week: list entries → lectures → materials (per lecture)', 'active' => ['admin_preweek', 'admin_preweek_topics', 'admin_preweek_materials']],
+            ['label' => 'Question sorting', 'href' => 'admin_question_sort', 'icon' => 'bi-diagram-3', 'title' => 'Upload .docx MCQs; group by topic in parentheses; export JSON / HTML / Word', 'active' => ['admin_question_sort']],
         ],
     ],
 ];

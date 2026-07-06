@@ -5,14 +5,14 @@ requireRole('admin');
 $token = $_POST['csrf_token'] ?? '';
 if (!verifyCSRFToken($token)) {
     $_SESSION['error'] = 'Invalid request. Please try again.';
-    header('Location: admin_dashboard.php');
+    header('Location: admin_dashboard');
     exit;
 }
 
 $userId = sanitizeInt($_POST['user_id'] ?? 0);
 $months = sanitizeInt($_POST['months'] ?? 0);
 if ($userId <= 0 || $months <= 0) {
-    header('Location: admin_dashboard.php');
+    header('Location: admin_dashboard');
     exit;
 }
 
@@ -34,7 +34,7 @@ mysqli_stmt_bind_param($stmt, 'iii', $months, $months, $userId);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 
-header('Location: admin_dashboard.php');
+header('Location: admin_dashboard');
 exit;
 ?>
 

@@ -12,7 +12,7 @@ $studentUserId = (int)($_GET['user_id'] ?? 0);
 
 if ($examId <= 0 || $studentUserId <= 0) {
     $_SESSION['message'] = 'Invalid exam or student.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
@@ -23,13 +23,13 @@ $exam = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$exam) {
     $_SESSION['message'] = 'Exam not found.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
 if (!college_exam_student_on_professor_monitor_roster($conn, $examId, $studentUserId)) {
     $_SESSION['message'] = 'That student is not on this exam roster.';
-    header('Location: professor_exam_monitor.php?exam_id=' . $examId);
+    header('Location: professor_exam_monitor?exam_id=' . $examId);
     exit;
 }
 
@@ -40,7 +40,7 @@ $studentUser = mysqli_fetch_assoc(mysqli_stmt_get_result($ust));
 mysqli_stmt_close($ust);
 if (!$studentUser) {
     $_SESSION['message'] = 'Student not found.';
-    header('Location: professor_exam_monitor.php?exam_id=' . $examId);
+    header('Location: professor_exam_monitor?exam_id=' . $examId);
     exit;
 }
 
@@ -134,7 +134,7 @@ if ($attemptSubmitted && $questions !== []) {
     }
 }
 
-$backHref = 'professor_exam_monitor.php?exam_id=' . (int)$examId;
+$backHref = 'professor_exam_monitor?exam_id=' . (int)$examId;
 ?>
 <!DOCTYPE html>
 <html lang="en">

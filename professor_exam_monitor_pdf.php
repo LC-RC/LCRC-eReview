@@ -14,7 +14,7 @@ $examId = (int)($_GET['exam_id'] ?? 0);
 
 if ($examId <= 0) {
     $_SESSION['message'] = 'Invalid exam selected.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
@@ -27,7 +27,7 @@ mysqli_stmt_close($stmt);
 
 if (!$exam) {
     $_SESSION['message'] = 'Exam not found.';
-    header('Location: professor_exams.php');
+    header('Location: professor_exams');
     exit;
 }
 
@@ -65,7 +65,7 @@ $isFinished = (!empty($exam['deadline']) && (string)$exam['deadline'] < $now) ||
 
 if (!$isFinished) {
     $_SESSION['message'] = 'PDF report is only available after the exam is finished.';
-    header('Location: professor_exam_monitor.php?exam_id=' . (int)$examIdSafe);
+    header('Location: professor_exam_monitor?exam_id=' . (int)$examIdSafe);
     exit;
 }
 

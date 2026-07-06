@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Optional third-party hooks (helpdesk, CRM). Configure via environment or local overrides.
- * Do not store secrets in this file; use chat_openai.local.php pattern or server env.
+ * Do not store secrets in this file; use chat_openai.local pattern or server env.
  */
 
 function ereview_chat_integration_ticket_url(int $ticketId): ?string

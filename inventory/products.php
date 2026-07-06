@@ -6,7 +6,7 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
     $id = (int) $_GET['id'];
     mysqli_query($conn, "DELETE FROM stock_log WHERE product_id = $id");
     mysqli_query($conn, "DELETE FROM products WHERE id = $id");
-    header('Location: products.php?msg=' . urlencode('Product deleted.'));
+    header('Location: products?msg=' . urlencode('Product deleted.'));
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sku'])) {
         mysqli_query($conn, "INSERT INTO products (category_id, sku, name, description, unit, cost_price, selling_price, quantity, reorder_level) VALUES ($category_id,'$sku','$name','$description','$unit',$cost_price,$selling_price,$quantity,$reorder_level)");
         $msg = 'Product added.';
     }
-    header('Location: products.php?msg=' . urlencode($msg));
+    header('Location: products?msg=' . urlencode($msg));
     exit;
 }
 
@@ -124,7 +124,7 @@ $cat_filter = isset($_GET['cat']) ? (int) $_GET['cat'] : 0;
                         <textarea name="description" class="form-control" rows="2"><?php echo $edit ? htmlspecialchars($edit['description']) : ''; ?></textarea>
                     </div>
                     <button type="submit" class="btn btn-teal"><?php echo $edit ? 'Update' : 'Add Product'; ?></button>
-                    <?php if ($edit): ?><a href="products.php" class="btn btn-outline-secondary">Cancel</a><?php endif; ?>
+                    <?php if ($edit): ?><a href="products" class="btn btn-outline-secondary">Cancel</a><?php endif; ?>
                 </form>
             </div>
         </div>
@@ -155,8 +155,8 @@ $cat_filter = isset($_GET['cat']) ? (int) $_GET['cat'] : 0;
                                 <td><?php echo htmlspecialchars($row['unit']); ?></td>
                                 <td><?php echo (int)$row['reorder_level']; ?></td>
                                 <td>
-                                    <a href="products.php?edit=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                    <a href="products.php?delete=1&id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this product?');"><i class="bi bi-trash"></i></a>
+                                    <a href="products?edit=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                    <a href="products?delete=1&id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this product?');"><i class="bi bi-trash"></i></a>
                                 </td>
                             </tr>
                         <?php endwhile; ?>

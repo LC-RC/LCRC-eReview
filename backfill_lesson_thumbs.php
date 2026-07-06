@@ -1,7 +1,7 @@
 <?php
 /**
  * CLI: fill lesson_videos.thumbnail_url when empty (Vimeo CDN or vumbnail proxy if server cannot reach Vimeo).
- * Usage: php backfill_lesson_thumbs.php
+ * Usage: php backfill_lesson_thumbs
  */
 require __DIR__ . '/db.php';
 require __DIR__ . '/includes/vimeo_helpers.php';

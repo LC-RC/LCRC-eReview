@@ -7,21 +7,24 @@
  *   $appShellNavConfig      array of [ 'label' => section, 'items' => [ href, label, icon, title?, active[], badge? ] ]
  *
  * Optional:
- *   $appShellCurrentScript  defaults to basename($_SERVER['PHP_SELF'])
+ *   $appShellCurrentScript  defaults to ereview_page_basename()
  *   $appShellSidebarHeader  'brand' (admin/student) | 'profile' (legacy)
  *   $appShellProfileInitial, $appShellProfileName, $appShellProfileHref — when header is profile
  */
+if (!function_exists('ereview_page_basename')) {
+    require_once __DIR__ . '/../url_helpers.php';
+}
 $appShellTheme = $appShellTheme ?? 'admin';
 if ($appShellTheme === 'student' || $appShellTheme === 'professor') {
     // preserve new themes
 } else {
     $appShellTheme = 'admin';
 }
-$appShellCurrentScript = $appShellCurrentScript ?? basename($_SERVER['PHP_SELF'] ?? '');
+$appShellCurrentScript = ereview_page_basename($appShellCurrentScript ?? null);
 $appShellSidebarHeader = $appShellSidebarHeader ?? 'brand';
 $appShellNavConfig = $appShellNavConfig ?? [];
 /** @var string $appShellBrandHref Dashboard link in sidebar brand header (admin theme defaults to admin_dashboard) */
-$appShellBrandHref = $appShellBrandHref ?? ($appShellTheme === 'admin' ? 'admin_dashboard.php' : 'student_dashboard.php');
+$appShellBrandHref = $appShellBrandHref ?? ($appShellTheme === 'admin' ? ereview_url('admin_dashboard') : ereview_url('student_dashboard'));
 $storageKey = 'ereview_app_shell_sidebar_' . $appShellTheme;
 
 $appShellTzName = 'Asia/Manila';
@@ -46,7 +49,7 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
        aria-label="<?php echo $appShellTheme === 'admin' ? 'Staff' : ($appShellTheme === 'professor' ? 'Professor' : 'Student'); ?> navigation">
   <?php if ($appShellSidebarHeader === 'profile'): ?>
   <div class="app-shell-sidebar-header app-shell-sidebar-header--profile px-4 py-2.5 border-b border-white/15 flex items-center shrink-0 transition-all duration-300 app-shell-hide-when-collapsed-center">
-    <a href="<?php echo h($appShellProfileHref ?? 'student_dashboard.php'); ?>" class="student-sidebar-brand flex items-center gap-3 min-w-0 overflow-hidden rounded-xl px-2 py-1.5 -mx-2 transition-all duration-300 w-full app-shell-brand-link">
+    <a href="<?php echo h(ereview_url($appShellProfileHref ?? 'student_dashboard')); ?>" class="student-sidebar-brand flex items-center gap-3 min-w-0 overflow-hidden rounded-xl px-2 py-1.5 -mx-2 transition-all duration-300 w-full app-shell-brand-link">
       <span class="student-sidebar-avatar shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg bg-white/20 border-2 border-white/30 transition-transform duration-300 overflow-hidden" aria-hidden="true">
         <?php if (!empty($appShellProfileImage)): ?>
           <img src="<?php echo h($appShellProfileImage); ?>" alt="" class="w-full h-full object-cover" loading="lazy">
@@ -60,14 +63,14 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   <?php else: ?>
   <?php if ($appShellTheme === 'professor'): ?>
     <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-transparent border-b border-white/10 shrink-0 flex items-center">
-      <a href="<?php echo h($appShellBrandHref); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
+      <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
         <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon text-green-200/90" aria-hidden="true"></i>
         <span class="app-shell-sidebar-brand-text text-white">LCRC eReview</span>
       </a>
     </div>
   <?php else: ?>
     <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-white/10 border-b border-white/10 shrink-0 flex items-center">
-      <a href="<?php echo h($appShellBrandHref); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
+      <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
         <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon" aria-hidden="true"></i>
         <span class="app-shell-sidebar-brand-text">LCRC eReview</span>
       </a>
@@ -87,7 +90,8 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
         <span class="admin-sidebar-section-label app-shell-section-label" aria-hidden="true"><?php echo h($section['label'] ?? ''); ?></span>
       </li>
       <?php foreach ($section['items'] ?? [] as $item):
-        $isActive = in_array($appShellCurrentScript, $item['active'] ?? [], true);
+        $activePages = array_map('ereview_page_basename', $item['active'] ?? []);
+        $isActive = in_array($appShellCurrentScript, $activePages, true);
 
         if ($appShellTheme === 'admin') {
           $classes = 'app-shell-nav-link app-shell-nav-link--admin flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition';
@@ -108,14 +112,14 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
       ?>
       <li>
         <?php if ($appShellTheme === 'student'): ?>
-          <a href="<?php echo h($item['href']); ?>"
+          <a href="<?php echo h(ereview_url($item['href'])); ?>"
              class="<?php echo $classes; ?>"
              <?php if ($isActive): ?>style="background-color: rgba(255,255,255,0.22); box-shadow: 0 2px 10px rgba(0,0,0,0.1)"<?php endif; ?>>
             <i class="bi <?php echo h($item['icon']); ?> shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
             <span class="font-medium truncate whitespace-nowrap app-shell-nav-text transition-all duration-300"><?php echo h($item['label']); ?></span>
           </a>
         <?php else: ?>
-          <a href="<?php echo h($item['href']); ?>"
+          <a href="<?php echo h(ereview_url($item['href'])); ?>"
              title="<?php echo h($item['title'] ?? ''); ?>"
              class="<?php echo $classes; ?>">
             <i class="bi <?php echo h($item['icon']); ?> text-lg w-6 text-center<?php echo ($appShellTheme === 'professor') ? ' text-green-200/90' : ''; ?>"></i>

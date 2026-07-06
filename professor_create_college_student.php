@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <main class="dashboard-shell w-full max-w-none">
     <div class="mb-6 dash-anim delay-1">
-      <a href="professor_college_students.php" class="inline-flex items-center gap-1 text-sm font-semibold text-green-700 hover:underline mb-4"><i class="bi bi-arrow-left"></i> Back</a>
+      <a href="professor_college_students" class="inline-flex items-center gap-1 text-sm font-semibold text-green-700 hover:underline mb-4"><i class="bi bi-arrow-left"></i> Back</a>
 
       <div class="prof-hero overflow-hidden">
         <div class="p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <li><i class="bi bi-check-circle text-green-700 mr-1"></i> Email must be unique to log in.</li>
           <li><i class="bi bi-check-circle text-green-700 mr-1"></i> You can review accounts in the students directory.</li>
         </ul>
-        <a href="professor_college_students.php" class="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-green-700 hover:underline">
+        <a href="professor_college_students" class="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-green-700 hover:underline">
           Open student directory <i class="bi bi-arrow-right"></i>
         </a>
       </aside>

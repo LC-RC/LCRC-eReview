@@ -5,7 +5,7 @@ $role = (string)($_SESSION['role'] ?? '');
 $pageTitle = 'Help Center';
 
 if (!in_array($role, ['student', 'college_student', 'admin', 'professor_admin'], true)) {
-    header('Location: index.php');
+    header('Location: index');
     exit;
 }
 
@@ -45,7 +45,7 @@ if ($role === 'student') {
         <li>Use <strong>Preboards</strong> and <strong>Preweek</strong> for focused practice and updates.</li>
         <li>Notifications appear in the bell — click to read messages from your instructors.</li>
       </ul>
-      <p class="mt-6 mb-0"><a href="student_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
 </main>
@@ -84,7 +84,7 @@ if ($role === 'college_student') {
         <li>Submit exams from <strong>Exams</strong> before the deadline shown on each card.</li>
         <li>Upload files from <strong>Uploads</strong> when your professor assigns a task.</li>
       </ul>
-      <p class="mt-6 mb-0"><a href="college_student_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="college_student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
 </main>
@@ -124,7 +124,7 @@ if ($role === 'admin') {
         <li>Approve or reject students under <strong>Students</strong>; pending counts appear in the sidebar.</li>
         <li>Maintain subjects, lessons, quizzes, and media from the <strong>Content</strong> area.</li>
       </ul>
-      <p class="mt-6 mb-0"><a href="admin_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-sky-400 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+      <p class="mt-6 mb-0"><a href="admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-sky-400 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
   </div>
@@ -170,7 +170,7 @@ requireRole('professor_admin');
           <li>Create and publish exams from <strong>Exams</strong>; monitor attempts from <strong>Monitor</strong>.</li>
           <li>Collect files with <strong>Upload tasks</strong> and track submissions from the task monitor.</li>
         </ul>
-        <p class="mt-6 mb-0"><a href="professor_admin_dashboard.php" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+        <p class="mt-6 mb-0"><a href="professor_admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
       </div>
     </div>
   </main>

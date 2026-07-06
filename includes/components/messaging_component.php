@@ -773,7 +773,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     var tid = getThreadStudentId();
     if (!tid) return;
     if (historyListEl) historyListEl.innerHTML = '<div class="ere-msg__empty">Loading history...</div>';
-    fetch(msgApiUrl('api/messages/history.php?thread_student_id='+encodeURIComponent(String(tid))), { credentials:'same-origin', headers:{Accept:'application/json'} })
+    fetch(msgApiUrl('api/messages/history?thread_student_id='+encodeURIComponent(String(tid))), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (!d || !d.ok || !Array.isArray(d.items)) {
@@ -843,7 +843,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
   }
   function tickUnreadBadge(){
     if (root.classList.contains('ere-msg--open')) return;
-    fetch(msgApiUrl('api/messages/unread.php'), { credentials:'same-origin', headers:{Accept:'application/json'} })
+    fetch(msgApiUrl('api/messages/unread'), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (!d || !d.ok) return;
@@ -1013,7 +1013,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     if (!urls.length) return;
     urls.slice(0, 4).forEach(function(u){
       previewCache[u] = '__pending__';
-      fetch(msgApiUrl('api/messages/link_preview.php?url='+encodeURIComponent(u)), { credentials:'same-origin', headers:{Accept:'application/json'} })
+      fetch(msgApiUrl('api/messages/link_preview?url='+encodeURIComponent(u)), { credentials:'same-origin', headers:{Accept:'application/json'} })
         .then(function(r){ return r.json(); })
         .then(function(d){
           if (d && d.ok && d.preview) {
@@ -1047,7 +1047,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     var q = String(state.messageFilter || '').trim();
     var tid = getThreadStudentId();
     if (q.length < 2 || !tid) return;
-    fetch(msgApiUrl('api/messages/search.php?thread_student_id='+encodeURIComponent(String(tid))+'&q='+encodeURIComponent(q)), { credentials:'same-origin', headers:{Accept:'application/json'} })
+    fetch(msgApiUrl('api/messages/search?thread_student_id='+encodeURIComponent(String(tid))+'&q='+encodeURIComponent(q)), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (!d || !d.ok || !Array.isArray(d.messages) || !d.messages.length) return;
@@ -1092,7 +1092,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     var ids = threadIdsForPresence();
     if (!ids.length) return;
     var q = 'ids=' + encodeURIComponent(ids.join(','));
-    fetch(msgApiUrl('api/messages/presence.php?' + q), { method: 'GET', credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
+    fetch(msgApiUrl('api/messages/presence?' + q), { method: 'GET', credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         if (!d || !d.ok || !d.presence) return;
@@ -1105,7 +1105,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     if (!tid){ setTypingIndicator(null); return; }
     var after = 0;
     state.messages.forEach(function(m){ var id = Number(m.message_id||0); if (id > after) after = id; });
-    fetch(msgApiUrl('api/messages/sync.php?thread_student_id='+encodeURIComponent(String(tid))+'&after_message_id='+encodeURIComponent(String(after))), { credentials:'same-origin', headers:{Accept:'application/json'} })
+    fetch(msgApiUrl('api/messages/sync?thread_student_id='+encodeURIComponent(String(tid))+'&after_message_id='+encodeURIComponent(String(after))), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (!d || !d.ok) return;
@@ -1137,7 +1137,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     }
     setTypingIndicator(null);
   }
-  /** Fast sync for new messages + typing; slower full refresh; presence poll matches admin_students.php (10s). */
+  /** Fast sync for new messages + typing; slower full refresh; presence poll matches admin_students (10s). */
   function startMessagingPolling(){
     stopMessagingRealtime();
     state.poll = setInterval(syncTick, 2300);
@@ -1222,12 +1222,12 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
       }
     }
     var q = '?scope=full' + getActiveContactParam() + (markRead ? '&mark_read=1' : '');
-    return fetch(msgApiUrl('api/messages/bootstrap.php') + q, { credentials:'same-origin', headers:{Accept:'application/json'} })
+    return fetch(msgApiUrl('api/messages/bootstrap') + q, { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){
         return r.text().then(function(text){
           var d = null;
           try { d = JSON.parse(text); } catch (e) {
-            state.lastApiError = 'Server returned non-JSON (HTTP '+r.status+'). Check that api/messages/bootstrap.php exists and PHP errors are disabled for APIs.';
+            state.lastApiError = 'Server returned non-JSON (HTTP '+r.status+'). Check that api/messages/bootstrap exists and PHP errors are disabled for APIs.';
             state.loadingThreads = false;
             state.loadingMessages = false;
             headEl.textContent = 'Could not load messages';
@@ -1269,7 +1269,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
         renderThreads();
         renderMessages();
       }).catch(function(){
-        state.lastApiError = 'Network error — could not reach api/messages/bootstrap.php.';
+        state.lastApiError = 'Network error — could not reach api/messages/bootstrap.';
         state.loadingThreads = false;
         state.loadingMessages = false;
         headEl.textContent = 'Could not load messages';
@@ -1293,7 +1293,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     }
     if (isStaffRole(state.role)) fd.append('student_id', String(state.selectedContactId || 0));
     else fd.append('admin_id', String(state.selectedContactId || 0));
-    fetch(msgApiUrl('api/messages/send.php'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
+    fetch(msgApiUrl('api/messages/send'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (!d || !d.ok){
@@ -1339,7 +1339,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     lastTypingPost = now;
     var fd = new FormData();
     fd.append('thread_student_id', String(tid));
-    fetch(msgApiUrl('api/messages/typing.php'), { method:'POST', credentials:'same-origin', body: fd }).catch(function(){});
+    fetch(msgApiUrl('api/messages/typing'), { method:'POST', credentials:'same-origin', body: fd }).catch(function(){});
   }
   if (input){
     input.addEventListener('keydown', function(ev){
@@ -1495,7 +1495,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
       if (!msgId) return;
       var fd = new FormData();
       fd.append('message_id', String(msgId));
-      fetch(msgApiUrl('api/messages/delete.php'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
+      fetch(msgApiUrl('api/messages/delete'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
         .then(function(r){ return r.json(); })
         .then(function(d){ if (d && d.ok) refreshAll(true); })
         .catch(function(){});
@@ -1512,7 +1512,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
         var fd = new FormData();
         fd.append('thread_student_id', String(sid));
         fd.append('pin', String(pstate));
-        fetch(msgApiUrl('api/messages/pin.php'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
+        fetch(msgApiUrl('api/messages/pin'), { method:'POST', credentials:'same-origin', body:fd, headers:{Accept:'application/json'} })
           .then(function(r){ return r.json(); })
           .then(function(d){ if (d && d.ok) refreshAll(false); })
           .catch(function(){});

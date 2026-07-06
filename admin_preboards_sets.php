@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/quiz_helpers.php';
 
 $subjectId = sanitizeInt($_GET['preboards_subject_id'] ?? 0);
 if ($subjectId <= 0) {
-    header('Location: admin_preboards_subjects.php');
+    header('Location: admin_preboards_subjects');
     exit;
 }
 
@@ -17,7 +17,7 @@ mysqli_stmt_execute($stmt);
 $subject = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 if (!$subject) {
-    header('Location: admin_preboards_subjects.php');
+    header('Location: admin_preboards_subjects');
     exit;
 }
 
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = $newVal ? 'Set opened manually.' : 'Set locked.';
         }
-        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
         exit;
     }
 
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['message'] = $useSchedule ? 'Schedule saved for this set.' : 'Schedule removed. Use Open/Locked for manual control.';
             }
         }
-        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
         exit;
     }
 
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['message'] = 'Request ' . ($decision === 'approved' ? 'approved' : 'denied') . '.';
             }
         }
-        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
         exit;
     }
 
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_close($stmt);
             $_SESSION['message'] = 'Set deleted.';
         }
-        header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
         exit;
     }
 
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $setLabel = getNextPreboardsSetLabel($conn, $subjectId);
         if (!$setLabel) {
             $_SESSION['error'] = 'All sets A-Z already exist for this subject.';
-            header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+            header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
             exit;
         }
         $stmt = mysqli_prepare($conn, "INSERT INTO preboards_sets (preboards_subject_id, set_label, title, time_limit_seconds, sort_order) VALUES (?, ?, ?, ?, 0)");
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Set ' . $setLabel . ' added.';
     }
-    header('Location: admin_preboards_sets.php?preboards_subject_id=' . $subjectId);
+    header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
     exit;
 }
 
@@ -279,9 +279,9 @@ if ($searchQ !== '' && !empty($pendingRequests)) {
 
 $pageTitle = 'Preboards Sets - ' . ($subject['subject_name'] ?? 'Subject');
 $adminBreadcrumbs = [
-    ['Dashboard', 'admin_dashboard.php'],
-    ['Preboards', 'admin_preboards_subjects.php'],
-    [($subject['subject_name'] ?? 'Subject'), 'admin_preboards_sets.php?preboards_subject_id=' . (int)$subjectId],
+    ['Dashboard', 'admin_dashboard'],
+    ['Preboards', 'admin_preboards_subjects'],
+    [($subject['subject_name'] ?? 'Subject'), 'admin_preboards_sets?preboards_subject_id=' . (int)$subjectId],
     ['Sets'],
 ];
 ?>
@@ -303,13 +303,13 @@ $adminBreadcrumbs = [
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
-    <a href="admin_preboards_subjects.php" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back</a>
+    <a href="admin_preboards_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back</a>
     <div class="flex flex-wrap gap-2">
       <?php if ($showCompletion): ?>
-        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back to sets</a>
+        <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back to sets</a>
       <?php else: ?>
-        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?>&completion=1<?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">View completion report</a>
-        <a href="admin_preboards_monitor.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-bar-chart-line"></i> Full monitoring</a>
+        <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?>&completion=1<?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">View completion report</a>
+        <a href="admin_preboards_monitor?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-bar-chart-line"></i> Full monitoring</a>
         <button type="button"
                 @click="openNewSet()"
                 :disabled="!nextSetLabelFromServer"
@@ -334,7 +334,7 @@ $adminBreadcrumbs = [
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_preboards_sets.php" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preboards_sets" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="preboards_subject_id" value="<?php echo (int)$subjectId; ?>">
     <?php if ($showCompletion): ?><input type="hidden" name="completion" value="1"><?php endif; ?>
     <div class="flex-1 min-w-[200px]">
@@ -344,7 +344,7 @@ $adminBreadcrumbs = [
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo $showCompletion ? '&completion=1' : ''; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo $showCompletion ? '&completion=1' : ''; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -438,7 +438,7 @@ $adminBreadcrumbs = [
               </td>
               <td class="px-5 py-3 text-center">
                 <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                  <a href="admin_preboards_questions.php?preboards_set_id=<?php echo (int)$row['preboards_set_id']; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--quizzes" title="Questions"><i class="bi bi-list-check"></i><span class="sr-only">Questions</span></a>
+                  <a href="admin_preboards_questions?preboards_set_id=<?php echo (int)$row['preboards_set_id']; ?>&preboards_subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--quizzes" title="Questions"><i class="bi bi-list-check"></i><span class="sr-only">Questions</span></a>
                   <button type="button"
                           class="admin-row-action admin-row-action--schedule"
                           title="Schedule"
@@ -454,7 +454,7 @@ $adminBreadcrumbs = [
                     <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                     <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                       <?php if (!preboards_set_uses_schedule($row)): ?>
-                      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
+                      <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
                         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                         <input type="hidden" name="action" value="toggle_open">
                         <input type="hidden" name="preboards_set_id" value="<?php echo (int)$row['preboards_set_id']; ?>">
@@ -528,14 +528,14 @@ $adminBreadcrumbs = [
                 <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : '—'; ?></td>
                 <td class="px-5 py-3 text-center">
                   <div class="admin-row-actions">
-                    <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
+                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
                       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                       <input type="hidden" name="action" value="decide_request">
                       <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
                       <input type="hidden" name="decision" value="approved">
                       <button type="submit" class="admin-row-action admin-row-action--approve" title="Approve"><i class="bi bi-check-lg"></i><span class="sr-only">Approve</span></button>
                     </form>
-                    <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
+                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
                       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                       <input type="hidden" name="action" value="decide_request">
                       <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
@@ -562,7 +562,7 @@ $adminBreadcrumbs = [
         <h2 class="text-xl font-bold text-gray-100 m-0" x-text="isEdit ? 'Edit set' : 'Add set'"></h2>
         <button type="button" @click="setModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="p-5">
+      <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="preboards_set_id" :value="preboards_set_id">
@@ -610,7 +610,7 @@ $adminBreadcrumbs = [
         <h2 class="text-xl font-bold text-gray-100 m-0"><i class="bi bi-calendar-range text-sky-300 mr-2"></i> Schedule access</h2>
         <button type="button" @click="scheduleModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="p-5">
+      <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save_schedule">
         <input type="hidden" name="preboards_set_id" :value="schedule_set_id">
@@ -654,7 +654,7 @@ $adminBreadcrumbs = [
         <h2 class="text-xl font-bold text-gray-100 m-0"><i class="bi bi-trash text-red-400 mr-2"></i> Delete set</h2>
         <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <form method="POST" action="admin_preboards_sets.php?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>">
+      <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="preboards_set_id" :value="delete_set_id">
