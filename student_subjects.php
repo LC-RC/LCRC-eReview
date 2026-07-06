@@ -57,11 +57,10 @@ $pageTitle = 'Subjects';
     .student-hero {
       border-radius: 1rem;
       border: 1px solid rgba(255, 255, 255, 0.65);
-      background:
-        linear-gradient(135deg, #1F58C3 0%, #2563eb 42%, #1e40af 100%);
+      background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
       box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.2) inset,
-        0 16px 40px -16px rgba(31, 88, 195, 0.45);
+        0 16px 40px -16px rgba(20, 61, 89, 0.45);
     }
     .student-hero::before {
       content: '';
@@ -69,8 +68,8 @@ $pageTitle = 'Subjects';
       inset: 0;
       border-radius: inherit;
       background:
-        radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.22) 0%, transparent 42%),
-        radial-gradient(circle at 10% 90%, rgba(255, 255, 255, 0.12) 0%, transparent 40%);
+        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 10% 90%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
       pointer-events: none;
     }
     .hero-strip {
