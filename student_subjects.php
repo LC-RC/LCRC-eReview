@@ -91,16 +91,16 @@ $pageTitle = 'Subjects';
 
     /* Subject catalog cards — modern course-card layout */
     .subject-catalog-card {
-      --subject-accent: #7eb3d8;
-      --subject-tint: rgba(255, 255, 255, 0.42);
-      --subject-fallback: linear-gradient(135deg, #f8fbff 0%, #f1f6fc 100%);
+      --subject-accent: #5b9fd4;
+      --subject-overlay: rgba(91, 159, 212, 0.24);
+      --subject-fallback: linear-gradient(135deg, #f4f9fe 0%, #eaf3fb 100%);
       position: relative;
       height: 100%;
       border-radius: 10px;
       background: #fff;
-      border: 1px solid #eef2f6;
+      border: 1px solid #e8edf2;
       border-top: 3px solid var(--subject-accent);
-      box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 5px rgba(15, 23, 42, 0.05);
       overflow: hidden;
       transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
@@ -132,9 +132,7 @@ $pageTitle = 'Subjects';
       position: absolute;
       inset: 0;
       z-index: 1;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.52) 100%),
-        var(--subject-tint);
+      background: var(--subject-overlay);
       pointer-events: none;
     }
     .subject-catalog-card__bg {
@@ -142,12 +140,10 @@ $pageTitle = 'Subjects';
       height: 100%;
       object-fit: cover;
       display: block;
-      filter: brightness(1.14) contrast(0.9) saturate(0.78);
-      transition: transform 0.35s ease, filter 0.35s ease;
+      transition: transform 0.35s ease;
     }
     .subject-catalog-card:hover .subject-catalog-card__bg {
       transform: scale(1.03);
-      filter: brightness(1.18) contrast(0.88) saturate(0.82);
     }
     .subject-catalog-card__bg-fallback {
       width: 100%;
@@ -241,39 +237,39 @@ $pageTitle = 'Subjects';
     }
 
     .subject-catalog-card[data-subject-theme="afar"] {
-      --subject-accent: #c4b5fd;
-      --subject-tint: rgba(196, 181, 253, 0.14);
-      --subject-fallback: linear-gradient(135deg, #faf8ff 0%, #f5f3ff 100%);
+      --subject-accent: #a78bfa;
+      --subject-overlay: rgba(167, 139, 250, 0.26);
+      --subject-fallback: linear-gradient(135deg, #f5f0ff 0%, #ede4ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-prob"] {
-      --subject-accent: #93c5fd;
-      --subject-tint: rgba(147, 197, 253, 0.14);
-      --subject-fallback: linear-gradient(135deg, #f8fbff 0%, #eff6ff 100%);
+      --subject-accent: #60a5fa;
+      --subject-overlay: rgba(96, 165, 250, 0.26);
+      --subject-fallback: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-theories"] {
-      --subject-accent: #b8c4d4;
-      --subject-tint: rgba(184, 196, 212, 0.16);
-      --subject-fallback: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      --subject-accent: #7b8fa3;
+      --subject-overlay: rgba(123, 143, 163, 0.28);
+      --subject-fallback: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     }
     .subject-catalog-card[data-subject-theme="far"] {
-      --subject-accent: #fda4af;
-      --subject-tint: rgba(253, 164, 175, 0.14);
-      --subject-fallback: linear-gradient(135deg, #fffafb 0%, #fff5f7 100%);
+      --subject-accent: #f47288;
+      --subject-overlay: rgba(244, 114, 136, 0.24);
+      --subject-fallback: linear-gradient(135deg, #fff1f3 0%, #ffe4e8 100%);
     }
     .subject-catalog-card[data-subject-theme="mas"] {
-      --subject-accent: #86efac;
-      --subject-tint: rgba(134, 239, 172, 0.14);
-      --subject-fallback: linear-gradient(135deg, #f7fef9 0%, #f0fdf4 100%);
+      --subject-accent: #5cb87a;
+      --subject-overlay: rgba(92, 184, 122, 0.24);
+      --subject-fallback: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
     }
     .subject-catalog-card[data-subject-theme="rfbt"] {
-      --subject-accent: #d4a0a8;
-      --subject-tint: rgba(212, 160, 168, 0.14);
-      --subject-fallback: linear-gradient(135deg, #fefafa 0%, #fdf5f6 100%);
+      --subject-accent: #b85c5c;
+      --subject-overlay: rgba(184, 92, 92, 0.26);
+      --subject-fallback: linear-gradient(135deg, #fef2f2 0%, #fde8e8 100%);
     }
     .subject-catalog-card[data-subject-theme="tax"] {
-      --subject-accent: #fcd34d;
-      --subject-tint: rgba(252, 211, 77, 0.16);
-      --subject-fallback: linear-gradient(135deg, #fffef8 0%, #fffbeb 100%);
+      --subject-accent: #e8b339;
+      --subject-overlay: rgba(232, 179, 57, 0.28);
+      --subject-fallback: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
     }
 
     @media (prefers-reduced-motion: reduce) {
