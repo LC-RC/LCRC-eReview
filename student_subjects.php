@@ -124,9 +124,10 @@ $pageTitle = 'Subjects';
     /* Subject catalog — crisp, modern course cards */
     .subject-catalog-card {
       --subject-accent: #1665A0;
+      --subject-color: #1665A0;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(22, 101, 160, 0.1);
-      --subject-tint: rgba(22, 101, 160, 0.08);
-      --subject-fallback: linear-gradient(145deg, #f4f9fe 0%, #eaf3fb 100%);
+      --subject-fallback: #f1f5f9;
       position: relative;
       height: 100%;
       border-radius: 1rem;
@@ -169,14 +170,15 @@ $pageTitle = 'Subjects';
       flex-shrink: 0;
       height: 148px;
       overflow: hidden;
-      background: var(--subject-fallback);
+      background: #f1f5f9;
     }
     .subject-catalog-card__media::after {
       content: '';
       position: absolute;
       inset: 0;
       z-index: 1;
-      background: var(--subject-tint);
+      background: var(--subject-color);
+      opacity: var(--subject-overlay-opacity);
       pointer-events: none;
     }
     .subject-catalog-card__bg {
@@ -297,45 +299,45 @@ $pageTitle = 'Subjects';
 
     .subject-catalog-card[data-subject-theme="afar"] {
       --subject-accent: #7c3aed;
+      --subject-color: #7c3aed;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(124, 58, 237, 0.1);
-      --subject-tint: rgba(124, 58, 237, 0.1);
-      --subject-fallback: linear-gradient(145deg, #faf8ff 0%, #f3eeff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-prob"] {
       --subject-accent: #2563eb;
+      --subject-color: #2563eb;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(37, 99, 235, 0.1);
-      --subject-tint: rgba(37, 99, 235, 0.1);
-      --subject-fallback: linear-gradient(145deg, #f5f9ff 0%, #edf4ff 100%);
     }
     .subject-catalog-card[data-subject-theme="aud-theories"] {
       --subject-accent: #64748b;
+      --subject-color: #64748b;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(100, 116, 139, 0.1);
-      --subject-tint: rgba(100, 116, 139, 0.1);
-      --subject-fallback: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
     }
     .subject-catalog-card[data-subject-theme="far"] {
       --subject-accent: #e11d48;
+      --subject-color: #e11d48;
+      --subject-overlay-opacity: 0.08;
       --subject-accent-soft: rgba(225, 29, 72, 0.1);
-      --subject-tint: rgba(225, 29, 72, 0.08);
-      --subject-fallback: linear-gradient(145deg, #fff8f9 0%, #fff1f3 100%);
     }
     .subject-catalog-card[data-subject-theme="mas"] {
       --subject-accent: #059669;
+      --subject-color: #059669;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(5, 150, 105, 0.1);
-      --subject-tint: rgba(5, 150, 105, 0.1);
-      --subject-fallback: linear-gradient(145deg, #f4fdf8 0%, #ecfdf5 100%);
     }
     .subject-catalog-card[data-subject-theme="rfbt"] {
       --subject-accent: #991b1b;
+      --subject-color: #991b1b;
+      --subject-overlay-opacity: 0.1;
       --subject-accent-soft: rgba(153, 27, 27, 0.1);
-      --subject-tint: rgba(153, 27, 27, 0.1);
-      --subject-fallback: linear-gradient(145deg, #fff8f8 0%, #fef2f2 100%);
     }
     .subject-catalog-card[data-subject-theme="tax"] {
       --subject-accent: #d97706;
+      --subject-color: #d97706;
+      --subject-overlay-opacity: 0.12;
       --subject-accent-soft: rgba(217, 119, 6, 0.12);
-      --subject-tint: rgba(217, 119, 6, 0.1);
-      --subject-fallback: linear-gradient(145deg, #fffdf5 0%, #fffbeb 100%);
     }
 
     .subject-catalog-card.lms-locked-card {
