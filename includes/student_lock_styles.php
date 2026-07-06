@@ -6,16 +6,16 @@
 <style>
   .lms-locked-card {
     position: relative;
-    opacity: 0.72;
+    opacity: 0.82;
     pointer-events: none;
-    filter: grayscale(0.15);
+    filter: grayscale(0.08) saturate(0.85);
   }
   .lms-locked-card::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: rgba(248, 250, 252, 0.35);
+    background: rgba(248, 250, 252, 0.2);
     pointer-events: none;
   }
   .lms-lock-badge {
