@@ -199,7 +199,7 @@ if (!function_exists('notifications_create_admin_preboards_request_notifications
         $isRetake = $requestType === 'retake';
         $title = $isRetake ? 'Preboards retake request' : 'Preboards access request';
         $msg = $studentName . ' requested ' . ($isRetake ? 'a retake' : 'access') . ' for Set ' . $setLabel . ' (' . $subjectName . ').';
-        $link = 'admin_preboards_sets?preboards_subject_id=' . (int) $preboardsSubjectId;
+        $link = 'admin_preboards_sets?preboards_subject_id=' . (int) $preboardsSubjectId . '#preboards-requests';
         $role = 'admin';
         $category = $isRetake ? 'preboards_request_retake' : 'preboards_request_access';
         $isRead = 0;
@@ -277,7 +277,7 @@ if (!function_exists('notifications_sync_admin_preboards_pending_reminder')) {
         $detail = implode(' and ', $parts);
         $title = 'Pending preboards requests';
         $msg = 'You have ' . $counts['total'] . ' pending student request(s)' . ($detail !== '' ? ' (' . $detail . ')' : '') . '. Review them under Preboards sets.';
-        $link = 'admin_preboards_subjects';
+        $link = 'admin_preboards_subjects#preboards-requests';
         $role = 'admin';
         $category = 'preboards_pending_digest';
         $isRead = 0;

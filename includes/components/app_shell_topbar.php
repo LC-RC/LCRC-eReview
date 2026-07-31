@@ -103,8 +103,14 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
 <header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
     userMenuOpen: false,
     searchFocused: false,
+    searchQuery: '',
     toggleSidebar() { window.toggleAppShellSidebar && window.toggleAppShellSidebar(); },
-    closeAll() { this.userMenuOpen = false; }
+    closeAll() { this.userMenuOpen = false; },
+    goSearch() {
+      var q = (this.searchQuery || '').trim();
+      if (!q) { window.location.href = 'admin_students'; return; }
+      window.location.href = 'admin_students?tab=all&q=' + encodeURIComponent(q) + '&page=1';
+    }
   }" @keydown.escape.window="closeAll()">
   <div class="admin-topbar-inner">
     <div class="admin-topbar-left">
@@ -120,15 +126,20 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
           </span>
         </button>
       <?php endif; ?>
-      <div class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }">
+      <form class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }" @submit.prevent="goSearch()" role="search">
         <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
-        <input type="search" placeholder="Search students, subjects..." aria-label="Search" class="admin-topbar-search"
+        <input type="search" placeholder="Search students, email…" aria-label="Search students" class="admin-topbar-search"
+               x-model="searchQuery"
                @focus="searchFocused = true" @blur="searchFocused = false">
-      </div>
+      </form>
     </div>
 
     <div class="admin-topbar-right">
       <nav class="admin-topbar-actions" aria-label="Quick actions">
+        <button type="button" class="admin-theme-toggle" data-admin-theme-toggle aria-pressed="true" title="Switch theme" aria-label="Switch theme">
+          <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+          <i class="bi bi-sun-fill" aria-hidden="true"></i>
+        </button>
         <button type="button" aria-label="Messages" class="admin-topbar-action admin-topbar-action--message relative" title="Messages" data-message-toggle>
           <i class="bi bi-chat-left-text" aria-hidden="true"></i>
           <span class="ere-msg-topbar-badge" aria-hidden="true"></span>
@@ -166,6 +177,11 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
           </div>
           <div class="ereview-profile-menu__section" role="group" aria-label="Account menu">
             <span class="ereview-profile-menu__section-label">Menu</span>
+            <button type="button" class="ereview-profile-menu__link ereview-profile-menu__link--nav" role="menuitem" data-admin-theme-toggle @click="userMenuOpen = false" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;">
+              <span class="ereview-profile-menu__link-icon"><i class="bi bi-circle-half" aria-hidden="true"></i></span>
+              <span class="ereview-profile-menu__link-text">Toggle light / dark</span>
+              <i class="bi bi-chevron-right ereview-profile-menu__chev" aria-hidden="true"></i>
+            </button>
             <a href="<?php echo h($ereviewProfilePageHref); ?>" class="ereview-profile-menu__link ereview-profile-menu__link--nav" role="menuitem" @click="userMenuOpen = false">
               <span class="ereview-profile-menu__link-icon"><i class="bi bi-person-circle" aria-hidden="true"></i></span>
               <span class="ereview-profile-menu__link-text">My Profile</span>

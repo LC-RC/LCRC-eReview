@@ -7,7 +7,7 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
   <input type="checkbox" class="rounded border-gray-500 w-4 h-4" :checked="hasFullLms" @change="toggleFullLms($event.target.checked)">
   <span>
     <span class="block text-gray-100">Full LMS access</span>
-    <span class="block text-xs font-normal text-gray-500">Unlocks all subjects, preboards, pre-week, and test bank</span>
+    <span class="block text-xs font-normal text-gray-500">Unlocks all subjects, topics, preboards, pre-week, and test bank</span>
   </span>
 </label>
 
@@ -17,30 +17,61 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
   No LMS content found to assign. Add active subjects, preboards, pre-week units, or test bank items first.
   </p>
 
+  <p class="sca-tree-hint text-xs text-gray-500 m-0 mb-2">Expand a subject to grant the whole subject, or select individual topics inside it.</p>
+
   <template x-for="sub in catalog.subjects" :key="'<?php echo $scope; ?>-sub-'+sub.id">
-    <details>
-      <summary x-text="sub.label"></summary>
-      <label><input type="checkbox" :checked="isChecked('subject', sub.id)" @change="toggle('subject', sub.id, $event.target.checked)"> Entire subject</label>
-      <template x-for="les in sub.lessons" :key="'<?php echo $scope; ?>-les-'+les.id">
-        <details>
-          <summary x-text="'Lesson: ' + les.label"></summary>
-          <label><input type="checkbox" :checked="isChecked('lesson', les.id)" @change="toggle('lesson', les.id, $event.target.checked)"> Entire lesson</label>
-          <template x-for="v in les.videos" :key="'<?php echo $scope; ?>-vid-'+v.id">
-            <label><input type="checkbox" :checked="isChecked('video', v.id)" @change="toggle('video', v.id, $event.target.checked)"> Video: <span x-text="v.label"></span></label>
-          </template>
-          <template x-for="h in les.handouts" :key="'<?php echo $scope; ?>-ho-'+h.id">
-            <label><input type="checkbox" :checked="isChecked('handout', h.id)" @change="toggle('handout', h.id, $event.target.checked)"> Handout: <span x-text="h.label"></span></label>
-          </template>
-        </details>
-      </template>
-      <template x-for="qz in sub.quizzes" :key="'<?php echo $scope; ?>-qz-'+qz.id">
-        <label><input type="checkbox" :checked="isChecked('quiz', qz.id)" @change="toggle('quiz', qz.id, $event.target.checked)"> Quiz: <span x-text="qz.label"></span></label>
-      </template>
+    <details class="sca-subject-block">
+      <summary class="sca-subject-summary">
+        <span class="sca-chevron" aria-hidden="true"></span>
+        <span class="sca-subject-summary__label" x-text="sub.label"></span>
+        <span class="sca-subject-summary__meta" x-text="(sub.lessons?.length || 0) + ' topic' + ((sub.lessons?.length || 0) === 1 ? '' : 's')"></span>
+      </summary>
+
+      <label class="sca-grant-all">
+        <input type="checkbox" :checked="isChecked('subject', sub.id)" @change="toggle('subject', sub.id, $event.target.checked)">
+        <span>
+          <span class="sca-grant-all__title">Entire subject</span>
+          <span class="sca-grant-all__sub">All topics, quizzes, videos, and handouts under this subject</span>
+        </span>
+      </label>
+
+      <div class="sca-topic-list" x-show="!isChecked('subject', sub.id)">
+        <p class="sca-topic-list__head">Topics</p>
+        <p class="sca-topic-list__empty text-xs text-gray-500 m-0 mb-2" x-show="!(sub.lessons && sub.lessons.length)">
+          No topics yet for this subject. Add lessons/topics in Subjects admin, or grant Entire subject.
+        </p>
+        <template x-for="les in sub.lessons" :key="'<?php echo $scope; ?>-les-'+les.id">
+          <div class="sca-topic-item">
+            <label class="sca-topic-check">
+              <input type="checkbox" :checked="isChecked('lesson', les.id)" @change="toggle('lesson', les.id, $event.target.checked)">
+              <span>Topic: <span x-text="les.label"></span></span>
+            </label>
+            <details class="sca-topic-assets" x-show="(les.videos?.length || 0) + (les.handouts?.length || 0) > 0 && !isChecked('lesson', les.id) && !isChecked('subject', sub.id)">
+              <summary>Videos &amp; handouts</summary>
+              <template x-for="v in les.videos" :key="'<?php echo $scope; ?>-vid-'+v.id">
+                <label><input type="checkbox" :checked="isChecked('video', v.id)" @change="toggle('video', v.id, $event.target.checked)"> Video: <span x-text="v.label"></span></label>
+              </template>
+              <template x-for="h in les.handouts" :key="'<?php echo $scope; ?>-ho-'+h.id">
+                <label><input type="checkbox" :checked="isChecked('handout', h.id)" @change="toggle('handout', h.id, $event.target.checked)"> Handout: <span x-text="h.label"></span></label>
+              </template>
+            </details>
+          </div>
+        </template>
+
+        <template x-if="sub.quizzes && sub.quizzes.length">
+          <div class="sca-quiz-list">
+            <p class="sca-topic-list__head">Quizzes</p>
+            <template x-for="qz in sub.quizzes" :key="'<?php echo $scope; ?>-qz-'+qz.id">
+              <label><input type="checkbox" :checked="isChecked('quiz', qz.id)" @change="toggle('quiz', qz.id, $event.target.checked)"> Quiz: <span x-text="qz.label"></span></label>
+            </template>
+          </div>
+        </template>
+      </div>
     </details>
   </template>
 
   <details x-show="catalog.preboard_subjects.length">
-    <summary>Preboards</summary>
+    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Preboards</summary>
     <template x-for="pbs in catalog.preboard_subjects" :key="'<?php echo $scope; ?>-pbs-'+pbs.id">
       <details>
         <summary x-text="pbs.label"></summary>
@@ -60,7 +91,7 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
   </details>
 
   <details x-show="catalog.preweek_units.length">
-    <summary>Pre-week</summary>
+    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Pre-week</summary>
     <template x-for="pu in catalog.preweek_units" :key="'<?php echo $scope; ?>-pu-'+pu.id">
       <details>
         <summary x-text="pu.label"></summary>
@@ -73,7 +104,7 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
   </details>
 
   <details x-show="catalog.test_bank.length">
-    <summary>Test Bank</summary>
+    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Test Bank</summary>
     <template x-for="tb in catalog.test_bank" :key="'<?php echo $scope; ?>-tb-'+tb.id">
       <label><input type="checkbox" :checked="isChecked('test_bank', tb.id)" @change="toggle('test_bank', tb.id, $event.target.checked)"> <span x-text="tb.label"></span></label>
     </template>

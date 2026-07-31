@@ -87,11 +87,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $isValid = false;
     if ($user) {
-        // Accept hashed passwords; fallback to plain match for existing seed data
-        if (password_verify($password, $user['password'])) {
+        $stored = (string)($user['password'] ?? '');
+        if ($stored !== '' && password_verify($password, $stored)) {
             $isValid = true;
-        } elseif ($password === $user['password']) {
+        } elseif ($stored !== '' && !preg_match('/^\$2[ayb]\$/', $stored) && hash_equals($stored, $password)) {
+            // Legacy plaintext seed passwords: accept once, then upgrade to bcrypt.
             $isValid = true;
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $upPw = @mysqli_prepare($conn, 'UPDATE users SET password = ? WHERE user_id = ? LIMIT 1');
+            if ($upPw) {
+                $uidUp = (int)$user['user_id'];
+                mysqli_stmt_bind_param($upPw, 'si', $newHash, $uidUp);
+                @mysqli_stmt_execute($upPw);
+                mysqli_stmt_close($upPw);
+            }
         }
     }
 

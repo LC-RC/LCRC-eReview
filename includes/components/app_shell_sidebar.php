@@ -425,7 +425,7 @@ include __DIR__ . '/../logout_confirm_modal.php';
 ?>
 
 <?php if ($appShellTheme === 'admin'): ?>
-<main id="main" class="min-h-screen flex flex-col bg-[#f6f9ff] text-gray-700 font-sans">
+<main id="main" class="min-h-screen flex flex-col admin-main-shell font-sans">
 <?php
 $appShellTopbarTheme = 'admin';
 include __DIR__ . '/app_shell_topbar.php';

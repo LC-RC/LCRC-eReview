@@ -13,9 +13,13 @@ if (function_exists('date_default_timezone_set')) {
 
 // Start session with secure configuration
 if (session_status() === PHP_SESSION_NONE) {
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+        (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+    );
     // Configure session settings
     ini_set('session.cookie_httponly', 1);
-    ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+    ini_set('session.cookie_secure', $isHttps ? '1' : '0');
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_samesite', 'Lax');
     
@@ -27,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => 28800, // 8 hours
         'path' => '/',
         'domain' => '',
-        'secure' => false, // Set to true if using HTTPS
+        'secure' => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);

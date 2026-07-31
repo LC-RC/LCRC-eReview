@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
 requireRole('admin');
+require_once __DIR__ . '/includes/preboards_migrate.php';
+require_once __DIR__ . '/includes/preboards_helpers.php';
 
 // Ensure module table exists
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS preboards_subjects (
@@ -25,11 +27,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_preboards_subjects');
+        header('Location: admin_preboards_subjects#preboards-requests');
         exit;
     }
 
     $action = $_POST['action'] ?? 'save';
+
+    if ($action === 'decide_request') {
+        $reqId = sanitizeInt($_POST['preboards_request_id'] ?? 0);
+        $decision = $_POST['decision'] ?? '';
+        $adminId = (int) getCurrentUserId();
+        if (preboards_decide_request($conn, $reqId, $decision, $adminId)) {
+            $_SESSION['message'] = 'Request ' . ($decision === 'approved' ? 'approved' : 'denied') . '.';
+        } else {
+            $_SESSION['error'] = 'Could not update that request. It may already be decided.';
+        }
+        header('Location: admin_preboards_subjects#preboards-requests');
+        exit;
+    }
+
+    if ($action === 'decide_requests_bulk') {
+        $decision = $_POST['decision'] ?? '';
+        $idsRaw = $_POST['request_ids'] ?? [];
+        if (!is_array($idsRaw)) {
+            $idsRaw = [];
+        }
+        $ids = [];
+        foreach ($idsRaw as $id) {
+            $id = sanitizeInt($id);
+            if ($id > 0) {
+                $ids[$id] = true;
+            }
+        }
+        $ids = array_keys($ids);
+        $adminId = (int) getCurrentUserId();
+        $ok = 0;
+        if (in_array($decision, ['approved', 'denied'], true) && !empty($ids)) {
+            foreach ($ids as $reqId) {
+                if (preboards_decide_request($conn, (int) $reqId, $decision, $adminId)) {
+                    $ok++;
+                }
+            }
+        }
+        if ($ok > 0) {
+            $_SESSION['message'] = $ok . ' request' . ($ok === 1 ? '' : 's') . ' ' . ($decision === 'approved' ? 'approved' : 'denied') . '.';
+        } else {
+            $_SESSION['error'] = 'No requests were updated. Select at least one pending request.';
+        }
+        header('Location: admin_preboards_subjects#preboards-requests');
+        exit;
+    }
 
     if ($action === 'delete') {
         $delId = sanitizeInt($_POST['preboards_subject_id'] ?? 0);
@@ -140,6 +187,9 @@ if ($statusFilter === 'active' || $statusFilter === 'inactive') {
 mysqli_stmt_execute($stmt);
 $subjects = mysqli_stmt_get_result($stmt);
 
+$pendingRequestsInbox = preboards_list_pending_requests($conn);
+$pendingRequestsCount = count($pendingRequestsInbox);
+
 $pageTitle = 'Preboards';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
 ?>
@@ -151,26 +201,156 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
 <body class="font-sans antialiased admin-app admin-preboards-page" x-data="adminPreboardsSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero">
+  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero admin-glass-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
-      Preboards
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0">Add and manage preboards (student layout mirrors Subjects).</p>
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+          <span>Preboards</span>
+          <?php if ($pendingRequestsCount > 0): ?>
+            <a href="#preboards-requests" class="inline-flex items-center gap-1.5 text-sm font-semibold px-2.5 py-1 rounded-full no-underline"
+               style="background:rgba(217,119,6,0.14);color:#b45309;border:1px solid rgba(217,119,6,0.28)">
+              <i class="bi bi-inbox"></i> <?php echo (int)$pendingRequestsCount; ?> pending request<?php echo $pendingRequestsCount === 1 ? '' : 's'; ?>
+            </a>
+          <?php endif; ?>
+        </h1>
+        <p class="admin-page-header__subtitle">Manage preboard subjects, sets, questions, and student access requests.</p>
+      </div>
+      <div class="admin-page-header__actions">
+        <?php if ($pendingRequestsCount > 0): ?>
+          <a href="#preboards-requests" class="admin-btn admin-btn--secondary"><i class="bi bi-people"></i> View requests</a>
+        <?php endif; ?>
+        <button type="button" class="admin-btn admin-btn--primary" @click="openNewSubject()"><i class="bi bi-plus-lg"></i> New Preboard</button>
+      </div>
+    </div>
   </div>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
-      <i class="bi bi-check-circle-fill"></i><span><?php echo h($_SESSION['message']); ?></span>
+    <div class="quiz-admin-alert quiz-admin-alert--success mb-5 flex items-center gap-2">
+      <i class="bi bi-check-circle-fill shrink-0"></i><span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
-      <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($_SESSION['error']); ?></span>
+    <div class="quiz-admin-alert quiz-admin-alert--error mb-5 flex items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill shrink-0"></i><span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
+  <?php endif; ?>
+
+  <?php if ($pendingRequestsCount > 0): ?>
+  <section id="preboards-requests" class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5" style="scroll-margin-top:1.25rem"
+           x-data="{
+             selected: {},
+             allIds: [<?php echo implode(',', array_map(static fn($r) => (int)$r['preboards_request_id'], $pendingRequestsInbox)); ?>],
+             get selectedCount() { return Object.keys(this.selected).filter((k) => this.selected[k]).length; },
+             get allSelected() { return this.allIds.length > 0 && this.selectedCount === this.allIds.length; },
+             toggleAll() {
+               if (this.allSelected) { this.selected = {}; return; }
+               const next = {};
+               this.allIds.forEach((id) => { next[id] = true; });
+               this.selected = next;
+             },
+             toggleOne(id) { this.selected[id] = !this.selected[id]; },
+             submitBulk(decision) {
+               if (this.selectedCount < 1) return;
+               const verb = decision === 'approved' ? 'approve' : 'deny';
+               if (!confirm(verb.charAt(0).toUpperCase() + verb.slice(1) + ' ' + this.selectedCount + ' selected request(s)?')) return;
+               this.$refs.bulkDecision.value = decision;
+               this.$refs.bulkForm.submit();
+             }
+           }">
+    <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="font-semibold text-gray-100">Who requested access</span>
+        <p class="text-sm text-gray-500 mt-0.5 mb-0">Select requests with checkboxes, then approve or deny in bulk.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full text-sm font-semibold" style="background:rgba(217,119,6,0.14);color:#b45309;border:1px solid rgba(217,119,6,0.28)"><?php echo (int)$pendingRequestsCount; ?> pending</span>
+        <button type="button" class="admin-btn admin-btn--primary text-sm" :disabled="selectedCount < 1" @click="submitBulk('approved')"
+                :class="selectedCount < 1 ? 'opacity-50 cursor-not-allowed' : ''">
+          <i class="bi bi-check2-all"></i> Approve selected <span x-show="selectedCount > 0" x-text="'(' + selectedCount + ')'"></span>
+        </button>
+        <button type="button" class="admin-btn admin-btn--secondary text-sm" :disabled="selectedCount < 1" @click="submitBulk('denied')"
+                :class="selectedCount < 1 ? 'opacity-50 cursor-not-allowed' : ''">
+          <i class="bi bi-x-lg"></i> Deny selected
+        </button>
+        <button type="button" class="admin-btn admin-btn--secondary text-sm"
+                @click="
+                  const next = {};
+                  allIds.forEach((id) => { next[id] = true; });
+                  selected = next;
+                  submitBulk('approved');
+                "
+                title="Select all and approve">
+          <i class="bi bi-lightning-charge"></i> Approve all
+        </button>
+      </div>
+    </div>
+
+    <form x-ref="bulkForm" method="POST" action="admin_preboards_subjects#preboards-requests" class="m-0">
+      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+      <input type="hidden" name="action" value="decide_requests_bulk">
+      <input type="hidden" name="decision" value="" x-ref="bulkDecision">
+      <template x-for="id in allIds" :key="id">
+        <input type="hidden" name="request_ids[]" :value="id" x-bind:disabled="!selected[id]">
+      </template>
+
+      <div class="overflow-x-auto">
+        <table class="quiz-admin-data-table w-full text-left">
+          <thead>
+            <tr>
+              <th class="px-4 py-3 w-12">
+                <label class="inline-flex items-center gap-2 cursor-pointer m-0" title="Select all">
+                  <input type="checkbox" class="rounded border-gray-400" :checked="allSelected" @change="toggleAll()" aria-label="Select all requests">
+                </label>
+              </th>
+              <th class="px-5 py-3 font-semibold">Student</th>
+              <th class="px-5 py-3 font-semibold">Subject</th>
+              <th class="px-5 py-3 font-semibold">Set</th>
+              <th class="px-5 py-3 font-semibold">Type</th>
+              <th class="px-5 py-3 font-semibold">Requested</th>
+              <th class="px-5 py-3 font-semibold w-[140px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($pendingRequestsInbox as $r): $rid = (int)$r['preboards_request_id']; ?>
+              <tr class="quiz-admin-row" :class="selected[<?php echo $rid; ?>] ? 'bg-sky-500/5' : ''">
+                <td class="px-4 py-3">
+                  <input type="checkbox" class="rounded border-gray-400" :checked="!!selected[<?php echo $rid; ?>]" @change="toggleOne(<?php echo $rid; ?>)" aria-label="Select <?php echo h($r['full_name'] ?? 'request'); ?>">
+                </td>
+                <td class="px-5 py-3">
+                  <div class="font-semibold text-gray-100"><?php echo h($r['full_name'] ?? ''); ?></div>
+                  <div class="text-xs text-gray-500"><?php echo h($r['email'] ?? ''); ?></div>
+                </td>
+                <td class="px-5 py-3">
+                  <a class="font-medium admin-link" href="admin_preboards_sets?preboards_subject_id=<?php echo (int)($r['preboards_subject_id'] ?? 0); ?>#preboards-requests"><?php echo h($r['subject_name'] ?? 'Subject'); ?></a>
+                </td>
+                <td class="px-5 py-3 font-semibold text-gray-100">Set <?php echo h($r['set_label'] ?? ''); ?></td>
+                <td class="px-5 py-3 text-sm">
+                  <?php if (($r['request_type'] ?? '') === 'open'): ?>
+                    <span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-700 border border-sky-500/35 font-semibold">Access</span>
+                  <?php else: ?>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 border border-amber-500/35 font-semibold">Retake</span>
+                  <?php endif; ?>
+                </td>
+                <td class="px-5 py-3 text-sm text-gray-500"><?php echo preboards_format_datetime($r['requested_at'] ?? null); ?></td>
+                <td class="px-5 py-3">
+                  <div class="admin-row-actions">
+                    <button type="button" class="admin-row-action admin-row-action--approve" title="Approve <?php echo h($r['full_name'] ?? ''); ?>"
+                            @click="selected = { <?php echo $rid; ?>: true }; submitBulk('approved')"><i class="bi bi-check-lg"></i><span class="sr-only">Approve</span></button>
+                    <button type="button" class="admin-row-action admin-row-action--deny" title="Deny <?php echo h($r['full_name'] ?? ''); ?>"
+                            @click="selected = { <?php echo $rid; ?>: true }; submitBulk('denied')"><i class="bi bi-x-lg"></i><span class="sr-only">Deny</span></button>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </section>
   <?php endif; ?>
 
   <div class="rounded-xl shadow-card border p-5 mb-5 page-filter">
@@ -258,7 +438,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
                     <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--sets" title="Manage sets"><i class="bi bi-collection"></i><span class="sr-only">Manage sets</span></a>
                     <a href="admin_preboards_monitor?preboards_subject_id=<?php echo (int)$s['preboards_subject_id']; ?>" class="admin-row-action admin-row-action--monitor" title="Monitoring"><i class="bi bi-bar-chart-line"></i><span class="sr-only">Monitoring</span></a>
                     <div class="admin-row-menu-wrap">
-                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                         <button type="button"
                                 class="admin-row-menu__item"

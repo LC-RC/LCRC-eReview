@@ -1,8 +1,33 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/remember_me.php';
 requireLogin();
 $role = (string)($_SESSION['role'] ?? '');
 $pageTitle = 'Preferences';
+$csrf = generateCSRFToken();
+$rememberMessage = null;
+$rememberError = null;
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedToken = (string)($_POST['csrf_token'] ?? '');
+    if (!verifyCSRFToken($postedToken)) {
+        $rememberError = 'Invalid request. Please refresh and try again.';
+    } elseif (isset($_POST['remember_revoke_all'])) {
+        clearRememberMeForUserId($currentUserId);
+        clearCurrentRememberedDevice($currentUserId);
+        $rememberMessage = 'All remembered devices were signed out.';
+    } elseif (isset($_POST['remember_revoke_one'])) {
+        $tokenId = (int)($_POST['token_id'] ?? 0);
+        if ($tokenId > 0 && revokeRememberedDevice($currentUserId, $tokenId)) {
+            $rememberMessage = 'Selected remembered device was removed.';
+        } else {
+            $rememberError = 'Could not remove that remembered device.';
+        }
+    }
+}
+
+$rememberDevices = getRememberedDevices($currentUserId);
 
 if (!in_array($role, ['student', 'college_student', 'admin', 'professor_admin'], true)) {
     header('Location: index');
@@ -39,6 +64,34 @@ if ($role === 'student') {
     </section>
     <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
       <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
+      <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <h2 class="text-base font-bold text-slate-800 m-0">Remembered devices</h2>
+        <p class="mt-1 text-xs text-slate-600">Manage browsers that can auto sign-in using Remember Me.</p>
+        <?php if ($rememberMessage): ?><p class="mt-3 text-sm text-emerald-700"><?php echo h($rememberMessage); ?></p><?php endif; ?>
+        <?php if ($rememberError): ?><p class="mt-3 text-sm text-rose-700"><?php echo h($rememberError); ?></p><?php endif; ?>
+        <?php if (empty($rememberDevices)): ?>
+          <p class="mt-3 text-sm text-slate-600">No active remembered devices.</p>
+        <?php else: ?>
+          <div class="mt-3 space-y-2">
+            <?php foreach ($rememberDevices as $device): ?>
+              <div class="rounded-lg border border-slate-200 bg-white p-3">
+                <p class="m-0 text-sm font-semibold text-slate-800">Token #<?php echo (int)$device['id']; ?> · Expires <?php echo h((string)($device['expires_at'] ?? '')); ?></p>
+                <p class="m-0 mt-1 text-xs text-slate-600">Last used: <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></p>
+                <?php if (!empty($device['last_used_ip'])): ?><p class="m-0 mt-1 text-xs text-slate-500">IP: <?php echo h((string)$device['last_used_ip']); ?></p><?php endif; ?>
+                <form method="POST" action="account_preferences" class="mt-2">
+                  <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                  <input type="hidden" name="token_id" value="<?php echo (int)$device['id']; ?>">
+                  <button type="submit" name="remember_revoke_one" class="text-xs font-semibold text-rose-700 hover:underline">Sign out this device</button>
+                </form>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <form method="POST" action="account_preferences" class="mt-3">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <button type="submit" name="remember_revoke_all" class="text-sm font-semibold text-rose-700 hover:underline">Sign out all remembered devices</button>
+          </form>
+        <?php endif; ?>
+      </div>
       <p class="mt-6 mb-0"><a href="student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
@@ -74,6 +127,34 @@ if ($role === 'college_student') {
     </section>
     <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
       <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
+      <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <h2 class="text-base font-bold text-slate-800 m-0">Remembered devices</h2>
+        <p class="mt-1 text-xs text-slate-600">Manage browsers that can auto sign-in using Remember Me.</p>
+        <?php if ($rememberMessage): ?><p class="mt-3 text-sm text-emerald-700"><?php echo h($rememberMessage); ?></p><?php endif; ?>
+        <?php if ($rememberError): ?><p class="mt-3 text-sm text-rose-700"><?php echo h($rememberError); ?></p><?php endif; ?>
+        <?php if (empty($rememberDevices)): ?>
+          <p class="mt-3 text-sm text-slate-600">No active remembered devices.</p>
+        <?php else: ?>
+          <div class="mt-3 space-y-2">
+            <?php foreach ($rememberDevices as $device): ?>
+              <div class="rounded-lg border border-slate-200 bg-white p-3">
+                <p class="m-0 text-sm font-semibold text-slate-800">Token #<?php echo (int)$device['id']; ?> · Expires <?php echo h((string)($device['expires_at'] ?? '')); ?></p>
+                <p class="m-0 mt-1 text-xs text-slate-600">Last used: <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></p>
+                <?php if (!empty($device['last_used_ip'])): ?><p class="m-0 mt-1 text-xs text-slate-500">IP: <?php echo h((string)$device['last_used_ip']); ?></p><?php endif; ?>
+                <form method="POST" action="account_preferences" class="mt-2">
+                  <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                  <input type="hidden" name="token_id" value="<?php echo (int)$device['id']; ?>">
+                  <button type="submit" name="remember_revoke_one" class="text-xs font-semibold text-rose-700 hover:underline">Sign out this device</button>
+                </form>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <form method="POST" action="account_preferences" class="mt-3">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <button type="submit" name="remember_revoke_all" class="text-sm font-semibold text-rose-700 hover:underline">Sign out all remembered devices</button>
+          </form>
+        <?php endif; ?>
+      </div>
       <p class="mt-6 mb-0"><a href="college_student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
@@ -110,6 +191,34 @@ if ($role === 'admin') {
     </section>
     <div class="px-6 py-6 rounded-2xl border border-white/10 bg-[#111] text-slate-200 shadow-xl">
       <p class="m-0 text-sm leading-relaxed text-slate-300"><?php echo h($blurb); ?></p>
+      <div class="mt-6 rounded-xl border border-white/15 bg-[#0b0b0b] p-4">
+        <h2 class="text-base font-bold text-white m-0">Remembered devices</h2>
+        <p class="mt-1 text-xs text-slate-400">Manage browsers that can auto sign-in using Remember Me.</p>
+        <?php if ($rememberMessage): ?><p class="mt-3 text-sm text-emerald-400"><?php echo h($rememberMessage); ?></p><?php endif; ?>
+        <?php if ($rememberError): ?><p class="mt-3 text-sm text-rose-400"><?php echo h($rememberError); ?></p><?php endif; ?>
+        <?php if (empty($rememberDevices)): ?>
+          <p class="mt-3 text-sm text-slate-400">No active remembered devices.</p>
+        <?php else: ?>
+          <div class="mt-3 space-y-2">
+            <?php foreach ($rememberDevices as $device): ?>
+              <div class="rounded-lg border border-white/10 bg-[#151515] p-3">
+                <p class="m-0 text-sm font-semibold text-white">Token #<?php echo (int)$device['id']; ?> · Expires <?php echo h((string)($device['expires_at'] ?? '')); ?></p>
+                <p class="m-0 mt-1 text-xs text-slate-400">Last used: <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></p>
+                <?php if (!empty($device['last_used_ip'])): ?><p class="m-0 mt-1 text-xs text-slate-500">IP: <?php echo h((string)$device['last_used_ip']); ?></p><?php endif; ?>
+                <form method="POST" action="account_preferences" class="mt-2">
+                  <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                  <input type="hidden" name="token_id" value="<?php echo (int)$device['id']; ?>">
+                  <button type="submit" name="remember_revoke_one" class="text-xs font-semibold text-rose-400 hover:underline">Sign out this device</button>
+                </form>
+              </div>
+            <?php endforeach; ?>
+          </div>
+          <form method="POST" action="account_preferences" class="mt-3">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <button type="submit" name="remember_revoke_all" class="text-sm font-semibold text-rose-400 hover:underline">Sign out all remembered devices</button>
+          </form>
+        <?php endif; ?>
+      </div>
       <p class="mt-6 mb-0"><a href="admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-sky-400 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>
   </div>
@@ -152,6 +261,34 @@ requireRole('professor_admin');
       </section>
       <div class="ereview-static-card-prof px-6 py-6 text-slate-800">
         <p class="m-0 text-sm leading-relaxed text-slate-600"><?php echo h($blurb); ?></p>
+        <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+          <h2 class="text-base font-bold text-emerald-900 m-0">Remembered devices</h2>
+          <p class="mt-1 text-xs text-emerald-800/80">Manage browsers that can auto sign-in using Remember Me.</p>
+          <?php if ($rememberMessage): ?><p class="mt-3 text-sm text-emerald-700"><?php echo h($rememberMessage); ?></p><?php endif; ?>
+          <?php if ($rememberError): ?><p class="mt-3 text-sm text-rose-700"><?php echo h($rememberError); ?></p><?php endif; ?>
+          <?php if (empty($rememberDevices)): ?>
+            <p class="mt-3 text-sm text-slate-600">No active remembered devices.</p>
+          <?php else: ?>
+            <div class="mt-3 space-y-2">
+              <?php foreach ($rememberDevices as $device): ?>
+                <div class="rounded-lg border border-emerald-200 bg-white p-3">
+                  <p class="m-0 text-sm font-semibold text-slate-800">Token #<?php echo (int)$device['id']; ?> · Expires <?php echo h((string)($device['expires_at'] ?? '')); ?></p>
+                  <p class="m-0 mt-1 text-xs text-slate-600">Last used: <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></p>
+                  <?php if (!empty($device['last_used_ip'])): ?><p class="m-0 mt-1 text-xs text-slate-500">IP: <?php echo h((string)$device['last_used_ip']); ?></p><?php endif; ?>
+                  <form method="POST" action="account_preferences" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                    <input type="hidden" name="token_id" value="<?php echo (int)$device['id']; ?>">
+                    <button type="submit" name="remember_revoke_one" class="text-xs font-semibold text-rose-700 hover:underline">Sign out this device</button>
+                  </form>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <form method="POST" action="account_preferences" class="mt-3">
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <button type="submit" name="remember_revoke_all" class="text-sm font-semibold text-rose-700 hover:underline">Sign out all remembered devices</button>
+            </form>
+          <?php endif; ?>
+        </div>
         <p class="mt-6 mb-0"><a href="professor_admin_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
       </div>
     </div>

@@ -1,0 +1,2052 @@
+/**
+ * Admin SaaS visual system ? premium glass + ambient depth
+ * Loads LAST. Intentional redesign of rendered UI (not just tokens).
+ */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Sans:wght@500;600;700&display=swap");
+
+/* ========== TOKENS (override earlier token file) ========== */
+html[data-admin-theme="dark"],
+:root {
+  --admin-font: "DM Sans", "Nunito", system-ui, sans-serif;
+  --admin-font-display: "Instrument Sans", "DM Sans", system-ui, sans-serif;
+
+  --admin-bg: #070b14;
+  --admin-bg-elevated: #0c1220;
+  --admin-surface: rgba(18, 26, 42, 0.72);
+  --admin-surface-solid: #121a2a;
+  --admin-surface-2: rgba(24, 34, 54, 0.78);
+  --admin-surface-hover: rgba(36, 48, 72, 0.72);
+  --admin-border: rgba(148, 183, 255, 0.12);
+  --admin-border-strong: rgba(148, 183, 255, 0.22);
+  --admin-glass: rgba(16, 24, 40, 0.55);
+  --admin-glass-strong: rgba(12, 18, 32, 0.78);
+  --admin-blur: 18px;
+
+  --admin-text: #f4f7fb;
+  --admin-text-secondary: #9aa8c0;
+  --admin-text-muted: #6d7b94;
+
+  --admin-primary: #3b82f6;
+  --admin-primary-2: #1d4ed8;
+  --admin-gold: #f2b01e;
+  --admin-gold-soft: rgba(242, 176, 30, 0.16);
+  --admin-primary-soft: rgba(59, 130, 246, 0.18);
+  --admin-primary-text: #f8fbff;
+
+  --admin-glow-blue: rgba(59, 130, 246, 0.28);
+  --admin-glow-gold: rgba(242, 176, 30, 0.14);
+
+  --admin-sidebar-bg: rgba(8, 12, 22, 0.72);
+  --admin-sidebar-border: rgba(148, 183, 255, 0.14);
+  --admin-sidebar-text: rgba(226, 232, 240, 0.78);
+  --admin-sidebar-muted: rgba(148, 183, 255, 0.45);
+  --admin-sidebar-active-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(242, 176, 30, 0.1));
+  --admin-sidebar-active-text: #ffffff;
+  --admin-topbar-bg: rgba(10, 14, 24, 0.55);
+
+  --admin-radius: 0.9rem;
+  --admin-radius-lg: 1.15rem;
+  --admin-radius-xl: 1.4rem;
+  --admin-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  --admin-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  --admin-hero-icon-fg: #dbeafe;
+  --admin-chart-grid: rgba(148, 163, 184, 0.2);
+  --admin-chart-tick: #94a3b8;
+  --admin-chart-bar: #3b82f6;
+}
+
+html[data-admin-theme="light"] {
+  --admin-font: "DM Sans", "Nunito", system-ui, sans-serif;
+  --admin-font-display: "Instrument Sans", "DM Sans", system-ui, sans-serif;
+
+  --admin-bg: #e8eef6;
+  --admin-bg-elevated: #e2e9f3;
+  --admin-surface: rgba(255, 255, 255, 0.78);
+  --admin-surface-solid: #ffffff;
+  --admin-surface-2: rgba(255, 255, 255, 0.9);
+  --admin-surface-hover: rgba(248, 250, 252, 0.98);
+  --admin-border: rgba(30, 58, 110, 0.1);
+  --admin-border-strong: rgba(30, 58, 110, 0.16);
+  --admin-glass: rgba(255, 255, 255, 0.68);
+  --admin-glass-strong: rgba(255, 255, 255, 0.82);
+  --admin-blur: 16px;
+
+  --admin-text: #0b1220;
+  --admin-text-secondary: #445468;
+  --admin-text-muted: #64748b;
+
+  --admin-primary: #2563eb;
+  --admin-primary-2: #1d4ed8;
+  --admin-gold: #c99700;
+  --admin-gold-soft: rgba(201, 151, 0, 0.14);
+  --admin-primary-soft: rgba(37, 99, 235, 0.1);
+  --admin-primary-text: #ffffff;
+
+  --admin-glow-blue: rgba(37, 99, 235, 0.16);
+  --admin-glow-gold: rgba(242, 176, 30, 0.12);
+
+  --admin-sidebar-bg: rgba(255, 255, 255, 0.78);
+  --admin-sidebar-border: rgba(30, 58, 110, 0.12);
+  --admin-sidebar-text: #334155;
+  --admin-sidebar-muted: #64748b;
+  --admin-sidebar-active-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(201, 151, 0, 0.08));
+  --admin-sidebar-active-text: #0b1220;
+  --admin-topbar-bg: rgba(255, 255, 255, 0.78);
+
+  --admin-radius: 0.9rem;
+  --admin-radius-lg: 1.15rem;
+  --admin-radius-xl: 1.4rem;
+  --admin-shadow: 0 10px 28px rgba(15, 35, 70, 0.08);
+  --admin-shadow-lg: 0 20px 48px rgba(15, 35, 70, 0.12);
+
+  --admin-hero-icon-fg: #1d4ed8;
+  --admin-chart-grid: rgba(30, 58, 110, 0.1);
+  --admin-chart-tick: #64748b;
+  --admin-chart-bar: #2563eb;
+}
+
+/* ========== AMBIENT PAGE BACKGROUND ========== */
+body.admin-app {
+  font-family: var(--admin-font) !important;
+  background:
+    radial-gradient(1200px 600px at 8% -10%, var(--admin-glow-blue), transparent 55%),
+    radial-gradient(900px 500px at 92% 0%, var(--admin-glow-gold), transparent 50%),
+    radial-gradient(800px 500px at 70% 100%, rgba(59, 130, 246, 0.08), transparent 55%),
+    var(--admin-bg) !important;
+  background-attachment: fixed !important;
+  color: var(--admin-text-secondary) !important;
+  min-height: 100vh;
+}
+
+body.admin-app #main,
+body.admin-app #main.admin-main-shell {
+  background: transparent !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+body.admin-app .admin-content {
+  padding-left: 1.35rem !important;
+  padding-right: 1.35rem !important;
+  max-width: 1400px;
+}
+
+/* ========== FLOATING GLASS SIDEBAR ========== */
+body.admin-app #app-sidebar.app-shell-sidebar--admin {
+  top: 0.75rem !important;
+  left: 0.75rem !important;
+  height: calc(100vh - 1.5rem) !important;
+  border-radius: var(--admin-radius-xl) !important;
+  background: var(--admin-sidebar-bg) !important;
+  border: 1px solid var(--admin-sidebar-border, rgba(148, 183, 255, 0.14)) !important;
+  box-shadow: var(--admin-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(var(--admin-blur)) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(var(--admin-blur)) saturate(140%) !important;
+  overflow: hidden !important;
+}
+
+body.admin-app.sidebar-expanded #main,
+body.admin-app:not(.sidebar-collapsed) #main {
+  /* keep shell margins; floating sidebar needs breathing room */
+}
+
+body.admin-app #app-sidebar .app-shell-sidebar-header--brand,
+body.admin-app #app-sidebar .p-5.bg-white\/10 {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(148, 183, 255, 0.1) !important;
+  padding: 1.15rem 1.1rem !important;
+}
+
+body.admin-app #app-sidebar .app-shell-sidebar-brand-text {
+  font-family: var(--admin-font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  font-size: 1.05rem !important;
+  background: linear-gradient(90deg, #fff 0%, #dbeafe 60%, #fde68a 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+body.admin-app #app-sidebar .app-shell-sidebar-brand-icon {
+  color: var(--admin-gold) !important;
+  filter: drop-shadow(0 0 10px rgba(242, 176, 30, 0.35));
+}
+
+body.admin-app #app-sidebar .app-shell-nav-section-label,
+body.admin-app #app-sidebar .text-xs.uppercase {
+  color: var(--admin-sidebar-muted) !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  font-weight: 700 !important;
+  padding-left: 0.85rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.4rem !important;
+}
+
+body.admin-app #app-sidebar nav {
+  padding: 0.5rem 0.65rem 1rem !important;
+}
+
+body.admin-app #app-sidebar nav a {
+  border-left: 0 !important;
+  border-radius: 0.75rem !important;
+  margin: 0.15rem 0 !important;
+  padding: 0.7rem 0.85rem !important;
+  color: var(--admin-sidebar-text) !important;
+  font-weight: 500 !important;
+  gap: 0.7rem !important;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease !important;
+}
+
+body.admin-app #app-sidebar nav a:hover {
+  background: var(--admin-primary-soft) !important;
+  color: var(--admin-sidebar-active-text) !important;
+  transform: translateX(2px);
+}
+
+body.admin-app #app-sidebar nav a.bg-white\/15,
+body.admin-app #app-sidebar nav a[class*="border-l-white"],
+body.admin-app #app-sidebar nav a.is-active {
+  background: var(--admin-sidebar-active-bg) !important;
+  color: var(--admin-sidebar-active-text) !important;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2), 0 8px 24px rgba(37, 99, 235, 0.12) !important;
+  font-weight: 600 !important;
+  border-left: 0 !important;
+}
+
+body.admin-app #app-sidebar nav a .bi {
+  font-size: 1.05rem !important;
+  opacity: 0.9;
+}
+
+/* ========== PREMIUM GLASS HEADER ========== */
+body.admin-app .admin-topbar-modern,
+body.admin-app .admin-topbar {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  margin-bottom: 1rem !important;
+  position: sticky;
+  top: 0.65rem;
+  z-index: 900;
+}
+
+body.admin-app .admin-topbar-modern .admin-topbar-inner,
+body.admin-app .admin-topbar .admin-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.6rem;
+  padding: 0.55rem 0.75rem !important;
+  border-radius: 1.1rem !important;
+  background: var(--admin-topbar-bg) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+}
+
+body.admin-app .admin-topbar-search-wrap {
+  min-width: min(28rem, 46vw) !important;
+  height: 2.55rem !important;
+  border-radius: 0.85rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search-wrap {
+  background: rgba(15, 23, 42, 0.03) !important;
+}
+
+body.admin-app .admin-topbar-search-wrap.is-focused,
+body.admin-app .admin-topbar-search-wrap:hover {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+body.admin-app .admin-topbar-search {
+  color: var(--admin-text) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+
+body.admin-app .admin-topbar-search::placeholder {
+  color: var(--admin-text-muted) !important;
+}
+
+body.admin-app .admin-topbar-action,
+body.admin-app .admin-theme-toggle,
+body.admin-app .admin-topbar-menu-btn {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 0.8rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-action,
+html[data-admin-theme="light"] body.admin-app .admin-theme-toggle,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-menu-btn,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-name {
+  color: var(--admin-text) !important;
+}
+
+body.admin-app .admin-topbar-action:hover,
+body.admin-app .admin-theme-toggle:hover,
+body.admin-app .admin-topbar-menu-btn:hover {
+  background: var(--admin-primary-soft) !important;
+  color: var(--admin-text) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+body.admin-app .admin-topbar-profile-btn {
+  border-radius: 999px !important;
+  border: 1px solid var(--admin-border) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  padding: 0.25rem 0.65rem 0.25rem 0.25rem !important;
+}
+
+body.admin-app .admin-topbar-avatar {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* ========== PREMIUM PAGE HERO ========== */
+body.admin-app .page-hero,
+body.admin-app .quiz-admin-hero,
+body.admin-app .admin-dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem 1.6rem !important;
+  margin-bottom: 1.35rem !important;
+  border-radius: var(--admin-radius-xl) !important;
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(242, 176, 30, 0.06) 42%, transparent 70%),
+    var(--admin-glass) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+}
+
+body.admin-app .page-hero::before,
+body.admin-app .quiz-admin-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto auto -10%;
+  width: 18rem;
+  height: 18rem;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.35), transparent 68%);
+  pointer-events: none;
+}
+
+body.admin-app .page-hero::after,
+body.admin-app .quiz-admin-hero::after {
+  content: "";
+  position: absolute;
+  right: -6%;
+  top: -40%;
+  width: 14rem;
+  height: 14rem;
+  background: radial-gradient(circle, rgba(242, 176, 30, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+body.admin-app .admin-page-header {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0 !important;
+}
+
+body.admin-app .admin-page-header__title,
+body.admin-app .page-hero h1,
+body.admin-app .quiz-admin-hero h1 {
+  font-family: var(--admin-font-display) !important;
+  font-size: clamp(1.55rem, 2.2vw, 2rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  color: var(--admin-text) !important;
+  line-height: 1.15 !important;
+}
+
+body.admin-app .admin-page-header__subtitle,
+body.admin-app .page-hero > p,
+body.admin-app .quiz-admin-hero > p {
+  color: var(--admin-text-secondary) !important;
+  font-size: 0.95rem !important;
+  max-width: 40rem;
+  margin-top: 0.45rem !important;
+}
+
+body.admin-app .quiz-admin-hero-icon {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 0.85rem !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.35), rgba(29, 78, 216, 0.2)) !important;
+  border: 1px solid rgba(147, 197, 253, 0.28) !important;
+  color: var(--admin-hero-icon-fg, #dbeafe) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+}
+
+/* ========== BUTTONS ========== */
+body.admin-app .admin-btn,
+body.admin-app .admin-content-btn,
+body.admin-app .admin-outline-btn,
+body.admin-app button.bg-primary,
+body.admin-app a.bg-primary {
+  border-radius: 0.8rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+body.admin-app .admin-btn--primary,
+body.admin-app .admin-content-btn--primary,
+body.admin-app .admin-content-btn--subject,
+body.admin-app button.bg-primary,
+body.admin-app a.bg-primary,
+body.admin-app .bg-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(147, 197, 253, 0.35) !important;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+body.admin-app .admin-btn--primary:hover,
+body.admin-app button.bg-primary:hover,
+body.admin-app a.bg-primary:hover,
+body.admin-app .bg-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  filter: brightness(1.04);
+}
+
+body.admin-app .admin-btn--secondary,
+body.admin-app .admin-outline-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--admin-text) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-btn--secondary,
+html[data-admin-theme="light"] body.admin-app .admin-outline-btn {
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* ========== CARDS ========== */
+body.admin-app .page-card,
+body.admin-app .page-table,
+body.admin-app .page-filter,
+body.admin-app .dashboard-card,
+body.admin-app .rounded-xl.shadow-card.border,
+body.admin-app .sca-panel,
+body.admin-app .sca-sidebar {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: var(--admin-radius-lg) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+}
+
+body.admin-app .dashboard-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+body.admin-app .dashboard-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--admin-primary), transparent 70%);
+  opacity: 0.85;
+}
+
+body.admin-app .dashboard-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(59, 130, 246, 0.12) !important;
+}
+
+body.admin-app .dashboard-card .text-3xl {
+  font-family: var(--admin-font-display) !important;
+  font-size: 2.35rem !important;
+  letter-spacing: -0.04em !important;
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
+}
+
+body.admin-app .dashboard-card__title {
+  color: var(--admin-text-muted) !important;
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700 !important;
+}
+
+body.admin-app .dashboard-card__btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 0.75rem !important;
+}
+
+body.admin-app .dashboard-card__btn:hover {
+  background: var(--admin-primary-soft) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Dense tables: readable solid-ish surface, still premium */
+body.admin-app .page-table,
+body.admin-app .admin-table-wrap,
+body.admin-app .admin-students-table {
+  background: var(--admin-glass-strong) !important;
+}
+
+body.admin-app table thead th {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  color: var(--admin-text-muted) !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.06em !important;
+}
+
+html[data-admin-theme="light"] body.admin-app table thead th {
+  background: rgba(15, 23, 42, 0.03) !important;
+}
+
+body.admin-app table tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+body.admin-app .border-gray-100,
+body.admin-app .border-gray-200 {
+  border-color: var(--admin-border) !important;
+}
+
+body.admin-app .text-gray-100,
+body.admin-app .text-gray-800,
+body.admin-app .text-gray-900,
+body.admin-app .font-semibold.text-gray-800 {
+  color: var(--admin-text) !important;
+}
+
+body.admin-app .text-gray-400,
+body.admin-app .text-gray-500,
+body.admin-app .text-gray-600,
+body.admin-app .text-gray-700 {
+  color: var(--admin-text-secondary) !important;
+}
+
+body.admin-app .bg-white,
+body.admin-app .bg-gray-50,
+body.admin-app .bg-gray-100 {
+  background: transparent !important;
+}
+
+/* Modals / dropdowns glass */
+body.admin-app .admin-modal,
+body.admin-app .admin-topbar-dropdown,
+body.admin-app .ereview-profile-menu {
+  background: var(--admin-glass-strong) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+  border-radius: 1rem !important;
+}
+
+/* Filter tabs */
+body.admin-app .student-filter-tab {
+  border-radius: 0.8rem !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+body.admin-app .student-filter-tab.bg-primary {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(29, 78, 216, 0.95)) !important;
+  color: #fff !important;
+  border-color: rgba(147, 197, 253, 0.35) !important;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* Dashboard alert */
+body.admin-app .admin-dashboard-alert {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(59, 130, 246, 0.08)) !important;
+  border: 1px solid rgba(245, 158, 11, 0.28) !important;
+  border-radius: var(--admin-radius-lg) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* Section titles */
+body.admin-app .page-section-title {
+  font-family: var(--admin-font-display) !important;
+  color: var(--admin-text) !important;
+  letter-spacing: -0.02em !important;
+  font-weight: 650 !important;
+}
+
+/* KPI strip in hero */
+body.admin-app .admin-dashboard-kpi-strip {
+  border-top: 1px solid var(--admin-border) !important;
+  margin-top: 1.1rem !important;
+  padding-top: 0.9rem !important;
+  color: var(--admin-text-secondary) !important;
+}
+body.admin-app .admin-kpi-number {
+  color: var(--admin-text) !important;
+  font-family: var(--admin-font-display);
+}
+
+/* Quick actions as chips */
+body.admin-app .admin-dashboard-quick-actions .quick-action-btn {
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+  padding: 0.45rem 0.9rem !important;
+}
+body.admin-app .admin-dashboard-quick-actions .quick-action-btn:hover {
+  background: var(--admin-primary-soft) !important;
+  color: var(--admin-text) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Dashboard asymmetric layout helpers */
+.admin-dash-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 1rem;
+}
+.admin-dash-grid .dashboard-card--featured {
+  grid-row: span 1;
+  min-height: 11rem;
+  background:
+    linear-gradient(145deg, rgba(59, 130, 246, 0.22), rgba(242, 176, 30, 0.08) 50%, transparent),
+    var(--admin-glass) !important;
+}
+@media (max-width: 1024px) {
+  .admin-dash-grid { grid-template-columns: 1fr 1fr; }
+  .admin-dash-grid .dashboard-card--featured { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .admin-dash-grid { grid-template-columns: 1fr; }
+}
+
+/* Breadcrumb soft */
+body.admin-app .admin-breadcrumb,
+body.admin-app nav[aria-label="Breadcrumb"] {
+  color: var(--admin-text-muted) !important;
+  font-size: 0.78rem !important;
+  margin-bottom: 0.55rem !important;
+}
+
+/* Inputs remain readable */
+body.admin-app .input-custom,
+body.admin-app input[type="text"],
+body.admin-app input[type="email"],
+body.admin-app input[type="password"],
+body.admin-app input[type="number"],
+body.admin-app input[type="search"],
+body.admin-app select,
+body.admin-app textarea {
+  background: rgba(8, 12, 22, 0.45) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text) !important;
+  border-radius: 0.75rem !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .input-custom,
+html[data-admin-theme="light"] body.admin-app input[type="text"],
+html[data-admin-theme="light"] body.admin-app input[type="email"],
+html[data-admin-theme="light"] body.admin-app input[type="password"],
+html[data-admin-theme="light"] body.admin-app input[type="number"],
+html[data-admin-theme="light"] body.admin-app input[type="search"],
+html[data-admin-theme="light"] body.admin-app select,
+html[data-admin-theme="light"] body.admin-app textarea {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Reduce old flat black overrides fighting glass */
+body.admin-app #app-sidebar {
+  background: var(--admin-sidebar-bg) !important;
+}
+
+/* ========== SPECIFICITY FIX: beat admin.css #141414 flat overrides ========== */
+body.admin-app #main .page-card,
+body.admin-app #main .page-table,
+body.admin-app #main .page-filter,
+body.admin-app #main .dashboard-card,
+body.admin-app #main .rounded-xl.shadow-card.border,
+body.admin-app #main .bg-white.rounded-xl,
+body.admin-app #main .sca-panel,
+body.admin-app #main .sca-sidebar {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: var(--admin-radius-lg) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+}
+
+body.admin-app #main .dashboard-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+}
+
+body.admin-app #main .dashboard-card:hover,
+body.admin-app #main .dashboard-card--enrolled:hover,
+body.admin-app #main .dashboard-card--pending:hover,
+body.admin-app #main .dashboard-card--expired:hover,
+body.admin-app #main .dashboard-card--subjects:hover,
+body.admin-app #main .dashboard-card--lessons:hover,
+body.admin-app #main .dashboard-card--quizzes:hover,
+body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
+  background:
+    linear-gradient(145deg, rgba(59, 130, 246, 0.12), rgba(242, 176, 30, 0.05) 55%, transparent),
+    var(--admin-glass) !important;
+  border-color: rgba(59, 130, 246, 0.32) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(59, 130, 246, 0.12) !important;
+  transform: translateY(-3px);
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__title,
+body.admin-app #main .dashboard-card .dashboard-card__title .bi {
+  color: var(--admin-text-muted) !important;
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: 0.75rem !important;
+}
+
+body.admin-app #main .dashboard-card .dashboard-card__btn:hover,
+body.admin-app #main .dashboard-card--enrolled:hover .dashboard-card__btn,
+body.admin-app #main .dashboard-card--pending:hover .dashboard-card__btn,
+body.admin-app #main .dashboard-card--expired:hover .dashboard-card__btn {
+  background: var(--admin-primary-soft) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: var(--admin-text) !important;
+  box-shadow: none !important;
+}
+
+body.admin-app #main .dashboard-card .text-3xl,
+body.admin-app #main .dashboard-card .admin-kpi-value {
+  font-family: var(--admin-font-display) !important;
+  color: var(--admin-text) !important;
+}
+
+body.admin-app #main .bg-white,
+body.admin-app #main .bg-gray-50,
+body.admin-app #main .bg-gray-100 {
+  background: transparent !important;
+}
+
+body.admin-app #main .page-table,
+body.admin-app #main .admin-table-wrap,
+body.admin-app #main .admin-students-table {
+  background: var(--admin-glass-strong) !important;
+}
+
+/* Floating sidebar clearance */
+body.admin-app #main {
+  margin-left: calc(var(--app-shell-sidebar-collapsed, 64px) + 1.35rem) !important;
+  padding-top: 0.35rem !important;
+  padding-right: 0.85rem !important;
+}
+body.admin-app.sidebar-expanded #main {
+  margin-left: calc(var(--app-shell-sidebar-expanded, 240px) + 1.35rem) !important;
+}
+
+@media (max-width: 768px) {
+  body.admin-app #main,
+  body.admin-app.sidebar-expanded #main {
+    margin-left: 0 !important;
+    padding-right: 0.75rem !important;
+  }
+  body.admin-app #app-sidebar.app-shell-sidebar--admin {
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Dashboard composition */
+.admin-dash-greeting {
+  font-family: var(--admin-font-display);
+  font-size: clamp(1.65rem, 2.4vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--admin-text);
+  line-height: 1.15;
+  margin: 0;
+}
+.admin-dash-greeting span {
+  background: linear-gradient(90deg, var(--admin-text) 0%, #93c5fd 70%, #fde68a 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.admin-dash-kpis {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+}
+.admin-dash-kpis .dashboard-card--featured {
+  min-height: 10.5rem;
+  background:
+    linear-gradient(145deg, rgba(59, 130, 246, 0.28), rgba(242, 176, 30, 0.1) 48%, transparent 78%),
+    var(--admin-glass) !important;
+  border-color: rgba(147, 197, 253, 0.28) !important;
+}
+.admin-dash-kpis .admin-kpi-value {
+  font-size: 2.6rem !important;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  margin: 0.55rem 0 0.85rem;
+  color: var(--admin-text);
+  font-family: var(--admin-font-display);
+}
+.admin-dash-kpis .dashboard-card--featured .admin-kpi-value {
+  font-size: 3rem !important;
+}
+.admin-dash-main {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 1.15rem;
+  margin-bottom: 1.15rem;
+}
+.admin-dash-side {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 1.15rem;
+}
+.admin-dash-actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.admin-dash-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--admin-border);
+  background: rgba(255,255,255,0.03);
+  text-decoration: none;
+  color: var(--admin-text);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.admin-dash-action:hover {
+  background: var(--admin-primary-soft);
+  border-color: rgba(59,130,246,0.35);
+  transform: translateX(2px);
+}
+.admin-dash-action__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.7rem;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(59,130,246,0.3), rgba(29,78,216,0.15));
+  color: #bfdbfe;
+  flex-shrink: 0;
+}
+html[data-admin-theme="light"] .admin-dash-action__icon {
+  color: #1d4ed8;
+  background: linear-gradient(145deg, rgba(37,99,235,0.16), rgba(29,78,216,0.08));
+}
+.admin-dash-action__meta {
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+}
+.admin-dash-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+.admin-dash-recent-item:last-child { border-bottom: 0; }
+.admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+.admin-status-pill--approved { background: rgba(34,197,94,0.15); color: #4ade80; }
+.admin-status-pill--pending { background: rgba(245,158,11,0.16); color: #fbbf24; }
+.admin-status-pill--rejected { background: rgba(239,68,68,0.16); color: #f87171; }
+html[data-admin-theme="light"] .admin-status-pill--approved { color: #15803d; }
+html[data-admin-theme="light"] .admin-status-pill--pending { color: #b45309; }
+html[data-admin-theme="light"] .admin-status-pill--rejected { color: #b91c1c; }
+
+@media (max-width: 1100px) {
+  .admin-dash-kpis { grid-template-columns: 1fr 1fr; }
+  .admin-dash-kpis .dashboard-card--featured { grid-column: 1 / -1; }
+  .admin-dash-main { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .admin-dash-kpis { grid-template-columns: 1fr; }
+}
+
+/* Students: premium table chrome + IA */
+body.admin-app.admin-students-page #main .page-table {
+  overflow: hidden;
+}
+body.admin-app.admin-students-page .admin-students-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+}
+body.admin-app.admin-students-page .admin-students-table tbody td {
+  border-bottom: 1px solid var(--admin-border) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  vertical-align: middle;
+}
+body.admin-app.admin-students-page .col-legacy-secondary {
+  display: none !important;
+}
+body.admin-app.admin-students-page .student-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+body.admin-app.admin-students-page .student-cell .student-name {
+  font-weight: 600;
+  color: var(--admin-text);
+  max-width: 14rem;
+}
+body.admin-app.admin-students-page .account-cell {
+  min-width: 10rem;
+  max-width: 16rem;
+}
+body.admin-app.admin-students-page .account-cell .student-email {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--admin-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.admin-app.admin-students-page .account-cell .account-sub {
+  font-size: 0.72rem;
+  color: var(--admin-text-muted);
+  margin-top: 0.15rem;
+}
+body.admin-app.admin-students-page .activity-cell {
+  font-size: 0.82rem;
+  color: var(--admin-text-secondary);
+  white-space: nowrap;
+}
+body.admin-app.admin-students-page .activity-cell.is-active {
+  color: #4ade80;
+  font-weight: 600;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .activity-cell.is-active {
+  color: #15803d;
+}
+body.admin-app.admin-students-page .admin-students-access-col {
+  max-width: 12.5rem !important;
+  width: 12.5rem !important;
+}
+
+/* =========================================================
+   LIGHT MODE SYSTEM ? intentional light theme (not inverted)
+   Beats admin.css #main white-text / #141414 dark leaks
+   ========================================================= */
+html[data-admin-theme="light"] body.admin-app {
+  background:
+    radial-gradient(1100px 560px at 6% -8%, rgba(37, 99, 235, 0.14), transparent 55%),
+    radial-gradient(900px 480px at 94% 0%, rgba(201, 151, 0, 0.1), transparent 52%),
+    radial-gradient(700px 420px at 70% 100%, rgba(37, 99, 235, 0.06), transparent 55%),
+    var(--admin-bg) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main,
+html[data-admin-theme="light"] body.admin-app #main.admin-main-shell {
+  background: transparent !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+/* Undo admin.css dark typography forced onto light surfaces */
+html[data-admin-theme="light"] body.admin-app #main h1,
+html[data-admin-theme="light"] body.admin-app #main h2,
+html[data-admin-theme="light"] body.admin-app #main h3,
+html[data-admin-theme="light"] body.admin-app #main .text-2xl.font-bold,
+html[data-admin-theme="light"] body.admin-app #main h1.text-2xl,
+html[data-admin-theme="light"] body.admin-app #main .text-3xl.font-bold,
+html[data-admin-theme="light"] body.admin-app #main .text-\[\#012970\],
+html[data-admin-theme="light"] body.admin-app #main .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-800,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-900,
+html[data-admin-theme="light"] body.admin-app #main .font-semibold.text-gray-800,
+html[data-admin-theme="light"] body.admin-app #main .admin-page-header__title,
+html[data-admin-theme="light"] body.admin-app #main .page-section-title,
+html[data-admin-theme="light"] body.admin-app #main .admin-dash-greeting,
+html[data-admin-theme="light"] body.admin-app #main .admin-kpi-value,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card .text-3xl {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-gray-700,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-600,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-500,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-400,
+html[data-admin-theme="light"] body.admin-app #main .admin-page-header__subtitle,
+html[data-admin-theme="light"] body.admin-app #main .page-hero p,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-hero p {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-gray-300,
+html[data-admin-theme="light"] body.admin-app #main .text-gray-200 {
+  color: var(--admin-text-muted) !important;
+}
+
+/* Light glass surfaces (cards / tables / filters) ? beat #141414 */
+html[data-admin-theme="light"] body.admin-app #main .page-card,
+html[data-admin-theme="light"] body.admin-app #main .page-table,
+html[data-admin-theme="light"] body.admin-app #main .page-filter,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card,
+html[data-admin-theme="light"] body.admin-app #main .rounded-xl.shadow-card.border,
+html[data-admin-theme="light"] body.admin-app #main .bg-white.rounded-xl,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel,
+html[data-admin-theme="light"] body.admin-app #main .sca-sidebar,
+html[data-admin-theme="light"] body.admin-app #main .grid .bg-white.rounded-xl.shadow-card {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .page-table,
+html[data-admin-theme="light"] body.admin-app #main .admin-table-wrap,
+html[data-admin-theme="light"] body.admin-app #main .admin-students-table {
+  background: var(--admin-glass-strong) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card:hover,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--enrolled:hover,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--pending:hover,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--expired:hover,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--subjects:hover,
+html[data-admin-theme="light"] body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
+  background:
+    linear-gradient(145deg, rgba(37, 99, 235, 0.08), rgba(201, 151, 0, 0.04) 55%, transparent),
+    var(--admin-glass) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+  box-shadow: 0 16px 36px rgba(15, 35, 70, 0.12) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card .dashboard-card__title,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card .dashboard-card__title .bi {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card .dashboard-card__btn {
+  background: rgba(37, 99, 235, 0.06) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card .dashboard-card__btn:hover,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--enrolled:hover .dashboard-card__btn,
+html[data-admin-theme="light"] body.admin-app #main .dashboard-card--pending:hover .dashboard-card__btn {
+  background: rgba(37, 99, 235, 0.12) !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  color: var(--admin-text) !important;
+  box-shadow: none !important;
+}
+
+/* Light Mode hero ? soft glass, NOT dark panel */
+html[data-admin-theme="light"] body.admin-app #main .page-hero,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-hero,
+html[data-admin-theme="light"] body.admin-app #main .admin-dashboard-hero,
+html[data-admin-theme="light"] body.admin-app .page-hero,
+html[data-admin-theme="light"] body.admin-app .quiz-admin-hero,
+html[data-admin-theme="light"] body.admin-app .admin-dashboard-hero {
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(201, 151, 0, 0.07) 40%, rgba(255, 255, 255, 0.55) 72%),
+    rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(30, 58, 110, 0.12) !important;
+  box-shadow: 0 12px 32px rgba(15, 35, 70, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .page-hero::before,
+html[data-admin-theme="light"] body.admin-app .quiz-admin-hero::before {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.22), transparent 68%);
+}
+
+html[data-admin-theme="light"] body.admin-app .page-hero::after,
+html[data-admin-theme="light"] body.admin-app .quiz-admin-hero::after {
+  background: radial-gradient(circle, rgba(201, 151, 0, 0.18), transparent 70%);
+}
+
+html[data-admin-theme="light"] body.admin-app .quiz-admin-hero-icon {
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.16), rgba(29, 78, 216, 0.08)) !important;
+  border: 1px solid rgba(37, 99, 235, 0.22) !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-dash-greeting span {
+  background: linear-gradient(90deg, #0b1220 0%, #1e3a8a 55%, #a16207 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Light floating sidebar */
+html[data-admin-theme="light"] body.admin-app #app-sidebar.app-shell-sidebar--admin,
+html[data-admin-theme="light"] body.admin-app #app-sidebar {
+  background: var(--admin-sidebar-bg) !important;
+  border: 1px solid var(--admin-sidebar-border) !important;
+  box-shadow: var(--admin-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-header--brand,
+html[data-admin-theme="light"] body.admin-app #app-sidebar .p-5.bg-white\/10 {
+  background: transparent !important;
+  border-bottom: 1px solid var(--admin-sidebar-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-brand-text {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #0b1220 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-brand-icon {
+  color: #c99700 !important;
+  filter: none;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a:hover {
+  color: #0b1220 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.bg-white\/15,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a[class*="border-l-white"],
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.is-active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(201, 151, 0, 0.1)) !important;
+  color: #0b1220 !important;
+  box-shadow: inset 3px 0 0 #2563eb, inset 0 0 0 1px rgba(37, 99, 235, 0.2), 0 8px 20px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Light topbar + search */
+html[data-admin-theme="light"] body.admin-app .admin-topbar-modern .admin-topbar-inner,
+html[data-admin-theme="light"] body.admin-app .admin-topbar .admin-topbar-inner {
+  background: var(--admin-topbar-bg) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search-wrap {
+  background: rgba(15, 23, 42, 0.035) !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-name,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-action,
+html[data-admin-theme="light"] body.admin-app .admin-theme-toggle,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-menu-btn {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search::placeholder {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-action,
+html[data-admin-theme="light"] body.admin-app .admin-theme-toggle,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-menu-btn,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-profile-btn {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+/* Inputs */
+html[data-admin-theme="light"] body.admin-app .input-custom,
+html[data-admin-theme="light"] body.admin-app input[type="text"],
+html[data-admin-theme="light"] body.admin-app input[type="email"],
+html[data-admin-theme="light"] body.admin-app input[type="password"],
+html[data-admin-theme="light"] body.admin-app input[type="number"],
+html[data-admin-theme="light"] body.admin-app input[type="search"],
+html[data-admin-theme="light"] body.admin-app select,
+html[data-admin-theme="light"] body.admin-app textarea {
+  background: var(--admin-input-bg, rgba(255, 255, 255, 0.92)) !important;
+  border: 1px solid var(--admin-input-border, var(--admin-border-strong)) !important;
+  color: var(--admin-text) !important;
+}
+
+/* Recent list / separators / links */
+html[data-admin-theme="light"] body.admin-app .admin-dash-recent-item,
+html[data-admin-theme="light"] body.admin-app .admin-dash-action {
+  border-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-dash-action {
+  background: rgba(15, 23, 42, 0.025) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-dash-action:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-dash-action__icon {
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.16), rgba(29, 78, 216, 0.08));
+  color: #1d4ed8;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-link {
+  color: #1d4ed8 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-status-pill--approved {
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+}
+html[data-admin-theme="light"] body.admin-app .admin-status-pill--pending {
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+}
+html[data-admin-theme="light"] body.admin-app .admin-status-pill--rejected {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+}
+
+/* Featured KPI card in light */
+html[data-admin-theme="light"] body.admin-app .admin-dash-kpis .dashboard-card--featured {
+  background:
+    linear-gradient(145deg, rgba(37, 99, 235, 0.14), rgba(201, 151, 0, 0.07) 48%, transparent 78%),
+    var(--admin-glass) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-dash-recent-item .admin-link {
+  color: #0b1220 !important;
+  font-weight: 600 !important;
+}
+html[data-admin-theme="light"] body.admin-app .admin-dash-recent-item .admin-link:hover {
+  color: #1d4ed8 !important;
+}
+
+/* Tables readable on light */
+html[data-admin-theme="light"] body.admin-app table thead th {
+  background: rgba(15, 23, 42, 0.03) !important;
+  color: var(--admin-text-muted) !important;
+  border-bottom-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app table tbody tr:hover td {
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .student-name,
+html[data-admin-theme="light"] body.admin-app .student-email,
+html[data-admin-theme="light"] body.admin-app .access-compact__end {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .student-meta,
+html[data-admin-theme="light"] body.admin-app .account-sub,
+html[data-admin-theme="light"] body.admin-app .access-compact__meta,
+html[data-admin-theme="light"] body.admin-app .activity-value {
+  color: var(--admin-text-muted) !important;
+}
+
+/* Modals / drawers / dropdowns */
+html[data-admin-theme="light"] body.admin-app .admin-modal,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-dropdown,
+html[data-admin-theme="light"] body.admin-app .ereview-profile-menu,
+html[data-admin-theme="light"] body.admin-app .student-drawer__panel {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text-secondary) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .student-drawer__title,
+html[data-admin-theme="light"] body.admin-app .admin-modal__title {
+  color: var(--admin-text) !important;
+}
+
+/* Primary buttons stay LCRC blue */
+html[data-admin-theme="light"] body.admin-app #main .bg-primary,
+html[data-admin-theme="light"] body.admin-app #main .admin-btn--primary,
+html[data-admin-theme="light"] body.admin-app .admin-btn--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #fff !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-btn--secondary,
+html[data-admin-theme="light"] body.admin-app .admin-outline-btn {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: var(--admin-text) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+}
+
+/* Soften students inline dark leftovers */
+html[data-admin-theme="light"] body.admin-app.admin-students-page .student-avatar-media {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Extra light overrides for admin.css leftovers */
+html[data-admin-theme="light"] body.admin-app #app-sidebar .p-5.bg-white\/10 h3,
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-brand-text,
+html[data-admin-theme="light"] body.admin-app #app-sidebar h3 {
+  color: #0b1220 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.bg-white\/15 .bi,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a[class*="border-l-white"] .bi,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.bg-white\/15 span,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a[class*="border-l-white"] span,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.is-active .bi,
+html[data-admin-theme="light"] body.admin-app #app-sidebar nav a.is-active span {
+  color: inherit !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-dashboard-bottom-block {
+  border-top-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
+  border-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-breadcrumb,
+html[data-admin-theme="light"] body.admin-app .admin-breadcrumb a,
+html[data-admin-theme="light"] body.admin-app nav[aria-label="Breadcrumb"] {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar {
+  background: transparent !important;
+  border-bottom-color: transparent !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-flash--success,
+html[data-admin-theme="light"] body.admin-app .admin-flash--error {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .students-view-tabs,
+html[data-admin-theme="light"] body.admin-app .students-toolbar {
+  background: var(--admin-glass) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .students-view-tab {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .students-view-tab.is-active {
+  color: var(--admin-text) !important;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(201, 151, 0, 0.08)) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .students-status-chip {
+  color: var(--admin-text-secondary) !important;
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .students-status-chip.is-active {
+  color: #fff !important;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+}
+
+/* Clock / sidebar meta widgets in light */
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-time,
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-time-digital,
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-time-date,
+html[data-admin-theme="light"] body.admin-app #app-sidebar .app-shell-sidebar-time-label {
+  color: var(--admin-text-secondary) !important;
+}
+
+/* =========================================================
+   STUDENT ACCESS (SCA) ? dedicated Light Mode
+   ========================================================= */
+html[data-admin-theme="light"] body.admin-app #main .sca-sidebar,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel.bg-white {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item {
+  background: rgba(248, 250, 252, 0.95) !important;
+  border: 1px solid rgba(30, 58, 110, 0.14) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 2px 8px rgba(15, 35, 70, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item:hover {
+  background: rgba(248, 250, 255, 0.98) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(255, 255, 255, 0.95) 55%) !important;
+  border-color: rgba(37, 99, 235, 0.4) !important;
+  box-shadow: inset 3px 0 0 #2563eb, 0 10px 24px rgba(37, 99, 235, 0.1) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item--picked {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(255, 255, 255, 0.95) 60%) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .font-semibold,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-gray-800,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-gray-900,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item strong,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item [class*="name"] {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-gray-500,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-gray-400,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-sm,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-xs {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item__avatar {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  color: #fff !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item.active .sca-student-item__avatar {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-select-all {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-select-all__label {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-section {
+  background: rgba(241, 245, 251, 0.72) !important;
+  border: 1px solid rgba(30, 58, 110, 0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-section__head,
+html[data-admin-theme="light"] body.admin-app #main .sca-section__head i {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-section__head i {
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-form-grid label.field-label {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-panel input,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel select,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel textarea,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel .input-custom {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--admin-input-border, var(--admin-border-strong)) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-tree details {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-tree summary {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-tree label,
+html[data-admin-theme="light"] body.admin-app #main .sca-topic-check {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-tree label:hover {
+  background: rgba(37, 99, 235, 0.06) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-grant-all {
+  background: rgba(37, 99, 235, 0.08) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-grant-all__title {
+  color: #1e3a8a !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-grant-all__sub {
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-access-pill {
+  background: rgba(37, 99, 235, 0.1) !important;
+  color: #1d4ed8 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-badge--approved {
+  background: rgba(22, 163, 74, 0.12) !important;
+  color: #15803d !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-badge--pending {
+  background: rgba(217, 119, 6, 0.12) !important;
+  color: #b45309 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-badge--rejected {
+  background: rgba(220, 38, 38, 0.1) !important;
+  color: #b91c1c !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-sticky-actions {
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.96) 80%, rgba(255, 255, 255, 0.85)) !important;
+  border-top: 1px solid var(--admin-border) !important;
+  box-shadow: 0 -8px 24px rgba(15, 35, 70, 0.06);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-btn--primary {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.25) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-btn--outline {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-btn--outline:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.4) !important;
+  color: #1d4ed8 !important;
+  background: rgba(37, 99, 235, 0.06) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-btn--ghost {
+  color: var(--admin-text-muted) !important;
+  background: transparent !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-btn--ghost:hover:not(:disabled) {
+  color: var(--admin-text) !important;
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-idle__icon {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(201, 151, 0, 0.08)) !important;
+  color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-idle h2,
+html[data-admin-theme="light"] body.admin-app #main .sca-idle .text-gray-800,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel .text-gray-800,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel h2,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel h3 {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-idle p,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel .text-gray-600,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel .text-gray-500 {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-panel-loading {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-spinner {
+  border-color: rgba(37, 99, 235, 0.15) !important;
+  border-top-color: #2563eb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-perm-count {
+  color: #15803d !important;
+  background: rgba(22, 163, 74, 0.12) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .sca-toast--ok,
+html[data-admin-theme="light"] body.admin-app .sca-toast--err,
+html[data-admin-theme="light"] body.admin-app #main .sca-toast--ok,
+html[data-admin-theme="light"] body.admin-app #main .sca-toast--err {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: var(--admin-text) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-toast__title {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-toast__msg {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-sidebar .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .sca-student-item .text-gray-100 {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-sidebar h2,
+html[data-admin-theme="light"] body.admin-app #main .sca-panel h2 {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-bulk-bar {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-bulk-bar__count {
+  color: #047857 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .sca-bulk-chip {
+  background: rgba(37, 99, 235, 0.1) !important;
+  color: #1e3a8a !important;
+}
+
+/* =========================================================
+   CONTENT PAGES � shared Light Mode (Pre-week, Lessons,
+   Materials, Preboards, Quizzes, Test Bank, etc.)
+   ========================================================= */
+
+/* Pre-week context trail � token-driven both themes */
+body.admin-app .admin-preweek-context-nav {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow-sm) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--admin-text-secondary) !important;
+}
+body.admin-app .admin-preweek-context-nav__link {
+  color: var(--admin-primary) !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+body.admin-app .admin-preweek-context-nav__link:hover {
+  text-decoration: underline;
+}
+body.admin-app .admin-preweek-context-nav__current {
+  color: var(--admin-text) !important;
+  font-weight: 650;
+}
+body.admin-app .admin-preweek-context-nav__sep {
+  color: var(--admin-text-muted) !important;
+}
+
+/* Shared quiz-admin surfaces */
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-shell,
+html[data-admin-theme="light"] body.admin-app #main .page-filter,
+html[data-admin-theme="light"] body.admin-app #main .page-table,
+html[data-admin-theme="light"] body.admin-app #main .page-trashlog {
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+  color: var(--admin-text-secondary) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-head,
+html[data-admin-theme="light"] body.admin-app #main .page-table > .px-5.py-4.border-b {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-head .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-shell .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .font-semibold.text-gray-100 {
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table thead th {
+  background: rgba(15, 23, 42, 0.035) !important;
+  color: var(--admin-text-muted) !important;
+  border-bottom-color: var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table tbody tr {
+  border-bottom: 1px solid var(--admin-border) !important;
+  background: transparent !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-data-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.04) !important;
+  box-shadow: inset 3px 0 0 #2563eb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+  border: 1px solid rgba(99, 102, 241, 0.4) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter-btn:hover {
+  filter: brightness(1.05);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter-clear {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-count-pill,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-count-pill--preweek {
+  background: rgba(201, 151, 0, 0.14) !important;
+  color: #92400e !important;
+  border: 1px solid rgba(201, 151, 0, 0.3) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-empty {
+  color: var(--admin-text-muted) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-empty-icon {
+  color: rgba(37, 99, 235, 0.35) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-alert--success {
+  background: rgba(22, 163, 74, 0.1) !important;
+  border: 1px solid rgba(22, 163, 74, 0.25) !important;
+  color: #166534 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-alert--error {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border: 1px solid rgba(220, 38, 38, 0.22) !important;
+  color: #991b1b !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-btn-secondary,
+html[data-admin-theme="light"] body.admin-app #main .preweek-materials-link {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .preweek-materials-link:hover {
+  border-color: rgba(201, 151, 0, 0.45) !important;
+  color: #92400e !important;
+  background: rgba(201, 151, 0, 0.08) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-hero-icon--preweek {
+  background: linear-gradient(145deg, rgba(201, 151, 0, 0.18), rgba(245, 158, 11, 0.1)) !important;
+  border-color: rgba(201, 151, 0, 0.35) !important;
+  color: #a16207 !important;
+}
+
+/* Labels / muted text inside content shells */
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter .text-gray-400,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-filter label,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-shell .text-gray-400,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-shell .text-gray-500 {
+  color: var(--admin-text-muted) !important;
+}
+
+/* Action menus / ellipsis buttons */
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-row-actions button,
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-menu-btn,
+html[data-admin-theme="light"] body.admin-app #main .admin-row-menu-btn {
+  color: var(--admin-text-secondary) !important;
+  background: rgba(15, 23, 42, 0.03) !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .shadow-modal,
+html[data-admin-theme="light"] body.admin-app #main .quiz-modal-panel,
+html[data-admin-theme="light"] body.admin-app .preweek-modal-panel {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid var(--admin-border-strong) !important;
+  color: var(--admin-text-secondary) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .shadow-modal .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .quiz-modal-panel .text-gray-100,
+html[data-admin-theme="light"] body.admin-app #main .shadow-modal h2,
+html[data-admin-theme="light"] body.admin-app #main .quiz-modal-panel h2 {
+  color: var(--admin-text) !important;
+}
+
+/* Student view proof viewer + leftover dark inline surfaces */
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer,
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__head,
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__body,
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__image,
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__frame,
+html[data-admin-theme="light"] body.admin-app #main .proof-empty {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: var(--admin-shadow) !important;
+}
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__title,
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__open {
+  color: var(--admin-text) !important;
+}
+html[data-admin-theme="light"] body.admin-app #main .proof-viewer__open {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-color: var(--admin-border-strong) !important;
+}
+
+/* Support analytics / generic white cards already covered;
+   ensure subjects/content page cards stay light glass */
+html[data-admin-theme="light"] body.admin-app #main .bg-\[\#141414\],
+html[data-admin-theme="light"] body.admin-app #main [class*="bg-[#141414]"] {
+  background: var(--admin-glass) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+/* =========================================================
+   ROW ACTIONS + EDIT/DELETE MENUS (both themes)
+   Fixes: light mode lost menu styles after dark-scoping;
+   overflow:hidden on table shells clipped dropdowns.
+   ========================================================= */
+body.admin-app #main .admin-row-actions {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-app #main td:has(.admin-row-actions),
+body.admin-app #main th:has(.admin-row-actions) {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-app #main .page-table,
+body.admin-app #main .quiz-admin-table-shell,
+body.admin-app #main .page-card:has(.admin-row-actions) {
+  overflow: visible !important;
+}
+
+body.admin-app #main .page-table > .overflow-x-auto,
+body.admin-app #main .quiz-admin-table-shell > .overflow-x-auto,
+body.admin-app #main .page-table .overflow-x-auto.pl-3,
+body.admin-app #main .quiz-admin-table-shell .overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+body.admin-app #main tr:has(.admin-row-action--more.is-open),
+body.admin-app #main tr:has(.admin-row-action--more[aria-expanded="true"]) {
+  position: relative;
+  z-index: 60;
+}
+
+body.admin-app #main .admin-row-menu-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+body.admin-app #main .admin-row-menu-wrap:has(.admin-row-action--more.is-open),
+body.admin-app #main .admin-row-menu-wrap:has(.admin-row-action--more[aria-expanded="true"]) {
+  z-index: 80;
+}
+
+body.admin-app #main .admin-row-action {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--admin-border-strong);
+  background: var(--admin-surface-2, rgba(255, 255, 255, 0.04));
+  color: var(--admin-text-secondary);
+  font-size: 1.05rem;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  flex-shrink: 0;
+}
+
+body.admin-app #main a.admin-row-action:hover,
+body.admin-app #main button.admin-row-action:hover {
+  color: var(--admin-text);
+  background: var(--admin-primary-soft);
+  border-color: rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+body.admin-app #main .admin-row-action--more.is-open,
+body.admin-app #main .admin-row-action--more[aria-expanded="true"] {
+  color: var(--admin-text);
+  background: var(--admin-primary-soft);
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+body.admin-app #main .admin-row-menu {
+  position: absolute !important;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 100 !important;
+  min-width: 12.5rem;
+  padding: 0.45rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--admin-border-strong) !important;
+  background: var(--admin-glass-strong, var(--admin-surface-solid, #fff)) !important;
+  color: var(--admin-text) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transform-origin: top right;
+  animation: admin-row-menu-pop 0.1s ease-out;
+}
+
+body.admin-app #main .admin-row-menu__item {
+  display: flex !important;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--admin-text) !important;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+body.admin-app #main .admin-row-menu__item:hover {
+  background: var(--admin-primary-soft) !important;
+  color: var(--admin-text) !important;
+}
+
+body.admin-app #main .admin-row-menu__item--danger {
+  color: var(--admin-danger, #b91c1c) !important;
+}
+
+body.admin-app #main .admin-row-menu__item--danger:hover {
+  background: var(--admin-danger-soft, rgba(220, 38, 38, 0.1)) !important;
+  color: var(--admin-danger, #b91c1c) !important;
+}
+
+body.admin-app #main .admin-row-menu__item .bi {
+  width: 1.125rem;
+  font-size: 1.05rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-row-action {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--admin-border-strong) !important;
+  color: var(--admin-text-secondary) !important;
+  box-shadow: 0 1px 2px rgba(15, 35, 70, 0.04);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-row-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(30, 58, 110, 0.16) !important;
+  box-shadow: 0 16px 40px rgba(15, 35, 70, 0.14) !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app #main .admin-row-action {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu {
+  background: #1c1d22 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 18px 44px -10px rgba(0, 0, 0, 0.8) !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu__item {
+  color: #f3f4f6 !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu__item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu__item--danger {
+  color: #fca5a5 !important;
+}

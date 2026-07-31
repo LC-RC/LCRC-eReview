@@ -373,32 +373,67 @@ function sca_subject_has_any_access(mysqli $conn, int $userId, int $subjectId): 
     if ($userId <= 0 || $subjectId <= 0) {
         return false;
     }
+    if (!sca_account_access_active($conn, $userId)) {
+        return false;
+    }
+    // Entire subject OR full LMS (via sca_has_access).
     if (sca_has_access($conn, $userId, 'subject', $subjectId)) {
         return true;
     }
-    $stmt = mysqli_prepare($conn, 'SELECT lesson_id FROM lessons WHERE subject_id = ?');
-    mysqli_stmt_bind_param($stmt, 'i', $subjectId);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    while ($res && ($row = mysqli_fetch_assoc($res))) {
-        if (sca_has_access($conn, $userId, 'lesson', (int) ($row['lesson_id'] ?? 0))) {
-            mysqli_stmt_close($stmt);
-            return true;
-        }
+
+    $perms = sca_load_permissions($conn, $userId);
+    if ($perms['full_lms']) {
+        return true;
     }
-    mysqli_stmt_close($stmt);
+
+    // Any granted topic/lesson under this subject unlocks the subject card for navigation.
+    $stmt = mysqli_prepare($conn, 'SELECT lesson_id FROM lessons WHERE subject_id = ?');
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'i', $subjectId);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($res && ($row = mysqli_fetch_assoc($res))) {
+            $lid = (int) ($row['lesson_id'] ?? 0);
+            if ($lid <= 0) {
+                continue;
+            }
+            if (sca_perm_has($perms, 'lesson', $lid)) {
+                mysqli_stmt_close($stmt);
+                return true;
+            }
+            $vq = mysqli_query($conn, 'SELECT video_id FROM lesson_videos WHERE lesson_id = ' . $lid);
+            while ($vq && ($v = mysqli_fetch_assoc($vq))) {
+                if (sca_perm_has($perms, 'video', (int) $v['video_id'])) {
+                    mysqli_stmt_close($stmt);
+                    return true;
+                }
+            }
+            $hq = mysqli_query($conn, 'SELECT handout_id FROM lesson_handouts WHERE lesson_id = ' . $lid);
+            while ($hq && ($h = mysqli_fetch_assoc($hq))) {
+                if (sca_perm_has($perms, 'handout', (int) $h['handout_id'])) {
+                    mysqli_stmt_close($stmt);
+                    return true;
+                }
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
 
     $stmt = mysqli_prepare($conn, 'SELECT quiz_id FROM quizzes WHERE subject_id = ?');
-    mysqli_stmt_bind_param($stmt, 'i', $subjectId);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    while ($res && ($row = mysqli_fetch_assoc($res))) {
-        if (sca_has_access($conn, $userId, 'quiz', (int) ($row['quiz_id'] ?? 0))) {
-            mysqli_stmt_close($stmt);
-            return true;
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'i', $subjectId);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($res && ($row = mysqli_fetch_assoc($res))) {
+            $qid = (int) ($row['quiz_id'] ?? 0);
+            if ($qid > 0 && sca_perm_has($perms, 'quiz', $qid)) {
+                mysqli_stmt_close($stmt);
+                return true;
+            }
         }
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_close($stmt);
+
     return false;
 }
 
@@ -732,4 +767,182 @@ function sca_permissions_for_api(mysqli $conn, int $userId): array
 function sca_grant_full_lms(mysqli $conn, int $userId, ?int $grantedBy): bool
 {
     return sca_save_user_permissions($conn, $userId, [['content_type' => 'full_lms', 'content_id' => 0]], $grantedBy);
+}
+
+/**
+ * Active grant-backed content keys from access_grants that admin replace-all must preserve.
+ * Includes source IN ('purchase','free_access'), status=active, ends_at > NOW().
+ * Does not include Free Access requests that were never granted. Empty if access_grants missing.
+ *
+ * @return list<array{content_type:string,content_id:int}>
+ */
+function sca_commerce_active_permission_keys(mysqli $conn, int $userId): array
+{
+    if ($userId <= 0) {
+        return [];
+    }
+    $tq = @mysqli_query($conn, "SHOW TABLES LIKE 'access_grants'");
+    if (!$tq || mysqli_num_rows($tq) === 0) {
+        if ($tq) {
+            mysqli_free_result($tq);
+        }
+        return [];
+    }
+    if ($tq) {
+        mysqli_free_result($tq);
+    }
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT DISTINCT content_type, content_id
+         FROM access_grants
+         WHERE user_id = ?
+           AND source IN ('purchase', 'free_access')
+           AND status = 'active'
+           AND ends_at > NOW()"
+    );
+    if (!$stmt) {
+        return [];
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $raw = [];
+    while ($res && ($row = mysqli_fetch_assoc($res))) {
+        $raw[] = [
+            'content_type' => (string) ($row['content_type'] ?? ''),
+            'content_id' => (int) ($row['content_id'] ?? 0),
+        ];
+    }
+    mysqli_stmt_close($stmt);
+    return sca_normalize_permission_payload($raw);
+}
+
+/**
+ * Union of permission lists by (content_type, content_id). No duplicates.
+ *
+ * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $a
+ * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $b
+ * @return list<array{content_type:string,content_id:int}>
+ */
+function sca_merge_permission_lists(array $a, array $b): array
+{
+    $seen = [];
+    $out = [];
+    foreach (array_merge(sca_normalize_permission_payload($a), sca_normalize_permission_payload($b)) as $p) {
+        $type = $p['content_type'];
+        $cid = (int) $p['content_id'];
+        $key = $type . ':' . $cid;
+        if (isset($seen[$key])) {
+            continue;
+        }
+        $seen[$key] = true;
+        $out[] = ['content_type' => $type, 'content_id' => $cid];
+    }
+    return $out;
+}
+
+/**
+ * Replace-all SCA save that merges in active purchase + free_access grant permissions first.
+ * Used by activate_user and Student Access so admin saves cannot wipe paid/FAR access rows.
+ * Does not modify access_grants, login, or payment fulfillment.
+ *
+ * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $permissions
+ */
+function sca_save_user_permissions_preserving_commerce(
+    mysqli $conn,
+    int $userId,
+    array $permissions,
+    ?int $grantedBy
+): bool {
+    $commerce = sca_commerce_active_permission_keys($conn, $userId);
+    $merged = sca_merge_permission_lists($permissions, $commerce);
+    if ($merged === []) {
+        // Preserve prior contract: empty payload is invalid for a full replace unless
+        // commerce had keys (already handled). Mirror sca_save empty → clear non-commerce only
+        // by saving commerce-only when admin sent empty but commerce exists.
+        return sca_save_user_permissions($conn, $userId, $commerce, $grantedBy);
+    }
+    return sca_save_user_permissions($conn, $userId, $merged, $grantedBy);
+}
+
+/**
+ * Merge/upsert SCA permissions without deleting existing rows.
+ * Used by commerce fulfillment — NEVER replace-all.
+ *
+ * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $permissions
+ */
+function sca_upsert_permissions(mysqli $conn, int $userId, array $permissions, ?int $grantedBy): bool
+{
+    sca_ensure_schema($conn);
+    if ($userId <= 0) {
+        return false;
+    }
+    $normalized = sca_normalize_permission_payload($permissions);
+    if ($normalized === []) {
+        return true;
+    }
+
+    $ins = mysqli_prepare(
+        $conn,
+        'INSERT INTO student_content_permissions (user_id, content_type, content_id, access_level, granted_by)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           access_level = VALUES(access_level),
+           updated_at = CURRENT_TIMESTAMP'
+    );
+    if (!$ins) {
+        return false;
+    }
+    $level = 'view';
+    $ok = true;
+    foreach ($normalized as $p) {
+        $type = $p['content_type'];
+        $cid = (int) $p['content_id'];
+        mysqli_stmt_bind_param($ins, 'isisi', $userId, $type, $cid, $level, $grantedBy);
+        if (!mysqli_stmt_execute($ins)) {
+            $ok = false;
+            break;
+        }
+    }
+    mysqli_stmt_close($ins);
+    if ($ok) {
+        sca_clear_permission_cache($userId);
+    }
+    return $ok;
+}
+
+/**
+ * Delete exactly one SCA permission row for (user_id, content_type, content_id).
+ * Does not replace-all or touch other keys. Used by commerce expiry reconcile.
+ */
+function sca_delete_permission_key(mysqli $conn, int $userId, string $contentType, int $contentId): bool
+{
+    if ($userId <= 0) {
+        return false;
+    }
+    $normalized = sca_normalize_permission_payload([
+        ['content_type' => $contentType, 'content_id' => $contentId],
+    ]);
+    if ($normalized === []) {
+        return false;
+    }
+    $type = $normalized[0]['content_type'];
+    $cid = (int) $normalized[0]['content_id'];
+    $del = mysqli_prepare(
+        $conn,
+        'DELETE FROM student_content_permissions
+         WHERE user_id = ? AND content_type = ? AND content_id = ?
+         LIMIT 1'
+    );
+    if (!$del) {
+        return false;
+    }
+    mysqli_stmt_bind_param($del, 'isi', $userId, $type, $cid);
+    $ok = mysqli_stmt_execute($del);
+    mysqli_stmt_close($del);
+    if ($ok) {
+        sca_clear_permission_cache($userId);
+    }
+    return $ok;
 }

@@ -2,6 +2,7 @@
 require_once 'session_config.php';
 require_once 'db.php';
 require_once 'password_reset.php';
+require_once 'remember_me.php';
 require_once 'auth.php';
 
 if (isLoggedIn() && verifySession()) {
@@ -76,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = mysqli_prepare($conn, "UPDATE users SET password = ? WHERE user_id = ?");
         mysqli_stmt_bind_param($stmt, 'si', $hashed, $tokenValid['user_id']);
         if (mysqli_stmt_execute($stmt)) {
+            clearRememberMeForUserId((int)$tokenValid['user_id']);
             deletePasswordResetToken($tokenValid['token_id']);
             mysqli_stmt_close($stmt);
             header('Location: login');

@@ -254,16 +254,20 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 <body class="font-sans antialiased admin-app admin-support-hub-page">
   <?php include __DIR__ . '/admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 pt-5 pb-0 mb-5 page-hero">
+  <div class="quiz-admin-hero rounded-xl px-5 pt-5 pb-0 mb-5 page-hero admin-glass-hero">
     <?php
     $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Support Analytics']];
     include __DIR__ . '/includes/admin_breadcrumb.php';
     ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-robot"></i></span>
-      Support Analytics
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0">Use the tabs below for overview metrics, KB backlog, the knowledge base editor, and staff enrollment lookup.</p>
+    <div class="admin-page-header mb-4">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-headset"></i></span>
+          <span>Support Analytics</span>
+        </h1>
+        <p class="admin-page-header__subtitle">Overview metrics, KB backlog, knowledge base, and enrollment lookup.</p>
+      </div>
+    </div>
 
     <div class="admin-support-hub-tabs-wrap">
       <nav class="admin-support-hub-tabs" aria-label="Support sections">

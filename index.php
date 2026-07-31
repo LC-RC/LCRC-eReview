@@ -1,15 +1,21 @@
 <?php
 require_once 'session_config.php';
 require_once 'auth.php';
-require_once __DIR__ . '/includes/registration_school_options.php';
-
-$schoolDropdownOptions = ereview_get_registration_school_dropdown_options($conn);
 
 if (isLoggedIn() && verifySession()) {
     header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
     exit;
 }
+
+// Legacy homepage register modal retired — send any leftover session open to canonical registration.
+if (isset($_SESSION['open_modal']) && $_SESSION['open_modal'] === 'registerModal') {
+    unset($_SESSION['open_modal']);
+    header('Location: registration');
+    exit;
+}
+
 $pageTitle = 'Home';
+$loginModalCsrf = generateCSRFToken();
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth overflow-x-hidden">
@@ -20,11 +26,9 @@ $pageTitle = 'Home';
       x-data="{
         openModal: '<?php echo isset($_SESSION['open_modal']) ? h($_SESSION['open_modal']) : ''; ?>',
         showLoginPass: false,
-        showRegisterPass: false,
-        otherSchool: '',
         mobileMenuOpen: false
       }"
-      x-init="if (openModal) { $nextTick(() => { $dispatch('open-modal', openModal); }); } openModal = ''"
+      x-init="if (openModal === 'loginModal') { $nextTick(() => { $dispatch('open-modal', openModal); }); } openModal = ''"
       @keydown.escape.window="mobileMenuOpen = false">
 <div class="min-h-screen flex flex-col overflow-x-hidden min-w-0">
   <!-- Top Navigation Bar (glassy) -->
@@ -160,7 +164,7 @@ $pageTitle = 'Home';
         <div class="grid grid-cols-2 gap-3 sm:gap-5 reveal-content reveal-delay-2 mt-10 lg:mt-0">
           <?php
           $features = [
-            ['icon' => 'bi-person-check', 'title' => 'Verified Enrollment', 'desc' => 'Register with payment proof and get admin-verified access.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
+            ['icon' => 'bi-person-check', 'title' => 'Verified Enrollment', 'desc' => 'Create your account first. After email verification, you will be directed to payment where you can upload your payment proof.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
             ['icon' => 'bi-journal-check', 'title' => 'CPA-Focused Modules', 'desc' => 'Study by subject with lessons, handouts, and progress tracking.', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
             ['icon' => 'bi-clipboard2-pulse', 'title' => 'Mock Exams & Results', 'desc' => 'Take timed quizzes and monitor your readiness in real time.', 'bg' => 'bg-accent-blue/10', 'text' => 'text-accent-blue', 'border' => 'hover:border-accent-blue/40', 'hoverText' => 'group-hover/card:text-accent-blue'],
             ['icon' => 'bi-graph-up-arrow', 'title' => 'Performance Insights', 'desc' => 'Track strengths, weak areas, and next topics to improve.', 'bg' => 'bg-accent-orange/10', 'text' => 'text-accent-orange', 'border' => 'hover:border-accent-orange/40', 'hoverText' => 'group-hover/card:text-accent-orange'],
@@ -310,11 +314,11 @@ $pageTitle = 'Home';
         <?php endforeach; ?>
       </div>
       <div class="text-center mt-10 reveal-content reveal-delay-4">
-        <button type="button" @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light shadow-md overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation max-w-md sm:max-w-none mx-auto">
+        <a href="registration" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light shadow-md overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation max-w-md sm:max-w-none mx-auto">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></span>
           <i class="bi bi-box-arrow-in-right text-lg relative z-10 group-hover/btn:scale-110 transition-transform duration-300"></i>
           <span class="relative z-10">Enroll Now</span>
-        </button>
+        </a>
       </div>
     </div>
   </section>
@@ -390,7 +394,7 @@ $pageTitle = 'Home';
             <i class="bi text-accent-blue text-lg shrink-0 transition-transform duration-300" :class="open === 1 ? 'bi-chevron-up rotate-0' : 'bi-chevron-down'"></i>
           </button>
           <div x-show="open === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="px-5 pb-4 text-gray-600 border-t border-gray-100 bg-gray-50/50">
-            Click Enroll Now or Register, fill out the form, and upload your payment proof. Wait for admin approval.
+            Create your account first. After email verification, you will be directed to payment where you can upload your payment proof. Free Access requests do not require payment.
           </div>
         </div>
         <div class="group/faq rounded-2xl border-2 border-gray-100 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:border-accent-orange/50 hover:shadow-[0_8px_24px_-8px_rgba(245,158,11,0.2)]">
@@ -408,7 +412,7 @@ $pageTitle = 'Home';
             <i class="bi text-accent-blue text-lg shrink-0 transition-transform duration-300" :class="open === 3 ? 'bi-chevron-up rotate-0' : 'bi-chevron-down'"></i>
           </button>
           <div x-show="open === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="px-5 pb-4 text-gray-600 border-t border-gray-100 bg-gray-50/50">
-            Images (JPG/PNG) and PDF are accepted, subject to the server upload limits.
+            After email verification, paid enrollment uses the payment page. Images (JPG/PNG/WEBP) and PDF are accepted there, subject to upload limits.
           </div>
         </div>
       </div>
@@ -422,11 +426,11 @@ $pageTitle = 'Home';
       <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4 reveal-content">Ready to start your CPA journey?</h2>
       <p class="text-blue-100 mb-8 max-w-xl mx-auto reveal-content reveal-delay-1 px-1">Join LCRC eReview today and get access to comprehensive review materials and support.</p>
       <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 reveal-content reveal-delay-3">
-        <button type="button" @click="$dispatch('open-modal', 'registerModal')" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light border-2 border-accent-orange shadow-lg overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation">
+        <a href="registration" class="group/btn relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light border-2 border-accent-orange shadow-lg overflow-hidden transition-all duration-300 hover:from-accent-orange-dark hover:to-accent-orange hover:shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500"></span>
           <i class="bi bi-person-plus-fill text-lg relative z-10 group-hover/btn:scale-110 transition-transform duration-300"></i>
           <span class="relative z-10">Register Now</span>
-        </button>
+        </a>
         <a href="#packages" class="group/cta relative w-full sm:w-auto justify-center inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white border-2 border-white/80 overflow-hidden transition-all duration-300 hover:bg-white hover:text-accent-blue hover:shadow-[0_12px_24px_-8px_rgba(255,255,255,0.3)] hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] touch-manipulation">
           <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover/cta:translate-x-full transition-transform duration-500"></span>
           <span class="relative z-10">View Packages</span>
@@ -499,7 +503,7 @@ $pageTitle = 'Home';
               <li><a href="#about" class="footer-link">About</a></li>
               <li><a href="#faqs" class="footer-link">FAQs</a></li>
               <li><a href="login" class="footer-link">Login</a></li>
-              <li><a href="#" @click.prevent="$dispatch('open-modal', 'registerModal')" class="footer-link" style="color:#F59E0B;">Register</a></li>
+              <li><a href="registration" class="footer-link" style="color:#F59E0B;">Register</a></li>
             </ul>
           </div>
           <!-- Column 3: Contact -->
@@ -960,31 +964,30 @@ window.chatbot = function chatbot() {
 }
 </script>
 
-<!-- Modals (Alpine) -->
+<!-- Modals (Alpine) — login only; registration is canonical at registration.php -->
 <div x-data="{
   activeModal: null,
   loginFormKey: 0,
-  registerFormKey: 0,
   login: {
     values: { email: '', password: '' },
     touched: { email: false, password: false },
     submit: false
   },
-  register: {
-    values: { full_name: '', email: '', school: '', school_other: '', review_type: '', password: '', hasProof: false },
-    touched: { full_name: false, email: false, school: false, school_other: false, review_type: false, password: false, payment_proof: false },
-    submit: false
+  open(name) {
+    if (name === 'registerModal') {
+      window.location.href = 'registration';
+      return;
+    }
+    this.activeModal = name;
+    document.body.classList.add('overflow-hidden');
+    this.resetFormUi(name);
+    if (name === 'loginModal') this.loginFormKey = Date.now();
   },
-  open(name) { this.activeModal = name; document.body.classList.add('overflow-hidden'); this.resetFormUi(name); if (name === 'loginModal') this.loginFormKey = Date.now(); if (name === 'registerModal') this.registerFormKey = Date.now(); },
   close() { this.activeModal = null; document.body.classList.remove('overflow-hidden'); this.resetFormUi(); },
   resetFormUi(scope = null) {
     if (!scope || scope === 'loginModal') {
       this.login.submit = false;
       this.login.touched = { email: false, password: false };
-    }
-    if (!scope || scope === 'registerModal') {
-      this.register.submit = false;
-      this.register.touched = { full_name: false, email: false, school: false, school_other: false, review_type: false, password: false, payment_proof: false };
     }
   },
   isEmail(v) { var s=(v||'').trim(); if(!s) return false; var i=s.indexOf('@'); if(i<=0||i>=s.length-1) return false; var d=s.slice(i+1); return d.indexOf('.')>0 && d.lastIndexOf('.')<d.length-1; },
@@ -1004,44 +1007,6 @@ window.chatbot = function chatbot() {
     const msg = this.loginError(field);
     return !!msg && (this.login.submit || this.login.touched[field]);
   },
-  registerError(field) {
-    const fullName = (this.register.values.full_name || '').trim();
-    const email = (this.register.values.email || '').trim();
-    const school = (this.register.values.school || '');
-    const schoolOther = (this.register.values.school_other || '').trim();
-    const reviewType = (this.register.values.review_type || '');
-    const password = (this.register.values.password || '');
-    const hasProof = !!this.register.values.hasProof;
-
-    if (field === 'full_name') {
-      if (!fullName) return 'Full name is required.';
-    }
-    if (field === 'email') {
-      if (!email) return 'Email address is required.';
-      if (!this.isEmail(email)) return 'Enter a valid email address.';
-    }
-    if (field === 'school') {
-      if (!school) return 'Please select your school.';
-    }
-    if (field === 'school_other') {
-      if (school === 'Other' && !schoolOther) return 'Please enter your school name.';
-    }
-    if (field === 'review_type') {
-      if (!reviewType) return 'Please select a review type.';
-    }
-    if (field === 'password') {
-      if (!password) return 'Password is required.';
-      if (password.length < 6) return 'Password must be at least 6 characters.';
-    }
-    if (field === 'payment_proof') {
-      if (!hasProof) return 'Payment proof is required.';
-    }
-    return '';
-  },
-  showRegisterError(field) {
-    const msg = this.registerError(field);
-    return !!msg && (this.register.submit || this.register.touched[field]);
-  },
   loginSubmit(e) {
     this.login.submit = true;
     const order = ['email', 'password'];
@@ -1050,19 +1015,6 @@ window.chatbot = function chatbot() {
       e.preventDefault();
       this.$nextTick(() => {
         const el = this.$refs[`login_${firstInvalid}`];
-        if (el && typeof el.focus === 'function') el.focus();
-      });
-    }
-  },
-  registerSubmit(e) {
-    this.register.submit = true;
-    const order = ['full_name', 'email', 'school', 'review_type', 'school_other', 'password', 'payment_proof'];
-    const effectiveOrder = order.filter((f) => f !== 'school_other' || this.register.values.school === 'Other');
-    const firstInvalid = effectiveOrder.find((f) => !!this.registerError(f));
-    if (firstInvalid) {
-      e.preventDefault();
-      this.$nextTick(() => {
-        const el = this.$refs[`reg_${firstInvalid}`];
         if (el && typeof el.focus === 'function') el.focus();
       });
     }
@@ -1132,6 +1084,7 @@ window.chatbot = function chatbot() {
           </div>
         <?php endif; ?>
         <form action="login_process" method="POST" class="space-y-6" novalidate @submit="loginSubmit($event)">
+          <input type="hidden" name="csrf_token" value="<?php echo h($loginModalCsrf); ?>">
           <div class="animate-slide-up-fade-1">
             <label for="login-email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
             <input id="login-email" x-ref="login_email" x-model.trim="login.values.email" @blur="login.touched.email = true"
@@ -1160,166 +1113,16 @@ window.chatbot = function chatbot() {
             <p class="mt-2 text-xs text-gray-500">Admin login supported</p>
           </div>
           <div class="animate-slide-up-fade-3">
+          <label class="inline-flex items-start gap-2.5 text-sm text-gray-700 mb-3 cursor-pointer">
+            <input type="checkbox" name="remember_me" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#1F58C3] focus:ring-[#1F58C3]/40">
+            <span class="leading-5">Remember me — stay signed in for 30 days (next visit skips login)</span>
+          </label>
           <button type="submit" name="login" class="w-full py-4 px-5 rounded-2xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange focus:outline-none focus:ring-4 focus:ring-accent-orange/25 transition-all duration-200 shadow-[0_14px_28px_rgba(245,158,11,0.25)] hover:shadow-[0_18px_36px_rgba(245,158,11,0.35)] hover:scale-[1.01] active:scale-[0.99] active:translate-y-[2px] active:shadow-[0_8px_20px_rgba(245,158,11,0.3)]">
             Login
           </button>
           </div>
         </form>
-        <p class="text-center mt-6 text-sm text-gray-600 animate-slide-up-fade-4">No account? <a href="#" @click.prevent="activeModal = null; $dispatch('open-modal', 'registerModal')" class="text-accent-blue font-semibold hover:text-accent-blue-dark hover:underline underline-offset-2 transition-all duration-200">Create one</a></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Register Modal (modernized) -->
-  <div x-show="activeModal === 'registerModal'"
-       x-transition:enter="transition ease-out duration-300"
-       x-transition:enter-start="opacity-0"
-       x-transition:enter-end="opacity-100"
-       x-transition:leave="transition ease-in duration-200"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-    <div @click.stop
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-modal-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto border border-white/60 ring-1 ring-black/5"
-         role="dialog" aria-modal="true" aria-labelledby="register-title">
-      <div class="relative px-8 pt-10 pb-6 text-center sticky top-0 bg-white/90 backdrop-blur-xl z-10 border-b border-gray-200/80">
-        <button @click="close()" class="absolute right-5 top-5 p-2.5 rounded-xl text-gray-400 hover:text-gray-800 hover:bg-gray-200/80 active:scale-95 focus:outline-none focus:ring-4 focus:ring-accent-blue/15 transition-all duration-200" aria-label="Close">
-          <i class="bi bi-x-lg text-lg"></i>
-        </button>
-
-        <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="select-none mx-auto" width="280" height="96" style="height:6rem;width:auto;max-height:6rem;max-width:min(280px,85vw);object-fit:contain;display:block;" loading="eager" decoding="async">
-
-        <h2 id="register-title" class="mt-6 text-2xl font-bold text-gray-900 tracking-tight">Create your account</h2>
-        <p class="mt-2 text-sm text-gray-600">Register to start your eReview journey.</p>
-      </div>
-
-      <div class="px-8 pt-6 pb-10" :key="registerFormKey">
-        <?php
-        $showRegisterError = isset($_SESSION['error']) && isset($_SESSION['open_modal']) && $_SESSION['open_modal'] === 'registerModal';
-        if ($showRegisterError):
-          $errorMsg = $_SESSION['error'];
-          unset($_SESSION['error']);
-        ?>
-          <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-200/80 flex items-center gap-3 text-red-800 animate-slide-up-fade">
-            <i class="bi bi-exclamation-triangle-fill text-red-500 text-lg"></i>
-            <span class="font-semibold"><?php echo h($errorMsg); ?></span>
-          </div>
-        <?php endif; ?>
-        <form action="register_process" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate @submit="registerSubmit($event)">
-          <div class="grid sm:grid-cols-2 gap-6">
-            <div class="animate-slide-up-fade-1">
-              <label for="reg-fullname" class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-              <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><i class="bi bi-person text-lg"></i></span>
-                <input id="reg-fullname" x-ref="reg_full_name" x-model.trim="register.values.full_name" @blur="register.touched.full_name = true"
-                       type="text" name="full_name" required placeholder="Your full name" autocomplete="name"
-                       :aria-invalid="showRegisterError('full_name') ? 'true' : 'false'"
-                       aria-describedby="reg-fullname-error"
-                       :class="showRegisterError('full_name') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                       class="w-full rounded-2xl border border-gray-300 bg-white/80 pl-12 pr-4 py-4 text-gray-900 placeholder-gray-400 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200">
-              </div>
-              <p id="reg-fullname-error" x-show="showRegisterError('full_name')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('full_name')"></p>
-            </div>
-
-            <div class="animate-slide-up-fade-2">
-              <label for="reg-email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><i class="bi bi-envelope text-lg"></i></span>
-                <input id="reg-email" x-ref="reg_email" x-model.trim="register.values.email" @blur="register.touched.email = true"
-                       type="email" name="email" required placeholder="you@example.com" autocomplete="email"
-                       :aria-invalid="showRegisterError('email') ? 'true' : 'false'"
-                       aria-describedby="reg-email-error"
-                       :class="showRegisterError('email') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                       class="w-full rounded-2xl border border-gray-300 bg-white/80 pl-12 pr-4 py-4 text-gray-900 placeholder-gray-400 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200">
-              </div>
-              <p id="reg-email-error" x-show="showRegisterError('email')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('email')"></p>
-            </div>
-
-            <div class="animate-slide-up-fade-3">
-              <label for="reg-school" class="block text-sm font-semibold text-gray-700 mb-2">School</label>
-              <select id="reg-school" x-ref="reg_school" x-model="register.values.school" @blur="register.touched.school = true"
-                      name="school" required
-                      :aria-invalid="showRegisterError('school') ? 'true' : 'false'"
-                      aria-describedby="reg-school-error"
-                      :class="showRegisterError('school') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                      class="w-full rounded-2xl border border-gray-300 bg-white/80 px-4 py-4 text-gray-900 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200 appearance-none bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat cursor-pointer" style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27 stroke=%27%236b7280%27%3E%3Cpath stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M19 9l-7 7-7-7%27/%3E%3C/svg%3E');">
-                <option value="" disabled selected>Select school</option>
-                <?php foreach ($schoolDropdownOptions as $schoolOpt): ?>
-                  <?php if ($schoolOpt === 'Other') { continue; } ?>
-                  <option value="<?php echo h($schoolOpt); ?>"><?php echo h($schoolOpt); ?></option>
-                <?php endforeach; ?>
-                <option value="Other">Other</option>
-              </select>
-              <p id="reg-school-error" x-show="showRegisterError('school')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('school')"></p>
-            </div>
-
-            <div class="animate-slide-up-fade-4">
-              <label for="reg-review-type" class="block text-sm font-semibold text-gray-700 mb-2">Review Type</label>
-              <select id="reg-review-type" x-ref="reg_review_type" x-model="register.values.review_type" @blur="register.touched.review_type = true"
-                      name="review_type" required
-                      :aria-invalid="showRegisterError('review_type') ? 'true' : 'false'"
-                      aria-describedby="reg-review-type-error"
-                      :class="showRegisterError('review_type') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                      class="w-full rounded-2xl border border-gray-300 bg-white/80 px-4 py-4 text-gray-900 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200 appearance-none bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat cursor-pointer" style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 24 24%27 stroke=%27%236b7280%27%3E%3Cpath stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M19 9l-7 7-7-7%27/%3E%3C/svg%3E');">
-                <option value="" disabled selected>Select type</option>
-                <option value="reviewee">Reviewee</option>
-                <option value="undergrad">Undergrad</option>
-              </select>
-              <p id="reg-review-type-error" x-show="showRegisterError('review_type')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('review_type')"></p>
-            </div>
-
-            <div x-show="register.values.school === 'Other'" x-cloak class="sm:col-span-2 animate-slide-up-fade-5">
-              <label for="reg-school-other" class="block text-sm font-semibold text-gray-700 mb-2">Enter School Name</label>
-              <input id="reg-school-other" x-ref="reg_school_other" x-model.trim="register.values.school_other" @blur="register.touched.school_other = true"
-                     type="text" name="school_other" placeholder="Your school name"
-                     :aria-invalid="showRegisterError('school_other') ? 'true' : 'false'"
-                     aria-describedby="reg-school-other-error"
-                     :class="showRegisterError('school_other') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                     class="w-full rounded-2xl border border-gray-300 bg-white/80 px-4 py-4 text-gray-900 placeholder-gray-400 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200">
-              <p id="reg-school-other-error" x-show="showRegisterError('school_other')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('school_other')"></p>
-            </div>
-
-            <div class="sm:col-span-2 animate-slide-up-fade-6">
-              <label for="reg-password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-              <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><i class="bi bi-lock text-lg"></i></span>
-                <input id="reg-password" x-ref="reg_password" x-model="register.values.password" @blur="register.touched.password = true"
-                       :type="showRegisterPass ? 'text' : 'password'" name="password" required minlength="6" placeholder="Min. 6 characters" autocomplete="new-password"
-                       :aria-invalid="showRegisterError('password') ? 'true' : 'false'"
-                       aria-describedby="reg-password-error"
-                       :class="showRegisterError('password') ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : ''"
-                       class="w-full rounded-2xl border border-gray-300 bg-white/80 pl-12 pr-12 py-4 text-gray-900 placeholder-gray-400 shadow-sm hover:border-gray-400 hover:bg-white hover:shadow-md focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 outline-none transition-all duration-200">
-                <button type="button" @click="showRegisterPass = !showRegisterPass" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-accent-blue hover:bg-accent-blue/10 active:scale-90 focus:outline-none focus:ring-4 focus:ring-accent-blue/15 transition-all duration-200" aria-label="Toggle password visibility">
-                  <i class="bi text-xl" :class="showRegisterPass ? 'bi-eye-slash' : 'bi-eye'"></i>
-                </button>
-              </div>
-              <p id="reg-password-error" x-show="showRegisterError('password')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('password')"></p>
-              <p class="mt-2 text-xs text-gray-500">Minimum 6 characters.</p>
-            </div>
-          </div>
-          <div class="animate-slide-up-fade-7">
-            <label for="reg-proof" class="block text-sm font-semibold text-gray-700 mb-2">Upload Payment Proof</label>
-            <div class="relative">
-              <input id="reg-proof" x-ref="reg_payment_proof" @change="register.values.hasProof = ($event.target.files && $event.target.files.length > 0); register.touched.payment_proof = true"
-                     type="file" name="payment_proof" accept="image/*,application/pdf" required
-                     :aria-invalid="showRegisterError('payment_proof') ? 'true' : 'false'"
-                     aria-describedby="reg-proof-error"
-                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-3.5 file:px-6 file:rounded-2xl file:border-0 file:font-semibold file:bg-accent-blue/10 file:text-accent-blue file:shadow-sm file:cursor-pointer file:transition-all file:duration-200 file:hover:bg-accent-blue/20 file:hover:shadow-md file:active:scale-[0.98]">
-            </div>
-            <p id="reg-proof-error" x-show="showRegisterError('payment_proof')" x-transition.opacity class="mt-2 text-xs font-semibold text-red-600" x-text="registerError('payment_proof')"></p>
-            <p class="text-xs text-gray-500 mt-2">
-              We accept images or PDF. Max size depends on server limits.
-              <span class="block mt-1">Tip: A clear screenshot/photo of your payment confirmation works great.</span>
-            </p>
-          </div>
-          <div class="animate-slide-up-fade-8">
-          <button type="submit" class="w-full py-4 px-5 rounded-2xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange focus:outline-none focus:ring-4 focus:ring-accent-orange/25 transition-all duration-200 shadow-[0_14px_28px_rgba(245,158,11,0.25)] hover:shadow-[0_18px_36px_rgba(245,158,11,0.35)] hover:scale-[1.01] active:scale-[0.99] active:translate-y-[2px] active:shadow-[0_8px_20px_rgba(245,158,11,0.3)]">
-            Register
-          </button>
-          </div>
-        </form>
-        <p class="text-center mt-6 text-sm text-gray-600 animate-slide-up-fade-9">Already have an account? <a href="login" class="text-accent-blue font-semibold hover:text-accent-blue-dark hover:underline underline-offset-2 transition-all duration-200">Sign in</a></p>
+        <p class="text-center mt-6 text-sm text-gray-600 animate-slide-up-fade-4">No account? <a href="registration" class="text-accent-blue font-semibold hover:text-accent-blue-dark hover:underline underline-offset-2 transition-all duration-200">Create one</a></p>
       </div>
     </div>
   </div>

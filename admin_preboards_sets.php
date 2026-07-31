@@ -93,46 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'decide_request') {
         $reqId = sanitizeInt($_POST['preboards_request_id'] ?? 0);
         $decision = $_POST['decision'] ?? '';
-        if ($reqId > 0 && in_array($decision, ['approved', 'denied'], true)) {
-            $adminId = (int)getCurrentUserId();
-            // Load request + ensure it belongs to this subject via set join
-            $stmt = mysqli_prepare($conn, "SELECT r.*, s.preboards_subject_id FROM preboards_requests r
-              INNER JOIN preboards_sets s ON s.preboards_set_id=r.preboards_set_id
-              WHERE r.preboards_request_id=? AND r.status='pending' LIMIT 1");
-            mysqli_stmt_bind_param($stmt, 'i', $reqId);
-            mysqli_stmt_execute($stmt);
-            $req = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-            mysqli_stmt_close($stmt);
-            if ($req && (int)$req['preboards_subject_id'] === (int)$subjectId) {
-                $decAt = date('Y-m-d H:i:s');
-                $upd = mysqli_prepare($conn, "UPDATE preboards_requests SET status=?, decided_at=?, decided_by=? WHERE preboards_request_id=? AND status='pending'");
-                mysqli_stmt_bind_param($upd, 'ssii', $decision, $decAt, $adminId, $reqId);
-                mysqli_stmt_execute($upd);
-                mysqli_stmt_close($upd);
-
-                if ($decision === 'approved') {
-                    $uid = (int)$req['user_id'];
-                    $sid = (int)$req['preboards_set_id'];
-                    if (($req['request_type'] ?? '') === 'open') {
-                        // Grant one-time access token for locked sets (auto-locks again after first use)
-                        $ins = mysqli_prepare($conn, "INSERT INTO preboards_set_access (user_id, preboards_set_id, granted_by, used_at, revoked_at)
-                          VALUES (?, ?, ?, NULL, NULL)
-                          ON DUPLICATE KEY UPDATE granted_at=CURRENT_TIMESTAMP, granted_by=VALUES(granted_by), used_at=NULL, revoked_at=NULL");
-                        mysqli_stmt_bind_param($ins, 'iii', $uid, $sid, $adminId);
-                        mysqli_stmt_execute($ins);
-                        mysqli_stmt_close($ins);
-                    } elseif (($req['request_type'] ?? '') === 'retake') {
-                        // Grant one retake token
-                        $ins = mysqli_prepare($conn, "INSERT INTO preboards_retake_tokens (user_id, preboards_set_id, granted_by) VALUES (?, ?, ?)");
-                        mysqli_stmt_bind_param($ins, 'iii', $uid, $sid, $adminId);
-                        mysqli_stmt_execute($ins);
-                        mysqli_stmt_close($ins);
-                    }
-                }
-                $_SESSION['message'] = 'Request ' . ($decision === 'approved' ? 'approved' : 'denied') . '.';
-            }
+        $adminId = (int) getCurrentUserId();
+        if (preboards_decide_request($conn, $reqId, $decision, $adminId, $subjectId)) {
+            $_SESSION['message'] = 'Request ' . ($decision === 'approved' ? 'approved' : 'denied') . '.';
+        } else {
+            $_SESSION['error'] = 'Could not update that request. It may already be decided.';
         }
-        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId);
+        header('Location: admin_preboards_sets?preboards_subject_id=' . $subjectId . '#preboards-requests');
         exit;
     }
 
@@ -258,15 +225,7 @@ if ($showCompletion) {
     }
 }
 
-$pendingRequests = [];
-$reqRes = mysqli_query($conn, "SELECT r.preboards_request_id, r.user_id, r.preboards_set_id, r.request_type, r.requested_at,
-  u.full_name, u.email, s.set_label
-  FROM preboards_requests r
-  INNER JOIN preboards_sets s ON s.preboards_set_id=r.preboards_set_id
-  INNER JOIN users u ON u.user_id=r.user_id
-  WHERE r.status='pending' AND s.preboards_subject_id=" . (int)$subjectId . "
-  ORDER BY r.requested_at DESC");
-if ($reqRes) { while ($r = mysqli_fetch_assoc($reqRes)) { $pendingRequests[] = $r; } }
+$pendingRequests = preboards_list_pending_requests($conn, $subjectId);
 if ($searchQ !== '' && !empty($pendingRequests)) {
     $sq = mb_strtolower($searchQ);
     $pendingRequests = array_values(array_filter($pendingRequests, function ($r) use ($sq) {
@@ -303,8 +262,13 @@ $adminBreadcrumbs = [
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
-    <a href="admin_preboards_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back</a>
+    <a href="admin_preboards_subjects<?php echo !empty($pendingRequests) ? '#preboards-requests' : ''; ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back</a>
     <div class="flex flex-wrap gap-2">
+      <?php if (!$showCompletion && !empty($pendingRequests)): ?>
+        <a href="#preboards-requests" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2" style="border-color:rgba(217,119,6,0.4);color:#b45309">
+          <i class="bi bi-inbox"></i> <?php echo count($pendingRequests); ?> request<?php echo count($pendingRequests) === 1 ? '' : 's'; ?>
+        </a>
+      <?php endif; ?>
       <?php if ($showCompletion): ?>
         <a href="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition">Back to sets</a>
       <?php else: ?>
@@ -394,6 +358,69 @@ $adminBreadcrumbs = [
     </div>
   </div>
   <?php else: ?>
+
+  <?php if (!empty($pendingRequests)): ?>
+    <div id="preboards-requests" class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5" style="scroll-margin-top:1.25rem">
+      <div class="quiz-admin-table-head px-5 py-4 flex items-center justify-between gap-3">
+        <div>
+          <span class="font-semibold text-gray-100">Who requested access</span>
+          <p class="text-sm text-gray-500 mt-0.5 mb-0">Students asking for locked-set access or a retake.</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-sm bg-amber-500/15 text-amber-200 border border-amber-500/35"><?php echo count($pendingRequests); ?> pending</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="quiz-admin-data-table w-full text-left">
+          <thead>
+            <tr>
+              <th class="px-5 py-3 font-semibold">Student</th>
+              <th class="px-5 py-3 font-semibold">Set</th>
+              <th class="px-5 py-3 font-semibold">Type</th>
+              <th class="px-5 py-3 font-semibold">Requested</th>
+              <th class="px-5 py-3 font-semibold w-[120px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($pendingRequests as $r): ?>
+              <tr class="quiz-admin-row">
+                <td class="px-5 py-3">
+                  <div class="font-medium text-gray-100"><?php echo h($r['full_name'] ?? ''); ?></div>
+                  <div class="text-xs text-gray-500"><?php echo h($r['email'] ?? ''); ?></div>
+                </td>
+                <td class="px-5 py-3 font-semibold text-gray-100">Set <?php echo h($r['set_label'] ?? ''); ?></td>
+                <td class="px-5 py-3 text-sm">
+                  <?php if (($r['request_type'] ?? '') === 'open'): ?>
+                    <span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/35 font-semibold">Access</span>
+                  <?php else: ?>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-500/35 font-semibold">Retake</span>
+                  <?php endif; ?>
+                </td>
+                <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : '—'; ?></td>
+                <td class="px-5 py-3 text-center">
+                  <div class="admin-row-actions">
+                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>#preboards-requests" class="m-0">
+                      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                      <input type="hidden" name="action" value="decide_request">
+                      <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
+                      <input type="hidden" name="decision" value="approved">
+                      <button type="submit" class="admin-row-action admin-row-action--approve" title="Approve <?php echo h($r['full_name'] ?? ''); ?>"><i class="bi bi-check-lg"></i><span class="sr-only">Approve</span></button>
+                    </form>
+                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>#preboards-requests" class="m-0">
+                      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                      <input type="hidden" name="action" value="decide_request">
+                      <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
+                      <input type="hidden" name="decision" value="denied">
+                      <button type="submit" class="admin-row-action admin-row-action--deny" title="Deny <?php echo h($r['full_name'] ?? ''); ?>"><i class="bi bi-x-lg"></i><span class="sr-only">Deny</span></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
     <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-2">
@@ -451,7 +478,7 @@ $adminBreadcrumbs = [
                     <i class="bi bi-calendar-range"></i><span class="sr-only">Schedule</span>
                   </button>
                   <div class="admin-row-menu-wrap">
-                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                     <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                       <?php if (!preboards_set_uses_schedule($row)): ?>
                       <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
@@ -490,67 +517,6 @@ $adminBreadcrumbs = [
     </div>
   </div>
 
-  <?php if (!empty($pendingRequests)): ?>
-    <div class="quiz-admin-table-shell rounded-xl overflow-hidden mt-6">
-      <div class="quiz-admin-table-head px-5 py-4 flex items-center justify-between gap-3">
-        <div>
-          <span class="font-semibold text-gray-100">Requests</span>
-          <p class="text-sm text-gray-500 mt-0.5 mb-0">Students requesting access (locked sets) or retake (after completion).</p>
-        </div>
-        <span class="px-2.5 py-1 rounded-full text-sm bg-amber-500/15 text-amber-200 border border-amber-500/35"><?php echo count($pendingRequests); ?> pending</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="quiz-admin-data-table w-full text-left">
-          <thead>
-            <tr>
-              <th class="px-5 py-3 font-semibold">Student</th>
-              <th class="px-5 py-3 font-semibold">Set</th>
-              <th class="px-5 py-3 font-semibold">Type</th>
-              <th class="px-5 py-3 font-semibold">Requested</th>
-              <th class="px-5 py-3 font-semibold w-[120px]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($pendingRequests as $r): ?>
-              <tr class="quiz-admin-row">
-                <td class="px-5 py-3">
-                  <div class="font-medium text-gray-100"><?php echo h($r['full_name'] ?? ''); ?></div>
-                  <div class="text-xs text-gray-500"><?php echo h($r['email'] ?? ''); ?></div>
-                </td>
-                <td class="px-5 py-3 font-semibold text-gray-100">Set <?php echo h($r['set_label'] ?? ''); ?></td>
-                <td class="px-5 py-3 text-sm">
-                  <?php if (($r['request_type'] ?? '') === 'open'): ?>
-                    <span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/35 font-semibold">Access</span>
-                  <?php else: ?>
-                    <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-500/35 font-semibold">Retake</span>
-                  <?php endif; ?>
-                </td>
-                <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : '—'; ?></td>
-                <td class="px-5 py-3 text-center">
-                  <div class="admin-row-actions">
-                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
-                      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                      <input type="hidden" name="action" value="decide_request">
-                      <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
-                      <input type="hidden" name="decision" value="approved">
-                      <button type="submit" class="admin-row-action admin-row-action--approve" title="Approve"><i class="bi bi-check-lg"></i><span class="sr-only">Approve</span></button>
-                    </form>
-                    <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>" class="m-0">
-                      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                      <input type="hidden" name="action" value="decide_request">
-                      <input type="hidden" name="preboards_request_id" value="<?php echo (int)$r['preboards_request_id']; ?>">
-                      <input type="hidden" name="decision" value="denied">
-                      <button type="submit" class="admin-row-action admin-row-action--deny" title="Deny"><i class="bi bi-x-lg"></i><span class="sr-only">Deny</span></button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  <?php endif; ?>
   <?php endif; ?>
   <?php if (isset($stmt)) { mysqli_stmt_close($stmt); } ?>
 

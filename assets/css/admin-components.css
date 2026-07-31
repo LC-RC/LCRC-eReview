@@ -1,0 +1,433 @@
+/**
+ * Admin shared components — buttons, badges, cards, tables, forms, empty states.
+ * Depends on admin-tokens.css
+ */
+body.admin-app {
+  font-family: var(--admin-font);
+  background: var(--admin-bg) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+body.admin-app #main,
+body.admin-app #main.admin-main-shell {
+  background: var(--admin-bg) !important;
+  color: var(--admin-text-secondary) !important;
+}
+
+body.admin-app .admin-content {
+  color: var(--admin-text-secondary);
+}
+
+/* ---- Buttons ---- */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--admin-control-h);
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--admin-text-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.admin-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--admin-focus-ring);
+}
+.admin-btn:disabled,
+.admin-btn.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.admin-btn--primary {
+  background: var(--admin-primary);
+  color: var(--admin-primary-text);
+  border-color: transparent;
+}
+.admin-btn--primary:hover { background: var(--admin-primary-hover); }
+.admin-btn--secondary {
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border-color: var(--admin-border-strong);
+}
+.admin-btn--secondary:hover { background: var(--admin-surface-hover); }
+.admin-btn--ghost {
+  background: transparent;
+  color: var(--admin-text-secondary);
+  border-color: transparent;
+}
+.admin-btn--ghost:hover {
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+.admin-btn--danger {
+  background: var(--admin-danger);
+  color: #fff;
+}
+.admin-btn--danger:hover { filter: brightness(0.95); }
+.admin-btn--sm {
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+  font-size: var(--admin-text-xs);
+}
+
+/* ---- Badges ---- */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.admin-badge--success { background: var(--admin-success-soft); color: var(--admin-success-text); border-color: color-mix(in srgb, var(--admin-success) 30%, transparent); }
+.admin-badge--warning { background: var(--admin-warning-soft); color: var(--admin-warning-text); border-color: color-mix(in srgb, var(--admin-warning) 30%, transparent); }
+.admin-badge--danger { background: var(--admin-danger-soft); color: var(--admin-danger-text); border-color: color-mix(in srgb, var(--admin-danger) 30%, transparent); }
+.admin-badge--info { background: var(--admin-info-soft); color: var(--admin-info); }
+.admin-badge--neutral { background: var(--admin-bg-elevated); color: var(--admin-text-secondary); border-color: var(--admin-border); }
+
+/* Map common Tailwind status pills to theme badges */
+body.admin-app .bg-green-100.text-green-800,
+body.admin-app .bg-green-100 {
+  background: var(--admin-success-soft) !important;
+  color: var(--admin-success-text) !important;
+}
+body.admin-app .bg-amber-100.text-amber-800,
+body.admin-app .bg-amber-100,
+body.admin-app .bg-yellow-100 {
+  background: var(--admin-warning-soft) !important;
+  color: var(--admin-warning-text) !important;
+}
+body.admin-app .bg-red-100.text-red-800,
+body.admin-app .bg-red-100 {
+  background: var(--admin-danger-soft) !important;
+  color: var(--admin-danger-text) !important;
+}
+
+/* ---- Cards / surfaces ---- */
+.admin-card,
+body.admin-app .page-card,
+body.admin-app .page-table,
+body.admin-app .rounded-xl.shadow-card.border,
+body.admin-app .dashboard-card {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: var(--admin-radius-lg) !important;
+  box-shadow: var(--admin-shadow-sm) !important;
+  color: var(--admin-text-secondary);
+}
+body.admin-app .page-hero,
+body.admin-app .quiz-admin-hero {
+  background: linear-gradient(180deg, var(--admin-surface) 0%, var(--admin-bg-elevated) 100%) !important;
+  border: 1px solid var(--admin-border) !important;
+  border-radius: var(--admin-radius-xl) !important;
+  box-shadow: none !important;
+}
+body.admin-app .page-hero h1,
+body.admin-app .quiz-admin-hero h1,
+body.admin-app .text-gray-100,
+body.admin-app .text-gray-800,
+body.admin-app .text-gray-900,
+body.admin-app .font-bold.text-gray-800 {
+  color: var(--admin-text) !important;
+}
+body.admin-app .text-gray-400,
+body.admin-app .text-gray-500,
+body.admin-app .text-gray-600,
+body.admin-app .text-gray-700 {
+  color: var(--admin-text-secondary) !important;
+}
+
+/* ---- Inputs ---- */
+body.admin-app .input-custom,
+body.admin-app input[type="text"],
+body.admin-app input[type="email"],
+body.admin-app input[type="password"],
+body.admin-app input[type="number"],
+body.admin-app input[type="search"],
+body.admin-app select,
+body.admin-app textarea {
+  background: var(--admin-input-bg) !important;
+  border: 1px solid var(--admin-input-border) !important;
+  color: var(--admin-text) !important;
+  border-radius: var(--admin-radius-sm) !important;
+  min-height: var(--admin-control-h);
+}
+body.admin-app .input-custom:focus,
+body.admin-app input:focus,
+body.admin-app select:focus,
+body.admin-app textarea:focus {
+  outline: none !important;
+  border-color: var(--admin-primary) !important;
+  box-shadow: var(--admin-focus-ring) !important;
+}
+body.admin-app input::placeholder,
+body.admin-app textarea::placeholder {
+  color: var(--admin-text-muted) !important;
+}
+
+/* ---- Tables ---- */
+.admin-table-wrap {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface);
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--admin-surface-2);
+  color: var(--admin-text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  white-space: nowrap;
+}
+.admin-table tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text-secondary);
+  vertical-align: middle;
+  font-size: var(--admin-text-sm);
+}
+.admin-table tbody tr:hover td {
+  background: var(--admin-surface-hover);
+}
+body.admin-app table thead,
+body.admin-app .bg-gray-50 {
+  background: var(--admin-surface-2) !important;
+}
+body.admin-app table th {
+  color: var(--admin-text-muted) !important;
+  border-color: var(--admin-border) !important;
+}
+body.admin-app table td {
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text-secondary) !important;
+}
+body.admin-app .border-gray-100,
+body.admin-app .border-gray-200,
+body.admin-app .border {
+  border-color: var(--admin-border) !important;
+}
+
+/* ---- Empty / loading ---- */
+.admin-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: var(--admin-text-secondary);
+}
+.admin-empty__icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.85rem;
+  border-radius: var(--admin-radius);
+  display: grid;
+  place-items: center;
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary);
+  font-size: 1.35rem;
+}
+.admin-empty__title {
+  margin: 0 0 0.35rem;
+  color: var(--admin-text);
+  font-size: var(--admin-text-lg);
+  font-weight: 800;
+}
+.admin-empty__desc {
+  margin: 0 auto 1rem;
+  max-width: 28rem;
+  font-size: var(--admin-text-sm);
+  color: var(--admin-text-muted);
+}
+.admin-skeleton {
+  background: linear-gradient(90deg, var(--admin-surface-2), var(--admin-surface-hover), var(--admin-surface-2));
+  background-size: 200% 100%;
+  animation: adminSkeleton 1.2s ease-in-out infinite;
+  border-radius: var(--admin-radius-sm);
+}
+@keyframes adminSkeleton {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ---- Page header ---- */
+.admin-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.admin-page-header__title {
+  margin: 0;
+  color: var(--admin-text);
+  font-size: var(--admin-text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.admin-page-header__subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--admin-text-secondary);
+  font-size: var(--admin-text-sm);
+  max-width: 42rem;
+}
+.admin-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---- Theme toggle ---- */
+.admin-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border-strong);
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.admin-theme-toggle:hover {
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+.admin-theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--admin-focus-ring);
+}
+.admin-theme-toggle .bi-sun-fill { display: none; }
+.admin-theme-toggle .bi-moon-stars-fill { display: inline-block; }
+html[data-admin-theme="light"] .admin-theme-toggle .bi-sun-fill { display: inline-block; }
+html[data-admin-theme="light"] .admin-theme-toggle .bi-moon-stars-fill { display: none; }
+
+/* Light mode: topbar becomes light surface */
+html[data-admin-theme="light"] body.admin-app .admin-topbar-modern,
+html[data-admin-theme="light"] body.admin-app .admin-topbar {
+  background: var(--admin-topbar-bg) !important;
+  border-bottom: 1px solid var(--admin-topbar-border) !important;
+  backdrop-filter: blur(12px);
+}
+html[data-admin-theme="light"] body.admin-app .admin-topbar-name,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-action,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-menu-btn {
+  color: var(--admin-text) !important;
+}
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search {
+  background: var(--admin-bg-elevated) !important;
+  border-color: var(--admin-border) !important;
+}
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search::placeholder {
+  color: var(--admin-text-muted) !important;
+}
+
+/* Sidebar uses theme tokens (light glass / dark glass) */
+body.admin-app #app-sidebar.app-shell-sidebar--admin {
+  background: var(--admin-sidebar-bg) !important;
+  border-right: 1px solid var(--admin-sidebar-border) !important;
+}
+body.admin-app #app-sidebar .app-shell-nav-section-label {
+  color: var(--admin-text-muted) !important;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+body.admin-app #app-sidebar nav a {
+  color: var(--admin-sidebar-text) !important;
+  border-radius: var(--admin-radius-sm);
+}
+body.admin-app #app-sidebar nav a.bg-white\/15,
+body.admin-app #app-sidebar nav a[class*="border-l-white"],
+body.admin-app #app-sidebar nav a.is-active {
+  background: var(--admin-sidebar-active-bg) !important;
+  color: var(--admin-sidebar-active-text) !important;
+}
+
+/* Primary CTA remap — brand blue instead of flat gray */
+body.admin-app .bg-primary,
+body.admin-app .admin-content-btn--primary,
+body.admin-app a.bg-primary,
+body.admin-app button.bg-primary {
+  background: var(--admin-primary) !important;
+  color: var(--admin-primary-text) !important;
+  border-color: transparent !important;
+}
+body.admin-app .hover\:bg-primary-dark:hover,
+body.admin-app .bg-primary:hover {
+  background: var(--admin-primary-hover) !important;
+}
+body.admin-app .text-primary,
+body.admin-app .border-primary {
+  color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+}
+
+/* Light mode: SCA sticky actions & toasts */
+html[data-admin-theme="light"] body.admin-app .sca-sticky-actions {
+  background: linear-gradient(to top, #fff 85%, rgba(255,255,255,.95)) !important;
+  border-top-color: var(--admin-border) !important;
+}
+html[data-admin-theme="light"] body.admin-app .sca-toast {
+  background: #fff !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+html[data-admin-theme="light"] body.admin-app .sca-toast__title {
+  color: var(--admin-text) !important;
+}
+html[data-admin-theme="light"] body.admin-app .sca-toast__msg {
+  color: var(--admin-text-secondary) !important;
+}
+
+/* Collapsed sidebar tooltips remain readable */
+body.admin-app #app-sidebar[data-collapsed="1"] nav a[title]:hover::after,
+body.admin-app.sidebar-collapsed #app-sidebar nav a[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 0.6rem);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border: 1px solid var(--admin-border);
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--admin-radius-sm);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1200;
+  box-shadow: var(--admin-shadow);
+}
+
+/* Modal surfaces */
+body.admin-app .admin-modal,
+body.admin-app .admin-modal-overlay .admin-modal {
+  background: var(--admin-surface) !important;
+  border: 1px solid var(--admin-border) !important;
+  color: var(--admin-text) !important;
+  box-shadow: var(--admin-shadow-lg) !important;
+}

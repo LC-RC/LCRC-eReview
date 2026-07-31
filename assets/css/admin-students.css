@@ -1,0 +1,683 @@
+﻿/**
+ * Students page â€” compact SaaS density, tabs, drawer
+ */
+body.admin-app.admin-students-page .admin-content {
+  max-width: 1480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.admin-app.admin-students-page .page-hero,
+body.admin-app.admin-students-page .quiz-admin-hero {
+  padding: 1rem 1.15rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
+body.admin-app.admin-students-page .admin-page-header__title {
+  font-size: clamp(1.35rem, 1.8vw, 1.65rem) !important;
+}
+
+body.admin-app.admin-students-page .admin-page-header__subtitle {
+  margin-top: 0.25rem !important;
+  font-size: 0.88rem !important;
+}
+
+.students-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* View tabs: Students | Deleted Users Log */
+.students-view-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 0.85rem;
+  background: var(--admin-glass);
+  border: 1px solid var(--admin-border);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--admin-shadow);
+}
+
+.students-view-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.65rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.students-view-tab:hover {
+  color: var(--admin-text);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.students-view-tab.is-active {
+  color: var(--admin-text);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(242, 176, 30, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.22);
+}
+
+/* Compact toolbar */
+.students-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem 0.75rem;
+  padding: 0.55rem 0.7rem !important;
+  border-radius: 0.9rem !important;
+  background: var(--admin-glass) !important;
+  border: 1px solid var(--admin-border) !important;
+  backdrop-filter: blur(12px);
+  margin: 0 !important;
+}
+
+.students-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.students-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  border: 1px solid var(--admin-border);
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.students-status-chip i { font-size: 0.78rem; opacity: 0.85; }
+
+.students-status-chip__count {
+  min-width: 1.15rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(148, 183, 255, 0.12);
+  color: var(--admin-text);
+  text-align: center;
+}
+
+.students-status-chip.is-active {
+  color: #fff;
+  border-color: rgba(147, 197, 253, 0.4);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22);
+}
+
+.students-status-chip.is-active .students-status-chip__count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.students-toolbar__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.students-toolbar__meta {
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+}
+
+.students-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: min(16rem, 70vw);
+}
+
+.students-search i {
+  position: absolute;
+  left: 0.65rem;
+  color: var(--admin-text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.students-search input {
+  width: 100%;
+  min-height: 2.1rem !important;
+  padding: 0.35rem 0.7rem 0.35rem 2rem !important;
+  font-size: 0.84rem !important;
+  border-radius: 0.65rem !important;
+}
+
+.students-clear-link {
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+}
+.students-clear-link:hover { color: var(--admin-text); text-decoration: underline; }
+
+/* ========== FIXED TABLE ALIGNMENT ========== */
+.students-table-shell { margin: 0 !important; }
+.students-table-meta {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+  padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--admin-border);
+  font-size: 0.78rem; color: var(--admin-text-muted);
+}
+.students-table-meta__hint { opacity: 0.85; }
+.students-table-scroll { overflow-x: auto; width: 100%; }
+
+body.admin-app.admin-students-page table.admin-students-table.students-table--aligned {
+  table-layout: fixed !important;
+  width: 100% !important;
+  border-collapse: collapse;
+}
+
+body.admin-app.admin-students-page .students-table--aligned col.col-check { width: 44px; }
+body.admin-app.admin-students-page .students-table--aligned col.col-student { width: 20%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-account { width: 24%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-status { width: 11%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-access { width: 18%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-activity { width: 11%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-enrollment { width: 15%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-payment { width: 12%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-proof { width: 8%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-commerce-access { width: 9%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-account-status { width: 12%; }
+body.admin-app.admin-students-page .students-table--aligned col.col-actions { width: 64px; }
+body.admin-app.admin-students-page .students-table--commerce col.col-actions { width: 9rem; }
+
+body.admin-app.admin-students-page .commerce-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+body.admin-app.admin-students-page .commerce-pill i { font-size: 0.78rem; }
+body.admin-app.admin-students-page .commerce-pill--verified {
+  color: #86efac; background: rgba(22, 163, 74, 0.18); border-color: rgba(34, 197, 94, 0.35);
+}
+body.admin-app.admin-students-page .commerce-pill--review {
+  color: #fcd34d; background: rgba(217, 119, 6, 0.18); border-color: rgba(245, 158, 11, 0.4);
+}
+body.admin-app.admin-students-page .commerce-pill--rejected {
+  color: #fca5a5; background: rgba(220, 38, 38, 0.16); border-color: rgba(248, 113, 113, 0.4);
+}
+body.admin-app.admin-students-page .commerce-pill--awaiting {
+  color: #93c5fd; background: rgba(37, 99, 235, 0.16); border-color: rgba(96, 165, 250, 0.35);
+}
+body.admin-app.admin-students-page .commerce-pill--neutral {
+  color: var(--admin-text-muted); background: rgba(148, 163, 184, 0.12); border-color: rgba(148, 163, 184, 0.25);
+}
+body.admin-app.admin-students-page .commerce-pill--access-granted {
+  color: #86efac; background: rgba(22, 163, 74, 0.18); border-color: rgba(34, 197, 94, 0.35);
+}
+body.admin-app.admin-students-page .commerce-pill--access-pending {
+  color: #fcd34d; background: rgba(217, 119, 6, 0.18); border-color: rgba(245, 158, 11, 0.4);
+}
+body.admin-app.admin-students-page .commerce-pill--access-none,
+body.admin-app.admin-students-page .commerce-pill--access-revoked,
+body.admin-app.admin-students-page .commerce-pill--access-expired {
+  color: #cbd5e1; background: rgba(100, 116, 139, 0.14); border-color: rgba(148, 163, 184, 0.3);
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--verified,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--access-granted {
+  color: #166534; background: #dcfce7; border-color: #86efac;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--review,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--access-pending {
+  color: #92400e; background: #fef3c7; border-color: #fcd34d;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--rejected {
+  color: #991b1b; background: #fee2e2; border-color: #fca5a5;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--awaiting {
+  color: #1d4ed8; background: #dbeafe; border-color: #93c5fd;
+}
+body.admin-app.admin-students-page .commerce-proof-link {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.8rem; font-weight: 650; color: #7dd3fc; text-decoration: none;
+}
+body.admin-app.admin-students-page .commerce-proof-link:hover { text-decoration: underline; }
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-proof-link { color: #0369a1; }
+
+body.admin-app.admin-students-page .students-table--aligned thead th,
+body.admin-app.admin-students-page .students-table--aligned tbody td {
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem !important;
+  vertical-align: middle !important;
+  text-align: left !important;
+  overflow: hidden;
+}
+
+body.admin-app.admin-students-page .students-table--aligned thead th {
+  font-size: 0.68rem !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+body.admin-app.admin-students-page .students-table--aligned tbody td {
+  border-bottom: 1px solid var(--admin-border) !important;
+  font-size: 0.84rem;
+  min-height: 3.75rem;
+  height: auto;
+}
+
+body.admin-app.admin-students-page .students-table--aligned tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+body.admin-app.admin-students-page .students-table--aligned .student-select-col {
+  width: 44px !important;
+  text-align: center !important;
+  padding-left: 0.55rem !important;
+  padding-right: 0.35rem !important;
+}
+
+body.admin-app.admin-students-page .student-cell {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.65rem !important;
+  min-width: 0;
+  width: 100%;
+  margin: 0 !important;
+}
+
+body.admin-app.admin-students-page .student-avatar-cell {
+  width: 2rem !important;
+  height: 2rem !important;
+  flex: 0 0 2rem !important;
+  margin: 0 !important;
+}
+
+body.admin-app.admin-students-page .student-avatar-media {
+  width: 2rem !important;
+  height: 2rem !important;
+  font-size: 0.72rem !important;
+}
+
+body.admin-app.admin-students-page .student-avatar-status-dot {
+  width: 0.55rem !important;
+  height: 0.55rem !important;
+  border-width: 1.5px !important;
+}
+
+body.admin-app.admin-students-page .student-cell__text {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+}
+
+body.admin-app.admin-students-page .student-name {
+  display: block;
+  font-size: 0.86rem !important;
+  font-weight: 650 !important;
+  color: var(--admin-text) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: none !important;
+  text-align: left !important;
+  line-height: 1.25;
+  margin: 0;
+}
+
+body.admin-app.admin-students-page .student-meta {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--admin-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  text-align: left;
+}
+
+body.admin-app.admin-students-page .account-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+body.admin-app.admin-students-page .account-stack .student-email,
+body.admin-app.admin-students-page .account-cell .student-email {
+  display: block;
+  width: 100%;
+  max-width: none !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: var(--admin-text) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left !important;
+}
+
+body.admin-app.admin-students-page .account-sub {
+  display: block;
+  width: 100%;
+  font-size: 0.72rem !important;
+  font-weight: 500;
+  color: var(--admin-text-muted) !important;
+  margin: 0 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+body.admin-app.admin-students-page .status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.3rem;
+}
+
+body.admin-app.admin-students-page .student-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+body.admin-app.admin-students-page .admin-students-access-col,
+body.admin-app.admin-students-page .admin-students-table td.admin-students-access-col,
+body.admin-app.admin-students-page .admin-students-table th.admin-students-access-col {
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body.admin-app.admin-students-page .access-window { display: none !important; }
+
+body.admin-app.admin-students-page .access-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.12rem;
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+body.admin-app.admin-students-page .access-compact__end {
+  width: 100%;
+  font-size: 0.78rem !important;
+  font-weight: 650 !important;
+  color: var(--admin-text) !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  text-align: left;
+}
+
+body.admin-app.admin-students-page .access-compact__meta {
+  width: 100%;
+  min-height: 0.9rem;
+  font-size: 0.7rem !important;
+  font-weight: 500;
+  color: var(--admin-text-muted) !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+body.admin-app.admin-students-page .access-compact__track {
+  width: 100% !important;
+  max-width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+  margin: 0.05rem 0 0;
+}
+
+body.admin-app.admin-students-page .access-compact__track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #2563eb);
+  max-width: 100%;
+}
+
+body.admin-app.admin-students-page .access-compact__track--empty { opacity: 0.35; }
+body.admin-app.admin-students-page .access-compact--ending .access-compact__meta,
+body.admin-app.admin-students-page .access-compact--expired .access-compact__meta { color: #fbbf24 !important; }
+body.admin-app.admin-students-page .access-compact--expired .access-compact__track > span { background: #ef4444; }
+
+body.admin-app.admin-students-page .activity-value {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.admin-students-page .activity-cell.is-active .activity-value {
+  color: #4ade80;
+  font-weight: 600;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .activity-cell.is-active .activity-value {
+  color: #15803d;
+}
+
+body.admin-app.admin-students-page .students-table--aligned .col-actions,
+body.admin-app.admin-students-page .students-table--aligned .student-actions-head,
+body.admin-app.admin-students-page .students-table--aligned .student-action-cell {
+  width: 64px !important;
+  text-align: right !important;
+  padding-left: 0.35rem !important;
+  padding-right: 0.75rem !important;
+}
+body.admin-app.admin-students-page .students-table--commerce .col-actions,
+body.admin-app.admin-students-page .students-table--commerce .student-actions-head,
+body.admin-app.admin-students-page .students-table--commerce .student-action-cell {
+  width: 9.5rem !important;
+  overflow: visible;
+}
+
+body.admin-app.admin-students-page .student-action-cell .admin-student-action-menu-wrap {
+  display: inline-flex !important;
+  justify-content: flex-end !important;
+  width: auto;
+  margin: 0 !important;
+}
+
+body.admin-app.admin-students-page .admin-student-action-menu-trigger--icon,
+body.admin-app.admin-students-page .admin-student-action-menu-trigger {
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  border-radius: 0.55rem !important;
+  font-size: 1rem;
+  gap: 0;
+  margin: 0 !important;
+}
+
+.students-empty-cell {
+  padding: 2.5rem 1rem !important;
+  text-align: center !important;
+  color: var(--admin-text-muted);
+  height: auto !important;
+}
+
+.students-pagination {
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid var(--admin-border);
+}
+.students-pagination ul {
+  display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center;
+  list-style: none; margin: 0; padding: 0;
+}
+.students-pagination a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2rem; height: 2rem; padding: 0 0.55rem; border-radius: 0.5rem;
+  border: 1px solid var(--admin-border); color: var(--admin-text-secondary);
+  text-decoration: none; font-size: 0.8rem; font-weight: 600;
+}
+.students-pagination a.is-active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: transparent; color: #fff;
+}
+.students-pagination a:hover:not(.is-active) {
+  background: rgba(59, 130, 246, 0.1); color: var(--admin-text);
+}
+
+.student-mobile-meta { display: none; }
+
+@media (max-width: 1100px) {
+  body.admin-app.admin-students-page .col-hide-tablet { display: none !important; }
+  body.admin-app.admin-students-page .students-table--aligned col.col-student { width: 42%; }
+  body.admin-app.admin-students-page .students-table--aligned col.col-status { width: 14%; }
+  body.admin-app.admin-students-page .students-table--aligned col.col-access { width: 28%; }
+  body.admin-app.admin-students-page .students-table--commerce .col-enrollment .text-xs { display: none; }
+}
+
+@media (max-width: 768px) {
+  body.admin-app.admin-students-page .students-table--aligned { table-layout: auto !important; }
+  body.admin-app.admin-students-page .admin-students-table thead { display: none; }
+  body.admin-app.admin-students-page .admin-students-table,
+  body.admin-app.admin-students-page .admin-students-table tbody,
+  body.admin-app.admin-students-page .admin-students-table tr,
+  body.admin-app.admin-students-page .admin-students-table td {
+    display: block; width: 100% !important; max-width: none !important; min-width: 0 !important; height: auto !important;
+  }
+  body.admin-app.admin-students-page .admin-students-table tr {
+    margin: 0.55rem 0.65rem; border: 1px solid var(--admin-border) !important;
+    border-radius: 0.75rem; background: var(--admin-surface); padding: 0.7rem; position: relative;
+  }
+  body.admin-app.admin-students-page .admin-students-table td {
+    border: 0 !important; padding: 0.2rem 0 !important; text-align: left !important;
+  }
+  body.admin-app.admin-students-page .col-hide-mobile { display: none !important; }
+  body.admin-app.admin-students-page .student-mobile-meta {
+    display: flex !important; flex-wrap: wrap; gap: 0.35rem 0.65rem; margin-top: 0.3rem;
+    font-size: 0.75rem; color: var(--admin-text-muted);
+  }
+  body.admin-app.admin-students-page .student-select-col {
+    position: absolute; right: 0.7rem; top: 0.7rem; width: auto !important;
+  }
+  body.admin-app.admin-students-page .student-action-cell {
+    margin-top: 0.45rem; width: 100% !important; text-align: left !important;
+  }
+  body.admin-app.admin-students-page .admin-student-action-menu-trigger { width: 100% !important; }
+  .students-view-tabs { width: 100%; }
+  .students-view-tab { flex: 1; justify-content: center; }
+  .students-toolbar { padding: 0.55rem !important; }
+  .deleted-log-table thead { display: none; }
+  .deleted-log-table, .deleted-log-table tbody, .deleted-log-table tr, .deleted-log-table td { display: block; width: 100%; }
+  .deleted-log-table tr {
+    margin: 0.55rem 0.65rem; padding: 0.7rem; border: 1px solid var(--admin-border); border-radius: 0.75rem;
+  }
+}
+
+/* Details drawer */
+.student-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  pointer-events: none;
+  visibility: hidden;
+}
+.student-drawer.is-open { pointer-events: auto; visibility: visible; }
+.student-drawer__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(2, 6, 18, 0.45);
+  opacity: 0; transition: opacity 0.2s ease;
+}
+.student-drawer.is-open .student-drawer__backdrop { opacity: 1; }
+.student-drawer__panel {
+  position: absolute; top: 0.65rem; right: 0.65rem; bottom: 0.65rem;
+  width: min(26rem, calc(100vw - 1.3rem));
+  display: flex; flex-direction: column; border-radius: 1rem;
+  background: var(--admin-glass-strong);
+  border: 1px solid var(--admin-border-strong);
+  box-shadow: var(--admin-shadow-lg);
+  backdrop-filter: blur(20px) saturate(160%);
+  transform: translateX(110%); transition: transform 0.22s ease; overflow: hidden;
+}
+.student-drawer.is-open .student-drawer__panel { transform: translateX(0); }
+.student-drawer__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.75rem; padding: 1rem 1rem 0.85rem; border-bottom: 1px solid var(--admin-border);
+}
+.student-drawer__identity { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.student-drawer__avatar {
+  width: 2.75rem; height: 2.75rem; border-radius: 0.8rem; display: grid; place-items: center;
+  overflow: hidden; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; font-weight: 700; flex-shrink: 0;
+}
+.student-drawer__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.student-drawer__title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--admin-text); letter-spacing: -0.02em; }
+.student-drawer__email { margin: 0.15rem 0 0; font-size: 0.8rem; color: var(--admin-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.student-drawer__close {
+  width: 2rem; height: 2rem; border-radius: 0.55rem; border: 1px solid var(--admin-border);
+  background: rgba(255, 255, 255, 0.04); color: var(--admin-text-secondary); cursor: pointer;
+}
+.student-drawer__body { flex: 1; overflow: auto; padding: 0.85rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.student-drawer__section h3 {
+  margin: 0 0 0.45rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--admin-text-muted); font-weight: 700;
+}
+.student-drawer__dl { margin: 0; display: grid; gap: 0.45rem; }
+.student-drawer__dl > div {
+  display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.5rem; align-items: start;
+  padding: 0.4rem 0.55rem; border-radius: 0.55rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border);
+}
+.student-drawer__dl dt { margin: 0; font-size: 0.72rem; color: var(--admin-text-muted); font-weight: 600; }
+.student-drawer__dl dd { margin: 0; font-size: 0.84rem; color: var(--admin-text); font-weight: 550; word-break: break-word; }
+.student-drawer__footer {
+  display: flex; gap: 0.5rem; justify-content: flex-end; padding: 0.75rem 1rem; border-top: 1px solid var(--admin-border);
+}

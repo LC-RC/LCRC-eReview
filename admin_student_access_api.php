@@ -97,7 +97,7 @@ if ($action === 'save_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         sca_api_json(['ok' => false, 'error' => 'Student not found.'], 404);
     }
     $adminId = getCurrentUserId();
-    if (!sca_save_user_permissions($conn, $userId, $permissions, $adminId)) {
+    if (!sca_save_user_permissions_preserving_commerce($conn, $userId, $permissions, $adminId)) {
         sca_api_json(['ok' => false, 'error' => 'Failed to save permissions.'], 500);
     }
     sca_api_json(['ok' => true, 'permissions' => sca_permissions_for_api($conn, $userId)]);
@@ -145,7 +145,7 @@ if ($action === 'save_bulk_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST'
             $failed[] = $userId;
             continue;
         }
-        if (sca_save_user_permissions($conn, $userId, $permissions, $adminId)) {
+        if (sca_save_user_permissions_preserving_commerce($conn, $userId, $permissions, $adminId)) {
             $updated++;
         } else {
             $failed[] = $userId;

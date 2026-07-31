@@ -139,21 +139,27 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 <body class="font-sans antialiased admin-app admin-lessons-page" x-data="lessonsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5">
+  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero admin-glass-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-text"></i></span>
-      Lessons — <span class="admin-subject-text admin-subject-text--lessons"><?php echo h($subject['subject_name']); ?></span>
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0 text-sm sm:text-base max-w-3xl">Create lessons, then open <strong class="text-gray-300 font-semibold">Materials</strong> to add videos and handouts.</p>
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-text"></i></span>
+          <span>Lessons — <?php echo h($subject['subject_name']); ?></span>
+        </h1>
+        <p class="admin-page-header__subtitle">Create lessons, then open Materials to add videos and handouts.</p>
+      </div>
+      <div class="admin-page-header__actions">
+        <a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>
+        <button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>
+      </div>
+    </div>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
     <div></div>
     <div class="flex flex-wrap gap-2">
-      <a href="admin_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
-      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--quiz px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-question-circle"></i> Quizzes for <?php echo h($subject['subject_name']); ?></a>
-      <button type="button" @click="openNewLesson()" class="admin-content-btn admin-content-btn--lessons px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Lesson</button>
+      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>
     </div>
   </div>
 
@@ -235,7 +241,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                 <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
                   <a href="admin_materials?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-grid"></i><span class="sr-only">Materials</span></a>
                   <div class="admin-row-menu-wrap">
-                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                     <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                       <button type="button" class="admin-row-menu__item" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" data-description="<?php echo h($l['description'] ?? ''); ?>" @click="menuOpen = false; openEditLesson($el.dataset.id, $el.dataset.title || '', $el.dataset.description || '')"><i class="bi bi-pencil"></i> Edit</button>
                       <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" @click="menuOpen = false; openDeleteLesson($el.dataset.id, $el.dataset.title || '')"><i class="bi bi-trash"></i> Delete</button>

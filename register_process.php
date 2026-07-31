@@ -34,7 +34,15 @@ function ensureRegistrationProfileColumns($conn) {
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
     || (!empty($_GET['ajax']) || (!empty($_POST['ajax'])));
 
+if ($isAjax) {
+    // Prevent notices/warnings from breaking r.json() in the registration UI.
+    ob_start();
+}
+
 function sendJson($data) {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     header('Content-Type: application/json; charset=UTF-8');
     echo json_encode($data);
     exit;
@@ -48,6 +56,15 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 ensureRegistrationProfileColumns($conn);
 require_once __DIR__ . '/includes/registration_school_options.php';
+require_once __DIR__ . '/auth.php';
+
+$csrfToken = $_POST['csrf_token'] ?? '';
+if (!verifyCSRFToken($csrfToken)) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid request. Please refresh the page and try again.']);
+    $_SESSION['error'] = 'Invalid request. Please refresh the page and try again.';
+    header('Location: registration');
+    exit;
+}
 
 $full_name_raw = $_POST['full_name'] ?? '';
 $full_name = trim(preg_replace('/\s+/', ' ', $full_name_raw));
@@ -188,39 +205,95 @@ if ($hasEmailVerifiedCol) {
     mysqli_stmt_close($checkStmt);
 }
 
-$uploadedPath = null;
 $allowed_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 $allowed_ext = ['jpg', 'jpeg', 'png', 'pdf'];
-if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $_FILES['payment_proof']['tmp_name']);
-    finfo_close($finfo);
-    $ext = strtolower(pathinfo($_FILES['payment_proof']['name'], PATHINFO_EXTENSION));
-    if (!in_array($mime, $allowed_mimes) || !in_array($ext, $allowed_ext)) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Invalid file type. Please upload an image (JPG, PNG) or PDF for payment verification.']);
-        $_SESSION['error'] = 'Invalid file type. Please upload an image (JPG, PNG) or PDF for payment verification.';
-        header('Location: registration');
-        exit;
-    }
-    $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
-    if (!is_dir($uploadsDir)) {
-        mkdir($uploadsDir, 0777, true);
-    }
-    $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
-    $filename = 'proof_' . uniqid('', true) . ($safeExt ? ('.' . $safeExt) : '');
-    $target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
-    if (!move_uploaded_file($_FILES['payment_proof']['tmp_name'], $target)) {
-        if ($isAjax) sendJson(['success' => false, 'error' => 'Failed to upload payment proof.']);
-        $_SESSION['error'] = 'Failed to upload payment proof.';
-        header('Location: registration');
-        exit;
-    }
-    $uploadedPath = 'uploads/' . $filename;
-} else {
-    if ($isAjax) sendJson(['success' => false, 'error' => 'Payment proof is required.']);
-    $_SESSION['error'] = 'Payment proof is required.';
+
+require_once __DIR__ . '/includes/commerce_catalog.php';
+
+$enrollment_path = trim((string) ($_POST['enrollment_path'] ?? ''));
+if (!in_array($enrollment_path, ['package', 'by_topic', 'free_access'], true)) {
+    if ($isAjax) sendJson(['success' => false, 'error' => 'Please select Package, By Topic, or Free Access.']);
+    $_SESSION['error'] = 'Please select Package, By Topic, or Free Access.';
     header('Location: registration');
     exit;
+}
+
+$selected_package_id = null;
+$selected_lesson_ids_json = null;
+$free_access_note = null;
+$commerceReady = commerce_schema_ready($conn);
+
+if ($enrollment_path === 'package') {
+    if (!$commerceReady) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Package catalog is not available.']);
+        $_SESSION['error'] = 'Package catalog is not available.';
+        header('Location: registration');
+        exit;
+    }
+    $pkgCheck = commerce_validate_package_selection($conn, (int) ($_POST['package_id'] ?? 0));
+    if (!$pkgCheck['ok']) {
+        if ($isAjax) sendJson(['success' => false, 'error' => $pkgCheck['error'] ?? 'Invalid package.']);
+        $_SESSION['error'] = $pkgCheck['error'] ?? 'Invalid package.';
+        header('Location: registration');
+        exit;
+    }
+    $selected_package_id = (int) $pkgCheck['package']['package_id'];
+} elseif ($enrollment_path === 'by_topic') {
+    if (!$commerceReady) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Topic catalog is not available.']);
+        $_SESSION['error'] = 'Topic catalog is not available.';
+        header('Location: registration');
+        exit;
+    }
+    $rawLessonIds = $_POST['lesson_ids'] ?? [];
+    if (!is_array($rawLessonIds)) {
+        $rawLessonIds = [];
+    }
+    $topicCheck = commerce_validate_topic_selection($conn, $rawLessonIds);
+    if (!$topicCheck['ok']) {
+        if ($isAjax) sendJson(['success' => false, 'error' => $topicCheck['error'] ?? 'Invalid topics.']);
+        $_SESSION['error'] = $topicCheck['error'] ?? 'Invalid topics.';
+        header('Location: registration');
+        exit;
+    }
+    $ids = [];
+    foreach ($topicCheck['lessons'] as $L) {
+        $ids[] = (int) $L['lesson_id'];
+    }
+    $selected_lesson_ids_json = json_encode($ids);
+} else {
+    // free_access — no payment / proof / package
+    $free_access_note = trim((string) ($_POST['free_access_note'] ?? ''));
+    if (function_exists('mb_strlen') ? mb_strlen($free_access_note, 'UTF-8') > 1000 : strlen($free_access_note) > 1000) {
+        if ($isAjax) sendJson(['success' => false, 'error' => 'Free Access note is too long.']);
+        $_SESSION['error'] = 'Free Access note is too long.';
+        header('Location: registration');
+        exit;
+    }
+}
+
+// Phase 4: new enrollment modes must NOT accept/store legacy payment_proof uploads.
+$uploadedPath = '';
+if (!in_array($enrollment_path, ['package', 'by_topic', 'free_access'], true)) {
+    // Legacy path (should not occur with current UI) — keep prior optional upload behavior.
+    if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $_FILES['payment_proof']['tmp_name']);
+        finfo_close($finfo);
+        $ext = strtolower(pathinfo($_FILES['payment_proof']['name'], PATHINFO_EXTENSION));
+        if (in_array($mime, $allowed_mimes) && in_array($ext, $allowed_ext)) {
+            $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadsDir)) {
+                mkdir($uploadsDir, 0777, true);
+            }
+            $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+            $filename = 'proof_' . uniqid('', true) . ($safeExt ? ('.' . $safeExt) : '');
+            $target = $uploadsDir . DIRECTORY_SEPARATOR . $filename;
+            if (move_uploaded_file($_FILES['payment_proof']['tmp_name'], $target)) {
+                $uploadedPath = 'uploads/' . $filename;
+            }
+        }
+    }
 }
 
 $profilePicturePath = null;
@@ -282,6 +355,10 @@ $verificationUrl = createPendingRegistration([
     'profile_picture' => $profilePicturePath,
     'use_default_avatar' => $useDefaultAvatar,
     'password_hash' => $hashed,
+    'enrollment_path' => $enrollment_path,
+    'selected_package_id' => $selected_package_id,
+    'selected_lesson_ids_json' => $selected_lesson_ids_json,
+    'free_access_note' => $free_access_note,
 ]);
 
 if ($verificationUrl === null) {
@@ -301,13 +378,14 @@ ereview_registration_school_catalog_save($conn, $school, $school_other);
 $emailSent = sendVerificationEmail($email, $verificationUrl);
 
 if (!$emailSent) {
+    $emailErr = 'Registration was saved, but we could not send the verification email. Please check the SMTP App Password in mail settings, then try again.';
     if ($isAjax) {
         sendJson([
             'success' => false,
-            'error' => 'Registration was saved, but we could not send the verification email right now. Please try again in a moment.'
+            'error' => $emailErr
         ]);
     }
-    $_SESSION['error'] = 'Registration was saved, but we could not send the verification email right now. Please try again in a moment.';
+    $_SESSION['error'] = $emailErr;
     header('Location: registration');
     exit;
 }

@@ -2,8 +2,11 @@
 require_once 'session_config.php';
 require_once 'auth.php';
 require_once __DIR__ . '/includes/registration_school_options.php';
+require_once __DIR__ . '/includes/commerce_catalog.php';
 
 $schoolDropdownOptions = ereview_get_registration_school_dropdown_options($conn);
+$regPackages = commerce_schema_ready($conn) ? commerce_catalog_packages_for_registration($conn) : [];
+$regTopicGroups = commerce_schema_ready($conn) ? commerce_catalog_topics_for_registration($conn) : [];
 
 if (isLoggedIn() && verifySession()) {
     header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
@@ -19,33 +22,37 @@ unset($_SESSION['error']);
 <head>
   <?php require_once __DIR__ . '/includes/head_public.php'; ?>
   <style>
-    /* === Modern design tokens (registration) === */
+    /* === Modern light glass design tokens (registration) === */
     body.registration-prototype {
-      --reg-bg: #0b0f1a;
-      --reg-surface: #111827;
-      --reg-surface-elevated: #1a2332;
-      --reg-input-bg: rgba(26, 35, 50, 0.9);
-      --reg-border: rgba(255, 255, 255, 0.08);
+      --reg-bg: #eef4fb;
+      --reg-surface: rgba(255, 255, 255, 0.78);
+      --reg-surface-elevated: rgba(255, 255, 255, 0.9);
+      --reg-input-bg: rgba(255, 255, 255, 0.82);
+      --reg-border: rgba(31, 88, 195, 0.14);
       --reg-border-focus: #1F58C3;
       --reg-primary: #1F58C3;
       --reg-primary-hover: #2563eb;
       --reg-accent: #F59E0B;
-      --reg-text: #f1f5f9;
-      --reg-text-label: #e2e8f0;
-      --reg-text-muted: #94a3b8;
-      --reg-radius: 0.75rem;
-      --reg-radius-lg: 1rem;
+      --reg-text: #0f172a;
+      --reg-text-label: #1e293b;
+      --reg-text-muted: #64748b;
+      --reg-radius: 0.85rem;
+      --reg-radius-lg: 1.15rem;
       --reg-space: 1.5rem;
       --reg-input-height: 2.875rem;
-      --reg-shadow-glow: 0 0 40px rgba(31, 88, 195, 0.12);
+      --reg-shadow-glow: 0 24px 50px -28px rgba(31, 88, 195, 0.28);
     }
     /* === Frame 8: split-panel layout, scrollable form === */
     body.registration-prototype {
       margin: 0;
       min-height: 100vh;
-      color: #e5e7eb;
+      color: #0f172a;
       display: flex;
       overflow: hidden;
+      background:
+        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(31, 88, 195, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(245, 158, 11, 0.1), transparent 50%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
     }
     .reg-frame8-layout {
       display: flex;
@@ -61,16 +68,19 @@ unset($_SESSION['error']);
       padding: 2.5rem 3rem;
       position: relative;
       overflow: hidden;
-      background: linear-gradient(155deg, #0a0d14 0%, #0f1419 25%, #131922 50%, #0d1117 75%, #06080c 100%);
+      background:
+        radial-gradient(ellipse 90% 70% at 80% 10%, rgba(31, 88, 195, 0.16), transparent 50%),
+        radial-gradient(ellipse 70% 60% at 10% 90%, rgba(245, 158, 11, 0.12), transparent 50%),
+        linear-gradient(155deg, #dbeafe 0%, #e0e7ff 30%, #eff6ff 60%, #f8fafc 100%);
     }
     .reg-frame8-left::before {
       content: '';
       position: absolute;
       inset: -30%;
       background:
-        radial-gradient(ellipse 80% 60% at 85% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
-        radial-gradient(ellipse 70% 80% at 90% 55%, rgba(30, 64, 175, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 70% at 15% 85%, rgba(31, 88, 195, 0.06) 0%, transparent 45%);
+        radial-gradient(ellipse 80% 60% at 85% 10%, rgba(59, 130, 246, 0.2) 0%, transparent 45%),
+        radial-gradient(ellipse 70% 80% at 90% 55%, rgba(30, 64, 175, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 70% at 15% 85%, rgba(245, 158, 11, 0.1) 0%, transparent 45%);
       animation: reg-left-glow-drift 20s ease-in-out infinite alternate;
       pointer-events: none;
       z-index: 0;
@@ -82,7 +92,7 @@ unset($_SESSION['error']);
       right: -30%;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+      background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.55) 0%, transparent 50%);
       border-radius: 50%;
       filter: blur(80px);
       animation: reg-left-shine 25s ease-in-out infinite alternate;
@@ -202,7 +212,7 @@ unset($_SESSION['error']);
     }
     .reg-frame8-hero {
       max-width: 420px;
-      color: #e2e8f0;
+      color: #0f172a;
     }
     .reg-left-statement {
       width: 100%;
@@ -210,27 +220,27 @@ unset($_SESSION['error']);
     }
     .reg-left-statement-inner {
       padding: 1.75rem 1.5rem;
-      background: rgba(15, 23, 42, 0.35);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 0.875rem;
-      box-shadow: 0 8px 32px -16px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(22px) saturate(1.3);
+      -webkit-backdrop-filter: blur(22px) saturate(1.3);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      border-radius: 1rem;
+      box-shadow: 0 20px 48px -24px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.9);
     }
     .reg-left-statement-headline {
       margin: 0 0 1rem;
       font-size: 1.0625rem;
-      font-weight: 600;
+      font-weight: 700;
       line-height: 1.5;
-      color: rgba(241, 245, 249, 0.95);
+      color: #0f172a;
       letter-spacing: -0.015em;
     }
     .reg-left-statement-metrics {
       margin: 0 0 0.5rem;
       font-size: 0.9375rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.01em;
-      color: rgba(125, 211, 252, 0.9);
+      color: #1F58C3;
       line-height: 1.4;
       min-height: 1.5em;
     }
@@ -238,7 +248,7 @@ unset($_SESSION['error']);
       margin: 0;
       font-size: 0.8125rem;
       font-weight: 500;
-      color: rgba(148, 163, 184, 0.85);
+      color: #64748b;
       line-height: 1.5;
       min-height: 1.5em;
     }
@@ -255,9 +265,10 @@ unset($_SESSION['error']);
     }
     .reg-frame8-right {
       flex: 0 0 50%;
-      background: var(--reg-bg);
-      background-image: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(31, 88, 195, 0.15) 0%, transparent 50%),
-                        linear-gradient(180deg, var(--reg-bg) 0%, #0f172a 100%);
+      background: transparent;
+      background-image:
+        radial-gradient(ellipse 120% 80% at 50% -20%, rgba(31, 88, 195, 0.1) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(248, 251, 255, 0.75) 0%, rgba(238, 244, 251, 0.9) 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -339,7 +350,7 @@ unset($_SESSION['error']);
       color: var(--reg-primary);
     }
     .reg-frame8-info-block .reg-frame8-info-line { margin: 0; font-size: 0.75rem; color: var(--reg-text-muted); line-height: 1.4; text-align: center; }
-    .reg-frame8-info-block .reg-frame8-info-metrics { margin: 0.35rem 0 0; font-size: 0.75rem; color: #7dd3fc; font-weight: 600; letter-spacing: 0.02em; text-align: center; }
+    .reg-frame8-info-block .reg-frame8-info-metrics { margin: 0.35rem 0 0; font-size: 0.75rem; color: #1F58C3; font-weight: 600; letter-spacing: 0.02em; text-align: center; }
     /* Info block below submit: compact so form content area gets more height */
     .reg-frame8-info-block.reg-info-below-submit {
       margin-top: 0.5rem;
@@ -351,7 +362,7 @@ unset($_SESSION['error']);
     }
     .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-icon { font-size: 0.75rem; color: rgba(31, 88, 195, 0.6); }
     .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-line { font-size: 0.625rem; color: var(--reg-text-muted); opacity: 0.85; line-height: 1.3; }
-    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-metrics { font-size: 0.625rem; color: rgba(125, 211, 252, 0.8); }
+    .reg-frame8-info-block.reg-info-below-submit .reg-frame8-info-metrics { font-size: 0.625rem; color: #1F58C3; }
     #reg-form {
       display: flex;
       flex-direction: column;
@@ -372,11 +383,11 @@ unset($_SESSION['error']);
       overflow-x: hidden;
       padding: 1.75rem 0.5rem 0.25rem 0;
       -webkit-overflow-scrolling: touch;
-      background: rgba(11, 15, 26, 0.35);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.45);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
       border-radius: var(--reg-radius-lg);
-      border: 1px solid rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(31, 88, 195, 0.1);
     }
     .reg-frame8-form-scroll::-webkit-scrollbar { width: 6px; }
     .reg-frame8-form-scroll::-webkit-scrollbar-track { background: rgba(31, 88, 195, 0.1); border-radius: 3px; }
@@ -399,12 +410,24 @@ unset($_SESSION['error']);
       border-radius: 0 0.375rem 0.375rem 0;
     }
     .reg-section-label:not(:first-child) { margin-top: 2rem; }
+    .reg-enroll-card {
+      border-color: rgba(31, 88, 195, 0.18);
+      background: rgba(255,255,255,0.85);
+      color: #0f172a;
+    }
+    .reg-enroll-card:hover { border-color: rgba(31, 88, 195, 0.45); }
+    .reg-enroll-card--active {
+      border-color: #1F58C3 !important;
+      background: rgba(31, 88, 195, 0.08) !important;
+      box-shadow: 0 8px 24px -12px rgba(31, 88, 195, 0.45);
+    }
+    .reg-package-card { border-color: rgba(15, 23, 42, 0.12); background: #fff; }
     #reg-label-account { margin-bottom: 1.5rem; }
     .reg-section-label--complete {
-      color: #86efac;
+      color: #15803d;
       border-left-color: #22c55e;
-      background: rgba(34, 197, 94, 0.08);
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15);
+      background: rgba(34, 197, 94, 0.1);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18);
     }
     .reg-section-label--complete .reg-section-label-check {
       opacity: 1;
@@ -428,7 +451,7 @@ unset($_SESSION['error']);
     .reg-inline-error {
       display: block;
       font-size: 0.75rem;
-      color: #f87171;
+      color: #dc2626;
       margin-top: 0.25rem;
       min-height: 1.25rem;
     }
@@ -492,7 +515,7 @@ unset($_SESSION['error']);
     }
     body.registration-prototype .reg-frame8-footer-terms a:hover {
       text-decoration: underline;
-      color: #FCD34D;
+      color: #d97706;
       opacity: 1;
     }
     body.registration-prototype .reg-frame8-footer-terms a:focus-visible {
@@ -527,47 +550,49 @@ unset($_SESSION['error']);
         left: 0;
         right: 0;
         z-index: 40;
-        background: var(--reg-bg);
+        background: rgba(255, 255, 255, 0.88);
         padding: 0.5rem 1rem 0.75rem;
         margin: 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+        border-top: 1px solid rgba(31, 88, 195, 0.12);
+        box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(14px);
       }
     }
-    /* === Form card & inputs (keep existing styles, scope to right panel) === */
-    body.registration-prototype .animated-bg { background: #0b1220 !important; }
+    /* === Form card & inputs (light glass) === */
+    body.registration-prototype .animated-bg { background: transparent !important; }
     body.registration-prototype .animated-bg::before,
     body.registration-prototype .animated-bg::after { display: none !important; }
     body.registration-prototype .auth-corner-decor::before,
     body.registration-prototype .auth-corner-decor::after {
       width: 80px; height: 52px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(31, 88, 195, 0.2);
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(31, 88, 195, 0.16);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
     }
     body.registration-prototype .auth-corner-dot {
-      width: 4px; height: 4px;
-      background: rgba(245, 158, 11, 0.9);
-      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+      width: 5px; height: 5px;
+      background: rgba(245, 158, 11, 0.95);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
     }
     body.registration-prototype .auth-corner-dot.blue {
-      background: rgba(31, 88, 195, 0.9);
-      box-shadow: 0 0 8px rgba(31, 88, 195, 0.5);
+      background: rgba(31, 88, 195, 0.95);
+      box-shadow: 0 0 10px rgba(31, 88, 195, 0.35);
     }
     body.registration-prototype .circuit-bg {
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-image:
-        linear-gradient(rgba(31, 88, 195, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(31, 88, 195, 0.05) 1px, transparent 1px);
-      background-size: 32px 32px;
+        linear-gradient(rgba(31, 88, 195, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31, 88, 195, 0.045) 1px, transparent 1px);
+      background-size: 36px 36px;
       animation: reg-bg-grid-pulse 12s ease-in-out infinite;
     }
-    @keyframes reg-bg-grid-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+    @keyframes reg-bg-grid-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.85; } }
     body.registration-prototype .login-bg-animation {
       position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
     }
     .login-bg-node {
-      position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      position: absolute; width: 7px; height: 7px; border-radius: 50%;
       animation: reg-bg-float 24s ease-in-out infinite;
     }
     .login-bg-node--blue {
@@ -577,14 +602,14 @@ unset($_SESSION['error']);
       animation-delay: var(--delay); animation-duration: var(--dur);
     }
     .login-bg-node--gold {
-      background: rgba(245, 158, 11, 0.3);
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+      background: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
       left: var(--x); top: var(--y);
       animation-delay: var(--delay); animation-duration: var(--dur);
     }
     .login-bg-node--white {
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 8px rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 8px rgba(148, 163, 184, 0.35);
       left: var(--x); top: var(--y);
       animation-delay: var(--delay); animation-duration: var(--dur);
     }
@@ -594,23 +619,23 @@ unset($_SESSION['error']);
       50% { transform: translate(-5px, 6px) scale(0.95); opacity: 0.8; }
       75% { transform: translate(-10px, -5px) scale(1.02); opacity: 0.9; }
     }
-    .login-bg-lines { position: absolute; inset: 0; opacity: 0.4; }
+    .login-bg-lines { position: absolute; inset: 0; opacity: 0.5; }
     .login-bg-lines svg { width: 100%; height: 100%; }
     .login-bg-lines .line {
-      fill: none; stroke-width: 0.5; stroke-linecap: round;
+      fill: none; stroke-width: 0.7; stroke-linecap: round;
       animation: reg-bg-line-flow 20s linear infinite;
     }
-    .login-bg-lines .line--blue { stroke: rgba(31, 88, 195, 0.2); }
-    .login-bg-lines .line--gold { stroke: rgba(245, 158, 11, 0.15); animation-delay: -5s; }
-    .login-bg-lines .line--white { stroke: rgba(255, 255, 255, 0.06); animation-delay: -10s; }
+    .login-bg-lines .line--blue { stroke: rgba(31, 88, 195, 0.22); }
+    .login-bg-lines .line--gold { stroke: rgba(245, 158, 11, 0.2); animation-delay: -5s; }
+    .login-bg-lines .line--white { stroke: rgba(148, 163, 184, 0.18); animation-delay: -10s; }
     @keyframes reg-bg-line-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -200; } }
     .login-bg-blob {
       position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: min(120vw, 680px); height: min(80vw, 520px);
       border-radius: 50% 40% 60% 50% / 50% 60% 40% 50%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(31, 88, 195, 0.18) 0%, transparent 50%),
-                  radial-gradient(ellipse at 70% 80%, rgba(245, 158, 11, 0.08) 0%, transparent 45%),
-                  radial-gradient(ellipse at 50% 50%, rgba(30, 58, 138, 0.12) 0%, transparent 55%);
+      background: radial-gradient(ellipse at 30% 20%, rgba(31, 88, 195, 0.22) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(245, 158, 11, 0.14) 0%, transparent 45%),
+                  radial-gradient(ellipse at 50% 50%, rgba(147, 197, 253, 0.16) 0%, transparent 55%);
       filter: blur(48px); z-index: 0; pointer-events: none;
       animation: login-blob-drift 20s ease-in-out infinite;
     }
@@ -619,10 +644,10 @@ unset($_SESSION['error']);
       33% { transform: translate(-52%, -48%) scale(1.05) rotate(2deg); }
       66% { transform: translate(-48%, -52%) scale(0.98) rotate(-1deg); }
     }
-    .login-cpa-visual { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.12; }
+    .login-cpa-visual { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.14; }
     .login-cpa-visual svg { width: 100%; height: 100%; object-fit: cover; }
-    .login-cpa-visual .cpa-ring { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke: rgba(31, 88, 195, 0.5); animation: cpa-ring-pulse 8s ease-in-out infinite; }
-    .login-cpa-visual .cpa-line { fill: none; stroke: rgba(31, 88, 195, 0.35); stroke-width: 0.8; stroke-dasharray: 4 6; animation: cpa-line-flow 25s linear infinite; }
+    .login-cpa-visual .cpa-ring { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke: rgba(31, 88, 195, 0.4); animation: cpa-ring-pulse 8s ease-in-out infinite; }
+    .login-cpa-visual .cpa-line { fill: none; stroke: rgba(31, 88, 195, 0.28); stroke-width: 0.8; stroke-dasharray: 4 6; animation: cpa-line-flow 25s linear infinite; }
     @keyframes cpa-ring-pulse { 0%, 100% { opacity: 0.6; stroke-dashoffset: 0; } 50% { opacity: 1; stroke-dashoffset: -30; } }
     @keyframes cpa-line-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -200; } }
     .login-cashflow-path { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.2; }
@@ -654,7 +679,7 @@ unset($_SESSION['error']);
         transform: none;
         animation: none;
       }
-      body.registration-prototype .circuit-bg { animation: none; opacity: 0.7; }
+      body.registration-prototype .circuit-bg { animation: none; opacity: 0.55; }
       .login-bg-node { animation: none; }
       .login-bg-lines .line { animation: none; }
       .login-bg-blob { animation: none; }
@@ -665,55 +690,57 @@ unset($_SESSION['error']);
     }
     body.registration-prototype .auth-card-wrap { max-width: 500px !important; }
     body.registration-prototype .login-card {
-      background: linear-gradient(180deg, #111827 0%, #0f172a 100%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.06) !important;
-      box-shadow: 0 24px 48px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(31, 88, 195, 0.1), 0 1px 0 rgba(255,255,255,0.03) inset !important;
-      border-radius: 1rem !important;
+      background: linear-gradient(165deg, rgba(255,255,255,0.84) 0%, rgba(255,255,255,0.7) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.7) !important;
+      box-shadow: 0 28px 60px -28px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(31, 88, 195, 0.08), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+      border-radius: 1.15rem !important;
       padding: 0.9rem 1.5rem 1.1rem !important;
+      backdrop-filter: blur(20px) saturate(1.3);
+      -webkit-backdrop-filter: blur(20px) saturate(1.3);
       transition: box-shadow 0.25s ease;
     }
     body.registration-prototype .login-card:focus-within {
-      box-shadow: 0 24px 48px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(31, 88, 195, 0.18), 0 0 40px rgba(31, 88, 195, 0.12), 0 1px 0 rgba(255,255,255,0.03) inset !important;
+      box-shadow: 0 32px 70px -28px rgba(31, 88, 195, 0.25), 0 0 0 1px rgba(31, 88, 195, 0.14), 0 0 36px rgba(31, 88, 195, 0.1), inset 0 1px 0 rgba(255,255,255,0.98) !important;
     }
     body.registration-prototype .reg-section { margin-top: 1.25rem !important; }
     body.registration-prototype .reg-section:first-of-type { margin-top: 0 !important; }
     .reg-section-divider {
       height: 1px;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(31, 88, 195, 0.12);
       margin: 1.5rem 0 0;
     }
-    body.registration-prototype .login-card .reg-intro { color: #94a3b8; font-size: 0.8125rem; margin-top: 0.375rem; }
+    body.registration-prototype .login-card .reg-intro { color: #64748b; font-size: 0.8125rem; margin-top: 0.375rem; }
     body.registration-prototype .login-header { margin-bottom: 1rem !important; }
     body.registration-prototype .login-logo-wrap { margin-bottom: 0.5rem !important; }
     body.registration-prototype .login-logo-hover { transition: transform 0.2s ease, filter 0.2s ease; }
-    body.registration-prototype .login-logo-hover:hover { transform: scale(1.03); filter: drop-shadow(0 0 8px rgba(31, 88, 195, 0.3)); }
+    body.registration-prototype .login-logo-hover:hover { transform: scale(1.03); filter: drop-shadow(0 0 8px rgba(31, 88, 195, 0.28)); }
     body.registration-prototype .login-logo-img {
       height: 2.5rem; width: auto; max-width: 120px;
       object-fit: contain; object-position: center; display: block;
     }
     body.registration-prototype .login-card .brand-text {
-      color: #fff; font-size: 1rem; font-weight: 700;
+      color: #0f172a; font-size: 1rem; font-weight: 700;
     }
     body.registration-prototype .login-card .brand-text .blue { color: #1F58C3; }
     body.registration-prototype .login-card .brand-text .amber { color: #F59E0B; }
     body.registration-prototype .login-welcome { margin-bottom: 1rem !important; }
-    body.registration-prototype .login-card .subtext { color: #94a3b8; font-size: 0.8125rem; }
+    body.registration-prototype .login-card .subtext { color: #64748b; font-size: 0.8125rem; }
     body.registration-prototype .login-card .subtext a { color: #F59E0B !important; }
-    body.registration-prototype .login-card .subtext a:hover { color: #FCD34D !important; }
+    body.registration-prototype .login-card .subtext a:hover { color: #d97706 !important; }
     body.registration-prototype .login-card h1 {
-      color: #fff !important; font-size: 1.25rem !important; font-weight: 700;
+      color: #0f172a !important; font-size: 1.25rem !important; font-weight: 800;
       letter-spacing: -0.025em;
     }
-    body.registration-prototype .login-card label { color: var(--reg-text-label) !important; font-weight: 500; }
-    /* Registration form fields: apply to both .login-card (legacy) and .reg-frame8-main (split layout) so content is always readable */
+    body.registration-prototype .login-card label { color: var(--reg-text-label) !important; font-weight: 600; }
+    /* Registration form fields — light glass inputs */
     body.registration-prototype .login-card .auth-input,
     body.registration-prototype .reg-frame8-main .auth-input {
-      background: #1a2332 !important;
-      background-image: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      color: #f1f5f9 !important;
-      -webkit-text-fill-color: #f1f5f9 !important;
-      caret-color: #60a5fa !important;
+      background: rgba(255, 255, 255, 0.82) !important;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%) !important;
+      border: 1px solid rgba(31, 88, 195, 0.18) !important;
+      color: #0f172a !important;
+      -webkit-text-fill-color: #0f172a !important;
+      caret-color: #1F58C3 !important;
       border-radius: var(--reg-radius) !important;
       padding: 0.75rem 1.25rem !important;
       min-height: var(--reg-input-height) !important;
@@ -721,7 +748,9 @@ unset($_SESSION['error']);
       font-weight: 500 !important;
       letter-spacing: 0.01em !important;
       line-height: 1.45 !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.35) inset, 0 1px 0 rgba(255,255,255,0.03) !important;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
     }
     body.registration-prototype .login-card .auth-input::placeholder,
@@ -730,49 +759,49 @@ unset($_SESSION['error']);
       -webkit-text-fill-color: #94a3b8 !important;
       opacity: 1;
     }
-    /* Autofill: keep dark background and light text */
     body.registration-prototype .login-card .auth-input:-webkit-autofill,
     body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill,
     body.registration-prototype .login-card .auth-input:-webkit-autofill:hover,
     body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill:hover,
     body.registration-prototype .login-card .auth-input:-webkit-autofill:focus,
     body.registration-prototype .reg-frame8-main .auth-input:-webkit-autofill:focus {
-      -webkit-text-fill-color: #f1f5f9 !important;
-      -webkit-box-shadow: 0 0 0 1000px #1a2332 inset !important;
-      box-shadow: 0 0 0 1000px #1a2332 inset, 0 1px 3px rgba(0,0,0,0.35) inset !important;
+      -webkit-text-fill-color: #0f172a !important;
+      -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+      box-shadow: 0 0 0 1000px #ffffff inset, inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
       transition: background-color 5000s ease-in-out 0s !important;
     }
     body.registration-prototype .login-card .auth-input:hover,
     body.registration-prototype .reg-frame8-main .auth-input:hover {
-      border-color: rgba(31, 88, 195, 0.4) !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.35) inset, 0 0 0 1px rgba(31, 88, 195, 0.15) !important;
+      border-color: rgba(31, 88, 195, 0.35) !important;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(31, 88, 195, 0.1) !important;
     }
     body.registration-prototype .login-card .auth-input:focus,
     body.registration-prototype .reg-frame8-main .auth-input:focus {
       border-color: var(--reg-border-focus) !important;
       outline: none !important;
-      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 0 16px rgba(31, 88, 195, 0.18), 0 1px 3px rgba(0,0,0,0.3) inset !important;
+      background: rgba(255, 255, 255, 0.95) !important;
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.16), inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
     body.registration-prototype .login-card .auth-input[aria-invalid="true"],
     body.registration-prototype .login-card .auth-input.is-invalid,
     body.registration-prototype .reg-frame8-main .auth-input[aria-invalid="true"],
     body.registration-prototype .reg-frame8-main .auth-input.is-invalid {
       border-color: rgba(239, 68, 68, 0.7) !important;
-      background: rgba(239, 68, 68, 0.08) !important;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 1px 3px rgba(0,0,0,0.25) inset !important;
+      background: rgba(254, 226, 226, 0.45) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15), inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
     body.registration-prototype .login-card .auth-input[aria-invalid="true"]:focus,
     body.registration-prototype .login-card .auth-input.is-invalid:focus,
     body.registration-prototype .reg-frame8-main .auth-input[aria-invalid="true"]:focus,
     body.registration-prototype .reg-frame8-main .auth-input.is-invalid:focus {
       border-color: #ef4444 !important;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3), 0 1px 3px rgba(0,0,0,0.25) inset !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22), inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
     body.registration-prototype .login-card #reg-password-confirm-wrap:has(~ .reg-confirm-success:not(.hidden)) .auth-input,
     body.registration-prototype .reg-frame8-main #reg-password-confirm-wrap:has(~ .reg-confirm-success:not(.hidden)) .auth-input {
-      border-color: rgba(34, 197, 94, 0.5) !important;
-      background: rgba(34, 197, 94, 0.08) !important;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2), 0 1px 3px rgba(0,0,0,0.2) inset !important;
+      border-color: rgba(34, 197, 94, 0.55) !important;
+      background: rgba(220, 252, 231, 0.55) !important;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18), inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
     body.registration-prototype .login-card select.auth-input,
     body.registration-prototype .reg-frame8-main select.auth-input {
@@ -784,20 +813,20 @@ unset($_SESSION['error']);
       padding-top: 0.75rem;
       padding-bottom: 0.75rem;
       min-height: var(--reg-input-height) !important;
-      background-color: #1a2332 !important;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
+      background-color: rgba(255, 255, 255, 0.85) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
       background-repeat: no-repeat !important;
       background-position: right 1rem center !important;
       background-size: 1rem !important;
     }
     body.registration-prototype .login-card select.auth-input:hover,
     body.registration-prototype .reg-frame8-main select.auth-input:hover {
-      border-color: rgba(31, 88, 195, 0.4) !important;
+      border-color: rgba(31, 88, 195, 0.35) !important;
     }
     body.registration-prototype .login-card select.auth-input:focus,
     body.registration-prototype .reg-frame8-main select.auth-input:focus {
       border-color: var(--reg-border-focus) !important;
-      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.25), 0 1px 3px rgba(0,0,0,0.3) inset !important;
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.16), inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
     body.registration-prototype .login-card select.auth-input[aria-invalid="true"],
     body.registration-prototype .login-card select.auth-input.is-invalid,
@@ -808,8 +837,8 @@ unset($_SESSION['error']);
     }
     body.registration-prototype .login-card select.auth-input option,
     body.registration-prototype .reg-frame8-main select.auth-input option {
-      background: #1a2332;
-      color: #f1f5f9;
+      background: #ffffff;
+      color: #0f172a;
     }
     body.registration-prototype .login-card .auth-password-wrap { position: relative; }
     body.registration-prototype .reg-frame8-main .auth-password-wrap { position: relative; }
@@ -830,9 +859,8 @@ unset($_SESSION['error']);
     body.registration-prototype .login-card .subtext a:focus-visible,
     body.registration-prototype .reg-frame8-main .auth-input:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #1F58C3 !important;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3 !important;
     }
-    body.registration-prototype .login-card #toggle-register-password-confirm,
     body.registration-prototype .reg-frame8-main #toggle-register-password-confirm {
       position: absolute !important; right: 0.5rem !important; top: 50% !important;
       transform: translateY(-50%) !important;
@@ -847,30 +875,31 @@ unset($_SESSION['error']);
     body.registration-prototype .reg-frame8-main #toggle-register-password:focus-visible,
     body.registration-prototype .reg-frame8-main #toggle-register-password-confirm:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #F59E0B !important;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #F59E0B !important;
     }
-    /* Success/error alerts: dark-theme, subtle animation */
+    /* Success/error alerts: light glass */
     body.registration-prototype .login-card .auth-alert {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       padding: 0.875rem 1rem;
-      border-radius: 0.75rem;
+      border-radius: 0.85rem;
       font-size: 0.875rem;
       margin-bottom: 1rem;
       border: 1px solid transparent;
       border-left: 3px solid;
+      background: rgba(255, 255, 255, 0.75);
       animation: reg-alert-in 0.35s ease-out;
     }
     body.registration-prototype .login-card .auth-alert-icon { font-size: 1.25rem; flex-shrink: 0; }
-    body.registration-prototype .login-card .auth-alert-text { font-weight: 500; }
+    body.registration-prototype .login-card .auth-alert-text { font-weight: 600; }
     body.registration-prototype .login-card .auth-alert--error {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.35);
+      background: rgba(254, 226, 226, 0.9);
+      border-color: rgba(239, 68, 68, 0.3);
       border-left-color: #ef4444;
-      color: #fca5a5;
+      color: #991b1b;
     }
-    body.registration-prototype .login-card .auth-alert--error .auth-alert-icon { color: #f87171; }
+    body.registration-prototype .login-card .auth-alert--error .auth-alert-icon { color: #dc2626; }
     @keyframes reg-alert-in {
       from { opacity: 0; transform: translateY(-6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -916,7 +945,7 @@ unset($_SESSION['error']);
     body.registration-prototype #reg-submit-btn:focus-visible,
     body.registration-prototype .reg-frame8-form-fixed-bottom .reg-submit:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #1F58C3 !important;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3 !important;
     }
     body.registration-prototype #reg-submit-btn:disabled,
     body.registration-prototype .reg-frame8-form-fixed-bottom .reg-submit:disabled {
@@ -932,7 +961,7 @@ unset($_SESSION['error']);
     }
     .reg-submit-hint {
       font-size: 0.75rem;
-      color: #94a3b8;
+      color: #64748b;
       margin: 0 0 0.5rem;
       text-align: center;
       min-height: 1.25rem;
@@ -947,14 +976,14 @@ unset($_SESSION['error']);
       gap: 0.35rem;
       flex-wrap: wrap;
     }
-    .reg-submit-hint .reg-hint-count { font-weight: 700; color: #7dd3fc; }
-    .reg-submit-hint.reg-hint-complete { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2); }
-    .reg-submit-hint.reg-hint-complete .reg-hint-count { color: #6ee7b7; }
+    .reg-submit-hint .reg-hint-count { font-weight: 700; color: #1F58C3; }
+    .reg-submit-hint.reg-hint-complete { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.25); }
+    .reg-submit-hint.reg-hint-complete .reg-hint-count { color: #15803d; }
     .reg-submit-hint.hidden { display: none !important; }
     .reg-frame8-form-fixed-bottom .login-blurbs {
       margin-top: 0.5rem !important;
       padding-top: 0.5rem !important;
-      border-top-color: rgba(255, 255, 255, 0.06);
+      border-top-color: rgba(31, 88, 195, 0.12);
     }
     .reg-frame8-form-fixed-bottom .login-blurb {
       font-size: 0.6875rem !important;
@@ -966,14 +995,14 @@ unset($_SESSION['error']);
       font-size: 0.75rem !important;
       color: #64748b;
     }
-    .reg-frame8-form-fixed-bottom .subtext a { color: #7dd3fc !important; }
+    .reg-frame8-form-fixed-bottom .subtext a { color: #1F58C3 !important; }
     body.registration-prototype .login-card .subtext a {
       transition: color 0.2s ease, text-decoration 0.2s ease;
       text-decoration: none;
     }
     body.registration-prototype .login-card .subtext a:hover {
       text-decoration: underline;
-      color: #FCD34D !important;
+      color: #F59E0B !important;
     }
     body.registration-prototype .login-card .subtext a:focus-visible {
       outline: 2px solid #F59E0B;
@@ -1004,15 +1033,15 @@ unset($_SESSION['error']);
       color: #64748b !important; font-size: 0.6875rem !important;
       margin-top: 1rem; padding: 0.75rem 1rem; position: relative; z-index: 10;
     }
-    body.registration-prototype .login-card .login-value-statement { font-size: 0.8125rem; color: #94a3b8; margin-bottom: 0.5rem; line-height: 1.4; }
+    body.registration-prototype .login-card .login-value-statement { font-size: 0.8125rem; color: #64748b; margin-bottom: 0.5rem; line-height: 1.4; }
     body.registration-prototype .login-card .reg-dashboard-preview {
       display: flex; align-items: center; justify-content: center; gap: 0.75rem;
       margin-top: 0.75rem; padding: 0.5rem 0.75rem;
       background: rgba(31, 88, 195, 0.08); border: 1px solid rgba(31, 88, 195, 0.2);
-      border-radius: 0.75rem; font-size: 0.6875rem; color: #94a3b8;
+      border-radius: 0.75rem; font-size: 0.6875rem; color: #64748b;
     }
     body.registration-prototype .login-card .reg-dashboard-preview span { display: inline-flex; align-items: center; gap: 0.25rem; }
-    body.registration-prototype .login-card .reg-dashboard-preview .score { color: #7dd3fc; font-weight: 600; }
+    body.registration-prototype .login-card .reg-dashboard-preview .score { color: #1F58C3; font-weight: 600; }
     body.registration-prototype .login-card .float-label-wrap { position: relative; }
     body.registration-prototype .reg-frame8-main .float-label-wrap { position: relative; }
     body.registration-prototype .login-card .float-label-wrap .float-label,
@@ -1025,7 +1054,7 @@ unset($_SESSION['error']);
     body.registration-prototype .login-card .float-label-wrap.has-value .float-label,
     body.registration-prototype .reg-frame8-main .float-label-wrap.focused .float-label,
     body.registration-prototype .reg-frame8-main .float-label-wrap.has-value .float-label {
-      top: -0.35rem; font-size: 0.75rem; color: #7dd3fc;
+      top: -0.35rem; font-size: 0.75rem; color: #1F58C3;
     }
     body.registration-prototype .login-card .reg-pw-strength-wrap,
     body.registration-prototype .reg-frame8-main .reg-pw-strength-wrap {
@@ -1041,13 +1070,13 @@ unset($_SESSION['error']);
       min-width: 80px;
       height: 6px;
       border-radius: 999px;
-      background: rgba(30, 41, 59, 0.8);
+      background: rgba(31, 88, 195, 0.12);
       overflow: hidden;
       transition: background 0.2s ease;
     }
     body.registration-prototype .reg-frame8-main .reg-pw-strength-bar {
       height: 8px;
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(31, 88, 195, 0.12);
     }
     body.registration-prototype .login-card .reg-pw-strength-fill,
     body.registration-prototype .reg-frame8-main .reg-pw-strength-fill {
@@ -1077,27 +1106,27 @@ unset($_SESSION['error']);
       border-radius: 999px;
       text-align: center;
       color: #64748b;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(31, 88, 195, 0.14);
       transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
     }
     body.registration-prototype .login-card .reg-pw-strength-label.weak,
-    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.weak { color: #fca5a5; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25); }
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.weak { color: #b91c1c; background: rgba(254, 226, 226, 0.95); border-color: rgba(239, 68, 68, 0.3); }
     body.registration-prototype .login-card .reg-pw-strength-label.fair,
-    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.fair { color: #fdba74; background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.25); }
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.fair { color: #c2410c; background: rgba(255, 237, 213, 0.95); border-color: rgba(249, 115, 22, 0.3); }
     body.registration-prototype .login-card .reg-pw-strength-label.good,
-    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.good { color: #fde047; background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.25); }
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.good { color: #a16207; background: rgba(254, 249, 195, 0.95); border-color: rgba(234, 179, 8, 0.35); }
     body.registration-prototype .login-card .reg-pw-strength-label.strong,
-    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.strong { color: #86efac; background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.25); }
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.strong { color: #15803d; background: rgba(220, 252, 231, 0.95); border-color: rgba(34, 197, 94, 0.3); }
     body.registration-prototype .login-card .reg-pw-strength-label.very-strong,
-    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.very-strong { color: #86efac; background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.35); }
+    body.registration-prototype .reg-frame8-main .reg-pw-strength-label.very-strong { color: #166534; background: rgba(187, 247, 208, 0.95); border-color: rgba(34, 197, 94, 0.4); }
     body.registration-prototype .reg-frame8-main .reg-pw-checklist-heading {
       margin: 0.75rem 0 0.5rem;
       font-size: 0.6875rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.8);
+      color: #64748b;
     }
     body.registration-prototype .login-card .reg-pw-checklist,
     body.registration-prototype .reg-frame8-main .reg-pw-checklist {
@@ -1120,25 +1149,25 @@ unset($_SESSION['error']);
       color: #64748b;
       padding: 0.5rem 0.65rem;
       border-radius: 0.5rem;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(31, 88, 195, 0.12);
       transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
     }
     body.registration-prototype .reg-frame8-main .reg-pw-check-item:hover {
-      background: rgba(30, 41, 59, 0.6);
+      background: rgba(255, 255, 255, 0.9);
     }
     body.registration-prototype .login-card .reg-pw-check-item i,
     body.registration-prototype .reg-frame8-main .reg-pw-check-item i {
       font-size: 0.875rem;
       flex-shrink: 0;
       transition: color 0.25s ease, transform 0.2s ease;
-      color: #475569;
+      color: #94a3b8;
     }
     body.registration-prototype .login-card .reg-pw-check-item.met,
     body.registration-prototype .reg-frame8-main .reg-pw-check-item.met {
-      color: #86efac;
-      background: rgba(34, 197, 94, 0.08);
-      border-color: rgba(34, 197, 94, 0.2);
+      color: #15803d;
+      background: rgba(220, 252, 231, 0.85);
+      border-color: rgba(34, 197, 94, 0.28);
     }
     body.registration-prototype .login-card .reg-pw-check-item.met i,
     body.registration-prototype .reg-frame8-main .reg-pw-check-item.met i {
@@ -1147,15 +1176,15 @@ unset($_SESSION['error']);
     }
     body.registration-prototype .login-card .reg-confirm-error {
       font-size: 0.75rem;
-      color: #f87171;
+      color: #dc2626;
       margin-top: 0.25rem;
     }
     body.registration-prototype .login-card .reg-confirm-error.hidden { display: none !important; }
-    body.registration-prototype .login-card .login-security-hint { color: #94a3b8 !important; }
-    body.registration-prototype .login-card .file-hint { color: #94a3b8; font-size: 0.6875rem; }
-    body.registration-prototype .login-card .file-feedback { color: #94a3b8; font-size: 0.75rem; margin-top: 0.25rem; }
+    body.registration-prototype .login-card .login-security-hint { color: #64748b !important; }
+    body.registration-prototype .login-card .file-hint { color: #64748b; font-size: 0.6875rem; }
+    body.registration-prototype .login-card .file-feedback { color: #64748b; font-size: 0.75rem; margin-top: 0.25rem; }
     body.registration-prototype .login-card input[type="file"] {
-      color: #e2e8f0;
+      color: #334155;
     }
     body.registration-prototype .login-card .reg-file-zone,
     body.registration-prototype .reg-frame8-main .reg-file-zone {
@@ -1190,33 +1219,6 @@ unset($_SESSION['error']);
       border-color: rgba(239, 68, 68, 0.6) !important;
       background: rgba(239, 68, 68, 0.06);
     }
-    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder,
-    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-    }
-    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder p,
-    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder p {
-      font-size: 0.8125rem;
-      margin: 0;
-      color: #94a3b8;
-      letter-spacing: 0.02em;
-      font-weight: 500;
-    }
-    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder .bi,
-    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder .bi {
-      font-size: 0.875rem;
-      color: #7dd3fc;
-      margin-right: 0.375rem;
-    }
-    body.registration-prototype .reg-frame8-main .reg-file-zone #reg-file-placeholder #reg-file-browse,
-    body.registration-prototype .login-card .reg-file-zone #reg-file-placeholder .text-\[\#7dd3fc\] {
-      font-size: inherit;
-      color: #7dd3fc;
-      font-weight: 600;
-    }
     body.registration-prototype .reg-frame8-main .reg-file-zone .file-hint,
     body.registration-prototype .login-card .reg-file-zone .file-hint {
       font-size: 0.6875rem;
@@ -1233,12 +1235,10 @@ unset($_SESSION['error']);
     .reg-avatar-default-toggle {
       justify-content: flex-end;
     }
-    #reg-file-preview .text-left,
     #reg-avatar-preview .text-left {
       max-width: min(100%, 320px);
       min-width: 0;
     }
-    #reg-file-name,
     #reg-avatar-name {
       word-break: break-all;
       overflow-wrap: anywhere;
@@ -1254,28 +1254,50 @@ unset($_SESSION['error']);
     .reg-modal-backdrop {
       position: fixed; inset: 0; z-index: 80;
       display: flex; align-items: center; justify-content: center; padding: 1.5rem;
-      background: rgba(11, 18, 32, 0.75); backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(14px);
       opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     }
     .reg-modal-backdrop.is-active { opacity: 1; pointer-events: auto; }
     .reg-modal-card {
       max-width: 400px; width: 100%;
-      background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
-      border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255,255,255,0.8); border-radius: 1.15rem;
       padding: 1.75rem; text-align: center;
-      box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+      box-shadow: 0 28px 60px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(18px);
       transform: translateY(12px) scale(0.98); opacity: 0;
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .reg-modal-backdrop.is-active .reg-modal-card { transform: translateY(0) scale(1); opacity: 1; }
-    .reg-modal-card h2 { color: #fff; font-size: 1.125rem; margin: 0 0 0.75rem; font-weight: 700; }
-    .reg-modal-card p { color: #94a3b8; font-size: 0.875rem; line-height: 1.6; margin: 0 0 1.25rem; }
+    .reg-modal-card h2 { color: #0f172a; font-size: 1.125rem; margin: 0 0 0.75rem; font-weight: 800; }
+    .reg-modal-card p { color: #64748b; font-size: 0.875rem; line-height: 1.6; margin: 0 0 1.25rem; }
     .reg-modal-card .btn-primary {
       display: inline-block; background: #1F58C3; color: #fff; padding: 0.625rem 1.25rem;
       border-radius: 0.75rem; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer;
       transition: background 0.2s, transform 0.2s; text-decoration: none;
     }
     .reg-modal-card .btn-primary:hover { background: #1E40AF; transform: translateY(-2px); }
+    .reg-flow-steps { margin-bottom: 1.25rem; }
+    .reg-flow-steps__list {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem;
+      align-items: center;
+    }
+    .reg-flow-steps__item {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.72rem; font-weight: 600; color: #94a3b8;
+    }
+    .reg-flow-steps__item.is-current { color: #1F58C3; }
+    .reg-flow-steps__item.is-done { color: #15803d; }
+    .reg-flow-steps__num {
+      width: 1.25rem; height: 1.25rem; border-radius: 999px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e2e8f0; color: #475569; font-size: 0.65rem; font-weight: 800;
+    }
+    .reg-flow-steps__item.is-current .reg-flow-steps__num { background: #1F58C3; color: #fff; }
+    .reg-flow-steps__item.is-done .reg-flow-steps__num { background: #15803d; color: #fff; }
+    .reg-flow-steps__hint { margin: 0.5rem 0 0; font-size: 0.75rem; color: #64748b; line-height: 1.4; }
+    .reg-flow-steps__modal-steps { font-size: 0.8rem !important; color: #334155 !important; font-weight: 600; }
     .reg-loading-orb {
       width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%;
       background: conic-gradient(from 200deg, #f59e0b, #1f58c3, #f59e0b);
@@ -1283,7 +1305,7 @@ unset($_SESSION['error']);
     }
     .reg-loading-orb-inner {
       width: 100%; height: 100%; border-radius: inherit;
-      background: #111827; display: flex; align-items: center; justify-content: center;
+      background: #ffffff; display: flex; align-items: center; justify-content: center;
     }
     .reg-loading-orb-inner span {
       width: 10px; height: 10px; border-radius: 50%;
@@ -1311,16 +1333,17 @@ unset($_SESSION['error']);
     .reg-error-backdrop {
       position: fixed; inset: 0; z-index: 90;
       display: flex; align-items: center; justify-content: center; padding: 1.5rem;
-      background: rgba(11, 18, 32, 0.75); backdrop-filter: blur(18px);
+      background: rgba(15, 23, 42, 0.35); backdrop-filter: blur(16px);
       opacity: 0; pointer-events: none; transition: opacity 0.22s ease-out;
     }
     .reg-error-backdrop.is-active { opacity: 1; pointer-events: auto; }
     .reg-error-card {
-      max-width: 380px; width: 100%; border-radius: 1rem;
+      max-width: 380px; width: 100%; border-radius: 1.15rem;
       padding: 1.75rem 1.5rem; text-align: center;
-      background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
-      border: 1px solid rgba(255,255,255,0.06);
-      box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255,255,255,0.85);
+      box-shadow: 0 28px 60px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(18px);
       transform: translateY(12px) scale(0.98); opacity: 0;
       transition: transform 0.22s ease-out, opacity 0.22s ease-out;
     }
@@ -1329,20 +1352,20 @@ unset($_SESSION['error']);
     }
     .reg-error-icon {
       width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%;
-      border: 2px solid rgba(248, 250, 252, 0.3);
-      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid rgba(239, 68, 68, 0.25);
+      background: rgba(254, 226, 226, 0.9);
       display: flex; align-items: center; justify-content: center;
     }
-    .reg-error-icon i { font-size: 1.5rem; color: #f87171; }
-    .reg-error-card h2 { color: #fff; font-size: 1.125rem; margin: 0 0 0.5rem; font-weight: 700; }
-    .reg-error-card .reg-error-message { color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin: 0 0 1.25rem; text-align: left; }
+    .reg-error-icon i { font-size: 1.5rem; color: #dc2626; }
+    .reg-error-card h2 { color: #0f172a; font-size: 1.125rem; margin: 0 0 0.5rem; font-weight: 800; }
+    .reg-error-card .reg-error-message { color: #64748b; font-size: 0.875rem; line-height: 1.5; margin: 0 0 1.25rem; text-align: left; }
     .reg-error-card .reg-error-list { list-style: none; padding: 0; margin: 0 0 1.25rem; }
     .reg-error-card .reg-error-list li { padding: 0.35rem 0 0.35rem 1.25rem; position: relative; }
     .reg-error-card .reg-error-list li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 4px; height: 4px; border-radius: 50%; background: #f87171; }
     .reg-error-card .btn-primary { cursor: pointer; border: none; }
   </style>
 </head>
-<body class="auth-page registration-prototype min-h-screen font-sans antialiased" x-data="{ school: '' }">
+<body class="auth-page registration-prototype min-h-screen font-sans antialiased" x-data="regEnrollmentApp()">
   <div class="reg-frame8-layout">
     <div class="reg-frame8-left" aria-hidden="true">
         <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
@@ -1381,6 +1404,7 @@ unset($_SESSION['error']);
         <p class="reg-frame8-subtitle">One step closer to your CPA journey.</p>
 
         <form action="register_process" method="POST" enctype="multipart/form-data" novalidate id="reg-form">
+          <input type="hidden" name="csrf_token" value="<?php echo h(generateCSRFToken()); ?>">
           <div class="reg-form-progress" aria-hidden="true" id="reg-form-progress">
             <div class="reg-form-progress-bar" id="reg-form-progress-bar"></div>
           </div>
@@ -1392,6 +1416,19 @@ unset($_SESSION['error']);
                 <span class="auth-alert-text"><?php echo h($error); ?></span>
               </div>
             <?php endif; ?>
+
+            <nav class="reg-flow-steps mb-4" aria-label="Enrollment steps">
+              <ol class="reg-flow-steps__list">
+                <li class="reg-flow-steps__item is-current"><span class="reg-flow-steps__num">1</span><span class="reg-flow-steps__label">Create Account</span></li>
+                <li class="reg-flow-steps__item"><span class="reg-flow-steps__num">2</span><span class="reg-flow-steps__label">Verify Email</span></li>
+                <li class="reg-flow-steps__item" x-show="enrollmentPath !== 'free_access'" x-cloak><span class="reg-flow-steps__num">3</span><span class="reg-flow-steps__label">Payment</span></li>
+                <li class="reg-flow-steps__item" x-show="enrollmentPath === 'free_access'" x-cloak><span class="reg-flow-steps__num">3</span><span class="reg-flow-steps__label">Admin review</span></li>
+                <li class="reg-flow-steps__item"><span class="reg-flow-steps__num">4</span><span class="reg-flow-steps__label">Access</span></li>
+              </ol>
+              <p class="reg-flow-steps__hint" x-show="enrollmentPath !== 'free_access'">First create your account → verify your email → then pay.</p>
+              <p class="reg-flow-steps__hint" x-show="enrollmentPath === 'free_access'" x-cloak>First create your account → verify your email → then admin review. No payment.</p>
+              <p class="reg-flow-steps__hint" x-show="!enrollmentPath">First create your account, then verify your email to continue.</p>
+            </nav>
 
             <span class="reg-section-label" id="reg-label-account"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Account</span>
             <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
@@ -1440,6 +1477,13 @@ unset($_SESSION['error']);
                 <label class="float-label" for="reg-school_other">Your school name</label>
                 <input type="text" name="school_other" id="reg-school_other" placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm">
               </div>
+            </div>
+
+            <?php require __DIR__ . '/includes/registration_enrollment_section.php'; ?>
+            <div class="text-sm text-slate-600 mb-4 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 space-y-1"
+                 x-show="enrollmentPath === 'package' || enrollmentPath === 'by_topic'" x-cloak>
+              <p class="font-semibold text-slate-800">Payment comes after email verification.</p>
+              <p>After creating your account, verify your email. You’ll then be redirected to the payment page where you can complete your GCash payment and upload your proof of payment.</p>
             </div>
 
             <span class="reg-section-label" id="reg-label-security"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Security</span>
@@ -1495,39 +1539,14 @@ unset($_SESSION['error']);
               <p class="login-security-hint text-xs">Secure sign-in. We never share your data.</p>
             </div>
 
-            <span class="reg-section-label" id="reg-label-payment"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Payment and profile</span>
-            <div class="reg-section reg-frame8-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              <div class="reg-upload-box-wrap">
-                <label class="reg-top-label" for="register-payment-proof">Upload Payment Proof</label>
-                <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-file-zone" aria-describedby="reg-error-payment_proof">
-                  <input type="file" name="payment_proof" id="register-payment-proof" required accept="image/*,application/pdf" class="hidden" aria-describedby="reg-error-payment_proof">
-                  <div id="reg-file-placeholder">
-                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-cloud-arrow-up text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Drag file here or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-file-browse">browse</button></p>
-                    <p class="file-hint text-xs">Accepted: images, PDF. We use this to verify your payment.</p>
-                  </div>
-                  <div id="reg-file-preview" class="hidden">
-                    <div class="flex items-center gap-3 justify-center flex-wrap">
-                      <img id="reg-file-thumb" src="" alt="" class="w-14 h-14 object-cover rounded-lg border border-slate-600 hidden">
-                      <div class="text-left">
-                        <p class="text-sm font-medium text-slate-200" id="reg-file-name"></p>
-                        <p class="text-xs text-slate-500" id="reg-file-size"></p>
-                        <div class="mt-1 h-1.5 bg-slate-700 rounded-full overflow-hidden" id="reg-upload-progress-wrap">
-                          <div class="h-full bg-[#1F58C3] rounded-full transition-all duration-300" id="reg-upload-progress" style="width: 0%"></div>
-                        </div>
-                      </div>
-                      <button type="button" id="reg-file-clear" class="text-slate-400 hover:text-white text-sm" aria-label="Remove file">Remove</button>
-                    </div>
-                  </div>
-                </div>
-                <span id="reg-error-payment_proof" class="reg-inline-error" role="alert" aria-live="polite"></span>
-              </div>
-
-              <div class="reg-upload-box-wrap">
+            <span class="reg-section-label" id="reg-label-profile"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Profile</span>
+            <div class="reg-section reg-frame8-full">
+              <div class="reg-upload-box-wrap max-w-md">
                 <label class="reg-top-label" for="register-profile-picture">Profile Picture</label>
                 <div class="reg-file-zone border-2 border-dashed rounded-xl p-4 text-center transition-colors" id="reg-avatar-zone" aria-describedby="reg-error-profile_picture">
                   <input type="file" name="profile_picture" id="register-profile-picture" required accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" aria-describedby="reg-error-profile_picture">
                   <div id="reg-avatar-placeholder">
-                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-person-circle text-lg text-[#7dd3fc] mr-1.5" aria-hidden="true"></i>Upload your photo or <button type="button" class="text-[#7dd3fc] hover:underline" id="reg-avatar-browse">browse</button></p>
+                    <p class="text-sm text-slate-400 mb-2"><i class="bi bi-person-circle text-lg text-[#1F58C3] mr-1.5" aria-hidden="true"></i>Upload your photo or <button type="button" class="text-[#1F58C3] hover:underline" id="reg-avatar-browse">browse</button></p>
                     <p class="file-hint text-xs">Accepted: JPG, PNG, WEBP, GIF only. Videos and audio are not allowed.</p>
                   </div>
                   <div id="reg-avatar-preview" class="hidden">
@@ -1548,8 +1567,8 @@ unset($_SESSION['error']);
 
           <div class="reg-frame8-form-fixed-bottom">
             <p class="reg-submit-hint" id="reg-submit-hint" aria-live="polite">Complete the fields above to continue.</p>
-            <button type="submit" class="reg-submit btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F58C3] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a] disabled:opacity-70 disabled:cursor-not-allowed" id="reg-submit-btn">
-              <span id="reg-submit-text">Submit registration</span>
+            <button type="submit" class="reg-submit btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1F58C3] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-70 disabled:cursor-not-allowed" id="reg-submit-btn">
+              <span id="reg-submit-text">Create Account</span>
               <span id="reg-submit-spinner" class="hidden" aria-hidden="true"><i class="bi bi-arrow-repeat animate-spin text-lg"></i></span>
               <i class="bi bi-arrow-right text-lg" id="reg-submit-arrow" aria-hidden="true"></i>
             </button>
@@ -1566,12 +1585,49 @@ unset($_SESSION['error']);
     </div>
   </div>
 
+  <script>
+    function regEnrollmentApp() {
+      return {
+        school: '',
+        enrollmentPath: '',
+        packageId: null,
+        selectedLessons: {},
+        freeAccessNote: '',
+        packages: <?php echo json_encode($regPackages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>,
+        topicGroups: <?php echo json_encode($regTopicGroups, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>,
+        get selectedLessonIds() {
+          return Object.keys(this.selectedLessons)
+            .filter(function (k) { return !!this.selectedLessons[k]; }.bind(this))
+            .map(function (k) { return parseInt(k, 10); });
+        },
+        get topicTotalCentavos() {
+          var total = 0;
+          var self = this;
+          (this.topicGroups || []).forEach(function (g) {
+            (g.topics || []).forEach(function (topic) {
+              if (self.selectedLessons[topic.lesson_id]) total += topic.price_centavos | 0;
+            });
+          });
+          return total;
+        },
+        get topicTotalDisplay() {
+          return '₱' + (this.topicTotalCentavos / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        toggleLesson: function (id, on) {
+          var next = Object.assign({}, this.selectedLessons);
+          if (on) next[id] = true;
+          else delete next[id];
+          this.selectedLessons = next;
+        }
+      };
+    }
+  </script>
   <div id="reg-modal-loading" class="reg-modal-backdrop" aria-hidden="true">
     <div class="reg-modal-card">
       <div class="reg-loading-orb">
         <div class="reg-loading-orb-inner"><span></span></div>
       </div>
-      <p style="margin:0;color:#e2e8f0;">Creating your account. Please wait...</p>
+      <p style="margin:0;color:#64748b;">Creating your account. Please wait...</p>
     </div>
   </div>
   <div id="reg-modal-email-sent" class="reg-modal-backdrop" aria-hidden="true">
@@ -1579,9 +1635,11 @@ unset($_SESSION['error']);
       <div style="width:56px;height:56px;margin:0 auto 1rem;border-radius:50%;background:rgba(31,88,195,0.2);display:flex;align-items:center;justify-content:center;">
         <i class="bi bi-envelope-check-fill" style="font-size:1.75rem;color:#1F58C3;"></i>
       </div>
-      <h2>Verification Email Sent</h2>
-      <p>We have sent a confirmation email to your registered email address. Please open your email and click the verification button to confirm and create your account.</p>
-      <button type="button" id="reg-modal-email-sent-ok" class="btn-primary">OK</button>
+      <h2>Registration successful!</h2>
+      <p class="reg-flow-steps__modal-steps"><strong>STEP 1 COMPLETE</strong> — Create Account ✓</p>
+      <p>We've sent a verification link to your email address.</p>
+      <p><strong>NEXT:</strong> Check your email to verify your account.</p>
+      <button type="button" id="reg-modal-email-sent-ok" class="btn-primary">OK, I'll check my email</button>
     </div>
   </div>
   <div id="reg-modal-waiting" class="reg-modal-backdrop" aria-hidden="true">
@@ -1590,15 +1648,24 @@ unset($_SESSION['error']);
         <div class="reg-loading-orb-inner"><span></span></div>
       </div>
       <h2>Waiting for email verification</h2>
-      <p>Please confirm your account through the email we sent. This page will update automatically when verification is complete.</p>
+      <p>Open the verification email and click the link. This page will update automatically when verification is complete.</p>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">After verification, paid enrollments continue to payment. Free Access does not require payment.</p>
     </div>
   </div>
   <div id="reg-modal-success" class="reg-modal-backdrop" aria-hidden="true">
     <div class="reg-modal-card">
       <div class="reg-success-check"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-      <h2>Account Created Successfully</h2>
-      <p>Your LCRC eReview account has been successfully verified and created. You may now sign in to access the system.</p>
-      <a href="login" class="btn-primary">Sign in</a>
+      <h2 id="reg-success-title">Email verified successfully!</h2>
+      <p id="reg-success-body">Your account has been verified.</p>
+      <div id="reg-success-paid-actions" class="hidden">
+        <p class="reg-flow-steps__modal-steps">STEP 1 ✓ Create Account<br>STEP 2 ✓ Verify Email<br>STEP 3 → Payment</p>
+        <a href="payment_checkout" class="btn-primary" id="reg-success-pay-cta">Continue to Payment</a>
+        <p class="text-center text-xs subtext mt-3"><a href="payment_checkout_resume">Resume checkout</a> · <a href="login">Sign in later</a></p>
+      </div>
+      <div id="reg-success-free-actions" class="hidden">
+        <p>Your Free Access request is ready for admin review. No payment or payment proof is required.</p>
+        <a href="login" class="btn-primary">Sign in</a>
+      </div>
     </div>
   </div>
 
@@ -1618,17 +1685,6 @@ unset($_SESSION['error']);
       var passwordInput = document.getElementById('register-password');
       var togglePasswordButton = document.getElementById('toggle-register-password');
       var togglePasswordIcon = document.getElementById('toggle-register-password-icon');
-      var fileInput = document.getElementById('register-payment-proof');
-      var fileZone = document.getElementById('reg-file-zone');
-      var filePlaceholder = document.getElementById('reg-file-placeholder');
-      var filePreview = document.getElementById('reg-file-preview');
-      var fileThumb = document.getElementById('reg-file-thumb');
-      var fileNameEl = document.getElementById('reg-file-name');
-      var fileSizeEl = document.getElementById('reg-file-size');
-      var fileProgress = document.getElementById('reg-upload-progress');
-      var fileProgressWrap = document.getElementById('reg-upload-progress-wrap');
-      var fileBrowse = document.getElementById('reg-file-browse');
-      var fileClear = document.getElementById('reg-file-clear');
       var avatarInput = document.getElementById('register-profile-picture');
       var avatarZone = document.getElementById('reg-avatar-zone');
       var avatarPlaceholder = document.getElementById('reg-avatar-placeholder');
@@ -1660,8 +1716,10 @@ unset($_SESSION['error']);
         email: 'reg-error-email',
         school: 'reg-error-school',
         review_type: 'reg-error-review_type',
+        enrollment_path: 'reg-error-enrollment_path',
+        package_id: 'reg-error-package_id',
+        lesson_ids: 'reg-error-lesson_ids',
         password: 'reg-error-password',
-        payment_proof: 'reg-error-payment_proof',
         profile_picture: 'reg-error-profile_picture'
       };
       function setInlineError(fieldKey, message) {
@@ -1672,15 +1730,10 @@ unset($_SESSION['error']);
         else if (fieldKey === 'school') control = document.getElementById('reg-school');
         else if (fieldKey === 'review_type') control = document.getElementById('reg-review_type');
         else if (fieldKey === 'password') control = document.getElementById('register-password');
-        else if (fieldKey === 'payment_proof') control = document.getElementById('register-payment-proof');
         else if (fieldKey === 'profile_picture') control = document.getElementById('register-profile-picture');
         var el = id ? document.getElementById(id) : null;
         if (el) {
           el.textContent = message || '';
-        }
-        if (fieldKey === 'payment_proof') {
-          var zone = document.getElementById('reg-file-zone');
-          if (zone) zone.classList.toggle('is-invalid', !!message);
         }
         if (fieldKey === 'profile_picture') {
           var avatarZoneEl = document.getElementById('reg-avatar-zone');
@@ -1722,8 +1775,6 @@ unset($_SESSION['error']);
           c.removeAttribute('aria-invalid');
           c.classList.remove('is-invalid');
         });
-        var fileZone = document.getElementById('reg-file-zone');
-        if (fileZone) fileZone.classList.remove('is-invalid');
         var avatarZoneEl = document.getElementById('reg-avatar-zone');
         if (avatarZoneEl) avatarZoneEl.classList.remove('is-invalid');
       }
@@ -1766,7 +1817,6 @@ unset($_SESSION['error']);
         var pw = (pwRaw || '').trim();
         var confirmRaw = confirmInput ? confirmInput.value : '';
         var confirm = (confirmRaw || '').trim();
-        var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
         var firstInvalid = null;
         var messages = [];
@@ -1814,25 +1864,26 @@ unset($_SESSION['error']);
           messages.push('Complete all password requirements first.');
           if (!firstInvalid) firstInvalid = confirmInput;
         }
-        var fileInvalidType = false;
-        if (fileInputEl && fileInputEl.files && fileInputEl.files.length > 0) {
-          var f = fileInputEl.files[0];
-          var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-          var ext = (f.name.split('.').pop() || '').toLowerCase();
-          var allowedExt = ['jpg', 'jpeg', 'png', 'pdf'];
-          if (!allowedTypes.includes(f.type) || !allowedExt.includes(ext)) {
-            fileInvalidType = true;
-            setInlineError('payment_proof', 'Please upload an image (JPG, PNG) or PDF only.');
-            messages.push('Invalid file type. Please upload an image or PDF for payment verification.');
-            if (fileZone) fileZone.classList.add('is-invalid');
-            if (!firstInvalid) firstInvalid = fileZone;
+        var enrollPathEl = document.getElementById('reg-enrollment_path');
+        var enrollPath = enrollPathEl ? String(enrollPathEl.value || '').trim() : '';
+        if (!enrollPath || ['package', 'by_topic', 'free_access'].indexOf(enrollPath) === -1) {
+          setInlineError('enrollment_path', 'Select Package, By Topic, or Free Access.');
+          messages.push('Select an enrollment type.');
+          if (!firstInvalid) firstInvalid = document.getElementById('reg-label-enrollment') || enrollPathEl;
+        } else if (enrollPath === 'package') {
+          var pkgId = document.getElementById('reg-package_id');
+          if (!pkgId || !String(pkgId.value || '').trim()) {
+            setInlineError('package_id', 'Select a package from the catalog.');
+            messages.push('Select a package.');
+            if (!firstInvalid) firstInvalid = document.getElementById('reg-label-enrollment');
           }
-        }
-        if (!fileInputEl || !fileInputEl.files || fileInputEl.files.length === 0) {
-          setInlineError('payment_proof', 'Upload a payment proof file.');
-          messages.push('Upload a payment proof file.');
-          if (fileZone) fileZone.classList.add('is-invalid');
-          if (!firstInvalid) firstInvalid = fileZone;
+        } else if (enrollPath === 'by_topic') {
+          var lessonInputs = regForm ? regForm.querySelectorAll('input[name="lesson_ids[]"]') : [];
+          if (!lessonInputs || lessonInputs.length === 0) {
+            setInlineError('lesson_ids', 'Select at least one topic.');
+            messages.push('Select at least one topic.');
+            if (!firstInvalid) firstInvalid = document.getElementById('reg-label-enrollment');
+          }
         }
         if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length > 0) {
           var af = avatarInputEl.files[0];
@@ -1869,7 +1920,6 @@ unset($_SESSION['error']);
         var reviewType = document.getElementById('reg-review_type');
         var pw = (passwordInput ? passwordInput.value : '').trim();
         var confirm = (confirmInput ? confirmInput.value : '').trim();
-        var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
         if (!validateFullNameValue(fullName ? fullName.value : '').valid) return false;
         if (!validateEmailValue(email ? email.value : '').valid) return false;
@@ -1878,11 +1928,17 @@ unset($_SESSION['error']);
         if (!pw || /^\s+$/.test(passwordInput ? passwordInput.value : '')) return false;
         if (!allPasswordChecksMet(pw)) return false;
         if (pw !== confirm) return false;
-        if (!fileInputEl || !fileInputEl.files || fileInputEl.files.length === 0) return false;
-        var f = fileInputEl.files[0];
-        var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-        var ext = (f.name.split('.').pop() || '').toLowerCase();
-        if (!allowedTypes.includes(f.type) || !['jpg', 'jpeg', 'png', 'pdf'].includes(ext)) return false;
+        var enrollPathEl = document.getElementById('reg-enrollment_path');
+        var enrollPath = enrollPathEl ? String(enrollPathEl.value || '').trim() : '';
+        if (!enrollPath || ['package', 'by_topic', 'free_access'].indexOf(enrollPath) === -1) return false;
+        if (enrollPath === 'package') {
+          var pkgId = document.getElementById('reg-package_id');
+          if (!pkgId || !String(pkgId.value || '').trim()) return false;
+        }
+        if (enrollPath === 'by_topic') {
+          var lessonInputs = regForm ? regForm.querySelectorAll('input[name="lesson_ids[]"]') : [];
+          if (!lessonInputs || lessonInputs.length === 0) return false;
+        }
         if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length > 0) {
           var af = avatarInputEl.files[0];
           var avatarAllowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
@@ -1900,7 +1956,6 @@ unset($_SESSION['error']);
         var reviewType = document.getElementById('reg-review_type');
         var pw = passwordInput ? passwordInput.value : '';
         var confirm = confirmInput ? confirmInput.value : '';
-        var fileInputEl = document.getElementById('register-payment-proof');
         var avatarInputEl = document.getElementById('register-profile-picture');
         var n = 0;
         if (fullName && fullName.value.trim()) n++;
@@ -1909,7 +1964,6 @@ unset($_SESSION['error']);
         if (reviewType && reviewType.value) n++;
         if (pw && pw.length) n++;
         if (confirm && confirm.length) n++;
-        if (fileInputEl && fileInputEl.files && fileInputEl.files.length) n++;
         if (avatarInputEl && avatarInputEl.files && avatarInputEl.files.length) n++;
         return n;
       }
@@ -1926,8 +1980,8 @@ unset($_SESSION['error']);
               hintEl.textContent = 'Complete the fields above to continue.';
               hintEl.classList.remove('reg-hint-complete');
             } else {
-              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 8 complete — fill all required fields to submit.';
-              hintEl.classList.toggle('reg-hint-complete', count >= 8);
+              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 7 complete — fill all required fields to submit.';
+              hintEl.classList.toggle('reg-hint-complete', count >= 7);
             }
             hintEl.classList.remove('hidden');
           }
@@ -2151,41 +2205,13 @@ unset($_SESSION['error']);
         });
       }
 
-      if (fileBrowse && fileInput) fileBrowse.addEventListener('click', function () { fileInput.click(); });
-      if (fileZone && fileInput) {
-        fileZone.addEventListener('dragover', function (e) { e.preventDefault(); fileZone.classList.add('dragover'); });
-        fileZone.addEventListener('dragleave', function () { fileZone.classList.remove('dragover'); });
-        fileZone.addEventListener('drop', function (e) {
-          e.preventDefault();
-          fileZone.classList.remove('dragover');
-          if (e.dataTransfer.files.length) fileInput.files = e.dataTransfer.files;
-          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-      }
       function formatSize(bytes) {
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
       }
-      var allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-      var allowedFileExt = ['jpg', 'jpeg', 'png', 'pdf'];
       var allowedAvatarTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
       var allowedAvatarExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-      function isAllowedPaymentFile(file) {
-        if (!file) return false;
-        var ext = (file.name.split('.').pop() || '').toLowerCase();
-        return allowedFileTypes.indexOf(file.type) !== -1 && allowedFileExt.indexOf(ext) !== -1;
-      }
-      function showInvalidFileModal() {
-        var errModal = document.getElementById('reg-modal-error');
-        var errTitle = document.getElementById('reg-error-title');
-        var errMsg = document.getElementById('reg-error-message');
-        if (errModal && errTitle && errMsg) {
-          errTitle.textContent = 'Invalid file type';
-          errMsg.innerHTML = 'Please upload an image (JPG, PNG) or PDF file for payment verification.';
-          errModal.classList.add('is-active');
-        }
-      }
       function showInvalidAvatarModal() {
         var errModal = document.getElementById('reg-modal-error');
         var errTitle = document.getElementById('reg-error-title');
@@ -2195,53 +2221,6 @@ unset($_SESSION['error']);
           errMsg.innerHTML = 'Please upload JPG, PNG, WEBP, or GIF only. Video, audio, and other file types are not allowed.';
           errModal.classList.add('is-active');
         }
-      }
-      if (fileInput && filePlaceholder && filePreview && fileThumb && fileNameEl && fileSizeEl && fileProgress && fileClear) {
-        fileInput.addEventListener('change', function () {
-          var file = this.files[0];
-          if (!file) {
-            filePlaceholder.classList.remove('hidden');
-            filePreview.classList.add('hidden');
-            fileProgress.style.width = '0%';
-            if (fileZone) fileZone.classList.remove('has-file');
-            return;
-          }
-          if (!isAllowedPaymentFile(file)) {
-            this.value = '';
-            filePlaceholder.classList.remove('hidden');
-            filePreview.classList.add('hidden');
-            if (fileZone) fileZone.classList.remove('has-file');
-            setInlineError('payment_proof', 'Please upload an image (JPG, PNG) or PDF only.');
-            if (fileZone) fileZone.classList.add('is-invalid');
-            showInvalidFileModal();
-            return;
-          }
-          setInlineError('payment_proof', '');
-          if (fileZone) fileZone.classList.remove('is-invalid');
-          if (fileZone) fileZone.classList.add('has-file');
-          filePlaceholder.classList.add('hidden');
-          filePreview.classList.remove('hidden');
-          fileNameEl.textContent = file.name;
-          fileSizeEl.textContent = formatSize(file.size);
-          fileThumb.classList.add('hidden');
-          if (file.type.indexOf('image/') === 0) {
-            var url = URL.createObjectURL(file);
-            fileThumb.src = url;
-            fileThumb.alt = file.name;
-            fileThumb.classList.remove('hidden');
-          }
-          fileProgress.style.width = '0%';
-          var step = 0;
-          var prog = setInterval(function () {
-            step += 10;
-            if (step >= 100) { clearInterval(prog); step = 100; }
-            fileProgress.style.width = step + '%';
-          }, 80);
-        });
-        fileClear.addEventListener('click', function () {
-          fileInput.value = '';
-          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-        });
       }
       function syncAvatarZoneState() {
         if (!avatarInput || !avatarZone) return;
@@ -2324,8 +2303,8 @@ unset($_SESSION['error']);
             scrollToFirstError(v.firstInvalid);
             if (v.firstInvalid) {
               if (typeof v.firstInvalid.focus === 'function') v.firstInvalid.focus();
-              else if (v.firstInvalid.id === 'reg-file-zone') {
-                var browse = document.getElementById('reg-file-browse');
+              else if (v.firstInvalid.id === 'reg-avatar-zone') {
+                var browse = document.getElementById('reg-avatar-browse');
                 if (browse) browse.focus();
               }
             }
@@ -2352,7 +2331,24 @@ unset($_SESSION['error']);
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
-          }).then(function (r) { return r.json(); }).then(function (data) {
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = null;
+              try {
+                data = JSON.parse(text);
+              } catch (e1) {
+                var start = text.indexOf('{');
+                var end = text.lastIndexOf('}');
+                if (start !== -1 && end > start) {
+                  try { data = JSON.parse(text.slice(start, end + 1)); } catch (e2) { data = null; }
+                }
+              }
+              if (!data || typeof data !== 'object') {
+                throw new Error('Invalid server response');
+              }
+              return data;
+            });
+          }).then(function (data) {
             if (loadingModal) loadingModal.classList.remove('is-active');
             if (data.success) {
               pendingEmail = data.email || pendingEmail;
@@ -2367,13 +2363,30 @@ unset($_SESSION['error']);
                     if (res.verified) {
                       clearInterval(pollInterval);
                       if (waitingModal) waitingModal.classList.remove('is-active');
+                      var pathEl = document.getElementById('reg-enrollment_path');
+                      var path = pathEl ? String(pathEl.value || '') : '';
+                      var successTitle = document.getElementById('reg-success-title');
+                      var successBody = document.getElementById('reg-success-body');
+                      var successPaid = document.getElementById('reg-success-paid-actions');
+                      var successFree = document.getElementById('reg-success-free-actions');
+                      if (path === 'package' || path === 'by_topic') {
+                        if (successTitle) successTitle.textContent = 'Email verified successfully!';
+                        if (successBody) successBody.textContent = 'Your account has been verified. Continue to payment to complete your enrollment.';
+                        if (successPaid) successPaid.classList.remove('hidden');
+                        if (successFree) successFree.classList.add('hidden');
+                      } else {
+                        if (successTitle) successTitle.textContent = 'Email verified successfully!';
+                        if (successBody) successBody.textContent = 'Your account has been verified. Free Access does not require payment.';
+                        if (successPaid) successPaid.classList.add('hidden');
+                        if (successFree) successFree.classList.remove('hidden');
+                      }
                       if (successModal) successModal.classList.add('is-active');
                     }
                   }).catch(function () {});
                 }, 2500);
               }, { once: true });
             } else {
-              regSubmitText.textContent = 'Submit registration';
+              regSubmitText.textContent = 'Create Account';
               regSubmitSpinner.classList.add('hidden');
               regSubmitArrow.classList.remove('hidden');
               if (regSubmitBtn) regSubmitBtn.disabled = false;
@@ -2391,7 +2404,7 @@ unset($_SESSION['error']);
             }
           }).catch(function () {
             if (loadingModal) loadingModal.classList.remove('is-active');
-            regSubmitText.textContent = 'Submit registration';
+            regSubmitText.textContent = 'Create Account';
             regSubmitSpinner.classList.add('hidden');
             regSubmitArrow.classList.remove('hidden');
             if (regSubmitBtn) regSubmitBtn.disabled = false;
@@ -2400,11 +2413,11 @@ unset($_SESSION['error']);
             var errTitle = document.getElementById('reg-error-title');
             var errMsg = document.getElementById('reg-error-message');
             if (errModal && errTitle && errMsg) {
-              errTitle.textContent = 'Connection error';
-              errMsg.textContent = 'Network error. Please try again.';
+              errTitle.textContent = 'Registration issue';
+              errMsg.textContent = 'Could not complete registration. If this keeps happening, check that email/SMTP is working, then try again.';
               errModal.classList.add('is-active');
             } else {
-              alert('Network error. Please try again.');
+              alert('Could not complete registration. Please try again.');
             }
           });
         });
@@ -2431,18 +2444,29 @@ unset($_SESSION['error']);
         var schoolOther = document.getElementById('reg-school_other');
         var pw = passwordInput ? passwordInput.value : '';
         var confirm = confirmInput ? confirmInput.value : '';
-        var file = document.getElementById('register-payment-proof');
+        var avatar = document.getElementById('register-profile-picture');
         var accountComplete = fullName && fullName.value.trim() &&
           email && email.value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()) &&
           school && school.value && reviewType && reviewType.value &&
           (school.value !== 'Other' || (schoolOther && schoolOther.value.trim()));
         var securityComplete = pw && allPasswordChecksMet(pw) && confirm === pw;
-        var paymentComplete = file && file.files && file.files.length > 0;
+        var enrollPath = document.getElementById('reg-enrollment_path');
+        var enrollComplete = enrollPath && ['package', 'by_topic', 'free_access'].indexOf(String(enrollPath.value || '')) !== -1;
+        if (enrollComplete && String(enrollPath.value) === 'package') {
+          var p = document.getElementById('reg-package_id');
+          enrollComplete = !!(p && String(p.value || '').trim());
+        }
+        if (enrollComplete && String(enrollPath.value) === 'by_topic') {
+          enrollComplete = !!(regForm && regForm.querySelectorAll('input[name="lesson_ids[]"]').length > 0);
+        }
+        var paymentComplete = avatar && avatar.files && avatar.files.length > 0;
         var accountEl = document.getElementById('reg-label-account');
         var securityEl = document.getElementById('reg-label-security');
+        var enrollEl = document.getElementById('reg-label-enrollment');
         var paymentEl = document.getElementById('reg-label-payment');
         if (accountEl) accountEl.classList.toggle('reg-section-label--complete', !!accountComplete);
         if (securityEl) securityEl.classList.toggle('reg-section-label--complete', !!securityComplete);
+        if (enrollEl) enrollEl.classList.toggle('reg-section-label--complete', !!enrollComplete);
         if (paymentEl) paymentEl.classList.toggle('reg-section-label--complete', !!paymentComplete);
       }
       function updateRegProgress() {
@@ -2453,7 +2477,8 @@ unset($_SESSION['error']);
         var reviewType = document.querySelector('select[name="review_type"]');
         var pw = document.getElementById('register-password');
         var confirm = document.getElementById('register-password-confirm');
-        var file = document.getElementById('register-payment-proof');
+        var avatar = document.getElementById('register-profile-picture');
+        var enrollPath = document.getElementById('reg-enrollment_path');
         var n = 0;
         if (fullName && fullName.value.trim()) n++;
         if (email && email.value.trim()) n++;
@@ -2461,8 +2486,9 @@ unset($_SESSION['error']);
         if (reviewType && reviewType.value) n++;
         if (pw && pw.value) n++;
         if (confirm && confirm.value) n++;
-        if (file && file.files && file.files.length) n++;
-        var pct = n >= 7 ? 100 : Math.round((n / 7) * 100);
+        if (enrollPath && String(enrollPath.value || '').trim()) n++;
+        if (avatar && avatar.files && avatar.files.length) n++;
+        var pct = n >= 8 ? 100 : Math.round((n / 8) * 100);
         if (bar) bar.style.width = pct + '%';
         updateSubmitState();
         updateSectionLabels();
@@ -2474,7 +2500,6 @@ unset($_SESSION['error']);
       document.querySelectorAll('select[name="school"], select[name="review_type"]').forEach(function (el) {
         el.addEventListener('change', updateRegProgress);
       });
-      if (fileInput) fileInput.addEventListener('change', updateRegProgress);
       updateRegProgress();
 
       var blurbEl = document.getElementById('reg-blurb-text');

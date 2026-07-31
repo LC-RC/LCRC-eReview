@@ -624,15 +624,16 @@ if ($qsortHasResults) {
   <?php include __DIR__ . '/admin_sidebar.php'; ?>
 
   <div class="px-5 max-w-[1600px] mx-auto w-full">
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-diagram-3"></i></span>
-      Question sorting
-    </h1>
-    <p class="text-gray-400 mt-3 mb-0 max-w-3xl text-sm sm:text-base leading-relaxed">
-      Upload a Word <strong class="text-gray-300">.docx</strong> with numbered multiple-choice items. The parser reads <strong class="text-gray-300">typed numbers</strong> (e.g. <code class="text-gray-400">148.</code>) and <strong class="text-gray-300">Word list numbering</strong> (numbers that exist only as list labels). Topics prefer <strong class="text-gray-300">red parentheticals</strong>, then lettered parentheses at the end of the stem. Purely numeric parentheses such as <strong class="text-gray-300">(2,200)</strong> are ignored.
-      Yellow highlight and wording stay as in the file.
-    </p>
+  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4 page-hero admin-glass-hero">
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-diagram-3"></i></span>
+          <span>Question Bank</span>
+        </h1>
+        <p class="admin-page-header__subtitle">Upload a Word .docx with numbered MCQs, group by topic, and export JSON / HTML / Word.</p>
+      </div>
+    </div>
     <?php if ($uiPayload && !empty($uiPayload['meta'])): ?>
     <div class="flex flex-wrap items-center gap-2 mt-4">
       <span class="preweek-stat-pill" title="Questions parsed"><i class="bi bi-list-ol text-sky-400"></i> <?php echo (int)($uiPayload['meta']['question_count'] ?? 0); ?> questions</span>

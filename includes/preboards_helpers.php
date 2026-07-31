@@ -245,6 +245,97 @@ function preboards_count_pending_requests(mysqli $conn): int
     return (int) ($row['c'] ?? 0);
 }
 
+/**
+ * Pending preboard requests with student + set + subject for admin inbox.
+ *
+ * @return list<array<string, mixed>>
+ */
+function preboards_list_pending_requests(mysqli $conn, ?int $subjectId = null): array
+{
+    $sql = "SELECT r.preboards_request_id, r.user_id, r.preboards_set_id, r.request_type, r.requested_at,
+      u.full_name, u.email, s.set_label, s.preboards_subject_id, ps.subject_name
+      FROM preboards_requests r
+      INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+      INNER JOIN preboards_subjects ps ON ps.preboards_subject_id = s.preboards_subject_id
+      INNER JOIN users u ON u.user_id = r.user_id
+      WHERE r.status = 'pending'";
+    if ($subjectId !== null && $subjectId > 0) {
+        $sql .= ' AND s.preboards_subject_id = ' . (int) $subjectId;
+    }
+    $sql .= ' ORDER BY r.requested_at DESC';
+    $out = [];
+    $res = @mysqli_query($conn, $sql);
+    if ($res) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $out[] = $row;
+        }
+        mysqli_free_result($res);
+    }
+    return $out;
+}
+
+/**
+ * Approve or deny a pending request. Grants access/retake token on approve.
+ */
+function preboards_decide_request(mysqli $conn, int $reqId, string $decision, int $adminId, ?int $requireSubjectId = null): bool
+{
+    if ($reqId <= 0 || !in_array($decision, ['approved', 'denied'], true) || $adminId <= 0) {
+        return false;
+    }
+    $stmt = mysqli_prepare($conn, "SELECT r.*, s.preboards_subject_id FROM preboards_requests r
+      INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+      WHERE r.preboards_request_id = ? AND r.status = 'pending' LIMIT 1");
+    if (!$stmt) {
+        return false;
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $reqId);
+    mysqli_stmt_execute($stmt);
+    $req = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+    if (!$req) {
+        return false;
+    }
+    if ($requireSubjectId !== null && (int) $req['preboards_subject_id'] !== (int) $requireSubjectId) {
+        return false;
+    }
+
+    $decAt = date('Y-m-d H:i:s');
+    $upd = mysqli_prepare($conn, "UPDATE preboards_requests SET status=?, decided_at=?, decided_by=? WHERE preboards_request_id=? AND status='pending'");
+    if (!$upd) {
+        return false;
+    }
+    mysqli_stmt_bind_param($upd, 'ssii', $decision, $decAt, $adminId, $reqId);
+    mysqli_stmt_execute($upd);
+    $ok = mysqli_stmt_affected_rows($upd) > 0;
+    mysqli_stmt_close($upd);
+    if (!$ok) {
+        return false;
+    }
+
+    if ($decision === 'approved') {
+        $uid = (int) $req['user_id'];
+        $sid = (int) $req['preboards_set_id'];
+        if (($req['request_type'] ?? '') === 'open') {
+            $ins = mysqli_prepare($conn, "INSERT INTO preboards_set_access (user_id, preboards_set_id, granted_by, used_at, revoked_at)
+              VALUES (?, ?, ?, NULL, NULL)
+              ON DUPLICATE KEY UPDATE granted_at=CURRENT_TIMESTAMP, granted_by=VALUES(granted_by), used_at=NULL, revoked_at=NULL");
+            if ($ins) {
+                mysqli_stmt_bind_param($ins, 'iii', $uid, $sid, $adminId);
+                mysqli_stmt_execute($ins);
+                mysqli_stmt_close($ins);
+            }
+        } elseif (($req['request_type'] ?? '') === 'retake') {
+            $ins = mysqli_prepare($conn, "INSERT INTO preboards_retake_tokens (user_id, preboards_set_id, granted_by) VALUES (?, ?, ?)");
+            if ($ins) {
+                mysqli_stmt_bind_param($ins, 'iii', $uid, $sid, $adminId);
+                mysqli_stmt_execute($ins);
+                mysqli_stmt_close($ins);
+            }
+        }
+    }
+    return true;
+}
+
 /** @return array{access:int, retake:int, total:int} */
 function preboards_pending_request_counts(mysqli $conn): array
 {

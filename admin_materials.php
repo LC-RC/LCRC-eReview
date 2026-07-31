@@ -492,7 +492,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 <body class="font-sans antialiased admin-app admin-materials-page" x-data="{ uploadType: 'url' }">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero admin-glass-hero">
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <?php if (!empty($materialsFlash['errors'])): ?>
       <div class="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-red-100">
@@ -514,11 +514,18 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
         </ul>
       </div>
     <?php endif; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
-      Materials — <?php echo h($lesson['title']); ?> <span class="text-gray-500 font-medium text-lg">(<?php echo h($lesson['subject_name']); ?>)</span>
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">Videos and handouts for this lesson — add, edit, or manage download access.</p>
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
+          <span>Materials — <?php echo h($lesson['title']); ?></span>
+        </h1>
+        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> · Videos and handouts for this lesson</p>
+      </div>
+      <div class="admin-page-header__actions">
+        <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Lessons</a>
+      </div>
+    </div>
   </div>
 
   <form method="get" action="admin_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
@@ -613,7 +620,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                     <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
                       <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_video_thumb=<?php echo (int)$v['video_id']; ?>" class="admin-row-action admin-row-action--refresh" title="Refresh thumbnail"><i class="bi bi-arrow-repeat"></i><span class="sr-only">Refresh thumbnail</span></a>
                       <div class="admin-row-menu-wrap">
-                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                         <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                           <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_video=<?php echo (int)$v['video_id']; ?>" onclick="return confirm('Delete this video?');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
                         </div>
@@ -690,7 +697,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                     <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
                       <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&toggle_handout=<?php echo (int)$h['handout_id']; ?>" class="admin-row-action admin-row-action--lock" title="<?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?>"><i class="bi bi-<?php echo !empty($h['allow_download']) ? 'lock' : 'unlock'; ?>"></i><span class="sr-only"><?php echo !empty($h['allow_download']) ? 'Lock download' : 'Allow download'; ?></span></a>
                       <div class="admin-row-menu-wrap">
-                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                        <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                         <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                           <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&delete_handout=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="admin-row-menu__item admin-row-menu__item--danger" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</a>
                         </div>

@@ -178,14 +178,13 @@ if ($listQ) {
 $rowTotal = count($preweekRows);
 $pageTitle = 'Pre-week';
 $preweekNavStep = 'list';
-$preweekNavTheme = 'dark';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 <style>
-    /* Modal sits above #main; match admin dark chrome */
+    /* Modal sits above #main; theme via tokens */
     .admin-preweek-page .preweek-modal-overlay {
       position: fixed;
       inset: 0;
@@ -202,9 +201,10 @@ $preweekNavTheme = 'dark';
       width: 100%;
       max-width: 26rem;
       border-radius: 0.75rem;
-      background: #141414;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      background: var(--admin-glass-strong, var(--admin-surface, #fff));
+      border: 1px solid var(--admin-border-strong, rgba(30, 58, 110, 0.16));
+      box-shadow: var(--admin-shadow-lg, 0 25px 50px -12px rgba(15, 35, 70, 0.18));
+      color: var(--admin-text-secondary, #445468);
       overflow: hidden;
     }
     .admin-preweek-page .preweek-modal-head {
@@ -213,8 +213,8 @@ $preweekNavTheme = 'dark';
       justify-content: space-between;
       gap: 0.75rem;
       padding: 1rem 1.25rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--admin-border, rgba(30, 58, 110, 0.1));
+      background: rgba(15, 23, 42, 0.03);
     }
     .admin-preweek-page .preweek-modal-body { padding: 1.25rem; }
   </style>
@@ -224,12 +224,16 @@ $preweekNavTheme = 'dark';
 
   <?php require __DIR__ . '/includes/admin_preweek_context_nav.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-lightning-charge-fill"></i></span>
-      Pre-week
-    </h1>
-    <p class="text-gray-400 mt-3 mb-0 max-w-3xl text-sm sm:text-base">Add and manage pre-weeks, then open each to add lectures and materials. Students see the same flow under Pre-week.</p>
+  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4 page-hero admin-glass-hero">
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-lightning-charge-fill"></i></span>
+          <span>Pre-week</span>
+        </h1>
+        <p class="admin-page-header__subtitle">Add and manage pre-weeks, then open each for lectures and materials.</p>
+      </div>
+    </div>
   </div>
 
   <?php if (!empty($flashErr)): ?>
@@ -333,7 +337,7 @@ $preweekNavTheme = 'dark';
                   <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
                     <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-row-action admin-row-action--materials" title="Open lectures"><i class="bi bi-folder2-open"></i><span class="sr-only">Open lectures</span></a>
                     <div class="admin-row-menu-wrap">
-                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                         <button type="button" class="admin-row-menu__item preweek-edit-open" data-id="<?php echo (int)$pid; ?>" data-title="<?php echo h($ptitle); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
                         <?php if ($hasPreweekContent): ?>

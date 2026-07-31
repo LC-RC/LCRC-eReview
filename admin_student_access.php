@@ -114,6 +114,38 @@ $adminBreadcrumbs = [
     }
     .sca-tree label:hover { background: #f3f4f6; }
     .sca-tree input[type=checkbox] { accent-color: #4154f1; width: 1rem; height: 1rem; }
+    .sca-tree-hint { line-height: 1.4; }
+    .sca-subject-summary {
+      display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0;
+    }
+    .sca-chevron {
+      width: 0.55rem; height: 0.55rem; border-right: 2px solid #64748b; border-bottom: 2px solid #64748b;
+      transform: rotate(-45deg); transition: transform .15s ease; flex-shrink: 0; margin-right: 0.15rem;
+    }
+    details[open] > summary .sca-chevron { transform: rotate(45deg); }
+    .sca-subject-summary__label { flex: 1; min-width: 0; }
+    .sca-subject-summary__meta {
+      font-size: 0.68rem; font-weight: 700; color: #64748b; background: #f1f5f9;
+      border-radius: 999px; padding: 0.12rem 0.45rem; white-space: nowrap;
+    }
+    .sca-grant-all {
+      align-items: flex-start !important; gap: 0.55rem !important; margin: 0.35rem 0 0.55rem;
+      padding: 0.5rem 0.65rem !important; border: 1px solid #c7d2fe; border-radius: 0.55rem; background: #eef2ff;
+    }
+    .sca-grant-all__title { display: block; font-weight: 800; color: #312e81; font-size: 0.84rem; }
+    .sca-grant-all__sub { display: block; font-size: 0.72rem; color: #6366f1; font-weight: 500; line-height: 1.35; }
+    .sca-topic-list { padding: 0.15rem 0 0.35rem 0.35rem; border-left: 2px solid #e2e8f0; margin-left: 0.35rem; }
+    .sca-topic-list__head {
+      margin: 0.35rem 0 0.25rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em;
+      text-transform: uppercase; color: #64748b;
+    }
+    .sca-topic-item { margin-bottom: 0.2rem; }
+    .sca-topic-check { font-weight: 600; color: #1e293b !important; }
+    .sca-topic-assets {
+      margin: 0.15rem 0 0.35rem 1.35rem; border: none !important; background: transparent !important; padding: 0 !important;
+    }
+    .sca-topic-assets summary { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+    .sca-quiz-list { margin-top: 0.35rem; }
     .sca-pb-hint { padding-left: 1rem; line-height: 1.4; }
     .sca-pb-set-label { align-items: flex-start !important; }
     .sca-pb-set-label__text { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
@@ -148,6 +180,16 @@ $adminBreadcrumbs = [
       border-radius: 0 0 0.75rem 0.75rem;
       display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: center;
     }
+    .sca-sticky-flash {
+      flex: 1 1 12rem; min-width: 0; font-size: 0.84rem; font-weight: 700; line-height: 1.35;
+      padding: 0.45rem 0.7rem; border-radius: 0.55rem;
+    }
+    .sca-sticky-flash--ok {
+      color: #166534; background: #dcfce7; border: 1px solid #86efac;
+    }
+    .sca-sticky-flash--err {
+      color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5;
+    }
 
     .sca-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
@@ -170,21 +212,22 @@ $adminBreadcrumbs = [
       display: flex; align-items: center; justify-content: center; font-size: 2rem;
     }
 
-    /* Toast stack */
+    /* Toast stack — near sticky Save actions (bottom), always viewport-visible */
     .sca-toast-stack {
-      position: fixed; top: 5.5rem; right: 1.25rem; z-index: 9999;
-      display: flex; flex-direction: column; gap: 0.65rem; width: min(100vw - 2rem, 22rem);
+      position: fixed; bottom: 5.25rem; right: 1.25rem; top: auto; z-index: 10050;
+      display: flex; flex-direction: column-reverse; gap: 0.65rem; width: min(100vw - 2rem, 22rem);
       pointer-events: none;
     }
     .sca-toast {
       pointer-events: auto; display: flex; gap: 0.75rem; align-items: flex-start;
       padding: 0.9rem 1rem; border-radius: 0.875rem;
-      box-shadow: 0 12px 40px rgba(15,23,42,.15); border: 1px solid transparent;
+      box-shadow: 0 12px 40px rgba(15,23,42,.28); border: 1px solid transparent;
       animation: scaToastIn .35s ease;
+      background: #fff;
     }
     @keyframes scaToastIn {
-      from { opacity: 0; transform: translateX(1.25rem); }
-      to { opacity: 1; transform: translateX(0); }
+      from { opacity: 0; transform: translateY(0.85rem); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .sca-toast--ok { background: #fff; border-color: #bbf7d0; }
     .sca-toast--err { background: #fff; border-color: #fecaca; }
@@ -228,6 +271,9 @@ $adminBreadcrumbs = [
         bulkPermissions: [],
         toasts: [],
         toastSeq: 0,
+        stickyFlash: '',
+        stickyFlashType: 'ok',
+        stickyFlashTimer: null,
         loadingSearch: false,
         loadingStudent: false,
         loadingCatalog: false,
@@ -291,8 +337,20 @@ $adminBreadcrumbs = [
 
         showToast(title, message, type) {
           const id = ++this.toastSeq;
-          this.toasts.push({ id, title, message, type: type || 'ok' });
-          setTimeout(() => this.dismissToast(id), type === 'err' ? 7000 : 4500);
+          const kind = type || 'ok';
+          this.toasts.push({ id, title, message, type: kind });
+          this.stickyFlash = (title ? title + ' — ' : '') + (message || '');
+          this.stickyFlashType = kind;
+          if (this.stickyFlashTimer) clearTimeout(this.stickyFlashTimer);
+          this.stickyFlashTimer = setTimeout(() => {
+            this.stickyFlash = '';
+          }, kind === 'err' ? 7000 : 4500);
+          // Keep confirmation near the Save buttons the admin just clicked.
+          this.$nextTick(() => {
+            const bar = document.querySelector('.sca-sticky-actions');
+            if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          });
+          setTimeout(() => this.dismissToast(id), kind === 'err' ? 7000 : 4500);
         },
         dismissToast(id) {
           this.toasts = this.toasts.filter(t => t.id !== id);
@@ -597,13 +655,23 @@ $adminBreadcrumbs = [
 <body class="font-sans antialiased admin-app admin-student-access-page">
 <?php include 'admin_sidebar.php'; ?>
 
-<div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero">
-  <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-  <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-    <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
-    Student Access Management
-  </h1>
-  <p class="text-gray-400 mt-2 mb-0">Add students, manage account status, and assign LMS content access to one or many students at once.</p>
+<div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero admin-glass-hero">
+  <?php
+    $adminBreadcrumbs = $adminBreadcrumbs ?? [['Dashboard', 'admin_dashboard'], ['Student Access']];
+    include __DIR__ . '/includes/admin_breadcrumb.php';
+  ?>
+  <div class="admin-page-header">
+    <div class="min-w-0">
+      <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+        <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+        <span>Manual / Administrative Access</span>
+      </h1>
+      <p class="admin-page-header__subtitle">Add students, manage account status, and assign LMS content permissions.</p>
+    </div>
+    <div class="admin-page-header__actions">
+      <a href="admin_students" class="admin-btn admin-btn--secondary"><i class="bi bi-people"></i> Students list</a>
+    </div>
+  </div>
 </div>
 
 <div x-data="studentAccessAdmin()" x-init="init()">
@@ -746,6 +814,9 @@ $adminBreadcrumbs = [
           <span x-text="saveAction === 'create' ? 'Creating…' : 'Create student'"></span>
         </button>
         <button type="button" class="sca-btn sca-btn--outline" @click="cancelCreate()" :disabled="saveAction !== null">Cancel</button>
+        <span class="sca-sticky-flash" x-show="stickyFlash" x-cloak
+              :class="stickyFlashType === 'ok' ? 'sca-sticky-flash--ok' : 'sca-sticky-flash--err'"
+              x-text="stickyFlash" role="status"></span>
       </div>
     </section>
 
@@ -794,6 +865,9 @@ $adminBreadcrumbs = [
           <span x-text="saveAction === 'bulk' ? 'Applying…' : ('Apply to ' + selectedIds.length + ' student' + (selectedIds.length === 1 ? '' : 's'))"></span>
         </button>
         <button type="button" class="sca-btn sca-btn--outline" @click="cancelBulk()" :disabled="saveAction !== null">Cancel</button>
+        <span class="sca-sticky-flash" x-show="stickyFlash" x-cloak
+              :class="stickyFlashType === 'ok' ? 'sca-sticky-flash--ok' : 'sca-sticky-flash--err'"
+              x-text="stickyFlash" role="status"></span>
       </div>
     </section>
 
@@ -875,6 +949,9 @@ $adminBreadcrumbs = [
             <a class="sca-btn sca-btn--outline no-underline" :href="'admin_student_view?id=' + selectedId">
               <i class="bi bi-person-lines-fill"></i> View profile
             </a>
+            <span class="sca-sticky-flash" x-show="stickyFlash" x-cloak
+                  :class="stickyFlashType === 'ok' ? 'sca-sticky-flash--ok' : 'sca-sticky-flash--err'"
+                  x-text="stickyFlash" role="status"></span>
           </div>
         </div>
       </template>

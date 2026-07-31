@@ -1,23 +1,27 @@
 /**
  * Admin dashboard – Grok-style: deep black, high contrast, minimal chrome.
  * Applied only when body has class .admin-app (admin account only).
+ *
+ * Dark visual color rules are scoped with:
+ *   html:not([data-admin-theme="light"]) …
+ * so Light Mode is owned by admin-tokens.css + admin-saas.css (not inverted dark).
  */
 
 /* --- Base: true black, high contrast --- */
-body.admin-app {
+html:not([data-admin-theme="light"]) body.admin-app {
   background: #0d0d0d;
   color: #a1a1aa;
   font-weight: 400;
   overflow-x: hidden;
 }
 
-body.admin-app #main {
+html:not([data-admin-theme="light"]) body.admin-app #main {
   background: #0d0d0d !important;
   color: #a1a1aa !important;
 }
 
 /* --- Sidebar: Grok-like elevation, crisp --- */
-body.admin-app #app-sidebar {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar {
   background: #0a0a0a !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
@@ -27,7 +31,7 @@ body.admin-app #app-sidebar {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
 }
 
-body.admin-app #app-sidebar .p-5.bg-white\/10 {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .p-5.bg-white\/10 {
   background: transparent !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding-top: 1.25rem !important;
@@ -36,7 +40,7 @@ body.admin-app #app-sidebar .p-5.bg-white\/10 {
   padding-right: 1.25rem !important;
 }
 
-body.admin-app #app-sidebar .p-5.bg-white\/10 h3 {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .p-5.bg-white\/10 h3 {
   font-weight: 600 !important;
   letter-spacing: 0.025em;
   font-size: 1rem;
@@ -48,7 +52,7 @@ body.admin-app #app-sidebar nav {
   padding-bottom: 1rem !important;
 }
 
-body.admin-app #app-sidebar nav a {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a {
   color: rgba(255, 255, 255, 0.65);
   border-left: 3px solid transparent;
   font-weight: 500;
@@ -60,15 +64,15 @@ body.admin-app #app-sidebar nav a {
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
-body.admin-app #app-sidebar nav a:hover {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a:hover {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.95);
   border-left-color: rgba(255, 255, 255, 0.25);
 }
 
 /* Grok-style active: thin white left bar + subtle tint, text stays white */
-body.admin-app #app-sidebar nav a.bg-white\/15,
-body.admin-app #app-sidebar nav a[class*="border-l-white"] {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a.bg-white\/15,
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a[class*="border-l-white"] {
   background: rgba(255, 255, 255, 0.06) !important;
   color: #ffffff !important;
   border-left-width: 2px !important;
@@ -85,14 +89,14 @@ body.admin-app #app-sidebar nav a[class*="border-l-white"] span {
 }
 
 /* --- Topbar: aligned with sidebar, same design language --- */
-body.admin-app .admin-topbar {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar {
   background: #0a0a0a !important;
   border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
-body.admin-app .admin-topbar .text-white\/90 {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar .text-white\/90 {
   color: rgba(255, 255, 255, 0.9) !important;
 }
-body.admin-app .admin-topbar .text-white\/60 {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar .text-white\/60 {
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -103,7 +107,7 @@ body.admin-app .admin-topbar-modern {
   margin-left: 0;
   margin-right: 0;
 }
-body.admin-app .admin-topbar-modern .admin-topbar-inner {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern .admin-topbar-inner {
   min-height: var(--app-shell-topbar-height, 80px);
   padding-left: 1.25rem;
   padding-right: 1.25rem;
@@ -129,21 +133,21 @@ body.admin-app .admin-topbar-left {
   flex: 1 1 auto;
   max-width: min(480px, 52%);
 }
-body.admin-app .admin-topbar-brand {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-brand {
   color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   flex-shrink: 0;
 }
-body.admin-app .admin-topbar-brand-icon {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-brand-icon {
   font-size: 1.25rem;
   color: #ffffff;
 }
-body.admin-app .admin-topbar-brand:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-brand:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.06);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
-body.admin-app .admin-topbar-menu-btn {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -156,14 +160,14 @@ body.admin-app .admin-topbar-menu-btn {
   transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
-body.admin-app .admin-topbar-menu-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
   transform: scale(1.04);
 }
 body.admin-app .admin-topbar-menu-btn:active { transform: scale(0.96); }
-body.admin-app .admin-topbar-menu-btn:focus-visible {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(255,255,255,0.25);
 }
@@ -185,7 +189,7 @@ body.admin-app .admin-topbar-menu-btn .burger-line--1 { top: 0; }
 body.admin-app .admin-topbar-menu-btn .burger-line--2 { top: 50%; transform: translateY(-50%); }
 body.admin-app .admin-topbar-menu-btn .burger-line--3 { top: 100%; transform: translateY(-100%); }
 
-body.admin-app .admin-topbar-search-wrap {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap {
   position: relative;
   flex: 1;
   min-width: 0;
@@ -194,13 +198,13 @@ body.admin-app .admin-topbar-search-wrap {
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-body.admin-app .admin-topbar-search-wrap:hover { background: rgba(255,255,255,0.08); }
-body.admin-app .admin-topbar-search-wrap.is-focused {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap:hover { background: rgba(255,255,255,0.08); }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap.is-focused {
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.18);
   box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
 }
-body.admin-app .admin-topbar-search-icon {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-icon {
   position: absolute;
   left: 14px;
   top: 50%;
@@ -209,7 +213,7 @@ body.admin-app .admin-topbar-search-icon {
   font-size: 1.1rem;
   pointer-events: none;
 }
-body.admin-app .admin-topbar-search {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search {
   width: 100%;
   padding: 12px 16px 12px 44px;
   border: none;
@@ -218,7 +222,7 @@ body.admin-app .admin-topbar-search {
   color: rgba(255,255,255,0.9);
   font-size: 0.9375rem;
 }
-body.admin-app .admin-topbar-search::placeholder { color: rgba(255,255,255,0.45); }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search::placeholder { color: rgba(255,255,255,0.45); }
 body.admin-app .admin-topbar-search:focus { outline: none; }
 
 body.admin-app .admin-topbar-right {
@@ -229,7 +233,7 @@ body.admin-app .admin-topbar-right {
   min-width: 0;
   justify-content: flex-end;
 }
-body.admin-app .admin-topbar-time {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -241,7 +245,7 @@ body.admin-app .admin-topbar-time {
   font-size: 0.8125rem;
   white-space: nowrap;
 }
-body.admin-app .admin-topbar-time-icon {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time-icon {
   width: 24px;
   height: 24px;
   border-radius: 999px;
@@ -252,17 +256,17 @@ body.admin-app .admin-topbar-time-icon {
   color: rgba(255,255,255,0.9);
 }
 body.admin-app .admin-topbar-time-text { display: flex; flex-direction: column; }
-body.admin-app .admin-topbar-time-label {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time-label {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(255,255,255,0.5);
 }
-body.admin-app .admin-topbar-time-value { font-weight: 600; color: rgba(255,255,255,0.9); }
-body.admin-app .admin-topbar-time-offset { margin-left: 4px; font-weight: 500; color: rgba(255,255,255,0.7); }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time-value { font-weight: 600; color: rgba(255,255,255,0.9); }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time-offset { margin-left: 4px; font-weight: 500; color: rgba(255,255,255,0.7); }
 
 /* Local time lives in sidebar footer (see app_shell_sidebar.php) */
-body.admin-app #app-sidebar .app-shell-sidebar-time {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -271,7 +275,7 @@ body.admin-app #app-sidebar .app-shell-sidebar-time {
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 10px 28px rgba(0, 0, 0, 0.35);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time:hover {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time:hover {
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
@@ -296,40 +300,40 @@ body.admin-app #app-sidebar .app-shell-sidebar-time-ring {
   );
   opacity: 0.5;
 }
-body.admin-app #app-sidebar .app-shell-sidebar-clock-face {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-clock-face {
   fill: rgba(255, 255, 255, 0.1);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-clock-rim {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-clock-rim {
   stroke: rgba(255, 255, 255, 0.22);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-clock-ticks {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-clock-ticks {
   stroke: rgba(255, 255, 255, 0.28);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-clock-hand line {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-clock-hand line {
   stroke: rgba(255, 255, 255, 0.92);
 }
 body.admin-app #app-sidebar .app-shell-sidebar-clock-hand--sec line {
   stroke: #5ce1a8;
   opacity: 0.95;
 }
-body.admin-app #app-sidebar .app-shell-sidebar-clock-pivot {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-clock-pivot {
   fill: rgba(255, 255, 255, 0.95);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-label {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-label {
   color: rgba(255, 255, 255, 0.48);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-digital {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-digital {
   color: rgba(255, 255, 255, 0.96);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-date {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-date {
   color: rgba(255, 255, 255, 0.88);
 }
-body.admin-app #app-sidebar .app-shell-sidebar-time-meta {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-meta {
   color: rgba(255, 255, 255, 0.62);
 }
 
 body.admin-app .admin-topbar-actions { display: flex; align-items: center; gap: 4px; }
-body.admin-app .admin-topbar-action {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-action {
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -340,7 +344,7 @@ body.admin-app .admin-topbar-action {
   background: transparent;
   transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
-body.admin-app .admin-topbar-action:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-action:hover {
   color: #ffffff;
   background: rgba(255,255,255,0.08);
   box-shadow: 0 2px 12px rgba(0,0,0,0.35);
@@ -365,12 +369,12 @@ body.admin-app .admin-topbar-profile-btn {
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
-body.admin-app .admin-topbar-profile-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-profile-btn:hover {
   background: rgba(255,255,255,0.06);
   box-shadow: 0 2px 12px rgba(0,0,0,0.35);
   transform: scale(1.01);
 }
-body.admin-app .admin-topbar-avatar {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-avatar {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -383,7 +387,7 @@ body.admin-app .admin-topbar-avatar {
   background: #ffffff;
   box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
-body.admin-app .admin-topbar-name {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name {
   font-size: 0.875rem;
   font-weight: 500;
   color: rgba(255,255,255,0.9);
@@ -394,10 +398,10 @@ body.admin-app .admin-topbar-name {
   display: none;
 }
 @media (min-width: 640px) { body.admin-app .admin-topbar-name { display: inline; } }
-body.admin-app .admin-topbar-chevron { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: transform 0.2s ease; }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-chevron { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: transform 0.2s ease; }
 body.admin-app .admin-topbar-chevron.is-open { transform: rotate(180deg); }
 
-body.admin-app .admin-topbar-dropdown {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
@@ -410,13 +414,13 @@ body.admin-app .admin-topbar-dropdown {
   z-index: 50;
   overflow: hidden;
 }
-body.admin-app .admin-topbar-dropdown-head {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-head {
   padding: 14px 16px;
   background: rgba(255,255,255,0.06);
   border-radius: 10px;
   margin-bottom: 4px;
 }
-body.admin-app .admin-topbar-dropdown-label {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-label {
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -424,7 +428,7 @@ body.admin-app .admin-topbar-dropdown-label {
   color: rgba(255,255,255,0.55);
   margin: 0;
 }
-body.admin-app .admin-topbar-dropdown-name {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-name {
   font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255,255,255,0.92);
@@ -433,7 +437,7 @@ body.admin-app .admin-topbar-dropdown-name {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-body.admin-app .admin-topbar-dropdown-item {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -445,13 +449,13 @@ body.admin-app .admin-topbar-dropdown-item {
   text-decoration: none;
   transition: background 0.18s ease, transform 0.15s ease;
 }
-body.admin-app .admin-topbar-dropdown-item:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-item:hover {
   background: rgba(255,255,255,0.08);
   transform: translateX(2px);
 }
 
 /* Profile dropdown — premium (dark) + shared menu rows */
-body.admin-app .admin-topbar-dropdown.ereview-profile-menu--dark {
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown.ereview-profile-menu--dark {
   width: 300px;
   padding: 0;
   border-radius: 18px;
@@ -463,7 +467,7 @@ body.admin-app .admin-topbar-dropdown.ereview-profile-menu--dark {
   overflow: hidden;
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__hero--dark {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__hero--dark {
   display: flex;
   align-items: flex-start;
   gap: 14px;
@@ -473,14 +477,14 @@ body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__hero--dark {
     linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 100%);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__avatar-ring {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__avatar-ring {
   padding: 3px;
   border-radius: 14px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.06));
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__avatar {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__avatar {
   width: 42px;
   height: 42px;
   border-radius: 12px;
@@ -490,36 +494,36 @@ body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__avatar {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__eyebrow {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__eyebrow {
   color: rgba(255, 255, 255, 0.45);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__title {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__title {
   color: rgba(255, 255, 255, 0.96);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__subtitle {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__subtitle {
   color: rgba(255, 255, 255, 0.55);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__section-label {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__section-label {
   color: rgba(255, 255, 255, 0.38);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link--nav {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link--nav {
   color: rgba(255, 255, 255, 0.92);
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: none;
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link--nav:hover {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link--nav:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(96, 165, 250, 0.45);
   box-shadow: 0 10px 28px -18px rgba(59, 130, 246, 0.55);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link-icon {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link-icon {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(147, 197, 253, 0.95);
 }
@@ -528,11 +532,11 @@ body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__link--nav:hove
   color: rgba(147, 197, 253, 0.95);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__chev {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__chev {
   color: rgba(255, 255, 255, 0.25);
 }
 
-body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__divider {
+html:not([data-admin-theme="light"]) body.admin-app .ereview-profile-menu--dark .ereview-profile-menu__divider {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
 }
 
@@ -648,7 +652,7 @@ body.admin-app #main {
 }
 
 /* --- Cards: Grok-style, border-only, no shadow --- */
-body.admin-app #main .bg-white {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-white {
   background: #141414 !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: none;
@@ -660,7 +664,7 @@ body.admin-app #main .shadow-card {
 }
 
 /* Some pages use light gradient wrappers; force dark in admin mode for contrast */
-body.admin-app #main .bg-gradient-to-b {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gradient-to-b {
   background: #141414 !important;
 }
 
@@ -671,31 +675,31 @@ body.admin-app #main .bg-\[\#e8f2fa\]\/70 {
 }
 
 /* Dashboard stat cards: subtle hover (reference “slight brightening / faint border glow”) */
-body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
   background: #1a1a1a !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* --- Dashboard cards: neutral default, semantic hover (outline + accent) --- */
 /* Modern palette: green #22c55e, amber #f59e0b, red #ef4444, Subjects=blue #0ea5e9, Lessons=yellow #FBEC52, violet #8b5cf6 */
-body.admin-app #main .dashboard-card {
+html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card {
   background: #141414 !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-left-width: 1px !important;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-body.admin-app #main .dashboard-card:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card:hover {
   background: rgba(255, 255, 255, 0.02) !important;
 }
 
-body.admin-app #main .dashboard-card .dashboard-card__title,
-body.admin-app #main .dashboard-card .dashboard-card__title .bi {
+html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card .dashboard-card__title,
+html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card .dashboard-card__title .bi {
   color: #6b7280 !important;
   transition: color 0.2s ease;
 }
 
-body.admin-app #main .dashboard-card .dashboard-card__btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card .dashboard-card__btn {
   border-color: rgba(255, 255, 255, 0.15) !important;
   color: #9ca3af !important;
   transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -827,48 +831,48 @@ body.admin-app #main .dashboard-card--quizzes .dashboard-card__btn:hover {
 }
 
 /* --- Typography: Grok-style, high contrast --- */
-body.admin-app #main .text-2xl.font-bold,
-body.admin-app #main h1.text-2xl {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-2xl.font-bold,
+html:not([data-admin-theme="light"]) body.admin-app #main h1.text-2xl {
   color: #ffffff !important;
   font-weight: 600 !important;
   letter-spacing: -0.025em;
 }
 
-body.admin-app #main .text-\[#012970\] {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-\[#012970\] {
   color: #ffffff !important;
 }
 
-body.admin-app #main .text-gray-800,
-body.admin-app #main .text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-gray-800,
+html:not([data-admin-theme="light"]) body.admin-app #main .text-gray-700 {
   color: #fafafa !important;
 }
 
-body.admin-app #main .text-gray-500,
-body.admin-app #main .text-gray-400 {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-gray-500,
+html:not([data-admin-theme="light"]) body.admin-app #main .text-gray-400 {
   color: #a1a1aa !important;
 }
 
-body.admin-app #main .text-3xl.font-bold {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-3xl.font-bold {
   color: #ffffff !important;
   font-weight: 600 !important;
   letter-spacing: -0.02em;
 }
 
-body.admin-app #main h2 {
+html:not([data-admin-theme="light"]) body.admin-app #main h2 {
   color: #ffffff !important;
   font-weight: 600 !important;
   letter-spacing: -0.015em;
 }
 
 /* --- Buttons: primary / accent (neutral gray for black palette) --- */
-body.admin-app #main a.border-primary.text-primary,
-body.admin-app #main button.border-primary {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-primary.text-primary,
+html:not([data-admin-theme="light"]) body.admin-app #main button.border-primary {
   border-color: #4c4e51 !important;
   color: #d1d5db !important;
 }
 
-body.admin-app #main a.border-primary.text-primary:hover,
-body.admin-app #main button.border-primary:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-primary.text-primary:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main button.border-primary:hover {
   background: #4c4e51 !important;
   color: #fff !important;
   border-color: #4c4e51 !important;
@@ -879,8 +883,8 @@ body.admin-app #main .hover\:bg-primary:hover {
   background: #4c4e51 !important;
 }
 
-body.admin-app #main .bg-primary.text-white,
-body.admin-app #main .hover\:bg-primary:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-primary.text-white,
+html:not([data-admin-theme="light"]) body.admin-app #main .hover\:bg-primary:hover {
   color: #fff !important;
 }
 
@@ -889,16 +893,16 @@ body.admin-app #main .hover\:bg-primary-dark:hover {
 }
 
 /* Secondary / gray buttons */
-body.admin-app #main a.border-gray-400.text-gray-600,
-body.admin-app #main a.border-gray-300,
-body.admin-app #main button.border-gray-400 {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-gray-400.text-gray-600,
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-gray-300,
+html:not([data-admin-theme="light"]) body.admin-app #main button.border-gray-400 {
   border-color: rgba(255, 255, 255, 0.2) !important;
   color: #9ca3af !important;
 }
 
-body.admin-app #main a.border-gray-400.text-gray-600:hover,
-body.admin-app #main a.border-gray-300:hover,
-body.admin-app #main a.hover\:bg-gray-400:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-gray-400.text-gray-600:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-gray-300:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main a.hover\:bg-gray-400:hover {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
   border-color: rgba(255, 255, 255, 0.25) !important;
@@ -910,7 +914,7 @@ body.admin-app #main a.border-green-500.text-green-600 {
   color: #27c27f !important;
 }
 
-body.admin-app #main a.border-green-500.text-green-600:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-green-500.text-green-600:hover {
   background: #27c27f !important;
   color: #fff !important;
 }
@@ -921,7 +925,7 @@ body.admin-app #main a.border-amber-500.text-amber-600 {
   color: #e6a23c !important;
 }
 
-body.admin-app #main a.border-amber-500.text-amber-600:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-amber-500.text-amber-600:hover {
   background: #e6a23c !important;
   color: #fff !important;
 }
@@ -982,21 +986,21 @@ body.admin-app #main .admin-subject-btn {
   border-color: #0ea5e9 !important;
   color: #0ea5e9 !important;
 }
-body.admin-app #main a.admin-subject-btn:hover,
-body.admin-app #main .admin-subject-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.admin-subject-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-btn:hover {
   background: #0ea5e9 !important;
   color: #fff !important;
 }
-body.admin-app #main .admin-subject-bg { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
-body.admin-app #main .admin-subject-bg:hover { background: #0284c7 !important; color: #fff !important; border-color: #0284c7 !important; }
-body.admin-app #main .admin-subject-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-bg { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-bg:hover { background: #0284c7 !important; color: #fff !important; border-color: #0284c7 !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
 body.admin-app #main .admin-subject-text-only:hover { background: rgba(14, 165, 233, 0.15) !important; color: #0ea5e9 !important; border-color: rgba(14, 165, 233, 0.4) !important; }
-body.admin-app #main .admin-subject-btn-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
-body.admin-app #main .admin-subject-btn-text-only:hover { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-btn-text-only { border-color: rgba(255,255,255,0.2) !important; color: #0ea5e9 !important; background: transparent !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-subject-btn-text-only:hover { background: #0ea5e9 !important; color: #fff !important; border-color: #0ea5e9 !important; }
 
 /* Quick action buttons: uniform shape, semantic colors + hover effects */
 /* Use a.quick-action-btn so we beat a.border-gray-300:hover and hover colors show */
-body.admin-app #main a.quick-action-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn {
   border-color: rgba(255, 255, 255, 0.2) !important;
   background: transparent !important;
   transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -1007,14 +1011,14 @@ body.admin-app #main a.quick-action-btn:hover {
 }
 
 /* Default: no semantic color – neutral text only */
-body.admin-app #main a.quick-action-btn--students,
-body.admin-app #main a.quick-action-btn--subject,
-body.admin-app #main a.quick-action-btn--pending {
+html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--students,
+html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--subject,
+html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--pending {
   color: #6b7280 !important;
 }
 
 /* Students: color only on hover */
-body.admin-app #main a.quick-action-btn--students:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--students:hover {
   color: #e5e7eb !important;
   border-color: rgba(255, 255, 255, 0.35) !important;
   background: rgba(255, 255, 255, 0.08) !important;
@@ -1043,7 +1047,7 @@ body.admin-app #main .student-filter-tab {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 /* Inactive: neutral tab label text */
-body.admin-app #main a.student-filter-tab:not(.bg-primary) {
+html:not([data-admin-theme="light"]) body.admin-app #main a.student-filter-tab:not(.bg-primary) {
   color: #9ca3af;
 }
 /* Semantic colors only on icon and count when inactive */
@@ -1095,8 +1099,8 @@ body.admin-app #main a.student-filter-tab--all:hover {
   box-shadow: 0 0 14px rgba(249, 250, 251, 0.25), 0 0 0 1px rgba(249, 250, 251, 0.35);
 }
 /* Active: dark background, semantic border/text/icon, semantic glow */
-body.admin-app #main a.student-filter-tab.bg-primary,
-body.admin-app #main a.student-filter-tab.bg-primary.text-white {
+html:not([data-admin-theme="light"]) body.admin-app #main a.student-filter-tab.bg-primary,
+html:not([data-admin-theme="light"]) body.admin-app #main a.student-filter-tab.bg-primary.text-white {
   background: #141414 !important;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
 }
@@ -1153,7 +1157,7 @@ body.admin-app #main a.border-sky-500.text-sky-600 {
   color: #38bdf8 !important;
 }
 
-body.admin-app #main a.border-sky-500.text-sky-600:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-sky-500.text-sky-600:hover {
   background: #38bdf8 !important;
   color: #fff !important;
 }
@@ -1164,7 +1168,7 @@ body.admin-app #main a.border-violet-500.text-violet-600 {
   color: #a78bfa !important;
 }
 
-body.admin-app #main a.border-violet-500.text-violet-600:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-violet-500.text-violet-600:hover {
   background: #a78bfa !important;
   color: #fff !important;
 }
@@ -1176,20 +1180,20 @@ body.admin-app #main button.border-red-500 {
   color: #f0545c !important;
 }
 
-body.admin-app #main a.border-red-500.text-red-600:hover,
-body.admin-app #main button.border-red-500:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.border-red-500.text-red-600:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main button.border-red-500:hover {
   background: #f0545c !important;
   color: #fff !important;
 }
 
 /* Solid primary button (e.g. Approve, New Video) */
-body.admin-app #main .bg-primary.text-white {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-primary.text-white {
   background: #4c4e51 !important;
   color: #fff !important;
   border-color: transparent;
 }
 
-body.admin-app #main .bg-primary.text-white:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-primary.text-white:hover {
   background: #47484c !important;
   color: #fff !important;
 }
@@ -1222,19 +1226,19 @@ body.admin-app #main .text-red-800 {
 }
 
 /* --- Forms: inputs & selects --- */
-body.admin-app #main .input-custom,
-body.admin-app #main input[type="text"],
-body.admin-app #main input[type="number"],
-body.admin-app #main input[type="email"],
-body.admin-app #main input[type="search"],
-body.admin-app #main select {
+html:not([data-admin-theme="light"]) body.admin-app #main .input-custom,
+html:not([data-admin-theme="light"]) body.admin-app #main input[type="text"],
+html:not([data-admin-theme="light"]) body.admin-app #main input[type="number"],
+html:not([data-admin-theme="light"]) body.admin-app #main input[type="email"],
+html:not([data-admin-theme="light"]) body.admin-app #main input[type="search"],
+html:not([data-admin-theme="light"]) body.admin-app #main select {
   background: #202129 !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
 }
 
-body.admin-app #main .input-custom::placeholder,
-body.admin-app #main input::placeholder {
+html:not([data-admin-theme="light"]) body.admin-app #main .input-custom::placeholder,
+html:not([data-admin-theme="light"]) body.admin-app #main input::placeholder {
   color: #6b7280;
 }
 
@@ -1245,74 +1249,74 @@ body.admin-app #main select:focus {
   box-shadow: 0 0 0 2px rgba(76, 78, 81, 0.4);
 }
 
-body.admin-app #main label.text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app #main label.text-gray-700 {
   color: #9ca3af !important;
 }
 
 /* --- Tables --- */
-body.admin-app #main table thead.bg-gray-50 {
+html:not([data-admin-theme="light"]) body.admin-app #main table thead.bg-gray-50 {
   background: rgba(255, 255, 255, 0.06) !important;
   border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-body.admin-app #main table th {
+html:not([data-admin-theme="light"]) body.admin-app #main table th {
   color: #9ca3af !important;
   font-weight: 600;
 }
 
-body.admin-app #main table tbody tr {
+html:not([data-admin-theme="light"]) body.admin-app #main table tbody tr {
   border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-body.admin-app #main table tbody tr:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main table tbody tr:hover {
   background: rgba(255, 255, 255, 0.04) !important;
 }
 
-body.admin-app #main table td {
+html:not([data-admin-theme="light"]) body.admin-app #main table td {
   color: #e5e7eb;
 }
 
-body.admin-app #main table .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main table .text-gray-800 {
   color: #fff !important;
 }
 
-body.admin-app #main table .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app #main table .text-gray-500 {
   color: #9ca3af !important;
 }
 
 /* Table empty state */
-body.admin-app #main table .text-center.text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app #main table .text-center.text-gray-500 {
   color: #9ca3af !important;
 }
 
-body.admin-app #main table .text-gray-600 {
+html:not([data-admin-theme="light"]) body.admin-app #main table .text-gray-600 {
   color: #e5e7eb !important;
 }
 
 /* --- Tabs (e.g. Enrolled / Pending) --- */
-body.admin-app #main .bg-gray-100.text-primary.border-primary {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-100.text-primary.border-primary {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #4c4e51 !important;
   border-color: #4c4e51 !important;
 }
 
-body.admin-app #main .bg-gray-100.border-gray-200 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-100.border-gray-200 {
   background: rgba(255, 255, 255, 0.06) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: #9ca3af !important;
 }
 
-body.admin-app #main .bg-gray-100.border-gray-200:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-100.border-gray-200:hover {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #fff !important;
 }
 
-body.admin-app #main .bg-gray-200.text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-200.text-gray-700 {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #9ca3af !important;
 }
 
-body.admin-app #main .bg-white\/20 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-white\/20 {
   background: rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -1347,29 +1351,29 @@ body.admin-app #main .bg-amber-100.text-amber-800 {
   color: #e6a23c !important;
 }
 
-body.admin-app #main .bg-gray-200.text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-200.text-gray-700 {
   background: rgba(255, 255, 255, 0.12) !important;
   color: #9ca3af !important;
 }
 
 /* --- Pagination (Students, Subjects, etc.) --- */
-body.admin-app #main nav[aria-label="Student pagination"] .border-gray-300,
-body.admin-app #main nav[aria-label="Subject pagination"] .border-gray-300,
-body.admin-app #main nav[aria-label*="pagination"] .border-gray-300 {
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Student pagination"] .border-gray-300,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Subject pagination"] .border-gray-300,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label*="pagination"] .border-gray-300 {
   border-color: rgba(255, 255, 255, 0.15) !important;
   color: #9ca3af !important;
 }
 
-body.admin-app #main nav[aria-label="Student pagination"] a:hover,
-body.admin-app #main nav[aria-label="Subject pagination"] a:hover,
-body.admin-app #main nav[aria-label*="pagination"] a:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Student pagination"] a:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Subject pagination"] a:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label*="pagination"] a:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #fff !important;
 }
 
-body.admin-app #main nav[aria-label="Student pagination"] .bg-primary,
-body.admin-app #main nav[aria-label="Subject pagination"] .bg-primary,
-body.admin-app #main nav[aria-label*="pagination"] .bg-primary {
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Student pagination"] .bg-primary,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label="Subject pagination"] .bg-primary,
+html:not([data-admin-theme="light"]) body.admin-app #main nav[aria-label*="pagination"] .bg-primary {
   background: #4c4e51 !important;
   border-color: #4c4e51 !important;
   color: #fff !important;
@@ -1398,22 +1402,22 @@ body.admin-app #main .text-green-500 { color: #27c27f !important; }
 body.admin-app #main .text-amber-500 { color: #e6a23c !important; }
 body.admin-app #main .text-sky-500 { color: #38bdf8 !important; }
 body.admin-app #main .text-violet-500 { color: #a78bfa !important; }
-body.admin-app #main .text-primary { color: #d1d5db !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .text-primary { color: #d1d5db !important; }
 
 /* --- Focus (accessibility; reference “subtle visual feedback”) --- */
-body.admin-app #main a:focus-visible,
-body.admin-app #main button:focus-visible {
+html:not([data-admin-theme="light"]) body.admin-app #main a:focus-visible,
+html:not([data-admin-theme="light"]) body.admin-app #main button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px #0d0d0d, 0 0 0 4px rgba(255, 255, 255, 0.12);
 }
 
-body.admin-app #app-sidebar nav a:focus-visible {
+html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
 }
 
 /* Sidebar: pending badge and section labels */
-body.admin-app .admin-sidebar-badge {
+html:not([data-admin-theme="light"]) body.admin-app .admin-sidebar-badge {
   margin-left: auto;
   min-width: 1.25rem;
   padding: 0.15rem 0.4rem;
@@ -1435,13 +1439,13 @@ body.admin-app .admin-sidebar-section:first-child {
   margin-top: 0;
 }
 
-body.admin-app .admin-sidebar-footer {
+html:not([data-admin-theme="light"]) body.admin-app .admin-sidebar-footer {
   border-top-color: rgba(255, 255, 255, 0.06);
   margin-bottom: 0;
   padding-bottom: 0.25rem;
 }
 
-body.admin-app .admin-sidebar-section-label {
+html:not([data-admin-theme="light"]) body.admin-app .admin-sidebar-section-label {
   display: block;
   padding: 0.5rem 1.25rem 0.25rem;
   font-size: 0.65rem;
@@ -1452,23 +1456,23 @@ body.admin-app .admin-sidebar-section-label {
 }
 
 /* --- Modals (may be outside #main) --- */
-body.admin-app .fixed .relative.bg-white,
-body.admin-app .fixed .bg-white.rounded-xl {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .relative.bg-white,
+html:not([data-admin-theme="light"]) body.admin-app .fixed .bg-white.rounded-xl {
   background: #141414 !important;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
 }
 
-body.admin-app .fixed .border-gray-200 {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .border-gray-200 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app .fixed .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .text-gray-800 {
   color: #fff !important;
 }
 
-body.admin-app .fixed .text-gray-500.hover\:bg-gray-100:hover,
-body.admin-app .fixed .hover\:bg-gray-100:hover {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .text-gray-500.hover\:bg-gray-100:hover,
+html:not([data-admin-theme="light"]) body.admin-app .fixed .hover\:bg-gray-100:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #fff;
 }
@@ -1482,12 +1486,12 @@ body.admin-app .fixed .text-amber-800 {
   color: #e6a23c !important;
 }
 
-body.admin-app .fixed .border-gray-300 {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .border-gray-300 {
   border-color: rgba(255, 255, 255, 0.2) !important;
   color: #9ca3af !important;
 }
 
-body.admin-app .fixed .border-gray-300:hover {
+html:not([data-admin-theme="light"]) body.admin-app .fixed .border-gray-300:hover {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #fff !important;
 }
@@ -1528,7 +1532,7 @@ body.admin-app #main .admin-dashboard-bottom-block {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -1539,12 +1543,12 @@ body.admin-app .admin-breadcrumb ol {
   margin: 0;
 }
 
-body.admin-app .admin-breadcrumb a {
+html:not([data-admin-theme="light"]) body.admin-app .admin-breadcrumb a {
   color: #a1a1aa;
   text-decoration: none;
 }
 
-body.admin-app .admin-breadcrumb a:hover {
+html:not([data-admin-theme="light"]) body.admin-app .admin-breadcrumb a:hover {
   color: #fff;
   text-decoration: underline;
 }
@@ -1553,7 +1557,7 @@ body.admin-app .admin-breadcrumb-sep {
   user-select: none;
 }
 
-body.admin-app .admin-breadcrumb-current {
+html:not([data-admin-theme="light"]) body.admin-app .admin-breadcrumb-current {
   color: #e5e7eb;
 }
 
@@ -1562,18 +1566,18 @@ body.admin-app #main .admin-dashboard-primary-kpis .text-3xl.font-bold {
   font-size: 1.875rem;
 }
 
-body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-primary-kpis .bg-white.rounded-xl {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* --- Dashboard: zero state (soften "0" so it doesn’t dominate) --- */
-body.admin-app #main [data-zero="true"] {
+html:not([data-admin-theme="light"]) body.admin-app #main [data-zero="true"] {
   color: #6b7280 !important;
   font-weight: 600;
 }
 
 /* --- Dashboard: KPI strip (hero summary) --- */
-body.admin-app #main .admin-dashboard-kpi-strip {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip {
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -1582,33 +1586,33 @@ body.admin-app #main .admin-dashboard-kpi-strip {
   margin-bottom: 1.25rem;
 }
 
-body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800 {
   color: #e5e7eb !important;
 }
 
-body.admin-app #main .admin-dashboard-kpi-strip .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip .text-gray-500 {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
   color: #e5e7eb !important;
 }
 
 /* --- Dashboard: Needs attention alert (neutral default, orange on hover) --- */
-body.admin-app #main .admin-dashboard-alert {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-alert {
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-body.admin-app #main .admin-dashboard-alert .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-alert .text-gray-800 {
   color: #fff !important;
 }
 
-body.admin-app #main .admin-dashboard-alert .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-alert .text-gray-500 {
   color: #a1a1aa !important;
 }
 
-body.admin-app #main .admin-alert-icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-alert-icon {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #9ca3af !important;
   transition: color 0.18s ease, background 0.18s ease;
@@ -1619,7 +1623,7 @@ body.admin-app #main .admin-dashboard-alert:hover .admin-alert-icon {
   background: rgba(230, 162, 60, 0.12) !important;
 }
 
-body.admin-app #main .admin-alert-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-alert-btn {
   border-color: rgba(255, 255, 255, 0.25) !important;
   color: #e5e7eb !important;
   background: transparent !important;
@@ -1633,31 +1637,31 @@ body.admin-app #main .admin-alert-btn:hover {
 }
 
 /* --- Dashboard: section icons, badges, links (neutral) --- */
-body.admin-app #main .admin-section-icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-section-icon {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .admin-badge {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-badge {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #d1d5db !important;
 }
 
-body.admin-app #main .admin-link {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-link {
   color: #e5e7eb !important;
   text-decoration: none;
   transition: color 0.18s ease;
 }
-body.admin-app #main .admin-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-link:hover {
   color: #fff !important;
 }
 
-body.admin-app #main .admin-outline-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-outline-btn {
   border-color: rgba(255, 255, 255, 0.25) !important;
   color: #e5e7eb !important;
   text-decoration: none;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
-body.admin-app #main .admin-outline-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-outline-btn:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #fff !important;
   border-color: rgba(255, 255, 255, 0.35) !important;
@@ -1679,7 +1683,7 @@ body.admin-app #main .admin-outline-btn--quiz:hover {
 }
 
 /* --- Content Hub / list pages: neutral buttons, color on hover --- */
-body.admin-app #main .admin-content-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-content-btn {
   border-color: rgba(255, 255, 255, 0.25) !important;
   color: #e5e7eb !important;
   background: transparent !important;
@@ -1716,7 +1720,7 @@ body.admin-app #main .admin-content-btn--subject:hover .bi {
   color: inherit;
 }
 
-body.admin-app #main .admin-action-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-action-btn {
   border-color: rgba(255, 255, 255, 0.25) !important;
   color: #e5e7eb !important;
   background: transparent !important;
@@ -1774,18 +1778,18 @@ body.admin-app #main .admin-action-btn--danger:hover {
   background: rgba(240, 84, 92, 0.1) !important;
 }
 
-body.admin-app #main .admin-status-pill {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-status-pill {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #d1d5db !important;
 }
 
 /* --- Dashboard: flash messages (neutral) --- */
-body.admin-app #main .admin-flash {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-flash {
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #e5e7eb !important;
 }
-body.admin-app #main .admin-flash .bi {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-flash .bi {
   color: #9ca3af !important;
 }
 
@@ -1799,11 +1803,11 @@ body.admin-app #main .admin-flash--error .bi {
 }
 
 /* --- Dashboard: section headings --- */
-body.admin-app #main h2.text-lg {
+html:not([data-admin-theme="light"]) body.admin-app #main h2.text-lg {
   color: #fff !important;
 }
 
-body.admin-app #main .space-y-3 li .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .space-y-3 li .text-gray-800 {
   color: #e5e7eb !important;
 }
 
@@ -1811,26 +1815,26 @@ body.admin-app #main .space-y-3 li a:hover {
   color: #4c4e51 !important;
 }
 
-body.admin-app #main .space-y-3 .border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .space-y-3 .border-gray-100 {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Quiz activity widget: big number */
-body.admin-app #main .flex.items-baseline .text-3xl.font-bold {
+html:not([data-admin-theme="light"]) body.admin-app #main .flex.items-baseline .text-3xl.font-bold {
   color: #fff !important;
 }
 
 /* Enrollment chart summary line (Total: X registrations) */
-body.admin-app #main .admin-dashboard-chart-summary strong {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-chart-summary strong {
   color: #d1d5db !important;
 }
 
 /* --- Dividers / borders in content --- */
-body.admin-app #main .border-t.border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .border-t.border-gray-100 {
   border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app #main .border-b.border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .border-b.border-gray-100 {
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 

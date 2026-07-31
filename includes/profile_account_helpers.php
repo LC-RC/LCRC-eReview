@@ -534,6 +534,13 @@ if (!function_exists('ereview_profile_apply_update')) {
             return ['ok' => false, 'error' => 'Could not save changes.'];
         }
 
+        if ($updatePassword) {
+            require_once __DIR__ . '/../remember_me.php';
+            if (function_exists('clearRememberMeForUserId')) {
+                clearRememberMeForUserId($userId);
+            }
+        }
+
         $_SESSION['full_name'] = $fullName;
         $_SESSION['email'] = $email;
 

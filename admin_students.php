@@ -2,14 +2,20 @@
 require_once 'auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/profile_avatar.php';
+require_once __DIR__ . '/includes/commerce_student_admin.php';
+require_once __DIR__ . '/includes/url_helpers.php';
 
 $csrf = generateCSRFToken();
 $nowSql = date('Y-m-d H:i:s');
+
+$view = $_GET['view'] ?? 'students';
+if (!in_array($view, ['students', 'deleted'], true)) { $view = 'students'; }
 
 $tab = $_GET['tab'] ?? 'enrolled';
 if (!in_array($tab, ['enrolled','pending','expired','rejected','all'], true)) { $tab = 'enrolled'; }
 
 $q = trim($_GET['q'] ?? '');
+$dq = trim($_GET['dq'] ?? '');
 $page = sanitizeInt($_GET['page'] ?? 1, 1);
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
@@ -81,6 +87,12 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
 $selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, status, access_start, access_end, access_months, created_at";
+$hasEnrollmentPath = false;
+$cep = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'enrollment_path'");
+if ($cep && mysqli_fetch_assoc($cep)) {
+  $hasEnrollmentPath = true;
+  $selectCols .= ", enrollment_path";
+}
 if ($hasProfilePicture) $selectCols .= ", profile_picture";
 if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
 if ($hasIsOnline) $selectCols .= ", is_online";
@@ -97,7 +109,16 @@ if (in_array($tab, ['enrolled','expired'], true)) {
   mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
 }
 mysqli_stmt_execute($stmt);
-$students = mysqli_stmt_get_result($stmt);
+$studentsRes = mysqli_stmt_get_result($stmt);
+$studentRows = [];
+while ($studentsRes && ($sr = mysqli_fetch_assoc($studentsRes))) {
+  $studentRows[] = $sr;
+}
+$badgeUserIds = [];
+foreach ($studentRows as $srRow) {
+  $badgeUserIds[] = (int) ($srRow['user_id'] ?? 0);
+}
+$studentBadgeMap = commerce_admin_students_dashboard_rows($conn, $badgeUserIds);
 
 $getCount = function(string $where, bool $needsNow) use ($conn, $nowSql, $like, $searchSql) : int {
   $sql = "SELECT COUNT(*) AS total FROM users WHERE $where AND $searchSql";
@@ -128,7 +149,7 @@ $checkLogTbl = @mysqli_query($conn, "SHOW TABLES LIKE 'deleted_users_log'");
 if ($checkLogTbl && mysqli_fetch_row($checkLogTbl)) {
   $hasDeletedLogTable = true;
 }
-if ($hasDeletedLogTable) {
+if ($hasDeletedLogTable && $view === 'deleted') {
   $hasLogSchool = false;
   $hasLogReviewType = false;
   $hasLogAccessRange = false;
@@ -142,19 +163,33 @@ if ($hasDeletedLogTable) {
   $lc4 = @mysqli_query($conn, "SHOW COLUMNS FROM deleted_users_log LIKE 'deletion_reason'");
   if ($lc4 && mysqli_fetch_assoc($lc4)) $hasLogReason = true;
 
-  $logSql = "SELECT log_id, deleted_user_id, deleted_name, deleted_email, " .
+  $logSelect = "SELECT log_id, deleted_user_id, deleted_name, deleted_email, " .
             ($hasLogSchool ? "deleted_school" : "'' AS deleted_school") . ", " .
             ($hasLogReviewType ? "deleted_review_type" : "'' AS deleted_review_type") . ", " .
             ($hasLogAccessRange ? "deleted_access_range" : "'' AS deleted_access_range") . ", " .
             "deleted_by_admin_name, " .
             ($hasLogReason ? "deletion_reason" : "'' AS deletion_reason") . ", deleted_at
-             FROM deleted_users_log
-             ORDER BY deleted_at DESC, log_id DESC
-             LIMIT 12";
-  $logRes = @mysqli_query($conn, $logSql);
-  if ($logRes) {
-    while ($lr = mysqli_fetch_assoc($logRes)) {
-      $deletedLogs[] = $lr;
+             FROM deleted_users_log";
+  if ($dq !== '') {
+    $logStmt = mysqli_prepare($conn, $logSelect . " WHERE deleted_name LIKE ? OR deleted_email LIKE ? ORDER BY deleted_at DESC, log_id DESC LIMIT 100");
+    if ($logStmt) {
+      $dqLike = '%' . $dq . '%';
+      mysqli_stmt_bind_param($logStmt, 'ss', $dqLike, $dqLike);
+      mysqli_stmt_execute($logStmt);
+      $logRes = mysqli_stmt_get_result($logStmt);
+      if ($logRes) {
+        while ($lr = mysqli_fetch_assoc($logRes)) {
+          $deletedLogs[] = $lr;
+        }
+      }
+      mysqli_stmt_close($logStmt);
+    }
+  } else {
+    $logRes = @mysqli_query($conn, $logSelect . " ORDER BY deleted_at DESC, log_id DESC LIMIT 100");
+    if ($logRes) {
+      while ($lr = mysqli_fetch_assoc($logRes)) {
+        $deletedLogs[] = $lr;
+      }
     }
   }
 }
@@ -162,9 +197,13 @@ if ($hasDeletedLogTable) {
 $pageTitle = 'Students';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students'] ];
 $mk = function(string $t, int $p = 1) use ($q) : string {
-  $params = ['tab' => $t, 'q' => $q, 'page' => $p];
+  $params = ['view' => 'students', 'tab' => $t, 'q' => $q, 'page' => $p];
   return 'admin_students?' . http_build_query($params);
 };
+$studentsViewUrl = 'admin_students?' . http_build_query(['view' => 'students', 'tab' => $tab, 'q' => $q, 'page' => $page]);
+$deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => 'deleted', 'dq' => $dq], static function ($v) {
+  return $v !== '' && $v !== null;
+}));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -173,10 +212,10 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
   <style>
     .student-avatar-cell {
       position: relative;
-      width: 2.85rem;
-      height: 2.85rem;
-      margin-left: auto;
-      margin-right: auto;
+      width: 2rem;
+      height: 2rem;
+      flex: 0 0 2rem;
+      margin: 0;
       border-radius: 9999px;
       display: flex;
       align-items: center;
@@ -194,10 +233,11 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       background: #334155;
       color: #fff;
       font-weight: 700;
-      font-size: 0.92rem;
-      border: 2px solid rgba(255,255,255,0.85);
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.24);
+      font-size: 0.72rem;
+      border: 1.5px solid rgba(255,255,255,0.75);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
       text-transform: uppercase;
+      line-height: 1;
     }
     .student-avatar-media img {
       width: 100%;
@@ -208,10 +248,10 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       position: absolute;
       right: -1px;
       bottom: -1px;
-      width: 0.9rem;
-      height: 0.9rem;
+      width: 0.55rem;
+      height: 0.55rem;
       border-radius: 9999px;
-      border: 2px solid rgba(255,255,255,0.9);
+      border: 1.5px solid rgba(255,255,255,0.9);
       z-index: 2;
     }
     .student-avatar-status-dot--active {
@@ -251,44 +291,29 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       }
     }
     .student-name {
-      font-weight: 700;
-      color: #ffffff;
-      font-size: 0.94rem;
+      font-weight: 650;
+      color: var(--admin-text, #ffffff);
+      font-size: 0.86rem;
       line-height: 1.25;
       white-space: nowrap;
-    }
-    .table-meta-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.2rem 0.58rem;
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }
-    .table-meta-pill--school {
-      color: #ffffff;
-      background: rgba(59, 130, 246, 0.2);
-      border-color: rgba(147, 197, 253, 0.35);
-    }
-    .table-meta-pill--review {
-      color: #ffffff;
-      background: rgba(139, 92, 246, 0.24);
-      border-color: rgba(196, 181, 253, 0.42);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
     }
     .student-email {
-      color: #ffffff;
-      font-weight: 600;
-      font-size: 0.84rem;
+      color: var(--admin-text, #ffffff);
+      font-weight: 500;
+      font-size: 0.8rem;
       white-space: nowrap;
-      word-break: normal;
-      letter-spacing: 0.01em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0;
+      display: block;
+      text-align: left;
     }
     .student-email-cell {
-      min-width: 15.5rem;
       text-align: left;
+      min-width: 0;
     }
     .student-extend-form {
       display: inline-flex;
@@ -347,12 +372,15 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     .student-action-cell {
       text-align: right;
       vertical-align: middle;
-      min-width: 9.5rem;
-      width: 1%;
+      width: 64px;
+      min-width: 64px;
+      max-width: 64px;
     }
     .student-actions-head {
       text-align: right !important;
-      width: 9.5rem;
+      width: 64px;
+      min-width: 64px;
+      max-width: 64px;
     }
     /* Consolidated row actions (aligned with professor exams pattern, admin dark theme) */
     .admin-student-action-menu-wrap {
@@ -492,9 +520,11 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       padding-top: 0.55rem;
       border-top: 1px solid rgba(51, 65, 85, 0.9);
     }
-    /* Access column: wide enough for full "Enrollment window | MMM d, YYYY – MMM d, YYYY" (no ellipsis). */
+    /* Access column: controlled width via colgroup / admin-students.css */
     .admin-students-table .admin-students-access-col {
-      min-width: 28rem;
+      width: 18%;
+      max-width: none;
+      min-width: 0;
     }
     .access-cell {
       vertical-align: middle;
@@ -969,436 +999,638 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       margin-bottom: 0.7rem;
     }
     @keyframes adminSpin { to { transform: rotate(360deg); } }
+
+    .student-select-col { width: 2.75rem; text-align: center; vertical-align: middle; }
+    .student-select-col input[type=checkbox] {
+      width: 1.05rem; height: 1.05rem; accent-color: #34d399; cursor: pointer;
+    }
+    .students-bulk-bar {
+      position: sticky; bottom: 0.85rem; z-index: 40;
+      display: none; flex-wrap: wrap; align-items: center; gap: 0.65rem;
+      margin-top: 0.85rem; padding: 0.85rem 1rem;
+      border-radius: 0.9rem; border: 1px solid rgba(52, 211, 153, 0.45);
+      background: linear-gradient(145deg, rgba(6, 78, 59, 0.96) 0%, rgba(15, 23, 42, 0.97) 100%);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+    .students-bulk-bar.is-visible { display: flex; }
+    .students-bulk-bar__count { font-weight: 800; color: #a7f3d0; font-size: 0.88rem; }
+    .students-bulk-bar__hint { color: rgba(226, 232, 240, 0.75); font-size: 0.78rem; flex: 1; min-width: 10rem; }
+    .students-bulk-bar .admin-modal__btn { margin: 0; }
+    .admin-modal--approve {
+      width: min(100%, 34rem);
+      max-height: min(90vh, 42rem);
+      overflow: auto;
+    }
+    .approve-access-box {
+      margin: 0.75rem 0 0.25rem;
+      padding: 0.85rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.55);
+    }
+    .approve-access-box .sca-tree {
+      max-height: 14rem; overflow-y: auto; padding-right: 0.25rem;
+    }
+    .approve-access-box .sca-tree details {
+      border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 0.55rem;
+      margin-bottom: 0.4rem; padding: 0.3rem 0.55rem; background: rgba(30, 41, 59, 0.75);
+    }
+    .approve-access-box .sca-tree summary {
+      cursor: pointer; font-weight: 700; color: #e2e8f0; list-style: none; font-size: 0.84rem;
+    }
+    .approve-access-box .sca-tree summary::-webkit-details-marker { display: none; }
+    .approve-access-box .sca-tree label {
+      display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0 0.2rem 0.85rem;
+      font-size: 0.8rem; color: #cbd5e1; cursor: pointer; border-radius: 0.35rem;
+    }
+    .approve-access-box .sca-tree label:hover { background: rgba(51, 65, 85, 0.65); }
+    .approve-access-box .sca-tree input[type=checkbox] { accent-color: #34d399; width: 0.95rem; height: 0.95rem; }
+    .approve-access-box .text-gray-100 { color: #f1f5f9 !important; }
+    .approve-access-box .text-gray-500 { color: #94a3b8 !important; }
+    .approve-access-box .sca-tree-hint { color: #94a3b8; }
+    .approve-access-box .sca-subject-summary { display: flex; align-items: center; gap: 0.4rem; }
+    .approve-access-box .sca-chevron {
+      width: 0.5rem; height: 0.5rem; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8;
+      transform: rotate(-45deg); flex-shrink: 0;
+    }
+    .approve-access-box details[open] > summary .sca-chevron { transform: rotate(45deg); }
+    .approve-access-box .sca-subject-summary__meta {
+      font-size: 0.65rem; font-weight: 700; color: #cbd5e1; background: rgba(51, 65, 85, 0.9);
+      border-radius: 999px; padding: 0.1rem 0.4rem; margin-left: auto;
+    }
+    .approve-access-box .sca-grant-all {
+      align-items: flex-start !important; margin: 0.35rem 0 0.45rem; padding: 0.45rem 0.55rem !important;
+      border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 0.5rem; background: rgba(6, 78, 59, 0.35);
+    }
+    .approve-access-box .sca-grant-all__title { display: block; font-weight: 800; color: #a7f3d0; font-size: 0.8rem; }
+    .approve-access-box .sca-grant-all__sub { display: block; font-size: 0.7rem; color: #86efac; }
+    .approve-access-box .sca-topic-list { border-left: 2px solid rgba(148, 163, 184, 0.35); margin-left: 0.3rem; padding-left: 0.35rem; }
+    .approve-access-box .sca-topic-list__head { color: #94a3b8; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 0.3rem 0 0.2rem; }
+    .approve-access-box .sca-topic-check { color: #f1f5f9 !important; font-weight: 600; }
+    .approve-access-customize {
+      margin-top: 0.55rem; font-size: 0.78rem; color: #93c5fd; cursor: pointer; background: none; border: none; padding: 0;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .approve-access-customize:hover { color: #bfdbfe; }
   </style>
 </head>
 <body class="font-sans antialiased admin-app admin-students-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-people"></i></span>
-      Students
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0">Manage enrollments and access — view by status, approve, or extend.</p>
-  </div>
+  <?php
+    $adminHeroIcon = 'people';
+    $adminHeroTitle = 'Students';
+    $adminHeroSubtitle = 'Manage registered and enrolled reviewees.';
+    $adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="admin_student_access"><i class="bi bi-plus-lg"></i> New Student</a>';
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">
       <i class="bi bi-check-circle-fill"></i>
       <span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2">
       <i class="bi bi-exclamation-triangle-fill"></i>
       <span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
   <?php endif; ?>
 
-  <div class="rounded-xl shadow-card border p-5 mb-5 page-filter">
-    <p class="text-gray-500 text-sm mb-3">Filter by status</p>
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-      <nav class="flex flex-wrap gap-2 student-filter-tabs" aria-label="Student tabs">
-        <a href="<?php echo h($mk('enrolled', 1)); ?>" class="student-filter-tab student-filter-tab--enrolled inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'enrolled' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
-          <span class="student-filter-tab__icon"><i class="bi bi-check2-circle"></i></span> Enrolled <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'enrolled' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['enrolled']; ?></span>
-        </a>
-        <a href="<?php echo h($mk('pending', 1)); ?>" class="student-filter-tab student-filter-tab--pending inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'pending' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
-          <span class="student-filter-tab__icon"><i class="bi bi-hourglass-split"></i></span> Pending <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'pending' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['pending']; ?></span>
-        </a>
-        <a href="<?php echo h($mk('expired', 1)); ?>" class="student-filter-tab student-filter-tab--expired inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'expired' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
-          <span class="student-filter-tab__icon"><i class="bi bi-calendar-x"></i></span> Expired <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'expired' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['expired']; ?></span>
-        </a>
-        <a href="<?php echo h($mk('rejected', 1)); ?>" class="student-filter-tab student-filter-tab--rejected inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'rejected' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
-          <span class="student-filter-tab__icon"><i class="bi bi-x-circle"></i></span> Rejected <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'rejected' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['rejected']; ?></span>
-        </a>
-        <a href="<?php echo h($mk('all', 1)); ?>" class="student-filter-tab student-filter-tab--all inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium border-2 transition <?php echo $tab === 'all' ? 'bg-primary text-white border-primary' : 'bg-gray-100 border-gray-200'; ?>">
-          <span class="student-filter-tab__icon"><i class="bi bi-collection"></i></span> All <span class="student-filter-tab__count px-2 py-0.5 rounded-full text-sm font-bold <?php echo $tab === 'all' ? 'student-filter-tab__count--active' : ''; ?>"><?php echo (int)$counts['all']; ?></span>
-        </a>
-      </nav>
-      <form method="GET" class="flex flex-wrap gap-2 items-center">
-        <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
-        <div class="relative min-w-[280px]">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search name or email..." class="input-custom pl-10">
-        </div>
-        <button type="submit" class="student-apply-btn px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2" title="Apply filters"><i class="bi bi-funnel"></i> Apply</button>
-        <?php if ($q !== ''): ?>
-          <a href="admin_students?tab=<?php echo h($tab); ?>&page=1" class="text-gray-500 text-sm hover:text-gray-700 hover:underline">Clear search</a>
-        <?php endif; ?>
-      </form>
-    </div>
-  </div>
+  <div class="students-page-shell">
+    <nav class="students-view-tabs" aria-label="Students sections">
+      <a href="<?php echo h($studentsViewUrl); ?>" class="students-view-tab <?php echo $view === 'students' ? 'is-active' : ''; ?>">Students</a>
+      <a href="<?php echo h($deletedViewUrl); ?>" class="students-view-tab <?php echo $view === 'deleted' ? 'is-active' : ''; ?>">Deleted Users Log</a>
+    </nav>
 
-  <div class="rounded-xl shadow-card border overflow-hidden page-table">
-    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-gray-800">Students</span>
-        <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
+    <?php if ($view === 'deleted'): ?>
+      <div class="students-toolbar page-filter">
+        <form method="GET" class="students-toolbar__search">
+          <input type="hidden" name="view" value="deleted">
+          <div class="students-search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="dq" value="<?php echo h($dq); ?>" placeholder="Search deleted users…" aria-label="Search deleted users">
+          </div>
+          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm">Filter</button>
+          <?php if ($dq !== ''): ?>
+            <a href="admin_students?view=deleted" class="students-clear-link">Clear</a>
+          <?php endif; ?>
+        </form>
+        <span class="students-toolbar__meta"><?php echo count($deletedLogs); ?> record<?php echo count($deletedLogs) === 1 ? '' : 's'; ?></span>
       </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Use <strong>Actions</strong> for view, proof, approve, extend, or delete.</p>
-      <div class="text-gray-500 text-sm text-right">
-        <?php if ($total > 0): ?>
-          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> students</span>
-        <?php else: ?>
-          <span>Showing 0-0 of 0 students</span>
-        <?php endif; ?>
-      </div>
-    </div>
-    <div class="overflow-x-auto pl-3 pr-8">
-      <table class="w-full text-left admin-students-table">
-        <thead class="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Profile</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Name</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">School</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Review Type</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-left">Email</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center admin-students-access-col">Access</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 student-actions-head">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if ($total === 0): ?>
-            <?php
-              $emptyHint = 'Try changing the tab or clearing search.';
-              if ($tab === 'pending') $emptyHint = 'When students register, they’ll appear here for approval.';
-              elseif ($tab === 'enrolled') $emptyHint = 'Approved students with active access will appear here.';
-              elseif ($tab === 'expired') $emptyHint = 'Students whose access has ended will appear here.';
-              elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
-            ?>
-            <tr>
-              <td colspan="8" class="px-5 py-14 text-center text-gray-500">
-                <i class="bi bi-people text-5xl block mb-3 opacity-50"></i>
-                <div class="font-semibold text-gray-600">No students found</div>
-                <p class="text-sm mt-1 max-w-sm mx-auto"><?php echo h($emptyHint); ?></p>
-                <?php if ($q !== ''): ?>
-                  <a href="admin_students?tab=<?php echo h($tab); ?>&page=1" class="inline-block mt-4 px-4 py-2 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition">Clear search</a>
-                <?php endif; ?>
-              </td>
-            </tr>
-          <?php else: ?>
-            <?php while ($row = mysqli_fetch_assoc($students)): ?>
-              <?php
-                $schoolLabel = $row['school'] === 'Other' && !empty($row['school_other']) ? $row['school_other'] : $row['school'];
-                $hasAccessRange = !empty($row['access_start']) || !empty($row['access_end']);
-                $accessStartLabel = !empty($row['access_start']) ? date('F j, Y', strtotime((string)$row['access_start'])) : '?';
-                $accessEndLabel = !empty($row['access_end']) ? date('F j, Y', strtotime((string)$row['access_end'])) : '?';
-                $access = $hasAccessRange ? ($accessStartLabel . ' → ' . $accessEndLabel) : '-';
-                $accessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : false;
-                $accessEndTs = !empty($row['access_end']) ? strtotime((string)$row['access_end']) : false;
-                $accessStartShort = ($accessStartTs !== false) ? date('M j, Y', $accessStartTs) : '?';
-                $accessEndShort = ($accessEndTs !== false) ? date('M j, Y', $accessEndTs) : '?';
-                $accessWindowTone = 'partial';
-                $accessWindowPct = null;
-                $accessWindowMeta = '';
-                $nowTs = time();
-                if ($accessStartTs !== false && $accessEndTs !== false && $accessEndTs > $accessStartTs) {
-                  $totalSec = $accessEndTs - $accessStartTs;
-                  if ($totalSec <= 0) {
-                    $accessWindowMeta = 'Check date range';
-                    $accessWindowTone = 'partial';
-                  } elseif ($nowTs < $accessStartTs) {
-                    $accessWindowPct = 0.0;
-                    $accessWindowTone = 'upcoming';
-                    $d = (int) ceil(($accessStartTs - $nowTs) / 86400);
-                    $accessWindowMeta = $d <= 0 ? 'Starts today' : ('Starts in ' . $d . ' day' . ($d === 1 ? '' : 's'));
-                  } elseif ($nowTs > $accessEndTs) {
-                    $accessWindowPct = 100.0;
-                    $accessWindowTone = 'expired';
-                    $d = (int) floor(($nowTs - $accessEndTs) / 86400);
-                    $accessWindowMeta = $d <= 0 ? 'Ended today' : ('Ended ' . $d . 'd ago');
-                  } else {
-                    $elapsed = $nowTs - $accessStartTs;
-                    $accessWindowPct = round(min(100, max(0, ($elapsed / $totalSec) * 100)), 1);
-                    $d = (int) ceil(($accessEndTs - $nowTs) / 86400);
-                    if ($d <= 0) {
-                      $accessWindowMeta = 'Ends today';
-                      $accessWindowTone = 'ending';
-                    } elseif ($d <= 7) {
-                      $accessWindowMeta = $d . ' day' . ($d === 1 ? '' : 's') . ' left';
-                      $accessWindowTone = 'ending';
-                    } else {
-                      $accessWindowMeta = $d . ' day' . ($d === 1 ? '' : 's') . ' left';
-                      $accessWindowTone = 'active';
-                    }
-                  }
-                } elseif ($accessStartTs !== false || $accessEndTs !== false) {
-                  $accessWindowMeta = 'Complete start & end dates to see timeline';
-                  $accessWindowTone = 'partial';
-                }
-                $statusClass = strtolower((string)$row['status']);
-                $badgeClass = $statusClass === 'approved' ? 'bg-green-100 text-green-800' : ($statusClass === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
-                $hasProof = !empty($row['payment_proof']);
-                $isExpired = ($statusClass === 'approved' && !empty($row['access_end']) && strtotime($row['access_end']) < time());
-                $avatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
-                $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($row['use_default_avatar']) : true;
-                $avatarInitial = ereview_avatar_initial($row['full_name'] ?? 'U');
-                $isSessionActive = false;
-                $recentThresholdTs = time() - (2 * 60); // 2 minutes idle window
-                if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
-                  $lastSeenTs = strtotime((string)$row['last_seen_at']);
-                  if ($lastSeenTs !== false && $lastSeenTs >= $recentThresholdTs) {
-                    $isSessionActive = true;
-                  }
-                } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
-                  $lastLoginTs = strtotime((string)$row['last_login_at']);
-                  if ($lastLoginTs !== false && $lastLoginTs >= $recentThresholdTs) {
-                    $isSessionActive = true;
-                  }
-                } elseif (!$hasLastSeenAt && !$hasLastLoginAt && $hasIsOnline && !empty($row['is_online'])) {
-                  // Legacy schema without timestamps: fall back to is_online flag.
-                  $isSessionActive = true;
-                }
-                if ($hasLastLogoutAt && !empty($row['last_logout_at'])) {
-                  $lastLogoutTs = strtotime((string)$row['last_logout_at']);
-                  $lastSeenTs2 = (!empty($row['last_seen_at']) ? strtotime((string)$row['last_seen_at']) : false);
-                  if ($lastLogoutTs !== false && ($lastSeenTs2 === false || $lastSeenTs2 <= $lastLogoutTs)) {
-                    $isSessionActive = false;
-                  }
-                }
-              ?>
-              <tr class="border-b border-gray-100 hover:bg-gray-50/50" data-user-id="<?php echo (int)$row['user_id']; ?>">
-                <td class="px-5 py-3 text-center">
-                  <span class="student-avatar-cell" aria-hidden="true" title="<?php echo h($row['full_name']); ?>">
-                    <span class="student-avatar-media">
-                      <?php if ($avatarPath !== '' && !$useDefaultAvatar): ?>
-                        <img src="<?php echo h($avatarPath); ?>" alt="<?php echo h($row['full_name']); ?> profile photo" class="w-full h-full object-cover" loading="lazy">
-                      <?php else: ?>
-                        <?php echo h($avatarInitial); ?>
-                      <?php endif; ?>
-                    </span>
-                    <span data-status-dot class="student-avatar-status-dot <?php echo $isSessionActive ? 'student-avatar-status-dot--active' : 'student-avatar-status-dot--inactive'; ?>" title="<?php echo $isSessionActive ? 'Session active' : 'Session inactive'; ?>"></span>
-                  </span>
-                </td>
-                <td class="px-5 py-3 text-center">
-                  <div class="student-name"><?php echo h($row['full_name']); ?></div>
-                </td>
-                <td class="px-5 py-3 text-center">
-                  <span class="table-meta-pill table-meta-pill--school" title="<?php echo h($schoolLabel); ?>">
-                    <?php echo h($schoolLabel ?: 'Not set'); ?>
-                  </span>
-                </td>
-                <td class="px-5 py-3 text-center">
-                  <span class="table-meta-pill table-meta-pill--review">
-                    <?php
-                      $reviewType = strtolower((string)($row['review_type'] ?? ''));
-                      echo h($reviewType === 'undergrad' ? 'Undergrad' : 'Reviewee');
-                    ?>
-                  </span>
-                </td>
-                <td class="px-5 py-3 student-email-cell">
-                  <span class="student-email"><?php echo h($row['email']); ?></span>
-                </td>
-                <td class="px-5 py-3 text-center">
+
+      <div class="rounded-xl overflow-hidden page-table students-table-shell">
+        <div class="students-table-scroll">
+          <table class="w-full text-left deleted-log-table students-table--compact">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th class="col-hide-mobile">Email</th>
+                <th class="col-hide-tablet">School</th>
+                <th class="col-hide-tablet">Review</th>
+                <th class="col-hide-mobile">Access</th>
+                <th class="col-hide-tablet">Deleted By</th>
+                <th>Reason</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($deletedLogs)): ?>
+                <tr>
+                  <td colspan="9" class="students-empty-cell">
+                    <?php echo $hasDeletedLogTable ? 'No deleted users logged yet.' : 'Deleted users log is not available.'; ?>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($deletedLogs as $dl): ?>
                   <?php
-                    $statusTitle = $statusClass === 'approved' ? 'Approved – has active access' : ($statusClass === 'rejected' ? 'Registration rejected' : 'Awaiting approval');
-                    if ($isExpired) $statusTitle .= ' (access period ended)';
+                    $deletedAccessLabel = (string)($dl['deleted_access_range'] ?? '-');
+                    if (preg_match('/^(\d{4}-\d{2}-\d{2})\s*(?:->|-)\s*(\d{4}-\d{2}-\d{2})$/', $deletedAccessLabel, $m)) {
+                      $sTs = strtotime($m[1]);
+                      $eTs = strtotime($m[2]);
+                      if ($sTs && $eTs) {
+                        $deletedAccessLabel = date('M j, Y', $sTs) . ' – ' . date('M j, Y', $eTs);
+                      }
+                    } elseif (preg_match('/^([A-Za-z]+\s+\d{1,2},\s+\d{4})\s*-\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})$/', $deletedAccessLabel, $m2)) {
+                      $deletedAccessLabel = $m2[1] . ' – ' . $m2[2];
+                    }
                   ?>
-                  <span class="inline-block px-2.5 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>" title="<?php echo h($statusTitle); ?>"><?php echo h($row['status']); ?></span>
-                  <?php if ($isExpired): ?>
-                    <span class="ml-1 inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Access period has ended">expired</span>
-                  <?php endif; ?>
-                </td>
-                <td class="px-5 py-3 text-center access-cell admin-students-access-col" title="<?php echo h($access !== '-' ? $access : 'No access set'); ?>">
-                  <?php if ($hasAccessRange): ?>
-                    <div class="access-window access-window--<?php echo h($accessWindowTone); ?>">
-                      <div class="access-window__headline">
-                        <span class="access-window__hourglass" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
-                        <span class="access-window__headline-inner">
-                          <span class="access-window__kw">Enrollment window</span>
-                          <span class="access-window__pipe" aria-hidden="true">|</span>
-                          <span class="access-window__dates">
-                            <?php if ($accessStartTs !== false): ?>
-                              <time datetime="<?php echo h(date('c', $accessStartTs)); ?>"><?php echo h($accessStartShort); ?></time>
+                  <tr>
+                    <td class="font-semibold"><?php echo (int)$dl['deleted_user_id']; ?></td>
+                    <td><?php echo h($dl['deleted_name']); ?></td>
+                    <td class="col-hide-mobile"><?php echo h($dl['deleted_email']); ?></td>
+                    <td class="col-hide-tablet"><?php echo h((string)($dl['deleted_school'] ?? '-')); ?></td>
+                    <td class="col-hide-tablet"><?php echo h((string)($dl['deleted_review_type'] ?? '-')); ?></td>
+                    <td class="col-hide-mobile"><?php echo h($deletedAccessLabel); ?></td>
+                    <td class="col-hide-tablet"><?php echo h($dl['deleted_by_admin_name']); ?></td>
+                    <td><?php echo h((string)($dl['deletion_reason'] ?? '-')); ?></td>
+                    <td class="whitespace-nowrap"><?php echo !empty($dl['deleted_at']) ? h(date('M j, Y g:i A', strtotime((string)$dl['deleted_at']))) : '-'; ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    <?php else: ?>
+
+      <div class="students-toolbar page-filter">
+        <nav class="students-status-chips" aria-label="Filter by status">
+          <?php
+            $statusChips = [
+              'enrolled' => ['Enrolled', 'bi-check2-circle'],
+              'pending' => ['Needs review', 'bi-hourglass-split'],
+              'expired' => ['Expired', 'bi-calendar-x'],
+              'rejected' => ['Rejected', 'bi-x-circle'],
+              'all' => ['All', 'bi-collection'],
+            ];
+            foreach ($statusChips as $key => $meta):
+          ?>
+            <a href="<?php echo h($mk($key, 1)); ?>" class="students-status-chip <?php echo $tab === $key ? 'is-active' : ''; ?>">
+              <i class="bi <?php echo h($meta[1]); ?>" aria-hidden="true"></i>
+              <span><?php echo h($meta[0]); ?></span>
+              <span class="students-status-chip__count"><?php echo (int)$counts[$key]; ?></span>
+            </a>
+          <?php endforeach; ?>
+        </nav>
+        <form method="GET" class="students-toolbar__search">
+          <input type="hidden" name="view" value="students">
+          <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
+          <div class="students-search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search students…" aria-label="Search students">
+          </div>
+          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
+          <?php if ($q !== ''): ?>
+            <a href="<?php echo h($mk($tab, 1)); ?>" class="students-clear-link">Clear</a>
+          <?php endif; ?>
+        </form>
+      </div>
+
+      <div class="rounded-xl overflow-hidden page-table students-table-shell">
+        <div class="students-table-meta">
+          <span>
+            <?php if ($total > 0): ?>
+              <?php echo $offset + 1; ?>–<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?>
+            <?php else: ?>
+              0 students
+            <?php endif; ?>
+          </span>
+          <span class="students-table-meta__hint hidden md:inline">Enrollment, payment, proof, access, and account at a glance · Review opens payment/FAR when needed</span>
+        </div>
+        <div class="students-table-scroll">
+          <table class="w-full text-left admin-students-table students-table--compact students-table--aligned students-table--commerce">
+            <colgroup>
+              <col class="col-check">
+              <col class="col-student">
+              <col class="col-enrollment">
+              <col class="col-payment">
+              <col class="col-proof">
+              <col class="col-commerce-access">
+              <col class="col-account-status">
+              <col class="col-actions">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="student-select-col" scope="col">
+                  <input type="checkbox" id="studentSelectAll" title="Select students needing repair activation on this page" aria-label="Select students needing repair activation on this page">
+                </th>
+                <th class="col-student" scope="col">Student</th>
+                <th class="col-enrollment" scope="col">Enrollment</th>
+                <th class="col-payment" scope="col">Payment</th>
+                <th class="col-proof" scope="col">Proof</th>
+                <th class="col-commerce-access" scope="col">Access</th>
+                <th class="col-account-status" scope="col">Account</th>
+                <th class="col-actions student-actions-head" scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if ($total === 0): ?>
+                <?php
+                  $emptyHint = 'Try changing the filter or clearing search.';
+                  if ($tab === 'pending') $emptyHint = 'Students requiring review or still awaiting payment/verification will appear here.';
+                  elseif ($tab === 'enrolled') $emptyHint = 'Active students with an approved login account will appear here.';
+                  elseif ($tab === 'expired') $emptyHint = 'Students whose account window has ended will appear here.';
+                  elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
+                ?>
+                <tr>
+                  <td colspan="8" class="students-empty-cell">
+                    <div class="font-semibold">No students found</div>
+                    <p class="text-sm mt-1 mb-0"><?php echo h($emptyHint); ?></p>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($studentRows as $row): ?>
+                  <?php
+                    $schoolLabel = $row['school'] === 'Other' && !empty($row['school_other']) ? $row['school_other'] : $row['school'];
+                    $dash = $studentBadgeMap[(int) $row['user_id']] ?? [];
+                    $badgeInfo = $dash;
+                    $enrollPathRow = (string) ($row['enrollment_path'] ?? ($dash['enrollment_path'] ?? ''));
+                    $isCommerceRow = commerce_admin_is_commerce_enrollment_path($enrollPathRow);
+                    $commerceProofUrl = (string) ($dash['proof_url'] ?? '');
+                    $hasCommerceProof = !empty($dash['has_proof']);
+                    $proofUi = (string) ($dash['proof_ui'] ?? ($hasCommerceProof ? 'View Proof' : (!empty($dash['is_free_access']) ? 'N/A' : 'Not Uploaded')));
+                    $primaryActionHref = (string) ($dash['action_href'] ?? ('admin_student_view?id=' . (int) $row['user_id']));
+                    $primaryActionLabel = (string) ($dash['action_label'] ?? 'View');
+                    $payTone = (string) ($dash['payment_tone'] ?? 'neutral');
+                    $accessTone = (string) ($dash['access_tone'] ?? 'none');
+                    $showRepairActivation = !empty($dash['show_repair_activation']) || !empty($dash['activation_required']);
+                    $accountUi = (string) ($dash['account_label'] ?? commerce_admin_label_account_status((string) $row['status']));
+                    $fulfilledUi = (string) ($dash['fulfilled_ui'] ?? '');
+                    $enrollAmt = (string) ($dash['enrollment_amount_display'] ?? '—');
+                    $enrollLab = (string) ($dash['enrollment_label'] ?? '—');
+                    $enrollCombined = $enrollLab;
+                    if ($enrollAmt !== '' && $enrollAmt !== '—' && strpos($enrollLab, '₱') === false) {
+                        $enrollCombined = $enrollLab . ' · ' . $enrollAmt;
+                    }
+                    $hasAccessRange = !empty($row['access_start']) || !empty($row['access_end']);
+                    $accessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : false;
+                    $accessEndTs = !empty($row['access_end']) ? strtotime((string)$row['access_end']) : false;
+                    $accessStartShort = ($accessStartTs !== false) ? date('M j, Y', $accessStartTs) : '?';
+                    $accessEndShort = ($accessEndTs !== false) ? date('M j, Y', $accessEndTs) : '?';
+                    $accessWindowTone = 'partial';
+                    $accessWindowPct = null;
+                    $accessWindowMeta = '';
+                    $nowTs = time();
+                    if ($accessStartTs !== false && $accessEndTs !== false && $accessEndTs > $accessStartTs) {
+                      $totalSec = $accessEndTs - $accessStartTs;
+                      if ($nowTs < $accessStartTs) {
+                        $accessWindowPct = 0.0;
+                        $accessWindowTone = 'upcoming';
+                        $d = (int) ceil(($accessStartTs - $nowTs) / 86400);
+                        $accessWindowMeta = $d <= 0 ? 'Starts today' : ('Starts in ' . $d . 'd');
+                      } elseif ($nowTs > $accessEndTs) {
+                        $accessWindowPct = 100.0;
+                        $accessWindowTone = 'expired';
+                        $d = (int) floor(($nowTs - $accessEndTs) / 86400);
+                        $accessWindowMeta = $d <= 0 ? 'Ended today' : ('Ended ' . $d . 'd ago');
+                      } else {
+                        $elapsed = $nowTs - $accessStartTs;
+                        $accessWindowPct = round(min(100, max(0, ($elapsed / $totalSec) * 100)), 1);
+                        $d = (int) ceil(($accessEndTs - $nowTs) / 86400);
+                        $accessWindowMeta = $d <= 0 ? 'Ends today' : ($d . ' days left');
+                        $accessWindowTone = ($d <= 7) ? 'ending' : 'active';
+                      }
+                    } elseif ($hasAccessRange) {
+                      $accessWindowMeta = 'Incomplete dates';
+                      $accessWindowTone = 'partial';
+                    }
+                    $statusClass = strtolower((string)$row['status']);
+                    $badgeClass = $statusClass === 'approved' ? 'bg-green-100 text-green-800' : ($statusClass === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
+                    $hasProof = !empty($row['payment_proof']);
+                    $isExpired = ($statusClass === 'approved' && !empty($row['access_end']) && strtotime($row['access_end']) < time());
+                    $avatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
+                    $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($row['use_default_avatar']) : true;
+                    $avatarInitial = ereview_avatar_initial($row['full_name'] ?? 'U');
+                    $isSessionActive = false;
+                    $recentThresholdTs = time() - (2 * 60);
+                    if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
+                      $lastSeenTs = strtotime((string)$row['last_seen_at']);
+                      if ($lastSeenTs !== false && $lastSeenTs >= $recentThresholdTs) $isSessionActive = true;
+                    } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
+                      $lastLoginTs = strtotime((string)$row['last_login_at']);
+                      if ($lastLoginTs !== false && $lastLoginTs >= $recentThresholdTs) $isSessionActive = true;
+                    } elseif (!$hasLastSeenAt && !$hasLastLoginAt && $hasIsOnline && !empty($row['is_online'])) {
+                      $isSessionActive = true;
+                    }
+                    if ($hasLastLogoutAt && !empty($row['last_logout_at'])) {
+                      $lastLogoutTs = strtotime((string)$row['last_logout_at']);
+                      $lastSeenTs2 = (!empty($row['last_seen_at']) ? strtotime((string)$row['last_seen_at']) : false);
+                      if ($lastLogoutTs !== false && ($lastSeenTs2 === false || $lastSeenTs2 <= $lastLogoutTs)) {
+                        $isSessionActive = false;
+                      }
+                    }
+                    $reviewType = strtolower((string)($row['review_type'] ?? ''));
+                    $reviewLabel = $reviewType === 'undergrad' ? 'Undergrad' : 'Reviewee';
+                    $activityTs = false;
+                    if ($hasLastSeenAt && !empty($row['last_seen_at'])) {
+                      $activityTs = strtotime((string)$row['last_seen_at']);
+                    } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
+                      $activityTs = strtotime((string)$row['last_login_at']);
+                    }
+                    $activityLabel = '—';
+                    if ($isSessionActive) {
+                      $activityLabel = 'Active now';
+                    } elseif ($activityTs !== false) {
+                      $diff = time() - $activityTs;
+                      if ($diff < 3600) $activityLabel = max(1, (int)floor($diff / 60)) . 'm ago';
+                      elseif ($diff < 86400) $activityLabel = (int)floor($diff / 3600) . 'h ago';
+                      elseif ($diff < 86400 * 7) $activityLabel = (int)floor($diff / 86400) . 'd ago';
+                      else $activityLabel = date('M j, Y', $activityTs);
+                    }
+                    $accessScan = $hasAccessRange
+                      ? ($accessEndTs !== false ? $accessEndShort : $accessStartShort)
+                      : 'No access';
+                    $accessFull = $hasAccessRange ? ($accessStartShort . ' – ' . $accessEndShort) : 'No access set';
+                    $createdLabel = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : '—';
+                  ?>
+                  <tr
+                    data-user-id="<?php echo (int)$row['user_id']; ?>"
+                    data-student-name="<?php echo h($row['full_name']); ?>"
+                    data-approvable="<?php echo ((!$isCommerceRow && $row['status'] !== 'approved') || $showRepairActivation) ? '1' : '0'; ?>"
+                    data-enrollment-path="<?php echo h($enrollPathRow); ?>"
+                    data-commerce-enrollment="<?php echo $isCommerceRow ? '1' : '0'; ?>"
+                    data-repair-activation="<?php echo $showRepairActivation ? '1' : '0'; ?>"
+                    data-drawer-name="<?php echo h($row['full_name']); ?>"
+                    data-drawer-email="<?php echo h($row['email']); ?>"
+                    data-drawer-school="<?php echo h($schoolLabel ?: 'Not set'); ?>"
+                    data-drawer-review="<?php echo h($reviewLabel); ?>"
+                    data-drawer-status="<?php echo h($accountUi); ?>"
+                    data-drawer-access="<?php echo h($accessFull); ?>"
+                    data-drawer-access-meta="<?php echo h($accessWindowMeta); ?>"
+                    data-drawer-activity="<?php echo h($activityLabel); ?>"
+                    data-drawer-created="<?php echo h($createdLabel); ?>"
+                    data-drawer-proof="<?php echo h($proofUi); ?>"
+                    data-drawer-enrollment="<?php echo h($enrollCombined); ?>"
+                    data-drawer-payment="<?php echo h((string) ($dash['payment_ui'] ?? '—')); ?>"
+                    data-drawer-commerce-access="<?php echo h((string) ($dash['access_ui'] ?? 'None')); ?>"
+                    data-drawer-account="<?php echo h($accountUi); ?>"
+                    data-drawer-avatar="<?php echo h(($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath : ''); ?>"
+                    data-drawer-initial="<?php echo h($avatarInitial); ?>"
+                  >
+                    <td class="student-select-col">
+                      <?php if ((!$isCommerceRow && $row['status'] !== 'approved') || $showRepairActivation): ?>
+                        <input type="checkbox" class="js-student-select" value="<?php echo (int)$row['user_id']; ?>" aria-label="Select <?php echo h($row['full_name']); ?>">
+                      <?php else: ?>
+                        <span class="sr-only">Not selectable</span>
+                      <?php endif; ?>
+                    </td>
+                    <td class="col-student">
+                      <div class="student-cell">
+                        <span class="student-avatar-cell" aria-hidden="true">
+                          <span class="student-avatar-media">
+                            <?php if ($avatarPath !== '' && !$useDefaultAvatar): ?>
+                              <img src="<?php echo h($avatarPath); ?>" alt="" loading="lazy">
                             <?php else: ?>
-                              <span><?php echo h($accessStartShort); ?></span>
-                            <?php endif; ?>
-                            <span class="access-window__dash" aria-hidden="true">–</span>
-                            <?php if ($accessEndTs !== false): ?>
-                              <time datetime="<?php echo h(date('c', $accessEndTs)); ?>"><?php echo h($accessEndShort); ?></time>
-                            <?php else: ?>
-                              <span><?php echo h($accessEndShort); ?></span>
+                              <?php echo h($avatarInitial); ?>
                             <?php endif; ?>
                           </span>
+                          <span data-status-dot class="student-avatar-status-dot <?php echo $isSessionActive ? 'student-avatar-status-dot--active' : 'student-avatar-status-dot--inactive'; ?>"></span>
                         </span>
-                      </div>
-                      <?php if ($accessWindowPct !== null): ?>
-                        <div class="access-window__track" role="presentation" aria-hidden="true">
-                          <span class="access-window__fill" style="width: <?php echo htmlspecialchars((string) $accessWindowPct, ENT_QUOTES, 'UTF-8'); ?>%;"></span>
+                        <div class="student-cell__text">
+                          <div class="student-name" title="<?php echo h($row['full_name']); ?>"><?php echo h($row['full_name']); ?></div>
+                          <div class="student-meta" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></div>
                         </div>
-                      <?php endif; ?>
-                      <?php if ($accessWindowMeta !== ''): ?>
-                        <div class="access-window__meta"><?php echo h($accessWindowMeta); ?></div>
-                      <?php endif; ?>
-                    </div>
-                  <?php else: ?>
-                    <div class="access-window access-window--empty">
-                      <div class="access-window__headline access-window__headline--empty">
-                        <span class="access-window__empty-icon" aria-hidden="true"><i class="bi bi-calendar-x"></i></span>
-                        <span class="access-window__headline-inner">
-                          <span class="access-window__kw">No access set</span>
-                          <span class="access-window__pipe" aria-hidden="true">|</span>
-                          <span class="access-window__dates">Set dates in student profile</span>
-                        </span>
                       </div>
-                    </div>
-                  <?php endif; ?>
-                </td>
-                <td class="px-5 py-3 student-action-cell">
-                  <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
-                    <button type="button" class="admin-student-action-menu-trigger" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="Open actions for <?php echo h($row['full_name']); ?>">
-                      <i class="bi bi-three-dots" aria-hidden="true"></i> Actions
-                    </button>
-                    <div class="admin-student-action-menu" data-action-menu-list role="menu">
-                      <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
-                      <?php if ($hasProof): ?>
-                        <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Proof</a>
-                      <?php else: ?>
-                        <span class="admin-student-action-item admin-student-action-item--disabled" aria-disabled="true"><i class="bi bi-receipt" aria-hidden="true"></i> Proof (none)</span>
+                    </td>
+                    <td class="col-enrollment">
+                      <div class="font-semibold text-sm text-slate-800" title="<?php echo h($enrollCombined); ?>"><?php echo h($enrollCombined); ?></div>
+                    </td>
+                    <td class="col-payment">
+                      <span class="commerce-pill commerce-pill--<?php echo h($payTone); ?>">
+                        <?php if ($payTone === 'verified'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        <?php elseif ($payTone === 'review'): ?><i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                        <?php elseif ($payTone === 'rejected'): ?><i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+                        <?php elseif ($payTone === 'awaiting'): ?><i class="bi bi-clock" aria-hidden="true"></i>
+                        <?php endif; ?>
+                        <?php echo h((string) ($dash['payment_ui'] ?? '—')); ?>
+                      </span>
+                      <?php if ($fulfilledUi !== ''): ?>
+                        <div class="text-[10px] text-emerald-400/90 mt-0.5 font-semibold"><?php echo h($fulfilledUi); ?></div>
                       <?php endif; ?>
-
-                      <?php if ($row['status'] !== 'approved'): ?>
-                        <form class="student-pending-form js-approve-form" action="activate_user" method="POST" data-student-name="<?php echo h($row['full_name']); ?>">
-                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                          <input type="hidden" name="return_to" value="<?php echo h($_SERVER['REQUEST_URI'] ?? 'admin_students'); ?>">
-                          <label class="sr-only" for="pending-months-<?php echo (int)$row['user_id']; ?>">Months of access</label>
-                          <input id="pending-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" class="student-pending-month-input" placeholder="+ Months" required>
-                          <button type="submit" class="admin-student-action-item admin-student-action-item--approve" role="menuitem"><i class="bi bi-check2-circle" aria-hidden="true"></i> Approve</button>
-                        </form>
-                        <form class="admin-student-action-menu-reject-form" action="reject" method="POST">
-                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                          <button type="submit" class="admin-student-action-item admin-student-action-item--reject" role="menuitem"><i class="bi bi-x-circle" aria-hidden="true"></i> Reject</button>
-                        </form>
+                    </td>
+                    <td class="col-proof">
+                      <?php if (!empty($dash['is_free_access']) || $proofUi === 'N/A'): ?>
+                        <span class="text-slate-400 text-sm">N/A</span>
+                      <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
+                        <a class="commerce-proof-link" href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>" target="_blank" rel="noopener" title="View commerce payment proof">
+                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
+                        </a>
                       <?php else: ?>
-                        <form class="student-extend-form" action="extend_access" method="POST">
-                          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                          <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                          <label class="sr-only" for="extend-months-<?php echo (int)$row['user_id']; ?>">Months to extend</label>
-                          <input id="extend-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" placeholder="+ Months" required title="Add months">
-                          <button type="submit" class="admin-student-action-item admin-student-action-item--extend" role="menuitem"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Extend access</button>
-                        </form>
+                        <span class="text-slate-400 text-sm">Not Uploaded</span>
                       <?php endif; ?>
-                      <button
-                        type="button"
-                        class="admin-student-action-item admin-student-action-item--danger admin-student-action-item--section js-delete-student-btn"
-                        role="menuitem"
-                        data-user-id="<?php echo (int)$row['user_id']; ?>"
-                        data-user-name="<?php echo h($row['full_name']); ?>"
-                        data-user-email="<?php echo h($row['email']); ?>"
-                        title="Delete student permanently">
-                        <i class="bi bi-trash" aria-hidden="true"></i> Delete
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            <?php endwhile; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+                    </td>
+                    <td class="col-commerce-access">
+                      <span class="commerce-pill commerce-pill--access-<?php echo h($accessTone); ?>">
+                        <?php if ($accessTone === 'granted'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        <?php elseif ($accessTone === 'pending'): ?><i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                        <?php elseif ($accessTone === 'none' || $accessTone === 'revoked'): ?><i class="bi bi-x-circle" aria-hidden="true"></i>
+                        <?php endif; ?>
+                        <?php echo h((string) ($dash['access_ui'] ?? 'None')); ?>
+                      </span>
+                    </td>
+                    <td class="col-account-status">
+                      <span class="commerce-pill <?php echo $accountUi === 'Active' ? 'commerce-pill--verified' : ($accountUi === 'Rejected' ? 'commerce-pill--rejected' : 'commerce-pill--awaiting'); ?>">
+                        <?php if ($accountUi === 'Active'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        <?php else: ?><i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                        <?php endif; ?>
+                        <?php echo h($accountUi); ?>
+                      </span>
+                    </td>
+                    <td class="student-action-cell col-actions">
+                      <div class="flex flex-wrap items-center gap-2 justify-end">
+                        <a class="admin-btn admin-btn--<?php echo ($primaryActionLabel === 'Review') ? 'primary' : 'secondary'; ?> admin-btn--sm"
+                           href="<?php echo h($primaryActionHref); ?>">
+                          <?php echo h($primaryActionLabel); ?>
+                        </a>
+                        <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
+                          <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h($row['full_name']); ?>">
+                            <i class="bi bi-three-dots" aria-hidden="true"></i>
+                          </button>
+                          <div class="admin-student-action-menu" data-action-menu-list role="menu">
+                            <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-person-badge" aria-hidden="true"></i> Student detail</a>
+                            <?php if (!empty($dash['payment_id'])): ?>
+                              <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $dash['payment_id']); ?>"><i class="bi bi-credit-card" aria-hidden="true"></i> View payment</a>
+                            <?php endif; ?>
+                            <?php if ($hasCommerceProof && !empty($dash['payment_id'])): ?>
+                              <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
+                            <?php elseif (!$isCommerceRow && $hasProof): ?>
+                              <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Legacy payment proof</a>
+                            <?php endif; ?>
+                            <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $row['user_id']); ?>"><i class="bi bi-journal-text" aria-hidden="true"></i> Grant ledger</a>
+                            <a role="menuitem" class="admin-student-action-item" href="admin_student_access?user_id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-shield-lock" aria-hidden="true"></i> Manual / Administrative Access</a>
+                            <?php if ($isCommerceRow && $showRepairActivation): ?>
+                              <button type="button" class="admin-student-action-item admin-student-action-item--approve js-approve-one-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-student-name="<?php echo h($row['full_name']); ?>" data-commerce-enrollment="1">
+                                <i class="bi bi-wrench" aria-hidden="true"></i> Repair Activation
+                              </button>
+                            <?php elseif (!$isCommerceRow && $row['status'] !== 'approved'): ?>
+                              <button type="button" class="admin-student-action-item admin-student-action-item--approve js-approve-one-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-student-name="<?php echo h($row['full_name']); ?>" data-commerce-enrollment="0">
+                                <i class="bi bi-check2-circle" aria-hidden="true"></i> Approve
+                              </button>
+                            <?php endif; ?>
+                            <?php if ($row['status'] !== 'approved'): ?>
+                              <form class="admin-student-action-menu-reject-form" action="reject" method="POST">
+                                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                                <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                                <button type="submit" class="admin-student-action-item admin-student-action-item--reject" role="menuitem"><i class="bi bi-x-circle" aria-hidden="true"></i> Reject</button>
+                              </form>
+                            <?php else: ?>
+                              <form class="student-extend-form" action="extend_access" method="POST">
+                                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                                <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
+                                <label class="sr-only" for="extend-months-<?php echo (int)$row['user_id']; ?>">Months to extend</label>
+                                <input id="extend-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" placeholder="+ Months" required title="Add months">
+                                <button type="submit" class="admin-student-action-item admin-student-action-item--extend" role="menuitem"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Extend account window</button>
+                              </form>
+                            <?php endif; ?>
+                            <button type="button" class="admin-student-action-item admin-student-action-item--danger admin-student-action-item--section js-delete-student-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-user-name="<?php echo h($row['full_name']); ?>" data-user-email="<?php echo h($row['email']); ?>">
+                              <i class="bi bi-trash" aria-hidden="true"></i> Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
 
-    <?php if ($totalPages > 1): ?>
-      <nav class="px-5 py-4 border-t border-gray-100 flex justify-center" aria-label="Student pagination">
-        <ul class="flex flex-wrap items-center gap-1">
-          <?php if ($page > 1): ?>
-            <li><a href="<?php echo h($mk($tab, $page - 1)); ?>" class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Previous</a></li>
-          <?php endif; ?>
-          <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
-            <li>
-              <a href="<?php echo h($mk($tab, $i)); ?>" class="px-3 py-2 rounded-lg border transition <?php echo $i === $page ? 'bg-primary border-primary text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-100'; ?>"><?php echo $i; ?></a>
-            </li>
-          <?php endfor; ?>
-          <?php if ($page < $totalPages): ?>
-            <li><a href="<?php echo h($mk($tab, $page + 1)); ?>" class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Next</a></li>
-          <?php endif; ?>
-        </ul>
-      </nav>
+        <?php if ($totalPages > 1): ?>
+          <nav class="students-pagination" aria-label="Student pagination">
+            <ul>
+              <?php if ($page > 1): ?>
+                <li><a href="<?php echo h($mk($tab, $page - 1)); ?>">Previous</a></li>
+              <?php endif; ?>
+              <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
+                <li><a href="<?php echo h($mk($tab, $i)); ?>" class="<?php echo $i === $page ? 'is-active' : ''; ?>"><?php echo $i; ?></a></li>
+              <?php endfor; ?>
+              <?php if ($page < $totalPages): ?>
+                <li><a href="<?php echo h($mk($tab, $page + 1)); ?>">Next</a></li>
+              <?php endif; ?>
+            </ul>
+          </nav>
+        <?php endif; ?>
+      </div>
     <?php endif; ?>
   </div>
 
-  <section class="rounded-xl shadow-card border overflow-hidden mt-5 page-trashlog">
-    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
-      <h2 class="text-base font-semibold text-gray-800 m-0">Deleted Users Log</h2>
-      <span class="text-xs text-gray-500">Audit trail</span>
-    </div>
-    <div class="overflow-x-auto px-3 py-3">
-      <table class="w-full text-left deleted-log-table">
-        <thead class="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th class="px-3 py-2 font-semibold text-gray-700">User ID</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Name</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Email</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">School</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Review Type</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Access</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Deleted By</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Reason of Deletion</th>
-            <th class="px-3 py-2 font-semibold text-gray-700">Date Deleted</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if (empty($deletedLogs)): ?>
-            <tr>
-              <td colspan="9" class="px-3 py-8 text-center text-gray-500 text-sm">
-                No deleted users logged yet.
-              </td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($deletedLogs as $dl): ?>
-              <?php
-                $deletedAccessLabel = (string)($dl['deleted_access_range'] ?? '-');
-                if (preg_match('/^(\d{4}-\d{2}-\d{2})\s*(?:->|-)\s*(\d{4}-\d{2}-\d{2})$/', $deletedAccessLabel, $m)) {
-                  $sTs = strtotime($m[1]);
-                  $eTs = strtotime($m[2]);
-                  if ($sTs && $eTs) {
-                    $deletedAccessLabel = date('F j, Y', $sTs) . ' - ' . date('F j, Y', $eTs);
-                  }
-                } elseif (preg_match('/^([A-Za-z]+\s+\d{1,2},\s+\d{4})\s*-\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})$/', $deletedAccessLabel, $m2)) {
-                  $deletedAccessLabel = $m2[1] . ' - ' . $m2[2];
-                }
-              ?>
-              <tr class="border-b border-gray-100">
-                <td class="px-3 py-2 font-semibold text-gray-700"><?php echo (int)$dl['deleted_user_id']; ?></td>
-                <td class="px-3 py-2 text-gray-800"><?php echo h($dl['deleted_name']); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h($dl['deleted_email']); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h((string)($dl['deleted_school'] ?? '-')); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h((string)($dl['deleted_review_type'] ?? '-')); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h($deletedAccessLabel); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h($dl['deleted_by_admin_name']); ?></td>
-                <td class="px-3 py-2 text-gray-700"><?php echo h((string)($dl['deletion_reason'] ?? '-')); ?></td>
-                <td class="px-3 py-2 text-gray-600"><?php echo !empty($dl['deleted_at']) ? h(date('M j, Y g:i A', strtotime((string)$dl['deleted_at']))) : '-'; ?></td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-  </section>
+  <?php if (isset($stmt) && $stmt instanceof mysqli_stmt) { mysqli_stmt_close($stmt); } ?>
 
-  <?php mysqli_stmt_close($stmt); ?>
+  <div id="studentDetailsDrawer" class="student-drawer" aria-hidden="true">
+    <div class="student-drawer__backdrop" data-drawer-close></div>
+    <aside class="student-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="studentDrawerTitle">
+      <header class="student-drawer__header">
+        <div class="student-drawer__identity">
+          <span class="student-drawer__avatar" id="studentDrawerAvatar" aria-hidden="true">U</span>
+          <div class="min-w-0">
+            <h2 id="studentDrawerTitle" class="student-drawer__title">Student</h2>
+            <p class="student-drawer__email" id="studentDrawerEmail">—</p>
+          </div>
+        </div>
+        <button type="button" class="student-drawer__close" data-drawer-close aria-label="Close details"><i class="bi bi-x-lg"></i></button>
+      </header>
+      <div class="student-drawer__body">
+        <section class="student-drawer__section">
+          <h3>Enrollment &amp; Commerce</h3>
+          <dl class="student-drawer__dl">
+            <div><dt>Enrollment</dt><dd id="studentDrawerEnrollment">—</dd></div>
+            <div><dt>Payment</dt><dd id="studentDrawerPayment">—</dd></div>
+            <div><dt>Proof</dt><dd id="studentDrawerProof">—</dd></div>
+            <div><dt>Commerce access</dt><dd id="studentDrawerCommerceAccess">—</dd></div>
+            <div><dt>Account</dt><dd id="studentDrawerAccount">—</dd></div>
+          </dl>
+        </section>
+        <section class="student-drawer__section">
+          <h3>Profile</h3>
+          <dl class="student-drawer__dl">
+            <div><dt>Login status</dt><dd id="studentDrawerStatus">—</dd></div>
+            <div><dt>School</dt><dd id="studentDrawerSchool">—</dd></div>
+            <div><dt>Review type</dt><dd id="studentDrawerReview">—</dd></div>
+            <div><dt>Registered</dt><dd id="studentDrawerCreated">—</dd></div>
+          </dl>
+        </section>
+        <section class="student-drawer__section">
+          <h3>Account window (login)</h3>
+          <dl class="student-drawer__dl">
+            <div><dt>Window</dt><dd id="studentDrawerAccess">—</dd></div>
+            <div><dt>Timeline</dt><dd id="studentDrawerAccessMeta">—</dd></div>
+            <div><dt>Last activity</dt><dd id="studentDrawerActivity">—</dd></div>
+          </dl>
+          <p class="text-xs opacity-70 mt-2 mb-0">Commerce grant dates are on the student detail / grant ledger. Manual / Administrative Access is separate from purchased access.</p>
+        </section>
+      </div>
+      <footer class="student-drawer__footer">
+        <a id="studentDrawerFullLink" href="admin_students" class="admin-btn admin-btn--secondary admin-btn--sm">Open full page</a>
+        <a id="studentDrawerAccessLink" href="admin_student_access" class="admin-btn admin-btn--secondary admin-btn--sm">Manual / Admin Access</a>
+      </footer>
+    </aside>
+  </div>
+
+  <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
+    <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
+    <span class="students-bulk-bar__hint">Legacy approve or repair activation for selected rows only. Normal paid enrollment auto-activates after fulfillment.</span>
+    <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
+    <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Continue</button>
+  </div>
 </div>
 </main>
 <div id="approveConfirmModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-  <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="approveConfirmTitle">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="approveConfirmTitle" x-data="approveAccessPicker()" x-init="init()">
     <div class="admin-modal__hero">
       <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-patch-check"></i></span>
       <div>
-        <h3 id="approveConfirmTitle" class="admin-modal__title">Confirm Approval</h3>
-        <p class="admin-modal__desc">Are you sure you want to approve this student?</p>
+        <h3 id="approveConfirmTitle" class="admin-modal__title">Repair Activation</h3>
+        <p class="admin-modal__desc" id="approveConfirmDesc">Exceptional repair only when commerce access is already granted but login is still pending.</p>
         <p class="admin-modal__desc"><strong id="approveConfirmStudentName">Student</strong></p>
       </div>
+    </div>
+    <div class="admin-modal__field">
+      <label for="approveConfirmMonths">Account window (months)</label>
+      <input type="number" id="approveConfirmMonths" min="1" max="36" value="6" required>
+    </div>
+    <div id="approveCommerceNotice" class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 mb-2" hidden>
+      Commerce enrollment detected. This activates <strong>login only</strong>. Paid content comes from payment fulfillment; Free Access comes from FAR approval. The SCA picker is not used.
+    </div>
+    <div class="approve-access-box" id="approveLegacyScaBox">
+      <p class="text-xs font-semibold text-slate-300 mb-1">Manual / Administrative Access (legacy students only)</p>
+      <?php
+        $scaTreeScope = 'approve';
+        require __DIR__ . '/includes/admin_sca_permission_tree.php';
+      ?>
+      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+      <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
     </div>
     <div id="approveConfirmError" class="admin-modal__error"></div>
     <div class="admin-modal__actions">
       <button type="button" id="approveConfirmCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
-      <button type="button" id="approveConfirmSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Confirm</button>
+      <button type="button" id="approveConfirmSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Confirm activate</button>
     </div>
   </section>
 </div>
@@ -1408,8 +1640,10 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     <span class="admin-feedback-icon admin-feedback-icon--success admin-feedback-icon--pulse"><i class="bi bi-check-circle-fill"></i></span>
     <h3 id="approveSuccessTitle" class="admin-modal__title">Student Approved</h3>
     <p id="approveSuccessMessage" class="admin-modal__desc">The student has been successfully approved.</p>
-    <div class="admin-modal__actions">
-      <button type="button" id="approveSuccessContinueBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-arrow-right-circle"></i> Go to Enrolled</button>
+    <p class="admin-modal__desc" style="margin-top:0.35rem;">Where do you want to go next?</p>
+    <div class="admin-modal__actions" style="flex-wrap:wrap; justify-content:center;">
+      <button type="button" id="approveSuccessStayBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-hourglass-split"></i> Stay on Pending</button>
+      <button type="button" id="approveSuccessContinueBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-people"></i> Go to Enrolled</button>
     </div>
   </section>
 </div>
@@ -1558,35 +1792,146 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     });
   })();
 
+  document.addEventListener('alpine:init', function () {
+    Alpine.data('approveAccessPicker', function () {
+      return {
+        catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
+        permissions: [{ content_type: 'full_lms', content_id: 0 }],
+        loadingCatalog: false,
+        get permissionListKey() { return 'permissions'; },
+        get activePermissionList() { return this.permissions || []; },
+        get hasFullLms() {
+          return this.activePermissionList.some(function (p) {
+            return p.content_type === 'full_lms' && Number(p.content_id) === 0;
+          });
+        },
+        get activePermCount() {
+          if (this.hasFullLms) return 'Full LMS';
+          var n = this.activePermissionList.length;
+          return n === 0 ? 'None selected' : n + ' item' + (n === 1 ? '' : 's');
+        },
+        async init() {
+          this.loadingCatalog = true;
+          try {
+            var res = await fetch('admin_student_access_api?action=catalog', { credentials: 'same-origin' });
+            var data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.ok && data.catalog) {
+              this.catalog = data.catalog;
+            }
+          } catch (e) { /* keep empty catalog */ }
+          this.loadingCatalog = false;
+        },
+        isChecked: function (type, id) {
+          return this.activePermissionList.some(function (p) {
+            return p.content_type === type && Number(p.content_id) === Number(id);
+          });
+        },
+        toggle: function (type, id, on) {
+          this.permissions = this.permissions.filter(function (p) {
+            return !(p.content_type === type && Number(p.content_id) === Number(id));
+          });
+          if (on) this.permissions.push({ content_type: type, content_id: Number(id) });
+        },
+        toggleFullLms: function (on) {
+          this.permissions = this.permissions.filter(function (p) { return p.content_type !== 'full_lms'; });
+          if (on) this.permissions.push({ content_type: 'full_lms', content_id: 0 });
+        },
+        resetDefaults: function () {
+          this.permissions = [{ content_type: 'full_lms', content_id: 0 }];
+        },
+        exportAccess: function () {
+          return {
+            grant_full_lms: this.hasFullLms ? '1' : '0',
+            permissions: JSON.stringify(this.hasFullLms ? [{ content_type: 'full_lms', content_id: 0 }] : this.permissions)
+          };
+        }
+      };
+    });
+  });
+
   (function () {
+    var csrf = <?php echo json_encode($csrf); ?>;
     var confirmOverlay = document.getElementById('approveConfirmModalOverlay');
     var successOverlay = document.getElementById('approveSuccessModalOverlay');
     var confirmName = document.getElementById('approveConfirmStudentName');
     var confirmError = document.getElementById('approveConfirmError');
     var confirmCancel = document.getElementById('approveConfirmCancelBtn');
     var confirmSubmit = document.getElementById('approveConfirmSubmitBtn');
+    var confirmMonths = document.getElementById('approveConfirmMonths');
     var successMsg = document.getElementById('approveSuccessMessage');
     var successContinue = document.getElementById('approveSuccessContinueBtn');
+    var successStay = document.getElementById('approveSuccessStayBtn');
     var loadingOverlay = document.getElementById('actionLoadingModalOverlay');
     var loadingTitle = document.getElementById('actionLoadingTitle');
     var loadingMessage = document.getElementById('actionLoadingMessage');
-    var currentForm = null;
-    var redirectUrl = 'admin_students?tab=enrolled&q=&page=1';
+    var bulkBar = document.getElementById('studentsBulkBar');
+    var bulkCount = document.getElementById('studentsBulkCount');
+    var bulkClear = document.getElementById('studentsBulkClearBtn');
+    var bulkApprove = document.getElementById('studentsBulkApproveBtn');
+    var selectAll = document.getElementById('studentSelectAll');
+    var pendingUserIds = [];
+    var pendingCommerceOnly = false;
+    var enrolledUrl = 'admin_students?tab=enrolled&q=&page=1';
+    var pendingUrl = 'admin_students?tab=pending&q=&page=1';
+    var commerceNotice = document.getElementById('approveCommerceNotice');
+    var legacyScaBox = document.getElementById('approveLegacyScaBox');
+    var approveTitle = document.getElementById('approveConfirmTitle');
+    var approveDesc = document.getElementById('approveConfirmDesc');
 
     if (!confirmOverlay || !confirmSubmit) return;
 
-    function openConfirm(form) {
-      currentForm = form;
-      var studentName = form ? (form.getAttribute('data-student-name') || 'this student') : 'this student';
-      confirmName.textContent = studentName;
-      confirmError.textContent = '';
+    function getPicker() {
+      var root = confirmOverlay.querySelector('[x-data]');
+      if (!root || !window.Alpine) return null;
+      try { return Alpine.$data(root); } catch (e) { return null; }
+    }
+
+    function selectedCheckboxes() {
+      return Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked'));
+    }
+
+    function rowIsCommerce(userId) {
+      var tr = document.querySelector('tr[data-user-id="' + String(userId) + '"]');
+      return !!(tr && tr.getAttribute('data-commerce-enrollment') === '1');
+    }
+
+    function syncBulkBar() {
+      var selected = selectedCheckboxes();
+      var n = selected.length;
+      if (bulkCount) bulkCount.textContent = String(n);
+      if (bulkBar) bulkBar.classList.toggle('is-visible', n > 0);
+      if (selectAll) {
+        var all = document.querySelectorAll('.js-student-select');
+        selectAll.checked = all.length > 0 && selected.length === all.length;
+        selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+      }
+    }
+
+    function openConfirm(userIds, label) {
+      pendingUserIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
+      if (pendingUserIds.length === 0) return;
+      pendingCommerceOnly = pendingUserIds.every(function (id) { return rowIsCommerce(id); });
+      if (confirmName) confirmName.textContent = label || (pendingUserIds.length + ' students');
+      if (confirmError) confirmError.textContent = '';
+      if (confirmMonths && (!confirmMonths.value || Number(confirmMonths.value) < 1)) confirmMonths.value = '6';
+      if (approveTitle) approveTitle.textContent = pendingCommerceOnly ? 'Repair Activation' : 'Approve account';
+      if (approveDesc) {
+        approveDesc.textContent = pendingCommerceOnly
+          ? 'Exceptional repair only: commerce access is already granted but login is still pending. This does not fulfill payments.'
+          : 'Set enrollment months and optional Manual / Administrative Access for legacy students.';
+      }
+      if (commerceNotice) commerceNotice.hidden = !pendingCommerceOnly;
+      if (legacyScaBox) legacyScaBox.style.display = pendingCommerceOnly ? 'none' : '';
+      var picker = getPicker();
+      if (picker && typeof picker.resetDefaults === 'function') picker.resetDefaults();
       confirmOverlay.classList.add('is-open');
       confirmOverlay.setAttribute('aria-hidden', 'false');
+      if (confirmMonths) setTimeout(function () { confirmMonths.focus(); }, 40);
     }
     function closeConfirm() {
       confirmOverlay.classList.remove('is-open');
       confirmOverlay.setAttribute('aria-hidden', 'true');
-      confirmError.textContent = '';
+      if (confirmError) confirmError.textContent = '';
     }
     function openSuccess(message) {
       if (successMsg) successMsg.textContent = message || 'The student has been successfully approved.';
@@ -1606,61 +1951,139 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
       loadingOverlay.setAttribute('aria-hidden', 'true');
     }
 
-    document.querySelectorAll('.js-approve-form').forEach(function(form) {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        openConfirm(form);
+    document.querySelectorAll('.js-approve-one-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = Number(btn.getAttribute('data-user-id') || 0);
+        var name = btn.getAttribute('data-student-name') || 'this student';
+        openConfirm([id], name);
       });
     });
-    if (confirmCancel) confirmCancel.addEventListener('click', closeConfirm);
-    confirmOverlay.addEventListener('click', function(e) {
-      if (e.target === confirmOverlay) closeConfirm();
+
+    document.querySelectorAll('.js-student-select').forEach(function (cb) {
+      cb.addEventListener('change', syncBulkBar);
     });
-    if (successContinue) {
-      successContinue.addEventListener('click', function() {
-        window.location.href = redirectUrl;
+    if (selectAll) {
+      selectAll.addEventListener('change', function () {
+        document.querySelectorAll('.js-student-select').forEach(function (cb) {
+          cb.checked = selectAll.checked;
+        });
+        syncBulkBar();
+      });
+    }
+    if (bulkClear) {
+      bulkClear.addEventListener('click', function () {
+        document.querySelectorAll('.js-student-select').forEach(function (cb) { cb.checked = false; });
+        syncBulkBar();
+      });
+    }
+    if (bulkApprove) {
+      bulkApprove.addEventListener('click', function () {
+        var selected = selectedCheckboxes();
+        if (selected.length === 0) return;
+        var ids = selected.map(function (cb) { return Number(cb.value); });
+        openConfirm(ids, selected.length + ' student' + (selected.length === 1 ? '' : 's'));
       });
     }
 
-    confirmSubmit.addEventListener('click', function() {
-      if (!currentForm) return;
+    if (confirmCancel) confirmCancel.addEventListener('click', closeConfirm);
+    confirmOverlay.addEventListener('click', function (e) {
+      if (e.target === confirmOverlay) closeConfirm();
+    });
+    if (successContinue) {
+      successContinue.addEventListener('click', function () {
+        window.location.href = enrolledUrl;
+      });
+    }
+    if (successStay) {
+      successStay.addEventListener('click', function () {
+        window.location.href = pendingUrl;
+      });
+    }
+
+    confirmSubmit.addEventListener('click', function () {
+      if (pendingUserIds.length === 0) return;
+      var months = confirmMonths ? Number(confirmMonths.value) : 0;
+      if (!months || months < 1) {
+        if (confirmError) confirmError.textContent = 'Enter a valid number of months.';
+        return;
+      }
+      var access = { grant_full_lms: '0', permissions: '[]' };
+      if (!pendingCommerceOnly) {
+        var picker = getPicker();
+        access = picker && typeof picker.exportAccess === 'function'
+          ? picker.exportAccess()
+          : { grant_full_lms: '1', permissions: JSON.stringify([{ content_type: 'full_lms', content_id: 0 }]) };
+        if (access.grant_full_lms !== '1') {
+          try {
+            var perms = JSON.parse(access.permissions || '[]');
+            if (!Array.isArray(perms) || perms.length === 0) {
+              if (confirmError) confirmError.textContent = 'Select Full LMS or at least one content item for legacy students.';
+              return;
+            }
+          } catch (e) {
+            if (confirmError) confirmError.textContent = 'Select Full LMS or at least one content item for legacy students.';
+            return;
+          }
+        }
+      }
+
       confirmSubmit.disabled = true;
-      confirmSubmit.textContent = 'Approving...';
-      confirmError.textContent = '';
+      confirmSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Activating...';
+      if (confirmError) confirmError.textContent = '';
       closeConfirm();
-      showLoading('Approving student...', 'Finalizing approval and sending notification email.');
+      showLoading(
+        pendingUserIds.length > 1 ? 'Activating accounts...' : 'Activating account...',
+        pendingCommerceOnly
+          ? 'Setting login window only. Commerce content access is unchanged.'
+          : 'Setting account window and manual access.'
+      );
 
-      var formData = new FormData(currentForm);
+      var formData = new FormData();
+      formData.append('csrf_token', csrf);
       formData.append('ajax', '1');
+      formData.append('months', String(months));
+      formData.append('grant_full_lms', access.grant_full_lms);
+      formData.append('permissions', access.permissions);
+      formData.append('return_to', 'admin_students?tab=enrolled&q=&page=1');
+      if (pendingUserIds.length === 1) {
+        formData.append('user_id', String(pendingUserIds[0]));
+      } else {
+        formData.append('user_ids', JSON.stringify(pendingUserIds));
+      }
 
-      fetch(currentForm.action || 'activate_user', {
+      fetch('activate_user', {
         method: 'POST',
         credentials: 'same-origin',
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
       })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
         if (!data || !data.ok) {
           hideLoading();
-          openConfirm(currentForm);
-          confirmError.textContent = (data && data.error) ? data.error : 'Approval failed. Please try again.';
+          openConfirm(pendingUserIds, confirmName ? confirmName.textContent : '');
+          if (confirmError) confirmError.textContent = (data && data.error) ? data.error : 'Activation failed. Please try again.';
           return;
         }
-        redirectUrl = data.redirect_url || redirectUrl;
         hideLoading();
-        openSuccess(data.message || 'Student approved successfully.');
+        openSuccess(data.message || 'Account activated successfully.');
       })
-      .catch(function() {
+      .catch(function () {
         hideLoading();
-        openConfirm(currentForm);
-        confirmError.textContent = 'Request failed. Please check your connection and try again.';
+        openConfirm(pendingUserIds, confirmName ? confirmName.textContent : '');
+        if (confirmError) confirmError.textContent = 'Request failed. Please check your connection and try again.';
       })
-      .finally(function() {
+      .finally(function () {
         confirmSubmit.disabled = false;
-        confirmSubmit.textContent = 'Confirm';
+        confirmSubmit.innerHTML = '<i class="bi bi-check2-circle"></i> Confirm activate';
       });
     });
+
+    syncBulkBar();
+    if (selectAll && document.querySelectorAll('.js-student-select').length === 0) {
+      selectAll.disabled = true;
+      selectAll.title = 'No approvable students on this page';
+    }
   })();
 
   (function () {
@@ -1927,6 +2350,94 @@ $mk = function(string $t, int $p = 1) use ($q) : string {
     document.addEventListener('click', closeAllMenus);
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeAllMenus();
+    });
+  })();
+
+  (function () {
+    var drawer = document.getElementById('studentDetailsDrawer');
+    if (!drawer) return;
+    var titleEl = document.getElementById('studentDrawerTitle');
+    var emailEl = document.getElementById('studentDrawerEmail');
+    var avatarEl = document.getElementById('studentDrawerAvatar');
+    var statusEl = document.getElementById('studentDrawerStatus');
+    var schoolEl = document.getElementById('studentDrawerSchool');
+    var reviewEl = document.getElementById('studentDrawerReview');
+    var createdEl = document.getElementById('studentDrawerCreated');
+    var accessEl = document.getElementById('studentDrawerAccess');
+    var accessMetaEl = document.getElementById('studentDrawerAccessMeta');
+    var activityEl = document.getElementById('studentDrawerActivity');
+    var proofEl = document.getElementById('studentDrawerProof');
+    var enrollEl = document.getElementById('studentDrawerEnrollment');
+    var paymentEl = document.getElementById('studentDrawerPayment');
+    var commerceAccessEl = document.getElementById('studentDrawerCommerceAccess');
+    var accountEl = document.getElementById('studentDrawerAccount');
+    var fullLink = document.getElementById('studentDrawerFullLink');
+    var accessLink = document.getElementById('studentDrawerAccessLink');
+
+    function setText(el, value) {
+      if (el) el.textContent = value || '—';
+    }
+
+    function openFromRow(row) {
+      if (!row) return;
+      var id = row.getAttribute('data-user-id') || '';
+      var name = row.getAttribute('data-drawer-name') || 'Student';
+      var email = row.getAttribute('data-drawer-email') || '—';
+      var avatar = row.getAttribute('data-drawer-avatar') || '';
+      var initial = row.getAttribute('data-drawer-initial') || 'U';
+      setText(titleEl, name);
+      setText(emailEl, email);
+      setText(statusEl, row.getAttribute('data-drawer-status'));
+      setText(schoolEl, row.getAttribute('data-drawer-school'));
+      setText(reviewEl, row.getAttribute('data-drawer-review'));
+      setText(createdEl, row.getAttribute('data-drawer-created'));
+      setText(accessEl, row.getAttribute('data-drawer-access'));
+      setText(accessMetaEl, row.getAttribute('data-drawer-access-meta') || '—');
+      setText(activityEl, row.getAttribute('data-drawer-activity'));
+      setText(proofEl, row.getAttribute('data-drawer-proof'));
+      setText(enrollEl, row.getAttribute('data-drawer-enrollment'));
+      setText(paymentEl, row.getAttribute('data-drawer-payment'));
+      setText(commerceAccessEl, row.getAttribute('data-drawer-commerce-access'));
+      setText(accountEl, row.getAttribute('data-drawer-account'));
+      if (fullLink) fullLink.href = 'admin_student_view?id=' + encodeURIComponent(id);
+      if (accessLink) accessLink.href = 'admin_student_access?user_id=' + encodeURIComponent(id);
+      if (avatarEl) {
+        if (avatar) {
+          avatarEl.innerHTML = '<img src="' + avatar.replace(/"/g, '&quot;') + '" alt="">';
+        } else {
+          avatarEl.textContent = initial;
+        }
+      }
+      drawer.classList.add('is-open');
+      drawer.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('student-drawer-open');
+      document.querySelectorAll('.admin-student-action-menu.open').forEach(function (m) {
+        m.classList.remove('open');
+      });
+      document.querySelectorAll('[data-admin-student-action-menu].is-open').forEach(function (w) {
+        w.classList.remove('is-open');
+      });
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      drawer.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('student-drawer-open');
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.js-student-drawer-open');
+      if (!btn) return;
+      e.preventDefault();
+      var uid = btn.getAttribute('data-user-id');
+      var row = uid ? document.querySelector('tr[data-user-id="' + uid + '"]') : btn.closest('tr');
+      openFromRow(row);
+    });
+    drawer.querySelectorAll('[data-drawer-close]').forEach(function (el) {
+      el.addEventListener('click', closeDrawer);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer();
     });
   })();
 </script>

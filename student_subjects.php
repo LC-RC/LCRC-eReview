@@ -408,7 +408,7 @@ $pageTitle = 'Subjects';
               }
               $cardTheme = ereview_subject_card_theme((string)($s['subject_name'] ?? ''));
               $subjectIdRow = (int)($s['subject_id'] ?? 0);
-              $subjectOpen = sca_has_access($conn, $uid, 'subject', $subjectIdRow);
+              $subjectOpen = sca_subject_has_any_access($conn, $uid, $subjectIdRow);
             ?>
             <article class="subject-catalog-card dash-anim delay-2<?php echo $subjectOpen ? '' : ' lms-locked-card'; ?>" data-subject-theme="<?php echo h($cardTheme); ?>">
               <?php if (!$subjectOpen): ?><span class="lms-lock-overlay lms-lock-badge"><i class="bi bi-lock-fill"></i> Locked</span><?php endif; ?>

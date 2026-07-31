@@ -1,7 +1,10 @@
-<?php
+﻿<?php
 require_once 'auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/profile_avatar.php';
+require_once __DIR__ . '/includes/url_helpers.php';
+require_once __DIR__ . '/includes/commerce_student_admin.php';
+require_once __DIR__ . '/includes/commerce_payment.php';
 
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
@@ -17,6 +20,13 @@ $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'")
 if ($cp2 && mysqli_fetch_assoc($cp2)) $hasUseDefaultAvatar = true;
 
 $selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, role, status, access_start, access_end, access_months, created_at, updated_at";
+$enrollCols = ['enrollment_path', 'selected_package_id', 'selected_lesson_ids_json'];
+foreach ($enrollCols as $ecol) {
+    $chk = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $ecol) . "'");
+    if ($chk && mysqli_fetch_assoc($chk)) {
+        $selectCols .= ', ' . $ecol;
+    }
+}
 if ($hasProfilePicture) $selectCols .= ", profile_picture";
 if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
 
@@ -32,15 +42,21 @@ if (!$user || $user['role'] !== 'student') {
     exit;
 }
 
+$commerce = commerce_admin_student_detail_summary($conn, $user);
+$isCommerceEnrollment = !empty($commerce['is_commerce']);
+$isPaidPath = !empty($commerce['is_paid_path']);
+$isFreeAccess = !empty($commerce['is_free_access']);
+$latestPayment = $commerce['latest_payment'] ?? null;
+
 $schoolLabel = $user['school'] === 'Other' && !empty($user['school_other']) ? $user['school_other'] : $user['school'];
 $avatarPath = ereview_avatar_public_path($user['profile_picture'] ?? '');
 $useDefaultAvatar = $hasUseDefaultAvatar ? !empty($user['use_default_avatar']) : true;
 $avatarInitial = ereview_avatar_initial($user['full_name'] ?? 'U');
-$hasPaymentProof = !empty($user['payment_proof']);
-$paymentProofUrl = 'admin_payment_proof?user_id=' . (int)$user['user_id'];
-$paymentProofExt = $hasPaymentProof ? strtolower((string)pathinfo((string)$user['payment_proof'], PATHINFO_EXTENSION)) : '';
-$isProofImage = in_array($paymentProofExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], true);
-$isProofPdf = ($paymentProofExt === 'pdf');
+$legacyHasPaymentProof = !empty($user['payment_proof']);
+$legacyPaymentProofUrl = 'admin_payment_proof?user_id=' . (int)$user['user_id'];
+$commerceProofUrl = ($latestPayment && !empty($latestPayment['has_proof']))
+    ? ereview_url('payment_proof_file') . '?payment_id=' . (int) $latestPayment['payment_id']
+    : '';
 $csrf = generateCSRFToken();
 $pageTitle = 'Student Details - ' . $user['full_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_students'], [ h($user['full_name']) ] ];
@@ -248,25 +264,76 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
       box-shadow: 0 16px 42px rgba(2, 6, 23, 0.65);
       background: #0f172a;
     }
+    .view-approve-access {
+      margin-top: 0.35rem;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .view-approve-access .sca-tree {
+      max-height: 16rem; overflow-y: auto; padding-right: 0.25rem;
+    }
+    .view-approve-access .sca-tree details {
+      border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 0.55rem;
+      margin-bottom: 0.4rem; padding: 0.3rem 0.55rem; background: rgba(30, 41, 59, 0.75);
+    }
+    .view-approve-access .sca-tree summary {
+      cursor: pointer; font-weight: 700; color: #e2e8f0; list-style: none; font-size: 0.84rem;
+    }
+    .view-approve-access .sca-tree summary::-webkit-details-marker { display: none; }
+    .view-approve-access .sca-tree label {
+      display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0 0.2rem 0.85rem;
+      font-size: 0.8rem; color: #cbd5e1; cursor: pointer; border-radius: 0.35rem;
+    }
+    .view-approve-access .sca-tree label:hover { background: rgba(51, 65, 85, 0.65); }
+    .view-approve-access .sca-tree input[type=checkbox] { accent-color: #34d399; width: 0.95rem; height: 0.95rem; }
+    .view-approve-access .text-gray-100 { color: #f1f5f9 !important; }
+    .view-approve-access .text-gray-500 { color: #94a3b8 !important; }
+    .view-approve-access .sca-tree-hint { color: #94a3b8; }
+    .view-approve-access .sca-subject-summary { display: flex; align-items: center; gap: 0.4rem; }
+    .view-approve-access .sca-chevron {
+      width: 0.5rem; height: 0.5rem; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8;
+      transform: rotate(-45deg); flex-shrink: 0;
+    }
+    .view-approve-access details[open] > summary .sca-chevron { transform: rotate(45deg); }
+    .view-approve-access .sca-subject-summary__meta {
+      font-size: 0.65rem; font-weight: 700; color: #cbd5e1; background: rgba(51, 65, 85, 0.9);
+      border-radius: 999px; padding: 0.1rem 0.4rem; margin-left: auto;
+    }
+    .view-approve-access .sca-grant-all {
+      align-items: flex-start !important; margin: 0.35rem 0 0.45rem; padding: 0.45rem 0.55rem !important;
+      border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 0.5rem; background: rgba(6, 78, 59, 0.35);
+    }
+    .view-approve-access .sca-grant-all__title { display: block; font-weight: 800; color: #a7f3d0; font-size: 0.8rem; }
+    .view-approve-access .sca-grant-all__sub { display: block; font-size: 0.7rem; color: #86efac; }
+    .view-approve-access .sca-topic-list { border-left: 2px solid rgba(148, 163, 184, 0.35); margin-left: 0.3rem; padding-left: 0.35rem; }
+    .view-approve-access .sca-topic-list__head { color: #94a3b8; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 0.3rem 0 0.2rem; }
+    .view-approve-access .sca-topic-check { color: #f1f5f9 !important; font-weight: 600; }
   </style>
 </head>
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero flex flex-wrap justify-between items-center gap-4">
-    <div>
-      <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-      <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-        <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
-        Student Details
-      </h1>
-      <p class="text-gray-400 mt-2 mb-0">View registration, approve or reject, and manage access. ID: <?php echo (int)$user['user_id']; ?></p>
-    </div>
-    <div class="flex gap-2">
-      <a href="admin_students" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to list</a>
-      <?php if ($hasPaymentProof): ?>
-        <a href="#payment-proof-section" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition inline-flex items-center gap-2"><i class="bi bi-receipt"></i> View Proof</a>
-      <?php endif; ?>
+  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero admin-glass-hero">
+    <div class="admin-page-header">
+      <div class="min-w-0">
+        <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
+        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
+          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+          <span><?php echo h($user['full_name'] ?? 'Student Details'); ?></span>
+        </h1>
+        <p class="admin-page-header__subtitle">Registration, commerce, and account activation Â· ID <?php echo (int)$user['user_id']; ?></p>
+      </div>
+      <div class="admin-page-header__actions">
+        <a href="admin_students" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Back to list</a>
+        <?php if ($commerceProofUrl !== ''): ?>
+          <a href="<?php echo h($commerceProofUrl); ?>" target="_blank" rel="noopener" class="admin-btn admin-btn--primary"><i class="bi bi-receipt"></i> View Proof</a>
+        <?php endif; ?>
+        <?php if ($latestPayment): ?>
+          <a href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']); ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-credit-card"></i> View Payment</a>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
 
@@ -334,60 +401,130 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <div class="text-gray-500 text-sm">Registered</div>
             <div class="font-semibold text-gray-800"><?php echo h($user['created_at']); ?></div>
           </div>
-          <div class="md:col-span-2" id="payment-proof-section">
-            <div class="text-gray-500 text-sm">Payment Proof</div>
-            <?php if ($hasPaymentProof): ?>
-              <div class="proof-viewer">
-                <div class="proof-viewer__head">
-                  <span class="proof-viewer__title">
-                    <i class="bi bi-shield-check"></i>
-                    Uploaded proof preview
-                  </span>
-                  <a href="<?php echo h($paymentProofUrl); ?>" target="_blank" rel="noopener" class="proof-viewer__open">Open original</a>
-                </div>
-                <div class="proof-viewer__body">
-                  <?php if ($isProofImage): ?>
-                    <img
-                      src="<?php echo h($paymentProofUrl); ?>"
-                      alt="Payment proof of <?php echo h($user['full_name']); ?>"
-                      class="proof-viewer__image js-open-media-modal"
-                      data-media-src="<?php echo h($paymentProofUrl); ?>"
-                      data-media-title="Payment proof of <?php echo h($user['full_name']); ?>"
-                      loading="lazy">
-                  <?php elseif ($isProofPdf): ?>
-                    <iframe
-                      src="<?php echo h($paymentProofUrl); ?>"
-                      class="proof-viewer__frame"
-                      title="Payment proof document"></iframe>
-                  <?php else: ?>
-                    <iframe
-                      src="<?php echo h($paymentProofUrl); ?>"
-                      class="proof-viewer__frame"
-                      title="Payment proof file preview"></iframe>
-                  <?php endif; ?>
-                </div>
-              </div>
-            <?php else: ?>
-              <div class="proof-empty"><i class="bi bi-info-circle"></i> No proof uploaded.</div>
-            <?php endif; ?>
-          </div>
         </div>
       </div>
+
+      <?php require __DIR__ . '/includes/admin_student_commerce_panel.php'; ?>
     </div>
     <div class="lg:col-span-5">
       <div class="rounded-xl shadow-card border p-5 page-table">
-        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Access</h2>
-        <div class="space-y-2 mb-4">
-          <div><span class="text-gray-500 text-sm">Start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '-'; ?></span></div>
-          <div><span class="text-gray-500 text-sm">End:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_end'] ? h($user['access_end']) : '-'; ?></span></div>
-          <div><span class="text-gray-500 text-sm">Months:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '-'; ?></span></div>
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Account activation</h2>
+        <div class="space-y-2 mb-4 text-sm">
+          <div><span class="text-gray-500">Login status:</span> <span class="font-semibold text-gray-800"><?php echo h((string) $commerce['account_label']); ?></span></div>
+          <div><span class="text-gray-500">Account window start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '—'; ?></span></div>
+          <div><span class="text-gray-500">Account window end:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_end'] ? h($user['access_end']) : '—'; ?></span></div>
+          <div><span class="text-gray-500">Months:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '—'; ?></span></div>
+          <div><span class="text-gray-500">Commerce content access:</span> <span class="font-semibold text-gray-800"><?php echo h((string) ($commerce['commerce_access']['label'] ?? 'None')); ?></span></div>
+          <div class="pt-1">
+            <a class="text-sm font-semibold underline text-sky-600" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $user['user_id']); ?>">View Commerce Grants</a>
+          </div>
         </div>
-        <?php if (strtolower((string)$user['status']) !== 'approved'): ?>
-          <form class="flex flex-wrap gap-2" action="activate_user" method="POST">
+
+        <?php
+          $acctIsApproved = strtolower((string) $user['status']) === 'approved';
+          $payToneUi = '';
+          $accessToneUi = (string) ($commerce['commerce_access']['tone'] ?? 'none');
+          $latestPayStatus = (string) (($latestPayment['status'] ?? ''));
+          $latestVStatus = (string) (($latestPayment['verification_status'] ?? ''));
+          $latestFulfilled = !empty($latestPayment['fulfilled']);
+          if (!empty($isPaidPath) && $latestPayment) {
+              if ($latestPayStatus === 'rejected' || in_array($latestVStatus, ['manually_rejected', 'failed'], true)) {
+                  $payToneUi = 'rejected';
+              } elseif ($latestPayStatus === 'pending_verification' || $latestVStatus === 'needs_review') {
+                  $payToneUi = 'review';
+              } elseif ($latestPayStatus === 'paid' && in_array($latestVStatus, ['auto_verified', 'manually_approved'], true)) {
+                  $payToneUi = 'verified';
+              } elseif ($latestPayStatus === 'awaiting_proof') {
+                  $payToneUi = 'awaiting';
+              }
+          }
+        ?>
+        <?php if ($isCommerceEnrollment && $acctIsApproved && $accessToneUi === 'active' && ($payToneUi === 'verified' || !empty($isFreeAccess))): ?>
+          <div class="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-950 mb-3">
+            <div class="font-bold flex items-center gap-2"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Active</div>
+            <div class="text-xs mt-1">
+              <?php if (!empty($isPaidPath)): ?>Payment Verified · <?php endif; ?>
+              Access Granted · Login activated automatically after commerce success.
+            </div>
+          </div>
+          <form class="flex flex-wrap gap-2" action="extend_access" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
-            <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="Months" required>
-            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-check2-circle"></i> Approve</button>
+            <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
+            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend account window</button>
+          </form>
+          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
+          <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
+        <?php elseif ($isCommerceEnrollment && !$acctIsApproved): ?>
+          <?php if ($payToneUi === 'review'): ?>
+            <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 mb-3">
+              <div class="font-bold">Payment Review Required</div>
+              <p class="text-xs mt-1 mb-0">Account stays Pending Activation until payment is verified and fulfilled.</p>
+            </div>
+            <?php if (!empty($latestPayment['payment_id'])): ?>
+              <a class="admin-btn admin-btn--primary admin-btn--sm mb-3 inline-flex" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']); ?>">Review Payment</a>
+            <?php endif; ?>
+          <?php elseif ($payToneUi === 'rejected'): ?>
+            <div class="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-950 mb-3">
+              <div class="font-bold">Payment Rejected</div>
+              <p class="text-xs mt-1 mb-0">No commerce access was granted. Account remains Pending Activation.</p>
+            </div>
+          <?php elseif ($payToneUi === 'verified' && $latestFulfilled && $accessToneUi === 'active'): ?>
+            <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 mb-3">
+              <div class="font-bold">Commerce access granted — login repair needed</div>
+              <p class="text-xs mt-1 mb-0">Payment was verified and fulfilled, but login is still pending. Use repair activation below.</p>
+            </div>
+          <?php elseif (!empty($isFreeAccess) && (($commerce['far']['status'] ?? '') === 'pending')): ?>
+            <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 mb-3">
+              <div class="font-bold">Free Access Review Required</div>
+              <p class="text-xs mt-1 mb-0">Account activates automatically when the Free Access request is approved.</p>
+            </div>
+          <?php else: ?>
+            <div class="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900 mb-3">
+              Paid enrollments activate login automatically after verification + fulfillment.
+              Free Access activates after FAR approval. Use repair activation only if commerce succeeded but login is still pending.
+            </div>
+          <?php endif; ?>
+          <?php if ($accessToneUi === 'active'): ?>
+          <form class="space-y-3" action="activate_user" method="POST" id="studentViewApproveForm">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+            <input type="hidden" name="grant_full_lms" value="0">
+            <input type="hidden" name="permissions" value="[]">
+            <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
+            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Account window (months)</label>
+            <input id="viewApproveMonths" type="number" min="1" max="36" name="months" class="input-custom w-28" value="6" placeholder="Months" required>
+            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-wrench"></i> Repair Activation</button>
+          </form>
+          <?php endif; ?>
+          <form class="mt-2" action="reject" method="POST" onsubmit="return confirm('Reject this student?');">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+            <button type="submit" class="w-full px-4 py-2.5 rounded-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition inline-flex items-center justify-center gap-2"><i class="bi bi-x-circle"></i> Reject</button>
+          </form>
+        <?php elseif (!$acctIsApproved): ?>
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 mb-3">
+            Legacy / non-commerce student. Approving can set <strong>Manual / Administrative Access</strong> via the SCA picker below. This is not a paid purchase.
+          </div>
+          <form class="space-y-3" action="activate_user" method="POST" id="studentViewApproveForm"
+                x-data="viewApproveAccessPicker()" x-init="init()"
+                @submit="prepareSubmit($event)">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+            <input type="hidden" name="grant_full_lms" :value="hasFullLms ? '1' : '0'">
+            <input type="hidden" name="permissions" :value="JSON.stringify(hasFullLms ? [{content_type:'full_lms',content_id:0}] : permissions)">
+            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Enrollment months</label>
+            <input id="viewApproveMonths" type="number" min="1" max="36" name="months" class="input-custom w-28" value="6" placeholder="Months" required>
+            <div class="view-approve-access">
+              <p class="text-xs font-semibold text-slate-300 mb-1">Manual / Administrative Access</p>
+              <?php
+                $scaTreeScope = 'viewapprove';
+                require __DIR__ . '/includes/admin_sca_permission_tree.php';
+              ?>
+              <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+              <p class="text-xs text-emerald-400 m-0 mt-2" x-text="'Access: ' + activePermCount"></p>
+            </div>
+            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-check2-circle"></i> Approve account &amp; set manual access</button>
           </form>
           <form class="mt-2" action="reject" method="POST" onsubmit="return confirm('Reject this student?');">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -399,9 +536,10 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
-            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend</button>
+            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend account window</button>
           </form>
-          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manage LMS content access</a>
+          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
+          <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
         <?php endif; ?>
       </div>
     </div>
@@ -461,6 +599,58 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
       if (e.key === 'Escape') closeModal();
     });
   })();
+
+  document.addEventListener('alpine:init', function () {
+    Alpine.data('viewApproveAccessPicker', function () {
+      return {
+        catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
+        permissions: [{ content_type: 'full_lms', content_id: 0 }],
+        loadingCatalog: false,
+        get permissionListKey() { return 'permissions'; },
+        get activePermissionList() { return this.permissions || []; },
+        get hasFullLms() {
+          return this.activePermissionList.some(function (p) {
+            return p.content_type === 'full_lms' && Number(p.content_id) === 0;
+          });
+        },
+        get activePermCount() {
+          if (this.hasFullLms) return 'Full LMS';
+          var n = this.activePermissionList.length;
+          return n === 0 ? 'None selected' : n + ' item' + (n === 1 ? '' : 's');
+        },
+        async init() {
+          this.loadingCatalog = true;
+          try {
+            var res = await fetch('admin_student_access_api?action=catalog', { credentials: 'same-origin' });
+            var data = await res.json().catch(function () { return {}; });
+            if (res.ok && data.ok && data.catalog) this.catalog = data.catalog;
+          } catch (e) { /* ignore */ }
+          this.loadingCatalog = false;
+        },
+        isChecked: function (type, id) {
+          return this.activePermissionList.some(function (p) {
+            return p.content_type === type && Number(p.content_id) === Number(id);
+          });
+        },
+        toggle: function (type, id, on) {
+          this.permissions = this.permissions.filter(function (p) {
+            return !(p.content_type === type && Number(p.content_id) === Number(id));
+          });
+          if (on) this.permissions.push({ content_type: type, content_id: Number(id) });
+        },
+        toggleFullLms: function (on) {
+          this.permissions = this.permissions.filter(function (p) { return p.content_type !== 'full_lms'; });
+          if (on) this.permissions.push({ content_type: 'full_lms', content_id: 0 });
+        },
+        prepareSubmit: function (e) {
+          if (!this.hasFullLms && (!this.permissions || this.permissions.length === 0)) {
+            e.preventDefault();
+            alert('Select Full LMS access or at least one content item before approving.');
+          }
+        }
+      };
+    });
+  });
 </script>
 </body>
 </html>

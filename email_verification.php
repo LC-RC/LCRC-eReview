@@ -53,6 +53,29 @@ function createPendingRegistration($data) {
     $profilePicture = trim($data['profile_picture'] ?? '');
     $useDefaultAvatar = !empty($data['use_default_avatar']) ? 1 : 0;
     $passwordHash = $data['password_hash'] ?? '';
+    $enrollmentPath = $data['enrollment_path'] ?? null;
+    if (!in_array($enrollmentPath, ['package', 'by_topic', 'free_access'], true)) {
+        $enrollmentPath = null;
+    }
+    $selectedPackageId = isset($data['selected_package_id']) && $data['selected_package_id'] !== null && $data['selected_package_id'] !== ''
+        ? (int) $data['selected_package_id']
+        : null;
+    if ($selectedPackageId !== null && $selectedPackageId <= 0) {
+        $selectedPackageId = null;
+    }
+    $selectedLessonIdsJson = $data['selected_lesson_ids_json'] ?? null;
+    if (is_array($selectedLessonIdsJson)) {
+        $selectedLessonIdsJson = json_encode(array_values($selectedLessonIdsJson));
+    }
+    if ($selectedLessonIdsJson !== null && $selectedLessonIdsJson !== '') {
+        $selectedLessonIdsJson = (string) $selectedLessonIdsJson;
+    } else {
+        $selectedLessonIdsJson = null;
+    }
+    $freeAccessNote = isset($data['free_access_note']) ? trim((string) $data['free_access_note']) : null;
+    if ($freeAccessNote === '') {
+        $freeAccessNote = null;
+    }
     if ($fullName === '' || $school === '' || $passwordHash === '') {
         setLastPendingRegistrationError('Missing required registration fields.');
         return null;
@@ -116,12 +139,38 @@ function createPendingRegistration($data) {
 
     $hasPendingProfilePicture = false;
     $hasPendingDefaultAvatar = false;
+    $hasEnrollmentPath = false;
     $cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'profile_picture'");
     if ($cp1 && mysqli_fetch_assoc($cp1)) $hasPendingProfilePicture = true;
     $cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'use_default_avatar'");
     if ($cp2 && mysqli_fetch_assoc($cp2)) $hasPendingDefaultAvatar = true;
+    $cp3 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'enrollment_path'");
+    if ($cp3 && mysqli_fetch_assoc($cp3)) $hasEnrollmentPath = true;
 
-    if ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
+    // Enrollment selection requires schema columns — fail closed rather than discarding selection.
+    if ($enrollmentPath !== null && !$hasEnrollmentPath) {
+        error_log('createPendingRegistration: enrollment_path column missing on pending_registrations');
+        setLastPendingRegistrationError('Enrollment selection is not available. Please contact support.');
+        return null;
+    }
+
+    // Prefer full insert including enrollment + profile fields when available.
+    $useEnrollmentInsert = $hasEnrollmentPath && $hasPendingProfilePicture && $hasPendingDefaultAvatar;
+    if ($enrollmentPath !== null && !$useEnrollmentInsert) {
+        // Enrollment must never be persisted via a path that omits enrollment columns.
+        error_log('createPendingRegistration: cannot persist enrollment selection (profile/enrollment schema mismatch)');
+        setLastPendingRegistrationError('Could not save enrollment selection. Please try again. If this continues, contact support.');
+        return null;
+    }
+
+    if ($useEnrollmentInsert) {
+        $stmt = mysqli_prepare($conn,
+            "INSERT INTO pending_registrations
+              (email, full_name, review_type, enrollment_path, selected_package_id, selected_lesson_ids_json, free_access_note,
+               school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, selector, token_hash, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+    } elseif ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
         $stmt = mysqli_prepare($conn,
             "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
@@ -134,7 +183,28 @@ function createPendingRegistration($data) {
         setLastPendingRegistrationError('Could not prepare pending registration query.');
         return null;
     }
-    if ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
+    if ($useEnrollmentInsert) {
+        mysqli_stmt_bind_param(
+            $stmt,
+            'ssssissssssissss',
+            $email,
+            $fullName,
+            $reviewType,
+            $enrollmentPath,
+            $selectedPackageId,
+            $selectedLessonIdsJson,
+            $freeAccessNote,
+            $school,
+            $schoolOther,
+            $paymentProof,
+            $profilePicture,
+            $useDefaultAvatar,
+            $passwordHash,
+            $selector,
+            $tokenHash,
+            $expiresAt
+        );
+    } elseif ($hasPendingProfilePicture && $hasPendingDefaultAvatar) {
         mysqli_stmt_bind_param($stmt, 'sssssssissss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $profilePicture, $useDefaultAvatar, $passwordHash, $selector, $tokenHash, $expiresAt);
     } else {
         mysqli_stmt_bind_param($stmt, 'ssssssssss', $email, $fullName, $reviewType, $school, $schoolOther, $paymentProof, $passwordHash, $selector, $tokenHash, $expiresAt);
@@ -142,7 +212,13 @@ function createPendingRegistration($data) {
     if (!mysqli_stmt_execute($stmt)) {
         $firstError = mysqli_error($conn);
         mysqli_stmt_close($stmt);
-        // Fallback insert (without profile fields) so email verification is not blocked by schema mismatch.
+        // Fail closed when enrollment selection was provided — never drop enrollment fields via fallback.
+        if ($enrollmentPath !== null) {
+            error_log('createPendingRegistration enrollment insert failed: ' . $firstError);
+            setLastPendingRegistrationError('Could not save enrollment selection. Please try again. If this continues, contact support.');
+            return null;
+        }
+        // Legacy path (no enrollment mode): allow profile-less fallback only.
         $fallbackStmt = mysqli_prepare($conn,
             "INSERT INTO pending_registrations (email, full_name, review_type, school, school_other, payment_proof, password_hash, selector, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
@@ -190,7 +266,9 @@ function validateVerificationToken($rawToken) {
     if ($cp2 && mysqli_fetch_assoc($cp2)) $hasPendingDefaultAvatar = true;
 
     $selectSql = $hasPendingProfilePicture && $hasPendingDefaultAvatar
-        ? "SELECT id, email, full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, token_hash FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1"
+        ? "SELECT id, email, full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, password_hash, token_hash,
+                  enrollment_path, selected_package_id, selected_lesson_ids_json, free_access_note
+           FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1"
         : "SELECT id, email, full_name, review_type, school, school_other, payment_proof, password_hash, token_hash FROM pending_registrations WHERE selector = ? AND expires_at > ? LIMIT 1";
     $stmt = mysqli_prepare($conn, $selectSql);
     if (!$stmt) return null;
@@ -234,7 +312,41 @@ function completeVerificationAndCreateUser($pendingRow) {
     $cu2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
     if ($cu2 && mysqli_fetch_assoc($cu2)) $hasUserDefaultAvatar = true;
 
-    if ($hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar) {
+    $hasEnrollmentPath = false;
+    $cuEnroll = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'enrollment_path'");
+    if ($cuEnroll && mysqli_fetch_assoc($cuEnroll)) {
+        $hasEnrollmentPath = true;
+    }
+    $hasSelectedPackage = false;
+    $cuPkg = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'selected_package_id'");
+    if ($cuPkg && mysqli_fetch_assoc($cuPkg)) {
+        $hasSelectedPackage = true;
+    }
+
+    $enrollmentPath = $pendingRow['enrollment_path'] ?? null;
+    if (!in_array($enrollmentPath, ['package', 'by_topic', 'free_access'], true)) {
+        $enrollmentPath = null;
+    }
+    $selectedPackageId = isset($pendingRow['selected_package_id']) && $pendingRow['selected_package_id'] !== null && $pendingRow['selected_package_id'] !== ''
+        ? (int) $pendingRow['selected_package_id']
+        : null;
+    if ($selectedPackageId !== null && $selectedPackageId <= 0) {
+        $selectedPackageId = null;
+    }
+    $selectedLessonIdsJson = $pendingRow['selected_lesson_ids_json'] ?? null;
+    if ($selectedLessonIdsJson !== null && $selectedLessonIdsJson !== '') {
+        $selectedLessonIdsJson = is_string($selectedLessonIdsJson) ? $selectedLessonIdsJson : json_encode($selectedLessonIdsJson);
+    } else {
+        $selectedLessonIdsJson = null;
+    }
+    $freeAccessNote = isset($pendingRow['free_access_note']) ? trim((string) $pendingRow['free_access_note']) : null;
+    if ($freeAccessNote === '') {
+        $freeAccessNote = null;
+    }
+
+    if ($hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar && $hasEnrollmentPath && $hasSelectedPackage) {
+        $sql = "INSERT INTO users (full_name, review_type, enrollment_path, selected_package_id, selected_lesson_ids_json, school, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending', 1)";
+    } elseif ($hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar) {
         $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending', 1)";
     } elseif (!$hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar) {
         $sql = "INSERT INTO users (full_name, review_type, school, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'student', 'pending')";
@@ -245,7 +357,24 @@ function completeVerificationAndCreateUser($pendingRow) {
     }
     $stmt = mysqli_prepare($conn, $sql);
     if (!$stmt) return null;
-    if ($hasUserProfilePicture && $hasUserDefaultAvatar) {
+    if ($hasEmailVerified && $hasUserProfilePicture && $hasUserDefaultAvatar && $hasEnrollmentPath && $hasSelectedPackage) {
+        mysqli_stmt_bind_param(
+            $stmt,
+            'sssisssssiss',
+            $fullName,
+            $reviewType,
+            $enrollmentPath,
+            $selectedPackageId,
+            $selectedLessonIdsJson,
+            $school,
+            $schoolOther,
+            $paymentProof,
+            $profilePicture,
+            $useDefaultAvatar,
+            $email,
+            $passwordHash
+        );
+    } elseif ($hasUserProfilePicture && $hasUserDefaultAvatar) {
         mysqli_stmt_bind_param($stmt, 'ssssssiss', $fullName, $reviewType, $school, $schoolOther, $paymentProof, $profilePicture, $useDefaultAvatar, $email, $passwordHash);
     } else {
         mysqli_stmt_bind_param($stmt, 'sssssss', $fullName, $reviewType, $school, $schoolOther, $paymentProof, $email, $passwordHash);
@@ -256,6 +385,39 @@ function completeVerificationAndCreateUser($pendingRow) {
     }
     $userId = (int) mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
+
+    // Free Access: create request only (no payment). Fulfillment/SCA sync is later phases.
+    if ($enrollmentPath === 'free_access' && $userId > 0) {
+        require_once __DIR__ . '/includes/commerce_catalog.php';
+        if (commerce_schema_ready($conn)) {
+            $ref = commerce_next_free_access_ref($conn);
+            $far = mysqli_prepare(
+                $conn,
+                'INSERT INTO free_access_requests (request_ref, user_id, status, student_note) VALUES (?, ?, \'pending\', ?)'
+            );
+            if ($far) {
+                mysqli_stmt_bind_param($far, 'sis', $ref, $userId, $freeAccessNote);
+                mysqli_stmt_execute($far);
+                mysqli_stmt_close($far);
+            }
+        }
+    }
+
+    // Package / By Topic: create or resume GCash checkout (Phase 5). Never for free_access.
+    // Does not fulfill access or run OCR — only awaiting_proof payment + checkout session.
+    if (in_array($enrollmentPath, ['package', 'by_topic'], true) && $userId > 0) {
+        require_once __DIR__ . '/includes/commerce_payment.php';
+        if (commerce_schema_ready($conn)) {
+            $checkout = commerce_bootstrap_checkout_after_verification($conn, $userId);
+            if (empty($checkout['ok'])) {
+                error_log(
+                    'completeVerificationAndCreateUser: checkout bootstrap failed for user '
+                    . $userId . ' — ' . ($checkout['error'] ?? 'unknown')
+                );
+                // Recovery session armed inside bootstrap; verify_email shows Continue Payment.
+            }
+        }
+    }
 
     // Notify all admins that a newly verified student is pending approval.
     notifications_create_admin_pending_registration_notifications($conn, $userId);
@@ -297,9 +459,10 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
         $config = require $configFile;
         require_once __DIR__ . '/smtp_sender.php';
 
-        // Retry once or twice for transient SMTP/network issues.
+        // Retry for transient SMTP/network issues. Stop early on hard auth failures.
         $attempts = 3;
         for ($i = 0; $i < $attempts; $i++) {
+            $debugLog = [];
             try {
                 if (is_array($config)) {
                     $fromEmail = $config['from_email'] ?? $config['smtp_username'] ?? '';
@@ -318,18 +481,15 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
                     }
 
                     if (($strictValid || $looksLikeSmtpConfigured) && function_exists('sendMailSmtpHtml')) {
-                        $debugLog = null;
                         $ok = sendMailSmtpHtml($toEmail, $subject, $html, $fromEmail, $fromName, $config, $debugLog);
                         if ($ok) {
                             return true;
                         }
-                        // If strict validation failed but SMTP might still work, we continue attempts.
                     }
 
                     // Plain fallback via SMTP (sometimes HTML path fails with certain servers).
                     if (($strictValid || $looksLikeSmtpConfigured) && function_exists('sendMailSmtp')) {
                         $plain = strip_tags(str_replace(['<br>', '<br/>', '</p>'], ["\n", "\n", "\n"], $html));
-                        $debugLog = null;
                         $ok = sendMailSmtp($toEmail, $subject, $plain, $fromEmail, $fromName, $config, $debugLog);
                         if ($ok) {
                             return true;
@@ -340,11 +500,31 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
                 error_log('[eReview] Verification email SMTP attempt failed: ' . $e->getMessage());
             }
 
+            $logBlob = implode("\n", $debugLog);
+            if (stripos($logBlob, 'AUTH FAIL') !== false || stripos($logBlob, 'Username and Password not accepted') !== false) {
+                error_log('[eReview] Verification email: SMTP auth rejected. Update Gmail App Password in config/mail_config.php');
+                break;
+            }
+
             // Backoff: keep it small for web requests.
             if ($i < $attempts - 1) {
                 usleep(300000); // 0.3s
             }
         }
+    }
+
+    // Local XAMPP/Windows usually has no SMTP on port 25. Avoid mail() warnings
+    // that corrupt AJAX JSON responses (shows as fake "Connection error" in the UI).
+    $smtpLooksConfigured = false;
+    if (isset($config) && is_array($config)) {
+        $smtpLooksConfigured =
+            !empty($config['smtp_host'] ?? '') &&
+            !empty($config['smtp_username'] ?? '') &&
+            !empty($config['smtp_password'] ?? '');
+    }
+    if ($smtpLooksConfigured) {
+        error_log('[eReview] Verification email: SMTP attempts failed; skipping PHP mail() fallback.');
+        return false;
     }
 
     $headers = [
@@ -353,5 +533,5 @@ function sendVerificationEmail($toEmail, $verificationUrl) {
         'From: LCRC eReview <noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>',
         'Reply-To: noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'),
     ];
-    return mail($toEmail, $subject, $html, implode("\r\n", $headers));
+    return (bool) @mail($toEmail, $subject, $html, implode("\r\n", $headers));
 }

@@ -291,15 +291,15 @@
    Admin Quizzes + Quiz Questions — dark shell alignment (admin_app main area)
    ============================================================================= */
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-hero,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-hero,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-hero-icon,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-hero-icon,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -323,32 +323,32 @@ body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert {
   border-radius: 0.75rem;
   font-size: 0.9375rem;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-alert--success,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-alert--success,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--success {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-alert--error,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--error {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-alert--error,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-alert--error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
 }
 
 /* Quizzes list table */
-body.admin-app.admin-quizzes-page #main .quiz-admin-table-shell {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-table-shell {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #141414;
   box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-table-head {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-table-head {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -362,7 +362,7 @@ body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill {
   border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-data-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -375,7 +375,7 @@ body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-adm
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
   background: rgba(255, 255, 255, 0.03);
   box-shadow: inset 3px 0 0 rgba(167, 139, 250, 0.75);
 }
@@ -383,7 +383,7 @@ body.admin-app.admin-quizzes-page #main .quiz-admin-data-table tbody tr.quiz-adm
 body.admin-app.admin-quizzes-page #main .quiz-type-pill {
   border: 1px solid transparent;
 }
-body.admin-app.admin-quizzes-page #main .quiz-type-pill--pre {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-type-pill--pre {
   background: rgba(255, 255, 255, 0.08);
   color: #e5e7eb;
   border-color: rgba(255, 255, 255, 0.12);
@@ -393,114 +393,114 @@ body.admin-app.admin-quizzes-page #main .quiz-type-pill--post {
   color: #7dd3fc;
   border-color: rgba(56, 189, 248, 0.35);
 }
-body.admin-app.admin-quizzes-page #main .quiz-type-pill--mock {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-type-pill--mock {
   background: rgba(167, 139, 250, 0.2);
   color: #ede9fe;
   border-color: rgba(167, 139, 250, 0.45);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-qcount {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-qcount {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-body.admin-app.admin-quizzes-page #main .quiz-qcount--ok {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-qcount--ok {
   background: rgba(16, 185, 129, 0.12);
   color: #6ee7b7;
   border-color: rgba(52, 211, 153, 0.35);
 }
-body.admin-app.admin-quizzes-page #main .quiz-qcount--empty {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-qcount--empty {
   background: rgba(245, 158, 11, 0.1);
   color: #fcd34d;
   border-color: rgba(251, 191, 36, 0.35);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary {
   border: 1px solid rgba(167, 139, 250, 0.55);
   color: #ddd6fe;
   background: rgba(167, 139, 250, 0.08);
   text-decoration: none;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-link-primary:hover {
   background: rgba(167, 139, 250, 0.22);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.45);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn {
   color: #9ca3af;
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-more-btn:hover {
   color: #e5e7eb;
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   background: transparent;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-empty {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-empty {
   color: #9ca3af;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-empty-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-empty-icon {
   color: rgba(167, 139, 250, 0.35);
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-pagination {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-pagination {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-page-link {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-page-link {
   border-color: rgba(255, 255, 255, 0.12);
   color: #d1d5db;
   text-decoration: none;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-page-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-page-link:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-page-link.is-active {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-page-link.is-active {
   background: rgba(167, 139, 250, 0.25);
   border-color: rgba(167, 139, 250, 0.55);
   color: #fff;
 }
 
 /* Shared modal surface (quizzes + questions) */
-body.admin-app.admin-quizzes-page #main .quiz-modal-panel,
-body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-modal-panel,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel {
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
-body.admin-app.admin-quizzes-page #main .quiz-modal-panel__head,
-body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel__head {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-modal-panel__head,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-modal-panel__head {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-modal-close:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-modal-close:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .admin-quiz-label {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .admin-quiz-label {
   color: #d1d5db;
 }
-body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-modal-form .text-gray-500 {
   color: #9ca3af !important;
 }
 
 /* Quiz questions page — cards & table */
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   border-color: transparent;
   color: #fff;
@@ -511,63 +511,63 @@ body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary:hover {
   box-shadow: 0 10px 28px rgba(109, 40, 217, 0.45);
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline {
   background: transparent;
   border-color: rgba(255, 255, 255, 0.22);
   color: #e5e7eb;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-outline:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-questions-card {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-questions-card {
   background: #141414;
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-card-head {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-card-head {
   background: rgba(255, 255, 255, 0.03);
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
   color: #e5e7eb;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-card-header-accent {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-card-header-accent {
   background: linear-gradient(90deg, rgba(167, 139, 250, 0.12) 0%, transparent 100%);
   border-bottom-color: rgba(167, 139, 250, 0.2) !important;
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question {
   background: #1a1a1a;
   border-color: rgba(255, 255, 255, 0.08);
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question:hover {
   border-color: rgba(167, 139, 250, 0.25);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-label {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-label {
   color: #e5e7eb;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-footer {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-batch-question-footer {
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-table th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-table th {
   background: #1a1a1a;
   color: #9ca3af;
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-table td {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-table td {
   border-bottom-color: rgba(255, 255, 255, 0.06);
   color: #e5e7eb;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-table tbody tr:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.03);
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-q-preview {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-q-preview {
   color: #e5e7eb;
   line-height: 1.45;
   max-width: 42rem;
@@ -578,61 +578,61 @@ body.admin-app.admin-quiz-questions-page #main .quiz-admin-q-empty {
   font-weight: 500;
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-badge-success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-badge-success {
   background: rgba(16, 185, 129, 0.15);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-outline {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-outline {
   border-color: rgba(255, 255, 255, 0.18);
   color: #e5e7eb;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger {
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(248, 113, 113, 0.45);
   color: #fecaca;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-sm.admin-quiz-btn-danger:hover {
   background: rgba(239, 68, 68, 0.22);
   color: #fff;
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal {
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal-header {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-modal-header {
   background: rgba(255, 255, 255, 0.03);
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-success {
   background: rgba(16, 185, 129, 0.12);
   border-color: rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-error {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-alert-error {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(248, 113, 113, 0.35);
   color: #fecaca;
 }
 
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .font-semibold.text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .font-semibold.text-gray-700 {
   color: #e5e7eb !important;
 }
-body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-empty .text-gray-500 {
   color: #9ca3af !important;
 }
 
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .admin-quiz-label {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .admin-quiz-label {
   color: #d1d5db;
 }
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .text-gray-500 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-batch-card .text-gray-500 {
   color: #9ca3af !important;
 }
 
-body.admin-app.admin-quiz-questions-page #main form[action*="admin_quiz_questions"] .bg-amber-50 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main form[action*="admin_quiz_questions"] .bg-amber-50 {
   background: rgba(245, 158, 11, 0.1) !important;
   border-color: rgba(251, 191, 36, 0.35) !important;
   color: #fde68a !important;
@@ -649,70 +649,70 @@ body.admin-app.admin-quiz-questions-page #main form[action*="admin_quiz_question
    Shared filter bar (quizzes, lessons, materials, test bank, preboards)
    ============================================================================= */
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-filter,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter,
-body.admin-app.admin-lessons-page #main .quiz-admin-filter,
-body.admin-app.admin-materials-page #main .quiz-admin-filter,
-body.admin-app.admin-test-bank-page #main .quiz-admin-filter,
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-filter,
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(20, 20, 20, 0.85);
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85);
   align-items: flex-end;
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-materials-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-btn,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-btn {
   background: rgba(167, 139, 250, 0.2);
   border: 1px solid rgba(167, 139, 250, 0.45);
   color: #ede9fe;
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-materials-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-btn:hover,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-btn:hover {
   background: rgba(167, 139, 250, 0.32);
   color: #fff;
 }
 
-body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-materials-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-clear,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-clear {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-clear,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-clear {
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #d1d5db;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.04);
 }
-body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-materials-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-clear:hover,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-clear:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-filter-clear:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-clear:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
@@ -721,13 +721,13 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-filter-clear:hover
    Lessons — dark hub
    ============================================================================= */
 
-body.admin-app.admin-lessons-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-lessons-page #main .quiz-admin-hero-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -740,18 +740,18 @@ body.admin-app.admin-lessons-page #main .quiz-admin-hero-icon {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-lessons-page #main .quiz-admin-alert--success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-alert--success {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
-body.admin-app.admin-lessons-page #main .quiz-admin-alert--error {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-alert--error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
 }
 
-body.admin-app.admin-lessons-page #main .quiz-admin-count-pill--lessons {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-count-pill--lessons {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -765,46 +765,46 @@ body.admin-app.admin-lessons-page #main .quiz-admin-count-pill--lessons {
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-body.admin-app.admin-lessons-page #main .lesson-count-pill--ok {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .lesson-count-pill--ok {
   background: rgba(16, 185, 129, 0.12);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
-body.admin-app.admin-lessons-page #main .lesson-count-pill--warn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .lesson-count-pill--warn {
   background: rgba(245, 158, 11, 0.1);
   color: #fcd34d;
   border: 1px solid rgba(251, 191, 36, 0.35);
 }
 
-body.admin-app.admin-lessons-page #main .lesson-materials-link {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .lesson-materials-link {
   border: 1px solid rgba(52, 211, 153, 0.55);
   color: #a7f3d0;
   background: rgba(16, 185, 129, 0.08);
   text-decoration: none;
 }
-body.admin-app.admin-lessons-page #main .lesson-materials-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .lesson-materials-link:hover {
   background: rgba(16, 185, 129, 0.22);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.45);
 }
 
-body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   background: transparent;
 }
-body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-body.admin-app.admin-lessons-page #main .quiz-admin-more-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-more-btn {
   color: #9ca3af;
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
 }
-body.admin-app.admin-lessons-page #main .quiz-admin-more-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-more-btn:hover {
   color: #e5e7eb;
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
@@ -814,7 +814,7 @@ body.admin-app.admin-lessons-page #main .quiz-admin-more-btn:hover {
    Materials — dark hub
    ============================================================================= */
 
-body.admin-app.admin-materials-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -833,12 +833,12 @@ body.admin-app.admin-materials-page #main .quiz-admin-hero-icon {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-materials-page #main .materials-panel-inner {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .materials-panel-inner {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 0 0 0.75rem 0.75rem;
 }
 
-body.admin-app.admin-materials-page #main .materials-data-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .materials-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -851,7 +851,7 @@ body.admin-app.admin-materials-page #main .materials-data-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.18s ease;
 }
-body.admin-app.admin-materials-page #main .materials-data-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .materials-data-row:hover {
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -861,12 +861,12 @@ body.admin-app.admin-materials-page #main .mat-link-open {
   background: rgba(56, 189, 248, 0.08);
   text-decoration: none;
 }
-body.admin-app.admin-materials-page #main .mat-link-open:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .mat-link-open:hover {
   background: rgba(56, 189, 248, 0.2);
   color: #fff;
 }
 
-body.admin-app.admin-materials-page #main .admin-materials-submit-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .admin-materials-submit-btn {
   border-color: rgba(16, 185, 129, 0.55);
   box-shadow: 0 6px 18px rgba(16, 185, 129, 0.2);
 }
@@ -875,13 +875,13 @@ body.admin-app.admin-materials-page #main .admin-materials-submit-btn {
    Test Bank — dark hub
    ============================================================================= */
 
-body.admin-app.admin-test-bank-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-test-bank-page #main .quiz-admin-hero-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -894,19 +894,19 @@ body.admin-app.admin-test-bank-page #main .quiz-admin-hero-icon {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-test-bank-page #main .test-bank-form-card {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .test-bank-form-card {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #141414;
   box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-test-bank-page #main .test-bank-form-fields .input-custom {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .test-bank-form-fields .input-custom {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.12);
   color: #e5e7eb;
 }
 
-body.admin-app.admin-test-bank-page #main .quiz-admin-count-pill--testbank {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-count-pill--testbank {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -920,38 +920,38 @@ body.admin-app.admin-test-bank-page #main .quiz-admin-count-pill--testbank {
   border: 1px solid rgba(251, 191, 36, 0.4);
 }
 
-body.admin-app.admin-test-bank-page #main .tb-file-link {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-file-link {
   border-color: rgba(251, 191, 36, 0.45);
   color: #fde68a;
   background: rgba(251, 191, 36, 0.06);
   text-decoration: none;
 }
-body.admin-app.admin-test-bank-page #main .tb-file-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-file-link:hover {
   background: rgba(251, 191, 36, 0.18);
   color: #fff;
 }
 
-body.admin-app.admin-test-bank-page #main .tb-action-link {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-action-link {
   border-color: rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.04);
 }
-body.admin-app.admin-test-bank-page #main .tb-action-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-action-link:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
-body.admin-app.admin-test-bank-page #main .tb-action-link--danger {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-action-link--danger {
   border-color: rgba(248, 113, 113, 0.45);
   color: #fecaca;
   background: rgba(239, 68, 68, 0.08);
 }
-body.admin-app.admin-test-bank-page #main .tb-action-link--danger:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .tb-action-link--danger:hover {
   background: rgba(239, 68, 68, 0.25);
   color: #fff;
 }
 
-body.admin-app.admin-test-bank-page #main .quiz-admin-data-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -964,7 +964,7 @@ body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-a
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
-body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
   background: rgba(255, 255, 255, 0.03);
   box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.65);
 }
@@ -973,13 +973,13 @@ body.admin-app.admin-test-bank-page #main .quiz-admin-data-table tbody tr.quiz-a
    Preboards sets — dark hub
    ============================================================================= */
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -992,7 +992,7 @@ body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero-icon {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-count-pill--preboards {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-count-pill--preboards {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1006,30 +1006,30 @@ body.admin-app.admin-preboards-sets-page #main .quiz-admin-count-pill--preboards
   border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary {
   border: 1px solid rgba(167, 139, 250, 0.55);
   color: #ddd6fe;
   background: rgba(167, 139, 250, 0.08);
   text-decoration: none;
 }
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-link-primary:hover {
   background: rgba(167, 139, 250, 0.22);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.45);
 }
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   background: transparent;
 }
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1042,7 +1042,7 @@ body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.q
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
-body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
   background: rgba(255, 255, 255, 0.03);
   box-shadow: inset 3px 0 0 rgba(167, 139, 250, 0.75);
 }
@@ -1051,13 +1051,13 @@ body.admin-app.admin-preboards-sets-page #main .quiz-admin-data-table tbody tr.q
    Preboards monitoring — scores, leaderboard, attempt log
    ============================================================================= */
 
-body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1070,13 +1070,13 @@ body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero-icon {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-shell {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-shell {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111214;
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-head {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .quiz-admin-table-head {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
 }
@@ -1102,7 +1102,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat {
   padding: 1rem 1.1rem;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-stat-icon {
   width: 2.35rem;
   height: 2.35rem;
   border-radius: 0.65rem;
@@ -1144,7 +1144,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table {
   text-align: left;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -1159,7 +1159,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table thead th {
   font-weight: 700;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody td {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody td {
   padding: 0.9rem 1rem;
   vertical-align: middle;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1171,11 +1171,11 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even) {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even) {
   background: rgba(255, 255, 255, 0.015);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-table tbody tr.pb-monitor-row:hover {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.7);
 }
@@ -1213,21 +1213,21 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-avatar {
   border: 1px solid rgba(129, 140, 248, 0.35);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-name {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-name {
   font-weight: 600;
   color: #f3f4f6;
   line-height: 1.25;
   word-break: break-word;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-email {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-student-email {
   font-size: 0.75rem;
   color: #9ca3af;
   margin-top: 0.1rem;
   word-break: break-all;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-set-badge {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-set-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1258,7 +1258,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-subject {
   font-weight: 600;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-attempt-no {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-attempt-no {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1273,7 +1273,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-attempt-no {
   font-variant-numeric: tabular-nums;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-correct {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-correct {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: #e5e7eb;
@@ -1299,19 +1299,19 @@ body.admin-app.admin-preboards-monitor-page #main .pb-score-pill {
   font-variant-numeric: tabular-nums;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--high {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--high {
   background: rgba(16, 185, 129, 0.18);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--mid {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--mid {
   background: rgba(245, 158, 11, 0.16);
   color: #fcd34d;
   border: 1px solid rgba(251, 191, 36, 0.35);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--low {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-score-pill--low {
   background: rgba(239, 68, 68, 0.14);
   color: #fca5a5;
   border: 1px solid rgba(248, 113, 113, 0.32);
@@ -1334,7 +1334,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-status-pill {
   white-space: nowrap;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--submitted {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-status-pill--submitted {
   background: rgba(16, 185, 129, 0.14);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.3);
@@ -1360,7 +1360,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime {
   line-height: 1.35;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime strong {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-datetime strong {
   display: block;
   color: #e5e7eb;
   font-weight: 600;
@@ -1391,14 +1391,14 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank {
   font-size: 0.875rem;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--1 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--1 {
   background: linear-gradient(145deg, #fef3c7, #fde68a);
   color: #92400e;
   border: 1px solid #fbbf24;
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--2 {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--2 {
   background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
   color: #374151;
   border: 1px solid #d1d5db;
@@ -1410,7 +1410,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--3 {
   border: 1px solid #fdba74;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--n {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-rank--n {
   background: #1e293b;
   color: #cbd5e1;
   border: 1px solid #334155;
@@ -1429,7 +1429,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-empty i {
   opacity: 0.7;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1445,7 +1445,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .pb-monitor-review-btn:hover {
   color: #ecfdf5;
   background: rgba(16, 185, 129, 0.22);
   border-color: rgba(52, 211, 153, 0.45);
@@ -1461,17 +1461,17 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-id {
    Pre-week hub — list, lectures, materials (admin_preweek*)
    ============================================================================= */
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-hero,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-hero,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-hero,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-hero,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-hero-icon--preweek,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-hero-icon--preweek,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-hero-icon--preweek {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-hero-icon--preweek,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-hero-icon--preweek,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-hero-icon--preweek {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1484,16 +1484,16 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-hero-icon--preweek
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-alert--success,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-alert--success,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-alert--success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-alert--success,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-alert--success,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-alert--success {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-alert--error,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-alert--error,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-alert--error {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-alert--error,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-alert--error,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-alert--error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
@@ -1507,9 +1507,9 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-alert {
   font-size: 0.9375rem;
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-count-pill--preweek,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-count-pill--preweek,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-count-pill--preweek {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-count-pill--preweek,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-count-pill--preweek,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-count-pill--preweek {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1523,24 +1523,24 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-count-pill--prewee
   border: 1px solid rgba(251, 191, 36, 0.4);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-table-shell,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-table-shell,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-table-shell {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-table-shell,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-table-shell,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-table-shell {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #141414;
   box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-table-head,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-table-head,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-table-head {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-table-head,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-table-head,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-table-head {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-data-table thead th,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-data-table thead th,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-data-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-data-table thead th,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-data-table thead th,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1555,59 +1555,59 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-data-table tbody t
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover {
   background: rgba(255, 255, 255, 0.03);
   box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.65);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-empty,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-empty,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-empty {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-empty,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-empty,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-empty {
   color: #9ca3af;
 }
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-empty-icon,
-body.admin-app.admin-preweek-list-page #main .quiz-admin-empty-icon,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-empty-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-empty-icon,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-list-page #main .quiz-admin-empty-icon,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-empty-icon {
   color: rgba(251, 191, 36, 0.35);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .preweek-materials-link,
-body.admin-app.admin-preweek-materials-page #main .preweek-materials-link {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .preweek-materials-link,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .preweek-materials-link {
   border: 1px solid rgba(251, 191, 36, 0.5);
   color: #fde68a;
   background: rgba(251, 191, 36, 0.08);
   text-decoration: none;
 }
-body.admin-app.admin-preweek-lectures-page #main .preweek-materials-link:hover,
-body.admin-app.admin-preweek-materials-page #main .preweek-materials-link:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .preweek-materials-link:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .preweek-materials-link:hover {
   background: rgba(251, 191, 36, 0.2);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.45);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-btn-secondary,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-btn-secondary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-btn-secondary,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   background: transparent;
 }
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-btn-secondary:hover,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-btn-secondary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-btn-secondary:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-more-btn,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-more-btn,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn {
   color: #9ca3af;
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
 }
-body.admin-app.admin-preweek-lectures-page #main .quiz-admin-more-btn:hover,
-body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-more-btn:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn:hover {
   color: #e5e7eb;
   border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
@@ -1617,13 +1617,13 @@ body.admin-app.admin-preweek-materials-page #main .quiz-admin-more-btn:hover {
    Question sorting (admin_question_sort.php) — same shell as pre-week materials
    ============================================================================= */
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-hero {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-hero {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%);
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-hero-icon--preweek {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-hero-icon--preweek {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1636,44 +1636,44 @@ body.admin-app.admin-question-sort-page #main .quiz-admin-hero-icon--preweek {
   font-size: 1.15rem;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-table-shell {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-table-shell {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #141414;
   box-shadow: 0 20px 50px -32px rgba(0, 0, 0, 0.85);
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-alert--error {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-alert--error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-alert--success {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-alert--success {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary {
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #d1d5db;
   background: transparent;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-body.admin-app.admin-question-sort-page .ereview-qsort-q {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .ereview-qsort-q {
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.25);
   border-radius: 0.65rem;
 }
 
-body.admin-app.admin-question-sort-page mark.ereview-qsort-hl,
-body.admin-app.admin-question-sort-page .ereview-qsort-hl {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page mark.ereview-qsort-hl,
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .ereview-qsort-hl {
   background: linear-gradient(180deg, #fef08a 0%, #facc15 100%);
   color: #1c1917;
   padding: 0.06em 0.2em;
@@ -1686,7 +1686,7 @@ body.admin-app.admin-question-sort-page .ereview-qsort-font-red {
   font-weight: 600;
 }
 
-body.admin-app.admin-question-sort-page .ereview-qsort-qnum {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .ereview-qsort-qnum {
   color: #fde68a;
   font-weight: 700;
   margin-right: 0.15em;
@@ -1698,7 +1698,7 @@ body.admin-app.admin-question-sort-page .ereview-qsort-choice-letter {
   margin-right: 0.35em;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-count-pill--preweek {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-count-pill--preweek {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1712,16 +1712,16 @@ body.admin-app.admin-question-sort-page #main .quiz-admin-count-pill--preweek {
   border: 1px solid rgba(251, 191, 36, 0.4);
 }
 
-body.admin-app.admin-question-sort-page .preweek-section-toolbar {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .preweek-section-toolbar {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 23, 42, 0.45);
 }
 
-body.admin-app.admin-question-sort-page .ereview-qsort-topic-shell .preweek-section-toolbar.cursor-pointer:hover {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .ereview-qsort-topic-shell .preweek-section-toolbar.cursor-pointer:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body.admin-app.admin-question-sort-page .preweek-stat-pill {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page .preweek-stat-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1740,13 +1740,13 @@ body.admin-app.admin-question-sort-page .preweek-materials-stack {
   gap: 1rem;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-empty {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-empty {
   color: #9ca3af;
   font-size: 0.9375rem;
   font-weight: 600;
 }
 
-body.admin-app.admin-question-sort-page #main .quiz-admin-empty-icon {
+html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-empty-icon {
   color: rgba(251, 191, 36, 0.35);
 }
 
@@ -1754,18 +1754,18 @@ body.admin-app.admin-question-sort-page #main .quiz-admin-empty-icon {
    Global admin unified UI — all admin pages (Preboards monitoring style)
    ============================================================================= */
 
-body.admin-app #main .quiz-admin-hero,
-body.admin-app #main .page-hero,
-body.admin-app #main .admin-dashboard-hero {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-hero,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-hero,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-hero {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: linear-gradient(145deg, #1a1d24 0%, #141414 55%, #12141a 100%) !important;
   box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }
 
-body.admin-app #main .quiz-admin-hero-icon,
-body.admin-app #main .page-hero h1 > .bi:first-child,
-body.admin-app #main .page-hero .admin-section-icon,
-body.admin-app #main .admin-dashboard-hero h1 > .bi:first-child {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-hero-icon,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-hero h1 > .bi:first-child,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-hero .admin-section-icon,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-hero h1 > .bi:first-child {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1780,59 +1780,59 @@ body.admin-app #main .admin-dashboard-hero h1 > .bi:first-child {
   margin-right: 0.35rem;
 }
 
-body.admin-app #main .quiz-admin-hero-icon--preweek {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-hero-icon--preweek {
   background: linear-gradient(145deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.16) 100%);
   border-color: rgba(251, 191, 36, 0.4);
   color: #fde68a;
 }
 
-body.admin-app #main .quiz-admin-table-shell,
-body.admin-app #main .page-table,
-body.admin-app #main .page-trashlog {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-table-shell,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-trashlog {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: #111214 !important;
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
   overflow: hidden;
 }
 
-body.admin-app #main .quiz-admin-table-head,
-body.admin-app #main .page-table > .px-5.py-4.border-b,
-body.admin-app #main .page-section-title {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-table-head,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table > .px-5.py-4.border-b,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-section-title {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%) !important;
   color: #f3f4f6 !important;
 }
 
-body.admin-app #main .page-section-title i {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-section-title i {
   background: rgba(255, 255, 255, 0.06) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
   color: #a7f3d0 !important;
 }
 
-body.admin-app #main .quiz-admin-filter,
-body.admin-app #main .page-filter {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-filter,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-filter {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: rgba(20, 20, 20, 0.92) !important;
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
 }
 
-body.admin-app #main .quiz-admin-filter-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-filter-btn {
   background: rgba(52, 211, 153, 0.16);
   border: 1px solid rgba(52, 211, 153, 0.38);
   color: #a7f3d0;
 }
-body.admin-app #main .quiz-admin-filter-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-filter-btn:hover {
   background: rgba(52, 211, 153, 0.28);
   color: #ecfdf5;
 }
 
-body.admin-app #main .quiz-admin-filter-clear {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-filter-clear {
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #d1d5db;
   text-decoration: none;
   background: rgba(255, 255, 255, 0.04);
 }
-body.admin-app #main .quiz-admin-filter-clear:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-filter-clear:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
@@ -1841,14 +1841,14 @@ body.admin-app #main .quiz-admin-alert,
 body.admin-app #main .admin-flash {
   border-radius: 0.75rem;
 }
-body.admin-app #main .quiz-admin-alert--success,
-body.admin-app #main .admin-flash--success {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-alert--success,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-flash--success {
   background: rgba(16, 185, 129, 0.12) !important;
   border: 1px solid rgba(52, 211, 153, 0.35) !important;
   color: #a7f3d0 !important;
 }
-body.admin-app #main .quiz-admin-alert--error,
-body.admin-app #main .admin-flash--error {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-alert--error,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-flash--error {
   background: rgba(239, 68, 68, 0.1) !important;
   border: 1px solid rgba(248, 113, 113, 0.35) !important;
   color: #fecaca !important;
@@ -1875,7 +1875,7 @@ body.admin-app #main .pb-monitor-stat {
   padding: 1rem 1.1rem;
 }
 
-body.admin-app #main .pb-monitor-stat-icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-stat-icon {
   width: 2.35rem;
   height: 2.35rem;
   border-radius: 0.65rem;
@@ -1924,10 +1924,10 @@ body.admin-app #main .pb-monitor-table {
   min-width: 960px;
 }
 
-body.admin-app #main .pb-monitor-table thead th,
-body.admin-app #main .quiz-admin-data-table thead th,
-body.admin-app #main .page-table thead th,
-body.admin-app #main .admin-students-table thead th {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-table thead th,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-data-table thead th,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table thead th,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-students-table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -1942,10 +1942,10 @@ body.admin-app #main .admin-students-table thead th {
   font-weight: 700;
 }
 
-body.admin-app #main .pb-monitor-table tbody td,
-body.admin-app #main .quiz-admin-data-table tbody td,
-body.admin-app #main .page-table tbody td,
-body.admin-app #main .admin-students-table tbody td {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-table tbody td,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-data-table tbody td,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table tbody td,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-students-table tbody td {
   padding: 0.9rem 1rem;
   vertical-align: middle;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1960,17 +1960,17 @@ body.admin-app #main .admin-students-table tbody tr {
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
-body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even),
-body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:nth-child(even),
-body.admin-app #main .page-table tbody tr:nth-child(even),
-body.admin-app #main .admin-students-table tbody tr:nth-child(even) {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:nth-child(even),
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:nth-child(even),
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table tbody tr:nth-child(even),
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-students-table tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.015);
 }
 
-body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:hover,
-body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
-body.admin-app #main .page-table tbody tr:hover,
-body.admin-app #main .admin-students-table tbody tr:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-table tbody tr.pb-monitor-row:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-data-table tbody tr.quiz-admin-row:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table tbody tr:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-students-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.04) !important;
   box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.65);
   transform: none !important;
@@ -1998,22 +1998,22 @@ body.admin-app #main .pb-monitor-avatar {
   border: 1px solid rgba(129, 140, 248, 0.35);
 }
 
-body.admin-app #main .pb-monitor-student-name {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-student-name {
   font-weight: 600;
   color: #f3f4f6;
   line-height: 1.25;
   word-break: break-word;
 }
 
-body.admin-app #main .pb-monitor-student-email {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-student-email {
   font-size: 0.75rem;
   color: #9ca3af;
   margin-top: 0.1rem;
   word-break: break-all;
 }
 
-body.admin-app #main .pb-monitor-set-badge,
-body.admin-app #main .table-chip {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-set-badge,
+html:not([data-admin-theme="light"]) body.admin-app #main .table-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -2039,19 +2039,19 @@ body.admin-app #main .pb-score-pill {
   font-variant-numeric: tabular-nums;
 }
 
-body.admin-app #main .pb-score-pill--high {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-score-pill--high {
   background: rgba(16, 185, 129, 0.18);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-body.admin-app #main .pb-score-pill--mid {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-score-pill--mid {
   background: rgba(245, 158, 11, 0.16);
   color: #fcd34d;
   border: 1px solid rgba(251, 191, 36, 0.35);
 }
 
-body.admin-app #main .pb-score-pill--low {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-score-pill--low {
   background: rgba(239, 68, 68, 0.14);
   color: #fca5a5;
   border: 1px solid rgba(248, 113, 113, 0.32);
@@ -2074,7 +2074,7 @@ body.admin-app #main .pb-status-pill {
   white-space: nowrap;
 }
 
-body.admin-app #main .pb-status-pill--submitted {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-status-pill--submitted {
   background: rgba(16, 185, 129, 0.14);
   color: #6ee7b7;
   border: 1px solid rgba(52, 211, 153, 0.3);
@@ -2095,7 +2095,7 @@ body.admin-app #main .pb-status-pill--progress::before {
   background: currentColor;
 }
 
-body.admin-app #main .pb-monitor-review-btn {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-review-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -2111,7 +2111,7 @@ body.admin-app #main .pb-monitor-review-btn {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-body.admin-app #main .pb-monitor-review-btn:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .pb-monitor-review-btn:hover {
   color: #ecfdf5;
   background: rgba(16, 185, 129, 0.22);
   border-color: rgba(52, 211, 153, 0.45);
@@ -2123,7 +2123,7 @@ body.admin-app #main .pb-monitor-empty {
   color: #6b7280;
 }
 
-body.admin-app #main .quiz-admin-count-pill {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-count-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2137,77 +2137,77 @@ body.admin-app #main .quiz-admin-count-pill {
   border: 1px solid rgba(52, 211, 153, 0.32);
 }
 
-body.admin-app #main .quiz-admin-empty {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-empty {
   color: #9ca3af;
 }
 
-body.admin-app #main .quiz-admin-pagination,
-body.admin-app #main .page-table nav {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-pagination,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table nav {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
 }
 
-body.admin-app #main .quiz-admin-page-link,
-body.admin-app #main .page-table nav a {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-page-link,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table nav a {
   border-color: rgba(255, 255, 255, 0.12) !important;
   color: #d1d5db !important;
 }
 
-body.admin-app #main .quiz-admin-page-link:hover,
-body.admin-app #main .page-table nav a:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-page-link:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table nav a:hover {
   background: rgba(255, 255, 255, 0.06) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
   color: #fff !important;
 }
 
-body.admin-app #main .quiz-admin-page-link.is-active,
-body.admin-app #main .page-table nav a.bg-primary {
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-page-link.is-active,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table nav a.bg-primary {
   background: rgba(52, 211, 153, 0.22) !important;
   border-color: rgba(52, 211, 153, 0.45) !important;
   color: #fff !important;
 }
 
 /* Student Access — dark theme */
-body.admin-app #main .sca-student-item {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-student-item {
   border-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(20, 20, 20, 0.9) !important;
   color: #e5e7eb;
 }
-body.admin-app #main .sca-student-item:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-student-item:hover {
   border-color: rgba(52, 211, 153, 0.35) !important;
   background: rgba(255, 255, 255, 0.04) !important;
   box-shadow: 0 8px 24px -16px rgba(0, 0, 0, 0.8) !important;
   transform: translateY(-1px);
 }
-body.admin-app #main .sca-student-item.active {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-student-item.active {
   border-color: rgba(52, 211, 153, 0.5) !important;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(20, 20, 20, 0.95) 100%) !important;
   box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.75);
 }
-body.admin-app #main .sca-student-item__avatar {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-student-item__avatar {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.35), rgba(16, 185, 129, 0.25)) !important;
 }
 body.admin-app #main .sca-panel-loading {
   background: rgba(10, 10, 10, 0.82) !important;
 }
-body.admin-app #main .sca-section {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-section {
   border-color: rgba(255, 255, 255, 0.08) !important;
   background: rgba(20, 20, 20, 0.85) !important;
 }
-body.admin-app #main .sca-section__head {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-section__head {
   color: #f3f4f6 !important;
 }
-body.admin-app #main .sca-perm-row {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-perm-row {
   border-color: rgba(255, 255, 255, 0.08) !important;
   background: rgba(255, 255, 255, 0.02) !important;
 }
-body.admin-app #main .sca-perm-row:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-perm-row:hover {
   background: rgba(255, 255, 255, 0.05) !important;
   border-color: rgba(52, 211, 153, 0.25) !important;
 }
 
 /* Dashboard cards keep semantic accents; hero matches unified shell */
-body.admin-app #main .admin-dashboard-page .page-card {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-page .page-card {
   border-color: rgba(255, 255, 255, 0.08) !important;
   background: #141414 !important;
   box-shadow: none !important;
@@ -2217,45 +2217,45 @@ body.admin-app #main .admin-dashboard-kpi-strip {
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800,
-body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip .text-gray-800,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-kpi-strip .admin-kpi-number {
   color: #f3f4f6 !important;
 }
 
 /* All admin cards / panels */
-body.admin-app #main .bg-white.rounded-xl.shadow-card,
-body.admin-app #main .bg-white.rounded-xl.shadow-card.border {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-white.rounded-xl.shadow-card,
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-white.rounded-xl.shadow-card.border {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: #111214 !important;
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
 }
 
-body.admin-app #main .border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .border-gray-100 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Student Access — full dark shell */
-body.admin-app #main .sca-sidebar,
-body.admin-app #main .sca-panel.bg-white {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-sidebar,
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-panel.bg-white {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: #111214 !important;
   box-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.85) !important;
 }
 
-body.admin-app #main .sca-tree details {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-tree details {
   border-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(255, 255, 255, 0.02) !important;
 }
 
-body.admin-app #main .sca-tree summary {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-tree summary {
   color: #e5e7eb !important;
 }
 
-body.admin-app #main .sca-tree label {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-tree label {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .sca-tree label:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-tree label:hover {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
@@ -2263,7 +2263,7 @@ body.admin-app #main .sca-tree input[type=checkbox] {
   accent-color: #34d399;
 }
 
-body.admin-app #main .sca-pb-hint {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-pb-hint {
   color: #9ca3af !important;
 }
 
@@ -2290,7 +2290,7 @@ body.admin-app #main .sca-pb-status {
   border: 1px solid transparent;
 }
 
-body.admin-app #main .sca-pb-status--open {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-pb-status--open {
   background: rgba(16, 185, 129, 0.14);
   color: #6ee7b7;
   border-color: rgba(52, 211, 153, 0.28);
@@ -2302,52 +2302,52 @@ body.admin-app #main .sca-pb-status--upcoming {
   border-color: rgba(56, 189, 248, 0.28);
 }
 
-body.admin-app #main .sca-pb-status--closed {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-pb-status--closed {
   background: rgba(107, 114, 128, 0.16);
   color: #d1d5db;
   border-color: rgba(156, 163, 175, 0.28);
 }
 
-body.admin-app #main .sca-pb-status--locked {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-pb-status--locked {
   background: rgba(245, 158, 11, 0.12);
   color: #fcd34d;
   border-color: rgba(251, 191, 36, 0.28);
 }
 
-body.admin-app #main .sca-section__head i {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-section__head i {
   color: #6ee7b7 !important;
 }
 
-body.admin-app #main .sca-badge--approved {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-badge--approved {
   background: rgba(16, 185, 129, 0.16);
   color: #6ee7b7;
 }
 
-body.admin-app #main .sca-badge--pending {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-badge--pending {
   background: rgba(245, 158, 11, 0.16);
   color: #fcd34d;
 }
 
-body.admin-app #main .sca-badge--rejected {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-badge--rejected {
   background: rgba(239, 68, 68, 0.14);
   color: #fca5a5;
 }
 
-body.admin-app #main .sca-form-grid label.field-label {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-form-grid label.field-label {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .sca-access-pill {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-access-pill {
   background: rgba(52, 211, 153, 0.12);
   color: #a7f3d0;
 }
 
-body.admin-app #main .sca-sticky-actions {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-sticky-actions {
   border-top-color: rgba(255, 255, 255, 0.08) !important;
   background: linear-gradient(to top, #111214 85%, rgba(17, 18, 20, 0.96)) !important;
 }
 
-body.admin-app #main .sca-btn--primary {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-btn--primary {
   background: rgba(16, 185, 129, 0.85) !important;
   color: #ecfdf5 !important;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
@@ -2357,103 +2357,103 @@ body.admin-app #main .sca-btn--primary:hover:not(:disabled) {
   background: rgba(5, 150, 105, 0.95) !important;
 }
 
-body.admin-app #main .sca-btn--outline {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-btn--outline {
   background: transparent !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
   color: #d1d5db !important;
 }
 
-body.admin-app #main .sca-btn--outline:hover:not(:disabled) {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-btn--outline:hover:not(:disabled) {
   border-color: rgba(52, 211, 153, 0.45) !important;
   color: #a7f3d0 !important;
   background: rgba(16, 185, 129, 0.1) !important;
 }
 
-body.admin-app #main .sca-btn--ghost {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-btn--ghost {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .sca-btn--ghost:hover:not(:disabled) {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-btn--ghost:hover:not(:disabled) {
   color: #e5e7eb !important;
   background: rgba(255, 255, 255, 0.06) !important;
 }
 
-body.admin-app #main .sca-idle__icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-idle__icon {
   background: rgba(16, 185, 129, 0.12) !important;
   color: #6ee7b7 !important;
 }
 
-body.admin-app #main .sca-toast--ok {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast--ok {
   background: #141414 !important;
   border-color: rgba(52, 211, 153, 0.35) !important;
 }
 
-body.admin-app #main .sca-toast--err {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast--err {
   background: #141414 !important;
   border-color: rgba(248, 113, 113, 0.35) !important;
 }
 
-body.admin-app #main .sca-toast--ok .sca-toast__icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast--ok .sca-toast__icon {
   background: rgba(16, 185, 129, 0.16);
   color: #6ee7b7;
 }
 
-body.admin-app #main .sca-toast--err .sca-toast__icon {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast--err .sca-toast__icon {
   background: rgba(239, 68, 68, 0.14);
   color: #fca5a5;
 }
 
-body.admin-app #main .sca-toast__title {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast__title {
   color: #f3f4f6 !important;
 }
 
-body.admin-app #main .sca-toast__msg {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-toast__msg {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .sca-perm-count {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-perm-count {
   color: #a7f3d0 !important;
   background: rgba(16, 185, 129, 0.12) !important;
 }
 
-body.admin-app #main .sca-spinner {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-spinner {
   border-color: rgba(52, 211, 153, 0.15) !important;
   border-top-color: #34d399 !important;
 }
 
 /* Students page tabs & filters */
-body.admin-app #main .page-filter .student-filter-tab {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-filter .student-filter-tab {
   border-color: rgba(255, 255, 255, 0.12) !important;
   background: rgba(255, 255, 255, 0.04) !important;
   color: #d1d5db !important;
 }
 
-body.admin-app #main .page-filter .student-filter-tab.bg-primary {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-filter .student-filter-tab.bg-primary {
   background: rgba(52, 211, 153, 0.22) !important;
   border-color: rgba(52, 211, 153, 0.45) !important;
   color: #ecfdf5 !important;
 }
 
-body.admin-app #main .page-filter .bg-gray-100.border-gray-200 {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-filter .bg-gray-100.border-gray-200 {
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Support hub */
-body.admin-app #main .admin-support-hub-tabs-wrap {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-support-hub-tabs-wrap {
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app #main .admin-support-hub-tab {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-support-hub-tab {
   color: #9ca3af !important;
 }
 
-body.admin-app #main .admin-support-hub-tab:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-support-hub-tab:hover {
   color: #e5e7eb !important;
   background: rgba(255, 255, 255, 0.04) !important;
 }
 
-body.admin-app #main .admin-support-hub-tab.is-active {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-support-hub-tab.is-active {
   color: #a7f3d0 !important;
   background: #111214 !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
@@ -2461,20 +2461,20 @@ body.admin-app #main .admin-support-hub-tab.is-active {
 }
 
 /* Legacy flash on students page */
-body.admin-app #main .bg-green-50.border-green-200 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-green-50.border-green-200 {
   background: rgba(16, 185, 129, 0.12) !important;
   border-color: rgba(52, 211, 153, 0.35) !important;
   color: #a7f3d0 !important;
 }
 
-body.admin-app #main .bg-red-50.border-red-200 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-red-50.border-red-200 {
   background: rgba(239, 68, 68, 0.1) !important;
   border-color: rgba(248, 113, 113, 0.35) !important;
   color: #fecaca !important;
 }
 
-body.admin-app #main .text-green-800 { color: #a7f3d0 !important; }
-body.admin-app #main .text-red-800 { color: #fecaca !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .text-green-800 { color: #a7f3d0 !important; }
+html:not([data-admin-theme="light"]) body.admin-app #main .text-red-800 { color: #fecaca !important; }
 
 /* Compact table row actions — icon bar + dropdown menu */
 body.admin-app #main .admin-row-actions {
@@ -2491,7 +2491,7 @@ body.admin-app #main th:has(.admin-row-actions) {
   overflow: visible;
 }
 
-body.admin-app #main .admin-row-action {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2510,7 +2510,7 @@ body.admin-app #main .admin-row-action {
   flex-shrink: 0;
 }
 
-body.admin-app #main .admin-row-action[title]::after {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action[title]::after {
   content: attr(title);
   position: absolute;
   bottom: calc(100% + 0.45rem);
@@ -2545,8 +2545,8 @@ body.admin-app #main .admin-row-action.admin-row-action--more.is-open::after {
   visibility: hidden;
 }
 
-body.admin-app #main a.admin-row-action:hover,
-body.admin-app #main button.admin-row-action:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main a.admin-row-action:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main button.admin-row-action:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.22);
@@ -2558,13 +2558,13 @@ body.admin-app #main button.admin-row-action:active {
   transform: scale(0.94);
 }
 
-body.admin-app #main .admin-row-action--lessons:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--lessons:hover {
   border-color: rgba(250, 204, 21, 0.45);
   color: #fde68a;
   background: rgba(250, 204, 21, 0.1);
 }
 
-body.admin-app #main .admin-row-action--quizzes:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--quizzes:hover {
   border-color: rgba(167, 139, 250, 0.45);
   color: #ddd6fe;
   background: rgba(167, 139, 250, 0.12);
@@ -2576,20 +2576,20 @@ body.admin-app #main .admin-row-action--testbank:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
-body.admin-app #main .admin-row-action--sets:hover,
-body.admin-app #main .admin-row-action--materials:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--sets:hover,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--materials:hover {
   border-color: rgba(52, 211, 153, 0.45);
   color: #a7f3d0;
   background: rgba(16, 185, 129, 0.12);
 }
 
-body.admin-app #main .admin-row-action--monitor:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--monitor:hover {
   border-color: rgba(52, 211, 153, 0.45);
   color: #6ee7b7;
   background: rgba(16, 185, 129, 0.14);
 }
 
-body.admin-app #main .admin-row-action--open:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--open:hover {
   border-color: rgba(251, 191, 36, 0.45);
   color: #fde68a;
   background: rgba(251, 191, 36, 0.1);
@@ -2607,26 +2607,26 @@ body.admin-app #main .admin-row-action--refresh:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
-body.admin-app #main .admin-row-action--lock:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--lock:hover {
   border-color: rgba(251, 191, 36, 0.45);
   color: #fde68a;
   background: rgba(251, 191, 36, 0.1);
 }
 
-body.admin-app #main .admin-row-action--approve:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--approve:hover {
   border-color: rgba(52, 211, 153, 0.45);
   color: #a7f3d0;
   background: rgba(16, 185, 129, 0.12);
 }
 
-body.admin-app #main .admin-row-action--deny:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--deny:hover {
   border-color: rgba(248, 113, 113, 0.45);
   color: #fecaca;
   background: rgba(239, 68, 68, 0.12);
 }
 
-body.admin-app #main .admin-row-action--more.is-open,
-body.admin-app #main .admin-row-action--more[aria-expanded="true"] {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--more.is-open,
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-action--more[aria-expanded="true"] {
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.1);
   color: #f3f4f6;
@@ -2636,7 +2636,7 @@ body.admin-app #main .admin-row-menu-wrap {
   position: relative;
 }
 
-body.admin-app #main .admin-row-menu {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-menu {
   position: absolute;
   right: 0;
   top: calc(100% + 0.4rem);
@@ -2662,7 +2662,7 @@ body.admin-app #main .admin-row-menu {
   }
 }
 
-body.admin-app #main .admin-row-menu__item {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-menu__item {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -2681,7 +2681,7 @@ body.admin-app #main .admin-row-menu__item {
   transition: background 0.1s ease, color 0.1s ease, transform 0.1s ease;
 }
 
-body.admin-app #main .admin-row-menu__item:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-menu__item:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
@@ -2690,11 +2690,11 @@ body.admin-app #main .admin-row-menu__item:active {
   transform: scale(0.98);
 }
 
-body.admin-app #main .admin-row-menu__item--danger {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-menu__item--danger {
   color: #fca5a5;
 }
 
-body.admin-app #main .admin-row-menu__item--danger:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-row-menu__item--danger:hover {
   background: rgba(239, 68, 68, 0.12);
   color: #fecaca;
 }
@@ -2707,12 +2707,12 @@ body.admin-app #main .admin-row-menu__item .bi {
   flex-shrink: 0;
 }
 
-body.admin-app #main .page-table thead.bg-gray-50 {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table thead.bg-gray-50 {
   background: #1a1a1a !important;
 }
 
-body.admin-app #main .page-table .border-gray-200,
-body.admin-app #main .page-table .border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table .border-gray-200,
+html:not([data-admin-theme="light"]) body.admin-app #main .page-table .border-gray-100 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -2770,7 +2770,7 @@ body.admin-app #main .admin-support-hub-tab .bi {
 }
 
 /* Stat / KPI cards (dashboard, support, etc.) */
-body.admin-app #main .admin-stat-card {
+html:not([data-admin-theme="light"]) body.admin-app #main .admin-stat-card {
   border: 1px solid rgba(148, 163, 184, 0.14) !important;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82)) !important;
   border-radius: 0.75rem;
@@ -2800,58 +2800,58 @@ body.admin-app #main .admin-stat-card__meta {
   margin: 0.35rem 0 0;
 }
 
-body.admin-app #main .text-gray-900 {
+html:not([data-admin-theme="light"]) body.admin-app #main .text-gray-900 {
   color: #f3f4f6 !important;
 }
 
-body.admin-app #main .border-gray-100,
-body.admin-app #main .border-b.border-gray-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .border-gray-100,
+html:not([data-admin-theme="light"]) body.admin-app #main .border-b.border-gray-100 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-body.admin-app #main .bg-green-100.text-green-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-green-100.text-green-800 {
   background: rgba(16, 185, 129, 0.16) !important;
   color: #6ee7b7 !important;
 }
 
-body.admin-app #main .bg-red-100.text-red-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-red-100.text-red-800 {
   background: rgba(239, 68, 68, 0.14) !important;
   color: #fca5a5 !important;
 }
 
-body.admin-app #main .bg-amber-100.text-amber-800 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-amber-100.text-amber-800 {
   background: rgba(245, 158, 11, 0.16) !important;
   color: #fcd34d !important;
 }
 
-body.admin-app #main .bg-amber-50.border-amber-200.text-amber-900 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-amber-50.border-amber-200.text-amber-900 {
   background: rgba(245, 158, 11, 0.1) !important;
   border-color: rgba(251, 191, 36, 0.35) !important;
   color: #fde68a !important;
 }
 
-body.admin-app #main .bg-red-50.border-red-200.text-red-900 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-red-50.border-red-200.text-red-900 {
   background: rgba(239, 68, 68, 0.1) !important;
   border-color: rgba(248, 113, 113, 0.35) !important;
   color: #fecaca !important;
 }
 
-body.admin-app #main .border-indigo-100.bg-indigo-50\/50,
-body.admin-app #main label.border-indigo-100 {
+html:not([data-admin-theme="light"]) body.admin-app #main .border-indigo-100.bg-indigo-50\/50,
+html:not([data-admin-theme="light"]) body.admin-app #main label.border-indigo-100 {
   border-color: rgba(52, 211, 153, 0.28) !important;
   background: rgba(16, 185, 129, 0.08) !important;
   color: #e5e7eb !important;
 }
 
-body.admin-app #main label.border-indigo-100:hover {
+html:not([data-admin-theme="light"]) body.admin-app #main label.border-indigo-100:hover {
   background: rgba(16, 185, 129, 0.12) !important;
 }
 
-body.admin-app #main .sca-panel .text-gray-600 {
+html:not([data-admin-theme="light"]) body.admin-app #main .sca-panel .text-gray-600 {
   color: #9ca3af !important;
 }
 
-body.admin-app #main code {
+html:not([data-admin-theme="light"]) body.admin-app #main code {
   background: rgba(255, 255, 255, 0.06);
   color: #a7f3d0;
   padding: 0.1rem 0.35rem;
@@ -2859,44 +2859,44 @@ body.admin-app #main code {
   font-size: 0.85em;
 }
 
-body.admin-app #main .bg-gray-50.border-gray-200.text-gray-700 {
+html:not([data-admin-theme="light"]) body.admin-app #main .bg-gray-50.border-gray-200.text-gray-700 {
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: #9ca3af !important;
 }
 
 /* Modals */
-body.admin-app .shadow-modal,
-body.admin-app #main .quiz-modal-panel {
+html:not([data-admin-theme="light"]) body.admin-app .shadow-modal,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-modal-panel {
   background: #141414 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #e5e7eb;
 }
 
-body.admin-app .shadow-modal .text-gray-800,
-body.admin-app .shadow-modal h2,
-body.admin-app #main .quiz-modal-panel .text-gray-800,
-body.admin-app #main .quiz-modal-panel h2 {
+html:not([data-admin-theme="light"]) body.admin-app .shadow-modal .text-gray-800,
+html:not([data-admin-theme="light"]) body.admin-app .shadow-modal h2,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-modal-panel .text-gray-800,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-modal-panel h2 {
   color: #f3f4f6 !important;
 }
 
-body.admin-app .shadow-modal .border-gray-200,
-body.admin-app #main .quiz-modal-panel .border-gray-200 {
+html:not([data-admin-theme="light"]) body.admin-app .shadow-modal .border-gray-200,
+html:not([data-admin-theme="light"]) body.admin-app #main .quiz-modal-panel .border-gray-200 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Pre-week context nav */
-body.admin-app .admin-preweek-context-nav--light {
+html:not([data-admin-theme="light"]) body.admin-app .admin-preweek-context-nav--light {
   border-color: rgba(255, 255, 255, 0.1) !important;
   background: #111214 !important;
   box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.8) !important;
 }
 
-body.admin-app .admin-preweek-context-nav--light a {
+html:not([data-admin-theme="light"]) body.admin-app .admin-preweek-context-nav--light a {
   color: #a7f3d0 !important;
 }
 
-body.admin-app .admin-preweek-context-nav--light .text-gray-800 {
+html:not([data-admin-theme="light"]) body.admin-app .admin-preweek-context-nav--light .text-gray-800 {
   color: #f3f4f6 !important;
 }
 

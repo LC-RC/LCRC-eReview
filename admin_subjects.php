@@ -264,14 +264,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
 <body class="font-sans antialiased admin-app admin-subjects-page" x-data="adminSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-book"></i></span>
-      Content Hub
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0">Manage subjects, lessons, materials, handouts, and quizzes.</p>
-  </div>
+  <?php
+    $adminHeroIcon = 'book';
+    $adminHeroTitle = 'Content Hub';
+    $adminHeroSubtitle = 'Manage subjects, lessons, materials, handouts, and quizzes.';
+    $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary" @click="openNewSubject()"><i class="bi bi-plus-lg"></i> New Subject</button>';
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
@@ -388,7 +387,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                     <a href="admin_quizzes?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--quizzes" title="Quizzes"><i class="bi bi-question-circle"></i><span class="sr-only">Quizzes</span></a>
                     <a href="admin_test_bank?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--testbank" title="Test Bank"><i class="bi bi-folder2-open"></i><span class="sr-only">Test Bank</span></a>
                     <div class="admin-row-menu-wrap">
-                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
                         <button type="button"
                                 class="admin-row-menu__item"
