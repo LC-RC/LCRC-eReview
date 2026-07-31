@@ -9,6 +9,13 @@ sca_enforce_student_session($conn);
 
 $uid = (int)$_SESSION['user_id'];
 
+// Consume flash while session is writable, then unlock before subject-access scans.
+$subjectsFlashError = isset($_SESSION['error']) ? (string) $_SESSION['error'] : '';
+unset($_SESSION['error']);
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
 $subjectsResult = mysqli_query($conn, "SELECT * FROM subjects WHERE status='active' ORDER BY subject_name ASC");
 $lessonCounts = [];
 $totalLessons = 0;
@@ -380,11 +387,10 @@ $pageTitle = 'Subjects';
       </div>
     </section>
 
-    <?php if (isset($_SESSION['error'])): ?>
+    <?php if ($subjectsFlashError !== ''): ?>
       <div class="dash-anim delay-1 mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <span><?php echo h($_SESSION['error']); ?></span>
-        <?php unset($_SESSION['error']); ?>
+        <span><?php echo h($subjectsFlashError); ?></span>
       </div>
     <?php endif; ?>
 

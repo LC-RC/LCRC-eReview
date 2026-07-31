@@ -1,9 +1,9 @@
 <?php
 /**
  * Admin Commerce — Payment verification + manual review (Phase 6/7) + paid revoke (Phase 8.3).
- * Approve/Reject only for needs_review. Fulfillment via commerce_fulfillment.php.
+ * Manual Approve/Reject for needs_review and OCR-failed (with proof).
+ * Approve uses the same fulfill path as auto_verified (grants + SCA + auto login activation).
  * Revoke Access targets purchase grants only; payment ledger stays immutable.
- * Manual approve/reject only for needs_review. Login auto-activates after successful fulfill.
  */
 require_once 'auth.php';
 requireRole('admin');
@@ -33,6 +33,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     $pid = (int) ($_POST['payment_id'] ?? 0);
     $note = (string) ($_POST['review_note'] ?? '');
+    $filterReturn = strtolower(trim((string) ($_POST['return_filter'] ?? 'all')));
+    $allowedReturn = ['all', 'pending', 'auto_verified', 'needs_review', 'failed', 'processing', 'not_started', 'manually_approved', 'manually_rejected'];
+    if (!in_array($filterReturn, $allowedReturn, true)) {
+        $filterReturn = 'all';
+    }
+    $listUrl = ereview_url('admin_commerce_payments') . ($filterReturn === 'all' ? '' : ('?v=' . rawurlencode($filterReturn)));
+
+    // Bulk approve / reject — same commerce_manual_* path per payment (no algorithm shortcut).
+    if ($action === 'bulk_approve' || $action === 'bulk_reject') {
+        if ($adminId <= 0) {
+            $_SESSION['error'] = 'Invalid admin session.';
+            header('Location: ' . $listUrl);
+            exit;
+        }
+        $rawIds = $_POST['payment_ids'] ?? [];
+        if (!is_array($rawIds)) {
+            $rawIds = [];
+        }
+        $ids = [];
+        foreach ($rawIds as $raw) {
+            $id = (int) $raw;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        $ids = array_values($ids);
+        if ($ids === []) {
+            $_SESSION['error'] = 'Select at least one reviewable payment.';
+            header('Location: ' . $listUrl);
+            exit;
+        }
+        if (count($ids) > 50) {
+            $_SESSION['error'] = 'Bulk limit is 50 payments at a time.';
+            header('Location: ' . $listUrl);
+            exit;
+        }
+        $okN = 0;
+        $failN = 0;
+        $failSamples = [];
+        foreach ($ids as $bulkPid) {
+            $r = ($action === 'bulk_approve')
+                ? commerce_manual_approve_payment($conn, $bulkPid, $adminId, $note)
+                : commerce_manual_reject_payment($conn, $bulkPid, $adminId, $note);
+            if (!empty($r['ok'])) {
+                $okN++;
+            } else {
+                $failN++;
+                if (count($failSamples) < 5) {
+                    $failSamples[] = '#' . $bulkPid . ':' . (string) ($r['error'] ?? 'error');
+                }
+            }
+        }
+        $verb = $action === 'bulk_approve' ? 'approved' : 'rejected';
+        $msg = $okN . ' payment(s) ' . $verb . '.';
+        if ($failN > 0) {
+            $msg .= ' ' . $failN . ' skipped/failed' . ($failSamples !== [] ? (' (' . implode(', ', $failSamples) . ')') : '') . '.';
+        }
+        if ($okN > 0) {
+            $_SESSION['message'] = $msg;
+        } else {
+            $_SESSION['error'] = $msg !== '' ? $msg : 'No payments were updated.';
+        }
+        header('Location: ' . $listUrl);
+        exit;
+    }
+
     if ($pid <= 0 || $adminId <= 0) {
         $_SESSION['error'] = 'Invalid payment or admin session.';
         header('Location: ' . ereview_url('admin_commerce_payments'));
@@ -175,14 +241,14 @@ function commerce_admin_vstatus_label(string $v): string
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['Payment Verification']];
 $adminHeroIcon = 'receipt';
 $adminHeroTitle = 'Payment Verification';
-$adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Approve uses the same fulfillment path as auto-verified.';
+$adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review payments with proof — same fulfillment path as auto-verified.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-commerce-payments-page">
   <?php include 'admin_sidebar.php'; ?>
   <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
@@ -219,8 +285,7 @@ $adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Appro
     <?php if ($detail): ?>
       <?php
         $vLab = commerce_admin_vstatus_label((string) $detail['verification_status']);
-        $canReview = ((string) $detail['verification_status'] === 'needs_review'
-            && (string) $detail['status'] === 'pending_verification');
+        $canReview = commerce_payment_is_manual_reviewable($detail);
       ?>
       <div class="quiz-admin-table-shell rounded-2xl p-5 sm:p-6 mb-5 space-y-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -405,7 +470,8 @@ $adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Appro
           <div>
             <div class="text-xs uppercase opacity-60 font-semibold mb-1">Proof</div>
             <?php if (!empty($detail['proof_path'])): ?>
-              <a class="text-sky-300 underline" target="_blank" rel="noopener"
+              <a class="text-sky-300 underline" data-admin-proof
+                 data-proof-title="Proof · <?php echo h((string) $detail['payment_ref']); ?>"
                  href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $detail['payment_id']); ?>">View proof</a>
             <?php else: ?>
               <span class="opacity-50">No proof</span>
@@ -506,32 +572,82 @@ $adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Appro
               <button type="submit" name="action" value="approve" class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold">Approve</button>
               <button type="submit" name="action" value="reject" class="admin-outline-btn px-4 py-2.5 rounded-xl font-semibold" onclick="return confirm('Reject this payment? No LMS access will be granted.');">Reject</button>
             </div>
-            <p class="text-xs opacity-60">Approve sets manually_approved + paid, then runs the same fulfillment as auto_verified. Reject sets manually_rejected + rejected with no grants/SCA.</p>
+            <p class="text-xs opacity-60">Approve sets manually_approved + paid, then runs the same fulfillment as auto_verified (grants, SCA, auto login activation). Use this when OCR failed but the receipt is valid. Reject sets manually_rejected + rejected with no grants/SCA.</p>
           </form>
+        <?php elseif ((string) ($detail['status'] ?? '') === 'pending_verification' && empty($detail['proof_path'])): ?>
+          <p class="text-sm opacity-70 border-t border-white/10 pt-4">Manual Approve is unavailable until proof is uploaded.</p>
+        <?php elseif (in_array((string) ($detail['verification_status'] ?? ''), ['manually_rejected'], true)): ?>
+          <p class="text-sm opacity-70 border-t border-white/10 pt-4">This payment was manually rejected. Create a new checkout if the student needs to pay again.</p>
         <?php endif; ?>
       </div>
     <?php endif; ?>
 
-    <div class="quiz-admin-table-shell rounded-2xl overflow-hidden">
+    <?php
+      $reviewableCount = 0;
+      foreach ($rows as $rr) {
+          if (commerce_payment_is_manual_reviewable($rr)) {
+              $reviewableCount++;
+          }
+      }
+    ?>
+    <form method="post" id="paymentsBulkForm" class="quiz-admin-table-shell rounded-2xl overflow-hidden">
+      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+      <input type="hidden" name="return_filter" value="<?php echo h($filter); ?>">
+      <input type="hidden" name="action" id="paymentsBulkAction" value="bulk_approve">
+      <?php if ($reviewableCount > 0): ?>
+        <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+          <span class="text-sm font-semibold">Bulk review</span>
+          <span class="text-xs opacity-70" id="paymentsSelectedCount"><?php echo (int) $reviewableCount; ?> reviewable on page · max 50</span>
+          <div class="flex-1 min-w-[8rem]"></div>
+          <input type="text" name="review_note" class="input-custom text-sm w-full sm:w-64" maxlength="2000" placeholder="Optional shared note">
+          <button type="submit" class="admin-content-btn px-3 py-2 rounded-xl text-sm font-semibold"
+                  onclick="return paymentsBulkSubmit('bulk_approve');">
+            Bulk Approve
+          </button>
+          <button type="submit" class="admin-outline-btn px-3 py-2 rounded-xl text-sm font-semibold"
+                  onclick="return paymentsBulkSubmit('bulk_reject');">
+            Bulk Reject
+          </button>
+        </div>
+      <?php else: ?>
+        <div class="px-4 py-3 border-b border-white/10 text-xs opacity-70">
+          No reviewable payments on this filter. Checkboxes appear only for Needs Review / OCR Failed (with proof) while still pending verification.
+        </div>
+      <?php endif; ?>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm admin-bulk-table">
           <thead>
             <tr class="text-left text-xs uppercase opacity-60 border-b border-white/10">
+              <th class="px-3 py-3 w-12">
+                <?php if ($reviewableCount > 0): ?>
+                  <input type="checkbox" id="paymentsSelectAll" class="admin-bulk-check"
+                         title="Select all reviewable on this page"
+                         aria-label="Select all reviewable payments on this page">
+                <?php endif; ?>
+              </th>
               <th class="px-3 py-3">Payment</th>
               <th class="px-3 py-3">User</th>
               <th class="px-3 py-3">Type</th>
               <th class="px-3 py-3">Amount</th>
               <th class="px-3 py-3">Verification</th>
               <th class="px-3 py-3">Summary</th>
-              <th class="px-3 py-3"></th>
+              <th class="px-3 py-3">Action</th>
             </tr>
           </thead>
           <tbody>
             <?php if ($rows === []): ?>
-              <tr><td colspan="7" class="px-3 py-8 text-center opacity-60">No payments match this filter.</td></tr>
+              <tr><td colspan="8" class="px-3 py-8 text-center opacity-60">No payments match this filter.</td></tr>
             <?php else: ?>
               <?php foreach ($rows as $r): ?>
-                <tr class="border-b border-white/5 align-top">
+                <?php $rowReviewable = commerce_payment_is_manual_reviewable($r); ?>
+                <tr class="border-b border-white/5 align-top<?php echo $rowReviewable ? ' is-selectable' : ''; ?>">
+                  <td class="px-3 py-3">
+                    <?php if ($rowReviewable): ?>
+                      <input type="checkbox" class="js-payment-select admin-bulk-check" name="payment_ids[]" value="<?php echo (int) $r['payment_id']; ?>" aria-label="Select payment <?php echo (int) $r['payment_id']; ?>">
+                    <?php else: ?>
+                      <span class="admin-bulk-check-na" title="Not reviewable">—</span>
+                    <?php endif; ?>
+                  </td>
                   <td class="px-3 py-3">
                     <div class="font-semibold"><?php echo h((string) $r['payment_ref']); ?></div>
                     <div class="text-xs opacity-60"><?php echo h((string) $r['status']); ?>
@@ -550,8 +666,22 @@ $adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Appro
                     <?php endif; ?>
                   </td>
                   <td class="px-3 py-3 text-xs max-w-xs"><?php echo h((string) ($r['verification_summary'] ?? '')); ?></td>
-                  <td class="px-3 py-3">
-                    <a class="font-semibold underline text-sky-300" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $r['payment_id'] . ($filter !== 'all' ? '&v=' . rawurlencode($filter) : '')); ?>">Open</a>
+                  <td class="px-3 py-3 whitespace-nowrap">
+                    <div class="flex flex-wrap gap-2 items-center">
+                      <a class="font-semibold underline text-sky-300" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $r['payment_id'] . ($filter !== 'all' ? '&v=' . rawurlencode($filter) : '')); ?>">Open</a>
+                      <?php if ($rowReviewable): ?>
+                        <?php if (!empty($r['proof_path'])): ?>
+                          <a class="font-semibold underline text-sky-300" data-admin-proof
+                             data-proof-title="Proof · <?php echo h((string) $r['payment_ref']); ?>"
+                             href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $r['payment_id']); ?>">Proof</a>
+                        <?php endif; ?>
+                        <button type="submit"
+                                class="admin-content-btn px-2.5 py-1 rounded-lg text-xs font-semibold"
+                                onclick="return paymentsQuickApprove(<?php echo (int) $r['payment_id']; ?>);">
+                          Approve
+                        </button>
+                      <?php endif; ?>
+                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -559,8 +689,88 @@ $adminHeroSubtitle = 'OCR results and manual review for NEEDS REVIEW only. Appro
           </tbody>
         </table>
       </div>
-    </div>
+    </form>
+    <p class="text-xs opacity-60 mt-3 mb-0">
+      Happy path after Approve: paid → fulfill → access grant → SCA → auto login activation.
+      Bulk Approve uses the same path per payment (not a shortcut). Check proof first when unsure.
+    </p>
   </div>
-  <?php include __DIR__ . '/includes/admin_topbar.php'; ?>
+</div>
+</main>
+<script>
+(function () {
+  var form = document.getElementById('paymentsBulkForm');
+  if (!form) return;
+  var selectAll = document.getElementById('paymentsSelectAll');
+  var actionInput = document.getElementById('paymentsBulkAction');
+  var countEl = document.getElementById('paymentsSelectedCount');
+  var reviewableTotal = form.querySelectorAll('.js-payment-select').length;
+
+  function allBoxes() {
+    return Array.prototype.slice.call(form.querySelectorAll('.js-payment-select'));
+  }
+  function selectedBoxes() {
+    return Array.prototype.slice.call(form.querySelectorAll('.js-payment-select:checked'));
+  }
+  function syncSelectAll() {
+    var all = allBoxes();
+    var selected = selectedBoxes();
+    if (countEl) {
+      countEl.textContent = selected.length + ' selected · ' + reviewableTotal + ' reviewable on page · max 50';
+    }
+    if (!selectAll) return;
+    selectAll.disabled = all.length === 0;
+    selectAll.checked = all.length > 0 && selected.length === all.length;
+    selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      var on = !!selectAll.checked;
+      allBoxes().forEach(function (cb) { cb.checked = on; });
+      selectAll.indeterminate = false;
+      syncSelectAll();
+    });
+  }
+  allBoxes().forEach(function (cb) {
+    cb.addEventListener('change', syncSelectAll);
+  });
+  syncSelectAll();
+
+  window.paymentsBulkSubmit = function (action) {
+    var boxes = selectedBoxes();
+    if (boxes.length === 0) {
+      alert('Select at least one reviewable payment (checkbox column). Already verified/rejected rows cannot be selected.');
+      return false;
+    }
+    if (boxes.length > 50) {
+      alert('Bulk limit is 50 payments. Uncheck some rows.');
+      return false;
+    }
+    var msg = action === 'bulk_reject'
+      ? ('Reject ' + boxes.length + ' payment(s)? No LMS access will be granted.')
+      : ('Approve ' + boxes.length + ' payment(s)? Each will be fulfilled and login activated when possible.');
+    if (!confirm(msg)) return false;
+    if (actionInput) actionInput.value = action;
+    return true;
+  };
+  window.paymentsQuickApprove = function (paymentId) {
+    if (!confirm('Approve payment #' + paymentId + '? This fulfills access and activates login when possible.')) {
+      return false;
+    }
+    allBoxes().forEach(function (cb) { cb.checked = false; });
+    form.querySelectorAll('input[name="payment_id"]').forEach(function (el) { el.remove(); });
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'payment_id';
+    hidden.value = String(paymentId);
+    form.appendChild(hidden);
+    if (actionInput) actionInput.value = 'approve';
+    syncSelectAll();
+    return true;
+  };
+})();
+</script>
+<?php include __DIR__ . '/includes/components/admin_proof_modal.php'; ?>
 </body>
 </html>

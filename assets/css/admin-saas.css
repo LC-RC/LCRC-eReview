@@ -1295,6 +1295,10 @@ html[data-admin-theme="light"] body.admin-app .activity-value {
 }
 
 /* Modals / drawers / dropdowns */
+html[data-admin-theme="light"] body.admin-app .admin-topbar-profile-wrap {
+  border-left-color: rgba(15, 23, 42, 0.1) !important;
+}
+
 html[data-admin-theme="light"] body.admin-app .admin-modal,
 html[data-admin-theme="light"] body.admin-app .admin-topbar-dropdown,
 html[data-admin-theme="light"] body.admin-app .ereview-profile-menu,
@@ -1303,6 +1307,18 @@ html[data-admin-theme="light"] body.admin-app .student-drawer__panel {
   border: 1px solid var(--admin-border-strong) !important;
   color: var(--admin-text-secondary) !important;
   box-shadow: var(--admin-shadow-lg) !important;
+}
+
+/* Keep profile menu anchored under the avatar in light mode (do not stretch topbar). */
+html[data-admin-theme="light"] body.admin-app .admin-topbar-dropdown,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-dropdown.ereview-profile-menu {
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  width: min(20rem, calc(100vw - 2rem)) !important;
+  max-height: min(70vh, 28rem);
+  overflow: auto !important;
+  z-index: 1200 !important;
 }
 
 html[data-admin-theme="light"] body.admin-app .student-drawer__title,
@@ -2049,4 +2065,270 @@ html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu__item:hover {
 
 html[data-admin-theme="dark"] body.admin-app #main .admin-row-menu__item--danger {
   color: #fca5a5 !important;
+}
+
+/* ========== Payment proof modal ========== */
+body.admin-proof-modal-open {
+  overflow: hidden;
+}
+
+.admin-proof-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.admin-proof-modal.is-open {
+  display: flex;
+}
+
+.admin-proof-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.admin-proof-modal__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(960px, 100%);
+  max-height: min(92vh, 920px);
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0f172a;
+  color: #e2e8f0;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__panel {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 28px 64px rgba(15, 23, 42, 0.22);
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-proof-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  flex-shrink: 0;
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__head {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.admin-proof-modal__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.admin-proof-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-proof-modal__link {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__link {
+  color: #0369a1;
+}
+
+.admin-proof-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__close {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+.admin-proof-modal__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 280px;
+  background: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+html[data-admin-theme="light"] .admin-proof-modal__body {
+  background: #f1f5f9;
+}
+
+.admin-proof-modal__loading {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.admin-proof-modal__img {
+  display: block;
+  max-width: 100%;
+  max-height: min(78vh, 820px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.admin-proof-modal__frame {
+  width: 100%;
+  height: min(78vh, 820px);
+  border: 0;
+  background: #fff;
+}
+
+/* ========== Light mode: commerce / utility contrast ========== */
+html[data-admin-theme="light"] body.admin-app #main .text-sky-300,
+html[data-admin-theme="light"] body.admin-app #main a.text-sky-300 {
+  color: #0369a1 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-amber-50,
+html[data-admin-theme="light"] body.admin-app #main .text-amber-100 {
+  color: #92400e !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-100,
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-50 {
+  color: #166534 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-rose-100,
+html[data-admin-theme="light"] body.admin-app #main .text-rose-50 {
+  color: #9f1239 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-400,
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-400\/90 {
+  color: #15803d !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .border-white\/10,
+html[data-admin-theme="light"] body.admin-app #main .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .bg-amber-500\/10 {
+  background: #fffbeb !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .bg-emerald-500\/10 {
+  background: #ecfdf5 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .bg-rose-500\/10 {
+  background: #fff1f2 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .border-amber-400\/40 {
+  border-color: #fcd34d !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .border-emerald-400\/40 {
+  border-color: #86efac !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .border-rose-400\/40 {
+  border-color: #fda4af !important;
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main a.border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: var(--admin-text-secondary) !important;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main a.border-sky-400 {
+  color: #0c4a6e !important;
+  border-color: #38bdf8 !important;
+  background: #e0f2fe !important;
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .quiz-admin-table-shell {
+  color: var(--admin-text-secondary) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .admin-content-btn {
+  color: #fff !important;
+}
+
+/* Bulk table checkboxes — visible in light + dark */
+body.admin-app #main .admin-bulk-check,
+body.admin-app #main input.admin-bulk-check[type="checkbox"],
+body.admin-app.admin-students-page .admin-bulk-check,
+body.admin-app.admin-students-page input.js-student-select[type="checkbox"] {
+  width: 1.1rem !important;
+  height: 1.1rem !important;
+  min-width: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+  vertical-align: middle;
+  flex-shrink: 0;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+  z-index: 2;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-bulk-check,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .admin-bulk-check {
+  accent-color: #1d4ed8;
+}
+
+body.admin-app #main .admin-bulk-check:disabled {
+  cursor: not-allowed;
+  opacity: 0.45 !important;
+}
+
+body.admin-app #main .admin-bulk-check-na {
+  display: inline-block;
+  min-width: 1.1rem;
+  text-align: center;
+  color: var(--admin-text-muted, #94a3b8);
+  font-size: 0.75rem;
+  line-height: 1;
+  user-select: none;
 }

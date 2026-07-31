@@ -369,5 +369,7 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
       </div>
     </div>
   </div>
+</div>
+</main>
 </body>
 </html>

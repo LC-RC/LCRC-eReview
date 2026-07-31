@@ -19,6 +19,11 @@ if (!sca_subject_has_any_access($conn, (int)$userId, $subjectId)) {
     exit;
 }
 
+// Session writes for this request are done; unlock so notification polls are not blocked.
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
 mysqli_stmt_execute($stmt);
@@ -120,11 +125,13 @@ $lastAttemptDateByQuiz = [];
 $lastTimeSpentByQuiz = [];
 $bestScoreByQuiz = [];
 $bestScoreDateByQuiz = [];
+$quizIds = [];
+mysqli_data_seek($quizzesAll, 0);
+while ($row = mysqli_fetch_assoc($quizzesAll)) {
+    $quizIds[] = (int) $row['quiz_id'];
+}
+mysqli_data_seek($quizzesAll, 0);
 if ($userId) {
-    $quizIds = [];
-    mysqli_data_seek($quizzesAll, 0);
-    while ($row = mysqli_fetch_assoc($quizzesAll)) $quizIds[] = (int)$row['quiz_id'];
-    mysqli_data_seek($quizzesAll, 0);
     if (!empty($quizIds)) {
         $ids = implode(',', array_map('intval', $quizIds));
         $ar = mysqli_query($conn, "SELECT attempt_id, quiz_id, status, score, correct_count, total_count, submitted_at, started_at FROM quiz_attempts WHERE user_id=".(int)$userId." AND quiz_id IN (".$ids.") ORDER BY attempt_id DESC");
@@ -181,19 +188,25 @@ while ($q = mysqli_fetch_assoc($quizzesAll)) {
 mysqli_data_seek($quizzesAll, 0);
 $averageScore = $scoreCount > 0 ? round($scoreSum / $scoreCount) : null;
 
+// Question counts for all quizzes on this subject (one query).
+$questionCountByQuiz = [];
+if (!empty($quizIds)) {
+    $idsForQc = implode(',', array_map('intval', $quizIds));
+    $qcRes = mysqli_query(
+        $conn,
+        "SELECT quiz_id, COUNT(*) AS cnt FROM quiz_questions WHERE quiz_id IN ($idsForQc) GROUP BY quiz_id"
+    );
+    while ($qcRes && ($qcr = mysqli_fetch_assoc($qcRes))) {
+        $questionCountByQuiz[(int) $qcr['quiz_id']] = (int) ($qcr['cnt'] ?? 0);
+    }
+}
+
 // Build quiz rows once so Quizzers can render as list or cards
 $quizRows = [];
 mysqli_data_seek($quizzesAll, 0);
 while ($q = mysqli_fetch_assoc($quizzesAll)) {
     $qid = (int)$q['quiz_id'];
-
-    $stmt = mysqli_prepare($conn, "SELECT COUNT(*) as cnt FROM quiz_questions WHERE quiz_id=?");
-    mysqli_stmt_bind_param($stmt, 'i', $qid);
-    mysqli_stmt_execute($stmt);
-    $cResult = mysqli_stmt_get_result($stmt);
-    $rc = mysqli_fetch_assoc($cResult);
-    mysqli_stmt_close($stmt);
-    $cnt = (int)($rc['cnt'] ?? 0);
+    $cnt = (int) ($questionCountByQuiz[$qid] ?? 0);
 
     $timeLimitSeconds = getQuizTimeLimitSeconds($q);
     $inProgressAttemptId = $attemptsByQuiz[$qid] ?? null;

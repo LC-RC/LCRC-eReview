@@ -1,7 +1,5 @@
 <?php
 /**
- * Legacy include — admin topbar is rendered inside includes/components/app_shell_sidebar.php.
- * If this file is included alone, it outputs only the topbar (unusual).
+ * Legacy stub — admin topbar is already rendered by app_shell_sidebar.php.
+ * Do not output another topbar here (caused duplicate headers on commerce pages).
  */
-$appShellTopbarTheme = 'admin';
-require __DIR__ . '/components/app_shell_topbar.php';

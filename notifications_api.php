@@ -16,6 +16,14 @@ if ($userId <= 0) {
     exit;
 }
 
+// Verify CSRF while session is open (POST mutations only; list ignores this flag).
+$token = (string) ($_POST['csrf_token'] ?? '');
+$csrfOk = verifyCSRFToken($token);
+
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
 notifications_seed_defaults($conn, (int)$userId, $role);
 
 if ($action === 'list') {
@@ -39,8 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$token = (string)($_POST['csrf_token'] ?? '');
-if (!verifyCSRFToken($token)) {
+if (!$csrfOk) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'Invalid CSRF token']);
     exit;

@@ -230,3 +230,15 @@ function touchUserPresence($userId) {
     setUserPresenceStatus($uid, true);
     $_SESSION['presence_last_touch'] = time();
 }
+
+/**
+ * Release the PHP session write lock after session mutations for this request are done.
+ * $_SESSION remains readable in-memory; later writes will not persist unless session is restarted.
+ * Safe on read-heavy LMS/admin GET paths and JSON poll endpoints.
+ */
+function ereview_release_session_lock(): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+}

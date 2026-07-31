@@ -498,7 +498,30 @@ function commerce_fulfill_after_auto_verify(mysqli $conn, int $paymentId): array
 }
 
 /**
- * Admin manual approve (needs_review only) → paid → fulfill.
+ * Whether admin can manually approve/reject this payment.
+ * Includes OCR-failed rows that still have uploaded proof (common when Tesseract is unavailable).
+ *
+ * @param array<string,mixed> $payment
+ */
+function commerce_payment_is_manual_reviewable(array $payment): bool
+{
+    if ((string) ($payment['status'] ?? '') !== 'pending_verification') {
+        return false;
+    }
+    $v = (string) ($payment['verification_status'] ?? '');
+    if ($v === 'needs_review') {
+        return true;
+    }
+    // Failed / stuck OCR — admin override only when modern commerce proof exists.
+    if (in_array($v, ['failed', 'processing', 'not_started'], true) && !empty($payment['proof_path'])) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Admin manual approve → paid → fulfill (same path as auto_verified).
+ * Allowed for needs_review, and for failed/processing/not_started when proof_path exists.
  *
  * @return array{ok:bool,error?:string,payment?:array<string,mixed>,fulfill?:array<string,mixed>}
  */
@@ -515,11 +538,8 @@ function commerce_manual_approve_payment(
     if (!$payment) {
         return ['ok' => false, 'error' => 'payment_not_found'];
     }
-    if ((string) ($payment['verification_status'] ?? '') !== 'needs_review') {
-        return ['ok' => false, 'error' => 'not_needs_review', 'payment' => $payment];
-    }
-    if ((string) ($payment['status'] ?? '') !== 'pending_verification') {
-        return ['ok' => false, 'error' => 'not_pending_verification', 'payment' => $payment];
+    if (!commerce_payment_is_manual_reviewable($payment)) {
+        return ['ok' => false, 'error' => 'not_reviewable', 'payment' => $payment];
     }
 
     $note = trim($reviewNote);
@@ -538,8 +558,10 @@ function commerce_manual_approve_payment(
             reviewed_at = NOW(),
             review_note = ?
          WHERE payment_id = ?
-           AND verification_status = 'needs_review'
            AND status = 'pending_verification'
+           AND verification_status IN ('needs_review','failed','processing','not_started')
+           AND proof_path IS NOT NULL
+           AND proof_path <> ''
          LIMIT 1"
     );
     if (!$upd) {
@@ -561,7 +583,8 @@ function commerce_manual_approve_payment(
 }
 
 /**
- * Admin manual reject (needs_review only). No grants / SCA / fulfilled_at.
+ * Admin manual reject. No grants / SCA / fulfilled_at.
+ * Same reviewable states as manual approve.
  *
  * @return array{ok:bool,error?:string,payment?:array<string,mixed>}
  */
@@ -578,11 +601,8 @@ function commerce_manual_reject_payment(
     if (!$payment) {
         return ['ok' => false, 'error' => 'payment_not_found'];
     }
-    if ((string) ($payment['verification_status'] ?? '') !== 'needs_review') {
-        return ['ok' => false, 'error' => 'not_needs_review', 'payment' => $payment];
-    }
-    if ((string) ($payment['status'] ?? '') !== 'pending_verification') {
-        return ['ok' => false, 'error' => 'not_pending_verification', 'payment' => $payment];
+    if (!commerce_payment_is_manual_reviewable($payment)) {
+        return ['ok' => false, 'error' => 'not_reviewable', 'payment' => $payment];
     }
 
     $note = trim($reviewNote);
@@ -600,8 +620,10 @@ function commerce_manual_reject_payment(
             reviewed_at = NOW(),
             review_note = ?
          WHERE payment_id = ?
-           AND verification_status = 'needs_review'
            AND status = 'pending_verification'
+           AND verification_status IN ('needs_review','failed','processing','not_started')
+           AND proof_path IS NOT NULL
+           AND proof_path <> ''
          LIMIT 1"
     );
     if (!$upd) {

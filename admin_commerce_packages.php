@@ -431,6 +431,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-conten
       </div>
     </div>
   </div>
-  <?php include __DIR__ . '/includes/admin_topbar.php'; ?>
+</div>
+</main>
 </body>
 </html>

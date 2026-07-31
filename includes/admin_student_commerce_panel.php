@@ -113,7 +113,8 @@ if (!isset($commerce) || !is_array($commerce)) {
               ?>
               <?php if ($proofUploaded): ?>
                 <div><strong>Uploaded</strong> · <?php echo h($proofVerifyLabel); ?></div>
-                <a class="font-semibold underline text-sky-700" target="_blank" rel="noopener"
+                <a class="font-semibold underline text-sky-700" data-admin-proof
+                   data-proof-title="Payment proof"
                    href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $latestPayment['payment_id']); ?>">View Proof</a>
               <?php else: ?>
                 <strong>Not Uploaded</strong>

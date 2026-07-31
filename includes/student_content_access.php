@@ -104,18 +104,32 @@ function sca_user_permission_row_count(mysqli $conn, int $userId): int
 
 function sca_tables_ready(mysqli $conn): bool
 {
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
     sca_ensure_schema($conn);
     $r = @mysqli_query($conn, "SHOW TABLES LIKE 'student_content_permissions'");
-    return (bool) ($r && mysqli_fetch_row($r));
+    $ready = (bool) ($r && mysqli_fetch_row($r));
+    return $ready;
 }
 
 /**
  * Approved + not past access_end (if set).
+ * Cached per user for the remainder of the request (same answer for every sca_has_access call).
  */
 function sca_account_access_active(mysqli $conn, int $userId): bool
 {
+    static $cache = [];
+    if ($userId <= 0) {
+        return false;
+    }
+    if (array_key_exists($userId, $cache)) {
+        return $cache[$userId];
+    }
     $stmt = mysqli_prepare($conn, "SELECT status, access_end FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
     if (!$stmt) {
+        $cache[$userId] = false;
         return false;
     }
     mysqli_stmt_bind_param($stmt, 'i', $userId);
@@ -124,12 +138,15 @@ function sca_account_access_active(mysqli $conn, int $userId): bool
     $row = $res ? mysqli_fetch_assoc($res) : null;
     mysqli_stmt_close($stmt);
     if (!$row || strtolower((string) ($row['status'] ?? '')) !== 'approved') {
+        $cache[$userId] = false;
         return false;
     }
     $end = trim((string) ($row['access_end'] ?? ''));
     if ($end !== '' && strtotime($end) < time()) {
+        $cache[$userId] = false;
         return false;
     }
+    $cache[$userId] = true;
     return true;
 }
 
@@ -386,7 +403,8 @@ function sca_subject_has_any_access(mysqli $conn, int $userId, int $subjectId): 
         return true;
     }
 
-    // Any granted topic/lesson under this subject unlocks the subject card for navigation.
+    // Same rules as before; load lesson/video/handout/quiz ids in a few queries (not per-lesson).
+    $lessonIds = [];
     $stmt = mysqli_prepare($conn, 'SELECT lesson_id FROM lessons WHERE subject_id = ?');
     if ($stmt) {
         mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -394,29 +412,31 @@ function sca_subject_has_any_access(mysqli $conn, int $userId, int $subjectId): 
         $res = mysqli_stmt_get_result($stmt);
         while ($res && ($row = mysqli_fetch_assoc($res))) {
             $lid = (int) ($row['lesson_id'] ?? 0);
-            if ($lid <= 0) {
-                continue;
-            }
-            if (sca_perm_has($perms, 'lesson', $lid)) {
-                mysqli_stmt_close($stmt);
-                return true;
-            }
-            $vq = mysqli_query($conn, 'SELECT video_id FROM lesson_videos WHERE lesson_id = ' . $lid);
-            while ($vq && ($v = mysqli_fetch_assoc($vq))) {
-                if (sca_perm_has($perms, 'video', (int) $v['video_id'])) {
-                    mysqli_stmt_close($stmt);
-                    return true;
-                }
-            }
-            $hq = mysqli_query($conn, 'SELECT handout_id FROM lesson_handouts WHERE lesson_id = ' . $lid);
-            while ($hq && ($h = mysqli_fetch_assoc($hq))) {
-                if (sca_perm_has($perms, 'handout', (int) $h['handout_id'])) {
-                    mysqli_stmt_close($stmt);
-                    return true;
-                }
+            if ($lid > 0) {
+                $lessonIds[] = $lid;
             }
         }
         mysqli_stmt_close($stmt);
+    }
+    foreach ($lessonIds as $lid) {
+        if (sca_perm_has($perms, 'lesson', $lid)) {
+            return true;
+        }
+    }
+    if ($lessonIds !== []) {
+        $in = implode(',', array_map('intval', $lessonIds));
+        $vq = mysqli_query($conn, "SELECT video_id FROM lesson_videos WHERE lesson_id IN ($in)");
+        while ($vq && ($v = mysqli_fetch_assoc($vq))) {
+            if (sca_perm_has($perms, 'video', (int) ($v['video_id'] ?? 0))) {
+                return true;
+            }
+        }
+        $hq = mysqli_query($conn, "SELECT handout_id FROM lesson_handouts WHERE lesson_id IN ($in)");
+        while ($hq && ($h = mysqli_fetch_assoc($hq))) {
+            if (sca_perm_has($perms, 'handout', (int) ($h['handout_id'] ?? 0))) {
+                return true;
+            }
+        }
     }
 
     $stmt = mysqli_prepare($conn, 'SELECT quiz_id FROM quizzes WHERE subject_id = ?');

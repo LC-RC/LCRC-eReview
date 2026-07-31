@@ -310,6 +310,23 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
     .view-approve-access .sca-topic-list { border-left: 2px solid rgba(148, 163, 184, 0.35); margin-left: 0.3rem; padding-left: 0.35rem; }
     .view-approve-access .sca-topic-list__head { color: #94a3b8; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 0.3rem 0 0.2rem; }
     .view-approve-access .sca-topic-check { color: #f1f5f9 !important; font-weight: 600; }
+    html[data-admin-theme="light"] .view-approve-access .sca-tree summary,
+    html[data-admin-theme="light"] .view-approve-access .text-gray-100,
+    html[data-admin-theme="light"] .view-approve-access .sca-topic-check { color: #0f172a !important; }
+    html[data-admin-theme="light"] .view-approve-access .sca-tree label { color: #334155; }
+    html[data-admin-theme="light"] .view-approve-access .sca-tree label:hover { background: rgba(37, 99, 235, 0.08); }
+    html[data-admin-theme="light"] .view-approve-access .text-gray-500,
+    html[data-admin-theme="light"] .view-approve-access .sca-tree-hint,
+    html[data-admin-theme="light"] .view-approve-access .sca-topic-list__head { color: #64748b !important; }
+    html[data-admin-theme="light"] .view-approve-access .sca-chevron { border-color: #64748b; }
+    html[data-admin-theme="light"] .view-approve-access .sca-subject-summary__meta {
+      color: #334155; background: #e2e8f0;
+    }
+    html[data-admin-theme="light"] .view-approve-access .sca-grant-all {
+      border-color: #86efac; background: #ecfdf5;
+    }
+    html[data-admin-theme="light"] .view-approve-access .sca-grant-all__title { color: #166534; }
+    html[data-admin-theme="light"] .view-approve-access .sca-grant-all__sub { color: #15803d; }
   </style>
 </head>
 <body class="font-sans antialiased admin-app">
@@ -328,7 +345,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
       <div class="admin-page-header__actions">
         <a href="admin_students" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Back to list</a>
         <?php if ($commerceProofUrl !== ''): ?>
-          <a href="<?php echo h($commerceProofUrl); ?>" target="_blank" rel="noopener" class="admin-btn admin-btn--primary"><i class="bi bi-receipt"></i> View Proof</a>
+          <a href="<?php echo h($commerceProofUrl); ?>" data-admin-proof
+             data-proof-title="Proof · <?php echo h($user['full_name'] ?? 'Student'); ?>"
+             class="admin-btn admin-btn--primary"><i class="bi bi-receipt"></i> View Proof</a>
         <?php endif; ?>
         <?php if ($latestPayment): ?>
           <a href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']); ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-credit-card"></i> View Payment</a>
@@ -408,12 +427,12 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
     </div>
     <div class="lg:col-span-5">
       <div class="rounded-xl shadow-card border p-5 page-table">
-        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Account activation</h2>
+        <h2 id="account-window-edit" class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Account activation</h2>
         <div class="space-y-2 mb-4 text-sm">
           <div><span class="text-gray-500">Login status:</span> <span class="font-semibold text-gray-800"><?php echo h((string) $commerce['account_label']); ?></span></div>
           <div><span class="text-gray-500">Account window start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '—'; ?></span></div>
           <div><span class="text-gray-500">Account window end:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_end'] ? h($user['access_end']) : '—'; ?></span></div>
-          <div><span class="text-gray-500">Months:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '—'; ?></span></div>
+          <div><span class="text-gray-500">Stored months equiv.:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '—'; ?></span></div>
           <div><span class="text-gray-500">Commerce content access:</span> <span class="font-semibold text-gray-800"><?php echo h((string) ($commerce['commerce_access']['label'] ?? 'None')); ?></span></div>
           <div class="pt-1">
             <a class="text-sm font-semibold underline text-sky-600" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $user['user_id']); ?>">View Commerce Grants</a>
@@ -447,12 +466,64 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
               Access Granted · Login activated automatically after commerce success.
             </div>
           </div>
-          <form class="flex flex-wrap gap-2" action="extend_access" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
-            <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
-            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend account window</button>
-          </form>
+          <?php
+            $awStartVal = !empty($user['access_start']) ? date('Y-m-d\TH:i', strtotime((string) $user['access_start'])) : date('Y-m-d\TH:i');
+            $awEndVal = !empty($user['access_end']) ? date('Y-m-d\TH:i', strtotime((string) $user['access_end'])) : date('Y-m-d\TH:i', strtotime('+6 months'));
+          ?>
+          <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 mb-3 space-y-3" x-data="{ awMode: 'extend' }">
+            <div class="text-sm font-bold text-gray-800">Edit account window</div>
+            <p class="text-xs text-gray-500 m-0">Login account dates only — not commerce grants or Manual / Administrative Access.</p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="extend" x-model="awMode"> Extend</label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="set" x-model="awMode"> Set new duration</label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="custom" x-model="awMode"> Custom dates</label>
+            </div>
+
+            <form class="space-y-2" action="extend_access" method="POST" x-show="awMode !== 'custom'">
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="mode" :value="awMode">
+              <div class="flex flex-wrap items-end gap-2">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1" for="awDurationValue">Duration</label>
+                  <input id="awDurationValue" type="number" min="1" max="3660" name="duration_value" class="input-custom w-24" value="1" required>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1" for="awDurationUnit">Unit</label>
+                  <select id="awDurationUnit" name="duration_unit" class="input-custom w-28">
+                    <option value="day">Days</option>
+                    <option value="month" selected>Months</option>
+                    <option value="year">Years</option>
+                  </select>
+                </div>
+                <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2">
+                  <i class="bi bi-calendar2-check"></i>
+                  <span x-text="awMode === 'set' ? 'Set window' : 'Extend window'"></span>
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 m-0" x-show="awMode === 'extend'">Adds time to the current end date (or from now if expired/missing).</p>
+              <p class="text-xs text-gray-500 m-0" x-show="awMode === 'set'">Replaces the window: start = now, end = now + duration.</p>
+            </form>
+
+            <form class="space-y-2" action="extend_access" method="POST" x-show="awMode === 'custom'" x-cloak>
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="mode" value="custom">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1" for="awStart">Start</label>
+                  <input id="awStart" type="datetime-local" name="access_start" class="input-custom w-full" value="<?php echo h($awStartVal); ?>" required>
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1" for="awEnd">End</label>
+                  <input id="awEnd" type="datetime-local" name="access_end" class="input-custom w-full" value="<?php echo h($awEndVal); ?>" required>
+                </div>
+              </div>
+              <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-pencil-square"></i> Save custom dates</button>
+            </form>
+          </div>
           <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
           <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
         <?php elseif ($isCommerceEnrollment && !$acctIsApproved): ?>
@@ -492,8 +563,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <input type="hidden" name="grant_full_lms" value="0">
             <input type="hidden" name="permissions" value="[]">
             <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
-            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Account window (months)</label>
-            <input id="viewApproveMonths" type="number" min="1" max="36" name="months" class="input-custom w-28" value="6" placeholder="Months" required>
+            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Account window</label>
+            <div class="flex flex-wrap gap-2 items-end">
+              <input id="viewApproveMonths" type="number" min="1" max="3660" name="duration_value" class="input-custom w-28" value="6" required>
+              <select name="duration_unit" class="input-custom w-28" aria-label="Duration unit">
+                <option value="day">Days</option>
+                <option value="month" selected>Months</option>
+                <option value="year">Years</option>
+              </select>
+            </div>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-wrench"></i> Repair Activation</button>
           </form>
           <?php endif; ?>
@@ -513,8 +591,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <input type="hidden" name="grant_full_lms" :value="hasFullLms ? '1' : '0'">
             <input type="hidden" name="permissions" :value="JSON.stringify(hasFullLms ? [{content_type:'full_lms',content_id:0}] : permissions)">
-            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Enrollment months</label>
-            <input id="viewApproveMonths" type="number" min="1" max="36" name="months" class="input-custom w-28" value="6" placeholder="Months" required>
+            <label class="block text-sm font-semibold text-gray-300 mb-1" for="viewApproveMonths">Account window</label>
+            <div class="flex flex-wrap gap-2 items-end mb-2">
+              <input id="viewApproveMonths" type="number" min="1" max="3660" name="duration_value" class="input-custom w-28" value="6" required>
+              <select name="duration_unit" class="input-custom w-28" aria-label="Duration unit">
+                <option value="day">Days</option>
+                <option value="month" selected>Months</option>
+                <option value="year">Years</option>
+              </select>
+            </div>
             <div class="view-approve-access">
               <p class="text-xs font-semibold text-slate-300 mb-1">Manual / Administrative Access</p>
               <?php
@@ -532,12 +617,47 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <button type="submit" class="w-full px-4 py-2.5 rounded-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition inline-flex items-center justify-center gap-2"><i class="bi bi-x-circle"></i> Reject</button>
           </form>
         <?php else: ?>
-          <form class="flex flex-wrap gap-2" action="extend_access" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
-            <input type="number" min="1" max="24" name="months" class="input-custom w-28" placeholder="+Months" required>
-            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Extend account window</button>
-          </form>
+          <?php
+            $awStartVal = !empty($user['access_start']) ? date('Y-m-d\TH:i', strtotime((string) $user['access_start'])) : date('Y-m-d\TH:i');
+            $awEndVal = !empty($user['access_end']) ? date('Y-m-d\TH:i', strtotime((string) $user['access_end'])) : date('Y-m-d\TH:i', strtotime('+6 months'));
+          ?>
+          <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 mb-3 space-y-3" x-data="{ awMode: 'extend' }">
+            <div class="text-sm font-bold text-gray-800">Edit account window</div>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui_legacy" value="extend" x-model="awMode"> Extend</label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui_legacy" value="set" x-model="awMode"> Set new duration</label>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui_legacy" value="custom" x-model="awMode"> Custom dates</label>
+            </div>
+            <form class="space-y-2" action="extend_access" method="POST" x-show="awMode !== 'custom'">
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="mode" :value="awMode">
+              <div class="flex flex-wrap items-end gap-2">
+                <input type="number" min="1" max="3660" name="duration_value" class="input-custom w-24" value="1" required>
+                <select name="duration_unit" class="input-custom w-28">
+                  <option value="day">Days</option>
+                  <option value="month" selected>Months</option>
+                  <option value="year">Years</option>
+                </select>
+                <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2">
+                  <i class="bi bi-calendar2-check"></i>
+                  <span x-text="awMode === 'set' ? 'Set window' : 'Extend window'"></span>
+                </button>
+              </div>
+            </form>
+            <form class="space-y-2" action="extend_access" method="POST" x-show="awMode === 'custom'" x-cloak>
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int)$user['user_id']; ?>">
+              <input type="hidden" name="mode" value="custom">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input type="datetime-local" name="access_start" class="input-custom w-full" value="<?php echo h($awStartVal); ?>" required>
+                <input type="datetime-local" name="access_end" class="input-custom w-full" value="<?php echo h($awEndVal); ?>" required>
+              </div>
+              <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-pencil-square"></i> Save custom dates</button>
+            </form>
+          </div>
           <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
           <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
         <?php endif; ?>
@@ -652,5 +772,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
     });
   });
 </script>
+<?php include __DIR__ . '/includes/components/admin_proof_modal.php'; ?>
 </body>
 </html>

@@ -3,12 +3,20 @@
 <title><?php echo isset($pageTitle) ? h($pageTitle) . ' - ' : ''; ?>LCRC eReview</title>
 <link rel="icon" type="image/png" href="/image%20assets/lms-logo.png">
 <link rel="apple-touch-icon" href="/image%20assets/lms-logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <?php
 $tailwindFile = __DIR__ . '/../assets/css/tailwind.css';
+$arbitraryFile = __DIR__ . '/../assets/css/tailwind-arbitrary.css';
 $useBuiltCss = file_exists($tailwindFile) && filesize($tailwindFile) > 1000;
 if ($useBuiltCss): ?>
 <link rel="stylesheet" href="assets/css/tailwind.css?v=<?php echo filemtime($tailwindFile); ?>">
+<?php if (is_file($arbitraryFile)): ?>
+<link rel="stylesheet" href="assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>">
+<?php endif; ?>
 <?php else: ?>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>

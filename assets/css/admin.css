@@ -401,18 +401,23 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name {
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-chevron { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: transform 0.2s ease; }
 body.admin-app .admin-topbar-chevron.is-open { transform: rotate(180deg); }
 
-html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown {
+/* Positioning must apply in light + dark — otherwise the open menu
+   expands the glass topbar into a huge white overlay in light mode. */
+body.admin-app .admin-topbar-dropdown {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
   width: 260px;
+  min-width: 260px;
   padding: 6px;
+  z-index: 1200;
+  overflow: hidden;
+}
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown {
   background: #0d0d0d;
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 16px;
   box-shadow: 0 16px 40px rgba(0,0,0,0.55);
-  z-index: 50;
-  overflow: hidden;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-head {
   padding: 14px 16px;

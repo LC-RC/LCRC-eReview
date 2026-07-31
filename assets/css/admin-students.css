@@ -253,12 +253,37 @@ html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill
 html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--awaiting {
   color: #1d4ed8; background: #dbeafe; border-color: #93c5fd;
 }
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--access-none,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--access-revoked,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--access-expired,
+html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-pill--neutral {
+  color: #334155; background: #f1f5f9; border-color: #cbd5e1;
+}
 body.admin-app.admin-students-page .commerce-proof-link {
   display: inline-flex; align-items: center; gap: 0.25rem;
   font-size: 0.8rem; font-weight: 650; color: #7dd3fc; text-decoration: none;
 }
 body.admin-app.admin-students-page .commerce-proof-link:hover { text-decoration: underline; }
+body.admin-app.admin-students-page .commerce-proof-link .bi {
+  color: inherit;
+  opacity: 1;
+}
 html[data-admin-theme="light"] body.admin-app.admin-students-page .commerce-proof-link { color: #0369a1; }
+html[data-admin-theme="light"] body.admin-app.admin-students-page .admin-student-action-menu-trigger {
+  color: #1e3a8a !important;
+  border-color: rgba(37, 99, 235, 0.45) !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .admin-student-action-menu-trigger:hover {
+  color: #172554 !important;
+  border-color: rgba(37, 99, 235, 0.65) !important;
+  background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%) !important;
+}
+html[data-admin-theme="light"] body.admin-app.admin-students-page .admin-student-action-menu-trigger .bi {
+  color: inherit !important;
+  opacity: 1 !important;
+}
 
 body.admin-app.admin-students-page .students-table--aligned thead th,
 body.admin-app.admin-students-page .students-table--aligned tbody td {

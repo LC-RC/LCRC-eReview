@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "LCRC eReview LMS - Tailwind CSS + Alpine.js",
   "scripts": {
-    "build": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css",
-    "watch": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --watch"
+    "build": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css && php scripts/build_tailwind_arbitrary.php",
+    "watch": "tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --watch",
+    "build:arbitrary": "php scripts/build_tailwind_arbitrary.php"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.1"

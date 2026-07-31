@@ -465,9 +465,25 @@ try {
     mysqli_query($conn, "DELETE FROM lessons WHERE lesson_id=$tempLesson LIMIT 1");
     $mark('W', $appears === 1 && $tempLesson > 0, "temp appeared=$appears then removed");
 
-    // Failed approve on failed payment
-    $badApprove = commerce_manual_approve_payment($conn, (int) $subE['payment_id'], $adminId, 'nope');
-    $mark('E_NO_APPROVE_FAILED', empty($badApprove['ok']) && ($badApprove['error'] ?? '') === 'not_needs_review', ($badApprove['error'] ?? ''));
+    // Failed OCR with proof CAN be manually approved (admin override) → fulfill
+    $okApproveFailed = commerce_manual_approve_payment($conn, (int) $subE['payment_id'], $adminId, 'ocr failed but receipt ok');
+    $payE2 = commerce_get_payment($conn, (int) $subE['payment_id']);
+    $mark(
+        'E_MANUAL_APPROVE_FAILED',
+        !empty($okApproveFailed['ok'])
+            && ($payE2['verification_status'] ?? '') === 'manually_approved'
+            && ($payE2['status'] ?? '') === 'paid'
+            && !empty($payE2['fulfilled_at'])
+            && p7_grant_count($conn, $uE) >= 1,
+        ($okApproveFailed['error'] ?? '') . ' v=' . ($payE2['verification_status'] ?? '')
+    );
+    // Awaiting proof still cannot be manually approved
+    $badAwait = commerce_manual_approve_payment($conn, $pidF, $adminId, 'no proof');
+    $mark(
+        'F_NO_APPROVE_AWAITING_PROOF',
+        empty($badAwait['ok']) && ($badAwait['error'] ?? '') === 'not_reviewable',
+        ($badAwait['error'] ?? '')
+    );
 
 } catch (Throwable $e) {
     out('EXCEPTION', false, $e->getMessage());

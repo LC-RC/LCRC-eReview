@@ -387,5 +387,7 @@ function p85_h_money(int $centavos): string
       </table>
     </div>
   </div>
+</div>
+</main>
 </body>
 </html>

@@ -4,6 +4,7 @@ requireRole('admin');
 require_once __DIR__ . '/smtp_sender.php';
 require_once __DIR__ . '/includes/student_content_access.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
+require_once __DIR__ . '/includes/admin_account_window.php';
 
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
     || !empty($_POST['ajax']);
@@ -30,11 +31,14 @@ if (!verifyCSRFToken($token)) {
     activate_user_respond($isAjax, false, 'Invalid request. Please try again.', 'admin_students?tab=pending&q=&page=1', 403);
 }
 
-$months = (int)($_POST['months'] ?? 0);
-$returnTo = trim((string)($_POST['return_to'] ?? 'admin_students?tab=enrolled&q=&page=1'));
-if ($returnTo === '' || strpos($returnTo, '://') !== false || strpos($returnTo, '//') === 0 || strpos($returnTo, '/') === 0) {
-    $returnTo = 'admin_students?tab=enrolled&q=&page=1';
-}
+$durationValue = (int) ($_POST['duration_value'] ?? ($_POST['months'] ?? 0));
+$durationUnit = admin_normalize_duration_unit((string) ($_POST['duration_unit'] ?? 'month'));
+$months = admin_duration_to_months_equiv($durationValue, $durationUnit);
+$intervalUnit = admin_sql_interval_unit($durationUnit);
+$returnTo = admin_safe_return_to(
+    (string) ($_POST['return_to'] ?? 'admin_students?tab=enrolled&q=&page=1'),
+    'admin_students?tab=enrolled&q=&page=1'
+);
 $enrolledRedirect = 'admin_students?tab=enrolled&q=&page=1';
 
 $userIds = [];
@@ -63,8 +67,13 @@ if ($singleId > 0) {
 }
 $userIds = array_values($userIds);
 
-if ($userIds === [] || $months <= 0) {
-    activate_user_respond($isAjax, false, 'Invalid user or months value.', 'admin_students?tab=pending&q=&page=1', 400);
+if ($userIds === [] || $durationValue <= 0) {
+    activate_user_respond($isAjax, false, 'Invalid user or duration value.', 'admin_students?tab=pending&q=&page=1', 400);
+}
+if (($durationUnit === 'day' && $durationValue > 3660)
+    || ($durationUnit === 'month' && $durationValue > 120)
+    || ($durationUnit === 'year' && $durationValue > 10)) {
+    activate_user_respond($isAjax, false, 'Duration value is too large for the selected unit.', 'admin_students?tab=pending&q=&page=1', 400);
 }
 
 $grantFullRaw = $_POST['grant_full_lms'] ?? '0';
@@ -163,13 +172,13 @@ foreach ($userIds as $userId) {
 
     $isCommerce = commerce_admin_is_commerce_enrollment_path($enrollmentPath);
 
-    $sql = "UPDATE users SET status='approved', access_start=NOW(), access_end=DATE_ADD(NOW(), INTERVAL ? MONTH), access_months=? WHERE user_id=? AND role='student'";
+    $sql = "UPDATE users SET status='approved', access_start=NOW(), access_end=DATE_ADD(NOW(), INTERVAL ? {$intervalUnit}), access_months=? WHERE user_id=? AND role='student'";
     $stmt = mysqli_prepare($conn, $sql);
     if (!$stmt) {
         $failed[] = $userId;
         continue;
     }
-    mysqli_stmt_bind_param($stmt, 'iii', $months, $months, $userId);
+    mysqli_stmt_bind_param($stmt, 'iii', $durationValue, $months, $userId);
     $okUpdate = mysqli_stmt_execute($stmt);
     $affected = mysqli_stmt_affected_rows($stmt);
     mysqli_stmt_close($stmt);

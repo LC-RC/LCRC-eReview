@@ -61,34 +61,13 @@ function commerce_admin_label_account_status(string $status): string
 }
 
 /**
+ * Summarize grant rows for one user (same rules as commerce_admin_grant_access_summary).
+ *
+ * @param list<array<string,mixed>> $rows
  * @return array{label:string,tone:string}
  */
-function commerce_admin_grant_access_summary(mysqli $conn, int $userId): array
+function commerce_admin_grant_access_summary_from_rows(array $rows): array
 {
-    if ($userId <= 0) {
-        return ['label' => 'No active commerce grant', 'tone' => 'none'];
-    }
-    $stmt = mysqli_prepare(
-        $conn,
-        "SELECT status, source, ends_at, starts_at
-         FROM access_grants
-         WHERE user_id = ?
-         ORDER BY
-           CASE status WHEN 'active' THEN 0 WHEN 'expired' THEN 1 WHEN 'revoked' THEN 2 ELSE 3 END,
-           ends_at DESC
-         LIMIT 20"
-    );
-    if (!$stmt) {
-        return ['label' => 'No active commerce grant', 'tone' => 'none'];
-    }
-    mysqli_stmt_bind_param($stmt, 'i', $userId);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    $rows = [];
-    while ($res && ($r = mysqli_fetch_assoc($res))) {
-        $rows[] = $r;
-    }
-    mysqli_stmt_close($stmt);
     if ($rows === []) {
         return ['label' => 'No active commerce grant', 'tone' => 'none'];
     }
@@ -127,6 +106,92 @@ function commerce_admin_grant_access_summary(mysqli $conn, int $userId): array
         return ['label' => 'Revoked', 'tone' => 'revoked'];
     }
     return ['label' => 'No active commerce grant', 'tone' => 'none'];
+}
+
+/**
+ * @return array{label:string,tone:string}
+ */
+function commerce_admin_grant_access_summary(mysqli $conn, int $userId): array
+{
+    if ($userId <= 0) {
+        return ['label' => 'No active commerce grant', 'tone' => 'none'];
+    }
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT status, source, ends_at, starts_at
+         FROM access_grants
+         WHERE user_id = ?
+         ORDER BY
+           CASE status WHEN 'active' THEN 0 WHEN 'expired' THEN 1 WHEN 'revoked' THEN 2 ELSE 3 END,
+           ends_at DESC
+         LIMIT 20"
+    );
+    if (!$stmt) {
+        return ['label' => 'No active commerce grant', 'tone' => 'none'];
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $rows = [];
+    while ($res && ($r = mysqli_fetch_assoc($res))) {
+        $rows[] = $r;
+    }
+    mysqli_stmt_close($stmt);
+    return commerce_admin_grant_access_summary_from_rows($rows);
+}
+
+/**
+ * Batch grant summaries for many users (one query). Same labels/tones as single-user helper.
+ *
+ * @param list<int> $userIds
+ * @return array<int, array{label:string,tone:string}>
+ */
+function commerce_admin_grant_access_summaries_for_users(mysqli $conn, array $userIds): array
+{
+    $out = [];
+    $ids = [];
+    foreach ($userIds as $uid) {
+        $uid = (int) $uid;
+        if ($uid > 0) {
+            $ids[$uid] = $uid;
+        }
+    }
+    $ids = array_values($ids);
+    foreach ($ids as $uid) {
+        $out[$uid] = ['label' => 'No active commerce grant', 'tone' => 'none'];
+    }
+    if ($ids === []) {
+        return $out;
+    }
+    $in = implode(',', array_map('intval', $ids));
+    $q = mysqli_query(
+        $conn,
+        "SELECT user_id, status, source, ends_at, starts_at
+         FROM access_grants
+         WHERE user_id IN ($in)
+         ORDER BY
+           user_id ASC,
+           CASE status WHEN 'active' THEN 0 WHEN 'expired' THEN 1 WHEN 'revoked' THEN 2 ELSE 3 END,
+           ends_at DESC"
+    );
+    $byUser = [];
+    while ($q && ($r = mysqli_fetch_assoc($q))) {
+        $uid = (int) ($r['user_id'] ?? 0);
+        if ($uid <= 0) {
+            continue;
+        }
+        if (!isset($byUser[$uid])) {
+            $byUser[$uid] = [];
+        }
+        if (count($byUser[$uid]) >= 20) {
+            continue;
+        }
+        $byUser[$uid][] = $r;
+    }
+    foreach ($byUser as $uid => $rows) {
+        $out[(int) $uid] = commerce_admin_grant_access_summary_from_rows($rows);
+    }
+    return $out;
 }
 
 /**
@@ -234,12 +299,25 @@ function commerce_admin_dashboard_status(array $ctx): array
             return $base;
         }
 
-        if ($payStatus === 'rejected' || $vStatus === 'manually_rejected' || $vStatus === 'failed') {
+        if ($payStatus === 'rejected' || $vStatus === 'manually_rejected') {
             $base['payment_ui'] = 'Rejected';
             $base['payment_tone'] = 'rejected';
             $base['access_ui'] = $grantTone === 'active' ? 'Granted' : 'None';
             $base['access_tone'] = $grantTone === 'active' ? 'granted' : 'none';
             $base['proof_status'] = $hasProof ? 'rejected' : $base['proof_status'];
+            $base['action_key'] = 'review_payment';
+            $base['action_label'] = 'Review';
+            $base['action_href'] = $viewPayment;
+            return $base;
+        }
+
+        // OCR/engine failure — not an admin rejection; still reviewable for Manual Approve.
+        if ($vStatus === 'failed') {
+            $base['payment_ui'] = 'OCR Failed';
+            $base['payment_tone'] = 'review';
+            $base['access_ui'] = $grantTone === 'active' ? 'Granted' : 'Pending';
+            $base['access_tone'] = $grantTone === 'active' ? 'granted' : 'pending';
+            $base['proof_status'] = $hasProof ? 'needs_review' : $base['proof_status'];
             $base['action_key'] = 'review_payment';
             $base['action_label'] = 'Review';
             $base['action_href'] = $viewPayment;
@@ -424,12 +502,14 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
         $farMap[(int) $r['user_id']] = $r;
     }
 
+    $grantMap = commerce_admin_grant_access_summaries_for_users($conn, $ids);
+
     foreach ($ids as $uid) {
         $u = $pathMap[$uid] ?? [];
         $path = (string) ($u['enrollment_path'] ?? '');
         $acct = (string) ($u['status'] ?? '');
         $selPkg = (int) ($u['selected_package_id'] ?? 0);
-        $grant = commerce_admin_grant_access_summary($conn, $uid);
+        $grant = $grantMap[$uid] ?? ['label' => 'No active commerce grant', 'tone' => 'none'];
         $pay = $payMap[$uid] ?? null;
         $far = $farMap[$uid] ?? null;
 

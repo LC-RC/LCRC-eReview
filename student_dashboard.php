@@ -94,6 +94,14 @@ try {
     $info = null;
 }
 
+// Consume flash while session is still writable, then unlock before heavy aggregates.
+$flashOk = !empty($_SESSION['success']) ? (string) $_SESSION['success'] : '';
+$flashErr = !empty($_SESSION['error']) ? (string) $_SESSION['error'] : '';
+unset($_SESSION['success'], $_SESSION['error']);
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
 require_once __DIR__ . '/includes/student_dashboard_aggregate.php';
 $dash = ereview_student_dashboard_aggregate($conn, $uid, $tableExists, $info, $weeklyActivityGoal);
 foreach ($dash as $_k => $_v) {
@@ -261,11 +269,6 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
       </article>
     </section>
 
-    <?php
-    $flashOk = !empty($_SESSION['success']) ? (string)$_SESSION['success'] : '';
-    $flashErr = !empty($_SESSION['error']) ? (string)$_SESSION['error'] : '';
-    unset($_SESSION['success'], $_SESSION['error']);
-    ?>
     <?php if ($flashOk !== '' || $flashErr !== ''): ?>
     <div class="dash-flash dash-anim delay-2 mb-4 px-4 py-3 rounded-xl border <?php echo $flashErr !== '' ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900'; ?>" role="status">
       <?php echo h($flashErr !== '' ? $flashErr : $flashOk); ?>

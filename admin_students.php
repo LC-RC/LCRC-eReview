@@ -342,6 +342,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.25);
     }
     .student-extend-form input::placeholder { color: rgba(255, 237, 213, 0.84); }
+    .student-extend-form select.student-extend-unit {
+      width: 100%;
+      border: 1px solid rgba(254, 215, 170, 0.55);
+      background: rgba(255,255,255,0.16);
+      border-radius: 0.48rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #ffedd5;
+      padding: 0.3rem 0.34rem;
+    }
     .student-pending-form {
       display: inline-flex;
       align-items: center;
@@ -1002,8 +1012,18 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
     .student-select-col { width: 2.75rem; text-align: center; vertical-align: middle; }
     .student-select-col input[type=checkbox] {
-      width: 1.05rem; height: 1.05rem; accent-color: #34d399; cursor: pointer;
+      width: 1.1rem; height: 1.1rem; accent-color: #2563eb; cursor: pointer;
     }
+    html[data-admin-theme="light"] .student-select-col input[type=checkbox] {
+      accent-color: #1d4ed8;
+    }
+    html[data-admin-theme="light"] .students-bulk-bar {
+      border-color: rgba(22, 163, 74, 0.35);
+      background: linear-gradient(145deg, #ecfdf5 0%, #f8fafc 100%);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
+    }
+    html[data-admin-theme="light"] .students-bulk-bar__count { color: #166534; }
+    html[data-admin-theme="light"] .students-bulk-bar__hint { color: #475569; }
     .students-bulk-bar {
       position: sticky; bottom: 0.85rem; z-index: 40;
       display: none; flex-wrap: wrap; align-items: center; gap: 0.65rem;
@@ -1238,7 +1258,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             <thead>
               <tr>
                 <th class="student-select-col" scope="col">
-                  <input type="checkbox" id="studentSelectAll" title="Select students needing repair activation on this page" aria-label="Select students needing repair activation on this page">
+                  <input type="checkbox" id="studentSelectAll" class="admin-bulk-check"
+                         title="Select all actionable students on this page (legacy pending or Repair Activation only)"
+                         aria-label="Select all actionable students on this page">
                 </th>
                 <th class="col-student" scope="col">Student</th>
                 <th class="col-enrollment" scope="col">Enrollment</th>
@@ -1395,9 +1417,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                   >
                     <td class="student-select-col">
                       <?php if ((!$isCommerceRow && $row['status'] !== 'approved') || $showRepairActivation): ?>
-                        <input type="checkbox" class="js-student-select" value="<?php echo (int)$row['user_id']; ?>" aria-label="Select <?php echo h($row['full_name']); ?>">
+                        <input type="checkbox" class="js-student-select admin-bulk-check" value="<?php echo (int)$row['user_id']; ?>" aria-label="Select <?php echo h($row['full_name']); ?>">
                       <?php else: ?>
-                        <span class="sr-only">Not selectable</span>
+                        <span class="admin-bulk-check-na" title="Not bulk-selectable (paid flow auto-activates; use Payment Verification for proofs)">—</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-student">
@@ -1438,7 +1460,10 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       <?php if (!empty($dash['is_free_access']) || $proofUi === 'N/A'): ?>
                         <span class="text-slate-400 text-sm">N/A</span>
                       <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
-                        <a class="commerce-proof-link" href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>" target="_blank" rel="noopener" title="View commerce payment proof">
+                        <a class="commerce-proof-link" data-admin-proof
+                           data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
+                           href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>"
+                           title="View commerce payment proof">
                           <i class="bi bi-eye" aria-hidden="true"></i> View Proof
                         </a>
                       <?php else: ?>
@@ -1478,7 +1503,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                               <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $dash['payment_id']); ?>"><i class="bi bi-credit-card" aria-hidden="true"></i> View payment</a>
                             <?php endif; ?>
                             <?php if ($hasCommerceProof && !empty($dash['payment_id'])): ?>
-                              <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
+                              <a role="menuitem" class="admin-student-action-item" data-admin-proof
+                                 data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
+                                 href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
                             <?php elseif (!$isCommerceRow && $hasProof): ?>
                               <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Legacy payment proof</a>
                             <?php endif; ?>
@@ -1503,10 +1530,18 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                               <form class="student-extend-form" action="extend_access" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                                 <input type="hidden" name="user_id" value="<?php echo (int)$row['user_id']; ?>">
-                                <label class="sr-only" for="extend-months-<?php echo (int)$row['user_id']; ?>">Months to extend</label>
-                                <input id="extend-months-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="months" placeholder="+ Months" required title="Add months">
-                                <button type="submit" class="admin-student-action-item admin-student-action-item--extend" role="menuitem"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Extend account window</button>
+                                <input type="hidden" name="mode" value="extend">
+                                <input type="hidden" name="return_to" value="admin_students?<?php echo h(http_build_query(['view' => 'students', 'tab' => $tab, 'q' => $q, 'page' => $page])); ?>">
+                                <label class="sr-only" for="extend-duration-<?php echo (int)$row['user_id']; ?>">Duration to extend</label>
+                                <input id="extend-duration-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="duration_value" placeholder="+ Amount" required title="Amount to add">
+                                <select name="duration_unit" class="student-extend-unit" aria-label="Duration unit" title="Days, months, or years">
+                                  <option value="day">Days</option>
+                                  <option value="month" selected>Months</option>
+                                  <option value="year">Years</option>
+                                </select>
+                                <button type="submit" class="admin-student-action-item admin-student-action-item--extend" role="menuitem"><i class="bi bi-calendar-plus" aria-hidden="true"></i> Extend / edit window</button>
                               </form>
+                              <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>#account-window-edit"><i class="bi bi-pencil-square" aria-hidden="true"></i> Edit account window</a>
                             <?php endif; ?>
                             <button type="button" class="admin-student-action-item admin-student-action-item--danger admin-student-action-item--section js-delete-student-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-user-name="<?php echo h($row['full_name']); ?>" data-user-email="<?php echo h($row['email']); ?>">
                               <i class="bi bi-trash" aria-hidden="true"></i> Delete
@@ -1595,7 +1630,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
   <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
     <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
-    <span class="students-bulk-bar__hint">Legacy approve or repair activation for selected rows only. Normal paid enrollment auto-activates after fulfillment.</span>
+    <span class="students-bulk-bar__hint">Only rows with a checkbox are bulk-selectable (legacy pending or Repair Activation). Paid students awaiting payment review are handled in Payment Verification — not here.</span>
     <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
     <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Continue</button>
   </div>
@@ -1612,8 +1647,15 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       </div>
     </div>
     <div class="admin-modal__field">
-      <label for="approveConfirmMonths">Account window (months)</label>
-      <input type="number" id="approveConfirmMonths" min="1" max="36" value="6" required>
+      <label for="approveConfirmMonths">Account window</label>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="number" id="approveConfirmMonths" min="1" max="3660" value="6" required style="flex:1;">
+        <select id="approveConfirmUnit" aria-label="Duration unit" style="min-width:7rem;">
+          <option value="day">Days</option>
+          <option value="month" selected>Months</option>
+          <option value="year">Years</option>
+        </select>
+      </div>
     </div>
     <div id="approveCommerceNotice" class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 mb-2" hidden>
       Commerce enrollment detected. This activates <strong>login only</strong>. Paid content comes from payment fulfillment; Free Access comes from FAR approval. The SCA picker is not used.
@@ -1878,6 +1920,49 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var approveTitle = document.getElementById('approveConfirmTitle');
     var approveDesc = document.getElementById('approveConfirmDesc');
 
+    function allSelectBoxes() {
+      return Array.prototype.slice.call(document.querySelectorAll('.js-student-select'));
+    }
+    function selectedCheckboxes() {
+      return Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked'));
+    }
+
+    function syncBulkBar() {
+      var selected = selectedCheckboxes();
+      var all = allSelectBoxes();
+      var n = selected.length;
+      if (bulkCount) bulkCount.textContent = String(n);
+      if (bulkBar) bulkBar.classList.toggle('is-visible', n > 0);
+      if (selectAll) {
+        selectAll.disabled = all.length === 0;
+        selectAll.checked = all.length > 0 && selected.length === all.length;
+        selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+        selectAll.title = all.length === 0
+          ? 'No actionable students on this page (only legacy pending or Repair Activation get checkboxes)'
+          : ('Select all ' + all.length + ' actionable student(s) on this page');
+      }
+    }
+
+    // Select-all must work even if approve modal markup is missing.
+    allSelectBoxes().forEach(function (cb) {
+      cb.addEventListener('change', syncBulkBar);
+    });
+    if (selectAll) {
+      selectAll.addEventListener('change', function () {
+        var on = !!selectAll.checked;
+        allSelectBoxes().forEach(function (cb) { cb.checked = on; });
+        selectAll.indeterminate = false;
+        syncBulkBar();
+      });
+    }
+    if (bulkClear) {
+      bulkClear.addEventListener('click', function () {
+        allSelectBoxes().forEach(function (cb) { cb.checked = false; });
+        syncBulkBar();
+      });
+    }
+    syncBulkBar();
+
     if (!confirmOverlay || !confirmSubmit) return;
 
     function getPicker() {
@@ -1886,25 +1971,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       try { return Alpine.$data(root); } catch (e) { return null; }
     }
 
-    function selectedCheckboxes() {
-      return Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked'));
-    }
-
     function rowIsCommerce(userId) {
       var tr = document.querySelector('tr[data-user-id="' + String(userId) + '"]');
       return !!(tr && tr.getAttribute('data-commerce-enrollment') === '1');
-    }
-
-    function syncBulkBar() {
-      var selected = selectedCheckboxes();
-      var n = selected.length;
-      if (bulkCount) bulkCount.textContent = String(n);
-      if (bulkBar) bulkBar.classList.toggle('is-visible', n > 0);
-      if (selectAll) {
-        var all = document.querySelectorAll('.js-student-select');
-        selectAll.checked = all.length > 0 && selected.length === all.length;
-        selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
-      }
     }
 
     function openConfirm(userIds, label) {
@@ -1959,23 +2028,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     });
 
-    document.querySelectorAll('.js-student-select').forEach(function (cb) {
-      cb.addEventListener('change', syncBulkBar);
-    });
-    if (selectAll) {
-      selectAll.addEventListener('change', function () {
-        document.querySelectorAll('.js-student-select').forEach(function (cb) {
-          cb.checked = selectAll.checked;
-        });
-        syncBulkBar();
-      });
-    }
-    if (bulkClear) {
-      bulkClear.addEventListener('click', function () {
-        document.querySelectorAll('.js-student-select').forEach(function (cb) { cb.checked = false; });
-        syncBulkBar();
-      });
-    }
     if (bulkApprove) {
       bulkApprove.addEventListener('click', function () {
         var selected = selectedCheckboxes();
@@ -2000,11 +2052,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     }
 
+    var confirmUnit = document.getElementById('approveConfirmUnit');
     confirmSubmit.addEventListener('click', function () {
       if (pendingUserIds.length === 0) return;
       var months = confirmMonths ? Number(confirmMonths.value) : 0;
+      var unit = confirmUnit ? String(confirmUnit.value || 'month') : 'month';
       if (!months || months < 1) {
-        if (confirmError) confirmError.textContent = 'Enter a valid number of months.';
+        if (confirmError) confirmError.textContent = 'Enter a valid duration.';
         return;
       }
       var access = { grant_full_lms: '0', permissions: '[]' };
@@ -2041,6 +2095,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       var formData = new FormData();
       formData.append('csrf_token', csrf);
       formData.append('ajax', '1');
+      formData.append('duration_value', String(months));
+      formData.append('duration_unit', unit);
       formData.append('months', String(months));
       formData.append('grant_full_lms', access.grant_full_lms);
       formData.append('permissions', access.permissions);
@@ -2080,10 +2136,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     });
 
     syncBulkBar();
-    if (selectAll && document.querySelectorAll('.js-student-select').length === 0) {
-      selectAll.disabled = true;
-      selectAll.title = 'No approvable students on this page';
-    }
   })();
 
   (function () {
@@ -2441,5 +2493,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     });
   })();
 </script>
+<?php include __DIR__ . '/includes/components/admin_proof_modal.php'; ?>
 </body>
 </html>

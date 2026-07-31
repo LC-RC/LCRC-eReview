@@ -316,7 +316,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
               <table class="w-full text-sm">
                 <thead>
                   <tr class="text-left text-xs uppercase tracking-wide opacity-70">
-                    <th class="px-3 py-3"><input type="checkbox" id="select-all-lessons" title="Select all on this page"></th>
+                    <th class="px-3 py-3"><input type="checkbox" id="select-all-lessons" class="admin-bulk-check" title="Select all topics on this page" aria-label="Select all topics on this page"></th>
                     <th class="px-3 py-3">Topic</th>
                     <th class="px-3 py-3 whitespace-nowrap">Price</th>
                     <th class="px-3 py-3">Duration</th>
@@ -331,7 +331,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
                     <?php foreach ($rows as $r): ?>
                       <tr class="border-t border-white/5">
                         <td class="px-3 py-3">
-                          <input type="checkbox" class="lesson-check" name="lesson_ids[]" value="<?php echo (int) $r['lesson_id']; ?>">
+                          <input type="checkbox" class="lesson-check admin-bulk-check" name="lesson_ids[]" value="<?php echo (int) $r['lesson_id']; ?>">
                         </td>
                         <td class="px-3 py-3 min-w-0">
                           <div class="font-semibold truncate"><?php echo h($r['title']); ?></div>
@@ -416,11 +416,25 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
     (function () {
       var all = document.getElementById('select-all-lessons');
       if (!all) return;
+      function boxes() { return Array.prototype.slice.call(document.querySelectorAll('.lesson-check')); }
+      function sync() {
+        var list = boxes();
+        var selected = list.filter(function (cb) { return cb.checked; });
+        all.disabled = list.length === 0;
+        all.checked = list.length > 0 && selected.length === list.length;
+        all.indeterminate = selected.length > 0 && selected.length < list.length;
+      }
       all.addEventListener('change', function () {
-        document.querySelectorAll('.lesson-check').forEach(function (cb) { cb.checked = all.checked; });
+        var on = !!all.checked;
+        boxes().forEach(function (cb) { cb.checked = on; });
+        all.indeterminate = false;
+        sync();
       });
+      boxes().forEach(function (cb) { cb.addEventListener('change', sync); });
+      sync();
     })();
   </script>
-  <?php include __DIR__ . '/includes/admin_topbar.php'; ?>
+</div>
+</main>
 </body>
 </html>
