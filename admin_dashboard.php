@@ -29,7 +29,8 @@ $nowSql = date('Y-m-d H:i:s');
 require_once __DIR__ . '/includes/commerce_access_gate.php';
 $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
 $enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
-$pendingWhere = "role='student' AND status <> 'rejected' AND NOT ({$hasActiveGrantSql})";
+// True registration queue only — not "missing grant" (legacy enrolled are restored separately).
+$pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
 $expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
 // Counts (used in hero, needs-attention, and stat cards)

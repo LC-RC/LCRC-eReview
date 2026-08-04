@@ -23,11 +23,11 @@ $offset = ($page - 1) * $perPage;
 
 $like = '%' . $q . '%';
 $searchSql = "(full_name LIKE ? OR email LIKE ?)";
-// Enrolled = has active access grant (SOT). Needs review = no active grant (not rejected).
+// Enrolled = active grant. Pending = awaiting approval (status pending, no grant).
 $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
 $whereMap = [
   'enrolled' => "role='student' AND ({$hasActiveGrantSql})",
-  'pending'  => "role='student' AND status <> 'rejected' AND NOT ({$hasActiveGrantSql})",
+  'pending'  => "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})",
   'expired'  => "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})",
   'rejected' => "role='student' AND status='rejected'",
   'all'      => "role='student'",
