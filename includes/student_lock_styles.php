@@ -18,6 +18,9 @@
     background: rgba(248, 250, 252, 0.2);
     pointer-events: none;
   }
+  html[data-student-theme="dark"] .lms-locked-card::after {
+    background: rgba(7, 11, 20, 0.35);
+  }
   .lms-lock-badge {
     display: inline-flex;
     align-items: center;
@@ -31,6 +34,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .03em;
+  }
+  html[data-student-theme="dark"] .lms-lock-badge {
+    background: var(--student-surface-2, rgba(24, 34, 54, 0.78));
+    border-color: var(--student-border, rgba(148, 183, 255, 0.14));
+    color: var(--student-text-secondary, #9aa8c0);
   }
   .lms-lock-overlay {
     position: absolute;

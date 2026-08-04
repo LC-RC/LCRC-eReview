@@ -3,7 +3,7 @@
  * Grant expiry + safe commerce SCA reconciliation (Phase 8.2).
  *
  * Marks overdue active access_grants as expired (history kept).
- * Reconciles SCA using grant ledger provenance only (purchase / free_access).
+ * Reconciles SCA using grant ledger provenance only (purchase / free_access / admin_manual).
  * Does NOT: revoke, emails, login, payment/OCR, replace-all SCA, delete grant history.
  */
 
@@ -27,7 +27,7 @@ function commerce_grant_commerce_backed_keys(mysqli $conn, int $userId): array
         "SELECT DISTINCT content_type, content_id
          FROM access_grants
          WHERE user_id = ?
-           AND source IN ('purchase', 'free_access')"
+           AND source IN ('purchase', 'free_access', 'admin_manual')"
     );
     if (!$stmt) {
         return [];
@@ -47,7 +47,7 @@ function commerce_grant_commerce_backed_keys(mysqli $conn, int $userId): array
 }
 
 /**
- * Live coverage keys: purchase/free_access, active, ends_at > NOW().
+ * Live coverage keys: purchase/free_access/admin_manual, active, ends_at > NOW().
  *
  * @return list<array{content_type:string,content_id:int}>
  */
@@ -61,7 +61,7 @@ function commerce_grant_live_coverage_keys(mysqli $conn, int $userId): array
         "SELECT DISTINCT content_type, content_id
          FROM access_grants
          WHERE user_id = ?
-           AND source IN ('purchase', 'free_access')
+           AND source IN ('purchase', 'free_access', 'admin_manual')
            AND status = 'active'
            AND ends_at > NOW()"
     );
@@ -318,6 +318,7 @@ function commerce_expire_and_reconcile(mysqli $conn, int $limit = 500, int $only
             $userIds = array_values($userIds);
         }
 
+        require_once __DIR__ . '/commerce_access_gate.php';
         foreach ($userIds as $uid) {
             $r = commerce_reconcile_user_commerce_sca($conn, (int) $uid);
             if (empty($r['ok'])) {
@@ -328,6 +329,7 @@ function commerce_expire_and_reconcile(mysqli $conn, int $limit = 500, int $only
                 $out['ok'] = false;
                 continue;
             }
+            commerce_student_demote_if_no_active_grant($conn, (int) $uid);
             $out['users_reconciled']++;
             $out['sca_upserts'] += (int) ($r['upserts'] ?? 0);
             $out['sca_removals'] += (int) ($r['removals'] ?? 0);

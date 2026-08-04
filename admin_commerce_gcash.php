@@ -199,7 +199,7 @@ $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later ve
         </div>
       </div>
 
-      <button type="submit" class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2"><i class="bi bi-check-lg"></i> Save settings</button>
+      <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2"><i class="bi bi-check-lg"></i> Save settings</button>
     </form>
   </div>
 </div>

@@ -54,22 +54,21 @@ $pageTitle = 'Pre-week';
   <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <?php require_once __DIR__ . '/includes/student_materials_list_styles.php'; ?>
   <style>
-    .preweek-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
-    .student-hero {
-      border-radius: 0.75rem;
-      border: 1px solid rgba(255,255,255,0.28);
-      background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
-      box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+    .preweek-page { background: transparent; }
+    html[data-student-theme="light"] .preweek-page {
+      background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
     }
-    .hero-strip { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.24); border-radius: .62rem; }
     .section-title {
-      display: flex; align-items: center; gap: .5rem; margin: 0 0 .85rem; padding: .45rem .65rem;
-      border: 1px solid #d8e8f6; border-radius: .62rem; background: linear-gradient(180deg,#f4f9fe 0%,#fff 100%);
-      color: #143D59; font-size: 1.03rem; font-weight: 800;
+      display: flex; align-items: center; gap: .625rem; margin: 0 0 1.35rem; padding: .65rem .95rem;
+      border: 1px solid var(--student-border, #d8e8f6); border-radius: .75rem;
+      background: linear-gradient(180deg, var(--student-surface-2, #f4f9fe) 0%, var(--student-glass, #fff) 100%);
+      color: var(--student-text, #143D59); font-size: 1.03rem; font-weight: 800;
     }
     .section-title i {
-      width: 1.55rem; height: 1.55rem; border-radius: .45rem; display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid #b9daf2; background: #e8f2fa; color: #1665A0; font-size: .83rem;
+      width: 2rem; height: 2rem; border-radius: .55rem; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--student-border, #b9daf2);
+      background: var(--student-primary-soft, #e8f2fa);
+      color: var(--student-primary, #1665A0); font-size: .9rem;
     }
     .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
     .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; }
@@ -132,18 +131,15 @@ $pageTitle = 'Pre-week';
   <?php include 'student_topbar.php'; ?>
 
   <div class="student-dashboard-page min-h-full pb-8">
-    <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7 text-white">
+    <section class="student-hero student-hero--glass dash-anim delay-1 relative overflow-hidden mb-7">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 border border-white/30"><i class="bi bi-lightning-charge"></i></span>
+          <h1 class="student-hero__title text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
+            <span class="student-hero__icon" aria-hidden="true"><i class="bi bi-lightning-charge"></i></span>
             Pre-week
           </h1>
-          <p class="text-white/90 mt-2 mb-0 max-w-2xl">Open a pre-week, then choose a lecture to view videos and handouts.</p>
+          <p class="student-hero__lede mt-2 mb-0">Open a pre-week, then choose a lecture to view videos and handouts.</p>
         </div>
-      </div>
-      <div class="hero-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
-        <span class="font-semibold"><?php echo (int)$rowTotal; ?> pre-week<?php echo $rowTotal === 1 ? '' : 's'; ?> available</span>
       </div>
     </section>
 

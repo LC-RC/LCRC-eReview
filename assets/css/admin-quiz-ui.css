@@ -362,6 +362,18 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .qu
   border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
+html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill--questions {
+  background: rgba(52, 211, 153, 0.16);
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-quizzes-page #main .quiz-admin-count-pill--questions {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
 html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-data-table thead th {
   font-size: 0.72rem;
   letter-spacing: 0.06em;

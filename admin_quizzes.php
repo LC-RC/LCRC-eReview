@@ -126,6 +126,7 @@ $countRes = mysqli_stmt_get_result($stmt);
 $countRow = mysqli_fetch_assoc($countRes);
 $totalQuizzes = (int)($countRow['total'] ?? 0);
 mysqli_stmt_close($stmt);
+$totalSubjectQuestions = count_subject_quiz_questions($conn, $subjectId);
 $totalPages = max(1, (int)ceil($totalQuizzes / $perPage));
 if ($page > $totalPages) {
     $page = $totalPages;
@@ -163,22 +164,23 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 <body class="font-sans antialiased admin-app admin-quizzes-page" x-data="quizzesApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-question-circle"></i></span> Quizzes — <span class="admin-subject-text admin-subject-text--quiz"><?php echo h($subject['subject_name']); ?></span>
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0 text-sm sm:text-base max-w-3xl">Create quizzes, then open <strong class="text-gray-300 font-semibold">Questions</strong> to build the question bank.</p>
-  </div>
-
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
-    <div></div>
-    <div class="flex flex-wrap gap-2">
-      <a href="admin_subjects" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to Content Hub</a>
-      <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn admin-outline-btn--lessons px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-file-text"></i> Lessons for <?php echo h($subject['subject_name']); ?></a>
-      <button type="button" @click="openNewQuiz()" class="admin-content-btn admin-content-btn--quiz px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Quiz</button>
-    </div>
-  </div>
+  <?php
+    $adminHeroIcon = 'question-circle';
+    $adminHeroTitle = 'Quizzes — ' . (string) $subject['subject_name'];
+    $adminHeroSubtitle = 'Create quizzes, then open Questions to build the question bank.';
+    $adminHeroMeta =
+      '<span class="quiz-admin-count-pill" title="Quizzes in this subject">'
+      . (int) $totalQuizzes . ' quiz' . ((int) $totalQuizzes === 1 ? '' : 'zes')
+      . '</span>'
+      . '<span class="quiz-admin-count-pill quiz-admin-count-pill--questions" title="All uploaded questions across every quiz in this subject">'
+      . (int) $totalSubjectQuestions . ' question' . ((int) $totalSubjectQuestions === 1 ? '' : 's') . ' total'
+      . '</span>';
+    $adminHeroActions =
+      '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
+      . '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-file-text"></i> Lessons</a>'
+      . '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="quiz-admin-alert quiz-admin-alert--success mb-5 flex items-center gap-2">
@@ -193,40 +195,34 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_quizzes" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
-    <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-    <div class="flex-1 min-w-[200px]">
-      <label for="quiz-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search</label>
-      <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title…" class="input-custom w-full" autocomplete="off">
-    </div>
-    <div class="flex flex-wrap gap-2">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-funnel"></i> Apply</button>
-      <?php if ($searchQ !== ''): ?>
-        <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
-      <?php endif; ?>
-    </div>
-  </form>
-
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-gray-100">Quizzes</span>
-        <span class="quiz-admin-count-pill"><?php echo (int)$totalQuizzes; ?></span>
+    <form method="get" action="admin_quizzes" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
+      <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
+      <div class="flex-1 min-w-[200px]">
+        <label for="quiz-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
+        <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title…" class="input-custom w-full" autocomplete="off">
       </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Open <strong class="text-gray-400">Questions</strong> for each quiz to build the question bank.</p>
-      <div class="text-gray-500 text-sm text-right">
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
+        <?php if ($searchQ !== ''): ?>
+          <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
+        <?php endif; ?>
+      </div>
+      <div class="w-full text-sm opacity-70">
         <?php if ($totalQuizzes > 0): ?>
-          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalQuizzes); ?> of <?php echo $totalQuizzes; ?></span>
+          Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalQuizzes); ?> of <?php echo $totalQuizzes; ?>
           <span class="mx-1">·</span>
         <?php endif; ?>
-        <span>Subject: <span class="admin-subject-text admin-subject-text--quiz"><?php echo h($subject['subject_name']); ?></span></span>
+        Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
+        <span class="mx-1">·</span>
+        <strong><?php echo (int)$totalSubjectQuestions; ?></strong> questions total
       </div>
-    </div>
+    </form>
     <div class="overflow-x-auto pl-3 pr-8">
-      <table class="quiz-admin-data-table w-full text-left">
+      <table class="quiz-admin-data-table admin-data-table w-full text-left">
         <thead>
           <tr>
-            <th class="px-5 py-3 font-semibold text-center">Quiz</th>
+            <th class="px-5 py-3 font-semibold admin-col-primary">Quiz</th>
             <th class="px-5 py-3 font-semibold text-center">Type</th>
             <th class="px-5 py-3 font-semibold text-center">Questions</th>
             <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
@@ -243,7 +239,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
             $questionsCellTitle = $qCnt === 0 ? 'No questions yet — add them via Questions' : $qCnt . ' question(s)';
           ?>
             <tr class="quiz-admin-row">
-              <td class="px-5 py-3.5 text-center font-semibold text-gray-100"><?php echo h($qz['title']); ?></td>
+              <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
               <td class="px-5 py-3.5 text-center"><span class="inline-block px-2.5 py-1 rounded-md text-xs font-semibold <?php echo $typeClass; ?>" title="<?php echo h($typeTitle); ?>"><?php echo h($typeLabel); ?></span></td>
               <td class="px-5 py-3.5 text-center" title="<?php echo h($questionsCellTitle); ?>">
                 <span class="inline-flex min-w-[2.25rem] justify-center px-2.5 py-1 rounded-md text-sm font-bold tabular-nums <?php echo $questionsCellClass; ?>"><?php echo $qCnt; ?></span>
@@ -268,7 +264,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
                 <div class="font-semibold text-gray-200">No quizzes yet</div>
                 <p class="text-sm mt-1 text-gray-500">Create your first quiz, then add questions.</p>
-                <button type="button" @click="openNewQuiz()" class="mt-4 px-4 py-2.5 rounded-lg font-semibold admin-content-btn admin-content-btn--quiz border-2 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Quiz</button>
+                <button type="button" @click="openNewQuiz()" class="mt-4 admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>
               </td>
             </tr>
           <?php endif; ?>

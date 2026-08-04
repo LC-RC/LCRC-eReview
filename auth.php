@@ -113,7 +113,7 @@ function verifySession() {
     }
     
     $userId = getCurrentUserId();
-    $stmt = mysqli_prepare($conn, "SELECT user_id, role, status FROM users WHERE user_id = ? LIMIT 1");
+    $stmt = mysqli_prepare($conn, "SELECT user_id, role, status, access_end FROM users WHERE user_id = ? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'i', $userId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -124,9 +124,13 @@ function verifySession() {
         return false;
     }
     
-    // For non-staff users, account must remain approved
-    if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
-        return false;
+    // Students: must keep an active access grant. Other non-staff: approved status.
+    if (!isStaffRole($user['role'])) {
+        require_once __DIR__ . '/includes/commerce_access_gate.php';
+        $gate = commerce_student_can_login($conn, $user);
+        if (empty($gate['ok'])) {
+            return false;
+        }
     }
     
     return true;

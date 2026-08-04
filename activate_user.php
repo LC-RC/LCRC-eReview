@@ -4,6 +4,9 @@ requireRole('admin');
 require_once __DIR__ . '/smtp_sender.php';
 require_once __DIR__ . '/includes/student_content_access.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
+require_once __DIR__ . '/includes/commerce_access_gate.php';
+require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
+require_once __DIR__ . '/includes/commerce_activation.php';
 require_once __DIR__ . '/includes/admin_account_window.php';
 
 $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
@@ -172,28 +175,42 @@ foreach ($userIds as $userId) {
 
     $isCommerce = commerce_admin_is_commerce_enrollment_path($enrollmentPath);
 
-    $sql = "UPDATE users SET status='approved', access_start=NOW(), access_end=DATE_ADD(NOW(), INTERVAL ? {$intervalUnit}), access_months=? WHERE user_id=? AND role='student'";
-    $stmt = mysqli_prepare($conn, $sql);
-    if (!$stmt) {
-        $failed[] = $userId;
-        continue;
-    }
-    mysqli_stmt_bind_param($stmt, 'iii', $durationValue, $months, $userId);
-    $okUpdate = mysqli_stmt_execute($stmt);
-    $affected = mysqli_stmt_affected_rows($stmt);
-    mysqli_stmt_close($stmt);
-    if (!$okUpdate || $affected < 1) {
-        $failed[] = $userId;
-        continue;
-    }
-
     if ($isCommerce) {
-        // Activate login only. Preserve any SCA already granted by commerce fulfillment / FAR.
-        // Do NOT apply the admin SCA picker — that would simulate paid content access.
-        $permOk = sca_save_user_permissions_preserving_commerce($conn, $userId, [], $adminId);
+        // Repair Activation only: commerce students must already have an active grant.
+        if (!commerce_student_has_active_access($conn, $userId)) {
+            $failed[] = $userId;
+            continue;
+        }
+        $act = commerce_activate_user_after_commerce_success($conn, $userId, [
+            'require_active_grant' => true,
+            'access_months' => max(1, $months),
+            'granted_by' => $adminId,
+        ]);
+        if (empty($act['ok']) && empty($act['already_approved'])) {
+            $failed[] = $userId;
+            continue;
+        }
+        // Optionally extend login window to match requested duration when already approved.
+        $endTs = commerce_user_max_active_grant_ends_ts($conn, $userId);
+        if ($endTs && function_exists('commerce_fulfill_maybe_extend_access_end')) {
+            commerce_fulfill_maybe_extend_access_end($conn, $userId, $endTs);
+        }
         $commerceActivated++;
+        $approved++;
+        $lastStudentName = $studentName;
     } else {
+        // Legacy: create admin_manual grant (SOT) + SCA, then activate login.
         if (!$grantFull && $normalizedPerms === []) {
+            $failed[] = $userId;
+            continue;
+        }
+        $grantRes = commerce_admin_grant_manual_access($conn, $userId, $adminId, [
+            'months' => max(1, $months > 0 ? $months : 6),
+            'activate_login' => true,
+            'close_open_payment' => false,
+            'label' => 'Legacy administrative access',
+        ]);
+        if (empty($grantRes['ok'])) {
             $failed[] = $userId;
             continue;
         }
@@ -205,15 +222,14 @@ foreach ($userIds as $userId) {
                 $adminId
             )
             : sca_save_user_permissions_preserving_commerce($conn, $userId, $normalizedPerms, $adminId);
+        if (!$permOk) {
+            $failed[] = $userId;
+            continue;
+        }
         $legacyActivated++;
+        $approved++;
+        $lastStudentName = $studentName;
     }
-    if (!$permOk) {
-        $failed[] = $userId;
-        continue;
-    }
-
-    $approved++;
-    $lastStudentName = $studentName;
 
     $accessStartRaw = '';
     $accessEndRaw = '';
@@ -264,7 +280,7 @@ if ($approved === 0) {
     activate_user_respond(
         $isAjax,
         false,
-        'Unable to activate student account(s): account/email not found or permission save failed.',
+        'Unable to activate: commerce students need an active access grant first (use Grant Access or approve payment). Legacy students need Full LMS or content selection.',
         'admin_students?tab=pending&q=&page=1',
         400,
         ['approved' => 0, 'failed' => $failed, 'total' => count($userIds)]

@@ -3,6 +3,7 @@ require_once 'auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
+require_once __DIR__ . '/includes/commerce_access_gate.php';
 require_once __DIR__ . '/includes/url_helpers.php';
 
 $csrf = generateCSRFToken();
@@ -22,10 +23,12 @@ $offset = ($page - 1) * $perPage;
 
 $like = '%' . $q . '%';
 $searchSql = "(full_name LIKE ? OR email LIKE ?)";
+// Enrolled = has active access grant (SOT). Needs review = no active grant (not rejected).
+$hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
 $whereMap = [
-  'enrolled' => "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end >= ?",
-  'pending'  => "role='student' AND status='pending'",
-  'expired'  => "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ?",
+  'enrolled' => "role='student' AND ({$hasActiveGrantSql})",
+  'pending'  => "role='student' AND status <> 'rejected' AND NOT ({$hasActiveGrantSql})",
+  'expired'  => "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})",
   'rejected' => "role='student' AND status='rejected'",
   'all'      => "role='student'",
 ];
@@ -68,7 +71,7 @@ if ($hasLastLogoutAt) {
 }
 $orderBySql = "$presenceOrderExpr DESC, created_at DESC";
 
-if (in_array($tab, ['enrolled','expired'], true)) {
+if ($tab === 'expired') {
   $countSql = "SELECT COUNT(*) AS total FROM users WHERE $tabWhere AND $searchSql";
   $stmt = mysqli_prepare($conn, $countSql);
   mysqli_stmt_bind_param($stmt, 'sss', $nowSql, $like, $like);
@@ -99,7 +102,7 @@ if ($hasIsOnline) $selectCols .= ", is_online";
 if ($hasLastSeenAt) $selectCols .= ", last_seen_at";
 if ($hasLastLogoutAt) $selectCols .= ", last_logout_at";
 if ($hasLastLoginAt) $selectCols .= ", last_login_at";
-if (in_array($tab, ['enrolled','expired'], true)) {
+if ($tab === 'expired') {
   $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY $orderBySql LIMIT ? OFFSET ?";
   $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
@@ -136,7 +139,7 @@ $getCount = function(string $where, bool $needsNow) use ($conn, $nowSql, $like, 
 };
 
 $counts = [
-  'enrolled' => $getCount($whereMap['enrolled'], true),
+  'enrolled' => $getCount($whereMap['enrolled'], false),
   'pending'  => $getCount($whereMap['pending'], false),
   'expired'  => $getCount($whereMap['expired'], true),
   'rejected' => $getCount($whereMap['rejected'], false),
@@ -1020,22 +1023,32 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     html[data-admin-theme="light"] .students-bulk-bar {
       border-color: rgba(22, 163, 74, 0.35);
       background: linear-gradient(145deg, #ecfdf5 0%, #f8fafc 100%);
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     }
     html[data-admin-theme="light"] .students-bulk-bar__count { color: #166534; }
     html[data-admin-theme="light"] .students-bulk-bar__hint { color: #475569; }
     .students-bulk-bar {
-      position: sticky; bottom: 0.85rem; z-index: 40;
-      display: none; flex-wrap: wrap; align-items: center; gap: 0.65rem;
-      margin-top: 0.85rem; padding: 0.85rem 1rem;
-      border-radius: 0.9rem; border: 1px solid rgba(52, 211, 153, 0.45);
-      background: linear-gradient(145deg, rgba(6, 78, 59, 0.96) 0%, rgba(15, 23, 42, 0.97) 100%);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      /* Stick under admin topbar so actions stay visible while scrolling a long list. */
+      position: sticky;
+      top: 4.5rem;
+      z-index: 45;
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem;
+      margin: 0 0 0.85rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      background: linear-gradient(145deg, rgba(6, 78, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
     }
     .students-bulk-bar.is-visible { display: flex; }
-    .students-bulk-bar__count { font-weight: 800; color: #a7f3d0; font-size: 0.88rem; }
+    .students-bulk-bar__count { font-weight: 800; color: #a7f3d0; font-size: 0.88rem; white-space: nowrap; }
     .students-bulk-bar__hint { color: rgba(226, 232, 240, 0.75); font-size: 0.78rem; flex: 1; min-width: 10rem; }
     .students-bulk-bar .admin-modal__btn { margin: 0; }
+    .students-bulk-bar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: auto; }
     .admin-modal--approve {
       width: min(100%, 34rem);
       max-height: min(90vh, 42rem);
@@ -1092,6 +1105,34 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       text-decoration: underline; text-underline-offset: 2px;
     }
     .approve-access-customize:hover { color: #bfdbfe; }
+    html[data-admin-theme="light"] .approve-access-box {
+      background: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    html[data-admin-theme="light"] .approve-access-box .sca-tree details {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    html[data-admin-theme="light"] .approve-access-box .sca-tree summary,
+    html[data-admin-theme="light"] .approve-access-box .text-gray-100,
+    html[data-admin-theme="light"] .approve-access-box .sca-topic-check { color: #0f172a !important; }
+    html[data-admin-theme="light"] .approve-access-box .sca-tree label { color: #334155; }
+    html[data-admin-theme="light"] .approve-access-box .sca-tree label:hover { background: rgba(37, 99, 235, 0.08); }
+    html[data-admin-theme="light"] .approve-access-box .text-gray-500,
+    html[data-admin-theme="light"] .approve-access-box .sca-tree-hint,
+    html[data-admin-theme="light"] .approve-access-box .sca-topic-list__head { color: #64748b !important; }
+    html[data-admin-theme="light"] .approve-access-box .sca-chevron { border-color: #64748b; }
+    html[data-admin-theme="light"] .approve-access-box .sca-subject-summary__meta {
+      color: #334155; background: #e2e8f0;
+    }
+    html[data-admin-theme="light"] .approve-access-box .sca-grant-all {
+      border-color: #86efac; background: #ecfdf5;
+    }
+    html[data-admin-theme="light"] .approve-access-box .sca-grant-all__title { color: #166534; }
+    html[data-admin-theme="light"] .approve-access-box .sca-grant-all__sub { color: #15803d; }
+    html[data-admin-theme="light"] .approve-access-customize { color: #0369a1; }
+    html[data-admin-theme="light"] .approve-access-customize:hover { color: #0c4a6e; }
+    html[data-admin-theme="light"] .students-bulk-bar__hint { color: #475569; }
   </style>
 </head>
 <body class="font-sans antialiased admin-app admin-students-page">
@@ -1232,6 +1273,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         </form>
       </div>
 
+      <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
+        <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
+        <span class="students-bulk-bar__hint">Bulk <strong>Grant Access</strong> = same Full LMS window for all. Also closes open payment reviews (Needs Review / OCR Failed) so you do not re-check in Payment Verification.</span>
+        <div class="students-bulk-bar__actions">
+          <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
+          <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Grant Access</button>
+          <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-check2-circle"></i> Continue</button>
+        </div>
+      </div>
+
       <div class="rounded-xl overflow-hidden page-table students-table-shell">
         <div class="students-table-meta">
           <span>
@@ -1259,7 +1310,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               <tr>
                 <th class="student-select-col" scope="col">
                   <input type="checkbox" id="studentSelectAll" class="admin-bulk-check"
-                         title="Select all actionable students on this page (legacy pending or Repair Activation only)"
+                         title="Select all actionable students on this page (Grant Access, Repair Activation, or legacy approve)"
                          aria-label="Select all actionable students on this page">
                 </th>
                 <th class="col-student" scope="col">Student</th>
@@ -1302,14 +1353,25 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     $payTone = (string) ($dash['payment_tone'] ?? 'neutral');
                     $accessTone = (string) ($dash['access_tone'] ?? 'none');
                     $showRepairActivation = !empty($dash['show_repair_activation']) || !empty($dash['activation_required']);
+                    $canBulkGrant = ($accessTone !== 'granted' && (string) $row['status'] !== 'rejected');
+                    $canBulkLegacyApprove = (!$isCommerceRow && (string) $row['status'] !== 'approved');
+                    $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove;
                     $accountUi = (string) ($dash['account_label'] ?? commerce_admin_label_account_status((string) $row['status']));
                     $fulfilledUi = (string) ($dash['fulfilled_ui'] ?? '');
                     $enrollAmt = (string) ($dash['enrollment_amount_display'] ?? '—');
                     $enrollLab = (string) ($dash['enrollment_label'] ?? '—');
+                    $enrollTopicsFull = (string) ($dash['enrollment_topics_full'] ?? '');
+                    $enrollLessonLabels = is_array($dash['lesson_labels'] ?? null) ? $dash['lesson_labels'] : [];
+                    if ($enrollTopicsFull === '' && $enrollLessonLabels !== []) {
+                        $enrollTopicsFull = implode(', ', $enrollLessonLabels);
+                    }
                     $enrollCombined = $enrollLab;
                     if ($enrollAmt !== '' && $enrollAmt !== '—' && strpos($enrollLab, '₱') === false) {
                         $enrollCombined = $enrollLab . ' · ' . $enrollAmt;
                     }
+                    $enrollTitle = $enrollTopicsFull !== ''
+                        ? ($enrollCombined . ' — ' . $enrollTopicsFull)
+                        : $enrollCombined;
                     $hasAccessRange = !empty($row['access_start']) || !empty($row['access_end']);
                     $accessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : false;
                     $accessEndTs = !empty($row['access_end']) ? strtotime((string)$row['access_end']) : false;
@@ -1409,6 +1471,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     data-drawer-created="<?php echo h($createdLabel); ?>"
                     data-drawer-proof="<?php echo h($proofUi); ?>"
                     data-drawer-enrollment="<?php echo h($enrollCombined); ?>"
+                    data-drawer-topics="<?php echo h($enrollTopicsFull !== '' ? $enrollTopicsFull : '—'); ?>"
                     data-drawer-payment="<?php echo h((string) ($dash['payment_ui'] ?? '—')); ?>"
                     data-drawer-commerce-access="<?php echo h((string) ($dash['access_ui'] ?? 'None')); ?>"
                     data-drawer-account="<?php echo h($accountUi); ?>"
@@ -1416,10 +1479,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     data-drawer-initial="<?php echo h($avatarInitial); ?>"
                   >
                     <td class="student-select-col">
-                      <?php if ((!$isCommerceRow && $row['status'] !== 'approved') || $showRepairActivation): ?>
-                        <input type="checkbox" class="js-student-select admin-bulk-check" value="<?php echo (int)$row['user_id']; ?>" aria-label="Select <?php echo h($row['full_name']); ?>">
+                      <?php if ($canBulkSelect): ?>
+                        <input type="checkbox"
+                               class="js-student-select admin-bulk-check"
+                               value="<?php echo (int)$row['user_id']; ?>"
+                               aria-label="Select <?php echo h($row['full_name']); ?>"
+                               data-student-name="<?php echo h($row['full_name']); ?>"
+                               <?php if ($canBulkGrant): ?>data-grantable="1"<?php endif; ?>
+                               <?php if ($showRepairActivation || $canBulkLegacyApprove): ?>data-activatable="1"<?php endif; ?>>
                       <?php else: ?>
-                        <span class="admin-bulk-check-na" title="Not bulk-selectable (paid flow auto-activates; use Payment Verification for proofs)">—</span>
+                        <span class="admin-bulk-check-na" title="Already has Access Granted — use Grant ledger or Edit content permissions if needed">—</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-student">
@@ -1441,7 +1510,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       </div>
                     </td>
                     <td class="col-enrollment">
-                      <div class="font-semibold text-sm text-slate-800" title="<?php echo h($enrollCombined); ?>"><?php echo h($enrollCombined); ?></div>
+                      <div class="font-semibold text-sm text-slate-800" title="<?php echo h($enrollTitle); ?>"><?php echo h($enrollCombined); ?></div>
+                      <?php if ($enrollPathRow === 'by_topic' && $enrollTopicsFull !== ''): ?>
+                        <div class="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2" title="<?php echo h($enrollTopicsFull); ?>">
+                          <?php echo h($enrollTopicsFull); ?>
+                        </div>
+                      <?php endif; ?>
                     </td>
                     <td class="col-payment">
                       <span class="commerce-pill commerce-pill--<?php echo h($payTone); ?>">
@@ -1462,7 +1536,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
                         <a class="commerce-proof-link" data-admin-proof
                            data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
-                           href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>"
+                           href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"
                            title="View commerce payment proof">
                           <i class="bi bi-eye" aria-hidden="true"></i> View Proof
                         </a>
@@ -1489,6 +1563,15 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     </td>
                     <td class="student-action-cell col-actions">
                       <div class="flex flex-wrap items-center gap-2 justify-end">
+                        <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
+                          <button type="button"
+                                  class="admin-btn admin-btn--primary admin-btn--sm js-grant-access-btn"
+                                  data-user-id="<?php echo (int) $row['user_id']; ?>"
+                                  data-student-name="<?php echo h($row['full_name']); ?>"
+                                  title="Grant Full LMS access without payment verification">
+                            Grant Access
+                          </button>
+                        <?php endif; ?>
                         <a class="admin-btn admin-btn--<?php echo ($primaryActionLabel === 'Review') ? 'primary' : 'secondary'; ?> admin-btn--sm"
                            href="<?php echo h($primaryActionHref); ?>">
                           <?php echo h($primaryActionLabel); ?>
@@ -1505,12 +1588,19 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                             <?php if ($hasCommerceProof && !empty($dash['payment_id'])): ?>
                               <a role="menuitem" class="admin-student-action-item" data-admin-proof
                                  data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
-                                 href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id']); ?>"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
+                                 href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
                             <?php elseif (!$isCommerceRow && $hasProof): ?>
                               <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Legacy payment proof</a>
                             <?php endif; ?>
                             <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $row['user_id']); ?>"><i class="bi bi-journal-text" aria-hidden="true"></i> Grant ledger</a>
-                            <a role="menuitem" class="admin-student-action-item" href="admin_student_access?user_id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-shield-lock" aria-hidden="true"></i> Manual / Administrative Access</a>
+                            <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
+                              <button type="button" class="admin-student-action-item admin-student-action-item--approve js-grant-access-btn" role="menuitem"
+                                      data-user-id="<?php echo (int) $row['user_id']; ?>"
+                                      data-student-name="<?php echo h($row['full_name']); ?>">
+                                <i class="bi bi-key" aria-hidden="true"></i> Grant Access (no payment needed)
+                              </button>
+                            <?php endif; ?>
+                            <a role="menuitem" class="admin-student-action-item" href="admin_student_access?user_id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-shield-lock" aria-hidden="true"></i> Edit content permissions (SCA)</a>
                             <?php if ($isCommerceRow && $showRepairActivation): ?>
                               <button type="button" class="admin-student-action-item admin-student-action-item--approve js-approve-one-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-student-name="<?php echo h($row['full_name']); ?>" data-commerce-enrollment="1">
                                 <i class="bi bi-wrench" aria-hidden="true"></i> Repair Activation
@@ -1596,6 +1686,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <h3>Enrollment &amp; Commerce</h3>
           <dl class="student-drawer__dl">
             <div><dt>Enrollment</dt><dd id="studentDrawerEnrollment">—</dd></div>
+            <div id="studentDrawerTopicsRow"><dt>Topics</dt><dd id="studentDrawerTopics">—</dd></div>
             <div><dt>Payment</dt><dd id="studentDrawerPayment">—</dd></div>
             <div><dt>Proof</dt><dd id="studentDrawerProof">—</dd></div>
             <div><dt>Commerce access</dt><dd id="studentDrawerCommerceAccess">—</dd></div>
@@ -1618,24 +1709,41 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             <div><dt>Timeline</dt><dd id="studentDrawerAccessMeta">—</dd></div>
             <div><dt>Last activity</dt><dd id="studentDrawerActivity">—</dd></div>
           </dl>
-          <p class="text-xs opacity-70 mt-2 mb-0">Commerce grant dates are on the student detail / grant ledger. Manual / Administrative Access is separate from purchased access.</p>
+          <p class="text-xs opacity-70 mt-2 mb-0"><strong>Access</strong> = grant ledger (purchase / free access / admin grant). <strong>Content permissions (SCA)</strong> controls which topics open. Use <em>Grant Access</em> when payment is not verified but the student should still study.</p>
         </section>
       </div>
       <footer class="student-drawer__footer">
         <a id="studentDrawerFullLink" href="admin_students" class="admin-btn admin-btn--secondary admin-btn--sm">Open full page</a>
-        <a id="studentDrawerAccessLink" href="admin_student_access" class="admin-btn admin-btn--secondary admin-btn--sm">Manual / Admin Access</a>
+        <a id="studentDrawerAccessLink" href="admin_student_access" class="admin-btn admin-btn--secondary admin-btn--sm">Edit content permissions</a>
       </footer>
     </aside>
   </div>
 
-  <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
-    <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
-    <span class="students-bulk-bar__hint">Only rows with a checkbox are bulk-selectable (legacy pending or Repair Activation). Paid students awaiting payment review are handled in Payment Verification — not here.</span>
-    <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
-    <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Continue</button>
-  </div>
 </div>
 </main>
+<div id="grantAccessModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="grantAccessTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
+      <div>
+        <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
+        <p class="admin-modal__desc">Creates an <strong>administrative Full LMS grant</strong> for each selected student. If they already have a proof under review (Needs Review / OCR Failed), that payment is marked <strong>approved</strong> too — no second trip to Payment Verification.</p>
+        <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
+      </div>
+    </div>
+    <div class="admin-modal__field">
+      <label for="grantAccessMonths">Access duration (months)</label>
+      <input type="number" id="grantAccessMonths" min="1" max="120" value="6" required>
+    </div>
+    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, sets Full LMS permissions, and closes open payment reviews with proof. Does not create a second purchase grant.</p>
+    <div id="grantAccessError" class="admin-modal__error"></div>
+    <div class="admin-modal__actions">
+      <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+      <button type="button" id="grantAccessSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Confirm grant</button>
+    </div>
+  </section>
+</div>
+
 <div id="approveConfirmModalOverlay" class="admin-modal-overlay" aria-hidden="true">
   <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="approveConfirmTitle" x-data="approveAccessPicker()" x-init="init()">
     <div class="admin-modal__hero">
@@ -1938,8 +2046,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         selectAll.checked = all.length > 0 && selected.length === all.length;
         selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
         selectAll.title = all.length === 0
-          ? 'No actionable students on this page (only legacy pending or Repair Activation get checkboxes)'
+          ? 'No actionable students on this page (Grant Access / Repair Activation / legacy approve)'
           : ('Select all ' + all.length + ' actionable student(s) on this page');
+      }
+      var grantBtn = document.getElementById('studentsBulkGrantBtn');
+      if (grantBtn) {
+        var grantableN = selected.filter(function (cb) { return cb.getAttribute('data-grantable') === '1'; }).length;
+        grantBtn.disabled = grantableN === 0;
+        grantBtn.title = grantableN === 0
+          ? 'Select students without Access Granted'
+          : ('Grant Access to ' + grantableN + ' selected student(s)');
       }
     }
 
@@ -2030,8 +2146,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
     if (bulkApprove) {
       bulkApprove.addEventListener('click', function () {
-        var selected = selectedCheckboxes();
-        if (selected.length === 0) return;
+        var selected = selectedCheckboxes().filter(function (cb) {
+          return cb.getAttribute('data-activatable') === '1';
+        });
+        if (selected.length === 0) {
+          window.alert('Continue is for Repair Activation / legacy approve only. Use Grant Access for students without Access Granted.');
+          return;
+        }
         var ids = selected.map(function (cb) { return Number(cb.value); });
         openConfirm(ids, selected.length + ' student' + (selected.length === 1 ? '' : 's'));
       });
@@ -2136,6 +2257,107 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     });
 
     syncBulkBar();
+  })();
+
+  (function () {
+    var csrf = <?php echo json_encode($csrf); ?>;
+    var overlay = document.getElementById('grantAccessModalOverlay');
+    var nameEl = document.getElementById('grantAccessStudentName');
+    var monthsEl = document.getElementById('grantAccessMonths');
+    var errEl = document.getElementById('grantAccessError');
+    var cancelBtn = document.getElementById('grantAccessCancelBtn');
+    var submitBtn = document.getElementById('grantAccessSubmitBtn');
+    var bulkGrantBtn = document.getElementById('studentsBulkGrantBtn');
+    var pendingUserIds = [];
+    if (!overlay || !submitBtn) return;
+
+    function openGrant(userIds, label) {
+      pendingUserIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
+      if (pendingUserIds.length === 0) return;
+      if (nameEl) {
+        nameEl.textContent = label || (pendingUserIds.length === 1
+          ? ('Student #' + pendingUserIds[0])
+          : (pendingUserIds.length + ' students (same Full LMS window)'));
+      }
+      if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
+      if (errEl) errEl.textContent = '';
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      if (monthsEl) setTimeout(function () { monthsEl.focus(); }, 40);
+    }
+    function closeGrant() {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      pendingUserIds = [];
+      if (errEl) errEl.textContent = '';
+    }
+
+    document.querySelectorAll('.js-grant-access-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openGrant([btn.getAttribute('data-user-id')], btn.getAttribute('data-student-name') || '');
+      });
+    });
+    if (bulkGrantBtn) {
+      bulkGrantBtn.addEventListener('click', function () {
+        var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-grantable="1"]'));
+        var ids = boxes.map(function (cb) { return cb.value; });
+        if (ids.length === 0) {
+          window.alert('Select at least one student without Access Granted.');
+          return;
+        }
+        var label = ids.length === 1
+          ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
+          : (ids.length + ' students — same package/window for all');
+        openGrant(ids, label);
+      });
+    }
+    if (cancelBtn) cancelBtn.addEventListener('click', closeGrant);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeGrant();
+    });
+    submitBtn.addEventListener('click', function () {
+      if (pendingUserIds.length === 0) return;
+      var months = monthsEl ? Number(monthsEl.value || 0) : 0;
+      if (!months || months < 1) {
+        if (errEl) errEl.textContent = 'Enter a valid duration in months.';
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Granting…';
+      if (errEl) errEl.textContent = '';
+      var fd = new FormData();
+      fd.append('csrf_token', csrf);
+      if (pendingUserIds.length === 1) {
+        fd.append('user_id', String(pendingUserIds[0]));
+      } else {
+        fd.append('user_ids', JSON.stringify(pendingUserIds));
+      }
+      fd.append('months', String(months));
+      fd.append('activate_login', '1');
+      fd.append('return_to', 'admin_students');
+      fetch('admin_grant_access', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) {
+          if (errEl) errEl.textContent = (data && data.message) ? data.message : 'Grant failed. Please try again.';
+          return;
+        }
+        closeGrant();
+        window.location.reload();
+      })
+      .catch(function () {
+        if (errEl) errEl.textContent = 'Request failed. Check your connection and try again.';
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-key"></i> Confirm grant';
+      });
+    });
   })();
 
   (function () {
@@ -2420,6 +2642,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var activityEl = document.getElementById('studentDrawerActivity');
     var proofEl = document.getElementById('studentDrawerProof');
     var enrollEl = document.getElementById('studentDrawerEnrollment');
+    var topicsEl = document.getElementById('studentDrawerTopics');
     var paymentEl = document.getElementById('studentDrawerPayment');
     var commerceAccessEl = document.getElementById('studentDrawerCommerceAccess');
     var accountEl = document.getElementById('studentDrawerAccount');
@@ -2448,6 +2671,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       setText(activityEl, row.getAttribute('data-drawer-activity'));
       setText(proofEl, row.getAttribute('data-drawer-proof'));
       setText(enrollEl, row.getAttribute('data-drawer-enrollment'));
+      var topicsVal = row.getAttribute('data-drawer-topics') || '—';
+      var pathVal = row.getAttribute('data-enrollment-path') || '';
+      setText(topicsEl, topicsVal);
+      var topicsRow = document.getElementById('studentDrawerTopicsRow');
+      if (topicsRow) {
+        topicsRow.style.display = (pathVal === 'by_topic' && topicsVal && topicsVal !== '—') ? '' : 'none';
+      }
       setText(paymentEl, row.getAttribute('data-drawer-payment'));
       setText(commerceAccessEl, row.getAttribute('data-drawer-commerce-access'));
       setText(accountEl, row.getAttribute('data-drawer-account'));

@@ -69,12 +69,23 @@ $pageTitle = $lessonTitle . ' - Materials';
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
-    .student-shell-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); min-height: 100%; }
+    .student-shell-page { background: transparent; min-height: 100%; }
+    html[data-student-theme="light"] .student-shell-page {
+      background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
+    }
     .student-hero {
       border-radius: 0.75rem;
       border: 1px solid rgba(255,255,255,0.28);
       background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
       box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+    html[data-student-theme="dark"] .student-hero {
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14));
+      background:
+        radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.16), transparent 55%),
+        radial-gradient(ellipse 60% 70% at 0% 100%, rgba(59, 159, 217, 0.18), transparent 50%),
+        linear-gradient(130deg, rgba(16, 24, 40, 0.92) 0%, rgba(10, 16, 28, 0.95) 100%);
+      box-shadow: var(--student-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
     .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
     .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
@@ -87,7 +98,7 @@ $pageTitle = $lessonTitle . ' - Materials';
     @media (max-width: 900px) {
       .lesson-split-container { grid-template-columns: 1fr; min-height: auto; }
     }
-    .lesson-split-pane { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: #fff; border: 1px solid rgba(22, 101, 160, 0.2); border-radius: 12px; box-shadow: 0 2px 8px rgba(20,61,89,0.08); }
+    .lesson-split-pane { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--student-glass-strong, #fff); border: 1px solid var(--student-border, rgba(22, 101, 160, 0.2)); border-radius: 12px; box-shadow: var(--student-shadow, 0 2px 8px rgba(20,61,89,0.08)); color: var(--student-text, inherit); }
     .lesson-split-pane iframe { flex: 1; width: 100%; min-height: 400px; border: 0; border-radius: 0 0 12px 12px; }
     @media (max-width: 768px) {
       .lesson-viewer-title-card { padding: 1rem !important; flex-direction: column; align-items: flex-start !important; gap: 0.75rem !important; }
@@ -105,7 +116,7 @@ $pageTitle = $lessonTitle . ' - Materials';
       #lesson-viewer-wrap:-webkit-full-screen .lesson-exit-fullscreen { padding: 0.4rem 0.75rem; font-size: 0.8125rem; }
     }
     /* Full screen: header + content like Test Bank */
-    #lesson-viewer-wrap { display: flex; flex-direction: column; min-height: 60vh; background: #fff; border: 1px solid rgba(22,101,160,0.2); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(20,61,89,0.08); }
+    #lesson-viewer-wrap { display: flex; flex-direction: column; min-height: 60vh; background: transparent; border: none; border-radius: 12px; overflow: visible; box-shadow: none; }
     #lesson-viewer-wrap .lesson-fs-header { display: none; }
     #lesson-viewer-wrap:fullscreen,
     #lesson-viewer-wrap:-webkit-full-screen { display: flex; flex-direction: column; background: #0f172a; padding: 0; min-height: 0; }
@@ -146,8 +157,8 @@ $pageTitle = $lessonTitle . ' - Materials';
     <section class="mb-4 sm:mb-5 dash-anim delay-1">
       <div class="lesson-viewer-title-card student-hero px-4 sm:px-6 py-4 sm:py-5 text-white flex flex-wrap items-center justify-between gap-3">
         <div class="lesson-viewer-title-block flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back"><i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i></a>
-          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
+          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back"><i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i></a>
+          <span class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
             <i class="bi bi-play-circle-fill text-lg sm:text-xl" aria-hidden="true"></i>
           </span>
           <div class="min-w-0 flex-1">

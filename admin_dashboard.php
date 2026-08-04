@@ -26,13 +26,14 @@ try {
 
 $nowSql = date('Y-m-d H:i:s');
 
-$enrolledWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end >= ?";
-$pendingWhere = "role='student' AND status='pending'";
-$expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ?";
+require_once __DIR__ . '/includes/commerce_access_gate.php';
+$hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
+$enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
+$pendingWhere = "role='student' AND status <> 'rejected' AND NOT ({$hasActiveGrantSql})";
+$expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
 // Counts (used in hero, needs-attention, and stat cards)
 $stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $enrolledWhere");
-mysqli_stmt_bind_param($stmt, 's', $nowSql);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
 $row = mysqli_fetch_assoc($res);

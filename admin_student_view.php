@@ -310,6 +310,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
     .view-approve-access .sca-topic-list { border-left: 2px solid rgba(148, 163, 184, 0.35); margin-left: 0.3rem; padding-left: 0.35rem; }
     .view-approve-access .sca-topic-list__head { color: #94a3b8; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 0.3rem 0 0.2rem; }
     .view-approve-access .sca-topic-check { color: #f1f5f9 !important; font-weight: 600; }
+    html[data-admin-theme="light"] .view-approve-access {
+      background: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    html[data-admin-theme="light"] .view-approve-access .sca-tree details {
+      background: #ffffff;
+      border-color: rgba(15, 23, 42, 0.12);
+    }
     html[data-admin-theme="light"] .view-approve-access .sca-tree summary,
     html[data-admin-theme="light"] .view-approve-access .text-gray-100,
     html[data-admin-theme="light"] .view-approve-access .sca-topic-check { color: #0f172a !important; }
@@ -351,6 +359,20 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
         <?php endif; ?>
         <?php if ($latestPayment): ?>
           <a href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']); ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-credit-card"></i> View Payment</a>
+        <?php endif; ?>
+        <?php
+          $heroAccessTone = (string) ($commerce['commerce_access']['tone'] ?? 'none');
+          if ($heroAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'):
+        ?>
+          <form method="post" action="<?php echo h(ereview_url('admin_grant_access')); ?>" class="inline"
+                onsubmit="return confirm('Grant Full LMS access for 6 months? Open payment reviews with proof will also be marked approved.');">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="user_id" value="<?php echo (int) $user['user_id']; ?>">
+            <input type="hidden" name="months" value="6">
+            <input type="hidden" name="activate_login" value="1">
+            <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) $user['user_id']; ?>">
+            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-key"></i> Grant Access</button>
+          </form>
         <?php endif; ?>
       </div>
     </div>
@@ -472,7 +494,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
           ?>
           <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 mb-3 space-y-3" x-data="{ awMode: 'extend' }">
             <div class="text-sm font-bold text-gray-800">Edit account window</div>
-            <p class="text-xs text-gray-500 m-0">Login account dates only — not commerce grants or Manual / Administrative Access.</p>
+            <p class="text-xs text-gray-500 m-0">Login account dates only — not commerce grants or Edit content permissions (SCA).</p>
             <div class="flex flex-wrap gap-2 text-xs">
               <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="extend" x-model="awMode"> Extend</label>
               <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="set" x-model="awMode"> Set new duration</label>
@@ -524,7 +546,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
               <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-pencil-square"></i> Save custom dates</button>
             </form>
           </div>
-          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
+          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Edit content permissions (SCA)</a>
           <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
         <?php elseif ($isCommerceEnrollment && !$acctIsApproved): ?>
           <?php if ($payToneUi === 'review'): ?>
@@ -582,7 +604,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
           </form>
         <?php elseif (!$acctIsApproved): ?>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 mb-3">
-            Legacy / non-commerce student. Approving can set <strong>Manual / Administrative Access</strong> via the SCA picker below. This is not a paid purchase.
+            Legacy / non-commerce student. Approving can set <strong>Edit content permissions (SCA)</strong> via the SCA picker below. This is not a paid purchase.
           </div>
           <form class="space-y-3" action="activate_user" method="POST" id="studentViewApproveForm"
                 x-data="viewApproveAccessPicker()" x-init="init()"
@@ -601,7 +623,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
               </select>
             </div>
             <div class="view-approve-access">
-              <p class="text-xs font-semibold text-slate-300 mb-1">Manual / Administrative Access</p>
+              <p class="text-xs font-semibold text-slate-300 mb-1">Edit content permissions (SCA)</p>
               <?php
                 $scaTreeScope = 'viewapprove';
                 require __DIR__ . '/includes/admin_sca_permission_tree.php';
@@ -658,7 +680,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
               <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"><i class="bi bi-pencil-square"></i> Save custom dates</button>
             </form>
           </div>
-          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Manual / Administrative Access</a>
+          <a href="admin_student_access?user_id=<?php echo (int)$user['user_id']; ?>" class="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition no-underline"><i class="bi bi-shield-lock"></i> Edit content permissions (SCA)</a>
           <p class="text-xs text-gray-500 mt-2 mb-0">Manual SCA edits are administrative. They are not the same as a paid purchase or Free Access grant.</p>
         <?php endif; ?>
       </div>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once 'auth.php';
 requireRole('admin');
 require_once __DIR__ . '/includes/student_content_access.php';
+require_once __DIR__ . '/includes/commerce_access_gate.php';
+require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -234,6 +236,25 @@ if ($action === 'create_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         sca_save_user_permissions($conn, $newId, $permissions, $adminId);
     }
 
+    // Active account requires an access_grants row (SOT).
+    if ($status === 'approved') {
+        $grantMonths = $months > 0 ? $months : 6;
+        $g = commerce_admin_grant_manual_access($conn, $newId, (int) $adminId, [
+            'months' => $grantMonths,
+            'activate_login' => true,
+            'close_open_payment' => false,
+            'label' => 'Admin-created student access',
+        ]);
+        if (empty($g['ok'])) {
+            mysqli_query($conn, "UPDATE users SET status='pending', access_start=NULL, access_end=NULL, access_months=NULL WHERE user_id=" . (int) $newId . " LIMIT 1");
+            sca_api_json([
+                'ok' => false,
+                'error' => 'Student created as pending — could not create access grant (' . (string) ($g['error'] ?? 'grant_failed') . ').',
+                'user_id' => $newId,
+            ], 500);
+        }
+    }
+
     sca_api_json(['ok' => true, 'user_id' => $newId]);
 }
 
@@ -288,12 +309,34 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $role = 'student';
         mysqli_stmt_bind_param($stmt, 'ssssis', $fullName, $email, $school, $status, $userId, $role);
     }
+    if ($status === 'approved' && !commerce_student_has_active_access($conn, $userId)) {
+        $grantMonths = $months > 0 ? $months : 6;
+        $g = commerce_admin_grant_manual_access($conn, $userId, (int) $adminId, [
+            'months' => $grantMonths,
+            'activate_login' => true,
+            'close_open_payment' => false,
+            'label' => 'Admin update — access grant',
+        ]);
+        if (empty($g['ok'])) {
+            if ($stmt) {
+                mysqli_stmt_close($stmt);
+            }
+            sca_api_json([
+                'ok' => false,
+                'error' => 'Cannot set Active without access grant. Grant Access failed: ' . (string) ($g['error'] ?? 'unknown'),
+            ], 422);
+        }
+    }
+
     if (!$stmt || !mysqli_stmt_execute($stmt)) {
+        if ($stmt) {
+            mysqli_stmt_close($stmt);
+        }
         sca_api_json(['ok' => false, 'error' => 'Update failed.'], 500);
     }
     mysqli_stmt_close($stmt);
 
-    if ($months > 0 && $status === 'approved') {
+    if ($months > 0 && $status === 'approved' && commerce_student_has_active_access($conn, $userId)) {
         $ext = mysqli_prepare(
             $conn,
             "UPDATE users SET access_start = IFNULL(access_start, NOW()),
@@ -304,6 +347,11 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($ext, 'iii', $months, $months, $userId);
         mysqli_stmt_execute($ext);
         mysqli_stmt_close($ext);
+    }
+
+    if ($status !== 'approved' && $status !== 'rejected') {
+        // Keep pending consistent if admin clears approval without grants.
+        commerce_student_demote_if_no_active_grant($conn, $userId);
     }
 
     sca_api_json(['ok' => true]);

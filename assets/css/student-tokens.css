@@ -1,0 +1,134 @@
+/**
+ * Student design tokens — Light + Dark
+ * Scope: html[data-student-theme="light|dark"]
+ * Default before JS: light (preserve current student UX).
+ */
+:root,
+html[data-student-theme="light"] {
+  color-scheme: light;
+
+  --student-bg: #e8eef6;
+  --student-bg-elevated: #e2e9f3;
+  --student-surface: rgba(255, 255, 255, 0.78);
+  --student-surface-solid: #ffffff;
+  --student-surface-2: rgba(255, 255, 255, 0.9);
+  --student-surface-hover: rgba(248, 250, 252, 0.98);
+  --student-border: rgba(30, 58, 110, 0.1);
+  --student-border-strong: rgba(30, 58, 110, 0.16);
+  --student-glass: rgba(255, 255, 255, 0.68);
+  --student-glass-strong: rgba(255, 255, 255, 0.82);
+  --student-blur: 16px;
+
+  --student-text: #0b1220;
+  --student-text-secondary: #445468;
+  --student-text-muted: #64748b;
+  --student-text-inverse: #f8fafc;
+
+  --student-primary: #1665a0;
+  --student-primary-hover: #145a8f;
+  --student-primary-2: #143d59;
+  --student-primary-soft: rgba(22, 101, 160, 0.12);
+  --student-primary-text: #ffffff;
+  --student-gold: #c99700;
+  --student-gold-soft: rgba(201, 151, 0, 0.14);
+
+  --student-success: #15803d;
+  --student-success-soft: rgba(22, 163, 74, 0.12);
+  --student-warning: #b45309;
+  --student-warning-soft: rgba(217, 119, 6, 0.12);
+  --student-danger: #b91c1c;
+  --student-danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* Brand blue glass (original #1665a0) — not white chrome */
+  --student-sidebar-bg: linear-gradient(165deg, rgba(27, 111, 184, 0.88) 0%, rgba(22, 101, 160, 0.82) 42%, rgba(20, 61, 89, 0.9) 100%);
+  --student-sidebar-border: rgba(255, 255, 255, 0.22);
+  --student-sidebar-text: rgba(248, 250, 252, 0.88);
+  --student-sidebar-muted: rgba(255, 255, 255, 0.55);
+  --student-sidebar-active-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.12));
+  --student-sidebar-active-text: #ffffff;
+  --student-sidebar-hover-bg: rgba(255, 255, 255, 0.14);
+  --student-topbar-bg: rgba(255, 255, 255, 0.78);
+  --student-topbar-border: rgba(30, 58, 110, 0.1);
+
+  --student-input-bg: rgba(255, 255, 255, 0.92);
+  --student-input-border: rgba(30, 58, 110, 0.16);
+  --student-input-focus: rgba(22, 101, 160, 0.35);
+  --student-shadow-sm: 0 1px 2px rgba(15, 35, 70, 0.05);
+  --student-shadow: 0 10px 28px rgba(15, 35, 70, 0.08);
+  --student-shadow-lg: 0 20px 48px rgba(15, 35, 70, 0.12);
+
+  --student-radius-sm: 0.45rem;
+  --student-radius: 0.7rem;
+  --student-radius-lg: 0.95rem;
+  --student-radius-xl: 1.15rem;
+
+  --student-font: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --student-control-h: 2.4rem;
+  --student-focus-ring: 0 0 0 3px rgba(22, 101, 160, 0.22);
+
+  --student-glow-blue: rgba(22, 101, 160, 0.22);
+  --student-glow-gold: rgba(242, 176, 30, 0.16);
+  --student-hero-icon-fg: #dbeafe;
+}
+
+html[data-student-theme="dark"] {
+  color-scheme: dark;
+
+  --student-bg: #070b14;
+  --student-bg-elevated: #0c1220;
+  --student-surface: rgba(18, 26, 42, 0.72);
+  --student-surface-solid: #121a2a;
+  --student-surface-2: rgba(24, 34, 54, 0.78);
+  --student-surface-hover: rgba(36, 48, 72, 0.72);
+  --student-border: rgba(148, 183, 255, 0.12);
+  --student-border-strong: rgba(148, 183, 255, 0.22);
+  --student-glass: rgba(16, 24, 40, 0.55);
+  --student-glass-strong: rgba(12, 18, 32, 0.78);
+  --student-blur: 18px;
+
+  --student-text: #f4f7fb;
+  --student-text-secondary: #9aa8c0;
+  --student-text-muted: #6d7b94;
+  --student-text-inverse: #0f172a;
+
+  --student-primary: #3b9fd9;
+  --student-primary-hover: #2b8fc9;
+  --student-primary-2: #1665a0;
+  --student-primary-soft: rgba(59, 159, 217, 0.18);
+  --student-primary-text: #f8fbff;
+  --student-gold: #f2b01e;
+  --student-gold-soft: rgba(242, 176, 30, 0.16);
+
+  --student-success: #22c55e;
+  --student-success-soft: rgba(34, 197, 94, 0.14);
+  --student-warning: #f59e0b;
+  --student-warning-soft: rgba(245, 158, 11, 0.16);
+  --student-danger: #ef4444;
+  --student-danger-soft: rgba(239, 68, 68, 0.16);
+
+  /* Match Subjects glass hero: deep navy + soft gold/blue glow */
+  --student-sidebar-bg:
+    radial-gradient(ellipse 80% 55% at 100% 0%, rgba(242, 176, 30, 0.14), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(59, 159, 217, 0.16), transparent 50%),
+    linear-gradient(165deg, rgba(16, 24, 40, 0.92) 0%, rgba(10, 16, 28, 0.94) 55%, rgba(7, 11, 20, 0.96) 100%);
+  --student-sidebar-border: rgba(148, 183, 255, 0.14);
+  --student-sidebar-text: rgba(244, 247, 251, 0.9);
+  --student-sidebar-muted: rgba(154, 168, 192, 0.72);
+  --student-sidebar-active-bg: linear-gradient(135deg, rgba(59, 159, 217, 0.32), rgba(22, 101, 160, 0.22));
+  --student-sidebar-active-text: #ffffff;
+  --student-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --student-topbar-bg: rgba(10, 14, 24, 0.55);
+  --student-topbar-border: rgba(148, 183, 255, 0.12);
+
+  --student-input-bg: rgba(15, 23, 42, 0.72);
+  --student-input-border: rgba(148, 163, 184, 0.28);
+  --student-input-focus: rgba(59, 159, 217, 0.45);
+  --student-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --student-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  --student-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  --student-focus-ring: 0 0 0 3px rgba(59, 159, 217, 0.28);
+  --student-glow-blue: rgba(59, 159, 217, 0.28);
+  --student-glow-gold: rgba(242, 176, 30, 0.14);
+  --student-hero-icon-fg: #dbeafe;
+}

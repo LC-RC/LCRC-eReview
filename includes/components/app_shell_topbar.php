@@ -361,6 +361,10 @@ include __DIR__ . '/messaging_component.php';
         <button type="button" id="studentTopbarMoreBtn" aria-label="More actions" class="student-topbar-action student-topbar-action--more" title="More actions" aria-expanded="false" aria-controls="studentTopbarMobileActions">
           <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
         </button>
+        <button type="button" class="student-theme-toggle" data-student-theme-toggle aria-pressed="false" title="Switch theme" aria-label="Switch theme">
+          <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+          <i class="bi bi-sun-fill" aria-hidden="true"></i>
+        </button>
         <button type="button" aria-label="Messages" class="student-topbar-action student-topbar-action--message relative" title="Messages" data-message-toggle>
           <i class="bi bi-chat-left-text" aria-hidden="true"></i>
           <span class="ere-msg-topbar-badge" aria-hidden="true"></span>
@@ -386,7 +390,7 @@ include __DIR__ . '/messaging_component.php';
           <span class="student-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
           <i class="bi bi-chevron-down student-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
         </button>
-        <div x-show="userMenuOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-0" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" @click.outside="userMenuOpen = false" class="student-topbar-dropdown ereview-profile-menu ereview-profile-menu--light" role="menu">
+        <div x-show="userMenuOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-0" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" @click.outside="userMenuOpen = false" class="student-topbar-dropdown ereview-profile-menu ereview-profile-menu--student-theme ereview-profile-menu--light" role="menu">
           <div class="ereview-profile-menu__hero ereview-profile-menu__hero--light">
             <div class="ereview-profile-menu__avatar-ring ereview-profile-menu__avatar-ring--student" aria-hidden="true">
               <span class="student-topbar-avatar ereview-profile-menu__hero-avatar overflow-hidden">
@@ -409,6 +413,11 @@ include __DIR__ . '/messaging_component.php';
           </div>
           <div class="ereview-profile-menu__section" role="group" aria-label="Account menu">
             <span class="ereview-profile-menu__section-label">Shortcuts</span>
+            <button type="button" class="ereview-profile-menu__link ereview-profile-menu__link--nav" role="menuitem" data-student-theme-toggle @click="userMenuOpen = false" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;">
+              <span class="ereview-profile-menu__link-icon"><i class="bi bi-circle-half" aria-hidden="true"></i></span>
+              <span class="ereview-profile-menu__link-text">Toggle light / dark</span>
+              <i class="bi bi-chevron-right ereview-profile-menu__chev" aria-hidden="true"></i>
+            </button>
             <a href="<?php echo h($ereviewProfilePageHref); ?>" class="ereview-profile-menu__link ereview-profile-menu__link--nav" role="menuitem" @click="userMenuOpen = false">
               <span class="ereview-profile-menu__link-icon"><i class="bi bi-person-circle" aria-hidden="true"></i></span>
               <span class="ereview-profile-menu__link-text">My Profile</span>
@@ -436,6 +445,10 @@ include __DIR__ . '/messaging_component.php';
         <button type="button" class="student-topbar-mobile-actions-item" role="menuitem" data-mobile-action="search">
           <span class="student-topbar-mobile-actions-item__icon"><i class="bi bi-search" aria-hidden="true"></i></span>
           <span class="student-topbar-mobile-actions-item__text">Search</span>
+        </button>
+        <button type="button" class="student-topbar-mobile-actions-item" role="menuitem" data-student-theme-toggle>
+          <span class="student-topbar-mobile-actions-item__icon"><i class="bi bi-circle-half" aria-hidden="true"></i></span>
+          <span class="student-topbar-mobile-actions-item__text">Light / dark</span>
         </button>
         <button type="button" class="student-topbar-mobile-actions-item" role="menuitem" data-mobile-action="notifications">
           <span class="student-topbar-mobile-actions-item__icon"><i class="bi bi-bell" aria-hidden="true"></i></span>

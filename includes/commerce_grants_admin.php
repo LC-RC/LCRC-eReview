@@ -525,6 +525,9 @@ function commerce_far_revoke_access(
         ];
     }
 
+    require_once __DIR__ . '/commerce_access_gate.php';
+    $demote = commerce_student_demote_if_no_active_grant($conn, $userId);
+
     return [
         'ok' => true,
         'skipped' => false,
@@ -533,5 +536,6 @@ function commerce_far_revoke_access(
         'user_id' => $userId,
         'revoked_count' => $revokedCount,
         'reconcile' => $recon,
+        'account_demoted' => !empty($demote['demoted']),
     ];
 }

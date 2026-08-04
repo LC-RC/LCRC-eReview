@@ -190,6 +190,7 @@ $averageScore = $scoreCount > 0 ? round($scoreSum / $scoreCount) : null;
 
 // Question counts for all quizzes on this subject (one query).
 $questionCountByQuiz = [];
+$totalSubjectQuestions = 0;
 if (!empty($quizIds)) {
     $idsForQc = implode(',', array_map('intval', $quizIds));
     $qcRes = mysqli_query(
@@ -197,7 +198,9 @@ if (!empty($quizIds)) {
         "SELECT quiz_id, COUNT(*) AS cnt FROM quiz_questions WHERE quiz_id IN ($idsForQc) GROUP BY quiz_id"
     );
     while ($qcRes && ($qcr = mysqli_fetch_assoc($qcRes))) {
-        $questionCountByQuiz[(int) $qcr['quiz_id']] = (int) ($qcr['cnt'] ?? 0);
+        $cnt = (int) ($qcr['cnt'] ?? 0);
+        $questionCountByQuiz[(int) $qcr['quiz_id']] = $cnt;
+        $totalSubjectQuestions += $cnt;
     }
 }
 
@@ -443,26 +446,114 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     /* Matches college_exams dash-card + exam grid (tailored columns for subject quizzes) */
     .quizzers-section .quiz-table-shell.qq-list-shell {
       min-width: 920px;
+      max-height: min(32rem, 62vh);
       border-radius: 0.75rem;
       border: 1px solid rgba(22, 101, 160, 0.18);
       background: linear-gradient(180deg, #f8fbff 0%, #ffffff 56%);
       box-shadow:
         0 10px 28px -22px rgba(20, 61, 89, 0.55),
         0 1px 0 rgba(255, 255, 255, 0.85) inset;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+    .quizzers-section .qq-grid-head {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      backdrop-filter: blur(6px);
+    }
+    .quizzers-section .quiz-table-pager {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem 1rem;
+      margin: 0.75rem 0 0.35rem;
+      padding: 0 0.15rem;
+    }
+    .quizzers-section .quiz-table-pager__info {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    .quizzers-section .quiz-table-pager__nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .quizzers-section .quiz-pager-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      min-height: 2.15rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.55rem;
+      border: 1px solid rgba(22, 101, 160, 0.2);
+      background: #fff;
+      color: #143d59;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    }
+    .quizzers-section .quiz-pager-btn:hover:not(:disabled) {
+      background: #e8f2fa;
+      border-color: rgba(22, 101, 160, 0.35);
+    }
+    .quizzers-section .quiz-pager-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .quizzers-section .quiz-control-pagesize {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .quizzers-section .quiz-control-pagesize__label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .quizzers-section .quiz-control-pagesize select {
+      min-height: 2.35rem;
+      padding: 0.4rem 1.75rem 0.4rem 0.65rem;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(22, 101, 160, 0.22);
+      background: #fff;
+      color: #143d59;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    html[data-student-theme="dark"] .quizzers-section .quiz-table-pager__info,
+    html[data-student-theme="dark"] .quizzers-section .quiz-control-pagesize__label {
+      color: var(--student-text-secondary, #9aa8c0);
+    }
+    html[data-student-theme="dark"] .quizzers-section .quiz-pager-btn,
+    html[data-student-theme="dark"] .quizzers-section .quiz-control-pagesize select {
+      background: var(--student-input-bg, rgba(15, 23, 42, 0.72));
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14));
+      color: var(--student-text, #f4f7fb);
     }
     .quizzers-section .qq-grid-head,
     .quizzers-section .qq-grid-row {
       display: grid;
       grid-template-columns:
-        minmax(11rem, 1.38fr)
-        minmax(6.5rem, 0.52fr)
-        minmax(10rem, 0.92fr)
-        minmax(7.5rem, 0.62fr)
-        minmax(4.25rem, 0.34fr)
-        minmax(11rem, 1fr);
+        minmax(10rem, 1.28fr)
+        minmax(4.5rem, 0.42fr)
+        minmax(6.25rem, 0.5fr)
+        minmax(9.5rem, 0.88fr)
+        minmax(7rem, 0.58fr)
+        minmax(4rem, 0.32fr)
+        minmax(10.5rem, 1fr);
       gap: 0.5rem 0.75rem;
       align-items: center;
     }
@@ -536,6 +627,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       text-align: left;
       align-self: center;
     }
+    .quizzers-section .qq-cell--questions,
     .quizzers-section .qq-cell--duration,
     .quizzers-section .qq-cell--attempt,
     .quizzers-section .qq-cell--status,
@@ -547,6 +639,25 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       text-align: center;
       min-width: 0;
       font-variant-numeric: tabular-nums;
+    }
+    .quizzers-section .qq-qcount {
+      display: inline-flex;
+      min-width: 2rem;
+      justify-content: center;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      background: rgba(22, 101, 160, 0.12);
+      color: #143d59;
+    }
+    .quizzers-section .quiz-counter-chip--questions {
+      border-color: rgba(22, 101, 160, 0.35);
+      background: rgba(22, 101, 160, 0.1);
+    }
+    .quizzers-section .quiz-counter-chip--questions b {
+      color: #1665A0;
     }
     .quizzers-section .qq-cell--duration {
       flex-wrap: wrap;
@@ -725,6 +836,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
         margin-bottom: 0.2rem;
       }
       .quizzers-section .qq-cell--title::before { content: "Quiz title"; }
+      .quizzers-section .qq-cell--questions::before { content: "Questions"; }
       .quizzers-section .qq-cell--duration::before { content: "Duration"; }
       .quizzers-section .qq-cell--attempt::before { content: "Last attempt"; }
       .quizzers-section .qq-cell--status::before { content: "Status"; }
@@ -2093,19 +2205,28 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     }
 </style>
 <style>
-  .student-shell-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); min-height: 100%; }
+  .student-shell-page { background: transparent; min-height: 100%; }
+  html[data-student-theme="light"] .student-shell-page {
+    background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
+  }
   .student-hero {
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background:
+      radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.18), transparent 55%),
+      radial-gradient(ellipse 55% 70% at 0% 100%, rgba(59, 159, 217, 0.22), transparent 50%),
+      linear-gradient(135deg, rgba(18, 42, 72, 0.96) 0%, rgba(14, 28, 48, 0.97) 48%, rgba(10, 18, 32, 0.98) 100%);
     box-shadow:
-      0 14px 34px -20px rgba(20, 61, 89, 0.85),
-      0 0 0 1px rgba(255, 255, 255, 0.06) inset;
-    min-height: clamp(11.5rem, 26vh, 16rem);
+      0 18px 40px -22px rgba(8, 26, 46, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    min-height: 0;
     transition: box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1), transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+  }
+  .student-hero.student-hero--brand {
+    backdrop-filter: blur(14px) saturate(140%);
   }
   .student-hero--has-cover {
     background: #0f2744;
@@ -2177,21 +2298,87 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     gap: 1rem;
     width: 100%;
     min-width: 0;
-    min-height: 100%;
   }
   .student-hero__nav {
     flex-shrink: 0;
   }
   .student-hero__main {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
     width: 100%;
     min-width: 0;
+  }
+  @media (min-width: 768px) {
+    .student-hero__main {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.25rem 1.5rem;
+    }
+  }
+  .student-hero__identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    min-width: 0;
     flex: 1;
-    align-content: center;
+  }
+  .student-hero .hero-title-wrap h1 {
+    font-size: clamp(1.65rem, 3.5vw, 2.15rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .student-hero .hero-title-wrap p {
+    margin: 0.4rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: rgba(226, 236, 248, 0.82);
+    max-width: 36rem;
+  }
+  .student-hero__meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    width: 100%;
+    max-width: 14.5rem;
+    padding: 0.55rem;
+    border-radius: 0.9rem;
+    background: rgba(7, 14, 28, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(10px);
+  }
+  .student-hero__meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    min-width: 0;
+    padding: 0.45rem 0.55rem;
+    border-radius: 0.65rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .student-hero__meta-label {
+    font-size: 0.62rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: rgba(186, 214, 255, 0.72);
+  }
+  .student-hero__meta-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+  .student-hero__meta-value--sm {
+    font-size: 0.88rem;
+    font-weight: 750;
   }
   .student-hero .btn-back-subjects {
     display: inline-flex;
@@ -2238,20 +2425,21 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   }
   .student-hero__icon-chip {
     display: flex;
-    height: 2.75rem;
-    width: 2.75rem;
+    height: 3.15rem;
+    width: 3.15rem;
     align-items: center;
     justify-content: center;
-    border-radius: 0.75rem;
-    background: rgba(255, 255, 255, 0.16);
+    border-radius: 0.95rem;
+    background: linear-gradient(145deg, rgba(59, 159, 217, 0.45) 0%, rgba(22, 101, 160, 0.55) 100%);
     border: 1px solid rgba(255, 255, 255, 0.28);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
     transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    flex-shrink: 0;
   }
   @media (min-width: 640px) {
     .student-hero__icon-chip {
-      height: 3rem;
-      width: 3rem;
+      height: 3.5rem;
+      width: 3.5rem;
     }
   }
   .student-hero--has-cover:hover .student-hero__icon-chip {
@@ -2299,19 +2487,9 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   .student-hero .hero-title-wrap p {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   }
-  .hero-strip {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 0.62rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, background 0.3s ease;
-  }
-  .student-hero--has-cover:hover .hero-strip {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.16);
-    border-color: rgba(255, 255, 255, 0.3);
+  .student-hero--has-cover:hover .student-hero__meta {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(7, 14, 28, 0.42);
   }
   @media (prefers-reduced-motion: reduce) {
     .student-hero--has-cover:hover {
@@ -2323,9 +2501,6 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       transition: none;
     }
     .student-hero--has-cover:hover .student-hero__icon-chip {
-      transform: none;
-    }
-    .student-hero--has-cover:hover .hero-strip {
       transform: none;
     }
     .student-hero .btn-back-subjects:hover {
@@ -2664,7 +2839,12 @@ document.addEventListener('alpine:init', function() {
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <section class="mb-4 sm:mb-5 dash-anim delay-1">
-    <div class="student-hero px-4 sm:px-6 py-5 sm:py-7 text-white flex flex-col <?php echo $subjectHeroCoverSrc !== '' ? 'student-hero--has-cover' : ''; ?>"
+    <?php
+      $subjectHeroLessonCount = count($lessonsRows);
+      $subjectHeroQuizCount = count($quizIds);
+      $subjectHeroDesc = trim((string)($subject['description'] ?? ''));
+    ?>
+    <div class="student-hero px-4 sm:px-6 py-4 sm:py-5 text-white flex flex-col <?php echo $subjectHeroCoverSrc !== '' ? 'student-hero--has-cover' : 'student-hero--brand'; ?>"
          data-subject-theme="<?php echo h($subjectHeroTheme); ?>">
       <?php if ($subjectHeroCoverSrc !== ''): ?>
       <div class="student-hero__media" aria-hidden="true">
@@ -2679,18 +2859,28 @@ document.addEventListener('alpine:init', function() {
           </a>
         </div>
         <div class="student-hero__main">
-          <div class="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-            <span class="student-hero__icon-chip shrink-0">
-              <i class="bi bi-book text-xl sm:text-2xl" aria-hidden="true"></i>
+          <div class="student-hero__identity">
+            <span class="student-hero__icon-chip" aria-hidden="true">
+              <i class="bi bi-book text-xl sm:text-2xl"></i>
             </span>
             <div class="min-w-0 hero-title-wrap">
-              <h1 class="text-2xl sm:text-3xl font-bold m-0 tracking-tight leading-tight"><?php echo h($subject['subject_name']); ?></h1>
-              <p class="text-sm sm:text-base text-white/90 mt-2 mb-0 break-words max-w-3xl"><?php echo h($subject['description'] ?? ''); ?></p>
+              <h1><?php echo h($subject['subject_name']); ?></h1>
+              <?php if ($subjectHeroDesc !== ''): ?>
+                <p><?php echo h($subjectHeroDesc); ?></p>
+              <?php else: ?>
+                <p>Lessons, quizzes, and test bank for this subject.</p>
+              <?php endif; ?>
             </div>
           </div>
-          <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0 hero-strip px-3 py-2 sm:px-4 sm:py-2.5 self-start sm:self-center">
-            <span class="uppercase tracking-[0.16em] text-white/60 font-semibold">Subject</span>
-            <span class="text-white/90"><?php echo h($subject['subject_code'] ?? 'Subject details'); ?></span>
+          <div class="student-hero__meta" role="list" aria-label="Subject summary">
+            <div class="student-hero__meta-item" role="listitem">
+              <span class="student-hero__meta-label">Lessons</span>
+              <span class="student-hero__meta-value"><?php echo (int)$subjectHeroLessonCount; ?></span>
+            </div>
+            <div class="student-hero__meta-item" role="listitem">
+              <span class="student-hero__meta-label">Quizzes</span>
+              <span class="student-hero__meta-value"><?php echo (int)$subjectHeroQuizCount; ?></span>
+            </div>
           </div>
         </div>
       </div>
@@ -2865,7 +3055,7 @@ document.addEventListener('alpine:init', function() {
         </span>
         <div class="min-w-0 flex-1">
           <h2 class="quizzers-title">Quizzers</h2>
-          <p class="quizzers-subtitle">Take or review your quizzes. Passing score is 50%.</p>
+          <p class="quizzers-subtitle">Take or review your quizzes. Passing score is 50%. This subject has <strong><?php echo (int)$totalSubjectQuestions; ?></strong> question<?php echo (int)$totalSubjectQuestions === 1 ? '' : 's'; ?> total.</p>
         </div>
       </div>
       <div class="quizzers-header__type flex justify-center w-full md:w-auto shrink-0 px-1">
@@ -2909,6 +3099,15 @@ document.addEventListener('alpine:init', function() {
           <i class="bi bi-search" aria-hidden="true"></i>
         </div>
         <div class="quiz-control-actions">
+          <div class="quiz-control-pagesize">
+            <label for="quizPageSizeSelect" class="quiz-control-pagesize__label">Show</label>
+            <select id="quizPageSizeSelect" title="Rows per page">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="0">All</option>
+            </select>
+          </div>
           <label for="quizSortSelect" class="sr-only">Sort quizzes</label>
           <select id="quizSortSelect" class="quiz-control-sort" title="Sort order">
             <option value="default">Default order</option>
@@ -2919,9 +3118,6 @@ document.addEventListener('alpine:init', function() {
             <option value="duration_asc">Short duration first</option>
             <option value="duration_desc">Long duration first</option>
           </select>
-          <button type="button" class="quiz-control-apply" id="quizControlApplyBtn" title="Apply sort order">
-            <i class="bi bi-arrow-down-up" aria-hidden="true"></i><span>Apply</span>
-          </button>
         </div>
       </div>
       <div class="quiz-control-panel__row quiz-control-panel__row--bottom">
@@ -2946,7 +3142,8 @@ document.addEventListener('alpine:init', function() {
           </div>
         </div>
         <div class="quiz-control-counters" role="group" aria-label="Quiz counts">
-          <span class="quiz-counter-chip"><i class="bi bi-collection" aria-hidden="true"></i> Total<b><?php echo (int)$totalQuizzes; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-collection" aria-hidden="true"></i> Quizzes<b><?php echo (int)$totalQuizzes; ?></b></span>
+          <span class="quiz-counter-chip quiz-counter-chip--questions" title="All questions uploaded across every quiz in this subject"><i class="bi bi-ui-checks-grid" aria-hidden="true"></i> Questions<b><?php echo (int)$totalSubjectQuestions; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-check-circle" aria-hidden="true"></i> Passed<b><?php echo (int)$quizzesPassed; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-x-circle" aria-hidden="true"></i> Failed<b><?php echo (int)$quizzesFailed; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Avg<b><?php echo $averageScore !== null ? (int)$averageScore . '%' : '—'; ?></b></span>
@@ -2967,6 +3164,7 @@ document.addEventListener('alpine:init', function() {
           <?php else: ?>
           <div class="qq-grid-head" role="row">
             <span>Quiz title</span>
+            <span>Questions</span>
             <span>Duration</span>
             <span>Last attempt</span>
             <span>Status</span>
@@ -2983,6 +3181,9 @@ document.addEventListener('alpine:init', function() {
                   <i class="bi bi-bookmarks" aria-hidden="true"></i>
                   <?php echo h($qr['quiz_type_label']); ?>
                 </span>
+              </div>
+              <div class="qq-cell qq-cell--questions" role="cell" title="<?php echo (int)$qr['count']; ?> question(s) in this quiz">
+                <span class="qq-qcount"><?php echo (int)$qr['count']; ?></span>
               </div>
               <div class="qq-cell qq-cell--duration qq-muted" role="cell">
                 <span class="qq-inline-ico" aria-hidden="true"><i class="bi bi-clock"></i></span><?php echo h($qr['duration']); ?>
@@ -3029,6 +3230,19 @@ document.addEventListener('alpine:init', function() {
           <?php endif; ?>
         </div>
       </div>
+      <?php if (!empty($quizRows)): ?>
+      <div class="quiz-table-pager" id="quizTablePager" aria-label="Quiz list pagination">
+        <span class="quiz-table-pager__info" id="quizTablePagerInfo">Showing 0 of 0</span>
+        <div class="quiz-table-pager__nav">
+          <button type="button" class="quiz-pager-btn" id="quizPagerPrev" disabled>
+            <i class="bi bi-chevron-left" aria-hidden="true"></i> Prev
+          </button>
+          <button type="button" class="quiz-pager-btn" id="quizPagerNext" disabled>
+            Next <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
     <div x-show="quizzersView === 'cards'" x-cloak class="quiz-cards-view">
       <div class="quiz-cards-wrap">
@@ -3048,6 +3262,10 @@ document.addEventListener('alpine:init', function() {
                 <div class="quiz-card__chip quiz-card__chip--type">
                   <span class="quiz-card__k"><i class="bi <?php echo h($typeIcon); ?>" aria-hidden="true"></i> Type</span>
                   <span class="quiz-card__v"><?php echo h($qr['quiz_type_label']); ?></span>
+                </div>
+                <div class="quiz-card__chip">
+                  <span class="quiz-card__k"><i class="bi bi-ui-checks-grid" aria-hidden="true"></i> Questions</span>
+                  <span class="quiz-card__v"><?php echo (int)$qr['count']; ?></span>
                 </div>
                 <div class="quiz-card__chip">
                   <span class="quiz-card__k"><i class="bi bi-clock" aria-hidden="true"></i> Duration</span>
@@ -3284,15 +3502,20 @@ document.addEventListener('alpine:init', function() {
 
   </script>
   <script>
-  // Quizzers: search by title + status filters + sort (topical only)
+  // Quizzers: search by title + status filters + sort + page size (topical only)
   (function() {
     var input = document.getElementById('quizTitleFilter');
     var pills = document.querySelectorAll('.quiz-status-filter-pill');
     var sortSelect = document.getElementById('quizSortSelect');
-    var applySortBtn = document.getElementById('quizControlApplyBtn');
+    var pageSizeSelect = document.getElementById('quizPageSizeSelect');
+    var pagerInfo = document.getElementById('quizTablePagerInfo');
+    var pagerPrev = document.getElementById('quizPagerPrev');
+    var pagerNext = document.getElementById('quizPagerNext');
     var activeStatus = '';
     var activeQuizType = 'topical';
+    var currentPage = 1;
     var SORT_STORAGE_KEY = 'ereview_quizzers_sort';
+    var PAGE_SIZE_KEY = 'ereview_quizzers_page_size';
     var defaultRowQids = [];
     var defaultCardQids = [];
     var allowedSort = {
@@ -3413,32 +3636,72 @@ document.addEventListener('alpine:init', function() {
       reorderCardsByQids(cards.map(function (c) { return c.getAttribute('data-qid') || ''; }));
     }
 
-    function applyFilters() {
-      var termNorm = input ? String(input.value || '').toLowerCase().trim().replace(/\s+/g, ' ') : '';
-      var rows = document.querySelectorAll('.qq-list-body .quiz-table-row');
-      rows.forEach(function(row) {
-        var text = (row.getAttribute('data-title') || '').toLowerCase();
-        var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
-        var rowQuizType = (row.getAttribute('data-quiz-type') || 'topical').toLowerCase();
-        var matchesTitle = !termNorm || text.indexOf(termNorm) !== -1;
-        var matchesStatus = !activeStatus || rowStatus === activeStatus;
-        var matchesType = rowQuizType === activeQuizType;
-        row.style.display = (matchesTitle && matchesStatus && matchesType) ? '' : 'none';
-      });
-      var cards = document.querySelectorAll('.quiz-cards-grid .quiz-card-item');
-      cards.forEach(function(card) {
-        var text = (card.getAttribute('data-title') || '').toLowerCase();
-        var rowStatus = (card.getAttribute('data-status') || '').toLowerCase();
-        var rowQuizType = (card.getAttribute('data-quiz-type') || 'topical').toLowerCase();
-        var matchesTitle = !termNorm || text.indexOf(termNorm) !== -1;
-        var matchesStatus = !activeStatus || rowStatus === activeStatus;
-        var matchesType = rowQuizType === activeQuizType;
-        card.style.display = (matchesTitle && matchesStatus && matchesType) ? '' : 'none';
-      });
-      updateFilterEmptyState();
+    function getPageSize() {
+      if (!pageSizeSelect) return 10;
+      var n = parseInt(pageSizeSelect.value, 10);
+      if (isNaN(n) || n < 0) return 10;
+      return n;
     }
 
-    function updateFilterEmptyState() {
+    function matchesQuizItem(el, termNorm) {
+      var text = (el.getAttribute('data-title') || '').toLowerCase();
+      var rowStatus = (el.getAttribute('data-status') || '').toLowerCase();
+      var rowQuizType = (el.getAttribute('data-quiz-type') || 'topical').toLowerCase();
+      var matchesTitle = !termNorm || text.indexOf(termNorm) !== -1;
+      var matchesStatus = !activeStatus || rowStatus === activeStatus;
+      var matchesType = rowQuizType === activeQuizType;
+      return matchesTitle && matchesStatus && matchesType;
+    }
+
+    function applyFilters() {
+      var termNorm = input ? String(input.value || '').toLowerCase().trim().replace(/\s+/g, ' ') : '';
+      var pageSize = getPageSize();
+      var matchedRows = [];
+      var matchedCards = [];
+
+      document.querySelectorAll('.qq-list-body .quiz-table-row').forEach(function(row) {
+        if (matchesQuizItem(row, termNorm)) matchedRows.push(row);
+        else row.style.display = 'none';
+      });
+      document.querySelectorAll('.quiz-cards-grid .quiz-card-item').forEach(function(card) {
+        if (matchesQuizItem(card, termNorm)) matchedCards.push(card);
+        else card.style.display = 'none';
+      });
+
+      var total = matchedRows.length || matchedCards.length;
+      var totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      var start = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+      var end = pageSize > 0 ? start + pageSize : total;
+
+      matchedRows.forEach(function(row, idx) {
+        row.style.display = (idx >= start && idx < end) ? '' : 'none';
+      });
+      matchedCards.forEach(function(card, idx) {
+        card.style.display = (idx >= start && idx < end) ? '' : 'none';
+      });
+
+      updatePagerUi(total, start, end, totalPages);
+      updateFilterEmptyState(total);
+    }
+
+    function updatePagerUi(total, start, end, totalPages) {
+      if (pagerInfo) {
+        if (total === 0) {
+          pagerInfo.textContent = 'Showing 0 of 0';
+        } else {
+          var from = Math.min(start + 1, total);
+          var to = Math.min(end, total);
+          pagerInfo.textContent = 'Showing ' + from + '–' + to + ' of ' + total;
+        }
+      }
+      if (pagerPrev) pagerPrev.disabled = currentPage <= 1 || total === 0;
+      if (pagerNext) pagerNext.disabled = currentPage >= totalPages || total === 0;
+    }
+
+    function updateFilterEmptyState(matchedTotal) {
       var el = document.getElementById('quizQuizzersFilterEmpty');
       var pageBody = document.querySelector('.quiz-quizzers-page-body');
       if (!el || !pageBody || pageBody.getAttribute('data-has-quizzes') !== '1') {
@@ -3449,11 +3712,8 @@ document.addEventListener('alpine:init', function() {
         }
         return;
       }
-      var visible = 0;
-      document.querySelectorAll('.qq-list-body .quiz-table-row').forEach(function(row) {
-        if (row.style.display !== 'none') visible++;
-      });
-      if (visible === 0) {
+      var total = typeof matchedTotal === 'number' ? matchedTotal : 0;
+      if (total === 0) {
         el.hidden = false;
         el.classList.add('is-visible');
         el.setAttribute('aria-hidden', 'false');
@@ -3472,18 +3732,53 @@ document.addEventListener('alpine:init', function() {
         if (savedSort && allowedSort[savedSort] && sortSelect) {
           sortSelect.value = savedSort;
         }
+        var savedSize = localStorage.getItem(PAGE_SIZE_KEY);
+        if (savedSize != null && pageSizeSelect) {
+          var opt = pageSizeSelect.querySelector('option[value="' + savedSize + '"]');
+          if (opt) pageSizeSelect.value = savedSize;
+        }
       } catch (e) {}
+      currentPage = 1;
       applyQuizSort();
       applyFilters();
     }
 
     if (input) {
-      input.addEventListener('input', applyFilters);
+      input.addEventListener('input', function() {
+        currentPage = 1;
+        applyFilters();
+      });
       input.addEventListener('keydown', function(e) {
         if ((e.key || '') === 'Enter') {
           e.preventDefault();
+          currentPage = 1;
           applyFilters();
         }
+      });
+    }
+
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener('change', function() {
+        try {
+          localStorage.setItem(PAGE_SIZE_KEY, pageSizeSelect.value || '10');
+        } catch (e3) {}
+        currentPage = 1;
+        applyFilters();
+      });
+    }
+
+    if (pagerPrev) {
+      pagerPrev.addEventListener('click', function() {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          applyFilters();
+        }
+      });
+    }
+    if (pagerNext) {
+      pagerNext.addEventListener('click', function() {
+        currentPage += 1;
+        applyFilters();
       });
     }
 
@@ -3492,6 +3787,7 @@ document.addEventListener('alpine:init', function() {
         pills.forEach(function(p) { p.classList.remove('is-active'); });
         btn.classList.add('is-active');
         activeStatus = (btn.getAttribute('data-status') || '').toLowerCase();
+        currentPage = 1;
         applyFilters();
       });
     });
@@ -3509,11 +3805,12 @@ document.addEventListener('alpine:init', function() {
 
     syncQuizTypeFromHash();
 
-    if (applySortBtn && sortSelect) {
-      applySortBtn.addEventListener('click', function () {
+    if (sortSelect) {
+      sortSelect.addEventListener('change', function () {
         try {
           localStorage.setItem(SORT_STORAGE_KEY, sortSelect.value || 'default');
         } catch (e2) {}
+        currentPage = 1;
         applyQuizSort();
         applyFilters();
       });
@@ -3527,6 +3824,7 @@ document.addEventListener('alpine:init', function() {
       clearFiltersBtn.addEventListener('click', function() {
         if (input) input.value = '';
         activeStatus = '';
+        currentPage = 1;
         pills.forEach(function(p) { p.classList.remove('is-active'); });
         var allPill = document.querySelector('.quiz-status-filter-pill[data-status=""]');
         if (allPill) allPill.classList.add('is-active');

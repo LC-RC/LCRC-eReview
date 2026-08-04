@@ -326,22 +326,19 @@ body.admin-app .border {
 html[data-admin-theme="light"] .admin-theme-toggle .bi-sun-fill { display: inline-block; }
 html[data-admin-theme="light"] .admin-theme-toggle .bi-moon-stars-fill { display: none; }
 
-/* Light mode: topbar becomes light surface */
+/* Light mode: keep same floating topbar layout as dark (colors via tokens). */
 html[data-admin-theme="light"] body.admin-app .admin-topbar-modern,
 html[data-admin-theme="light"] body.admin-app .admin-topbar {
-  background: var(--admin-topbar-bg) !important;
-  border-bottom: 1px solid var(--admin-topbar-border) !important;
-  backdrop-filter: blur(12px);
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
 }
 html[data-admin-theme="light"] body.admin-app .admin-topbar-name,
 html[data-admin-theme="light"] body.admin-app .admin-topbar-search,
 html[data-admin-theme="light"] body.admin-app .admin-topbar-action,
 html[data-admin-theme="light"] body.admin-app .admin-topbar-menu-btn {
   color: var(--admin-text) !important;
-}
-html[data-admin-theme="light"] body.admin-app .admin-topbar-search {
-  background: var(--admin-bg-elevated) !important;
-  border-color: var(--admin-border) !important;
 }
 html[data-admin-theme="light"] body.admin-app .admin-topbar-search::placeholder {
   color: var(--admin-text-muted) !important;

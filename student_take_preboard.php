@@ -562,6 +562,22 @@ $preboardExamActive = (
     .preboard-motivation-banner--final .preboard-motivation-banner__icon {
       background: linear-gradient(135deg, #059669, #10b981);
     }
+    html[data-student-theme="dark"] .preboard-motivation-banner {
+      background: var(--student-primary-soft, rgba(59, 159, 217, 0.18));
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14));
+      color: var(--student-text, #f4f7fb);
+      box-shadow: var(--student-shadow-sm);
+    }
+    html[data-student-theme="dark"] .preboard-motivation-banner--urgent {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+    html[data-student-theme="dark"] .preboard-motivation-banner--final {
+      background: rgba(34, 197, 94, 0.14);
+      border-color: rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
     .preboard-privacy-shield {
       position: fixed;
       inset: 0;
@@ -691,15 +707,15 @@ $preboardExamActive = (
       <div class="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <?php if ($preboardExamActive): ?>
-          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md" aria-hidden="true">
+          <span class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md" aria-hidden="true">
             <i class="bi bi-shield-lock text-lg sm:text-xl"></i>
           </span>
           <?php else: ?>
-          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="exam-leave-link flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back">
+          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="exam-leave-link student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back">
             <i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i>
           </a>
           <?php endif; ?>
-          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
+          <span class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
             <i class="bi bi-clipboard-check text-lg sm:text-xl" aria-hidden="true"></i>
           </span>
           <div class="min-w-0">
@@ -790,7 +806,7 @@ $preboardExamActive = (
               <div class="result-actions-bar mt-4 pt-3 border-t border-[#dbeafe]">
                 <a href="<?php echo h($backUrl); ?>" class="result-actions-primary"><i class="bi bi-arrow-left-circle"></i> Back to sets</a>
                 <?php if (!empty($reviewQuestions)): ?>
-                  <a href="#reviewAnswers" class="result-actions-primary" style="background:#ffffff;color:#4154f1;border-color:#d1d5db">
+                  <a href="#reviewAnswers" class="result-actions-ghost">
                     <i class="bi bi-journal-text"></i> Review Answers
                   </a>
                 <?php endif; ?>
@@ -1146,6 +1162,18 @@ $preboardExamActive = (
         if (PREBOARD_EXAM_LOCKED) {
           window.__examTimerPaused = true;
           history.pushState({ preboardExamLock: true }, '', location.href);
+          // Jump-to-question: scroll in-place (no hash history) so popstate lock is not triggered
+          document.querySelectorAll('.exam-q-list a[href^="#"]').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var id = (a.getAttribute('href') || '').replace(/^#/, '');
+              var el = id ? document.getElementById(id) : null;
+              if (!el) return;
+              var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+              el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+            });
+          });
           window.addEventListener('popstate', function() {
             history.pushState({ preboardExamLock: true }, '', location.href);
             showSecurityOverlay('navigation');
@@ -1153,6 +1181,7 @@ $preboardExamActive = (
           document.addEventListener('click', function(e) {
             var link = e.target.closest('a');
             var btn = e.target.closest('button');
+            if (link && link.closest('.exam-q-list')) return;
             if (link && link.getAttribute('href')) {
               var href = link.getAttribute('href');
               if (href.charAt(0) === '#') return;
@@ -1387,6 +1416,21 @@ $preboardExamActive = (
             submitBtn.innerHTML = '<i class=\"bi bi-check-circle-fill\"></i> Submit preboard';
           }
         }
+        function scrollToNextExamQuestion(fromEl) {
+          var card = fromEl && fromEl.closest ? fromEl.closest('.exam-question-card') : null;
+          if (!card || !card.id || !/^q\d+$/.test(card.id)) return;
+          var cards = Array.prototype.slice.call(document.querySelectorAll('.exam-question-card[id^="q"]')).filter(function(el) {
+            return /^q\d+$/.test(el.id);
+          });
+          var idx = cards.indexOf(card);
+          if (idx < 0) return;
+          var target = cards[idx + 1] || document.querySelector('.exam-nav-card');
+          if (!target) return;
+          var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          window.setTimeout(function() {
+            target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+          }, 140);
+        }
         document.querySelectorAll('input[name^=\"answer_\"]').forEach(function(radio) {
           radio.addEventListener('change', function() {
             var qId = this.getAttribute('data-question-id');
@@ -1394,6 +1438,7 @@ $preboardExamActive = (
             var card = radio.closest('.exam-question-card');
             if (card) card.querySelectorAll('.exam-choice').forEach(function(c) { c.classList.remove('selected'); });
             radio.closest('.exam-choice').classList.add('selected');
+            scrollToNextExamQuestion(radio);
             var fd = new FormData();
             fd.append('action', 'save_answer');
             fd.append('csrf_token', csrf);

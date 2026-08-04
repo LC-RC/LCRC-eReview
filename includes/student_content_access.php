@@ -127,7 +127,7 @@ function sca_account_access_active(mysqli $conn, int $userId): bool
     if (array_key_exists($userId, $cache)) {
         return $cache[$userId];
     }
-    $stmt = mysqli_prepare($conn, "SELECT status, access_end FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
+    $stmt = mysqli_prepare($conn, "SELECT user_id, role, status, access_end FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
     if (!$stmt) {
         $cache[$userId] = false;
         return false;
@@ -137,17 +137,14 @@ function sca_account_access_active(mysqli $conn, int $userId): bool
     $res = mysqli_stmt_get_result($stmt);
     $row = $res ? mysqli_fetch_assoc($res) : null;
     mysqli_stmt_close($stmt);
-    if (!$row || strtolower((string) ($row['status'] ?? '')) !== 'approved') {
+    if (!$row) {
         $cache[$userId] = false;
         return false;
     }
-    $end = trim((string) ($row['access_end'] ?? ''));
-    if ($end !== '' && strtotime($end) < time()) {
-        $cache[$userId] = false;
-        return false;
-    }
-    $cache[$userId] = true;
-    return true;
+    require_once __DIR__ . '/commerce_access_gate.php';
+    $gate = commerce_student_can_login($conn, $row);
+    $cache[$userId] = !empty($gate['ok']);
+    return $cache[$userId];
 }
 
 /**
@@ -531,19 +528,19 @@ function sca_enforce_student_session(mysqli $conn, string $redirect = 'index'): 
     if ($uid <= 0) {
         return;
     }
-    $stmt = mysqli_prepare($conn, 'SELECT access_end, status FROM users WHERE user_id = ? LIMIT 1');
+    $stmt = mysqli_prepare($conn, "SELECT user_id, role, status, access_end FROM users WHERE user_id = ? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'i', $uid);
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     $row = $res ? mysqli_fetch_assoc($res) : null;
     mysqli_stmt_close($stmt);
-    if ($row && !empty($row['access_end']) && strtotime((string) $row['access_end']) < time()) {
-        $_SESSION['error'] = 'Your access has expired.';
-        header('Location: ' . $redirect);
-        exit;
+    if (!$row) {
+        return;
     }
-    if ($row && strtolower((string) ($row['status'] ?? '')) !== 'approved') {
-        $_SESSION['error'] = 'Your account is not approved yet.';
+    require_once __DIR__ . '/commerce_access_gate.php';
+    $gate = commerce_student_can_login($conn, $row);
+    if (empty($gate['ok'])) {
+        $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
         header('Location: ' . $redirect);
         exit;
     }
@@ -791,7 +788,7 @@ function sca_grant_full_lms(mysqli $conn, int $userId, ?int $grantedBy): bool
 
 /**
  * Active grant-backed content keys from access_grants that admin replace-all must preserve.
- * Includes source IN ('purchase','free_access'), status=active, ends_at > NOW().
+ * Includes source IN ('purchase','free_access','admin_manual'), status=active, ends_at > NOW().
  * Does not include Free Access requests that were never granted. Empty if access_grants missing.
  *
  * @return list<array{content_type:string,content_id:int}>
@@ -817,7 +814,7 @@ function sca_commerce_active_permission_keys(mysqli $conn, int $userId): array
         "SELECT DISTINCT content_type, content_id
          FROM access_grants
          WHERE user_id = ?
-           AND source IN ('purchase', 'free_access')
+           AND source IN ('purchase', 'free_access', 'admin_manual')
            AND status = 'active'
            AND ends_at > NOW()"
     );

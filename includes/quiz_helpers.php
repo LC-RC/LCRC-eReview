@@ -6,9 +6,9 @@
 function formatTimeLimitSeconds($totalSeconds) {
   $s = (int) $totalSeconds;
   if ($s <= 0) return '0 seconds';
-  $hours = floor($s / 3600);
-  $mins = floor(($s % 3600) / 60);
-  $secs = $s % 60;
+  $hours = (int) floor($s / 3600);
+  $mins = (int) floor(($s % 3600) / 60);
+  $secs = (int) ($s % 60);
   $parts = [];
   if ($hours > 0) $parts[] = $hours . ' hour' . ($hours !== 1 ? 's' : '');
   if ($mins > 0) $parts[] = $mins . ' min' . ($mins !== 1 ? 's' : '');
@@ -25,6 +25,32 @@ function getQuizTimeLimitSeconds($quizRow) {
   }
   $mins = (int)($quizRow['time_limit_minutes'] ?? 30);
   return $mins * 60;
+}
+
+/**
+ * Total quiz_questions across all quizzes for a subject.
+ */
+function count_subject_quiz_questions(mysqli $conn, int $subjectId): int
+{
+  if ($subjectId <= 0) {
+    return 0;
+  }
+  $stmt = mysqli_prepare(
+    $conn,
+    'SELECT COUNT(*) AS cnt
+     FROM quiz_questions qq
+     INNER JOIN quizzes q ON q.quiz_id = qq.quiz_id
+     WHERE q.subject_id = ?'
+  );
+  if (!$stmt) {
+    return 0;
+  }
+  mysqli_stmt_bind_param($stmt, 'i', $subjectId);
+  mysqli_stmt_execute($stmt);
+  $res = mysqli_stmt_get_result($stmt);
+  $row = $res ? mysqli_fetch_assoc($res) : null;
+  mysqli_stmt_close($stmt);
+  return (int) ($row['cnt'] ?? 0);
 }
 
 /**

@@ -12,8 +12,16 @@ $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 $tailwindFile = __DIR__ . '/../assets/css/tailwind.css';
 $arbitraryFile = __DIR__ . '/../assets/css/tailwind-arbitrary.css';
 $appShellFile = __DIR__ . '/../assets/css/app-shell.css';
+$studentTokensFile = __DIR__ . '/../assets/css/student-tokens.css';
+$studentSaasFile = __DIR__ . '/../assets/css/student-saas.css';
+$studentThemeJsFile = __DIR__ . '/../assets/js/student-theme.js';
+$autoFilterFormsJsFile = __DIR__ . '/../assets/js/auto-filter-forms.js';
+$scrollTopJsFile = __DIR__ . '/../assets/js/scroll-top.js';
 $useBuiltCss = is_file($tailwindFile) && filesize($tailwindFile) > 1000;
 $forceTailwindCdn = !empty($forceTailwindCdn);
+$__headScript = strtolower((string) basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '.php'));
+$loadStudentTheme = !empty($loadStudentTheme)
+    || (strpos($__headScript, 'student_') === 0);
 ?>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
@@ -49,6 +57,30 @@ $forceTailwindCdn = !empty($forceTailwindCdn);
 <?php endif; ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo is_file($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
+<?php if ($loadStudentTheme): ?>
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ereview_student_theme');
+      if (t !== 'light' && t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-student-theme', t);
+      document.documentElement.style.colorScheme = t;
+      document.documentElement.classList.add('student-theme-boot');
+    } catch (e) {
+      document.documentElement.setAttribute('data-student-theme', 'light');
+    }
+  })();
+</script>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/student-tokens.css<?php echo is_file($studentTokensFile) ? '?v=' . filemtime($studentTokensFile) : ''; ?>">
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/student-saas.css<?php echo is_file($studentSaasFile) ? '?v=' . filemtime($studentSaasFile) : ''; ?>">
+<script src="<?php echo h($base); ?>/assets/js/student-theme.js<?php echo is_file($studentThemeJsFile) ? '?v=' . filemtime($studentThemeJsFile) : ''; ?>" defer></script>
+<?php endif; ?>
+<?php if (is_file($autoFilterFormsJsFile)): ?>
+<script src="<?php echo h($base); ?>/assets/js/auto-filter-forms.js?v=<?php echo filemtime($autoFilterFormsJsFile); ?>" defer></script>
+<?php endif; ?>
+<?php if (is_file($scrollTopJsFile)): ?>
+<script src="<?php echo h($base); ?>/assets/js/scroll-top.js?v=<?php echo filemtime($scrollTopJsFile); ?>" defer></script>
+<?php endif; ?>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 <style>
   /*
@@ -59,4 +91,7 @@ $forceTailwindCdn = !empty($forceTailwindCdn);
   .app-shell-main--student .rounded-xl { border-radius: 0.625rem !important; }
   .app-shell-main--student .rounded-lg { border-radius: 0.5rem !important; }
   body { font-family: Nunito, "Segoe UI", sans-serif; }
+  <?php if ($loadStudentTheme): ?>
+  html.student-theme-boot body { background: var(--student-bg, #e8eef6); }
+  <?php endif; ?>
 </style>

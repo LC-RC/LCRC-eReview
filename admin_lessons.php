@@ -139,29 +139,17 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 <body class="font-sans antialiased admin-app admin-lessons-page" x-data="lessonsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5 page-hero admin-glass-hero">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
-          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-text"></i></span>
-          <span>Lessons — <?php echo h($subject['subject_name']); ?></span>
-        </h1>
-        <p class="admin-page-header__subtitle">Create lessons, then open Materials to add videos and handouts.</p>
-      </div>
-      <div class="admin-page-header__actions">
-        <a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>
-        <button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
-    <div></div>
-    <div class="flex flex-wrap gap-2">
-      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>
-    </div>
-  </div>
+  <?php
+    $adminHeroIcon = 'file-text';
+    $adminHeroTitle = 'Lessons — ' . (string) $subject['subject_name'];
+    $adminHeroSubtitle = 'Create lessons, then open Materials to add videos and handouts.';
+    $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessons . ' lesson' . ((int) $totalLessons === 1 ? '' : 's') . '</span>';
+    $adminHeroActions =
+      '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
+      . '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>'
+      . '<button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>';
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="quiz-admin-alert quiz-admin-alert--success mb-5 flex items-center gap-2">
@@ -176,40 +164,32 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_lessons" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
-    <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-    <div class="flex-1 min-w-[200px]">
-      <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description…" class="input-custom w-full" autocomplete="off">
-    </div>
-    <div class="flex flex-wrap gap-2">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
-      <?php if ($searchQ !== ''): ?>
-        <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
-      <?php endif; ?>
-    </div>
-  </form>
-
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-gray-100">Lessons</span>
-        <span class="quiz-admin-count-pill quiz-admin-count-pill--lessons"><?php echo (int)$totalLessons; ?></span>
+    <form method="get" action="admin_lessons" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
+      <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
+      <div class="flex-1 min-w-[200px]">
+        <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
+        <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description…" class="input-custom w-full" autocomplete="off">
       </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">Tip: Open <strong class="text-gray-400">Materials</strong> for each lesson to add videos and handouts.</p>
-      <div class="text-gray-500 text-sm text-right">
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
+        <?php if ($searchQ !== ''): ?>
+          <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
+        <?php endif; ?>
+      </div>
+      <div class="w-full text-sm opacity-70">
         <?php if ($totalLessons > 0): ?>
-          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalLessons); ?> of <?php echo $totalLessons; ?></span>
+          Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalLessons); ?> of <?php echo $totalLessons; ?>
           <span class="mx-1">·</span>
         <?php endif; ?>
-        <span>Subject: <span class="admin-subject-text admin-subject-text--lessons"><?php echo h($subject['subject_name']); ?></span></span>
+        Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
       </div>
-    </div>
+    </form>
     <div class="overflow-x-auto pl-3 pr-8">
-      <table class="quiz-admin-data-table w-full text-left">
+      <table class="quiz-admin-data-table admin-data-table w-full text-left">
         <thead>
           <tr>
-            <th class="px-5 py-3 font-semibold text-center">Lesson</th>
+            <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
             <th class="px-5 py-3 font-semibold text-center">Videos</th>
             <th class="px-5 py-3 font-semibold text-center">Handouts</th>
             <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
@@ -225,8 +205,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
             $hTitle = $hCnt === 0 ? 'No handouts yet — add via Materials' : $hCnt . ' handout(s)';
           ?>
             <tr class="quiz-admin-row">
-              <td class="px-5 py-3 text-center">
-                <div class="font-semibold text-gray-100"><?php echo h($l['title']); ?></div>
+              <td class="px-5 py-3 admin-col-primary">
+                <div class="font-semibold"><?php echo h($l['title']); ?></div>
                 <?php if (!empty($l['description'])): ?>
                   <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '…')); ?></div>
                 <?php endif; ?>

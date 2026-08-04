@@ -78,7 +78,10 @@ $pageTitle = $unitTitle . ' — Materials';
   <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <?php require_once __DIR__ . '/includes/student_materials_list_styles.php'; ?>
   <style>
-    .preweek-inner-page { background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%); }
+    .preweek-inner-page { background: transparent; }
+    html[data-student-theme="light"] .preweek-inner-page {
+      background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
+    }
     .student-hero-pw {
       border-radius: 0.75rem;
       border: 1px solid rgba(255,255,255,0.28);

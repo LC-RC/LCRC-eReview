@@ -422,6 +422,211 @@ unset($_SESSION['error']);
       box-shadow: 0 8px 24px -12px rgba(31, 88, 195, 0.45);
     }
     .reg-package-card { border-color: rgba(15, 23, 42, 0.12); background: #fff; }
+    .reg-topic-browser {
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 1rem;
+      background: #fff;
+      overflow: hidden;
+    }
+    .reg-topic-toolbar {
+      padding: 0.85rem 1rem 0.65rem;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    }
+    .reg-topic-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .reg-topic-search-wrap > .bi-search {
+      position: absolute;
+      left: 0.85rem;
+      color: #64748b;
+      pointer-events: none;
+    }
+    .reg-topic-search {
+      width: 100%;
+      border: 1.5px solid rgba(15, 23, 42, 0.14);
+      border-radius: 0.75rem;
+      padding: 0.7rem 2.4rem 0.7rem 2.35rem;
+      font-size: 0.9rem;
+      color: #0f172a;
+      background: #fff;
+      outline: none;
+    }
+    .reg-topic-search:focus {
+      border-color: #1F58C3;
+      box-shadow: 0 0 0 3px rgba(31, 88, 195, 0.15);
+    }
+    .reg-topic-search-clear {
+      position: absolute;
+      right: 0.45rem;
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .reg-topic-search-clear:hover { background: rgba(15, 23, 42, 0.06); color: #0f172a; }
+    .reg-topic-toolbar-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.55rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .reg-topic-subject-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    .reg-topic-chip {
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #fff;
+      color: #334155;
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .reg-topic-chip:hover { border-color: rgba(31, 88, 195, 0.4); color: #1F58C3; }
+    .reg-topic-chip--active {
+      background: rgba(31, 88, 195, 0.1);
+      border-color: #1F58C3;
+      color: #1F58C3;
+    }
+    .reg-topic-chip-count {
+      min-width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.08);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      padding: 0 0.3rem;
+    }
+    .reg-topic-chip--active .reg-topic-chip-count { background: rgba(31, 88, 195, 0.18); }
+    .reg-topic-groups { max-height: 22rem; overflow: auto; }
+    .reg-topic-subject { border-bottom: 1px solid rgba(15, 23, 42, 0.06); }
+    .reg-topic-subject:last-child { border-bottom: 0; }
+    .reg-topic-subject-head {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.8rem 1rem;
+      background: #f8fafc;
+      border: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+    .reg-topic-subject-head:hover { background: #f1f5f9; }
+    .reg-topic-subject-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 800;
+      color: #0f172a;
+      font-size: 0.9rem;
+    }
+    .reg-topic-subject-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .reg-topic-selected-badge {
+      background: rgba(31, 88, 195, 0.12);
+      color: #1F58C3;
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      font-weight: 700;
+    }
+    .reg-topic-subject-body { background: #fff; }
+    .reg-topic-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid rgba(15, 23, 42, 0.05);
+      cursor: pointer;
+    }
+    .reg-topic-row:hover { background: rgba(31, 88, 195, 0.04); }
+    .reg-topic-row--selected { background: rgba(31, 88, 195, 0.07); }
+    .reg-topic-selected-summary {
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 0.85rem 1rem 1rem;
+      background: #f8fafc;
+    }
+    .reg-topic-selected-summary__title {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+    }
+    .reg-topic-selected-group { margin-bottom: 0.65rem; }
+    .reg-topic-selected-group:last-child { margin-bottom: 0; }
+    .reg-topic-selected-group__subj {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+    .reg-topic-selected-group ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .reg-topic-selected-group li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.65rem;
+      font-size: 0.82rem;
+      color: #334155;
+      padding: 0.2rem 0;
+    }
+    .reg-topic-selected-price { color: #1F58C3; font-weight: 700; }
+    .reg-topic-remove {
+      margin-left: auto;
+      border: 0;
+      background: transparent;
+      color: #b91c1c;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.1rem 0.25rem;
+    }
+    .reg-topic-remove:hover { text-decoration: underline; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     #reg-label-account { margin-bottom: 1.5rem; }
     .reg-section-label--complete {
       color: #15803d;
@@ -1593,8 +1798,14 @@ unset($_SESSION['error']);
         packageId: null,
         selectedLessons: {},
         freeAccessNote: '',
+        topicSearch: '',
+        topicSubjectFilter: null,
+        openSubjects: {},
         packages: <?php echo json_encode($regPackages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>,
         topicGroups: <?php echo json_encode($regTopicGroups, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>,
+        init: function () {
+          this.ensureTopicBrowserOpen();
+        },
         get selectedLessonIds() {
           return Object.keys(this.selectedLessons)
             .filter(function (k) { return !!this.selectedLessons[k]; }.bind(this))
@@ -1612,6 +1823,107 @@ unset($_SESSION['error']);
         },
         get topicTotalDisplay() {
           return '₱' + (this.topicTotalCentavos / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        get filteredTopicGroups() {
+          var q = String(this.topicSearch || '').trim().toLowerCase();
+          var filterSid = this.topicSubjectFilter;
+          var out = [];
+          (this.topicGroups || []).forEach(function (g) {
+            if (filterSid !== null && filterSid !== '' && String(g.subject_id) !== String(filterSid)) {
+              return;
+            }
+            var subjectName = String(g.subject_name || '');
+            var topics = (g.topics || []).filter(function (topic) {
+              if (!q) return true;
+              var title = String(topic.title || '').toLowerCase();
+              return title.indexOf(q) !== -1 || subjectName.toLowerCase().indexOf(q) !== -1;
+            });
+            if (topics.length) {
+              out.push({
+                subject_id: g.subject_id,
+                subject_name: g.subject_name,
+                topics: topics
+              });
+            }
+          });
+          return out;
+        },
+        get filteredTopicCount() {
+          var n = 0;
+          this.filteredTopicGroups.forEach(function (g) { n += (g.topics || []).length; });
+          return n;
+        },
+        get filteredSubjectCount() {
+          return this.filteredTopicGroups.length;
+        },
+        get selectedTopicGroups() {
+          var self = this;
+          var out = [];
+          (this.topicGroups || []).forEach(function (g) {
+            var topics = (g.topics || []).filter(function (topic) {
+              return !!self.selectedLessons[topic.lesson_id];
+            });
+            if (topics.length) {
+              out.push({
+                subject_id: g.subject_id,
+                subject_name: g.subject_name,
+                topics: topics
+              });
+            }
+          });
+          return out;
+        },
+        ensureTopicBrowserOpen: function () {
+          var next = Object.assign({}, this.openSubjects);
+          var groups = this.topicGroups || [];
+          if (groups.length === 1) {
+            next[groups[0].subject_id] = true;
+          } else if (groups.length > 0 && Object.keys(next).length === 0) {
+            // First visit: open first subject so students immediately see topics
+            next[groups[0].subject_id] = true;
+          }
+          this.openSubjects = next;
+        },
+        isSubjectOpen: function (subjectId) {
+          return !!this.openSubjects[subjectId];
+        },
+        openSubject: function (subjectId) {
+          var next = Object.assign({}, this.openSubjects);
+          next[subjectId] = true;
+          this.openSubjects = next;
+        },
+        toggleSubject: function (subjectId) {
+          var next = Object.assign({}, this.openSubjects);
+          next[subjectId] = !next[subjectId];
+          this.openSubjects = next;
+        },
+        onTopicSearchInput: function () {
+          var q = String(this.topicSearch || '').trim();
+          if (!q) return;
+          var next = Object.assign({}, this.openSubjects);
+          this.filteredTopicGroups.forEach(function (g) {
+            next[g.subject_id] = true;
+          });
+          this.openSubjects = next;
+        },
+        selectedCountInGroup: function (group) {
+          var self = this;
+          var n = 0;
+          (group.topics || []).forEach(function (topic) {
+            // Count against full catalog group when possible
+            if (self.selectedLessons[topic.lesson_id]) n += 1;
+          });
+          // Prefer full-group count so badge stays accurate while filtering
+          var full = null;
+          (this.topicGroups || []).forEach(function (g) {
+            if (String(g.subject_id) === String(group.subject_id)) full = g;
+          });
+          if (!full) return n;
+          n = 0;
+          (full.topics || []).forEach(function (topic) {
+            if (self.selectedLessons[topic.lesson_id]) n += 1;
+          });
+          return n;
         },
         toggleLesson: function (id, on) {
           var next = Object.assign({}, this.selectedLessons);

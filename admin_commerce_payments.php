@@ -216,6 +216,73 @@ if ($res) {
     mysqli_free_result($res);
 }
 
+/** @var array<int, list<string>> $paymentTopicLabelsById */
+$paymentTopicLabelsById = [];
+if ($rows !== []) {
+    $topicPayIds = [];
+    foreach ($rows as $rr) {
+        if ((string) ($rr['purchase_type'] ?? '') === 'by_topic') {
+            $pid = (int) ($rr['payment_id'] ?? 0);
+            if ($pid > 0) {
+                $topicPayIds[$pid] = $pid;
+            }
+        }
+    }
+    if ($topicPayIds !== []) {
+        $pin = implode(',', array_map('intval', array_values($topicPayIds)));
+        $iq = mysqli_query(
+            $conn,
+            "SELECT payment_id, lesson_id, item_name
+             FROM payment_items
+             WHERE payment_id IN ($pin)
+             ORDER BY payment_id ASC, line_no ASC"
+        );
+        $needLessonIds = [];
+        while ($iq && ($ir = mysqli_fetch_assoc($iq))) {
+            $pid = (int) ($ir['payment_id'] ?? 0);
+            $name = trim((string) ($ir['item_name'] ?? ''));
+            $lid = (int) ($ir['lesson_id'] ?? 0);
+            if ($pid <= 0) {
+                continue;
+            }
+            if (!isset($paymentTopicLabelsById[$pid])) {
+                $paymentTopicLabelsById[$pid] = [];
+            }
+            if ($name !== '') {
+                $paymentTopicLabelsById[$pid][] = $name;
+            } elseif ($lid > 0) {
+                $paymentTopicLabelsById[$pid][] = '__lesson__' . $lid;
+                $needLessonIds[$lid] = $lid;
+            }
+        }
+        $lessonTitles = [];
+        if ($needLessonIds !== [] && function_exists('commerce_admin_lesson_meta_map')) {
+            $meta = commerce_admin_lesson_meta_map($conn, array_values($needLessonIds));
+            foreach ($meta as $lid => $m) {
+                $lessonTitles[(int) $lid] = (string) ($m['title'] ?? ('Lesson #' . (int) $lid));
+            }
+        } elseif ($needLessonIds !== []) {
+            $lin = implode(',', array_map('intval', array_values($needLessonIds)));
+            $lq = mysqli_query($conn, "SELECT lesson_id, title FROM lessons WHERE lesson_id IN ($lin)");
+            while ($lq && ($lr = mysqli_fetch_assoc($lq))) {
+                $lessonTitles[(int) $lr['lesson_id']] = (string) ($lr['title'] ?? ('Lesson #' . (int) $lr['lesson_id']));
+            }
+        }
+        foreach ($paymentTopicLabelsById as $pid => $labels) {
+            $resolved = [];
+            foreach ($labels as $lab) {
+                if (strpos($lab, '__lesson__') === 0) {
+                    $lid = (int) substr($lab, strlen('__lesson__'));
+                    $resolved[] = $lessonTitles[$lid] ?? ('Lesson #' . $lid);
+                } else {
+                    $resolved[] = $lab;
+                }
+            }
+            $paymentTopicLabelsById[$pid] = $resolved;
+        }
+    }
+}
+
 function commerce_admin_vstatus_label(string $v): string
 {
     switch ($v) {
@@ -250,17 +317,17 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
 </head>
 <body class="font-sans antialiased admin-app admin-commerce-payments-page">
   <?php include 'admin_sidebar.php'; ?>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+  <div class="w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
     <?php if (!empty($_SESSION['message'])): ?>
-      <div class="admin-alert admin-alert--success mb-4"><?php echo h($_SESSION['message']); unset($_SESSION['message']); ?></div>
+      <div class="admin-flash admin-flash--success mb-4"><?php echo h($_SESSION['message']); unset($_SESSION['message']); ?></div>
     <?php endif; ?>
     <?php if (!empty($_SESSION['error'])): ?>
-      <div class="admin-alert admin-alert--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
+      <div class="admin-flash admin-flash--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <div class="flex flex-wrap gap-2 text-sm mb-4">
+    <div class="admin-filter-chips flex flex-wrap gap-2 text-sm mb-4" role="tablist" aria-label="Payment filters">
       <?php
         $tabs = [
           'all' => 'All',
@@ -277,7 +344,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           $active = $filter === $key;
           $href = ereview_url('admin_commerce_payments') . ($key === 'all' ? '' : '?v=' . rawurlencode($key));
       ?>
-        <a class="px-3 py-1.5 rounded-lg border <?php echo $active ? 'border-sky-400 bg-sky-500/20 font-semibold' : 'border-white/10 opacity-80 hover:opacity-100'; ?>"
+        <a class="admin-filter-chip <?php echo $active ? 'is-active' : ''; ?>"
            href="<?php echo h($href); ?>"><?php echo h($label); ?></a>
       <?php endforeach; ?>
     </div>
@@ -298,7 +365,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
               <?php endif; ?>
             </p>
           </div>
-          <a class="admin-outline-btn px-3 py-2 rounded-xl text-sm font-semibold" href="<?php echo h(ereview_url('admin_commerce_payments') . ($filter === 'all' ? '' : '?v=' . rawurlencode($filter))); ?>">Back to list</a>
+          <a class="admin-btn admin-btn--secondary px-3 py-2 text-sm font-semibold" href="<?php echo h(ereview_url('admin_commerce_payments') . ($filter === 'all' ? '' : '?v=' . rawurlencode($filter))); ?>">Back to list</a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -338,19 +405,14 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                   }
               }
               $topicLabels = [];
+              $topicGroupsDetail = [];
               if ($enrollPath === 'by_topic' && !empty($u['selected_lesson_ids_json'])) {
-                  $ids = json_decode((string) $u['selected_lesson_ids_json'], true);
-                  if (is_array($ids)) {
-                      $safeIds = array_values(array_filter(array_map('intval', $ids), static function ($id) {
-                          return $id > 0;
-                      }));
-                      if ($safeIds !== []) {
-                          $in = implode(',', $safeIds);
-                          $lq = mysqli_query($conn, "SELECT lesson_id, title FROM lessons WHERE lesson_id IN ($in) ORDER BY title");
-                          while ($lq && ($lr = mysqli_fetch_assoc($lq))) {
-                              $topicLabels[] = (string) ($lr['title'] ?? ('Lesson #' . (int) $lr['lesson_id']));
-                          }
-                      }
+                  $safeIds = commerce_admin_parse_lesson_ids_json((string) $u['selected_lesson_ids_json']);
+                  if ($safeIds !== []) {
+                      $metaMap = commerce_admin_lesson_meta_map($conn, $safeIds);
+                      $grouped = commerce_admin_group_topics_by_subject($safeIds, $metaMap);
+                      $topicLabels = $grouped['flat_labels'];
+                      $topicGroupsDetail = $grouped['groups'];
                   }
               }
             ?>
@@ -384,7 +446,19 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <?php if ($enrollPath === 'package'): ?>
               <div class="opacity-70">Package: <?php echo h($pkgLabel !== '' ? $pkgLabel : '—'); ?></div>
             <?php elseif ($enrollPath === 'by_topic'): ?>
-              <div class="opacity-70">Topics: <?php echo h($topicLabels !== [] ? implode(', ', $topicLabels) : '—'); ?></div>
+              <?php if ($topicGroupsDetail !== []): ?>
+                <div class="opacity-70 mb-1">Topics by subject:</div>
+                <div class="space-y-2">
+                  <?php foreach ($topicGroupsDetail as $tg): ?>
+                    <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                      <div class="text-xs font-bold uppercase opacity-60"><?php echo h((string) $tg['subject_name']); ?></div>
+                      <div class="text-sm mt-0.5"><?php echo h(implode(', ', $tg['topics'])); ?></div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div class="opacity-70">Topics: <?php echo h($topicLabels !== [] ? implode(', ', $topicLabels) : '—'); ?></div>
+              <?php endif; ?>
             <?php endif; ?>
           </div>
         </div>
@@ -569,8 +643,8 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <label class="block text-xs font-semibold uppercase opacity-70">Review note (optional)</label>
             <textarea class="input-custom w-full" name="review_note" rows="2" maxlength="2000" placeholder="Why approve or reject…"></textarea>
             <div class="flex flex-wrap gap-2">
-              <button type="submit" name="action" value="approve" class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold">Approve</button>
-              <button type="submit" name="action" value="reject" class="admin-outline-btn px-4 py-2.5 rounded-xl font-semibold" onclick="return confirm('Reject this payment? No LMS access will be granted.');">Reject</button>
+              <button type="submit" name="action" value="approve" class="admin-btn admin-btn--primary px-4 py-2.5">Approve</button>
+              <button type="submit" name="action" value="reject" class="admin-btn admin-btn--secondary px-4 py-2.5" onclick="return confirm('Reject this payment? No LMS access will be granted.');">Reject</button>
             </div>
             <p class="text-xs opacity-60">Approve sets manually_approved + paid, then runs the same fulfillment as auto_verified (grants, SCA, auto login activation). Use this when OCR failed but the receipt is valid. Reject sets manually_rejected + rejected with no grants/SCA.</p>
           </form>
@@ -595,16 +669,16 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
       <input type="hidden" name="return_filter" value="<?php echo h($filter); ?>">
       <input type="hidden" name="action" id="paymentsBulkAction" value="bulk_approve">
       <?php if ($reviewableCount > 0): ?>
-        <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+        <div class="payments-bulk-toolbar flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
           <span class="text-sm font-semibold">Bulk review</span>
           <span class="text-xs opacity-70" id="paymentsSelectedCount"><?php echo (int) $reviewableCount; ?> reviewable on page · max 50</span>
           <div class="flex-1 min-w-[8rem]"></div>
           <input type="text" name="review_note" class="input-custom text-sm w-full sm:w-64" maxlength="2000" placeholder="Optional shared note">
-          <button type="submit" class="admin-content-btn px-3 py-2 rounded-xl text-sm font-semibold"
+          <button type="submit" class="admin-btn admin-btn--primary px-3 py-2 text-sm"
                   onclick="return paymentsBulkSubmit('bulk_approve');">
             Bulk Approve
           </button>
-          <button type="submit" class="admin-outline-btn px-3 py-2 rounded-xl text-sm font-semibold"
+          <button type="submit" class="admin-btn admin-btn--secondary px-3 py-2 text-sm"
                   onclick="return paymentsBulkSubmit('bulk_reject');">
             Bulk Reject
           </button>
@@ -657,7 +731,22 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                     <div><?php echo h((string) ($r['full_name'] ?? '')); ?></div>
                     <div class="text-xs opacity-60"><?php echo h((string) ($r['email'] ?? '')); ?></div>
                   </td>
-                  <td class="px-3 py-3"><?php echo h((string) $r['purchase_type']); ?></td>
+                  <td class="px-3 py-3">
+                    <?php
+                      $ptype = (string) ($r['purchase_type'] ?? '');
+                      $topicLabs = ($ptype === 'by_topic')
+                          ? ($paymentTopicLabelsById[(int) $r['payment_id']] ?? [])
+                          : [];
+                      $topicFull = $topicLabs !== [] ? implode(', ', $topicLabs) : '';
+                      $topicShort = $topicLabs !== [] ? commerce_admin_format_topics_short($topicLabs, 2) : '';
+                    ?>
+                    <div class="font-semibold"><?php echo h($ptype); ?></div>
+                    <?php if ($topicShort !== ''): ?>
+                      <div class="text-xs opacity-70 mt-0.5 max-w-[14rem] leading-snug" title="<?php echo h($topicFull); ?>">
+                        <?php echo h($topicShort); ?>
+                      </div>
+                    <?php endif; ?>
+                  </td>
                   <td class="px-3 py-3">₱<?php echo h(commerce_centavos_to_pesos_display((int) $r['expected_amount_centavos'])); ?></td>
                   <td class="px-3 py-3">
                     <div class="font-semibold"><?php echo h(commerce_admin_vstatus_label((string) $r['verification_status'])); ?></div>
@@ -667,16 +756,16 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                   </td>
                   <td class="px-3 py-3 text-xs max-w-xs"><?php echo h((string) ($r['verification_summary'] ?? '')); ?></td>
                   <td class="px-3 py-3 whitespace-nowrap">
-                    <div class="flex flex-wrap gap-2 items-center">
-                      <a class="font-semibold underline text-sky-300" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $r['payment_id'] . ($filter !== 'all' ? '&v=' . rawurlencode($filter) : '')); ?>">Open</a>
+                    <div class="payments-row-actions">
+                      <a class="payments-action-link" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $r['payment_id'] . ($filter !== 'all' ? '&v=' . rawurlencode($filter) : '')); ?>">Open</a>
                       <?php if ($rowReviewable): ?>
                         <?php if (!empty($r['proof_path'])): ?>
-                          <a class="font-semibold underline text-sky-300" data-admin-proof
+                          <a class="payments-action-link" data-admin-proof
                              data-proof-title="Proof · <?php echo h((string) $r['payment_ref']); ?>"
                              href="<?php echo h(ereview_url('payment_proof_file') . '?payment_id=' . (int) $r['payment_id']); ?>">Proof</a>
                         <?php endif; ?>
                         <button type="submit"
-                                class="admin-content-btn px-2.5 py-1 rounded-lg text-xs font-semibold"
+                                class="admin-btn admin-btn--primary"
                                 onclick="return paymentsQuickApprove(<?php echo (int) $r['payment_id']; ?>);">
                           Approve
                         </button>

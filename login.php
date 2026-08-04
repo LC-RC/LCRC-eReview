@@ -31,22 +31,14 @@ if (!empty($_GET['magic'])) {
                 header('Location: login');
                 exit;
             }
-            if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
-                $_SESSION['error'] = 'Your account is not approved yet.';
-                $_SESSION['error_type'] = 'not_approved';
-                header('Location: login');
-                exit;
-            }
             if (!isStaffRole($user['role'])) {
-                $now = new DateTime('now');
-                if (!empty($user['access_end'])) {
-                    $end = new DateTime($user['access_end']);
-                    if ($now > $end) {
-                        $_SESSION['error'] = 'Your access has expired.';
-                        $_SESSION['error_type'] = 'access_expired';
-                        header('Location: login');
-                        exit;
-                    }
+                require_once __DIR__ . '/includes/commerce_access_gate.php';
+                $gate = commerce_student_can_login($conn, $user);
+                if (empty($gate['ok'])) {
+                    $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
+                    $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
+                    header('Location: login');
+                    exit;
                 }
             }
             if (session_status() === PHP_SESSION_ACTIVE) {

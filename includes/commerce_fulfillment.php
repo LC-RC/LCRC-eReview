@@ -520,6 +520,107 @@ function commerce_payment_is_manual_reviewable(array $payment): bool
 }
 
 /**
+ * Close a reviewable open payment after admin_manual grant — no purchase grants / no fulfill.
+ * Marks paid + manually_approved + fulfilled_at so Payment Verification queue clears
+ * without stacking a second source=purchase grant on top of admin_manual.
+ *
+ * @return array{ok:bool,skipped?:bool,error?:string,payment_id?:int,payment?:array<string,mixed>}
+ */
+function commerce_close_reviewable_payment_after_admin_grant(
+    mysqli $conn,
+    int $userId,
+    int $adminId,
+    int $grantId = 0,
+    string $reviewNote = ''
+): array {
+    if ($userId <= 0 || $adminId <= 0) {
+        return ['ok' => false, 'error' => 'invalid_ids'];
+    }
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT * FROM payments
+         WHERE user_id = ?
+           AND status = 'pending_verification'
+         ORDER BY payment_id DESC
+         LIMIT 8"
+    );
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'payment_lookup_failed'];
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $payment = null;
+    while ($res && ($row = mysqli_fetch_assoc($res))) {
+        if (commerce_payment_is_manual_reviewable($row)) {
+            $payment = $row;
+            break;
+        }
+    }
+    mysqli_stmt_close($stmt);
+
+    if (!$payment) {
+        return ['ok' => true, 'skipped' => true, 'error' => 'no_reviewable_payment'];
+    }
+
+    $paymentId = (int) ($payment['payment_id'] ?? 0);
+    if ($paymentId <= 0) {
+        return ['ok' => true, 'skipped' => true, 'error' => 'no_reviewable_payment'];
+    }
+
+    $note = trim($reviewNote);
+    if ($note === '') {
+        $note = 'Closed via administrative Grant Access'
+            . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
+            . '. Access already granted — payment marked approved without creating a second purchase grant.';
+    }
+    if (strlen($note) > 2000) {
+        $note = substr($note, 0, 2000);
+    }
+
+    $upd = mysqli_prepare(
+        $conn,
+        "UPDATE payments SET
+            verification_status = 'manually_approved',
+            status = 'paid',
+            paid_at = IFNULL(paid_at, NOW()),
+            reviewed_by = ?,
+            reviewed_at = NOW(),
+            review_note = ?,
+            fulfilled_at = IFNULL(fulfilled_at, NOW())
+         WHERE payment_id = ?
+           AND user_id = ?
+           AND status = 'pending_verification'
+           AND verification_status IN ('needs_review','failed','processing','not_started')
+           AND proof_path IS NOT NULL
+           AND proof_path <> ''
+         LIMIT 1"
+    );
+    if (!$upd) {
+        return ['ok' => false, 'error' => 'close_prepare_failed', 'payment_id' => $paymentId];
+    }
+    mysqli_stmt_bind_param($upd, 'isii', $adminId, $note, $paymentId, $userId);
+    if (!mysqli_stmt_execute($upd) || mysqli_stmt_affected_rows($upd) < 1) {
+        mysqli_stmt_close($upd);
+        return [
+            'ok' => false,
+            'error' => 'close_race_or_state',
+            'payment_id' => $paymentId,
+            'payment' => commerce_get_payment($conn, $paymentId) ?: $payment,
+        ];
+    }
+    mysqli_stmt_close($upd);
+
+    return [
+        'ok' => true,
+        'skipped' => false,
+        'payment_id' => $paymentId,
+        'payment' => commerce_get_payment($conn, $paymentId) ?: $payment,
+    ];
+}
+
+/**
  * Admin manual approve → paid → fulfill (same path as auto_verified).
  * Allowed for needs_review, and for failed/processing/not_started when proof_path exists.
  *

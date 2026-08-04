@@ -268,6 +268,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
     $adminHeroIcon = 'book';
     $adminHeroTitle = 'Content Hub';
     $adminHeroSubtitle = 'Manage subjects, lessons, materials, handouts, and quizzes.';
+    $adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int) $total . ' subject' . ((int) $total === 1 ? '' : 's') . '</span>';
     $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary" @click="openNewSubject()"><i class="bi bi-plus-lg"></i> New Subject</button>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
@@ -287,17 +288,17 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
     </div>
   <?php endif; ?>
 
-  <div class="rounded-xl shadow-card border p-5 mb-5 page-filter">
-    <form method="GET" class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+  <div class="rounded-xl shadow-card border overflow-hidden page-table">
+    <form method="GET" class="admin-sticky-toolbar page-filter px-4 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 items-end border-b">
       <div class="lg:col-span-5">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+        <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
         <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="bi bi-search"></i></span>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 opacity-50"><i class="bi bi-search"></i></span>
           <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search subject..." class="input-custom pl-10">
         </div>
       </div>
       <div class="lg:col-span-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Status</label>
         <select name="status" class="input-custom">
           <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All status</option>
           <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
@@ -305,43 +306,21 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
         </select>
       </div>
       <div class="lg:col-span-4 flex flex-wrap gap-2 justify-end">
-        <button type="submit" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
-          <i class="bi bi-funnel"></i> Apply
-        </button>
-        <button type="button" @click="openNewSubject()" class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
-          <i class="bi bi-plus-circle"></i> New Subject
-        </button>
+        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-funnel"></i> Apply</button>
       </div>
-      <div class="lg:col-span-12">
-        <p class="text-gray-500 text-sm">Showing <?php echo $total ? ($offset + 1) : 0; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> subjects</p>
+      <div class="lg:col-span-12 text-sm opacity-70">
+        Showing <?php echo $total ? ($offset + 1) : 0; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?> subjects
       </div>
     </form>
-  </div>
-
-  <div class="rounded-xl shadow-card border overflow-hidden page-table">
-    <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-gray-800">Subjects</span>
-        <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
-      </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">Manage subjects, materials, quizzes, and Test Banks per subject.</p>
-      <div class="text-gray-500 text-sm text-right">
-        <?php if ($total > 0): ?>
-          <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> subjects</span>
-        <?php else: ?>
-          <span>Showing 0-0 of 0 subjects</span>
-        <?php endif; ?>
-      </div>
-    </div>
     <div class="overflow-x-auto pl-3 pr-8">
-      <table class="w-full text-left">
-        <thead class="bg-gray-50 border-b border-gray-200">
+      <table class="w-full text-left admin-data-table">
+        <thead>
           <tr>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Subject</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Status</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Lessons</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center">Quizzes</th>
-            <th class="px-5 py-3 font-semibold text-gray-700 text-center w-[120px]">Actions</th>
+            <th class="px-5 py-3 font-semibold admin-col-primary">Subject</th>
+            <th class="px-5 py-3 font-semibold text-center">Status</th>
+            <th class="px-5 py-3 font-semibold text-center">Lessons</th>
+            <th class="px-5 py-3 font-semibold text-center">Quizzes</th>
+            <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -364,11 +343,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                     $rowCoverSrc = ereview_avatar_img_src((string)$s['subject_cover']);
                 }
               ?>
-              <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-                <td class="px-5 py-3 text-center">
-                  <div class="font-semibold text-gray-800"><?php echo h($s['subject_name']); ?></div>
+              <tr>
+                <td class="px-5 py-3 admin-col-primary">
+                  <div class="font-semibold"><?php echo h($s['subject_name']); ?></div>
                   <?php if (!empty($s['description'])): ?>
-                    <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 80, '…')); ?></div>
+                    <div class="text-sm opacity-70 mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 80, '…')); ?></div>
                   <?php endif; ?>
                 </td>
                 <td class="px-5 py-3 text-center">

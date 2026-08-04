@@ -26,6 +26,25 @@ if (!isset($commerce) || !is_array($commerce)) {
             <div class="font-bold flex items-center gap-2"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Account: Active</div>
             <p class="mt-1 mb-0 text-xs">Login is active. Commerce access is granted. Manual Approve is not required for this enrollment.</p>
           </div>
+        <?php elseif ($commerceAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'): ?>
+          <div class="rounded-lg border border-sky-300 bg-sky-50 p-3 mb-4 text-sm text-sky-950">
+            <div class="font-bold flex items-center gap-2"><i class="bi bi-key" aria-hidden="true"></i> Access: None</div>
+            <p class="mt-1 mb-2 text-xs">Use <strong>Grant Access</strong> for Full LMS. If a proof is already under review, that payment is marked approved too (no second Payment Verification step).</p>
+            <?php if (!empty($csrf)): ?>
+              <form method="post" action="<?php echo h(function_exists('ereview_url') ? ereview_url('admin_grant_access') : 'admin_grant_access'); ?>" class="flex flex-wrap items-end gap-2"
+                    onsubmit="return confirm('Grant Full LMS access? Open payment reviews with proof will also be marked approved.');">
+                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                <input type="hidden" name="user_id" value="<?php echo (int) ($user['user_id'] ?? 0); ?>">
+                <input type="hidden" name="activate_login" value="1">
+                <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) ($user['user_id'] ?? 0); ?>">
+                <label class="text-xs font-semibold">
+                  Months
+                  <input type="number" name="months" min="1" max="120" value="6" class="input-custom w-20 mt-0.5" required>
+                </label>
+                <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-key"></i> Grant Access</button>
+              </form>
+            <?php endif; ?>
+          </div>
         <?php endif; ?>
 
         <div class="text-xs uppercase font-semibold text-gray-500 mb-2">Enrollment</div>
@@ -41,8 +60,53 @@ if (!isset($commerce) || !is_array($commerce)) {
             </div>
             <?php if (($commerce['enrollment_path'] ?? '') === 'by_topic'): ?>
               <div class="md:col-span-2">
-                <div class="text-gray-500">Selected topics</div>
-                <div class="font-semibold text-gray-800"><?php echo !empty($commerce['lesson_labels']) ? h(implode(', ', $commerce['lesson_labels'])) : '—'; ?></div>
+                <div class="text-gray-500">Selected topics (by subject)</div>
+                <?php
+                  $lessonGroups = is_array($commerce['lesson_groups'] ?? null) ? $commerce['lesson_groups'] : [];
+                  $lessonItems = is_array($commerce['lesson_items'] ?? null) ? $commerce['lesson_items'] : [];
+                  $lessonLabelsFallback = is_array($commerce['lesson_labels'] ?? null) ? $commerce['lesson_labels'] : [];
+                ?>
+                <?php if ($lessonGroups !== []): ?>
+                  <div class="mt-2 space-y-3">
+                    <?php foreach ($lessonGroups as $g): ?>
+                      <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2">
+                        <div class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">
+                          <?php echo h((string) ($g['subject_name'] ?? 'Subject')); ?>
+                          <span class="font-semibold normal-case tracking-normal text-slate-400">
+                            · <?php echo count($g['topics'] ?? []); ?> topic<?php echo count($g['topics'] ?? []) === 1 ? '' : 's'; ?>
+                          </span>
+                        </div>
+                        <ul class="mb-0 space-y-1 list-none pl-0">
+                          <?php foreach (($g['topics'] ?? []) as $li): ?>
+                            <li class="font-semibold text-gray-800 text-sm">
+                              <?php if (!empty($li['href'])): ?>
+                                <a class="underline text-sky-700 hover:text-sky-900" href="<?php echo h((string) $li['href']); ?>" title="Open topic materials">
+                                  <?php echo h((string) ($li['title'] ?? 'Topic')); ?>
+                                </a>
+                              <?php else: ?>
+                                <?php echo h((string) ($li['title'] ?? 'Topic')); ?>
+                              <?php endif; ?>
+                            </li>
+                          <?php endforeach; ?>
+                        </ul>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                  <div class="mt-2 flex flex-wrap gap-3 text-xs">
+                    <a class="font-semibold underline text-sky-700" href="<?php echo h(ereview_url('admin_commerce_topics')); ?>">By Topic pricing</a>
+                    <a class="font-semibold underline text-sky-700" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) ($user['user_id'] ?? 0)); ?>">Grant ledger</a>
+                  </div>
+                <?php elseif ($lessonItems !== []): ?>
+                  <ul class="mt-1 mb-0 space-y-1 list-none pl-0">
+                    <?php foreach ($lessonItems as $li): ?>
+                      <li class="font-semibold text-gray-800"><?php echo h((string) ($li['title'] ?? 'Topic')); ?></li>
+                    <?php endforeach; ?>
+                  </ul>
+                <?php elseif ($lessonLabelsFallback !== []): ?>
+                  <div class="font-semibold text-gray-800"><?php echo h(implode(', ', $lessonLabelsFallback)); ?></div>
+                <?php else: ?>
+                  <div class="font-semibold text-gray-800">—</div>
+                <?php endif; ?>
               </div>
             <?php endif; ?>
           <?php endif; ?>

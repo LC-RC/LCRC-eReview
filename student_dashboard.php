@@ -1,7 +1,9 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
+sca_enforce_student_session($conn);
 $pageTitle = 'Student Dashboard';
 $csrf = generateCSRFToken();
 
@@ -149,124 +151,116 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   <?php $appShellHideStudentAccessTopbar = true; ?>
   <?php include 'student_sidebar.php'; ?>
   <div class="student-dashboard-page min-h-full pb-8">
-    <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7">
-      <div class="relative z-10 text-white">
+    <section class="student-hero student-hero--brand dash-anim delay-1 relative overflow-hidden mb-6">
+      <div class="relative z-10 text-white student-hero__inner">
         <div class="dash-hero-masthead">
-          <div class="dash-hero-avatar-col">
-            <div class="dash-hero-avatar-ring" aria-hidden="true">
-              <?php if ($dashboardAvatarPath !== '' && !$dashboardUseDefaultAvatar): ?>
-                <img src="<?php echo h($dashboardAvatarPath); ?>" alt="Your profile photo" class="dash-hero-avatar-img" width="160" height="160" loading="eager" decoding="async">
-              <?php else: ?>
-                <span class="dash-hero-avatar-initial"><?php echo h($dashboardAvatarInitial); ?></span>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="dash-hero-copy-col min-w-0">
-            <h1 class="dash-hero-title m-0 text-2xl sm:text-3xl lg:text-[1.85rem] font-extrabold leading-tight tracking-tight">
-              <?php echo h($greeting); ?>, <?php echo h($_SESSION['full_name']); ?>
-            </h1>
-            <p class="dash-hero-lede mt-2 mb-0 max-w-2xl text-white/90 text-sm sm:text-base font-medium leading-relaxed">A smarter learning overview with your real-time review activity and progress.</p>
-            <div class="hero-chip-row mt-3 flex flex-wrap gap-2" aria-label="Quick stats">
-          <span class="hero-chip"><i class="bi bi-fire"></i> <?php echo (int)$weeksActiveStreak; ?> active week<?php echo $weeksActiveStreak === 1 ? '' : 's'; ?> streak</span>
-          <span class="hero-chip"><i class="bi bi-calendar-check"></i> <?php echo (int)$daysActiveStreak; ?> day submission streak</span>
-          <?php if ($weeklyActivityGoal > 0): ?>
-            <span class="hero-chip hero-chip--goal"><i class="bi bi-bullseye"></i> This week: <?php echo (int)$goalThisWeekCount; ?> / <?php echo (int)$weeklyActivityGoal; ?> toward your goal</span>
-          <?php endif; ?>
-          <?php if (count($last5Scores) > 0): ?>
-            <span class="hero-chip hero-chip--score"><i class="bi bi-<?php echo $last5Trend === 'up' ? 'graph-up-arrow' : ($last5Trend === 'down' ? 'graph-down-arrow' : 'dash'); ?>"></i> Last <?php echo count($last5Scores); ?> quizzes avg <?php echo (int)$last5Avg; ?>%</span>
-          <?php endif; ?>
-        </div>
-        <div class="hero-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
-          <span class="font-semibold">Active subjects: <?php echo (int)$subjectsCount; ?></span>
-          <span class="text-white/50">·</span>
-          <span class="font-semibold">Lessons: <?php echo (int)$lessonsCount; ?></span>
-          <span class="text-white/50">·</span>
-          <span class="font-semibold">Quiz submissions: <?php echo (int)$quizSubmittedCount; ?></span>
-          <span class="text-white/50">·</span>
-          <span class="font-semibold">Preboards done: <?php echo (int)$preboardsSubmittedCount; ?></span>
-          <?php if ($lastLoginAt): ?>
-            <span class="text-white/50">·</span>
-            <span class="font-semibold">Last login: <?php echo h(date('M j, g:i A', strtotime($lastLoginAt))); ?></span>
-          <?php endif; ?>
-        </div>
-          </div>
-          <?php if ($dashboardAccessEndTs): ?>
-          <aside class="dash-hero-access-col" aria-label="Enrollment access status">
-            <div class="dash-hero-access-card dash-hero-access-card--<?php echo h($dashboardAccessState); ?>"
-              data-access-start-ts="<?php echo (int)($dashboardAccessStartTs ?: 0); ?>"
-              data-access-end-ts="<?php echo (int)$dashboardAccessEndTs; ?>">
-              <div class="dash-hero-access-card__title">
-                <span class="dash-hero-access-card__hourglass" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
-                <span>Enrollment active through</span>
+          <div class="dash-hero-top">
+            <div class="dash-hero-avatar-col">
+              <div class="dash-hero-avatar-ring" aria-hidden="true">
+                <?php if ($dashboardAvatarPath !== '' && !$dashboardUseDefaultAvatar): ?>
+                  <img src="<?php echo h($dashboardAvatarPath); ?>" alt="Your profile photo" class="dash-hero-avatar-img" width="160" height="160" loading="eager" decoding="async">
+                <?php else: ?>
+                  <span class="dash-hero-avatar-initial"><?php echo h($dashboardAvatarInitial); ?></span>
+                <?php endif; ?>
               </div>
-              <div class="dash-hero-access-card__relative"><?php echo h($dashboardAccessRelative); ?></div>
-              <div class="dash-hero-access-card__date"><?php echo h($dashboardAccessLabel); ?></div>
-              <div class="dash-hero-access-timeline" aria-hidden="true">
-                <div class="dash-hero-access-timeline__track">
-                  <div class="dash-hero-access-timeline__fill"
-                    id="dashHeroAccessTimelineFill"
-                    style="width: <?php echo (int)($dashboardAccessProgressPct ?? 0); ?>%"></div>
-                </div>
-                <div class="dash-hero-access-timeline__labels">
-                  <span class="dash-hero-access-timeline__start"><?php echo h($dashboardAccessStartLabel); ?></span>
-                  <span class="dash-hero-access-timeline__percent" id="dashHeroAccessTimelinePct"><?php echo (int)($dashboardAccessProgressPct ?? 0); ?>% used</span>
-                  <span class="dash-hero-access-timeline__end"><?php echo h(date('M j, Y', (int)$dashboardAccessEndTs)); ?></span>
-                </div>
-              </div>
-              <?php if ($dashboardAccessDaysLeft !== null && $dashboardAccessDaysLeft > 0): ?>
-              <div class="dash-hero-access-card__hint">Renew early to avoid interruptions.</div>
-              <?php elseif ($dashboardAccessState === 'expired'): ?>
-              <div class="dash-hero-access-card__hint">Contact your administrator for renewal.</div>
-              <?php endif; ?>
             </div>
-          </aside>
-          <?php endif; ?>
+            <div class="dash-hero-copy-col min-w-0">
+              <h1 class="dash-hero-title m-0 text-2xl sm:text-3xl lg:text-[1.85rem] font-extrabold leading-tight tracking-tight">
+                <?php echo h($greeting); ?>, <?php echo h($_SESSION['full_name']); ?>
+              </h1>
+              <p class="dash-hero-lede mt-2 mb-0 max-w-xl text-sm sm:text-[0.95rem] font-medium leading-relaxed">Your review activity and progress at a glance.</p>
+              <div class="hero-chip-row mt-3.5 flex flex-wrap gap-2" aria-label="Quick streaks">
+                <span class="hero-chip"><i class="bi bi-fire" aria-hidden="true"></i> <?php echo (int)$weeksActiveStreak; ?> week streak</span>
+                <span class="hero-chip"><i class="bi bi-calendar-check" aria-hidden="true"></i> <?php echo (int)$daysActiveStreak; ?> day streak</span>
+                <?php if ($weeklyActivityGoal > 0): ?>
+                  <span class="hero-chip hero-chip--goal"><i class="bi bi-bullseye" aria-hidden="true"></i> Goal <?php echo (int)$goalThisWeekCount; ?>/<?php echo (int)$weeklyActivityGoal; ?></span>
+                <?php endif; ?>
+                <?php if (count($last5Scores) > 0): ?>
+                  <span class="hero-chip hero-chip--score"><i class="bi bi-<?php echo $last5Trend === 'up' ? 'graph-up-arrow' : ($last5Trend === 'down' ? 'graph-down-arrow' : 'dash'); ?>" aria-hidden="true"></i> Avg <?php echo (int)$last5Avg; ?>%</span>
+                <?php endif; ?>
+                <?php if ($lastLoginAt): ?>
+                  <span class="hero-chip"><i class="bi bi-clock-history" aria-hidden="true"></i> Last login <?php echo h(date('M j, g:i A', strtotime($lastLoginAt))); ?></span>
+                <?php endif; ?>
+              </div>
+            </div>
+            <?php if ($dashboardAccessEndTs): ?>
+            <aside class="dash-hero-access-col" aria-label="Enrollment access status">
+              <div class="dash-hero-access-card dash-hero-access-card--<?php echo h($dashboardAccessState); ?>"
+                data-access-start-ts="<?php echo (int)($dashboardAccessStartTs ?: 0); ?>"
+                data-access-end-ts="<?php echo (int)$dashboardAccessEndTs; ?>">
+                <div class="dash-hero-access-card__title">
+                  <span class="dash-hero-access-card__hourglass" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                  <span>Enrollment active through</span>
+                </div>
+                <div class="dash-hero-access-card__relative"><?php echo h($dashboardAccessRelative); ?></div>
+                <div class="dash-hero-access-card__date"><?php echo h($dashboardAccessLabel); ?></div>
+                <div class="dash-hero-access-timeline" aria-hidden="true">
+                  <div class="dash-hero-access-timeline__track">
+                    <div class="dash-hero-access-timeline__fill"
+                      id="dashHeroAccessTimelineFill"
+                      style="width: <?php echo (int)($dashboardAccessProgressPct ?? 0); ?>%"></div>
+                  </div>
+                  <div class="dash-hero-access-timeline__labels">
+                    <span class="dash-hero-access-timeline__start"><?php echo h($dashboardAccessStartLabel); ?></span>
+                    <span class="dash-hero-access-timeline__percent" id="dashHeroAccessTimelinePct"><?php echo (int)($dashboardAccessProgressPct ?? 0); ?>% used</span>
+                    <span class="dash-hero-access-timeline__end"><?php echo h(date('M j, Y', (int)$dashboardAccessEndTs)); ?></span>
+                  </div>
+                </div>
+                <?php if ($dashboardAccessDaysLeft !== null && $dashboardAccessDaysLeft > 0): ?>
+                <div class="dash-hero-access-card__hint">Renew early to avoid interruptions.</div>
+                <?php elseif ($dashboardAccessState === 'expired'): ?>
+                <div class="dash-hero-access-card__hint">Contact your administrator for renewal.</div>
+                <?php endif; ?>
+              </div>
+            </aside>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
     </section>
 
-    <h2 class="section-title dash-section-title dash-anim delay-2" id="dash-section-learning-overview"><span class="dash-section-title__icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span><span class="dash-section-title__text">Learning Overview</span></h2>
-    <section class="dash-kpi-grid dash-kpi-strip grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
-      <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--subjects dash-anim delay-2 p-5">
-        <div class="flex items-center gap-4">
-          <span class="kpi-icon bg-[#e8f2fa] text-[#1665A0]"><i class="bi bi-journal-bookmark"></i></span>
-          <div>
-            <p class="text-sm text-slate-500 m-0">Subjects</p>
-            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$subjectsCount; ?></p>
-          </div>
-        </div>
-        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Manage subjects</a>
-      </article>
-      <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--lessons dash-anim delay-2 p-5">
-        <div class="flex items-center gap-4">
-          <span class="kpi-icon bg-cyan-50 text-cyan-700"><i class="bi bi-journal-text"></i></span>
-          <div>
-            <p class="text-sm text-slate-500 m-0">Lessons</p>
-            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$lessonsCount; ?></p>
-          </div>
-        </div>
-        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Continue learning</a>
-      </article>
-      <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--quizzes dash-anim delay-3 p-5">
-        <div class="flex items-center gap-4">
-          <span class="kpi-icon bg-emerald-50 text-emerald-700"><i class="bi bi-check2-circle"></i></span>
-          <div>
-            <p class="text-sm text-slate-500 m-0">Quiz completed</p>
-            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$quizSubmittedCount; ?></p>
-          </div>
-        </div>
-        <a href="student_subjects" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> View quizzes</a>
-      </article>
-      <article class="dash-card kpi-card dash-kpi-card dash-kpi-card--preboards dash-anim delay-3 p-5">
-        <div class="flex items-center gap-4">
-          <span class="kpi-icon bg-indigo-50 text-indigo-700"><i class="bi bi-clipboard-check"></i></span>
-          <div>
-            <p class="text-sm text-slate-500 m-0">Preboards done</p>
-            <p class="kpi-number text-[#143D59] m-0"><?php echo (int)$preboardsSubmittedCount; ?></p>
-          </div>
-        </div>
-        <a href="student_preboards" class="kpi-action mt-4"><i class="bi bi-arrow-right"></i> Open preboards</a>
-      </article>
+    <section class="dash-overview dash-anim delay-2 mb-8" aria-labelledby="dash-section-learning-overview">
+      <div class="dash-overview__head">
+        <h2 class="section-title dash-section-title m-0" id="dash-section-learning-overview">
+          <span class="dash-section-title__icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
+          <span class="dash-section-title__text">Learning Overview</span>
+        </h2>
+        <p class="dash-overview__lede">Jump into the areas you use most.</p>
+      </div>
+      <div class="dash-kpi-grid dash-kpi-strip" role="list">
+        <a href="student_subjects" class="dash-kpi-card dash-kpi-card--subjects dash-anim delay-2" role="listitem">
+          <span class="dash-kpi-card__icon" aria-hidden="true"><i class="bi bi-journal-bookmark"></i></span>
+          <span class="dash-kpi-card__body">
+            <span class="dash-kpi-card__label">Subjects</span>
+            <span class="dash-kpi-card__value"><?php echo (int)$subjectsCount; ?></span>
+            <span class="dash-kpi-card__cta">Open catalog <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+          </span>
+        </a>
+        <a href="student_subjects" class="dash-kpi-card dash-kpi-card--lessons dash-anim delay-2" role="listitem">
+          <span class="dash-kpi-card__icon" aria-hidden="true"><i class="bi bi-play-circle"></i></span>
+          <span class="dash-kpi-card__body">
+            <span class="dash-kpi-card__label">Lessons</span>
+            <span class="dash-kpi-card__value"><?php echo (int)$lessonsCount; ?></span>
+            <span class="dash-kpi-card__cta">Continue learning <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+          </span>
+        </a>
+        <a href="student_subjects" class="dash-kpi-card dash-kpi-card--quizzes dash-anim delay-3" role="listitem">
+          <span class="dash-kpi-card__icon" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
+          <span class="dash-kpi-card__body">
+            <span class="dash-kpi-card__label">Quizzes done</span>
+            <span class="dash-kpi-card__value"><?php echo (int)$quizSubmittedCount; ?></span>
+            <span class="dash-kpi-card__cta">View quizzes <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+          </span>
+        </a>
+        <a href="student_preboards" class="dash-kpi-card dash-kpi-card--preboards dash-anim delay-3" role="listitem">
+          <span class="dash-kpi-card__icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+          <span class="dash-kpi-card__body">
+            <span class="dash-kpi-card__label">Preboards done</span>
+            <span class="dash-kpi-card__value"><?php echo (int)$preboardsSubmittedCount; ?></span>
+            <span class="dash-kpi-card__cta">Open preboards <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+          </span>
+        </a>
+      </div>
     </section>
 
     <?php if ($flashOk !== '' || $flashErr !== ''): ?>
@@ -586,16 +580,36 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   </div>
 </main>
 <style>
-.student-dashboard-page {
+.student-dashboard-page { background: transparent; }
+html[data-student-theme="light"] .student-dashboard-page {
   background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
 }
-.student-hero {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.28);
-  background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
-  box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85), inset 0 1px 0 rgba(255,255,255,0.22);
+/* Brand hero — keep content off the edges */
+.student-hero.student-hero--brand {
+  border-radius: 1rem;
+  padding: 1.75rem 1.5rem !important;
+}
+@media (min-width: 640px) {
+  .student-hero.student-hero--brand {
+    padding: 2rem 2rem !important;
+  }
+}
+@media (min-width: 1024px) {
+  .student-hero.student-hero--brand {
+    padding: 2.15rem 2.35rem !important;
+  }
+}
+.student-hero.student-hero--brand .student-hero__inner {
+  display: block;
+  width: 100%;
 }
 .dash-hero-masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+.dash-hero-top {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -603,12 +617,15 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   gap: 1.25rem;
 }
 @media (min-width: 640px) {
-  .dash-hero-masthead {
+  .dash-hero-top {
     flex-direction: row;
     align-items: flex-start;
     text-align: left;
     gap: 1.5rem;
   }
+}
+@media (min-width: 1024px) {
+  .dash-hero-top { gap: 1.85rem; }
 }
 .dash-hero-avatar-col {
   display: flex;
@@ -621,15 +638,15 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   .dash-hero-avatar-col { align-items: flex-start; }
 }
 .dash-hero-avatar-ring {
-  width: clamp(5.5rem, 14vw, 7.25rem);
-  height: clamp(5.5rem, 14vw, 7.25rem);
+  width: clamp(5.25rem, 13vw, 6.75rem);
+  height: clamp(5.25rem, 13vw, 6.75rem);
   border-radius: 9999px;
-  padding: 4px;
-  background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(186, 230, 253, 0.55) 45%, rgba(255,255,255,0.35) 100%);
+  padding: 3px;
+  background: linear-gradient(145deg, rgba(125, 211, 252, 0.55) 0%, rgba(59, 159, 217, 0.35) 50%, rgba(255, 255, 255, 0.2) 100%);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.45),
-    0 12px 28px -8px rgba(15, 40, 70, 0.55),
-    inset 0 1px 0 rgba(255,255,255,0.65);
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 14px 28px -10px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -671,14 +688,16 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 }
 .dash-hero-access-card {
   width: min(100%, 20.5rem);
-  padding: 0.85rem 0.95rem;
-  border-radius: 0.85rem;
-  border: 1px solid rgba(255,255,255,0.38);
-  background: linear-gradient(145deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%);
+  padding: 1.15rem 1.2rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(242, 176, 30, 0.12), transparent 55%),
+    rgba(8, 16, 32, 0.42);
   box-shadow:
-    0 14px 28px -20px rgba(8, 26, 46, 0.75),
-    inset 0 1px 0 rgba(255,255,255,0.32);
-  backdrop-filter: blur(8px);
+    0 16px 32px -22px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px) saturate(140%);
   text-align: left;
 }
 .dash-hero-access-card__title {
@@ -724,7 +743,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   color: rgba(224, 242, 254, 0.95);
 }
 .dash-hero-access-timeline {
-  margin-top: 0.5rem;
+  margin-top: 0.7rem;
 }
 .dash-hero-access-timeline__track {
   position: relative;
@@ -739,7 +758,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   position: relative;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #6ee7ff 0%, #fcd34d 52%, #f97316 100%);
+  background: linear-gradient(90deg, #3b9fd9 0%, #7dd3fc 45%, #f2b01e 100%);
   transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .dash-hero-access-timeline__fill::after {
@@ -771,7 +790,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 .dash-hero-access-timeline__percent { text-align: center; white-space: nowrap; }
 .dash-hero-access-timeline__end { text-align: right; }
 .dash-hero-access-card__hint {
-  margin-top: 0.45rem;
+  margin-top: 0.65rem;
   font-size: 0.72rem;
   font-weight: 700;
   color: rgba(255,255,255,0.86);
@@ -799,23 +818,21 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   transform: translateY(-2px);
   box-shadow: 0 12px 22px -20px rgba(14, 64, 105, .95);
 }
-.hero-strip {
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.24);
-  border-radius: 0.62rem;
+.dash-hero-lede {
+  color: rgba(226, 236, 248, 0.82);
 }
 .student-dashboard-page .section-title.dash-section-title {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin: 0 0 0.85rem;
+  margin: 0.35rem 0 1.25rem;
   padding: 0.5rem 0.85rem 0.5rem 0.75rem;
-  border: 1px solid #b9daf2;
+  border: 1px solid var(--student-border, #b9daf2);
   border-radius: 0.65rem;
-  border-left: 3px solid #1665A0;
-  background: linear-gradient(105deg, rgba(22, 101, 160, 0.09) 0%, #ffffff 38%, #f8fbff 100%);
-  box-shadow: 0 2px 12px -7px rgba(20, 61, 89, 0.2), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
-  color: #0a2540;
+  border-left: 3px solid var(--student-primary, #1665A0);
+  background: linear-gradient(105deg, var(--student-primary-soft, rgba(22, 101, 160, 0.09)) 0%, var(--student-glass, #ffffff) 42%, var(--student-surface-2, #f8fbff) 100%);
+  box-shadow: var(--student-shadow-sm, 0 2px 12px -7px rgba(20, 61, 89, 0.2)), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--student-text, #0a2540);
   font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -823,8 +840,8 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   scroll-margin-top: 5.5rem;
 }
 .student-dashboard-page .section-title.dash-section-title--insights {
-  border-left-color: #0f766e;
-  background: linear-gradient(105deg, rgba(15, 118, 110, 0.08) 0%, #ffffff 38%, #f8fbff 100%);
+  border-left-color: #14b8a6;
+  background: linear-gradient(105deg, rgba(20, 184, 166, 0.14) 0%, var(--student-glass, #ffffff) 42%, var(--student-surface-2, #f8fbff) 100%);
 }
 .student-dashboard-page .dash-section-title__icon {
   flex-shrink: 0;
@@ -860,117 +877,169 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 }
 .dash-card {
   border-radius: .75rem;
-  border: 1px solid rgba(22,101,160,.18);
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 60%);
-  box-shadow: 0 10px 28px -22px rgba(20,61,89,.55), 0 1px 0 rgba(255,255,255,.85) inset;
+  border: 1px solid var(--student-border, rgba(22,101,160,.18));
+  background: var(--student-glass, linear-gradient(180deg, #f8fbff 0%, #ffffff 60%));
+  box-shadow: var(--student-shadow, 0 10px 28px -22px rgba(20,61,89,.55));
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
 }
 .dash-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(22,101,160,.32);
-  background-color: #fdfeff;
-  box-shadow: 0 20px 34px -24px rgba(20,61,89,.35);
+  border-color: var(--student-border-strong, rgba(22,101,160,.32));
+  box-shadow: var(--student-shadow-lg, 0 20px 34px -24px rgba(20,61,89,.35));
 }
-.kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 188px; }
-.kpi-icon {
-  width: 3rem; height: 3rem; border-radius: .75rem;
-  display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.25s ease;
-  border: 1px solid transparent;
+/* Learning Overview — modern clickable KPI tiles */
+.dash-overview__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem 1.25rem;
+  margin-bottom: 1.15rem;
 }
-.kpi-number { font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; transition: color 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
-.kpi-action {
-  width: 100%; border: 1px solid #cde2f4; border-radius: .55rem; background: #fff;
-  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
-  font-size: .82rem; font-weight: 700; color: #1665A0; padding: .55rem .7rem;
-  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease, color 0.22s ease;
+.dash-overview__lede {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--student-text-secondary, #64748b);
+}
+.dash-kpi-grid.dash-kpi-strip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+@media (min-width: 640px) {
+  .dash-kpi-grid.dash-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+@media (min-width: 1100px) {
+  .dash-kpi-grid.dash-kpi-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+}
+.dash-kpi-card {
+  --kpi-accent: #1665A0;
+  --kpi-accent-soft: rgba(22, 101, 160, 0.12);
+  --kpi-accent-glow: rgba(22, 101, 160, 0.28);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  min-height: 7.25rem;
+  padding: 1.15rem 1.2rem 1.05rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(22, 101, 160, 0.14);
+  background:
+    radial-gradient(ellipse 90% 80% at 100% 0%, var(--kpi-accent-soft), transparent 55%),
+    linear-gradient(165deg, #ffffff 0%, #f7fbff 55%, #f2f8fd 100%);
+  box-shadow:
+    0 10px 28px -22px rgba(20, 61, 89, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  position: relative;
-  overflow: hidden;
-}
-.kpi-action:hover { border-color: #8fc0e8; background: #f4f9fe; transform: translateY(-1px); }
-.dash-kpi-strip {
-  gap: 1.1rem;
-}
-.dash-kpi-grid .dash-kpi-card {
-  position: relative;
+  color: inherit;
   overflow: hidden;
   isolation: isolate;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
 }
-.dash-kpi-grid .dash-kpi-card::before {
+.dash-kpi-card::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--kpi-accent, #1665A0), var(--kpi-accent-end, #38bdf8));
-  transform: scaleX(0.28);
-  transform-origin: left center;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  z-index: 1;
+  inset: auto -20% -40% auto;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--kpi-accent-soft), transparent 68%);
   pointer-events: none;
+  z-index: 0;
 }
-.dash-kpi-grid .dash-kpi-card:hover::before {
-  transform: scaleX(1);
-}
-.dash-kpi-card--subjects { --kpi-accent: #1665A0; --kpi-accent-end: #38bdf8; --kpi-metric: #1665A0; }
-.dash-kpi-card--lessons { --kpi-accent: #0891b2; --kpi-accent-end: #22d3ee; --kpi-metric: #0e7490; }
-.dash-kpi-card--quizzes { --kpi-accent: #059669; --kpi-accent-end: #34d399; --kpi-metric: #047857; }
-.dash-kpi-card--preboards { --kpi-accent: #4f46e5; --kpi-accent-end: #818cf8; --kpi-metric: #4338ca; }
-.dash-kpi-grid .dash-kpi-card.dash-card {
-  background: linear-gradient(165deg, #ffffff 0%, #f8fbff 48%, #f4f9fe 100%);
-}
-.dash-kpi-grid .dash-kpi-card.dash-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(22, 101, 160, 0.32);
-  background: linear-gradient(165deg, #ffffff 0%, #fbfdff 40%, #f0f7fc 100%);
+.dash-kpi-card--subjects { --kpi-accent: #1665A0; --kpi-accent-soft: rgba(22, 101, 160, 0.14); --kpi-accent-glow: rgba(22, 101, 160, 0.3); }
+.dash-kpi-card--lessons { --kpi-accent: #0e7490; --kpi-accent-soft: rgba(14, 116, 144, 0.14); --kpi-accent-glow: rgba(14, 116, 144, 0.28); }
+.dash-kpi-card--quizzes { --kpi-accent: #047857; --kpi-accent-soft: rgba(4, 120, 87, 0.12); --kpi-accent-glow: rgba(4, 120, 87, 0.26); }
+.dash-kpi-card--preboards { --kpi-accent: #b45309; --kpi-accent-soft: rgba(242, 176, 30, 0.18); --kpi-accent-glow: rgba(180, 83, 9, 0.22); }
+.dash-kpi-card__icon {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 2.85rem;
+  height: 2.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  background: linear-gradient(145deg, var(--kpi-accent) 0%, color-mix(in srgb, var(--kpi-accent) 70%, #0f2740) 100%);
+  color: #fff;
+  font-size: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 22px 44px -20px rgba(20, 61, 89, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.85) inset,
-    0 12px 36px -18px rgba(22, 101, 160, 0.18);
-}
-.dash-kpi-card--lessons.dash-card:hover { border-color: rgba(8, 145, 178, 0.35); box-shadow: 0 22px 44px -20px rgba(20, 61, 89, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.85) inset, 0 12px 36px -18px rgba(8, 145, 178, 0.2); }
-.dash-kpi-card--quizzes.dash-card:hover { border-color: rgba(5, 150, 105, 0.35); box-shadow: 0 22px 44px -20px rgba(20, 61, 89, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.85) inset, 0 12px 36px -18px rgba(5, 150, 105, 0.2); }
-.dash-kpi-card--preboards.dash-card:hover { border-color: rgba(79, 70, 229, 0.38); box-shadow: 0 22px 44px -20px rgba(20, 61, 89, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.85) inset, 0 12px 36px -18px rgba(79, 70, 229, 0.22); }
-.dash-kpi-grid .dash-kpi-card:hover .kpi-icon {
-  transform: scale(1.07) rotate(-2deg);
-  box-shadow: 0 10px 22px -14px rgba(22, 101, 160, 0.35);
-  border-color: rgba(22, 101, 160, 0.18);
-}
-.dash-kpi-card--lessons:hover .kpi-icon { box-shadow: 0 10px 22px -14px rgba(8, 145, 178, 0.38); border-color: rgba(8, 145, 178, 0.2); }
-.dash-kpi-card--quizzes:hover .kpi-icon { box-shadow: 0 10px 22px -14px rgba(5, 150, 105, 0.38); border-color: rgba(5, 150, 105, 0.2); }
-.dash-kpi-card--preboards:hover .kpi-icon { box-shadow: 0 10px 22px -14px rgba(79, 70, 229, 0.38); border-color: rgba(79, 70, 229, 0.22); }
-.dash-kpi-grid .dash-kpi-card:hover .kpi-number {
-  color: var(--kpi-metric);
-  transform: translateY(-1px);
-}
-.dash-kpi-grid .dash-kpi-card:focus-within {
-  outline: 2px solid rgba(22, 101, 160, 0.45);
-  outline-offset: 3px;
-}
-.dash-kpi-card--lessons:focus-within { outline-color: rgba(8, 145, 178, 0.5); }
-.dash-kpi-card--quizzes:focus-within { outline-color: rgba(5, 150, 105, 0.5); }
-.dash-kpi-card--preboards:focus-within { outline-color: rgba(79, 70, 229, 0.5); }
-.dash-kpi-grid .dash-kpi-card .kpi-action {
-  color: var(--kpi-metric);
-  border-color: #cfe8f8;
-}
-.dash-kpi-grid .dash-kpi-card .kpi-action:hover {
-  background: linear-gradient(180deg, #ffffff 0%, #f0f7fc 100%);
-  border-color: #8fc0e8;
-  color: var(--kpi-metric);
-  box-shadow: 0 6px 16px -10px rgba(22, 101, 160, 0.22);
-  transform: translateY(-2px);
-}
-.dash-kpi-card--lessons .kpi-action:hover { box-shadow: 0 6px 16px -10px rgba(8, 145, 178, 0.22); }
-.dash-kpi-card--quizzes .kpi-action:hover { box-shadow: 0 6px 16px -10px rgba(5, 150, 105, 0.22); }
-.dash-kpi-card--preboards .kpi-action:hover { box-shadow: 0 6px 16px -10px rgba(79, 70, 229, 0.24); }
-.dash-kpi-grid .dash-kpi-card .kpi-action i {
+    0 12px 22px -12px var(--kpi-accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.dash-kpi-grid .dash-kpi-card .kpi-action:hover i {
-  transform: translateX(5px);
+.dash-kpi-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+.dash-kpi-card__label {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--student-text-muted, #64748b);
+}
+.dash-kpi-card__value {
+  font-size: clamp(1.85rem, 2.4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--student-text, #143D59);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease, transform 0.22s ease;
+}
+.dash-kpi-card__cta {
+  margin-top: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--kpi-accent);
+}
+.dash-kpi-card__cta i {
+  font-size: 0.85rem;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dash-kpi-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--kpi-accent) 45%, transparent);
+  box-shadow:
+    0 20px 40px -24px var(--kpi-accent-glow),
+    0 10px 24px -20px rgba(20, 61, 89, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+.dash-kpi-card:hover .dash-kpi-card__icon {
+  transform: scale(1.06) rotate(-3deg);
+}
+.dash-kpi-card:hover .dash-kpi-card__value {
+  color: var(--kpi-accent);
+  transform: translateY(-1px);
+}
+.dash-kpi-card:hover .dash-kpi-card__cta i {
+  transform: translateX(4px);
+}
+.dash-kpi-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--kpi-accent) 65%, #7dd3fc);
+  outline-offset: 3px;
 }
 .metric-box {
   padding: .5rem .65rem;
@@ -1383,17 +1452,28 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 .hero-chip {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  padding: .28rem .55rem;
+  gap: .4rem;
+  padding: .4rem .7rem;
   border-radius: 9999px;
-  font-size: .72rem;
+  font-size: .75rem;
   font-weight: 700;
-  background: rgba(255,255,255,.16);
-  border: 1px solid rgba(255,255,255,.28);
-  color: #f0f9ff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(244, 247, 251, 0.95);
+  backdrop-filter: blur(6px);
 }
-.hero-chip--goal { background: rgba(254, 243, 199, .95); color: #78350f; border-color: rgba(251, 191, 36, .65); }
-.hero-chip--score { background: rgba(224, 242, 254, .2); }
+.hero-chip i { opacity: 0.9; color: #7dd3fc; }
+.hero-chip--goal {
+  background: rgba(242, 176, 30, 0.16);
+  color: #fde68a;
+  border-color: rgba(242, 176, 30, 0.32);
+}
+.hero-chip--goal i { color: #fbbf24; }
+.hero-chip--score {
+  background: rgba(59, 159, 217, 0.16);
+  border-color: rgba(59, 159, 217, 0.3);
+}
+.hero-chip--score i { color: #93c5fd; }
 .insight-snapshot__heading {
   font-size: 1.02rem;
   font-weight: 800;
@@ -1403,7 +1483,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 .insight-snapshot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(5.85rem, 1fr));
-  gap: 0.55rem;
+  gap: 0.85rem;
 }
 .insight-snap-tile {
   border-radius: 0.65rem;
@@ -1683,19 +1763,23 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.dash-page--loading .dash-kpi-grid .kpi-card {
+.dash-page--loading .dash-kpi-grid .dash-kpi-card {
   position: relative;
   pointer-events: none;
 }
-.dash-page--loading .dash-kpi-grid .kpi-card::after {
+.dash-page--loading .dash-kpi-grid .dash-kpi-card > * {
+  visibility: hidden;
+}
+.dash-page--loading .dash-kpi-grid .dash-kpi-card::before {
   content: '';
   position: absolute;
   inset: 0.65rem;
-  border-radius: .55rem;
+  border-radius: .7rem;
   background: linear-gradient(90deg, #e8f2fa 0%, #f4f9fe 45%, #e8f2fa 90%);
   background-size: 200% 100%;
   animation: dashShimmer 1.15s ease-in-out infinite;
   pointer-events: none;
+  z-index: 2;
 }
 .dash-page--loading .study-activity-card--has-chart .chart-shell {
   position: relative;
@@ -1719,15 +1803,13 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
   .dash-anim { opacity: 1; transform: none; animation: none; }
-  .dash-card, .kpi-action, .hero-btn { transition: none !important; }
-  .dash-page--loading .dash-kpi-grid .kpi-card::after,
+  .dash-card, .dash-kpi-card, .hero-btn { transition: none !important; }
+  .dash-page--loading .dash-kpi-grid .dash-kpi-card::before,
   .dash-page--loading .study-activity-card--has-chart .chart-shell::after { animation: none; background-position: 0 0; }
-  .dash-kpi-grid .dash-kpi-card::before { transition: none; transform: scaleX(1); opacity: 0.9; }
-  .dash-kpi-grid .dash-kpi-card.dash-card:hover { transform: none; }
-  .dash-kpi-grid .dash-kpi-card:hover .kpi-icon { transform: none; }
-  .dash-kpi-grid .dash-kpi-card:hover .kpi-number { transform: none; }
-  .dash-kpi-grid .dash-kpi-card .kpi-action:hover { transform: none; }
-  .dash-kpi-grid .dash-kpi-card .kpi-action:hover i { transform: none; }
+  .dash-kpi-card:hover { transform: none; }
+  .dash-kpi-card:hover .dash-kpi-card__icon,
+  .dash-kpi-card:hover .dash-kpi-card__value,
+  .dash-kpi-card:hover .dash-kpi-card__cta i { transform: none; }
   .progress-fill { animation: none !important; transition-duration: 0.01ms !important; }
   .progress-detail-pct { transition: none !important; }
   .progress-detail[open] .progress-detail-pct { transform: none; }

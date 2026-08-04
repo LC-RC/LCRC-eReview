@@ -113,8 +113,7 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
       <li>
         <?php if ($appShellTheme === 'student'): ?>
           <a href="<?php echo h(ereview_url($item['href'])); ?>"
-             class="<?php echo $classes; ?>"
-             <?php if ($isActive): ?>style="background-color: rgba(255,255,255,0.22); box-shadow: 0 2px 10px rgba(0,0,0,0.1)"<?php endif; ?>>
+             class="<?php echo $classes; ?>">
             <i class="bi <?php echo h($item['icon']); ?> shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
             <span class="font-medium truncate whitespace-nowrap app-shell-nav-text transition-all duration-300"><?php echo h($item['label']); ?></span>
           </a>
@@ -439,7 +438,7 @@ include __DIR__ . '/app_shell_topbar.php';
 ?>
 <div class="admin-content flex-1 pt-5 pb-5">
 <?php else: ?>
-<main id="main" class="app-shell-main app-shell-main--student min-h-screen flex-1 bg-[#f6f9ff] text-gray-800 font-sans pt-0 px-5 pb-5">
+<main id="main" class="app-shell-main app-shell-main--student min-h-screen flex-1 font-sans pt-0 px-5 pb-5">
 <?php
 $appShellTopbarTheme = 'student';
 include __DIR__ . '/app_shell_topbar.php';

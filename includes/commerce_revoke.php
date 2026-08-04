@@ -235,6 +235,9 @@ function commerce_revoke_payment_grants(
         ];
     }
 
+    require_once __DIR__ . '/commerce_access_gate.php';
+    $demote = commerce_student_demote_if_no_active_grant($conn, $userId);
+
     return [
         'ok' => true,
         'skipped' => $revokedCount === 0,
@@ -243,5 +246,6 @@ function commerce_revoke_payment_grants(
         'user_id' => $userId,
         'revoked_count' => $revokedCount,
         'reconcile' => $recon,
+        'account_demoted' => !empty($demote['demoted']),
     ];
 }

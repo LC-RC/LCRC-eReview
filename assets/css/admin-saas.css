@@ -2194,6 +2194,18 @@ html[data-admin-theme="light"] .admin-proof-modal__body {
   background: #f1f5f9;
 }
 
+.admin-proof-modal__error {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #fecaca;
+  text-align: center;
+  max-width: 28rem;
+}
+html[data-admin-theme="light"] .admin-proof-modal__error {
+  color: #9f1239;
+}
 .admin-proof-modal__loading {
   margin: 0;
   padding: 1rem;
@@ -2218,9 +2230,14 @@ html[data-admin-theme="light"] .admin-proof-modal__body {
   background: #fff;
 }
 
-/* ========== Light mode: commerce / utility contrast ========== */
+/* ========== Light mode: global contrast (all admin pages) ========== */
+
+/* Accent text leftovers from dark UI */
+html[data-admin-theme="light"] body.admin-app #main .text-sky-200,
 html[data-admin-theme="light"] body.admin-app #main .text-sky-300,
-html[data-admin-theme="light"] body.admin-app #main a.text-sky-300 {
+html[data-admin-theme="light"] body.admin-app #main a.text-sky-300,
+html[data-admin-theme="light"] body.admin-app #main .text-sky-400,
+html[data-admin-theme="light"] body.admin-app #main a.text-sky-400 {
   color: #0369a1 !important;
 }
 
@@ -2229,9 +2246,21 @@ html[data-admin-theme="light"] body.admin-app #main .text-amber-100 {
   color: #92400e !important;
 }
 
+html[data-admin-theme="light"] body.admin-app #main .text-amber-200,
+html[data-admin-theme="light"] body.admin-app #main .text-amber-300 {
+  color: #b45309 !important;
+}
+
 html[data-admin-theme="light"] body.admin-app #main .text-emerald-100,
 html[data-admin-theme="light"] body.admin-app #main .text-emerald-50 {
   color: #166534 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-200,
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-300,
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-400,
+html[data-admin-theme="light"] body.admin-app #main .text-emerald-400\/90 {
+  color: #15803d !important;
 }
 
 html[data-admin-theme="light"] body.admin-app #main .text-rose-100,
@@ -2239,14 +2268,55 @@ html[data-admin-theme="light"] body.admin-app #main .text-rose-50 {
   color: #9f1239 !important;
 }
 
-html[data-admin-theme="light"] body.admin-app #main .text-emerald-400,
-html[data-admin-theme="light"] body.admin-app #main .text-emerald-400\/90 {
-  color: #15803d !important;
+html[data-admin-theme="light"] body.admin-app #main .text-rose-200,
+html[data-admin-theme="light"] body.admin-app #main .text-rose-300,
+html[data-admin-theme="light"] body.admin-app #main .text-rose-400 {
+  color: #be123c !important;
 }
 
+html[data-admin-theme="light"] body.admin-app #main .text-slate-200,
+html[data-admin-theme="light"] body.admin-app #main .text-slate-300 {
+  color: #475569 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Muted labels: opacity wash → solid slate (commerce KPIs, forms, tables) */
+html[data-admin-theme="light"] body.admin-app #main .opacity-50,
+html[data-admin-theme="light"] body.admin-app #main .opacity-60,
+html[data-admin-theme="light"] body.admin-app #main .opacity-70,
+html[data-admin-theme="light"] body.admin-app #main .opacity-80 {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+/* White-alpha borders → slate borders */
+html[data-admin-theme="light"] body.admin-app #main .border-white\/5,
 html[data-admin-theme="light"] body.admin-app #main .border-white\/10,
-html[data-admin-theme="light"] body.admin-app #main .border-white\/5 {
-  border-color: rgba(15, 23, 42, 0.1) !important;
+html[data-admin-theme="light"] body.admin-app #main .border-white\/15,
+html[data-admin-theme="light"] body.admin-app #main .border-white\/20,
+html[data-admin-theme="light"] body.admin-app #main .border-white\/\[0\.06\],
+html[data-admin-theme="light"] body.admin-app #main .border-white\/\[0\.08\],
+html[data-admin-theme="light"] body.admin-app #main .border-white\/\[0\.12\] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* White-alpha fills → soft slate fills */
+html[data-admin-theme="light"] body.admin-app #main .bg-white\/5,
+html[data-admin-theme="light"] body.admin-app #main .bg-white\/10,
+html[data-admin-theme="light"] body.admin-app #main .bg-white\/\[0\.02\],
+html[data-admin-theme="light"] body.admin-app #main .bg-white\/\[0\.04\],
+html[data-admin-theme="light"] body.admin-app #main .bg-white\/\[0\.06\] {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .hover\:bg-white\/5:hover,
+html[data-admin-theme="light"] body.admin-app #main .hover\:bg-white\/10:hover,
+html[data-admin-theme="light"] body.admin-app #main .hover\:bg-white\/\[0\.02\]:hover,
+html[data-admin-theme="light"] body.admin-app #main .hover\:bg-white\/\[0\.04\]:hover {
+  background-color: rgba(15, 23, 42, 0.06) !important;
 }
 
 html[data-admin-theme="light"] body.admin-app #main .bg-amber-500\/10 {
@@ -2261,6 +2331,18 @@ html[data-admin-theme="light"] body.admin-app #main .bg-rose-500\/10 {
   background: #fff1f2 !important;
 }
 
+html[data-admin-theme="light"] body.admin-app #main .bg-sky-500\/10,
+html[data-admin-theme="light"] body.admin-app #main .bg-sky-500\/15,
+html[data-admin-theme="light"] body.admin-app #main .bg-sky-500\/20 {
+  background: #e0f2fe !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .bg-sky-900\/40,
+html[data-admin-theme="light"] body.admin-app #main .bg-sky-900\/50 {
+  background: #e0f2fe !important;
+  color: #0c4a6e !important;
+}
+
 html[data-admin-theme="light"] body.admin-app #main .border-amber-400\/40 {
   border-color: #fcd34d !important;
 }
@@ -2273,24 +2355,142 @@ html[data-admin-theme="light"] body.admin-app #main .border-rose-400\/40 {
   border-color: #fda4af !important;
 }
 
-html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main a.border-white\/10 {
-  border-color: rgba(15, 23, 42, 0.12) !important;
-  color: var(--admin-text-secondary) !important;
-  background: rgba(255, 255, 255, 0.75);
+html[data-admin-theme="light"] body.admin-app #main .border-sky-400 {
+  border-color: #38bdf8 !important;
 }
 
-html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main a.border-sky-400 {
+/* Filter chips / tabs */
+html[data-admin-theme="light"] body.admin-app #main a.border-white\/10,
+html[data-admin-theme="light"] body.admin-app #main a.border-white\/15 {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main a.border-sky-400 {
   color: #0c4a6e !important;
   border-color: #38bdf8 !important;
   background: #e0f2fe !important;
 }
 
-html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .quiz-admin-table-shell {
-  color: var(--admin-text-secondary) !important;
+/* Bare primary CTAs (commerce Save / Apply / Approve) — never ghost white-on-white.
+   Keep content-hub variants (--subject/--quiz/--lessons/--testbank) on their own hover accents. */
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn:not(.admin-content-btn--subject):not(.admin-content-btn--quiz):not(.admin-content-btn--lessons):not(.admin-content-btn--testbank),
+html[data-admin-theme="light"] body.admin-app #main .admin-btn--primary,
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(37, 99, 235, 0.4) !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.22) !important;
 }
 
-html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .admin-content-btn {
-  color: #fff !important;
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn--subject,
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn--quiz,
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn--lessons,
+html[data-admin-theme="light"] body.admin-app #main .admin-content-btn--testbank {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.18) !important;
+  box-shadow: none !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-outline-btn,
+html[data-admin-theme="light"] body.admin-app #main .admin-btn--secondary {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.18) !important;
+}
+
+/* Modal cancel / ghost buttons with white borders */
+html[data-admin-theme="light"] body.admin-app #main button.border-white\/20,
+html[data-admin-theme="light"] body.admin-app #main a.border-white\/20,
+html[data-admin-theme="light"] body.admin-app #main .quiz-modal-panel button.border-white\/20,
+html[data-admin-theme="light"] body.admin-app #main .preweek-modal-panel button.border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.18) !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+}
+
+/* Tables / shells */
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-table-shell,
+html[data-admin-theme="light"] body.admin-app #main .page-table,
+html[data-admin-theme="light"] body.admin-app #main .page-card {
+  color: #1e293b !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main table thead,
+html[data-admin-theme="light"] body.admin-app #main table thead th {
+  color: #334155 !important;
+  background: #f8fafc !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main table tbody td {
+  color: #1e293b !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main table tbody tr {
+  border-bottom-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Inputs / textareas */
+html[data-admin-theme="light"] body.admin-app #main .input-custom,
+html[data-admin-theme="light"] body.admin-app #main input[type="text"],
+html[data-admin-theme="light"] body.admin-app #main input[type="search"],
+html[data-admin-theme="light"] body.admin-app #main input[type="number"],
+html[data-admin-theme="light"] body.admin-app #main input[type="email"],
+html[data-admin-theme="light"] body.admin-app #main input[type="password"],
+html[data-admin-theme="light"] body.admin-app #main input[type="url"],
+html[data-admin-theme="light"] body.admin-app #main input[type="date"],
+html[data-admin-theme="light"] body.admin-app #main input[type="datetime-local"],
+html[data-admin-theme="light"] body.admin-app #main select,
+html[data-admin-theme="light"] body.admin-app #main textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main input::placeholder,
+html[data-admin-theme="light"] body.admin-app #main textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Hardcoded dark checkbox/input leftovers */
+html[data-admin-theme="light"] body.admin-app #main .bg-\[\#1a1a1a\],
+html[data-admin-theme="light"] body.admin-app #main input.bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* Payments page extras */
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .payments-bulk-toolbar {
+  background: #f0fdf4 !important;
+  border-bottom: 1px solid rgba(22, 163, 74, 0.2) !important;
+  color: #14532d !important;
+}
+
+html[data-admin-theme="light"] body.admin-app.admin-commerce-payments-page #main .payments-action-link {
+  color: #0369a1 !important;
+}
+
+body.admin-app.admin-commerce-payments-page #main .payments-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+body.admin-app.admin-commerce-payments-page #main .payments-action-link {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  color: #7dd3fc;
+}
+body.admin-app.admin-commerce-payments-page #main .payments-row-actions .admin-btn,
+body.admin-app.admin-commerce-payments-page #main .payments-row-actions .admin-content-btn {
+  padding: 0.28rem 0.65rem !important;
+  font-size: 0.75rem !important;
+  line-height: 1.2;
+  border-radius: 0.55rem !important;
 }
 
 /* Bulk table checkboxes — visible in light + dark */
@@ -2331,4 +2531,265 @@ body.admin-app #main .admin-bulk-check-na {
   font-size: 0.75rem;
   line-height: 1;
   user-select: none;
+}
+
+/* ========== LAYOUT PARITY: light + dark (topbar / hero / tables) ========== */
+
+/* Outer topbar chrome identical in both themes */
+body.admin-app .admin-topbar-modern,
+body.admin-app .admin-topbar,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-modern,
+html[data-admin-theme="light"] body.admin-app .admin-topbar,
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern,
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  margin-bottom: 1rem !important;
+  position: sticky !important;
+  top: 0.65rem !important;
+  z-index: 900 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Floating glass pill — beat admin.css dark full-bleed rules */
+body.admin-app .admin-topbar-modern .admin-topbar-inner,
+body.admin-app .admin-topbar .admin-topbar-inner,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-modern .admin-topbar-inner,
+html[data-admin-theme="light"] body.admin-app .admin-topbar .admin-topbar-inner,
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern .admin-topbar-inner,
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar .admin-topbar-inner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  min-height: 3.6rem !important;
+  padding: 0.55rem 0.75rem !important;
+  border-radius: 1.1rem !important;
+  background: var(--admin-topbar-bg) !important;
+  border: 1px solid var(--admin-border) !important;
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--admin-blur)) saturate(150%) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-modern .admin-topbar-inner,
+html[data-admin-theme="light"] body.admin-app .admin-topbar .admin-topbar-inner {
+  box-shadow: var(--admin-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Profile name visible in BOTH themes (admin.css dark used to force display:none) */
+@media (min-width: 640px) {
+  body.admin-app .admin-topbar-name,
+  html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name,
+  html[data-admin-theme="light"] body.admin-app .admin-topbar-name {
+    display: inline !important;
+  }
+}
+
+body.admin-app .admin-topbar-profile-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  padding: 0.25rem 0.65rem 0.25rem 0.25rem !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--admin-border) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app .admin-topbar-profile-btn {
+  background: rgba(15, 23, 42, 0.03) !important;
+}
+
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-avatar {
+  width: 2.1rem !important;
+  height: 2.1rem !important;
+  border-radius: 0.65rem !important;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Profile dropdown positioning identical in both themes */
+body.admin-app .admin-topbar-dropdown,
+body.admin-app .admin-topbar-dropdown.ereview-profile-menu {
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  width: min(20rem, calc(100vw - 2rem)) !important;
+  max-height: min(70vh, 28rem);
+  overflow: auto !important;
+  z-index: 1200 !important;
+}
+
+/* Hero header structure: title left, actions right (both themes) */
+body.admin-app .admin-page-header {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 1rem 1.25rem !important;
+  margin-bottom: 0 !important;
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-app .admin-page-header__lead {
+  min-width: min(100%, 18rem);
+  flex: 1 1 16rem;
+}
+
+body.admin-app .admin-page-header__title {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  margin: 0 !important;
+}
+
+body.admin-app .admin-page-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+body.admin-app .admin-page-header__actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.5rem !important;
+  flex: 0 1 auto;
+}
+
+body.admin-app .admin-page-header__actions .admin-btn,
+body.admin-app .admin-page-header__actions .admin-outline-btn,
+body.admin-app .admin-page-header__actions .admin-content-btn {
+  white-space: nowrap;
+}
+
+/* Sticky list toolbar (search stays in view) */
+body.admin-app #main .admin-sticky-toolbar {
+  position: sticky;
+  top: 4.6rem;
+  z-index: 40;
+  background: var(--admin-glass-strong, var(--admin-surface)) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-sticky-toolbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Primary text column left-aligned across content tables */
+body.admin-app #main .admin-data-table th.admin-col-primary,
+body.admin-app #main .admin-data-table td.admin-col-primary,
+body.admin-app #main .quiz-admin-data-table th.admin-col-primary,
+body.admin-app #main .quiz-admin-data-table td.admin-col-primary {
+  text-align: left !important;
+}
+
+body.admin-app #main .admin-data-table thead th,
+body.admin-app #main .quiz-admin-data-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted) !important;
+}
+
+/* Count / type pills — readable in BOTH themes */
+body.admin-app #main .quiz-admin-count-pill,
+body.admin-app #main .admin-count-pill {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.2rem 0.65rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  background: rgba(59, 130, 246, 0.14) !important;
+  color: var(--admin-text) !important;
+}
+
+body.admin-app #main .quiz-admin-count-pill--questions {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #6ee7b7 !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-admin-count-pill--questions {
+  color: #047857 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+body.admin-app #main .quiz-type-pill,
+body.admin-app #main .quiz-type-pill--post {
+  display: inline-flex !important;
+  align-items: center;
+  padding: 0.2rem 0.65rem !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  background: rgba(59, 130, 246, 0.14) !important;
+  color: #bfdbfe !important;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .quiz-type-pill,
+html[data-admin-theme="light"] body.admin-app #main .quiz-type-pill--post {
+  background: rgba(37, 99, 235, 0.1) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+  color: #1d4ed8 !important;
+}
+
+/* Filter chips (payments + reusable) */
+body.admin-app #main .admin-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid var(--admin-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-text-secondary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+body.admin-app #main .admin-filter-chip:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: var(--admin-text);
+}
+
+body.admin-app #main .admin-filter-chip.is-active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: var(--admin-text);
+  font-weight: 700;
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-filter-chip {
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--admin-text);
+}
+
+html[data-admin-theme="light"] body.admin-app #main .admin-filter-chip.is-active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: #1d4ed8;
+}
+
+/* Commerce payments: drop width drift */
+body.admin-app.admin-commerce-payments-page #main > .w-full {
+  max-width: none;
 }

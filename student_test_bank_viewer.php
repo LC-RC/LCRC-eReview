@@ -73,7 +73,7 @@ $pageTitle = $title . ' - Test Bank';
       .viewer-split { grid-template-columns: 1fr; min-height: 50vh; gap: 0.5rem; }
       .viewer-iframe { min-height: 45vh !important; }
     }
-    .viewer-pane { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .viewer-pane { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--student-glass-strong, #fff); border: 1px solid var(--student-border, #e2e8f0); border-radius: 12px; box-shadow: var(--student-shadow, 0 1px 3px rgba(0,0,0,0.06)); color: var(--student-text, inherit); }
     .viewer-iframe { flex: 1; width: 100%; min-height: 55vh; border: 0; border-radius: 0 0 12px 12px; }
     @media (max-width: 640px) {
       .testbank-title-card { padding: 1rem 1rem !important; flex-direction: column; align-items: flex-start !important; gap: 0.75rem !important; }
@@ -138,8 +138,8 @@ $pageTitle = $title . ' - Test Bank';
     <section class="mb-4 sm:mb-5">
       <div class="testbank-title-card rounded-2xl px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-[#1665A0] to-[#143D59] text-white shadow-[0_10px_30px_rgba(20,61,89,0.35)] flex flex-wrap items-center justify-between gap-3">
         <div class="testbank-title-block flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back"><i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i></a>
-          <span class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
+          <a href="<?php echo htmlspecialchars($backUrl); ?>" class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md hover:bg-white/25 transition" aria-label="Back"><i class="bi bi-arrow-left text-lg sm:text-xl" aria-hidden="true"></i></a>
+          <span class="student-hero-icon-btn flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-md">
             <i class="bi bi-folder2-open text-lg sm:text-xl" aria-hidden="true"></i>
           </span>
           <div class="min-w-0 flex-1">

@@ -233,21 +233,11 @@ function loginFromRememberMe() {
         return false;
     }
 
-    if (!function_exists('isStaffRole') || !isStaffRole((string)$user['role'])) {
-        if (strtolower((string)$user['status']) !== 'approved') {
-            $del = @mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE id = ?");
-            if ($del) {
-                mysqli_stmt_bind_param($del, 'i', $row['id']);
-                @mysqli_stmt_execute($del);
-                mysqli_stmt_close($del);
-            }
-            clearRememberMeCookie();
-            return false;
-        }
-    }
-    if (!function_exists('isStaffRole') || !isStaffRole((string)$user['role'])) {
-        if (!empty($user['access_end']) && strtotime((string)$user['access_end']) < time()) {
-            $del = @mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE id = ?");
+    if (!function_exists('isStaffRole') || !isStaffRole((string) $user['role'])) {
+        require_once __DIR__ . '/includes/commerce_access_gate.php';
+        $gate = commerce_student_can_login($conn, $user);
+        if (empty($gate['ok'])) {
+            $del = @mysqli_prepare($conn, 'DELETE FROM remember_tokens WHERE id = ?');
             if ($del) {
                 mysqli_stmt_bind_param($del, 'i', $row['id']);
                 @mysqli_stmt_execute($del);

@@ -279,7 +279,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
           <option value="not" <?php echo $filter === 'not' ? 'selected' : ''; ?>>Not purchasable</option>
         </select>
       </div>
-      <button class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold" type="submit">Apply</button>
+      <button class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold" type="submit">Apply</button>
     </form>
 
     <form method="post" id="bulk-topics-form" class="space-y-4">
@@ -305,7 +305,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
             <option value="month" selected>Months</option>
           </select>
         </div>
-        <button type="submit" class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold" onclick="return confirm('Apply price/duration to selected existing lessons?');">Apply to Selected</button>
+        <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold" onclick="return confirm('Apply price/duration to selected existing lessons?');">Apply to Selected</button>
         <p class="text-xs opacity-60 w-full">Updates existing <code>lessons</code> only (sets purchasable). Does not create products or packages.</p>
       </div>
 
@@ -405,7 +405,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
             </div>
           </div>
           <div class="flex gap-2">
-            <button type="submit" class="admin-content-btn px-4 py-2.5 rounded-xl font-semibold">Save</button>
+            <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold">Save</button>
             <a href="admin_commerce_topics?q=<?php echo urlencode($q); ?>&filter=<?php echo urlencode($filter); ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-outline-btn px-4 py-2.5 rounded-xl font-semibold">Close</a>
           </div>
         </form>

@@ -522,6 +522,103 @@ define('EREVIEW_MATERIALS_LIST_STYLES', true);
         margin-right: 1.5rem;
       }
     }
+
+    /* Dark mode — materials list (pre-week + subject materials) */
+    html[data-student-theme="dark"] .materials-view-toggle__label,
+    html[data-student-theme="dark"] .materials-sort-group__label,
+    html[data-student-theme="dark"] .materials-results-hint,
+    html[data-student-theme="dark"] .lesson-list__sub,
+    html[data-student-theme="dark"] .lesson-card__meta {
+      color: var(--student-text-muted, #6d7b94) !important;
+    }
+    html[data-student-theme="dark"] .materials-view-seg {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14)) !important;
+      box-shadow: none !important;
+    }
+    html[data-student-theme="dark"] .materials-view-seg button {
+      color: var(--student-text-secondary, #9aa8c0) !important;
+    }
+    html[data-student-theme="dark"] .materials-view-seg button:hover {
+      color: var(--student-text, #f4f7fb) !important;
+      background: var(--student-primary-soft, rgba(59, 159, 217, 0.18)) !important;
+    }
+    html[data-student-theme="dark"] .materials-view-seg button.is-active {
+      color: #fff !important;
+      background: linear-gradient(145deg, var(--student-primary, #3b9fd9), var(--student-primary-2, #1665a0)) !important;
+    }
+    html[data-student-theme="dark"] .lesson-card {
+      background: var(--student-glass-strong, rgba(12, 18, 32, 0.78)) !important;
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14)) !important;
+      box-shadow: var(--student-shadow, 0 10px 40px rgba(0, 0, 0, 0.35)) !important;
+      color: var(--student-text, #f4f7fb) !important;
+    }
+    html[data-student-theme="dark"] .lesson-card:hover {
+      border-color: var(--student-border-strong, rgba(148, 183, 255, 0.22)) !important;
+      box-shadow: var(--student-shadow-lg, 0 24px 60px rgba(0, 0, 0, 0.45)) !important;
+    }
+    html[data-student-theme="dark"] .lesson-card__title,
+    html[data-student-theme="dark"] .lesson-list__title {
+      color: var(--student-text, #f4f7fb) !important;
+    }
+    html[data-student-theme="dark"] .lesson-card__badge,
+    html[data-student-theme="dark"] .lesson-list__idx,
+    html[data-student-theme="dark"] .lesson-list__pill {
+      background: var(--student-primary-soft, rgba(59, 159, 217, 0.18)) !important;
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14)) !important;
+      color: var(--student-primary, #3b9fd9) !important;
+      box-shadow: none !important;
+    }
+    html[data-student-theme="dark"] .lesson-list {
+      background: var(--student-glass-strong, rgba(12, 18, 32, 0.78)) !important;
+      border-color: var(--student-border, rgba(148, 183, 255, 0.14)) !important;
+      box-shadow: var(--student-shadow) !important;
+    }
+    html[data-student-theme="dark"] .lesson-list__item {
+      border-bottom-color: var(--student-border, rgba(148, 183, 255, 0.1)) !important;
+    }
+    html[data-student-theme="dark"] .lesson-list__link:hover {
+      background: var(--student-primary-soft, rgba(59, 159, 217, 0.12)) !important;
+      box-shadow: inset 3px 0 0 var(--student-primary, #3b9fd9) !important;
+    }
+    html[data-student-theme="dark"] .lesson-list__link:hover .lesson-list__pill {
+      background: var(--student-primary, #3b9fd9) !important;
+      color: #fff !important;
+    }
+    html[data-student-theme="dark"] .materials-toolbar {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border-top-color: var(--student-border, rgba(148, 183, 255, 0.12)) !important;
+    }
+    html[data-student-theme="dark"] .materials-search-input,
+    html[data-student-theme="dark"] .materials-sort-select {
+      background-color: var(--student-input-bg, rgba(15, 23, 42, 0.72)) !important;
+      border-color: var(--student-input-border, rgba(148, 163, 184, 0.28)) !important;
+      color: var(--student-text, #f4f7fb) !important;
+      box-shadow: none !important;
+    }
+    html[data-student-theme="dark"] .materials-search-input::placeholder {
+      color: var(--student-text-muted, #6d7b94) !important;
+    }
+    html[data-student-theme="dark"] .materials-search-wrap .materials-search-icon,
+    html[data-student-theme="dark"] .materials-search-clear {
+      color: var(--student-text-secondary, #9aa8c0) !important;
+    }
+    html[data-student-theme="dark"] .materials-search-clear {
+      background: rgba(255, 255, 255, 0.06) !important;
+    }
+    html[data-student-theme="dark"] .materials-sort-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239aa8c0' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
+    }
+    html[data-student-theme="dark"] .lesson-empty-state,
+    html[data-student-theme="dark"] .lesson-no-match {
+      background: var(--student-primary-soft, rgba(59, 159, 217, 0.1)) !important;
+      border-color: var(--student-border, rgba(148, 183, 255, 0.18)) !important;
+      color: var(--student-text-secondary, #9aa8c0) !important;
+    }
+    html[data-student-theme="dark"] .lesson-empty-state i,
+    html[data-student-theme="dark"] .lesson-no-match i {
+      color: var(--student-primary, #3b9fd9) !important;
+    }
 </style>
 <?php
 }

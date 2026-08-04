@@ -17,7 +17,18 @@ if (!empty($conn)) {
     if ($cachedPending !== null && ($badgeNow - $cachedPendingAt) < $badgeTtl) {
         $adminPendingCount = (int) $cachedPending;
     } else {
-        $pr = @mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND status='pending'");
+        // Needs review = students without an active access grant (not rejected).
+        if (is_file(__DIR__ . '/includes/commerce_access_gate.php')) {
+            require_once __DIR__ . '/includes/commerce_access_gate.php';
+            $hasG = commerce_sql_user_has_active_grant('users.user_id');
+            $pr = @mysqli_query(
+                $conn,
+                "SELECT COUNT(*) AS cnt FROM users
+                 WHERE role='student' AND status <> 'rejected' AND NOT ({$hasG})"
+            );
+        } else {
+            $pr = @mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND status='pending'");
+        }
         if ($pr && $prRow = mysqli_fetch_assoc($pr)) {
             $adminPendingCount = (int) ($prRow['cnt'] ?? 0);
             mysqli_free_result($pr);

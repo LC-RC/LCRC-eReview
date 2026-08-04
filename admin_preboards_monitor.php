@@ -145,7 +145,7 @@ $adminBreadcrumbs = [
       <i class="bi bi-inbox text-4xl block mb-2"></i>
       <div class="font-semibold text-gray-200">No preboards subjects yet</div>
       <p class="text-sm mt-1 mb-4">Create a preboards subject first.</p>
-      <a href="admin_preboards_subjects" class="admin-content-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Manage preboards</a>
+      <a href="admin_preboards_subjects" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> Manage preboards</a>
     </div>
   <?php else: ?>
 

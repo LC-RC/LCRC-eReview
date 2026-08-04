@@ -1,0 +1,2054 @@
+/**
+ * Student SaaS visual system — glass shell + dual-theme surfaces.
+ * Loads after app-shell.css. Scoped to body.app-shell--student / data-student-theme.
+ */
+
+/* ========== Canvas ========== */
+html[data-student-theme] body.app-shell--student,
+html[data-student-theme] body.student-theme-pending {
+  background: var(--student-bg) !important;
+  color: var(--student-text);
+  font-family: var(--student-font);
+}
+
+body.app-shell--student #main.app-shell-main--student {
+  background: transparent !important;
+  color: var(--student-text) !important;
+  margin-left: calc(var(--app-shell-sidebar-collapsed, 64px) + 1.25rem) !important;
+  padding-left: 1.35rem !important;
+  padding-right: 1.35rem !important;
+  max-width: none;
+}
+
+body.app-shell--student.sidebar-expanded #main.app-shell-main--student {
+  margin-left: calc(var(--app-shell-sidebar-expanded, 240px) + 1.25rem) !important;
+}
+
+/* ========== Global spacing (all student pages) ========== */
+body.app-shell--student .dash-kpi-grid,
+body.app-shell--student .dash-kpi-strip {
+  gap: 1.1rem !important;
+  row-gap: 1.1rem !important;
+  column-gap: 1.1rem !important;
+}
+
+body.app-shell--student .student-hero {
+  margin-bottom: 1.75rem !important;
+}
+
+/* Dark-theme polish for floating back-to-top */
+html[data-student-theme="dark"] .ereview-scroll-top {
+  border-color: rgba(148, 183, 255, 0.22);
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(242, 176, 30, 0.22), transparent 55%),
+    linear-gradient(145deg, rgba(22, 101, 160, 0.95) 0%, rgba(12, 24, 42, 0.98) 100%);
+}
+
+/* Hero back / icon tiles (quiz, preboard, lesson viewers) — don't rely on purged Tailwind sizes */
+body.app-shell--student a.exam-leave-link,
+body.app-shell--student .student-hero-icon-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+body.app-shell--student a.exam-leave-link i,
+body.app-shell--student .student-hero-icon-btn i {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+@media (min-width: 640px) {
+  body.app-shell--student a.exam-leave-link,
+  body.app-shell--student .student-hero-icon-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  body.app-shell--student a.exam-leave-link i,
+  body.app-shell--student .student-hero-icon-btn i {
+    font-size: 1.25rem;
+  }
+}
+
+/* Keep hero content away from edges (list + brand heroes) */
+body.app-shell--student .student-hero.student-hero--glass,
+body.app-shell--student .student-hero:not(.student-hero--has-cover) {
+  padding: 1.65rem 1.5rem !important;
+}
+@media (min-width: 640px) {
+  body.app-shell--student .student-hero.student-hero--glass,
+  body.app-shell--student .student-hero:not(.student-hero--has-cover) {
+    padding: 1.9rem 2rem !important;
+  }
+}
+@media (min-width: 1024px) {
+  body.app-shell--student .student-hero.student-hero--glass,
+  body.app-shell--student .student-hero:not(.student-hero--has-cover) {
+    padding: 2.1rem 2.35rem !important;
+  }
+}
+
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip {
+  margin-top: 1.15rem !important;
+  padding: 0.85rem 1.15rem !important;
+}
+
+body.app-shell--student .section-title {
+  margin: 0 0 1.35rem !important;
+  padding: 0.65rem 0.95rem !important;
+}
+
+/* All card grids — force breathing room */
+body.app-shell--student #main .grid {
+  gap: 1.5rem !important;
+  row-gap: 1.5rem !important;
+  column-gap: 1.5rem !important;
+}
+@media (min-width: 1024px) {
+  body.app-shell--student #main .grid {
+    gap: 1.75rem !important;
+    row-gap: 1.75rem !important;
+    column-gap: 1.75rem !important;
+  }
+}
+
+/* List / preboard cards — inner padding */
+body.app-shell--student .dash-card {
+  border-radius: 1rem !important;
+}
+
+body.app-shell--student .dash-card > [class*="px-5"],
+body.app-shell--student .dash-card > [class*="px-6"] {
+  padding-left: 1.35rem !important;
+  padding-right: 1.35rem !important;
+}
+
+body.app-shell--student .dash-card > [class*="pt-5"],
+body.app-shell--student .dash-card > [class*="pt-6"] {
+  padding-top: 1.35rem !important;
+}
+
+body.app-shell--student .dash-card > [class*="pb-4"],
+body.app-shell--student .dash-card > [class*="pb-5"] {
+  padding-bottom: 1.2rem !important;
+}
+
+body.app-shell--student .dash-card > .border-t,
+body.app-shell--student article.rounded-2xl > .border-t {
+  padding: 1.1rem 1.35rem 1.25rem !important;
+}
+
+body.app-shell--student article.rounded-2xl > [class*="px-5"],
+body.app-shell--student article.rounded-2xl > [class*="px-6"] {
+  padding-left: 1.35rem !important;
+  padding-right: 1.35rem !important;
+}
+
+body.app-shell--student article.rounded-2xl > [class*="pt-5"] {
+  padding-top: 1.35rem !important;
+}
+
+body.app-shell--student .subject-catalog-card__body {
+  padding: 1.65rem 1.35rem 1.25rem !important;
+}
+
+body.app-shell--student .student-dashboard-page {
+  padding-bottom: 2.5rem !important;
+}
+
+body.app-shell--student .materials-section {
+  border-radius: 1rem !important;
+}
+
+body.app-shell--student .materials-section > [class*="px-4"],
+body.app-shell--student .materials-section > [class*="px-6"] {
+  padding: 1.15rem 1.35rem !important;
+}
+
+@media (max-width: 1024px) {
+  body.app-shell--student #main.app-shell-main--student,
+  body.app-shell--student.sidebar-expanded #main.app-shell-main--student {
+    margin-left: 0 !important;
+  }
+}
+
+/* ========== Floating brand-blue glass sidebar ========== */
+body.app-shell--student #app-sidebar.app-shell-sidebar--student {
+  top: 0.75rem !important;
+  left: 0.75rem !important;
+  height: calc(100vh - 1.5rem) !important;
+  border-radius: var(--student-radius-xl) !important;
+  background: var(--student-sidebar-bg) !important;
+  border: 1px solid var(--student-sidebar-border) !important;
+  box-shadow:
+    0 18px 48px rgba(15, 40, 70, 0.28),
+    0 4px 16px rgba(22, 101, 160, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  overflow: hidden !important;
+  color: var(--student-sidebar-text) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand,
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--profile {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-brand-text,
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-profile-name {
+  color: #ffffff !important;
+  font-weight: 800;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-brand-icon {
+  color: #fde68a !important;
+  filter: drop-shadow(0 0 10px rgba(242, 176, 30, 0.35));
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .admin-sidebar-section-label {
+  color: var(--student-sidebar-muted) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student {
+  color: var(--student-sidebar-text) !important;
+  border-radius: 0.75rem !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student .student-nav-icon {
+  color: inherit !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student:not(.student-nav-item--active):hover {
+  background: var(--student-sidebar-hover-bg, rgba(255, 255, 255, 0.14)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student.student-nav-item--active {
+  background: var(--student-sidebar-active-bg) !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 8px 22px rgba(0, 0, 0, 0.12) !important;
+  font-weight: 700;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student::before {
+  display: none;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .student-nav-item--logout:hover {
+  background: rgba(220, 38, 38, 0.28) !important;
+  color: #fecaca !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Dark sidebar — same glass plane as Subjects / list heroes */
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student {
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.45),
+    0 4px 16px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand,
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--profile {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-nav-link--student.student-nav-item--active {
+  box-shadow:
+    inset 0 0 0 1px rgba(59, 159, 217, 0.35),
+    0 8px 22px rgba(0, 0, 0, 0.25) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-footer {
+  border-top-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--student-border) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 6px 22px rgba(15, 23, 42, 0.12) !important;
+  color: #f8fafc !important;
+  backdrop-filter: blur(10px);
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time-label,
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time-meta {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time-date,
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-time-digital {
+  color: #ffffff !important;
+}
+
+body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-close-btn {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 1024px) {
+  body.app-shell--student #app-sidebar.app-shell-sidebar--student {
+    border-radius: 0 var(--student-radius-xl) var(--student-radius-xl) 0 !important;
+    background: var(--student-sidebar-bg) !important;
+    color: var(--student-sidebar-text) !important;
+  }
+}
+
+/* ========== Floating glass topbar ========== */
+body.app-shell--student .student-topbar-modern {
+  --topbar-bg: transparent;
+  --topbar-border: transparent;
+  --topbar-shadow: none;
+  --brand: var(--student-primary);
+  --brand-light: var(--student-primary-soft);
+  --brand-focus: var(--student-input-focus);
+  --text: var(--student-text);
+  --text-muted: var(--student-text-secondary);
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-hover: var(--student-primary-soft);
+  --search-placeholder: var(--student-text-muted);
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 1rem !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  position: sticky;
+  top: 0.65rem;
+  z-index: 900;
+}
+
+html[data-student-theme="light"] body.app-shell--student .student-topbar-modern {
+  --surface: rgba(15, 23, 42, 0.03);
+}
+
+body.app-shell--student .student-topbar-modern .student-topbar-inner {
+  min-height: 3.6rem;
+  padding: 0.55rem 0.75rem !important;
+  border-radius: 1.1rem !important;
+  background: var(--student-topbar-bg) !important;
+  border: 1px solid var(--student-border) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(150%) !important;
+}
+
+body.app-shell--student .student-topbar-search-wrap {
+  background: var(--surface) !important;
+  border: 1px solid var(--student-border) !important;
+  border-radius: 0.85rem !important;
+  box-shadow: none !important;
+}
+
+body.app-shell--student .student-topbar-search-wrap.is-focused,
+body.app-shell--student .student-topbar-search-wrap:hover {
+  border-color: rgba(22, 101, 160, 0.45) !important;
+  box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.15) !important;
+  background: var(--student-primary-soft) !important;
+}
+
+body.app-shell--student .student-topbar-search,
+body.app-shell--student .student-topbar-name,
+body.app-shell--student .student-topbar-menu-btn,
+body.app-shell--student .student-topbar-action,
+body.app-shell--student .student-theme-toggle {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-search::placeholder {
+  color: var(--student-text-muted) !important;
+}
+
+body.app-shell--student .student-topbar-search-icon,
+body.app-shell--student .student-topbar-chevron {
+  color: var(--student-text-secondary) !important;
+}
+
+body.app-shell--student .student-topbar-action,
+body.app-shell--student .student-theme-toggle,
+body.app-shell--student .student-topbar-menu-btn {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 0.8rem !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+body.app-shell--student .student-topbar-action:hover,
+body.app-shell--student .student-theme-toggle:hover,
+body.app-shell--student .student-topbar-menu-btn:hover {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  border-color: rgba(22, 101, 160, 0.35) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+body.app-shell--student .student-topbar-profile-btn {
+  border-radius: 999px !important;
+  border: 1px solid var(--student-border) !important;
+  background: var(--surface) !important;
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-mobile-brand,
+body.app-shell--student .student-topbar-mobile-brand__text {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-mobile-brand__icon {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-primary) !important;
+}
+
+body.app-shell--student .student-topbar-access {
+  background: var(--student-primary-soft) !important;
+  border: 1px solid var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-access-intro,
+body.app-shell--student .student-topbar-access-count {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-search-panel {
+  background: var(--student-glass-strong) !important;
+  border: 1px solid var(--student-border) !important;
+  backdrop-filter: blur(var(--student-blur));
+  box-shadow: var(--student-shadow-lg);
+  color: var(--student-text);
+}
+
+body.app-shell--student .student-topbar-search-panel__item {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-topbar-search-panel__item:hover {
+  background: var(--student-primary-soft) !important;
+}
+
+body.app-shell--student .student-topbar-dropdown.ereview-profile-menu {
+  background: var(--student-glass-strong) !important;
+  border: 1px solid var(--student-border) !important;
+  backdrop-filter: blur(var(--student-blur));
+  box-shadow: var(--student-shadow-lg);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme {
+  background: linear-gradient(165deg, #141414 0%, #0a0a0a 55%, #050505 100%) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__hero {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(59, 159, 217, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 100%);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__eyebrow,
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__subtitle,
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__section-label,
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__chev {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__title,
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__link--nav {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__link--nav {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__link-icon {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(147, 197, 253, 0.95) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ereview-profile-menu--student-theme .ereview-profile-menu__divider {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent) !important;
+}
+
+/* Theme toggle */
+.student-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.student-theme-toggle .bi-sun-fill { display: none; }
+.student-theme-toggle .bi-moon-stars-fill { display: inline-block; }
+html[data-student-theme="light"] .student-theme-toggle .bi-sun-fill { display: inline-block; }
+html[data-student-theme="light"] .student-theme-toggle .bi-moon-stars-fill { display: none; }
+
+/* ========== Page hero (shared + glass list heroes) ========== */
+body.app-shell--student .student-page-hero,
+body.app-shell--student .student-glass-hero,
+body.app-shell--student .student-hero.student-hero--glass,
+body.app-shell--student .student-hero:not(.student-hero--brand):not(.student-hero--has-cover) {
+  position: relative;
+  overflow: hidden;
+  padding: 1.35rem 1.35rem 1.25rem !important;
+  border-radius: var(--student-radius-xl) !important;
+  border: 1px solid rgba(22, 101, 160, 0.16) !important;
+  background:
+    radial-gradient(ellipse 72% 90% at 100% -10%, rgba(242, 176, 30, 0.2), transparent 52%),
+    radial-gradient(ellipse 65% 80% at -5% 110%, rgba(22, 101, 160, 0.2), transparent 48%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78) 0%, rgba(232, 242, 250, 0.88) 42%, rgba(220, 236, 248, 0.92) 100%) !important;
+  box-shadow:
+    var(--student-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(22, 101, 160, 0.06) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(155%) !important;
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(155%) !important;
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-page-hero::after,
+body.app-shell--student .student-glass-hero::after,
+body.app-shell--student .student-hero.student-hero--glass::after {
+  content: "";
+  position: absolute;
+  right: -2.5rem;
+  top: -2.5rem;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 159, 217, 0.16) 0%, transparent 68%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.app-shell--student .student-page-hero > *,
+body.app-shell--student .student-glass-hero > *,
+body.app-shell--student .student-hero.student-hero--glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 640px) {
+  body.app-shell--student .student-page-hero,
+  body.app-shell--student .student-glass-hero,
+  body.app-shell--student .student-hero.student-hero--glass,
+  body.app-shell--student .student-hero:not(.student-hero--brand):not(.student-hero--has-cover) {
+    padding: 1.65rem 1.75rem 1.5rem !important;
+  }
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-page-hero,
+html[data-student-theme="dark"] body.app-shell--student .student-glass-hero,
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--glass,
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand):not(.student-hero--has-cover) {
+  border-color: var(--student-border) !important;
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, var(--student-glow-gold), transparent 55%),
+    radial-gradient(ellipse 60% 70% at 0% 100%, var(--student-glow-blue), transparent 50%),
+    var(--student-glass-strong) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--glass::after,
+html[data-student-theme="dark"] body.app-shell--student .student-page-hero::after,
+html[data-student-theme="dark"] body.app-shell--student .student-glass-hero::after {
+  background: radial-gradient(circle, rgba(59, 159, 217, 0.22) 0%, transparent 68%);
+}
+
+body.app-shell--student .student-hero.student-hero--glass::before,
+body.app-shell--student .student-hero:not(.student-hero--brand):not(.student-hero--has-cover)::before {
+  opacity: 0.35;
+}
+
+body.app-shell--student .student-hero__title,
+body.app-shell--student .student-page-header__title {
+  color: var(--student-text) !important;
+  letter-spacing: -0.02em;
+}
+
+body.app-shell--student .student-hero__lede,
+body.app-shell--student .student-page-header__subtitle {
+  color: var(--student-text-secondary) !important;
+  font-weight: 500;
+  max-width: 36rem;
+  line-height: 1.5;
+}
+
+body.app-shell--student .student-hero__icon,
+body.app-shell--student .student-page-hero-icon {
+  width: 3.15rem;
+  height: 3.15rem;
+  border-radius: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #3b9fd9 0%, var(--student-primary) 48%, var(--student-primary-2) 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 12px 24px -12px rgba(22, 101, 160, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* List-page hero strip — labeled tiles (Subjects / Preboards / Pre-week).
+   Exclude brand dashboard hero — that uses glass-on-navy tiles. */
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip,
+body.app-shell--student .student-page-hero .hero-strip {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.7rem !important;
+  margin-top: 1.15rem !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(22, 101, 160, 0.14) !important;
+  border-radius: 0.9rem !important;
+  color: var(--student-text) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+@media (min-width: 640px) {
+  body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip,
+  body.app-shell--student .student-page-hero .hero-strip {
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    max-width: 34rem;
+  }
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip,
+html[data-student-theme="dark"] body.app-shell--student .student-page-hero .hero-strip {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__item,
+body.app-shell--student .student-page-hero .hero-strip__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.65rem;
+  background: linear-gradient(180deg, rgba(232, 242, 250, 0.85) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border: 1px solid rgba(22, 101, 160, 0.12);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__item,
+html[data-student-theme="dark"] body.app-shell--student .student-page-hero .hero-strip__item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+}
+
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__label,
+body.app-shell--student .student-page-hero .hero-strip__label {
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--student-text-muted);
+}
+
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__value,
+body.app-shell--student .student-page-hero .hero-strip__value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--student-primary-2);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__value,
+html[data-student-theme="dark"] body.app-shell--student .student-page-hero .hero-strip__value {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__sep {
+  display: none;
+}
+
+/* Dashboard brand hero — glass stats strip matching enrollment card */
+body.app-shell--student .student-hero.student-hero--brand .hero-strip {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  max-width: none !important;
+  margin-top: 0 !important;
+  padding: 0.65rem !important;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(59, 159, 217, 0.12), transparent 55%),
+    rgba(8, 16, 32, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 1rem !important;
+  color: #fff !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 12px 28px -22px rgba(0, 0, 0, 0.45) !important;
+}
+@media (min-width: 640px) {
+  body.app-shell--student .student-hero.student-hero--brand .hero-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.55rem;
+    padding: 0.75rem !important;
+  }
+}
+body.app-shell--student .student-hero.student-hero--brand .hero-strip__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+body.app-shell--student .student-hero.student-hero--brand .hero-strip__label {
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(186, 214, 255, 0.72) !important;
+}
+body.app-shell--student .student-hero.student-hero--brand .hero-strip__value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  text-shadow: none !important;
+}
+body.app-shell--student .student-hero.student-hero--brand .hero-strip__value--sm {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: rgba(224, 242, 254, 0.95) !important;
+}
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--brand .hero-strip {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(59, 159, 217, 0.1), transparent 55%),
+    rgba(8, 14, 28, 0.55) !important;
+  border-color: rgba(148, 183, 255, 0.16) !important;
+  color: #fff !important;
+}
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--brand .hero-strip__item {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(148, 183, 255, 0.12) !important;
+}
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--brand .hero-strip__label {
+  color: rgba(186, 214, 255, 0.7) !important;
+}
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--brand .hero-strip__value {
+  color: #f4f7fb !important;
+}
+
+body.app-shell--student .student-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Dashboard greeting — Subjects-style glass (deep navy + soft gold) */
+body.app-shell--student .student-hero.student-hero--brand {
+  border-radius: var(--student-radius-xl) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.18), transparent 55%),
+    radial-gradient(ellipse 55% 70% at 0% 100%, rgba(59, 159, 217, 0.22), transparent 50%),
+    linear-gradient(135deg, rgba(18, 42, 72, 0.94) 0%, rgba(14, 28, 48, 0.96) 48%, rgba(10, 18, 32, 0.98) 100%) !important;
+  box-shadow: var(--student-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(16px) saturate(145%);
+  color: #fff !important;
+}
+
+html[data-student-theme="light"] body.app-shell--student .student-hero.student-hero--brand {
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.2), transparent 55%),
+    radial-gradient(ellipse 55% 70% at 0% 100%, rgba(59, 159, 217, 0.2), transparent 50%),
+    linear-gradient(135deg, rgba(22, 101, 160, 0.9) 0%, rgba(20, 61, 89, 0.94) 55%, rgba(12, 32, 52, 0.96) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--brand {
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.14), transparent 55%),
+    radial-gradient(ellipse 55% 70% at 0% 100%, rgba(59, 159, 217, 0.16), transparent 50%),
+    linear-gradient(135deg, rgba(16, 24, 40, 0.92) 0%, rgba(10, 16, 28, 0.96) 100%) !important;
+  border-color: var(--student-border) !important;
+}
+
+/* Subject hub hero meta tiles */
+body.app-shell--student .student-hero__meta {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero__meta {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero__meta-item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(148, 183, 255, 0.1) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero.student-hero--has-cover {
+  border-color: var(--student-border) !important;
+}
+
+/* Subject tab bar — quieter inactive, clear active */
+html[data-student-theme="dark"] body.app-shell--student .subject-tab-btn {
+  border-radius: 0.75rem !important;
+}
+
+html[data-student-theme="light"] body.app-shell--student .subject-tab-btn:not(.bg-\[\#1665A0\]) {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(22, 101, 160, 0.16) !important;
+  box-shadow: 0 1px 2px rgba(15, 35, 70, 0.04);
+}
+
+/* ========== Section titles ========== */
+body.app-shell--student .section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--student-text) !important;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body.app-shell--student .section-title i {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--student-primary), var(--student-primary-2));
+  color: #fff !important;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px -4px rgba(22, 101, 160, 0.45);
+}
+
+/* ========== Cards & catalog ========== */
+body.app-shell--student .student-dashboard-page {
+  background: transparent !important;
+}
+
+body.app-shell--student .dash-card {
+  background: var(--student-glass) !important;
+  border: 1px solid var(--student-border) !important;
+  box-shadow: var(--student-shadow) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  color: var(--student-text);
+}
+
+body.app-shell--student .dash-card:hover {
+  border-color: var(--student-border-strong) !important;
+  box-shadow: var(--student-shadow-lg) !important;
+}
+
+body.app-shell--student .subject-catalog-card {
+  background: var(--student-glass) !important;
+  border: 1px solid var(--student-border) !important;
+  box-shadow: var(--student-shadow) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  color: var(--student-text);
+  overflow: hidden;
+}
+
+body.app-shell--student .subject-catalog-card:hover {
+  border-color: color-mix(in srgb, var(--subject-accent, var(--student-primary)) 40%, var(--student-border)) !important;
+  box-shadow: var(--student-shadow-lg) !important;
+}
+
+body.app-shell--student .subject-catalog-card__link {
+  min-height: 0 !important;
+}
+
+body.app-shell--student .subject-catalog-card__media {
+  height: 96px !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--subject-accent, var(--student-primary)) 22%, transparent), transparent 70%),
+    var(--student-surface-2) !important;
+}
+
+body.app-shell--student .subject-catalog-card__bg-fallback {
+  background:
+    radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--subject-accent, var(--student-primary)) 35%, transparent), transparent 55%),
+    linear-gradient(145deg, var(--student-surface-2), color-mix(in srgb, var(--subject-accent, var(--student-primary)) 12%, var(--student-surface))) !important;
+}
+
+body.app-shell--student .subject-catalog-card__body {
+  background: transparent !important;
+  padding-top: 1.65rem !important;
+}
+
+body.app-shell--student .subject-catalog-card__badge {
+  box-shadow:
+    0 4px 14px -4px color-mix(in srgb, var(--subject-accent, var(--student-primary)) 55%, transparent),
+    0 0 0 3px var(--student-surface-solid) !important;
+}
+
+body.app-shell--student .subject-catalog-card__title {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .subject-catalog-card__desc {
+  color: var(--student-text-secondary) !important;
+}
+
+body.app-shell--student .subject-catalog-card__lessons {
+  background: var(--subject-accent-soft, var(--student-primary-soft)) !important;
+  color: var(--subject-accent, var(--student-primary)) !important;
+}
+
+body.app-shell--student .subject-catalog-card__arrow {
+  background: var(--student-surface-2) !important;
+  border: 1px solid var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+body.app-shell--student .subject-catalog-card:hover .subject-catalog-card__arrow {
+  background: var(--subject-accent, var(--student-primary)) !important;
+  border-color: var(--subject-accent, var(--student-primary)) !important;
+  color: #fff !important;
+}
+
+/* Dashboard KPI / insights */
+body.app-shell--student .kpi-number {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .kpi-action {
+  background: var(--student-surface-2) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-primary) !important;
+}
+
+body.app-shell--student .kpi-action:hover {
+  background: var(--student-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--student-primary) 35%, var(--student-border)) !important;
+}
+
+body.app-shell--student .insight-snap-tile,
+body.app-shell--student .insight-recents,
+body.app-shell--student .insight-subject-row {
+  background: var(--student-glass) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .insight-snap-tile__val,
+body.app-shell--student .insight-subject-name,
+body.app-shell--student .insight-recents__title {
+  color: var(--student-text) !important;
+}
+
+body.app-shell--student .insight-snap-tile__lbl,
+body.app-shell--student .insight-snap-tile__hint,
+body.app-shell--student .insight-recents__single-hint {
+  color: var(--student-text-secondary) !important;
+}
+
+body.app-shell--student .insight-goal-select,
+body.app-shell--student .materials-section,
+body.app-shell--student .preweek-page .rounded-2xl.border {
+  background: var(--student-glass) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+/* ========== Dark mode sweep ========== */
+html[data-student-theme="dark"] body.app-shell--student #main .bg-white,
+html[data-student-theme="dark"] body.app-shell--student #main .bg-slate-50,
+html[data-student-theme="dark"] body.app-shell--student #main .bg-gray-50,
+html[data-student-theme="dark"] body.app-shell--student #main .bg-\[\#f6f9ff\],
+html[data-student-theme="dark"] body.app-shell--student #main .bg-\[\#f8fafc\],
+html[data-student-theme="dark"] body.app-shell--student #main .bg-\[\#e8f2fa\],
+html[data-student-theme="dark"] body.app-shell--student #main .bg-\[\#e8f2fa\]\/50,
+html[data-student-theme="dark"] body.app-shell--student #main .bg-\[\#e8f2fa\]\/80,
+html[data-student-theme="dark"] body.app-shell--student #main .bg-red-50,
+html[data-student-theme="dark"] body.app-shell--student #main .from-\[\#f0f7fc\],
+html[data-student-theme="dark"] body.app-shell--student #main .from-\[\#fbfdff\],
+html[data-student-theme="dark"] body.app-shell--student #main .to-white {
+  background-color: var(--student-glass) !important;
+  background-image: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-800,
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-900,
+html[data-student-theme="dark"] body.app-shell--student #main .text-slate-800,
+html[data-student-theme="dark"] body.app-shell--student #main .text-slate-900,
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#0f172a\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#1e293b\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#334155\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#143D59\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#143d59\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#475569\],
+html[data-student-theme="dark"] body.app-shell--student #main .text-red-800,
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-800,
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-900 {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct .quiz-rich-text,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong .quiz-rich-text,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct .quiz-rich-text *,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong .quiz-rich-text *,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct p,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong p,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct table,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong table,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct td,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong td,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-correct th,
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong th,
+html[data-student-theme="dark"] body.app-shell--student #main .exam-question-text,
+html[data-student-theme="dark"] body.app-shell--student #main .exam-question-text * {
+  color: var(--exam-text, var(--student-text)) !important;
+}
+
+/* Keep status labels readable */
+html[data-student-theme="dark"] body.app-shell--student #main .review-item-wrong .text-\[\#dc2626\] {
+  color: #fca5a5 !important;
+}
+html[data-student-theme="dark"] body.app-shell--student #main .review-correct-label {
+  color: #4ade80 !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-500,
+html[data-student-theme="dark"] body.app-shell--student #main .text-gray-600,
+html[data-student-theme="dark"] body.app-shell--student #main .text-slate-500,
+html[data-student-theme="dark"] body.app-shell--student #main .text-slate-600,
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#143D59\]\/80,
+html[data-student-theme="dark"] body.app-shell--student #main .text-\[\#143D59\]\/70 {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #main .border-gray-200,
+html[data-student-theme="dark"] body.app-shell--student #main .border-slate-200,
+html[data-student-theme="dark"] body.app-shell--student #main .border-gray-100,
+html[data-student-theme="dark"] body.app-shell--student #main .border-slate-100,
+html[data-student-theme="dark"] body.app-shell--student #main .border-red-200,
+html[data-student-theme="dark"] body.app-shell--student #main .border-\[\#cde2f4\],
+html[data-student-theme="dark"] body.app-shell--student #main .border-\[\#e2eef9\],
+html[data-student-theme="dark"] body.app-shell--student #main .border-\[\#1665A0\]\/15,
+html[data-student-theme="dark"] body.app-shell--student #main .border-\[\#1665A0\]\/10 {
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #main input:not([type="checkbox"]):not([type="radio"]),
+html[data-student-theme="dark"] body.app-shell--student #main select,
+html[data-student-theme="dark"] body.app-shell--student #main textarea {
+  background: var(--student-input-bg) !important;
+  border-color: var(--student-input-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .exam-bar,
+html[data-student-theme="dark"] body.app-shell--student .exam-header {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  backdrop-filter: blur(12px);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-card.quiz-card-item,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn-outline,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-header,
+html[data-student-theme="dark"] body.app-shell--student .materials-section,
+html[data-student-theme="dark"] body.app-shell--student .subject-panel,
+html[data-student-theme="dark"] body.app-shell--student .subject-tabs,
+html[data-student-theme="dark"] body.app-shell--student .subject-tab-bar {
+  background: var(--student-glass) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-sm) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-cell--title .qq-title-line,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-header .quizzers-title,
+html[data-student-theme="dark"] body.app-shell--student .kpi-number {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-muted,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-header .quizzers-subtitle {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-topbar-mobile-actions-menu,
+html[data-student-theme="dark"] body.app-shell--student .student-topbar-access-popover,
+html[data-student-theme="dark"] body.app-shell--student .student-topbar-access-popover__inner,
+html[data-student-theme="dark"] body.app-shell--student .dash-week-modal,
+html[data-student-theme="dark"] body.app-shell--student [class*="modal"] .bg-white {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-topbar-mobile-actions-item {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-recents__trend--up {
+  background: var(--student-success-soft) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: var(--student-success) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-recents__trend--down,
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile--goal {
+  background: var(--student-warning-soft) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: var(--student-warning) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .subject-catalog-card__badge {
+  box-shadow:
+    0 4px 14px -4px color-mix(in srgb, var(--subject-accent, var(--student-primary)) 55%, transparent),
+    0 0 0 3px var(--student-surface-solid) !important;
+}
+
+/* Soften page-local light hex leftovers inside subject hub */
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-quizzers-filter-empty {
+  background: transparent !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn-outline:hover {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+}
+
+/* Subject hub tabs — inactive state in dark */
+html[data-student-theme="dark"] body.app-shell--student .subject-tab-btn.bg-\[\#e8f2fa\]\/80,
+html[data-student-theme="dark"] body.app-shell--student button.subject-tab-btn:not(.bg-\[\#1665A0\]) {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero--has-cover {
+  border: 1px solid var(--student-border);
+  border-radius: var(--student-radius-xl);
+  overflow: hidden;
+}
+
+/*
+ * Soft ambient canvas — keep BEHIND content.
+ * Do NOT force position/z-index on #main children: that broke
+ * .ere-notif / .ere-msg (position:fixed → relative) and buried
+ * topbar dropdowns under page content.
+ */
+body.app-shell--student #main.app-shell-main--student {
+  isolation: isolate;
+}
+
+body.app-shell--student #main.app-shell-main--student::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 70% 45% at 80% -10%, var(--student-glow-blue), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 0% 100%, var(--student-glow-gold), transparent 50%);
+  opacity: 0.9;
+}
+
+/* Topbar + overlays must stay above page content */
+body.app-shell--student #main.app-shell-main--student > .student-topbar,
+body.app-shell--student #main.app-shell-main--student > .student-topbar-modern {
+  position: sticky !important;
+  z-index: 1100 !important;
+}
+
+body.app-shell--student #main.app-shell-main--student > .ere-notif,
+body.app-shell--student #main.app-shell-main--student > .ere-notif-toasts,
+body.app-shell--student #main.app-shell-main--student > .ere-msg,
+body.app-shell--student .ere-notif,
+body.app-shell--student .ere-msg {
+  position: fixed !important;
+}
+
+body.app-shell--student .ere-notif {
+  z-index: 1300 !important;
+}
+
+body.app-shell--student .ere-msg {
+  z-index: 1400 !important;
+}
+
+body.app-shell--student .student-topbar-dropdown,
+body.app-shell--student .student-topbar-search-panel,
+body.app-shell--student .student-topbar-access-popover,
+body.app-shell--student .student-topbar-mobile-actions-menu {
+  z-index: 1200 !important;
+}
+
+/* Dropdowns must not be clipped by topbar chrome */
+body.app-shell--student .student-topbar-modern,
+body.app-shell--student .student-topbar-inner,
+body.app-shell--student .student-topbar-right,
+body.app-shell--student .student-topbar-profile-wrap {
+  overflow: visible !important;
+}
+
+/* ========== Dark mode color harmony ========== */
+html[data-student-theme="dark"] body.app-shell--student {
+  background: var(--student-bg) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .section-title,
+html[data-student-theme="dark"] body.app-shell--student .student-dashboard-page .section-title.dash-section-title,
+html[data-student-theme="dark"] body.app-shell--student .student-dashboard-page .section-title.dash-section-title--insights {
+  background: linear-gradient(
+    105deg,
+    var(--student-primary-soft) 0%,
+    var(--student-glass-strong) 45%,
+    var(--student-surface-2) 100%
+  ) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-dashboard-page .section-title.dash-section-title {
+  border-left-color: var(--student-primary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-dashboard-page .section-title.dash-section-title--insights {
+  border-left-color: #2dd4bf !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-card,
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card,
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card {
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, var(--pb-accent-soft, var(--student-glow-blue)), transparent 55%),
+    var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(140%);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card:hover {
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(59, 159, 217, 0.16), transparent 55%),
+    var(--student-surface-hover) !important;
+  border-color: var(--student-border-strong) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__title,
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__chip {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__eyebrow,
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__meta,
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__progress {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__chip {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-set-card__foot {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-top-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .pb-sets-empty {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card:hover {
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(59, 159, 217, 0.16), transparent 55%),
+    var(--student-surface-hover) !important;
+  border-color: var(--student-border-strong) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__title {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__eyebrow,
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__meta {
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__desc {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__footer {
+  border-top-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__cta {
+  color: #7dd3fc !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-card__status {
+  color: #7dd3fc !important;
+  background: rgba(59, 159, 217, 0.14) !important;
+  border-color: rgba(148, 183, 255, 0.18) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-catalog-empty {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .subject-catalog-card {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow) !important;
+}
+
+/* Dashboard KPIs — glass clickable tiles */
+html[data-student-theme="dark"] body.app-shell--student .dash-overview__lede {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-grid .dash-kpi-card {
+  background:
+    radial-gradient(ellipse 90% 80% at 100% 0%, var(--kpi-accent-soft, var(--student-glow-blue)), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 0% 100%, var(--student-glow-gold), transparent 50%),
+    var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(var(--student-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--student-blur)) saturate(140%);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-grid .dash-kpi-card:hover {
+  background:
+    radial-gradient(ellipse 90% 80% at 100% 0%, rgba(59, 159, 217, 0.18), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 0% 100%, rgba(242, 176, 30, 0.14), transparent 50%),
+    var(--student-surface-hover) !important;
+  border-color: var(--student-border-strong) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-card__label {
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-card__value {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-card:hover .dash-kpi-card__value {
+  color: #7dd3fc !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-card__cta {
+  color: #7dd3fc !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-kpi-card__icon {
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-card:hover {
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(242, 176, 30, 0.18), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 0% 100%, rgba(59, 159, 217, 0.2), transparent 50%),
+    var(--student-surface-hover) !important;
+  border-color: var(--student-border-strong) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile,
+html[data-student-theme="dark"] body.app-shell--student .insight-recents,
+html[data-student-theme="dark"] body.app-shell--student .insight-subject-row,
+html[data-student-theme="dark"] body.app-shell--student .study-activity-card,
+html[data-student-theme="dark"] body.app-shell--student .chart-empty {
+  background: var(--student-glass) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-snapshot__heading,
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile__val,
+html[data-student-theme="dark"] body.app-shell--student .insight-recents__title,
+html[data-student-theme="dark"] body.app-shell--student .insight-recents__single-pct {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile__lbl,
+html[data-student-theme="dark"] body.app-shell--student .insight-snapshot__foot,
+html[data-student-theme="dark"] body.app-shell--student .insight-snapshot__empty,
+html[data-student-theme="dark"] body.app-shell--student .text-slate-500,
+html[data-student-theme="dark"] body.app-shell--student .text-slate-600 {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile--accent {
+  background: var(--student-primary-soft) !important;
+  border-color: rgba(59, 159, 217, 0.28) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .insight-snap-tile--accent .insight-snap-tile__val {
+  color: #7dd3fc !important;
+}
+
+/* Preboards / preweek page-local section titles */
+html[data-student-theme="dark"] body.app-shell--student .section-title {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .section-title i {
+  background: linear-gradient(135deg, var(--student-primary), var(--student-primary-2)) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student article.rounded-2xl.border,
+html[data-student-theme="dark"] body.app-shell--student .from-\[\#f4f8fe\],
+html[data-student-theme="dark"] body.app-shell--student .to-white,
+html[data-student-theme="dark"] body.app-shell--student .bg-white\/70 {
+  background: var(--student-glass-strong) !important;
+  background-image: none !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-hero-access-card {
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(242, 176, 30, 0.1), transparent 55%),
+    rgba(8, 14, 28, 0.62) !important;
+  border-color: rgba(148, 183, 255, 0.18) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(148, 183, 255, 0.1) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__label {
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__value {
+  color: var(--student-text) !important;
+  text-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-hero-title {
+  color: #f4f7fb !important;
+  text-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .dash-hero-lede {
+  color: rgba(186, 214, 255, 0.78) !important;
+}
+
+/* Topbar stays glass-dark, not white */
+html[data-student-theme="dark"] body.app-shell--student .student-topbar-modern .student-topbar-inner {
+  background: var(--student-topbar-bg) !important;
+  border-color: var(--student-border) !important;
+}
+
+/* Materials section header strip + page shells */
+html[data-student-theme="dark"] body.app-shell--student .materials-section {
+  background: var(--student-glass-strong) !important;
+  background-image: none !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-section > .border-b,
+html[data-student-theme="dark"] body.app-shell--student .materials-section > [class*="bg-\[\#e8f2fa\]"],
+html[data-student-theme="dark"] body.app-shell--student .materials-section [class*="bg-\[\#e8f2fa\]"] {
+  background-color: var(--student-primary-soft) !important;
+  background-image: none !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preweek-page,
+html[data-student-theme="dark"] body.app-shell--student .preweek-inner-page,
+html[data-student-theme="dark"] body.app-shell--student .student-dashboard-page,
+html[data-student-theme="dark"] body.app-shell--student .student-shell-page {
+  background: transparent !important;
+}
+
+/* Materials list UI — global (pre-week + subject hub duplicates) */
+html[data-student-theme="dark"] body.app-shell--student .materials-view-toggle__label,
+html[data-student-theme="dark"] body.app-shell--student .materials-sort-group__label,
+html[data-student-theme="dark"] body.app-shell--student .materials-results-hint,
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__sub,
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__meta,
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__hint {
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-view-seg {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-view-seg button {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-view-seg button:hover {
+  color: var(--student-text) !important;
+  background: var(--student-primary-soft) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-view-seg button.is-active {
+  color: #fff !important;
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card:hover {
+  border-color: var(--student-border-strong) !important;
+  box-shadow: var(--student-shadow-lg) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__title,
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__title {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__cta {
+  color: var(--student-primary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__meta {
+  border-top-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__badge,
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__idx,
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__pill,
+html[data-student-theme="dark"] body.app-shell--student .lesson-card__media-fallback {
+  background: var(--student-primary-soft) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-primary) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-list {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: var(--student-shadow) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__item {
+  border-bottom-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__link:hover {
+  background: var(--student-primary-soft) !important;
+  box-shadow: inset 3px 0 0 var(--student-primary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-list__link:hover .lesson-list__pill {
+  background: var(--student-primary) !important;
+  color: #fff !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-toolbar {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-top-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-search-input,
+html[data-student-theme="dark"] body.app-shell--student .materials-sort-select {
+  background-color: var(--student-input-bg) !important;
+  border-color: var(--student-input-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-search-input::placeholder {
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-search-wrap .materials-search-icon,
+html[data-student-theme="dark"] body.app-shell--student .materials-search-clear {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-search-clear {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .materials-sort-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239aa8c0' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-empty-state,
+html[data-student-theme="dark"] body.app-shell--student .lesson-no-match {
+  background: var(--student-primary-soft) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+/* Subject hub — Quizzers dark: calmer contrast, fewer neon pills */
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-table-shell.qq-list-shell,
+html[data-student-theme="dark"] body.app-shell--student .testbank-card,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-card.quiz-card-item,
+html[data-student-theme="dark"] body.app-shell--student .quiz-quizzers-filter-empty__card {
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, var(--student-glow-gold), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 0% 100%, var(--student-glow-blue), transparent 50%),
+    var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-header.quizzers-header--triple {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-type-switch {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-type-switch__btn {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-type-switch__btn:hover:not(.is-active) {
+  color: var(--student-text) !important;
+  background: var(--student-primary-soft) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-type-switch__btn.is-active,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-type-switch__btn.is-active--topical {
+  color: #fff !important;
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+  box-shadow: 0 4px 14px rgba(22, 101, 160, 0.35) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-panel {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-panel__hint {
+  color: var(--student-text-muted) !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Status filters — one quiet style; active = brand blue only */
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-status-filter-pill,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--passed:not(.is-active),
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--failed:not(.is-active),
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--progress:not(.is-active),
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--notstarted:not(.is-active) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-status-filter-pill:hover {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  border-color: var(--student-border-strong) !important;
+  transform: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-status-filter-pill.is-active,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-status-filter-pill.is-active:hover {
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-counter-chip {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-counter-chip i {
+  color: var(--student-primary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-counter-chip b {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-head {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom-color: var(--student-border) !important;
+  color: var(--student-text-muted) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-list-body .qq-grid-row {
+  border-top-color: rgba(148, 183, 255, 0.08) !important;
+  background: transparent !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-list-body .qq-grid-row:hover {
+  background: rgba(59, 159, 217, 0.08) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .testbank-card__title,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-cell--title .qq-title-line {
+  color: var(--student-text) !important;
+  font-weight: 700 !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .testbank-card__badge,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-type-tag,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-type-tag--topical,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-type-tag--randomized {
+  background: var(--student-primary-soft) !important;
+  border-color: rgba(59, 159, 217, 0.28) !important;
+  color: #7dd3fc !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-qcount {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  border: 1px solid var(--student-border);
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-muted,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-last-date,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-inline-ico {
+  color: var(--student-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-date-chip,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-date-chip.qq-date-chip--muted {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+/* Soft status / score — readable, not neon */
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-badge.passed,
+html[data-student-theme="dark"] body.app-shell--student .quiz-status-badge.passed,
+html[data-student-theme="dark"] body.app-shell--student .quiz-score-badge-lg.pass {
+  background: rgba(34, 197, 94, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #86efac !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-badge.failed,
+html[data-student-theme="dark"] body.app-shell--student .quiz-status-badge.failed,
+html[data-student-theme="dark"] body.app-shell--student .quiz-score-badge-lg.fail {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-badge.in-progress,
+html[data-student-theme="dark"] body.app-shell--student .quiz-status-badge.in-progress {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  color: #fcd34d !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-badge.not-started,
+html[data-student-theme="dark"] body.app-shell--student .quiz-status-badge.not-started {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn {
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn-outline {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn-outline:hover {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-btn-primary,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-grid-row .quiz-take-again-btn {
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 16px rgba(22, 101, 160, 0.28) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-search-input,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-select,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-apply {
+  background: var(--student-input-bg) !important;
+  border-color: var(--student-input-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-apply {
+  background: linear-gradient(145deg, var(--student-primary), var(--student-primary-2)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .materials-view-seg,
+html[data-student-theme="dark"] body.app-shell--student .quizzers-header .materials-view-seg {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+}
+
+/* Dashboard focus / progress leftovers */
+html[data-student-theme="dark"] body.app-shell--student .focus-card,
+html[data-student-theme="dark"] body.app-shell--student .focus-card--soft,
+html[data-student-theme="dark"] body.app-shell--student .focus-card--soft .focus-action-item,
+html[data-student-theme="dark"] body.app-shell--student .focus-stat-pill,
+html[data-student-theme="dark"] body.app-shell--student .metric-box,
+html[data-student-theme="dark"] body.app-shell--student .progress-detail,
+html[data-student-theme="dark"] body.app-shell--student .progress-indicators-card .progress-detail,
+html[data-student-theme="dark"] body.app-shell--student .dash-week-modal__dialog,
+html[data-student-theme="dark"] body.app-shell--student .dash-week-modal__row,
+html[data-student-theme="dark"] body.app-shell--student .dash-progress-intro__help {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow-sm) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .focus-card--soft .focus-title,
+html[data-student-theme="dark"] body.app-shell--student .progress-detail-label,
+html[data-student-theme="dark"] body.app-shell--student .progress-detail-pct {
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .focus-card--soft .focus-copy,
+html[data-student-theme="dark"] body.app-shell--student .progress-detail-hint {
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .focus-resume-btn,
+html[data-student-theme="dark"] body.app-shell--student .focus-library-btn {
+  background: var(--student-surface-2) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-primary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .progress-track {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .bg-amber-50,
+html[data-student-theme="dark"] body.app-shell--student .bg-green-50,
+html[data-student-theme="dark"] body.app-shell--student .bg-emerald-50 {
+  background-color: var(--student-primary-soft) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student #retakeModal .bg-white,
+html[data-student-theme="dark"] body.app-shell--student .relative.bg-white {
+  background-color: var(--student-glass-strong) !important;
+  color: var(--student-text) !important;
+}
+
+/* Profile — student theme bridge */
+html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__chip-wrap,
+html[data-student-theme="dark"] body.app-shell--student .ere-prof--student-refresh[data-ere-profile-theme="student"] .ere-prof__card,
+html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__card {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__chip {
+  background: var(--student-surface-2) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text-secondary) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__chip.is-active {
+  background: linear-gradient(180deg, var(--student-primary), var(--student-primary-2)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .ere-prof h1,
+html[data-student-theme="dark"] body.app-shell--student .ere-prof h2,
+html[data-student-theme="dark"] body.app-shell--student .ere-prof h3,
+html[data-student-theme="dark"] body.app-shell--student .ere-prof__card {
+  color: var(--student-text) !important;
+}
+
+/* ========== Secondary pages: viewers, quiz hub, legacy lists ========== */
+html[data-student-theme="dark"] body.app-shell--student .lesson-split-pane,
+html[data-student-theme="dark"] body.app-shell--student .viewer-pane,
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page .rounded-2xl.border,
+html[data-student-theme="dark"] body.app-shell--student .preweek-viewer-page .rounded-2xl.border,
+html[data-student-theme="dark"] body.app-shell--student #testbank-viewer-wrap .viewer-pane {
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, var(--student-glow-gold), transparent 55%),
+    radial-gradient(ellipse 55% 60% at 0% 100%, var(--student-glow-blue), transparent 50%),
+    var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-split-pane > .border-b,
+html[data-student-theme="dark"] body.app-shell--student .viewer-pane > .border-b,
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page [class*="bg-\[\#e8f2fa\]"],
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page .bg-white\/50,
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page .bg-\[\#f8fafc\] {
+  background: var(--student-primary-soft) !important;
+  background-color: var(--student-primary-soft) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page select,
+html[data-student-theme="dark"] body.app-shell--student .preweek-viewer-page select,
+html[data-student-theme="dark"] body.app-shell--student .lesson-viewer-page .bg-white {
+  background-color: var(--student-input-bg) !important;
+  border-color: var(--student-input-border) !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .lesson-view-row .bg-\[\#e8f2fa\],
+html[data-student-theme="dark"] body.app-shell--student .lesson-view-row button:not(.bg-\[\#1665A0\]) {
+  background: var(--student-primary-soft) !important;
+  color: var(--student-text) !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-panel,
+html[data-student-theme="dark"] body.app-shell--student .quiz-control-panel {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--student-border) !important;
+  box-shadow: none !important;
+  color: var(--student-text) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-control-panel__hint {
+  color: var(--student-text-muted) !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-date-chip {
+  color: var(--student-text-secondary) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--student-border) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .exam-choice,
+html[data-student-theme="dark"] body.app-shell--student .exam-instructions-wrap,
+html[data-student-theme="dark"] body.app-shell--student .exam-sidebar-section,
+html[data-student-theme="dark"] body.app-shell--student .exam-sidebar-section-head,
+html[data-student-theme="dark"] body.app-shell--student .result-stat-card,
+html[data-student-theme="dark"] body.app-shell--student .quiz-start-card,
+html[data-student-theme="dark"] body.app-shell--student .result-card,
+html[data-student-theme="dark"] body.app-shell--student .exam-question-card,
+html[data-student-theme="dark"] body.app-shell--student .exam-nav-card,
+html[data-student-theme="dark"] body.app-shell--student .exam-bar {
+  background: var(--exam-surface, var(--student-glass-strong)) !important;
+  border-color: var(--exam-border, var(--student-border)) !important;
+  color: var(--exam-text, var(--student-text)) !important;
+  box-shadow: var(--exam-shadow, var(--student-shadow)) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .exam-choice:hover {
+  background: var(--exam-primary-light, var(--student-primary-soft)) !important;
+}
+
+html[data-student-theme="dark"] body.app-shell--student .preboard-motivation-banner,
+html[data-student-theme="dark"] body.app-shell--student .preboard-shell-locked-note {
+  background: var(--student-primary-soft) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+}
+
+/* Legacy list pages */
+html[data-student-theme="dark"] body.app-shell--student .shadow-card,
+html[data-student-theme="dark"] body.app-shell--student .rounded-xl.bg-white,
+html[data-student-theme="dark"] body.app-shell--student .rounded-2xl.bg-white {
+  background: var(--student-glass-strong) !important;
+  border-color: var(--student-border) !important;
+  color: var(--student-text) !important;
+  box-shadow: var(--student-shadow) !important;
+}

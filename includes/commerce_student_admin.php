@@ -45,6 +45,146 @@ function commerce_admin_label_verification_status(string $status): string
     return $map[$status] ?? ($status !== '' ? $status : '—');
 }
 
+/**
+ * @return list<int>
+ */
+function commerce_admin_parse_lesson_ids_json(?string $json): array
+{
+    if ($json === null || trim($json) === '') {
+        return [];
+    }
+    $decoded = json_decode($json, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+    $ids = [];
+    foreach ($decoded as $lid) {
+        $lid = (int) $lid;
+        if ($lid > 0) {
+            $ids[$lid] = $lid;
+        }
+    }
+    return array_values($ids);
+}
+
+/**
+ * Short topic list for table cells: "Topic A, Topic B" or "Topic A, Topic B +2 more".
+ *
+ * @param list<string> $labels
+ */
+function commerce_admin_format_topics_short(array $labels, int $maxShow = 2): string
+{
+    $clean = [];
+    foreach ($labels as $label) {
+        $label = trim((string) $label);
+        if ($label !== '') {
+            $clean[] = $label;
+        }
+    }
+    if ($clean === []) {
+        return '';
+    }
+    $maxShow = max(1, $maxShow);
+    if (count($clean) <= $maxShow) {
+        return implode(', ', $clean);
+    }
+    $head = array_slice($clean, 0, $maxShow);
+    $more = count($clean) - $maxShow;
+    return implode(', ', $head) . ' +' . $more . ' more';
+}
+
+/**
+ * Batch-load lesson titles + subject (for by-subject admin/student displays).
+ *
+ * @param list<int> $lessonIds
+ * @return array<int, array{title:string,subject_id:int,subject_name:string}>
+ */
+function commerce_admin_lesson_meta_map(mysqli $conn, array $lessonIds): array
+{
+    $map = [];
+    $ids = [];
+    foreach ($lessonIds as $lid) {
+        $lid = (int) $lid;
+        if ($lid > 0) {
+            $ids[$lid] = $lid;
+        }
+    }
+    $ids = array_values($ids);
+    if ($ids === []) {
+        return $map;
+    }
+    $in = implode(',', array_map('intval', $ids));
+    $lq = mysqli_query(
+        $conn,
+        "SELECT l.lesson_id, l.title, l.subject_id, COALESCE(s.subject_name, '') AS subject_name
+         FROM lessons l
+         LEFT JOIN subjects s ON s.subject_id = l.subject_id
+         WHERE l.lesson_id IN ($in)
+         ORDER BY s.subject_name ASC, l.title ASC"
+    );
+    while ($lq && ($lr = mysqli_fetch_assoc($lq))) {
+        $id = (int) ($lr['lesson_id'] ?? 0);
+        if ($id <= 0) {
+            continue;
+        }
+        $map[$id] = [
+            'title' => (string) ($lr['title'] ?? ('Lesson #' . $id)),
+            'subject_id' => (int) ($lr['subject_id'] ?? 0),
+            'subject_name' => (string) ($lr['subject_name'] ?? ''),
+        ];
+    }
+    return $map;
+}
+
+/**
+ * Group lesson labels by subject for readable admin copy.
+ *
+ * @param list<int> $lessonIdsOrdered
+ * @param array<int, array{title?:string,subject_id?:int,subject_name?:string}> $metaMap
+ * @return array{groups: list<array{subject_id:int,subject_name:string,topics:list<string>}>, flat_labels: list<string>, grouped_text: string}
+ */
+function commerce_admin_group_topics_by_subject(array $lessonIdsOrdered, array $metaMap): array
+{
+    $groups = [];
+    $flat = [];
+    foreach ($lessonIdsOrdered as $lid) {
+        $lid = (int) $lid;
+        if ($lid <= 0) {
+            continue;
+        }
+        $meta = $metaMap[$lid] ?? null;
+        $title = $meta ? (string) ($meta['title'] ?? ('Lesson #' . $lid)) : ('Lesson #' . $lid);
+        $sid = $meta ? (int) ($meta['subject_id'] ?? 0) : 0;
+        $sname = $meta ? trim((string) ($meta['subject_name'] ?? '')) : '';
+        if ($sname === '') {
+            $sname = 'Other';
+            $sid = 0;
+        }
+        $flat[] = $title;
+        if (!isset($groups[$sid])) {
+            $groups[$sid] = [
+                'subject_id' => $sid,
+                'subject_name' => $sname,
+                'topics' => [],
+            ];
+        }
+        $groups[$sid]['topics'][] = $title;
+    }
+    $groupList = array_values($groups);
+    usort($groupList, static function ($a, $b) {
+        return strcasecmp((string) $a['subject_name'], (string) $b['subject_name']);
+    });
+    $parts = [];
+    foreach ($groupList as $g) {
+        $parts[] = $g['subject_name'] . ': ' . implode(', ', $g['topics']);
+    }
+    return [
+        'groups' => $groupList,
+        'flat_labels' => $flat,
+        'grouped_text' => implode(' · ', $parts),
+    ];
+}
+
 function commerce_admin_label_account_status(string $status): string
 {
     $s = strtolower(trim($status));
@@ -96,7 +236,11 @@ function commerce_admin_grant_access_summary_from_rows(array $rows): array
         }
     }
     if ($hasActive) {
-        $src = $activeSource === 'free_access' ? 'Free Access' : ($activeSource === 'purchase' ? 'Purchase' : $activeSource);
+        $src = $activeSource === 'free_access'
+            ? 'Free Access'
+            : ($activeSource === 'purchase'
+                ? 'Purchase'
+                : ($activeSource === 'admin_manual' ? 'Admin' : $activeSource));
         return ['label' => 'Active ' . ($src !== '' ? $src . ' grant' : 'commerce grant'), 'tone' => 'active'];
     }
     if ($hasExpired) {
@@ -280,8 +424,9 @@ function commerce_admin_dashboard_status(array $ctx): array
         if ($payId <= 0) {
             $base['payment_ui'] = 'Awaiting Payment';
             $base['payment_tone'] = 'awaiting';
-            $base['access_ui'] = 'None';
-            $base['access_tone'] = 'none';
+            // Admin/manual grants still count as Access Granted even without a payment.
+            $base['access_ui'] = $grantTone === 'active' ? 'Granted' : 'None';
+            $base['access_tone'] = $grantTone === 'active' ? 'granted' : 'none';
             $base['action_key'] = 'view';
             $base['action_label'] = 'View';
             $base['action_href'] = $viewStudent;
@@ -291,8 +436,8 @@ function commerce_admin_dashboard_status(array $ctx): array
         if ($payStatus === 'awaiting_proof') {
             $base['payment_ui'] = 'Awaiting Payment';
             $base['payment_tone'] = 'awaiting';
-            $base['access_ui'] = 'None';
-            $base['access_tone'] = 'none';
+            $base['access_ui'] = $grantTone === 'active' ? 'Granted' : 'None';
+            $base['access_tone'] = $grantTone === 'active' ? 'granted' : 'none';
             $base['action_key'] = 'view';
             $base['action_label'] = 'View';
             $base['action_href'] = $viewStudent;
@@ -327,8 +472,8 @@ function commerce_admin_dashboard_status(array $ctx): array
         if ($payStatus === 'cancelled' || $payStatus === 'expired') {
             $base['payment_ui'] = $payStatus === 'expired' ? 'Expired' : 'Cancelled';
             $base['payment_tone'] = 'rejected';
-            $base['access_ui'] = 'None';
-            $base['access_tone'] = 'none';
+            $base['access_ui'] = $grantTone === 'active' ? 'Granted' : 'None';
+            $base['access_tone'] = $grantTone === 'active' ? 'granted' : 'none';
             $base['action_key'] = 'review_payment';
             $base['action_label'] = 'Review';
             $base['action_href'] = $viewPayment;
@@ -471,6 +616,8 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
     }
 
     $itemNames = [];
+    /** @var array<int, list<array{lesson_id:int,item_name:string}>> $payItemsByPayment */
+    $payItemsByPayment = [];
     if ($payMap !== []) {
         $payIds = array_map(static function ($p) {
             return (int) $p['payment_id'];
@@ -480,11 +627,26 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
             $pin = implode(',', $payIds);
             $iq = mysqli_query(
                 $conn,
-                "SELECT payment_id, item_name FROM payment_items
-                 WHERE payment_id IN ($pin) AND line_no = 1"
+                "SELECT payment_id, line_no, lesson_id, item_name FROM payment_items
+                 WHERE payment_id IN ($pin)
+                 ORDER BY payment_id ASC, line_no ASC"
             );
             while ($iq && ($ir = mysqli_fetch_assoc($iq))) {
-                $itemNames[(int) $ir['payment_id']] = (string) ($ir['item_name'] ?? '');
+                $pid = (int) ($ir['payment_id'] ?? 0);
+                $lineNo = (int) ($ir['line_no'] ?? 0);
+                $itemName = (string) ($ir['item_name'] ?? '');
+                if ($pid > 0 && $lineNo === 1 && $itemName !== '') {
+                    $itemNames[$pid] = $itemName;
+                }
+                if ($pid > 0) {
+                    if (!isset($payItemsByPayment[$pid])) {
+                        $payItemsByPayment[$pid] = [];
+                    }
+                    $payItemsByPayment[$pid][] = [
+                        'lesson_id' => (int) ($ir['lesson_id'] ?? 0),
+                        'item_name' => $itemName,
+                    ];
+                }
             }
         }
     }
@@ -504,6 +666,27 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
 
     $grantMap = commerce_admin_grant_access_summaries_for_users($conn, $ids);
 
+    // Prefetch lesson titles for by_topic rows (registration JSON + payment line items).
+    $allLessonIds = [];
+    foreach ($pathMap as $uidTmp => $uTmp) {
+        if ((string) ($uTmp['enrollment_path'] ?? '') !== 'by_topic') {
+            continue;
+        }
+        foreach (commerce_admin_parse_lesson_ids_json((string) ($uTmp['selected_lesson_ids_json'] ?? '')) as $lid) {
+            $allLessonIds[$lid] = $lid;
+        }
+        $payTmp = $payMap[(int) $uidTmp] ?? null;
+        if ($payTmp) {
+            foreach ($payItemsByPayment[(int) $payTmp['payment_id']] ?? [] as $pi) {
+                $lid = (int) ($pi['lesson_id'] ?? 0);
+                if ($lid > 0) {
+                    $allLessonIds[$lid] = $lid;
+                }
+            }
+        }
+    }
+    $lessonMetaMap = commerce_admin_lesson_meta_map($conn, array_values($allLessonIds));
+
     foreach ($ids as $uid) {
         $u = $pathMap[$uid] ?? [];
         $path = (string) ($u['enrollment_path'] ?? '');
@@ -515,6 +698,10 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
 
         $enrollmentLabel = '—';
         $amountDisplay = '—';
+        $lessonLabels = [];
+        $lessonIdsOrdered = [];
+        $lessonGroups = [];
+        $topicsGroupedText = '';
         if ($path === 'package') {
             $name = $pkgNames[$selPkg] ?? '';
             if ($pay && !empty($itemNames[(int) $pay['payment_id']])) {
@@ -527,12 +714,58 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
                 $amountDisplay = '₱' . commerce_centavos_to_pesos_display($pkgPrices[$selPkg]);
             }
         } elseif ($path === 'by_topic') {
-            $enrollmentLabel = 'By Topic';
+            $lessonIdsOrdered = commerce_admin_parse_lesson_ids_json((string) ($u['selected_lesson_ids_json'] ?? ''));
+            if ($lessonIdsOrdered === [] && $pay) {
+                foreach ($payItemsByPayment[(int) $pay['payment_id']] ?? [] as $pi) {
+                    $lid = (int) ($pi['lesson_id'] ?? 0);
+                    if ($lid > 0 && !in_array($lid, $lessonIdsOrdered, true)) {
+                        $lessonIdsOrdered[] = $lid;
+                    }
+                }
+            }
+            // Ensure meta exists for payment-only fallbacks missing from map
+            foreach ($lessonIdsOrdered as $lid) {
+                if (!isset($lessonMetaMap[$lid])) {
+                    $fallback = 'Lesson #' . $lid;
+                    if ($pay) {
+                        foreach ($payItemsByPayment[(int) $pay['payment_id']] ?? [] as $pi) {
+                            if ((int) ($pi['lesson_id'] ?? 0) === $lid && trim((string) ($pi['item_name'] ?? '')) !== '') {
+                                $fallback = (string) $pi['item_name'];
+                                break;
+                            }
+                        }
+                    }
+                    $lessonMetaMap[$lid] = [
+                        'title' => $fallback,
+                        'subject_id' => 0,
+                        'subject_name' => 'Other',
+                    ];
+                }
+            }
+            $grouped = commerce_admin_group_topics_by_subject($lessonIdsOrdered, $lessonMetaMap);
+            $lessonLabels = $grouped['flat_labels'];
+            $lessonGroups = $grouped['groups'];
+            $topicsGroupedText = (string) ($grouped['grouped_text'] ?? '');
+            if ($lessonLabels === [] && $pay) {
+                foreach ($payItemsByPayment[(int) $pay['payment_id']] ?? [] as $pi) {
+                    $nm = trim((string) ($pi['item_name'] ?? ''));
+                    if ($nm !== '') {
+                        $lessonLabels[] = $nm;
+                    }
+                }
+                if ($lessonLabels !== [] && $topicsGroupedText === '') {
+                    $topicsGroupedText = implode(', ', $lessonLabels);
+                }
+            }
+            $subjectBits = [];
+            foreach ($lessonGroups as $g) {
+                $n = count($g['topics']);
+                $subjectBits[] = $g['subject_name'] . ($n > 1 ? (' (' . $n . ')') : '');
+            }
+            $subjectsShort = commerce_admin_format_topics_short($subjectBits, 2);
+            $enrollmentLabel = $subjectsShort !== '' ? ('By Topic · ' . $subjectsShort) : 'By Topic';
             if ($pay) {
                 $amountDisplay = '₱' . commerce_centavos_to_pesos_display((int) ($pay['expected_amount_centavos'] ?? 0));
-                if (!empty($itemNames[(int) $pay['payment_id']])) {
-                    $enrollmentLabel = 'By Topic · ' . $itemNames[(int) $pay['payment_id']];
-                }
             }
         } elseif ($path === 'free_access') {
             $enrollmentLabel = 'Free Access';
@@ -566,11 +799,19 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
             && ($mapped['access_tone'] ?? '') === 'granted'
         );
 
+        $topicsFull = $topicsGroupedText !== ''
+            ? $topicsGroupedText
+            : ($lessonLabels !== [] ? implode(', ', $lessonLabels) : '');
+
         $out[$uid] = [
             'user_id' => $uid,
             'enrollment_path' => $path,
             'enrollment_label' => $enrollmentLabel,
             'enrollment_amount_display' => $amountDisplay,
+            'lesson_labels' => $lessonLabels,
+            'lesson_ids' => $lessonIdsOrdered,
+            'lesson_groups' => $lessonGroups,
+            'enrollment_topics_full' => $topicsFull,
             'account_status' => $acct,
             'account_label' => commerce_admin_label_account_status($acct),
             'activation_required' => $activationRequired,
@@ -640,23 +881,47 @@ function commerce_admin_student_detail_summary(mysqli $conn, array $user): array
     }
 
     $lessonLabels = [];
-    $lessonIds = [];
-    if ($lessonJson !== '') {
-        $decoded = json_decode($lessonJson, true);
-        if (is_array($decoded)) {
-            foreach ($decoded as $lid) {
-                $lid = (int) $lid;
-                if ($lid > 0) {
-                    $lessonIds[$lid] = $lid;
+    $lessonItems = [];
+    $lessonGroups = [];
+    $lessonIds = commerce_admin_parse_lesson_ids_json($lessonJson);
+    if ($lessonIds !== []) {
+        $metaMap = commerce_admin_lesson_meta_map($conn, $lessonIds);
+        if (!function_exists('ereview_url')) {
+            require_once __DIR__ . '/url_helpers.php';
+        }
+        foreach ($lessonIds as $lid) {
+            $meta = $metaMap[$lid] ?? null;
+            $title = $meta ? (string) $meta['title'] : ('Lesson #' . $lid);
+            $subjectId = $meta ? (int) $meta['subject_id'] : 0;
+            $subjectName = $meta ? (string) ($meta['subject_name'] ?? '') : '';
+            $lessonLabels[] = $title;
+            $href = '';
+            if ($subjectId > 0) {
+                $href = ereview_url('admin_materials') . '?lesson_id=' . $lid . '&subject_id=' . $subjectId;
+            }
+            $lessonItems[] = [
+                'lesson_id' => $lid,
+                'title' => $title,
+                'subject_id' => $subjectId,
+                'subject_name' => $subjectName !== '' ? $subjectName : 'Other',
+                'href' => $href,
+            ];
+        }
+        $grouped = commerce_admin_group_topics_by_subject($lessonIds, $metaMap);
+        foreach ($grouped['groups'] as $g) {
+            $topics = [];
+            foreach ($lessonItems as $li) {
+                $sameSubject = ((int) $li['subject_id'] === (int) $g['subject_id'])
+                    || ((int) $g['subject_id'] === 0 && (string) $li['subject_name'] === (string) $g['subject_name']);
+                if ($sameSubject) {
+                    $topics[] = $li;
                 }
             }
-        }
-    }
-    if ($lessonIds !== []) {
-        $in = implode(',', array_map('intval', array_values($lessonIds)));
-        $lq = mysqli_query($conn, "SELECT lesson_id, title FROM lessons WHERE lesson_id IN ($in) ORDER BY lesson_id");
-        while ($lq && ($lr = mysqli_fetch_assoc($lq))) {
-            $lessonLabels[] = (string) ($lr['title'] ?? ('Lesson #' . $lr['lesson_id']));
+            $lessonGroups[] = [
+                'subject_id' => (int) $g['subject_id'],
+                'subject_name' => (string) $g['subject_name'],
+                'topics' => $topics,
+            ];
         }
     }
 
@@ -793,6 +1058,8 @@ function commerce_admin_student_detail_summary(mysqli $conn, array $user): array
         'package_id' => $packageId,
         'package_name' => $packageName,
         'lesson_labels' => $lessonLabels,
+        'lesson_items' => $lessonItems,
+        'lesson_groups' => $lessonGroups,
         'account_status' => (string) ($user['status'] ?? ''),
         'account_label' => commerce_admin_label_account_status((string) ($user['status'] ?? '')),
         'access_start' => $user['access_start'] ?? null,

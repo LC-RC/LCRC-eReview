@@ -55,94 +55,22 @@ $pageTitle = 'Subjects';
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <?php require_once __DIR__ . '/includes/student_lock_styles.php'; ?>
   <style>
-    .student-dashboard-page {
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(31, 88, 195, 0.07) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(245, 158, 11, 0.05) 0%, transparent 45%),
-        #f8fafc;
-    }
-    .student-hero {
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.65);
-      background: linear-gradient(130deg, #1665A0 0%, #145a8f 38%, #143D59 100%);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.2) inset,
-        0 16px 40px -16px rgba(20, 61, 89, 0.45);
-    }
-    .student-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background:
-        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
-        radial-gradient(circle at 10% 90%, rgba(255, 255, 255, 0.1) 0%, transparent 40%);
-      pointer-events: none;
-    }
-    .hero-strip {
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      border-radius: 0.75rem;
-      backdrop-filter: blur(8px);
-    }
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-      margin: 0 0 1.125rem;
-      padding: 0;
-      border: none;
-      background: transparent;
-      color: #0f172a;
-      font-size: 1.125rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .section-title i {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0.625rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #1F58C3, #3b82f6);
-      color: #fff;
-      font-size: 0.9rem;
-      box-shadow: 0 4px 12px -4px rgba(31, 88, 195, 0.5);
-    }
-    .dash-card {
-      border-radius: 1rem;
-      border: 1px solid #e2e8f0;
-      background: #fff;
-      box-shadow: 0 4px 16px -8px rgba(15, 23, 42, 0.08);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    }
-    .dash-card:hover {
-      transform: translateY(-2px);
-      border-color: #cbd5e1;
-      box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.12);
-    }
+    /* Page-local motion + subject accent themes; surfaces come from student-saas.css */
     .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp 0.55s ease-out forwards; }
     .delay-1 { animation-delay: 0.05s; }
     .delay-2 { animation-delay: 0.12s; }
     .delay-3 { animation-delay: 0.18s; }
     @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
 
-    /* Subject catalog — crisp, modern course cards */
     .subject-catalog-card {
       --subject-accent: #1665A0;
       --subject-color: #1665A0;
-      --subject-overlay-opacity: 0.1;
-      --subject-accent-soft: rgba(22, 101, 160, 0.1);
-      --subject-fallback: #f1f5f9;
+      --subject-overlay-opacity: 0.12;
+      --subject-accent-soft: rgba(22, 101, 160, 0.12);
+      --subject-fallback: transparent;
       position: relative;
       height: 100%;
       border-radius: 1rem;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.04),
-        0 4px 16px -6px rgba(15, 23, 42, 0.08);
       overflow: hidden;
       transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
     }
@@ -157,17 +85,12 @@ $pageTitle = 'Subjects';
       z-index: 3;
     }
     .subject-catalog-card:hover {
-      transform: translateY(-5px);
-      border-color: color-mix(in srgb, var(--subject-accent) 35%, #e2e8f0);
-      box-shadow:
-        0 4px 8px rgba(15, 23, 42, 0.04),
-        0 20px 40px -12px color-mix(in srgb, var(--subject-accent) 28%, transparent);
+      transform: translateY(-4px);
     }
     .subject-catalog-card__link {
       display: flex;
       flex-direction: column;
       height: 100%;
-      min-height: 18rem;
       color: inherit;
       text-decoration: none;
     }
@@ -175,9 +98,8 @@ $pageTitle = 'Subjects';
     .subject-catalog-card__media {
       position: relative;
       flex-shrink: 0;
-      height: 148px;
+      height: 96px;
       overflow: hidden;
-      background: #f1f5f9;
     }
     .subject-catalog-card__media::after {
       content: '';
@@ -210,7 +132,6 @@ $pageTitle = 'Subjects';
       display: flex;
       flex-direction: column;
       padding: 1.5rem 1.15rem 1.1rem;
-      background: #fff;
     }
     .subject-catalog-card__badge {
       position: absolute;
@@ -226,15 +147,11 @@ $pageTitle = 'Subjects';
       background: linear-gradient(145deg, var(--subject-accent), color-mix(in srgb, var(--subject-accent) 80%, #000));
       color: #fff;
       font-size: 1rem;
-      box-shadow:
-        0 4px 14px -4px color-mix(in srgb, var(--subject-accent) 55%, transparent),
-        0 0 0 3px #fff;
     }
     .subject-catalog-card__title {
       margin: 0;
       font-size: 1.125rem;
       font-weight: 800;
-      color: #0f172a;
       letter-spacing: -0.025em;
       line-height: 1.25;
     }
@@ -243,7 +160,6 @@ $pageTitle = 'Subjects';
       font-size: 0.8125rem;
       line-height: 1.5;
       font-weight: 500;
-      color: #64748b;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -283,20 +199,10 @@ $pageTitle = 'Subjects';
       align-items: center;
       justify-content: center;
       font-size: 0.95rem;
-      color: #64748b;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
       transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
     }
     .subject-catalog-card:hover .subject-catalog-card__arrow {
       transform: translateX(2px);
-      background: var(--subject-accent);
-      color: #fff;
-      border-color: var(--subject-accent);
-    }
-    .subject-catalog-card.lms-locked-card .subject-catalog-card__arrow {
-      background: #f1f5f9;
-      color: #94a3b8;
     }
     .subject-catalog-card__link:focus-visible {
       outline: 2px solid var(--subject-accent);
@@ -369,22 +275,17 @@ $pageTitle = 'Subjects';
   <?php $topbarSubtitle = false; include 'student_topbar.php'; ?>
 
   <div class="student-dashboard-page min-h-full pb-8">
-    <section class="student-hero dash-anim delay-1 relative overflow-hidden mb-6 px-6 py-7 text-white">
+    <section class="student-hero student-hero--glass dash-anim delay-1 relative overflow-hidden mb-7">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 border border-white/30"><i class="bi bi-book"></i></span>
+          <h1 class="student-hero__title text-2xl sm:text-3xl font-bold m-0 flex items-center gap-3">
+            <span class="student-hero__icon" aria-hidden="true"><i class="bi bi-book"></i></span>
             Subjects
           </h1>
-          <p class="text-white/90 mt-2 mb-0 max-w-2xl">Choose a subject to open lessons, videos, handouts, and quizzes.</p>
+          <p class="student-hero__lede mt-2 mb-0">Choose a subject to open lessons, videos, handouts, and quizzes.</p>
         </div>
       </div>
-      <div class="hero-strip mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
-        <?php $totalSubjects = $subjectsResult ? mysqli_num_rows($subjectsResult) : 0; ?>
-        <span class="font-semibold">Active subjects: <?php echo (int)$totalSubjects; ?></span>
-        <span class="text-white/50">·</span>
-        <span class="font-semibold">Total lessons: <?php echo (int)$totalLessons; ?></span>
-      </div>
+      <?php $totalSubjects = $subjectsResult ? mysqli_num_rows($subjectsResult) : 0; ?>
     </section>
 
     <?php if ($subjectsFlashError !== ''): ?>
@@ -394,7 +295,7 @@ $pageTitle = 'Subjects';
       </div>
     <?php endif; ?>
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 dash-anim delay-2 mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 dash-anim delay-2 mb-5">
       <h2 class="section-title m-0"><i class="bi bi-grid-3x3-gap"></i> Subject Catalog</h2>
       <?php if ($totalSubjects > 0): ?>
         <p class="text-sm font-semibold text-slate-500 m-0"><?php echo (int)$totalSubjects; ?> subject<?php echo $totalSubjects === 1 ? '' : 's'; ?> · <?php echo (int)$totalLessons; ?> lessons</p>

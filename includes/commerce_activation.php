@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/commerce_access_gate.php';
+
 /**
  * Max future ends_at among active commerce grants for a student, or null.
  */
@@ -24,7 +26,7 @@ function commerce_user_max_active_grant_ends_ts(mysqli $conn, int $userId): ?int
          WHERE user_id = ?
            AND status = 'active'
            AND ends_at > NOW()
-           AND source IN ('purchase', 'free_access')"
+           AND source IN ('purchase', 'free_access', 'admin_manual')"
     );
     if (!$stmt) {
         return null;

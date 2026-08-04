@@ -107,10 +107,11 @@ body.admin-app .admin-topbar-modern {
   margin-left: 0;
   margin-right: 0;
 }
+/* Dark topbar uses the same floating glass layout as light (see admin-saas.css). */
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern .admin-topbar-inner {
-  min-height: var(--app-shell-topbar-height, 80px);
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  min-height: 3.6rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -120,10 +121,6 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern .admin-
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(to bottom, #0a0a0a 0%, #0d0d0d 55%, #0a0a0a 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  border-radius: 0;
 }
 body.admin-app .admin-topbar-left {
   display: flex;
@@ -387,17 +384,28 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-avatar {
   background: #ffffff;
   box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
-html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name {
+body.admin-app .admin-topbar-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.9);
   max-width: min(240px, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: none;
 }
-@media (min-width: 640px) { body.admin-app .admin-topbar-name { display: inline; } }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name {
+  color: rgba(255, 255, 255, 0.92);
+}
+html[data-admin-theme="light"] body.admin-app .admin-topbar-name {
+  color: var(--admin-text, #0f172a);
+}
+@media (min-width: 640px) {
+  body.admin-app .admin-topbar-name,
+  html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-name,
+  html[data-admin-theme="light"] body.admin-app .admin-topbar-name {
+    display: inline !important;
+  }
+}
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-chevron { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: transform 0.2s ease; }
 body.admin-app .admin-topbar-chevron.is-open { transform: rotate(180deg); }
 

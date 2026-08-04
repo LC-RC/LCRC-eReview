@@ -126,18 +126,12 @@ if ($hasEmailVerifiedCol) {
     }
 }
 
-if (!isStaffRole($user['role']) && strtolower($user['status']) !== 'approved') {
-    $_SESSION['error'] = 'Your account is pending approval. An admin must approve your account before you can sign in. Please try again later or contact support.';
-    $_SESSION['error_type'] = 'not_approved';
-    header('Location: login');
-    exit;
-}
-if (!isStaffRole($user['role']) && !empty($user['access_end'])) {
-    $now = new DateTime('now');
-    $end = new DateTime($user['access_end']);
-    if ($now > $end) {
-        $_SESSION['error'] = 'Your access has expired.';
-        $_SESSION['error_type'] = 'access_expired';
+if (!isStaffRole($user['role'])) {
+    require_once __DIR__ . '/includes/commerce_access_gate.php';
+    $gate = commerce_student_can_login($conn, $user);
+    if (empty($gate['ok'])) {
+        $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is pending approval.');
+        $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
         header('Location: login');
         exit;
     }
