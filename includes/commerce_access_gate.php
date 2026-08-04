@@ -122,8 +122,9 @@ function commerce_student_try_restore_legacy_access(mysqli $conn, int $userId, a
     if (commerce_student_has_active_access($conn, $userId)) {
         return ['ok' => true, 'skipped' => true, 'restored' => false];
     }
-    // Login/session callers often pass a partial users row — reload for restore decisions.
+    // Login/session/CLI callers often pass a partial users row — reload for restore decisions.
     $needsReload = $user === []
+        || !array_key_exists('role', $user)
         || !array_key_exists('enrollment_path', $user)
         || !array_key_exists('access_start', $user)
         || !array_key_exists('access_months', $user);

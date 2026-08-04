@@ -26,7 +26,7 @@ if (!commerce_schema_ready($conn)) {
     exit(1);
 }
 
-$sql = "SELECT u.user_id, u.full_name, u.email, u.status, u.enrollment_path,
+$sql = "SELECT u.user_id, u.full_name, u.email, u.role, u.status, u.enrollment_path,
                u.access_start, u.access_end, u.access_months,
                (SELECT COUNT(*) FROM student_content_permissions p WHERE p.user_id = u.user_id) AS sca
         FROM users u
