@@ -197,6 +197,7 @@ function commerce_student_try_restore_legacy_access(mysqli $conn, int $userId, a
         'months' => $months,
         'activate_login' => true,
         'close_open_payment' => false,
+        'notify_student' => false,
         'label' => 'Legacy enrolled access restore',
     ]);
     if (empty($g['ok'])) {

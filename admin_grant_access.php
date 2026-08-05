@@ -134,6 +134,8 @@ $granted = [];
 $failed = [];
 $activated = 0;
 $paymentsClosed = 0;
+$emailsSent = 0;
+$inAppNotified = 0;
 
 foreach ($userIds as $userId) {
     $result = commerce_admin_grant_manual_access($conn, $userId, $adminId, [
@@ -141,6 +143,7 @@ foreach ($userIds as $userId) {
         'activate_login' => $activateLogin,
         'label' => 'Administrative Access (' . $scopeLabel . ')',
         'close_open_payment' => true,
+        'notify_student' => true,
         'permissions' => $permissions,
     ]);
     if (empty($result['ok'])) {
@@ -161,6 +164,13 @@ foreach ($userIds as $userId) {
     if ($paymentClosed) {
         $paymentsClosed++;
     }
+    $nv = $result['notify'] ?? [];
+    if (!empty($nv['sent'])) {
+        $emailsSent++;
+    }
+    if (!empty($nv['in_app'])) {
+        $inAppNotified++;
+    }
     $granted[] = [
         'user_id' => $userId,
         'grant_id' => (int) ($result['grant_id'] ?? 0),
@@ -169,6 +179,8 @@ foreach ($userIds as $userId) {
         'already_approved' => !empty($act['already_approved']),
         'payment_closed' => $paymentClosed,
         'payment_id' => (int) ($pc['payment_id'] ?? 0),
+        'email_sent' => !empty($nv['sent']),
+        'in_app_notified' => !empty($nv['in_app']),
     ];
 }
 
@@ -196,7 +208,13 @@ if (count($userIds) === 1) {
         $note .= ' Login was already active.';
     }
     if (!empty($one['payment_closed'])) {
-        $note .= ' Open payment review also marked approved.';
+        $note .= ' Open payment also marked manually approved.';
+    }
+    if (!empty($one['email_sent'])) {
+        $note .= ' Student emailed.';
+    }
+    if (!empty($one['in_app_notified'])) {
+        $note .= ' In-app notification sent.';
     }
     admin_grant_access_respond(true, $note, [
         'grant_id' => (int) ($one['grant_id'] ?? 0),
@@ -206,6 +224,8 @@ if (count($userIds) === 1) {
         'granted_count' => 1,
         'failed_count' => $failCount,
         'payments_closed' => $paymentsClosed,
+        'emails_sent' => $emailsSent,
+        'in_app_notified' => $inAppNotified,
     ]);
 }
 
@@ -214,7 +234,13 @@ if ($activated > 0) {
     $note .= ' (' . $activated . ' login activated)';
 }
 if ($paymentsClosed > 0) {
-    $note .= '; ' . $paymentsClosed . ' payment review' . ($paymentsClosed === 1 ? '' : 's') . ' closed';
+    $note .= '; ' . $paymentsClosed . ' payment' . ($paymentsClosed === 1 ? '' : 's') . ' manually approved';
+}
+if ($emailsSent > 0) {
+    $note .= '; ' . $emailsSent . ' email' . ($emailsSent === 1 ? '' : 's') . ' sent';
+}
+if ($inAppNotified > 0) {
+    $note .= '; ' . $inAppNotified . ' in-app notice' . ($inAppNotified === 1 ? '' : 's');
 }
 $note .= '.';
 if ($failCount > 0) {
@@ -227,5 +253,7 @@ admin_grant_access_respond(true, $note, [
     'granted_count' => $okCount,
     'failed_count' => $failCount,
     'payments_closed' => $paymentsClosed,
+    'emails_sent' => $emailsSent,
+    'in_app_notified' => $inAppNotified,
     'partial' => $failCount > 0,
 ]);

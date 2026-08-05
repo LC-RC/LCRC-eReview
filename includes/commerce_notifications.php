@@ -400,6 +400,109 @@ function commerce_notify_far_approved(mysqli $conn, int $requestId, int $duratio
 }
 
 /**
+ * Notify student after administrative Grant Access (email + in-app message).
+ * Safe to call when payment had no proof — SMTP/notification failure never undoes the grant.
+ *
+ * @param array{months?:int,scope?:string,no_proof?:bool,payment_closed?:bool} $opts
+ * @return array{ok:bool,error?:string,sent?:bool,in_app?:bool}
+ */
+function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $adminId = 0, array $opts = []): array
+{
+    if ($userId <= 0) {
+        return ['ok' => false, 'error' => 'invalid_user'];
+    }
+
+    $student = commerce_notify_load_student($conn, $userId);
+    if (empty($student['ok'])) {
+        return ['ok' => false, 'error' => $student['error'] ?? 'student_load_failed', 'sent' => false, 'in_app' => false];
+    }
+
+    // Refresh status after activation so login copy is accurate.
+    $refreshed = commerce_notify_load_student($conn, $userId);
+    if (!empty($refreshed['ok'])) {
+        $student = $refreshed;
+    }
+
+    $months = max(1, (int) ($opts['months'] ?? 6));
+    $scope = strtolower(trim((string) ($opts['scope'] ?? 'full_lms')));
+    $scopeLabel = $scope === 'by_topic' ? 'selected topics' : 'Full LMS';
+    $noProof = !empty($opts['no_proof']);
+    $loginHint = htmlspecialchars(commerce_notify_login_hint(), ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
+    $approved = ((string) ($student['status'] ?? '') === 'approved');
+
+    $inApp = false;
+    if (is_file(__DIR__ . '/notification_helpers.php')) {
+        require_once __DIR__ . '/notification_helpers.php';
+        if (function_exists('notifications_create_for_user')) {
+            $title = 'Access granted';
+            $msg = 'An administrator granted your LMS access (' . $scopeLabel . ', ' . $months . ' month'
+                . ($months === 1 ? '' : 's') . ').';
+            if ($noProof) {
+                $msg .= ' Your payment proof was not required for this manual approval.';
+            }
+            if ($approved) {
+                $msg .= ' You can sign in now.';
+            } else {
+                $msg .= ' Sign-in may still need a moment to activate — try logging in shortly.';
+            }
+            $inApp = notifications_create_for_user(
+                $conn,
+                $userId,
+                'student',
+                $title,
+                $msg,
+                'login',
+                'access_granted',
+                $adminId > 0 ? $adminId : null
+            );
+        }
+    }
+
+    $config = commerce_notify_load_mail_config();
+    if ($config === null) {
+        error_log('commerce_notify: mail config missing/invalid; admin grant email not sent');
+        return [
+            'ok' => $inApp,
+            'error' => 'mail_config_invalid',
+            'sent' => false,
+            'in_app' => $inApp,
+        ];
+    }
+
+    $subject = 'LCRC eReview — Access granted';
+    $bodyHtml = "<p>Dear {$name},</p>"
+        . '<p>An administrator has <strong>granted your LMS access</strong> ('
+        . htmlspecialchars($scopeLabel, ENT_QUOTES, 'UTF-8')
+        . " for <strong>{$months} month" . ($months === 1 ? '' : 's') . '</strong>).</p>';
+    if ($noProof) {
+        $bodyHtml .= '<p>This was a <strong>manual approval</strong>. A payment proof upload was not required for this activation.</p>';
+    }
+    if ($approved) {
+        $bodyHtml .= '<p>Your account is active. You may sign in here:</p>'
+            . "<p><a href=\"{$loginHint}\">{$loginHint}</a></p>";
+        $plainExtra = 'Your account is active. Sign in at: ' . commerce_notify_login_hint() . "\n";
+    } else {
+        $bodyHtml .= '<p>Please try signing in shortly. If you cannot log in yet, contact LCRC eReview support.</p>';
+        $plainExtra = "Please try signing in shortly. If you cannot log in yet, contact support.\n";
+    }
+    $plain = "Dear {$student['full_name']},\n\nAn administrator granted your LMS access ({$scopeLabel}, {$months} month"
+        . ($months === 1 ? '' : 's') . ").\n"
+        . ($noProof ? "This was a manual approval; payment proof was not required.\n" : '')
+        . $plainExtra
+        . "\nLCRC eReview Admin Team\n";
+    $html = commerce_notify_wrap_html('Access granted', $bodyHtml);
+    $sent = commerce_notify_dispatch((string) $student['email'], $subject, $html, $plain, $config);
+
+    return [
+        'ok' => !empty($sent['ok']) || $inApp,
+        'error' => empty($sent['ok']) ? (string) ($sent['error'] ?? 'send_failed') : null,
+        'sent' => !empty($sent['ok']),
+        'in_app' => $inApp,
+    ];
+}
+
+/**
  * @return array{ok:bool,skipped?:bool,error?:string,sent?:bool}
  */
 function commerce_notify_far_rejected(mysqli $conn, int $requestId): array

@@ -1727,7 +1727,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
       <div>
         <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
-        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) for each selected student. If they already have a proof under review (Needs Review / OCR Failed), that payment is marked <strong>approved</strong> too — no second trip to Payment Verification.</p>
+        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic). Open payments — including <strong>Awaiting Payment / no proof uploaded</strong> — are marked <strong>manually approved</strong>. The student also gets an <strong>email</strong> and <strong>in-app notification</strong>.</p>
         <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
       </div>
     </div>
@@ -1745,7 +1745,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
       <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
     </div>
-    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies the selected content permissions, and closes open payment reviews with proof. Does not create a second purchase grant.</p>
+    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies content permissions, emails + notifies the student, and closes open payments (with or without proof). Does not create a second purchase grant.</p>
     <div id="grantAccessError" class="admin-modal__error"></div>
     <div class="admin-modal__actions">
       <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>

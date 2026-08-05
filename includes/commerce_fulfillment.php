@@ -520,11 +520,11 @@ function commerce_payment_is_manual_reviewable(array $payment): bool
 }
 
 /**
- * Close a reviewable open payment after admin_manual grant — no purchase grants / no fulfill.
- * Marks paid + manually_approved + fulfilled_at so Payment Verification queue clears
- * without stacking a second source=purchase grant on top of admin_manual.
+ * Close an open payment after admin_manual grant — no purchase grants / no fulfill.
+ * 1) Reviewable pending_verification with proof → manually_approved + paid
+ * 2) Else awaiting_proof (incl. no proof uploaded) → same manual approve so Needs Review clears
  *
- * @return array{ok:bool,skipped?:bool,error?:string,payment_id?:int,payment?:array<string,mixed>}
+ * @return array{ok:bool,skipped?:bool,error?:string,payment_id?:int,payment?:array<string,mixed>,mode?:string}
  */
 function commerce_close_reviewable_payment_after_admin_grant(
     mysqli $conn,
@@ -541,9 +541,9 @@ function commerce_close_reviewable_payment_after_admin_grant(
         $conn,
         "SELECT * FROM payments
          WHERE user_id = ?
-           AND status = 'pending_verification'
+           AND status IN ('pending_verification', 'awaiting_proof')
          ORDER BY payment_id DESC
-         LIMIT 8"
+         LIMIT 12"
     );
     if (!$stmt) {
         return ['ok' => false, 'error' => 'payment_lookup_failed'];
@@ -552,10 +552,18 @@ function commerce_close_reviewable_payment_after_admin_grant(
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     $payment = null;
+    $mode = '';
     while ($res && ($row = mysqli_fetch_assoc($res))) {
-        if (commerce_payment_is_manual_reviewable($row)) {
+        $st = (string) ($row['status'] ?? '');
+        if ($st === 'pending_verification' && commerce_payment_is_manual_reviewable($row)) {
             $payment = $row;
+            $mode = 'reviewable_proof';
             break;
+        }
+        if ($payment === null && $st === 'awaiting_proof') {
+            $payment = $row;
+            $mode = 'awaiting_proof';
+            // Prefer a reviewable proof payment if one appears later in the loop.
         }
     }
     mysqli_stmt_close($stmt);
@@ -569,34 +577,59 @@ function commerce_close_reviewable_payment_after_admin_grant(
         return ['ok' => true, 'skipped' => true, 'error' => 'no_reviewable_payment'];
     }
 
+    $hasProof = trim((string) ($payment['proof_path'] ?? '')) !== '';
     $note = trim($reviewNote);
     if ($note === '') {
-        $note = 'Closed via administrative Grant Access'
-            . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
-            . '. Access already granted — payment marked approved without creating a second purchase grant.';
+        if ($mode === 'awaiting_proof' && !$hasProof) {
+            $note = 'Manually approved via administrative Grant Access'
+                . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
+                . '. No payment proof was uploaded — access granted by admin without a second purchase grant.';
+        } else {
+            $note = 'Closed via administrative Grant Access'
+                . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
+                . '. Access already granted — payment marked approved without creating a second purchase grant.';
+        }
     }
     if (strlen($note) > 2000) {
         $note = substr($note, 0, 2000);
     }
 
-    $upd = mysqli_prepare(
-        $conn,
-        "UPDATE payments SET
-            verification_status = 'manually_approved',
-            status = 'paid',
-            paid_at = IFNULL(paid_at, NOW()),
-            reviewed_by = ?,
-            reviewed_at = NOW(),
-            review_note = ?,
-            fulfilled_at = IFNULL(fulfilled_at, NOW())
-         WHERE payment_id = ?
-           AND user_id = ?
-           AND status = 'pending_verification'
-           AND verification_status IN ('needs_review','failed','processing','not_started')
-           AND proof_path IS NOT NULL
-           AND proof_path <> ''
-         LIMIT 1"
-    );
+    if ($mode === 'awaiting_proof') {
+        $upd = mysqli_prepare(
+            $conn,
+            "UPDATE payments SET
+                verification_status = 'manually_approved',
+                status = 'paid',
+                paid_at = IFNULL(paid_at, NOW()),
+                reviewed_by = ?,
+                reviewed_at = NOW(),
+                review_note = ?,
+                fulfilled_at = IFNULL(fulfilled_at, NOW())
+             WHERE payment_id = ?
+               AND user_id = ?
+               AND status = 'awaiting_proof'
+             LIMIT 1"
+        );
+    } else {
+        $upd = mysqli_prepare(
+            $conn,
+            "UPDATE payments SET
+                verification_status = 'manually_approved',
+                status = 'paid',
+                paid_at = IFNULL(paid_at, NOW()),
+                reviewed_by = ?,
+                reviewed_at = NOW(),
+                review_note = ?,
+                fulfilled_at = IFNULL(fulfilled_at, NOW())
+             WHERE payment_id = ?
+               AND user_id = ?
+               AND status = 'pending_verification'
+               AND verification_status IN ('needs_review','failed','processing','not_started')
+               AND proof_path IS NOT NULL
+               AND proof_path <> ''
+             LIMIT 1"
+        );
+    }
     if (!$upd) {
         return ['ok' => false, 'error' => 'close_prepare_failed', 'payment_id' => $paymentId];
     }
@@ -615,6 +648,7 @@ function commerce_close_reviewable_payment_after_admin_grant(
     return [
         'ok' => true,
         'skipped' => false,
+        'mode' => $mode,
         'payment_id' => $paymentId,
         'payment' => commerce_get_payment($conn, $paymentId) ?: $payment,
     ];

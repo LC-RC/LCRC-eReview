@@ -115,9 +115,10 @@ function commerce_admin_upsert_manual_grant_row(
  *   activate_login?:bool,
  *   label?:string,
  *   close_open_payment?:bool,
+ *   notify_student?:bool,
  *   permissions?:list<array{content_type?:string,content_id?:int|string}>
  * } $opts
- * @return array{ok:bool,error?:string,grant_id?:int,activation?:array<string,mixed>,already_active?:bool,payment_close?:array<string,mixed>,scope?:string}
+ * @return array{ok:bool,error?:string,grant_id?:int,activation?:array<string,mixed>,already_active?:bool,payment_close?:array<string,mixed>,notify?:array<string,mixed>,scope?:string}
  */
 function commerce_admin_grant_manual_access(
     mysqli $conn,
@@ -141,6 +142,8 @@ function commerce_admin_grant_manual_access(
     }
     $activateLogin = array_key_exists('activate_login', $opts) ? (bool) $opts['activate_login'] : true;
     $closeOpenPayment = array_key_exists('close_open_payment', $opts) ? (bool) $opts['close_open_payment'] : true;
+    // Default on for interactive Grant Access; scripts/restore should pass notify_student=false.
+    $notifyStudent = array_key_exists('notify_student', $opts) ? (bool) $opts['notify_student'] : true;
 
     $permissions = sca_normalize_permission_payload(
         isset($opts['permissions']) && is_array($opts['permissions'])
@@ -342,12 +345,37 @@ function commerce_admin_grant_manual_access(
         }
     }
 
+    $notify = ['ok' => true, 'skipped' => true, 'sent' => false, 'in_app' => false];
+    if ($notifyStudent) {
+        try {
+            if (!function_exists('commerce_notify_admin_manual_grant')) {
+                require_once __DIR__ . '/commerce_notifications.php';
+            }
+            $payRow = is_array($paymentClose['payment'] ?? null) ? $paymentClose['payment'] : [];
+            $noProof = ((string) ($paymentClose['mode'] ?? '') === 'awaiting_proof')
+                || (
+                    empty($paymentClose['skipped'])
+                    && trim((string) ($payRow['proof_path'] ?? '')) === ''
+                );
+            $notify = commerce_notify_admin_manual_grant($conn, $userId, $adminId, [
+                'months' => $months,
+                'scope' => $isFullLms ? 'full_lms' : 'by_topic',
+                'no_proof' => $noProof,
+                'payment_closed' => empty($paymentClose['skipped']),
+            ]);
+        } catch (Throwable $e) {
+            error_log('commerce_admin_grant_manual_access notify_failed user=' . $userId . ' ' . $e->getMessage());
+            $notify = ['ok' => false, 'sent' => false, 'in_app' => false, 'error' => 'notify_exception'];
+        }
+    }
+
     return [
         'ok' => true,
         'grant_id' => $grantId,
         'already_active' => $alreadyActive,
         'activation' => $activation,
         'payment_close' => $paymentClose,
+        'notify' => $notify,
         'scope' => $isFullLms ? 'full_lms' : 'by_topic',
     ];
 }

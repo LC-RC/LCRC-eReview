@@ -165,6 +165,110 @@ if (!function_exists('notifications_get_admin_user_ids')) {
     }
 }
 
+if (!function_exists('notifications_create_for_user')) {
+    /**
+     * Create one in-app notification for a user (student/admin/etc.).
+     *
+     * @return bool true when a row was inserted
+     */
+    function notifications_create_for_user(
+        mysqli $conn,
+        int $userId,
+        string $role,
+        string $title,
+        string $message,
+        string $linkUrl = '',
+        string $category = 'general',
+        ?int $actorUserId = null
+    ): bool {
+        if ($userId <= 0 || trim($title) === '' || trim($message) === '') {
+            return false;
+        }
+        if (!notifications_ensure_table($conn)) {
+            return false;
+        }
+        $role = trim($role);
+        if ($role === '') {
+            $role = 'student';
+        }
+        $linkUrl = trim($linkUrl);
+        $category = trim($category) !== '' ? trim($category) : 'general';
+        $isRead = 0;
+        $toastShown = 0;
+        $actor = ($actorUserId !== null && $actorUserId > 0) ? $actorUserId : 0;
+
+        $hasCategory = notifications_column_exists($conn, 'notifications', 'category');
+        $hasActor = notifications_column_exists($conn, 'notifications', 'actor_user_id');
+        $hasToast = notifications_column_exists($conn, 'notifications', 'toast_shown');
+        if ($hasCategory && $hasActor && $hasToast) {
+            $ins = mysqli_prepare(
+                $conn,
+                'INSERT INTO notifications (user_id, role, title, message, link_url, category, actor_user_id, is_read, toast_shown)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            if (!$ins) {
+                return false;
+            }
+            // actor_user_id 0 → store NULL
+            if ($actor <= 0) {
+                $insNull = mysqli_prepare(
+                    $conn,
+                    'INSERT INTO notifications (user_id, role, title, message, link_url, category, actor_user_id, is_read, toast_shown)
+                     VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)'
+                );
+                if ($insNull) {
+                    mysqli_stmt_close($ins);
+                    $ins = $insNull;
+                    mysqli_stmt_bind_param(
+                        $ins,
+                        'isssssii',
+                        $userId,
+                        $role,
+                        $title,
+                        $message,
+                        $linkUrl,
+                        $category,
+                        $isRead,
+                        $toastShown
+                    );
+                    $ok = mysqli_stmt_execute($ins);
+                    mysqli_stmt_close($ins);
+                    return (bool) $ok;
+                }
+            }
+            mysqli_stmt_bind_param(
+                $ins,
+                'isssssiii',
+                $userId,
+                $role,
+                $title,
+                $message,
+                $linkUrl,
+                $category,
+                $actor,
+                $isRead,
+                $toastShown
+            );
+            $ok = mysqli_stmt_execute($ins);
+            mysqli_stmt_close($ins);
+            return (bool) $ok;
+        }
+
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO notifications (user_id, role, title, message, link_url, is_read)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        if (!$ins) {
+            return false;
+        }
+        mysqli_stmt_bind_param($ins, 'issssi', $userId, $role, $title, $message, $linkUrl, $isRead);
+        $ok = mysqli_stmt_execute($ins);
+        mysqli_stmt_close($ins);
+        return (bool) $ok;
+    }
+}
+
 if (!function_exists('notifications_create_admin_preboards_request_notifications')) {
     function notifications_create_admin_preboards_request_notifications(
         mysqli $conn,

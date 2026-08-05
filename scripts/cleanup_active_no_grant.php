@@ -103,6 +103,7 @@ foreach ($rows as $row) {
             'months' => $months,
             'activate_login' => true,
             'close_open_payment' => false,
+            'notify_student' => false,
             'label' => 'Legacy access backfill',
         ]);
         if (!empty($g['ok'])) {
