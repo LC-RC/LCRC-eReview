@@ -4,6 +4,8 @@
  * Does NOT run commerce_fulfill_payment (avoids duplicate purchase grants).
  * By default, closes any open reviewable payment (needs_review / OCR failed + proof)
  * as manually_approved + fulfilled so Payment Verification is not double work.
+ *
+ * Supports Full LMS or by-topic (subject/lesson/… ) permissions — same choices as Student Access.
  */
 declare(strict_types=1);
 
@@ -14,12 +16,108 @@ if (is_file(__DIR__ . '/commerce_fulfillment.php')) {
 }
 
 /**
- * Grant Full LMS access for N months via access_grants.source = admin_manual + SCA upsert.
- * Optionally activates login when status is pending (same helper as paid/FAR success).
- * Optionally closes a reviewable open payment (status only — no purchase fulfill).
+ * Insert or extend one admin_manual access_grants row for a content key.
  *
- * @param array{months?:int,activate_login?:bool,label?:string,close_open_payment?:bool} $opts
- * @return array{ok:bool,error?:string,grant_id?:int,activation?:array<string,mixed>,already_active?:bool,payment_close?:array<string,mixed>}
+ * @return array{ok:bool,error?:string,grant_id?:int,already_active?:bool}
+ */
+function commerce_admin_upsert_manual_grant_row(
+    mysqli $conn,
+    int $userId,
+    int $adminId,
+    string $contentType,
+    int $contentId,
+    string $label,
+    int $months
+): array {
+    $existing = null;
+    $eq = mysqli_prepare(
+        $conn,
+        "SELECT grant_id
+         FROM access_grants
+         WHERE user_id = ?
+           AND source = 'admin_manual'
+           AND content_type = ?
+           AND content_id = ?
+           AND status = 'active'
+           AND ends_at > NOW()
+         ORDER BY ends_at DESC
+         LIMIT 1"
+    );
+    if ($eq) {
+        mysqli_stmt_bind_param($eq, 'isi', $userId, $contentType, $contentId);
+        mysqli_stmt_execute($eq);
+        $er = mysqli_stmt_get_result($eq);
+        $existing = $er ? mysqli_fetch_assoc($er) : null;
+        mysqli_stmt_close($eq);
+    }
+
+    if ($existing) {
+        $grantId = (int) ($existing['grant_id'] ?? 0);
+        $ext = mysqli_prepare(
+            $conn,
+            "UPDATE access_grants
+             SET ends_at = GREATEST(ends_at, DATE_ADD(NOW(), INTERVAL ? MONTH)),
+                 content_label = ?,
+                 granted_by = ?,
+                 updated_at = NOW()
+             WHERE grant_id = ?
+               AND status = 'active'
+             LIMIT 1"
+        );
+        if ($ext) {
+            mysqli_stmt_bind_param($ext, 'isii', $months, $label, $adminId, $grantId);
+            mysqli_stmt_execute($ext);
+            mysqli_stmt_close($ext);
+        }
+        return ['ok' => true, 'grant_id' => $grantId, 'already_active' => true];
+    }
+
+    $source = 'admin_manual';
+    $gStatus = 'active';
+    $ins = mysqli_prepare(
+        $conn,
+        'INSERT INTO access_grants
+          (user_id, source, payment_id, payment_item_id, free_access_request_id,
+           content_type, content_id, content_label, starts_at, ends_at, status, granted_by)
+         VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH), ?, ?)'
+    );
+    if (!$ins) {
+        return ['ok' => false, 'error' => 'grant_prepare_failed'];
+    }
+    mysqli_stmt_bind_param(
+        $ins,
+        'issisisi',
+        $userId,
+        $source,
+        $contentType,
+        $contentId,
+        $label,
+        $months,
+        $gStatus,
+        $adminId
+    );
+    if (!mysqli_stmt_execute($ins)) {
+        $err = mysqli_error($conn);
+        mysqli_stmt_close($ins);
+        return ['ok' => false, 'error' => 'grant_insert_failed:' . $err];
+    }
+    $grantId = (int) mysqli_insert_id($conn);
+    mysqli_stmt_close($ins);
+    return ['ok' => true, 'grant_id' => $grantId, 'already_active' => false];
+}
+
+/**
+ * Grant LMS access for N months via access_grants.source = admin_manual + SCA.
+ * Default permissions = Full LMS. Pass topic/subject rows for by-topic access.
+ *
+ * @param array{
+ *   months?:int,
+ *   activate_login?:bool,
+ *   label?:string,
+ *   close_open_payment?:bool,
+ *   permissions?:list<array{content_type?:string,content_id?:int|string}>
+ * } $opts
+ * @return array{ok:bool,error?:string,grant_id?:int,activation?:array<string,mixed>,already_active?:bool,payment_close?:array<string,mixed>,scope?:string}
  */
 function commerce_admin_grant_manual_access(
     mysqli $conn,
@@ -43,9 +141,33 @@ function commerce_admin_grant_manual_access(
     }
     $activateLogin = array_key_exists('activate_login', $opts) ? (bool) $opts['activate_login'] : true;
     $closeOpenPayment = array_key_exists('close_open_payment', $opts) ? (bool) $opts['close_open_payment'] : true;
-    $label = trim((string) ($opts['label'] ?? 'Administrative Access (Full LMS)'));
+
+    $permissions = sca_normalize_permission_payload(
+        isset($opts['permissions']) && is_array($opts['permissions'])
+            ? $opts['permissions']
+            : [['content_type' => 'full_lms', 'content_id' => 0]]
+    );
+    if ($permissions === []) {
+        return ['ok' => false, 'error' => 'no_permissions'];
+    }
+
+    $isFullLms = false;
+    foreach ($permissions as $p) {
+        if (($p['content_type'] ?? '') === 'full_lms' && (int) ($p['content_id'] ?? 0) === 0) {
+            $isFullLms = true;
+            break;
+        }
+    }
+    if ($isFullLms) {
+        $permissions = [['content_type' => 'full_lms', 'content_id' => 0]];
+    }
+
+    $defaultLabel = $isFullLms
+        ? 'Administrative Access (Full LMS)'
+        : ('Administrative Access (' . count($permissions) . ' topic' . (count($permissions) === 1 ? '' : 's') . ')');
+    $label = trim((string) ($opts['label'] ?? $defaultLabel));
     if ($label === '') {
-        $label = 'Administrative Access (Full LMS)';
+        $label = $defaultLabel;
     }
     if (strlen($label) > 200) {
         $label = substr($label, 0, 200);
@@ -70,87 +192,110 @@ function commerce_admin_grant_manual_access(
         return ['ok' => false, 'error' => 'rejected_student'];
     }
 
-    // If an active admin_manual full_lms grant already covers the student, extend SCA / login only.
-    $existing = null;
-    $eq = mysqli_prepare(
-        $conn,
-        "SELECT grant_id, ends_at, status, source
-         FROM access_grants
-         WHERE user_id = ?
-           AND source = 'admin_manual'
-           AND content_type = 'full_lms'
-           AND content_id = 0
-           AND status = 'active'
-           AND ends_at > NOW()
-         ORDER BY ends_at DESC
-         LIMIT 1"
-    );
-    if ($eq) {
-        mysqli_stmt_bind_param($eq, 'i', $userId);
-        mysqli_stmt_execute($eq);
-        $er = mysqli_stmt_get_result($eq);
-        $existing = $er ? mysqli_fetch_assoc($er) : null;
-        mysqli_stmt_close($eq);
-    }
-
-    $source = 'admin_manual';
-    $ctype = 'full_lms';
-    $cid = 0;
-    $gStatus = 'active';
-    $grantId = 0;
-
-    if ($existing) {
-        $grantId = (int) ($existing['grant_id'] ?? 0);
-        // Extend end date if the new window would be longer.
-        $ext = mysqli_prepare(
+    // By-topic grant must not keep a prior admin Full LMS grant (would re-expand SCA via commerce keys).
+    if (!$isFullLms) {
+        $rev = mysqli_prepare(
             $conn,
             "UPDATE access_grants
-             SET ends_at = GREATEST(ends_at, DATE_ADD(NOW(), INTERVAL ? MONTH)),
-                 content_label = ?,
-                 granted_by = ?,
-                 updated_at = NOW()
-             WHERE grant_id = ?
-               AND status = 'active'
-             LIMIT 1"
+             SET status = 'revoked', updated_at = NOW()
+             WHERE user_id = ?
+               AND source = 'admin_manual'
+               AND content_type = 'full_lms'
+               AND content_id = 0
+               AND status = 'active'"
         );
-        if ($ext) {
-            mysqli_stmt_bind_param($ext, 'isii', $months, $label, $adminId, $grantId);
-            mysqli_stmt_execute($ext);
-            mysqli_stmt_close($ext);
+        if ($rev) {
+            mysqli_stmt_bind_param($rev, 'i', $userId);
+            mysqli_stmt_execute($rev);
+            mysqli_stmt_close($rev);
         }
-    } else {
-        $ins = mysqli_prepare(
-            $conn,
-            'INSERT INTO access_grants
-              (user_id, source, payment_id, payment_item_id, free_access_request_id,
-               content_type, content_id, content_label, starts_at, ends_at, status, granted_by)
-             VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH), ?, ?)'
-        );
-        if (!$ins) {
-            return ['ok' => false, 'error' => 'grant_prepare_failed'];
-        }
-        mysqli_stmt_bind_param(
-            $ins,
-            'issisisi',
-            $userId,
-            $source,
-            $ctype,
-            $cid,
-            $label,
-            $months,
-            $gStatus,
-            $adminId
-        );
-        if (!mysqli_stmt_execute($ins)) {
-            $err = mysqli_error($conn);
-            mysqli_stmt_close($ins);
-            return ['ok' => false, 'error' => 'grant_insert_failed:' . $err];
-        }
-        $grantId = (int) mysqli_insert_id($conn);
-        mysqli_stmt_close($ins);
     }
 
-    if (!sca_upsert_permissions($conn, $userId, [['content_type' => 'full_lms', 'content_id' => 0]], $adminId)) {
+    $grantId = 0;
+    $alreadyActive = false;
+    foreach ($permissions as $p) {
+        $ctype = (string) $p['content_type'];
+        $cid = (int) $p['content_id'];
+        $rowLabel = $isFullLms
+            ? $label
+            : ($label . ' / ' . $ctype . '#' . $cid);
+        if (strlen($rowLabel) > 200) {
+            $rowLabel = substr($rowLabel, 0, 200);
+        }
+        $row = commerce_admin_upsert_manual_grant_row(
+            $conn,
+            $userId,
+            $adminId,
+            $ctype,
+            $cid,
+            $rowLabel,
+            $months
+        );
+        if (empty($row['ok'])) {
+            return [
+                'ok' => false,
+                'error' => (string) ($row['error'] ?? 'grant_failed'),
+                'grant_id' => $grantId > 0 ? $grantId : null,
+            ];
+        }
+        if ($grantId <= 0) {
+            $grantId = (int) ($row['grant_id'] ?? 0);
+        }
+        if (!empty($row['already_active'])) {
+            $alreadyActive = true;
+        }
+    }
+
+    if ($grantId <= 0) {
+        return ['ok' => false, 'error' => 'grant_failed'];
+    }
+
+    // By-topic: drop other admin_manual rows so SCA/login match the picker (keep purchase/FAR).
+    if (!$isFullLms) {
+        $keep = [];
+        foreach ($permissions as $p) {
+            $keep[(string) $p['content_type'] . ':' . (int) $p['content_id']] = true;
+        }
+        $listQ = mysqli_prepare(
+            $conn,
+            "SELECT grant_id, content_type, content_id
+             FROM access_grants
+             WHERE user_id = ?
+               AND source = 'admin_manual'
+               AND status = 'active'
+               AND ends_at > NOW()"
+        );
+        if ($listQ) {
+            mysqli_stmt_bind_param($listQ, 'i', $userId);
+            mysqli_stmt_execute($listQ);
+            $listR = mysqli_stmt_get_result($listQ);
+            $revokeIds = [];
+            while ($listR && ($gr = mysqli_fetch_assoc($listR))) {
+                $key = (string) ($gr['content_type'] ?? '') . ':' . (int) ($gr['content_id'] ?? 0);
+                if (!isset($keep[$key])) {
+                    $revokeIds[] = (int) ($gr['grant_id'] ?? 0);
+                }
+            }
+            mysqli_stmt_close($listQ);
+            foreach ($revokeIds as $rid) {
+                if ($rid <= 0) {
+                    continue;
+                }
+                $rq = mysqli_prepare(
+                    $conn,
+                    "UPDATE access_grants SET status = 'revoked', updated_at = NOW() WHERE grant_id = ? LIMIT 1"
+                );
+                if ($rq) {
+                    mysqli_stmt_bind_param($rq, 'i', $rid);
+                    mysqli_stmt_execute($rq);
+                    mysqli_stmt_close($rq);
+                }
+            }
+        }
+    }
+
+    // Replace SCA with selection, but keep active purchase/FAR grant keys.
+    if (!sca_save_user_permissions_preserving_commerce($conn, $userId, $permissions, $adminId)) {
         return ['ok' => false, 'error' => 'sca_upsert_failed', 'grant_id' => $grantId];
     }
 
@@ -188,7 +333,6 @@ function commerce_admin_grant_manual_access(
             $adminId,
             $grantId
         );
-        // Grant already succeeded — payment close failure must not undo access.
         if (empty($paymentClose['ok'])) {
             error_log(
                 'commerce_admin_grant_manual_access payment_close_failed user=' . $userId
@@ -201,8 +345,9 @@ function commerce_admin_grant_manual_access(
     return [
         'ok' => true,
         'grant_id' => $grantId,
-        'already_active' => (bool) $existing,
+        'already_active' => $alreadyActive,
         'activation' => $activation,
         'payment_close' => $paymentClose,
+        'scope' => $isFullLms ? 'full_lms' : 'by_topic',
     ];
 }

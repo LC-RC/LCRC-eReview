@@ -29,7 +29,7 @@ if (!isset($commerce) || !is_array($commerce)) {
         <?php elseif ($commerceAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'): ?>
           <div class="rounded-lg border border-sky-300 bg-sky-50 p-3 mb-4 text-sm text-sky-950">
             <div class="font-bold flex items-center gap-2"><i class="bi bi-key" aria-hidden="true"></i> Access: None</div>
-            <p class="mt-1 mb-2 text-xs">Use <strong>Grant Access</strong> for Full LMS. If a proof is already under review, that payment is marked approved too (no second Payment Verification step).</p>
+            <p class="mt-1 mb-2 text-xs">Quick <strong>Grant Access</strong> here is Full LMS (6 months). For by-topic, use Students → Grant Access or Student Access. If a proof is under review, that payment is marked approved too.</p>
             <?php if (!empty($csrf)): ?>
               <form method="post" action="<?php echo h(function_exists('ereview_url') ? ereview_url('admin_grant_access') : 'admin_grant_access'); ?>" class="flex flex-wrap items-end gap-2"
                     onsubmit="return confirm('Grant Full LMS access? Open payment reviews with proof will also be marked approved.');">

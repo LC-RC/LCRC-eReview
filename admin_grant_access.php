@@ -1,6 +1,7 @@
 <?php
 /**
- * Admin Grant Access — creates source=admin_manual grant + Full LMS SCA.
+ * Admin Grant Access — creates source=admin_manual grant(s) + SCA.
+ * Supports Full LMS or by-topic permissions (same picker as Student Access).
  * Does not verify payment or run paid fulfillment.
  * Accepts user_id (single) or user_ids (JSON array / comma list) for bulk.
  */
@@ -52,6 +53,42 @@ $adminId = (int) ($_SESSION['user_id'] ?? 0);
 $months = (int) ($_POST['months'] ?? 6);
 $activateLogin = !isset($_POST['activate_login']) || (string) $_POST['activate_login'] !== '0';
 
+$grantFull = isset($_POST['grant_full_lms']) && in_array((string) $_POST['grant_full_lms'], ['1', 'true', 'on', 'yes'], true);
+$permissions = [];
+if ($grantFull) {
+    $permissions = [['content_type' => 'full_lms', 'content_id' => 0]];
+} else {
+    $rawPerms = $_POST['permissions'] ?? '[]';
+    if (is_string($rawPerms)) {
+        $decoded = json_decode($rawPerms, true);
+        $rawPerms = is_array($decoded) ? $decoded : [];
+    }
+    if (!is_array($rawPerms)) {
+        $rawPerms = [];
+    }
+    require_once __DIR__ . '/includes/student_content_access.php';
+    $permissions = sca_normalize_permission_payload($rawPerms);
+}
+$pickerSubmitted = array_key_exists('grant_full_lms', $_POST) || array_key_exists('permissions', $_POST);
+if ($permissions === []) {
+    if ($pickerSubmitted) {
+        admin_grant_access_respond(false, 'Select Full LMS or at least one topic/subject.');
+    }
+    // Older forms without the picker still default to Full LMS.
+    $permissions = [['content_type' => 'full_lms', 'content_id' => 0]];
+    $grantFull = true;
+}
+$isFullLms = $grantFull;
+foreach ($permissions as $p) {
+    if (($p['content_type'] ?? '') === 'full_lms') {
+        $isFullLms = true;
+        break;
+    }
+}
+$scopeLabel = $isFullLms
+    ? 'Full LMS'
+    : (count($permissions) . ' selected topic' . (count($permissions) === 1 ? '' : 's'));
+
 $userIds = [];
 $rawIds = $_POST['user_ids'] ?? null;
 if ($rawIds !== null && $rawIds !== '') {
@@ -90,6 +127,7 @@ $errorMap = [
     'rejected_student' => 'Rejected students cannot receive access.',
     'commerce_schema_missing' => 'Commerce schema is not installed.',
     'sca_upsert_failed' => 'Grant saved but content permissions failed.',
+    'no_permissions' => 'Select Full LMS or at least one topic/subject.',
 ];
 
 $granted = [];
@@ -101,8 +139,9 @@ foreach ($userIds as $userId) {
     $result = commerce_admin_grant_manual_access($conn, $userId, $adminId, [
         'months' => $months,
         'activate_login' => $activateLogin,
-        'label' => 'Administrative Access (Full LMS)',
+        'label' => 'Administrative Access (' . $scopeLabel . ')',
         'close_open_payment' => true,
+        'permissions' => $permissions,
     ]);
     if (empty($result['ok'])) {
         $err = (string) ($result['error'] ?? 'grant_failed');
@@ -149,8 +188,8 @@ if ($okCount === 0) {
 if (count($userIds) === 1) {
     $one = $granted[0];
     $note = !empty($one['already_active'])
-        ? 'Administrative access updated (existing grant extended).'
-        : 'Administrative access granted (Full LMS).';
+        ? ('Administrative access updated (' . $scopeLabel . ').')
+        : ('Administrative access granted (' . $scopeLabel . ').');
     if (!empty($one['activated'])) {
         $note .= ' Login account activated.';
     } elseif (!empty($one['already_approved'])) {
@@ -170,7 +209,7 @@ if (count($userIds) === 1) {
     ]);
 }
 
-$note = $okCount . ' student' . ($okCount === 1 ? '' : 's') . ' granted Full LMS access';
+$note = $okCount . ' student' . ($okCount === 1 ? '' : 's') . ' granted ' . $scopeLabel . ' access';
 if ($activated > 0) {
     $note .= ' (' . $activated . ' login activated)';
 }

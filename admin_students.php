@@ -1275,7 +1275,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
       <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
         <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
-        <span class="students-bulk-bar__hint">Bulk <strong>Grant Access</strong> = same Full LMS window for all. Also closes open payment reviews (Needs Review / OCR Failed) so you do not re-check in Payment Verification.</span>
+        <span class="students-bulk-bar__hint">Bulk <strong>Grant Access</strong> = same duration + Full LMS or by-topic selection for all. Also closes open payment reviews (Needs Review / OCR Failed).</span>
         <div class="students-bulk-bar__actions">
           <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
           <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Grant Access</button>
@@ -1568,7 +1568,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                                   class="admin-btn admin-btn--primary admin-btn--sm js-grant-access-btn"
                                   data-user-id="<?php echo (int) $row['user_id']; ?>"
                                   data-student-name="<?php echo h($row['full_name']); ?>"
-                                  title="Grant Full LMS access without payment verification">
+                                  title="Grant Full LMS or by-topic access without payment verification">
                             Grant Access
                           </button>
                         <?php endif; ?>
@@ -1722,12 +1722,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 </div>
 </main>
 <div id="grantAccessModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="grantAccessTitle">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="grantAccessTitle" x-data="grantAccessPicker()" x-init="init()">
     <div class="admin-modal__hero">
       <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
       <div>
         <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
-        <p class="admin-modal__desc">Creates an <strong>administrative Full LMS grant</strong> for each selected student. If they already have a proof under review (Needs Review / OCR Failed), that payment is marked <strong>approved</strong> too — no second trip to Payment Verification.</p>
+        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) for each selected student. If they already have a proof under review (Needs Review / OCR Failed), that payment is marked <strong>approved</strong> too — no second trip to Payment Verification.</p>
         <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
       </div>
     </div>
@@ -1735,7 +1735,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <label for="grantAccessMonths">Access duration (months)</label>
       <input type="number" id="grantAccessMonths" min="1" max="120" value="6" required>
     </div>
-    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, sets Full LMS permissions, and closes open payment reviews with proof. Does not create a second purchase grant.</p>
+    <div class="approve-access-box">
+      <p class="text-xs font-semibold text-slate-300 mb-1">Content access</p>
+      <p class="text-xs opacity-70 m-0 mb-2">Same picker as Student Access — Full LMS or choose subjects/topics.</p>
+      <?php
+        $scaTreeScope = 'grant';
+        require __DIR__ . '/includes/admin_sca_permission_tree.php';
+      ?>
+      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+      <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
+    </div>
+    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies the selected content permissions, and closes open payment reviews with proof. Does not create a second purchase grant.</p>
     <div id="grantAccessError" class="admin-modal__error"></div>
     <div class="admin-modal__actions">
       <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
@@ -1943,7 +1953,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   })();
 
   document.addEventListener('alpine:init', function () {
-    Alpine.data('approveAccessPicker', function () {
+    function scaAccessPickerFactory() {
       return {
         catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
         permissions: [{ content_type: 'full_lms', content_id: 0 }],
@@ -1996,7 +2006,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           };
         }
       };
-    });
+    }
+    Alpine.data('approveAccessPicker', scaAccessPickerFactory);
+    Alpine.data('grantAccessPicker', scaAccessPickerFactory);
   });
 
   (function () {
@@ -2262,6 +2274,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   (function () {
     var csrf = <?php echo json_encode($csrf); ?>;
     var overlay = document.getElementById('grantAccessModalOverlay');
+    var modalRoot = overlay ? overlay.querySelector('section.admin-modal') : null;
     var nameEl = document.getElementById('grantAccessStudentName');
     var monthsEl = document.getElementById('grantAccessMonths');
     var errEl = document.getElementById('grantAccessError');
@@ -2271,16 +2284,23 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var pendingUserIds = [];
     if (!overlay || !submitBtn) return;
 
+    function grantPicker() {
+      if (!modalRoot || !window.Alpine) return null;
+      try { return Alpine.$data(modalRoot); } catch (e) { return null; }
+    }
+
     function openGrant(userIds, label) {
       pendingUserIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
       if (pendingUserIds.length === 0) return;
       if (nameEl) {
         nameEl.textContent = label || (pendingUserIds.length === 1
           ? ('Student #' + pendingUserIds[0])
-          : (pendingUserIds.length + ' students (same Full LMS window)'));
+          : (pendingUserIds.length + ' students (same access selection)'));
       }
       if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
       if (errEl) errEl.textContent = '';
+      var picker = grantPicker();
+      if (picker && typeof picker.resetDefaults === 'function') picker.resetDefaults();
       overlay.classList.add('is-open');
       overlay.setAttribute('aria-hidden', 'false');
       if (monthsEl) setTimeout(function () { monthsEl.focus(); }, 40);
@@ -2307,7 +2327,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         }
         var label = ids.length === 1
           ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
-          : (ids.length + ' students — same package/window for all');
+          : (ids.length + ' students — same duration & content selection for all');
         openGrant(ids, label);
       });
     }
@@ -2322,6 +2342,18 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         if (errEl) errEl.textContent = 'Enter a valid duration in months.';
         return;
       }
+      var picker = grantPicker();
+      var access = picker && typeof picker.exportAccess === 'function'
+        ? picker.exportAccess()
+        : { grant_full_lms: '1', permissions: JSON.stringify([{ content_type: 'full_lms', content_id: 0 }]) };
+      if (access.grant_full_lms !== '1') {
+        var perms = [];
+        try { perms = JSON.parse(access.permissions || '[]'); } catch (e) { perms = []; }
+        if (!Array.isArray(perms) || perms.length === 0) {
+          if (errEl) errEl.textContent = 'Select Full LMS or at least one topic/subject.';
+          return;
+        }
+      }
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Granting…';
       if (errEl) errEl.textContent = '';
@@ -2334,6 +2366,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
       fd.append('months', String(months));
       fd.append('activate_login', '1');
+      fd.append('grant_full_lms', access.grant_full_lms);
+      fd.append('permissions', access.permissions);
       fd.append('return_to', 'admin_students');
       fetch('admin_grant_access', {
         method: 'POST',
