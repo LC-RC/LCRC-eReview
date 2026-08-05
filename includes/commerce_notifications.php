@@ -206,27 +206,58 @@ function commerce_notify_payment_fulfilled(mysqli $conn, int $paymentId): array
     $loginHint = htmlspecialchars(commerce_notify_login_hint(), ENT_QUOTES, 'UTF-8');
     $approved = ((string) $student['status'] === 'approved');
 
-    $subject = 'LCRC eReview — Payment fulfilled';
+    $durationPlain = '';
+    $endsQ = mysqli_prepare(
+        $conn,
+        "SELECT MAX(ends_at) AS ends_at
+         FROM access_grants
+         WHERE payment_id = ?
+           AND status = 'active'"
+    );
+    if ($endsQ) {
+        mysqli_stmt_bind_param($endsQ, 'i', $paymentId);
+        mysqli_stmt_execute($endsQ);
+        $endsR = mysqli_stmt_get_result($endsQ);
+        $endsRow = $endsR ? mysqli_fetch_assoc($endsR) : null;
+        mysqli_stmt_close($endsQ);
+        $endsRaw = trim((string) ($endsRow['ends_at'] ?? ''));
+        if ($endsRaw !== '') {
+            $endsTs = strtotime($endsRaw);
+            if ($endsTs !== false) {
+                $durationPlain = 'until ' . date('F j, Y', $endsTs);
+            }
+        }
+    }
+
+    $subject = 'LCRC eReview — Access granted (payment fulfilled)';
+    $durationHtml = $durationPlain !== ''
+        ? '<p><strong>Access duration:</strong> ' . htmlspecialchars($durationPlain, ENT_QUOTES, 'UTF-8') . '</p>'
+        : '';
+    $durationPlainLine = $durationPlain !== '' ? ("Access duration: {$durationPlain}\n") : '';
     if ($approved) {
         $bodyHtml = "<p>Dear {$name},</p>"
-            . '<p>Your payment has been <strong>fulfilled</strong> and LMS access has been granted for your purchase'
+            . '<p>Your payment has been <strong>fulfilled</strong> and LMS access has been <strong>granted</strong> for your purchase'
             . ($ref !== '' ? " (reference <strong>{$ref}</strong>)" : '') . '.</p>'
+            . $durationHtml
             . '<p>You may sign in using your registered account:</p>'
             . "<p><a href=\"{$loginHint}\">{$loginHint}</a></p>";
         $plain = "Dear {$student['full_name']},\n\nYour payment has been fulfilled and LMS access has been granted"
-            . ($payment['payment_ref'] ? " (reference {$payment['payment_ref']})" : '') . ".\n\n"
-            . "You may sign in at: " . commerce_notify_login_hint() . "\n\nLCRC eReview Admin Team\n";
+            . ($payment['payment_ref'] ? " (reference {$payment['payment_ref']})" : '') . ".\n"
+            . $durationPlainLine
+            . "\nYou may sign in at: " . commerce_notify_login_hint() . "\n\nLCRC eReview Admin Team\n";
     } else {
         $bodyHtml = "<p>Dear {$name},</p>"
             . '<p>Your payment has been <strong>successfully processed and fulfilled</strong>'
             . ($ref !== '' ? " (reference <strong>{$ref}</strong>)" : '')
             . ', and access has been recorded for your purchase.</p>'
+            . $durationHtml
             . '<p><strong>Important:</strong> Your student account login is still pending admin activation. '
             . 'Payment fulfillment does <em>not</em> automatically approve your login. '
             . 'You will receive a separate notice when your account is approved for sign-in.</p>';
         $plain = "Dear {$student['full_name']},\n\nYour payment has been successfully processed and fulfilled"
-            . ($payment['payment_ref'] ? " (reference {$payment['payment_ref']})" : '') . ".\n\n"
-            . "Important: Your student account login is still pending admin activation. "
+            . ($payment['payment_ref'] ? " (reference {$payment['payment_ref']})" : '') . ".\n"
+            . $durationPlainLine
+            . "\nImportant: Your student account login is still pending admin activation. "
             . "Payment fulfillment does not automatically approve your login.\n\n"
             . "LCRC eReview Admin Team\n";
     }
@@ -403,7 +434,7 @@ function commerce_notify_far_approved(mysqli $conn, int $requestId, int $duratio
  * Notify student after administrative Grant Access (email + in-app message).
  * Safe to call when payment had no proof — SMTP/notification failure never undoes the grant.
  *
- * @param array{months?:int,scope?:string,no_proof?:bool,payment_closed?:bool} $opts
+ * @param array{months?:int,scope?:string,no_proof?:bool,payment_closed?:bool,ends_at?:string,grant_id?:int} $opts
  * @return array{ok:bool,error?:string,sent?:bool,in_app?:bool}
  */
 function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $adminId = 0, array $opts = []): array
@@ -427,6 +458,18 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
     $scope = strtolower(trim((string) ($opts['scope'] ?? 'full_lms')));
     $scopeLabel = $scope === 'by_topic' ? 'selected topics' : 'Full LMS';
     $noProof = !empty($opts['no_proof']);
+    $endsAtRaw = trim((string) ($opts['ends_at'] ?? ''));
+    $endsLabel = '';
+    if ($endsAtRaw !== '') {
+        $endsTs = strtotime($endsAtRaw);
+        if ($endsTs !== false) {
+            $endsLabel = date('F j, Y', $endsTs);
+        }
+    }
+    $durationPlain = $months . ' month' . ($months === 1 ? '' : 's');
+    if ($endsLabel !== '') {
+        $durationPlain .= ' (until ' . $endsLabel . ')';
+    }
     $loginHint = htmlspecialchars(commerce_notify_login_hint(), ENT_QUOTES, 'UTF-8');
     $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
     $approved = ((string) ($student['status'] ?? '') === 'approved');
@@ -436,15 +479,14 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
         require_once __DIR__ . '/notification_helpers.php';
         if (function_exists('notifications_create_for_user')) {
             $title = 'Access granted';
-            $msg = 'An administrator granted your LMS access (' . $scopeLabel . ', ' . $months . ' month'
-                . ($months === 1 ? '' : 's') . ').';
+            $msg = 'Your LMS access has been granted: ' . $scopeLabel . ' for ' . $durationPlain . '.';
             if ($noProof) {
-                $msg .= ' Your payment proof was not required for this manual approval.';
+                $msg .= ' Manual approval — payment proof was not required.';
             }
             if ($approved) {
                 $msg .= ' You can sign in now.';
             } else {
-                $msg .= ' Sign-in may still need a moment to activate — try logging in shortly.';
+                $msg .= ' Try signing in shortly if login is not active yet.';
             }
             $inApp = notifications_create_for_user(
                 $conn,
@@ -472,9 +514,11 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
 
     $subject = 'LCRC eReview — Access granted';
     $bodyHtml = "<p>Dear {$name},</p>"
-        . '<p>An administrator has <strong>granted your LMS access</strong> ('
-        . htmlspecialchars($scopeLabel, ENT_QUOTES, 'UTF-8')
-        . " for <strong>{$months} month" . ($months === 1 ? '' : 's') . '</strong>).</p>';
+        . '<p>Good news — your <strong>LMS access has been granted</strong>.</p>'
+        . '<ul>'
+        . '<li><strong>Access type:</strong> ' . htmlspecialchars($scopeLabel, ENT_QUOTES, 'UTF-8') . '</li>'
+        . '<li><strong>Duration:</strong> ' . htmlspecialchars($durationPlain, ENT_QUOTES, 'UTF-8') . '</li>'
+        . '</ul>';
     if ($noProof) {
         $bodyHtml .= '<p>This was a <strong>manual approval</strong>. A payment proof upload was not required for this activation.</p>';
     }
@@ -486,9 +530,10 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
         $bodyHtml .= '<p>Please try signing in shortly. If you cannot log in yet, contact LCRC eReview support.</p>';
         $plainExtra = "Please try signing in shortly. If you cannot log in yet, contact support.\n";
     }
-    $plain = "Dear {$student['full_name']},\n\nAn administrator granted your LMS access ({$scopeLabel}, {$months} month"
-        . ($months === 1 ? '' : 's') . ").\n"
-        . ($noProof ? "This was a manual approval; payment proof was not required.\n" : '')
+    $plain = "Dear {$student['full_name']},\n\nYour LMS access has been granted.\n"
+        . "Access type: {$scopeLabel}\n"
+        . "Duration: {$durationPlain}\n"
+        . ($noProof ? "Manual approval — payment proof was not required.\n" : '')
         . $plainExtra
         . "\nLCRC eReview Admin Team\n";
     $html = commerce_notify_wrap_html('Access granted', $bodyHtml);

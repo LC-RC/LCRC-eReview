@@ -357,11 +357,37 @@ function commerce_admin_grant_manual_access(
                     empty($paymentClose['skipped'])
                     && trim((string) ($payRow['proof_path'] ?? '')) === ''
                 );
+            $endsAt = '';
+            $endsQ2 = mysqli_prepare(
+                $conn,
+                'SELECT ends_at FROM access_grants WHERE grant_id = ? LIMIT 1'
+            );
+            if ($endsQ2) {
+                mysqli_stmt_bind_param($endsQ2, 'i', $grantId);
+                mysqli_stmt_execute($endsQ2);
+                $er2 = mysqli_stmt_get_result($endsQ2);
+                $erow = $er2 ? mysqli_fetch_assoc($er2) : null;
+                mysqli_stmt_close($endsQ2);
+                $endsAt = trim((string) ($erow['ends_at'] ?? ''));
+            }
+            if ($endsAt === '') {
+                $uEnd = mysqli_prepare($conn, 'SELECT access_end FROM users WHERE user_id = ? LIMIT 1');
+                if ($uEnd) {
+                    mysqli_stmt_bind_param($uEnd, 'i', $userId);
+                    mysqli_stmt_execute($uEnd);
+                    $ur = mysqli_stmt_get_result($uEnd);
+                    $urow = $ur ? mysqli_fetch_assoc($ur) : null;
+                    mysqli_stmt_close($uEnd);
+                    $endsAt = trim((string) ($urow['access_end'] ?? ''));
+                }
+            }
             $notify = commerce_notify_admin_manual_grant($conn, $userId, $adminId, [
                 'months' => $months,
                 'scope' => $isFullLms ? 'full_lms' : 'by_topic',
                 'no_proof' => $noProof,
                 'payment_closed' => empty($paymentClose['skipped']),
+                'ends_at' => $endsAt,
+                'grant_id' => $grantId,
             ]);
         } catch (Throwable $e) {
             error_log('commerce_admin_grant_manual_access notify_failed user=' . $userId . ' ' . $e->getMessage());

@@ -276,15 +276,23 @@ function preboards_list_pending_requests(mysqli $conn, ?int $subjectId = null): 
 
 /**
  * Approve or deny a pending request. Grants access/retake token on approve.
+ * Notifies the student (in-app + email) after a successful decision.
  */
 function preboards_decide_request(mysqli $conn, int $reqId, string $decision, int $adminId, ?int $requireSubjectId = null): bool
 {
     if ($reqId <= 0 || !in_array($decision, ['approved', 'denied'], true) || $adminId <= 0) {
         return false;
     }
-    $stmt = mysqli_prepare($conn, "SELECT r.*, s.preboards_subject_id FROM preboards_requests r
-      INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
-      WHERE r.preboards_request_id = ? AND r.status = 'pending' LIMIT 1");
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT r.*, s.preboards_subject_id, s.set_label, s.title AS set_title,
+                ps.subject_name
+         FROM preboards_requests r
+         INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+         INNER JOIN preboards_subjects ps ON ps.preboards_subject_id = s.preboards_subject_id
+         WHERE r.preboards_request_id = ? AND r.status = 'pending'
+         LIMIT 1"
+    );
     if (!$stmt) {
         return false;
     }
@@ -333,7 +341,122 @@ function preboards_decide_request(mysqli $conn, int $reqId, string $decision, in
             }
         }
     }
+
+    try {
+        preboards_notify_student_request_decision($conn, $req, $decision, $adminId);
+    } catch (Throwable $e) {
+        error_log('preboards_decide_request notify failed req=' . $reqId . ' ' . $e->getMessage());
+    }
+
     return true;
+}
+
+/**
+ * In-app + email when a preboards access/retake request is approved or denied.
+ * Failure never undoes the decision.
+ *
+ * @param array<string,mixed> $req Row with user_id, request_type, preboards_subject_id, set_label, subject_name, …
+ * @return array{ok:bool,sent?:bool,in_app?:bool,error?:string}
+ */
+function preboards_notify_student_request_decision(
+    mysqli $conn,
+    array $req,
+    string $decision,
+    int $adminId = 0
+): array {
+    $userId = (int) ($req['user_id'] ?? 0);
+    if ($userId <= 0 || !in_array($decision, ['approved', 'denied'], true)) {
+        return ['ok' => false, 'error' => 'invalid_args'];
+    }
+
+    $reqType = (string) ($req['request_type'] ?? 'open');
+    $isRetake = $reqType === 'retake';
+    $kind = $isRetake ? 'retake' : 'access';
+    $setLabel = trim((string) ($req['set_label'] ?? ''));
+    if ($setLabel === '') {
+        $setLabel = 'Set';
+    }
+    $subjectName = trim((string) ($req['subject_name'] ?? 'Preboards'));
+    $subjectId = (int) ($req['preboards_subject_id'] ?? 0);
+    $link = $subjectId > 0
+        ? ('student_preboards_view?preboards_subject_id=' . $subjectId)
+        : 'student_preboards';
+
+    $approved = $decision === 'approved';
+    if ($approved) {
+        $title = $isRetake ? 'Preboards retake approved' : 'Preboards access approved';
+        $msg = 'Your request for ' . $kind . ' to Set ' . $setLabel . ' (' . $subjectName . ') was approved. You can open it from Preboards.';
+    } else {
+        $title = $isRetake ? 'Preboards retake not approved' : 'Preboards access not approved';
+        $msg = 'Your request for ' . $kind . ' to Set ' . $setLabel . ' (' . $subjectName . ') was not approved.';
+    }
+
+    $inApp = false;
+    if (is_file(__DIR__ . '/notification_helpers.php')) {
+        require_once __DIR__ . '/notification_helpers.php';
+        if (function_exists('notifications_create_for_user')) {
+            $inApp = notifications_create_for_user(
+                $conn,
+                $userId,
+                'student',
+                $title,
+                $msg,
+                $link,
+                $approved
+                    ? ($isRetake ? 'preboards_retake_approved' : 'preboards_access_approved')
+                    : ($isRetake ? 'preboards_retake_denied' : 'preboards_access_denied'),
+                $adminId > 0 ? $adminId : null
+            );
+        }
+    }
+
+    $emailSent = false;
+    if (is_file(__DIR__ . '/commerce_notifications.php')) {
+        require_once __DIR__ . '/commerce_notifications.php';
+        $student = function_exists('commerce_notify_load_student')
+            ? commerce_notify_load_student($conn, $userId)
+            : ['ok' => false];
+        $config = function_exists('commerce_notify_load_mail_config')
+            ? commerce_notify_load_mail_config()
+            : null;
+        if (!empty($student['ok']) && is_array($config)) {
+            $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
+            $setEsc = htmlspecialchars($setLabel, ENT_QUOTES, 'UTF-8');
+            $subEsc = htmlspecialchars($subjectName, ENT_QUOTES, 'UTF-8');
+            $loginHint = htmlspecialchars(
+                function_exists('commerce_notify_login_hint') ? commerce_notify_login_hint() : 'login',
+                ENT_QUOTES,
+                'UTF-8'
+            );
+            $mailSubject = 'LCRC eReview — ' . $title;
+            if ($approved) {
+                $bodyHtml = "<p>Dear {$name},</p>"
+                    . '<p>Your Preboards <strong>' . htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') . '</strong> request for '
+                    . "<strong>Set {$setEsc}</strong> ({$subEsc}) has been <strong>approved</strong>.</p>"
+                    . '<p>Sign in and open Preboards to continue:</p>'
+                    . "<p><a href=\"{$loginHint}\">{$loginHint}</a></p>";
+                $plain = "Dear {$student['full_name']},\n\nYour Preboards {$kind} request for Set {$setLabel} ({$subjectName}) was approved.\n"
+                    . 'Sign in at: ' . (function_exists('commerce_notify_login_hint') ? commerce_notify_login_hint() : 'login') . "\n\nLCRC eReview Admin Team\n";
+            } else {
+                $bodyHtml = "<p>Dear {$name},</p>"
+                    . '<p>Your Preboards <strong>' . htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') . '</strong> request for '
+                    . "<strong>Set {$setEsc}</strong> ({$subEsc}) was <strong>not approved</strong>.</p>"
+                    . '<p>If you believe this was a mistake, please contact LCRC eReview support.</p>';
+                $plain = "Dear {$student['full_name']},\n\nYour Preboards {$kind} request for Set {$setLabel} ({$subjectName}) was not approved.\n\nLCRC eReview Admin Team\n";
+            }
+            $html = commerce_notify_wrap_html($title, $bodyHtml);
+            $sent = commerce_notify_dispatch((string) $student['email'], $mailSubject, $html, $plain, $config);
+            $emailSent = !empty($sent['ok']);
+        } elseif ($config === null) {
+            error_log('preboards_notify: mail config missing; student email skipped for user=' . $userId);
+        }
+    }
+
+    return [
+        'ok' => $inApp || $emailSent,
+        'sent' => $emailSent,
+        'in_app' => $inApp,
+    ];
 }
 
 /** @return array{access:int, retake:int, total:int} */
