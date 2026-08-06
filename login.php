@@ -180,21 +180,20 @@ if (isset($_SESSION['google_redirect_uri'])) {
     <span class="auth-corner-dot tl"></span><span class="auth-corner-dot tr blue"></span>
     <span class="auth-corner-dot bl blue"></span><span class="auth-corner-dot br"></span>
   </div>
-  <div class="login-page-layout min-h-screen flex flex-col relative z-10">
-    <div class="flex-1 flex items-center justify-center p-4">
-    <div class="login-card-wrap w-full max-w-[520px] mx-auto">
+  <div class="login-page-layout relative z-10">
+    <div class="login-card-wrap w-full mx-auto">
       <div class="login-card">
-          <div class="flex flex-col items-center login-piece login-piece-1 login-header">
+        <div class="flex flex-col items-center login-piece login-piece-1 login-header">
           <div class="login-logo-wrap flex items-center justify-center login-logo-hover">
-            <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="login-logo-img" width="120" height="48" loading="eager" decoding="async">
+            <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="login-logo-img" width="160" height="62" loading="eager" decoding="async">
           </div>
           <span class="brand-text"><span class="blue">LCRC</span> <span class="amber">eReview</span></span>
         </div>
 
         <div class="text-center login-piece login-piece-2 login-welcome">
-          <p class="login-value-statement">Track your scores, drills, and mock exams in one place.</p>
-          <h1 class="text-xl font-bold tracking-tight">Welcome Back</h1>
-          <p class="subtext login-signup-line">Don't have an account yet? <a href="registration">Sign up</a></p>
+          <h1>Welcome Back</h1>
+          <p class="login-value-statement">Sign in to continue your CPA review journey.</p>
+          <p class="subtext login-signup-line">Don&rsquo;t have an account yet? <a href="registration">Sign up</a></p>
         </div>
 
         <?php if ($showRateLimitBlock): ?>
@@ -211,16 +210,16 @@ if (isset($_SESSION['google_redirect_uri'])) {
         <?php endif; ?>
 
         <div class="login-form-wrap" id="login-form-wrap"<?php if ($showRateLimitBlock): ?> style="display: none;"<?php endif; ?>>
-        <form action="login_process" method="POST" class="login-form-fields space-y-4" novalidate id="login-form"<?php if ($showRecaptcha): ?> data-recaptcha="1" data-recaptcha-key="<?php echo h($recaptchaSiteKey); ?>"<?php endif; ?>>
+        <form action="login_process" method="POST" class="login-form-fields" novalidate id="login-form"<?php if ($showRecaptcha): ?> data-recaptcha="1" data-recaptcha-key="<?php echo h($recaptchaSiteKey); ?>"<?php endif; ?>>
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <?php if ($showRecaptcha): ?>
           <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response" value="">
           <?php endif; ?>
-          <div class="space-y-2 login-piece login-piece-4">
+          <div class="login-field login-piece login-piece-4">
             <div class="relative float-label-wrap" id="login-email-wrap">
               <label for="login-email" class="float-label">Email Address</label>
-              <span class="auth-input-icon-wrap absolute left-0 top-0 bottom-0 flex items-center justify-center input-icon">
-                <i class="bi bi-envelope-fill text-lg" aria-hidden="true"></i>
+              <span class="auth-input-icon-wrap absolute left-0 top-0 bottom-0 flex items-center justify-center input-icon" aria-hidden="true">
+                <i class="bi bi-envelope-fill" style="color:#003865;-webkit-text-fill-color:#003865;opacity:1" aria-hidden="true"></i>
               </span>
               <input
                 id="login-email"
@@ -230,17 +229,18 @@ if (isset($_SESSION['google_redirect_uri'])) {
                 autocomplete="email"
                 required
                 placeholder=" "
-                class="auth-input w-full rounded-xl border pl-11 pr-4 py-3 text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500/30" aria-describedby="email-error"
+                class="auth-input"
+                aria-describedby="email-error"
               >
             </div>
-            <p id="email-error" class="text-sm mt-1 min-h-[1.25rem]" role="alert" aria-live="polite"></p>
+            <p id="email-error" class="login-field-error" role="alert" aria-live="polite"></p>
           </div>
 
-          <div class="space-y-2 login-piece login-piece-5">
+          <div class="login-field login-piece login-piece-5">
             <div class="relative float-label-wrap auth-password-wrap" id="login-password-wrap">
               <label for="login-password" class="float-label">Password</label>
-              <span class="auth-input-icon-wrap absolute left-0 top-0 bottom-0 flex items-center justify-center input-icon">
-                <i class="bi bi-lock-fill text-lg" aria-hidden="true"></i>
+              <span class="auth-input-icon-wrap absolute left-0 top-0 bottom-0 flex items-center justify-center input-icon" aria-hidden="true">
+                <i class="bi bi-lock-fill" style="color:#003865;-webkit-text-fill-color:#003865;opacity:1" aria-hidden="true"></i>
               </span>
               <input
                 id="login-password"
@@ -249,49 +249,47 @@ if (isset($_SESSION['google_redirect_uri'])) {
                 autocomplete="current-password"
                 required
                 placeholder=" "
-                class="auth-input w-full rounded-xl border pl-11 pr-12 py-3 text-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500/30" aria-describedby="password-error"
+                class="auth-input"
+                aria-describedby="password-error"
               >
               <button
                 type="button"
                 id="toggle-password"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F58C3]/40 rounded-lg p-1.5 transition-colors auth-toggle-password"
+                class="auth-toggle-password"
                 aria-label="Show password"
                 aria-pressed="false"
                 title="Show password"
               >
-                <i id="toggle-password-icon" class="bi bi-eye-fill text-lg" aria-hidden="true"></i>
+                <i id="toggle-password-icon" class="bi bi-eye-fill" style="color:#003865;-webkit-text-fill-color:#003865;opacity:1" aria-hidden="true"></i>
               </button>
             </div>
-            <p id="password-error" class="text-red-600 text-sm mt-1 min-h-[1.25rem]" role="alert" aria-live="polite"></p>
-            <div class="login-password-actions">
-              <p class="login-security-hint text-xs">
-                <i class="bi bi-shield-lock text-slate-500" aria-hidden="true"></i>
-                <span>Secure sign-in. We never share your data.</span>
-              </p>
-              <a href="forgot_password" class="login-forgot-link text-xs font-medium">Forgot password?</a>
-            </div>
+            <p id="password-error" class="login-field-error" role="alert" aria-live="polite"></p>
           </div>
 
-          <div class="flex items-start gap-3 login-piece login-piece-5b">
-            <input type="checkbox" id="login-remember" name="remember_me" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#1F58C3] focus:ring-[#1F58C3]/50" aria-describedby="login-remember-hint">
-            <label for="login-remember" class="flex flex-col gap-0.5 cursor-pointer">
-              <span class="text-sm font-semibold text-gray-700">Remember me</span>
-              <span id="login-remember-hint" class="text-xs text-gray-500">Stay signed in for 30 days — next visit, skip the login form (no password needed)</span>
-            </label>
+          <div class="login-meta-row login-piece login-piece-5b">
+            <div class="login-remember-row">
+              <input type="checkbox" id="login-remember" name="remember_me" value="1" class="login-remember-check" aria-describedby="login-remember-hint">
+              <label for="login-remember" class="login-remember-label cursor-pointer">
+                <span class="login-remember-title">Remember me</span>
+                <span id="login-remember-hint" class="sr-only">Stay signed in for 30 days on this device.</span>
+              </label>
+            </div>
+            <a href="forgot_password" class="login-forgot-link">Forgot password?</a>
           </div>
 
           <button
             type="submit"
             name="login"
             id="login-submit"
-            class="btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed login-piece login-piece-6"
+            class="btn-shine login-piece login-piece-6"
+            aria-label="Login"
           >
+            <span id="login-submit-spinner" class="login-submit-spinner hidden" aria-hidden="true"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></span>
             <span id="login-submit-text">Login</span>
-            <span id="login-submit-spinner" class="hidden" aria-hidden="true"><i class="bi bi-arrow-repeat animate-spin text-lg"></i></span>
             <i id="login-submit-arrow" class="hidden" aria-hidden="true"></i>
           </button>
 
-          <div class="flex items-center gap-3 or-divider login-piece login-piece-7">
+          <div class="flex items-center or-divider login-piece login-piece-7">
             <span class="h-px flex-1"></span>
             <span>OR</span>
             <span class="h-px flex-1"></span>
@@ -299,11 +297,11 @@ if (isset($_SESSION['google_redirect_uri'])) {
 
           <div class="login-piece login-piece-8">
             <div class="login-social-actions">
-              <a href="google_auth" class="login-google-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Continue with Google">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" class="login-google-icon w-4 h-4" aria-hidden="true">
+              <a href="google_auth" class="login-google-btn" aria-label="Continue with Google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" class="login-google-icon" aria-hidden="true">
                 <span>Google Sign-In</span>
               </a>
-              <a href="request_magic_link" class="login-magic-btn w-full inline-flex items-center justify-center gap-2 no-underline" aria-label="Email me a sign-in link">
+              <a href="request_magic_link" class="login-magic-btn" aria-label="Email me a sign-in link">
                 <i class="bi bi-envelope-paper-fill" aria-hidden="true"></i>
                 <span>Sign-in Link</span>
               </a>
@@ -313,8 +311,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
         </div>
       </div>
     </div>
-    </div>
-    <footer class="login-footer-copy text-center shrink-0">
+    <footer class="login-footer-copy text-center">
       © Copyright 2026 LCRC eReview. All rights reserved. · Built for aspiring CPAs
     </footer>
   </div>
@@ -367,6 +364,24 @@ if (isset($_SESSION['google_redirect_uri'])) {
       const submitText = document.getElementById('login-submit-text');
       const submitSpinner = document.getElementById('login-submit-spinner');
       const submitArrow = document.getElementById('login-submit-arrow');
+      let isSigningIn = false;
+
+      function setSigningIn(active) {
+        isSigningIn = !!active;
+        if (submitBtn) {
+          submitBtn.disabled = isSigningIn;
+          submitBtn.setAttribute('aria-busy', isSigningIn ? 'true' : 'false');
+          submitBtn.setAttribute('aria-label', isSigningIn ? 'Signing in' : 'Login');
+          submitBtn.classList.toggle('is-loading', isSigningIn);
+        }
+        if (submitText) submitText.textContent = isSigningIn ? 'Signing in...' : 'Login';
+        if (submitSpinner) {
+          submitSpinner.classList.toggle('hidden', !isSigningIn);
+          submitSpinner.setAttribute('aria-hidden', isSigningIn ? 'false' : 'true');
+        }
+        if (submitArrow) submitArrow.classList.add('hidden');
+        if (loadingOverlay) loadingOverlay.classList.toggle('is-active', isSigningIn);
+      }
 
       function setInputState(input, isValid, errorEl, message) {
         if (isValid) {
@@ -478,6 +493,10 @@ if (isset($_SESSION['google_redirect_uri'])) {
       }
 
       form.addEventListener('submit', function (event) {
+        if (isSigningIn) {
+          event.preventDefault();
+          return;
+        }
         var isEmailValid = validateEmail();
         var isPasswordValid = validatePassword();
         if (!isEmailValid || !isPasswordValid) {
@@ -489,26 +508,21 @@ if (isset($_SESSION['google_redirect_uri'])) {
         var recaptchaInput = document.getElementById('g-recaptcha-response');
         if (recaptchaRequired && recaptchaInput && !recaptchaInput.value) {
           event.preventDefault();
+          setSigningIn(true);
           var siteKey = form.dataset.recaptchaKey || '';
           function doSubmitWithToken() {
             if (typeof grecaptcha === 'undefined' || !grecaptcha.execute) {
-              if (submitText) submitText.textContent = 'Login';
-              alert('Security check is loading. Please wait a moment and try again.');
+              setSigningIn(false);
+              if (emailError) emailError.textContent = 'Security check is loading. Please wait a moment and try again.';
               return;
             }
             grecaptcha.execute(siteKey, { action: 'login' }).then(function (token) {
               recaptchaInput.value = token;
-              submitBtn.disabled = true;
-              submitBtn.setAttribute('aria-busy', 'true');
-              if (submitText) submitText.textContent = 'Signing in…';
-              if (submitSpinner) submitSpinner.classList.remove('hidden');
-              if (submitArrow) submitArrow.classList.add('hidden');
-              if (loadingOverlay) loadingOverlay.classList.add('is-active');
               try { var e = emailInput.value.trim(); if (e) localStorage.setItem('lcreview_last_email', e); } catch (err) {}
               form.submit();
             }, function () {
-              if (submitText) submitText.textContent = 'Login';
-              alert('Security check failed. Please try again.');
+              setSigningIn(false);
+              if (emailError) emailError.textContent = 'Security check failed. Please try again.';
             });
           }
           if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
@@ -518,12 +532,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
           }
           return;
         }
-        submitBtn.disabled = true;
-        submitBtn.setAttribute('aria-busy', 'true');
-        if (submitText) submitText.textContent = 'Signing in…';
-        if (submitSpinner) submitSpinner.classList.remove('hidden');
-        if (submitArrow) submitArrow.classList.add('hidden');
-        if (loadingOverlay) loadingOverlay.classList.add('is-active');
+        setSigningIn(true);
         try {
           var e = emailInput.value.trim();
           if (e) localStorage.setItem('lcreview_last_email', e);
