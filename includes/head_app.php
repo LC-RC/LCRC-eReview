@@ -3,15 +3,14 @@
 <title><?php echo isset($pageTitle) ? h($pageTitle) . ' - ' : ''; ?>LCRC eReview</title>
 <link rel="icon" type="image/png" href="/image%20assets/lms-logo.png">
 <link rel="apple-touch-icon" href="/image%20assets/lms-logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <?php
 $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
 $tailwindFile = __DIR__ . '/../assets/css/tailwind.css';
 $arbitraryFile = __DIR__ . '/../assets/css/tailwind-arbitrary.css';
 $appShellFile = __DIR__ . '/../assets/css/app-shell.css';
+$fontsNunitoFile = __DIR__ . '/../assets/css/fonts-nunito.css';
+$bootstrapIconsFile = __DIR__ . '/../assets/vendor/bootstrap-icons/bootstrap-icons.min.css';
+$alpineJsFile = __DIR__ . '/../assets/js/alpine.min.js';
 $studentTokensFile = __DIR__ . '/../assets/css/student-tokens.css';
 $studentSaasFile = __DIR__ . '/../assets/css/student-saas.css';
 $studentThemeJsFile = __DIR__ . '/../assets/js/student-theme.js';
@@ -23,8 +22,9 @@ $__headScript = strtolower((string) basename((string) ($_SERVER['SCRIPT_NAME'] ?
 $loadStudentTheme = !empty($loadStudentTheme)
     || (strpos($__headScript, 'student_') === 0);
 ?>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<?php if (is_file($fontsNunitoFile)): ?>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>">
+<?php endif; ?>
 <?php if ($useBuiltCss && !$forceTailwindCdn): ?>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind.css?v=<?php echo filemtime($tailwindFile); ?>">
 <?php if (is_file($arbitraryFile)): ?>
@@ -55,8 +55,11 @@ $loadStudentTheme = !empty($loadStudentTheme)
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <?php endif; ?>
+<?php if (is_file($bootstrapIconsFile)): ?>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>">
+<?php else: ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"></noscript>
+<?php endif; ?>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo is_file($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
 <?php if ($loadStudentTheme): ?>
 <script>
@@ -82,7 +85,11 @@ $loadStudentTheme = !empty($loadStudentTheme)
 <?php if (is_file($scrollTopJsFile)): ?>
 <script src="<?php echo h($base); ?>/assets/js/scroll-top.js?v=<?php echo filemtime($scrollTopJsFile); ?>" defer></script>
 <?php endif; ?>
+<?php if (is_file($alpineJsFile)): ?>
+<script defer src="<?php echo h($base); ?>/assets/js/alpine.min.js?v=<?php echo filemtime($alpineJsFile); ?>"></script>
+<?php else: ?>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+<?php endif; ?>
 <style>
   /*
     Uniform student box corner radius (less rounded / more admin-like).

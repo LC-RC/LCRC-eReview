@@ -924,8 +924,15 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
       }
     });
 
-    // Cheap badge poll on every page; full list only when the panel opens.
-    fetchBadge();
-    setInterval(fetchBadge, 90000);
+    // Defer badge poll so first paint is not competing with HTML/CSS parse.
+    function scheduleBadgeBoot() {
+      fetchBadge();
+      setInterval(fetchBadge, 90000);
+    }
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(scheduleBadgeBoot, { timeout: 4000 });
+    } else {
+      setTimeout(scheduleBadgeBoot, 2500);
+    }
   })();
 </script>

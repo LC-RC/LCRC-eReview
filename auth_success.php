@@ -30,8 +30,8 @@ $nameEnc = htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Signing In... - LCRC eReview</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fonts-nunito.css">
+  <link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <meta http-equiv="refresh" content="4;url=<?php echo $targetEnc; ?>">
   <style>
     *, *::before, *::after { box-sizing: border-box; }

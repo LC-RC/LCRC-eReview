@@ -858,8 +858,13 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
   }
   function startTopbarUnreadPolling(){
     stopTopbarUnreadPolling();
-    state.badgePoll = setInterval(tickUnreadBadge, 45000);
-    setTimeout(tickUnreadBadge, 2500);
+    state.badgePoll = setInterval(tickUnreadBadge, 60000);
+    var bootUnread = function(){ tickUnreadBadge(); };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(bootUnread, { timeout: 5000 });
+    } else {
+      setTimeout(bootUnread, 3500);
+    }
   }
   function renderThreads(){
     threadsWrap.style.display = '';
