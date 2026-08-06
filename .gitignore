@@ -24,8 +24,10 @@ tmp/
 temp/
 cache/
 
-# Composer (if you use it later)
+# Composer
 /vendor/
+/composer.phar
+composer-setup.php
 
 # Node dependencies (tracked so collaborators don't need npm install)
 # node_modules/

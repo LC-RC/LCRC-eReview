@@ -29,10 +29,36 @@ if (!isset($commerce) || !is_array($commerce)) {
         <?php elseif ($commerceAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'): ?>
           <div class="rounded-lg border border-sky-300 bg-sky-50 p-3 mb-4 text-sm text-sky-950">
             <div class="font-bold flex items-center gap-2"><i class="bi bi-key" aria-hidden="true"></i> Access: None</div>
-            <p class="mt-1 mb-2 text-xs">Quick <strong>Grant Access</strong> here is Full LMS (6 months). For by-topic, use Students → Grant Access or Student Access. If a proof is under review, that payment is marked approved too.</p>
+            <p class="mt-1 mb-2 text-xs">Prefer <strong>Remind to upload</strong> when proof is missing. Quick Grant here is Full LMS (6 months). For by-topic, use Students → Grant Access.</p>
+            <?php
+              $panelLatest = is_array($commerce['latest_payment'] ?? null)
+                  ? $commerce['latest_payment']
+                  : (isset($latestPayment) && is_array($latestPayment) ? $latestPayment : []);
+              $panelPayStatus = (string) ($panelLatest['status'] ?? '');
+              $panelHasProof = trim((string) ($panelLatest['proof_path'] ?? '')) !== '';
+              $panelPaymentId = (int) ($panelLatest['payment_id'] ?? 0);
+              $panelNeedsRemind = $panelPaymentId > 0 && !$panelHasProof && $panelPayStatus === 'awaiting_proof';
+            ?>
+            <?php if (!empty($csrf) && $panelNeedsRemind): ?>
+              <form method="post" action="<?php echo h(function_exists('ereview_url') ? ereview_url('admin_remind_upload_proof') : 'admin_remind_upload_proof'); ?>" class="flex flex-wrap items-end gap-2 mb-2"
+                    data-admin-confirm-title="Remind to upload proof"
+                    data-admin-confirm="Email this student a secure link to upload GCash proof? The link is valid for 7 days."
+                    data-admin-confirm-ok="Send reminder"
+                    data-admin-confirm-icon="<i class=&quot;bi bi-envelope&quot;></i>">
+                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+                <input type="hidden" name="user_id" value="<?php echo (int) ($user['user_id'] ?? 0); ?>">
+                <input type="hidden" name="payment_id" value="<?php echo $panelPaymentId; ?>">
+                <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) ($user['user_id'] ?? 0); ?>">
+                <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-envelope"></i> Remind to upload</button>
+              </form>
+            <?php endif; ?>
             <?php if (!empty($csrf)): ?>
-              <form method="post" action="<?php echo h(function_exists('ereview_url') ? ereview_url('admin_grant_access') : 'admin_grant_access'); ?>" class="flex flex-wrap items-end gap-2"
-                    onsubmit="return confirm('Grant Full LMS access? Open payment reviews with proof will also be marked approved.');">
+              <form method="post" action="<?php echo h(function_exists('ereview_url') ? ereview_url('admin_grant_access') : 'admin_grant_access'); ?>" class="flex flex-wrap items-end gap-2 js-panel-grant-form"
+                    data-admin-confirm-title="Grant Access"
+                    data-admin-confirm="Grant Full LMS access for the selected duration?"
+                    data-admin-confirm-ok="Confirm grant"
+                    data-admin-confirm-icon="<i class=&quot;bi bi-key&quot;></i>"
+                    <?php if ($panelNeedsRemind): ?>data-needs-proof-override="1"<?php endif; ?>>
                 <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                 <input type="hidden" name="user_id" value="<?php echo (int) ($user['user_id'] ?? 0); ?>">
                 <input type="hidden" name="activate_login" value="1">
@@ -41,8 +67,39 @@ if (!isset($commerce) || !is_array($commerce)) {
                   Months
                   <input type="number" name="months" min="1" max="120" value="6" class="input-custom w-20 mt-0.5" required>
                 </label>
+                <?php if ($panelNeedsRemind): ?>
+                  <label class="text-xs flex items-center gap-1">
+                    <input type="checkbox" name="close_awaiting_without_proof" value="1" data-required="1">
+                    Grant without proof (emergency)
+                  </label>
+                <?php endif; ?>
                 <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-key"></i> Grant Access</button>
               </form>
+              <script>
+              (function () {
+                var form = document.currentScript && document.currentScript.previousElementSibling;
+                if (!form || !form.classList.contains('js-panel-grant-form')) {
+                  form = document.querySelector('.js-panel-grant-form');
+                }
+                if (!form) return;
+                form.addEventListener('submit', function (e) {
+                  if (form.getAttribute('data-needs-proof-override') !== '1') return;
+                  if (form.getAttribute('data-admin-confirm-accepted') === '1') return;
+                  var np = form.querySelector('[name=close_awaiting_without_proof]');
+                  if (np && np.type === 'checkbox' && !np.checked && np.dataset.required === '1') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (window.adminUiDialog) {
+                      window.adminUiDialog.notice({
+                        type: 'info',
+                        title: 'Proof still required',
+                        message: 'Check Grant without proof (emergency), or use Remind to upload.'
+                      });
+                    }
+                  }
+                }, true);
+              })();
+              </script>
             <?php endif; ?>
           </div>
         <?php endif; ?>

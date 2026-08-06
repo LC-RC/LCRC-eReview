@@ -87,7 +87,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
                 <select id="ereMsgCanned" class="ere-msg__canned" hidden>
                   <option value="">Canned reply...</option>
                   <option value="Enrollment reminder: Please complete your pending requirements to avoid access interruption.">Enrollment reminder</option>
-                  <option value="Please upload your payment proof in your profile to proceed with review activation.">Payment proof reminder</option>
+                  <option value="Please upload your GCash payment proof using the upload link from our email (or ask admin to resend Remind to upload) so we can activate your access.">Payment proof reminder</option>
                   <option value="Thank you for your message. We received this and will get back to you shortly.">Acknowledgement</option>
                 </select>
               </div>
@@ -858,8 +858,8 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
   }
   function startTopbarUnreadPolling(){
     stopTopbarUnreadPolling();
-    state.badgePoll = setInterval(tickUnreadBadge, 8000);
-    setTimeout(tickUnreadBadge, 1200);
+    state.badgePoll = setInterval(tickUnreadBadge, 45000);
+    setTimeout(tickUnreadBadge, 2500);
   }
   function renderThreads(){
     threadsWrap.style.display = '';

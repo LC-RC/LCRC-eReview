@@ -6,8 +6,8 @@ require_once __DIR__ . '/includes/url_helpers.php';
 $adminPendingCount = 0;
 $adminPreboardsPendingCount = 0;
 if (!empty($conn)) {
-    // Cache badge COUNTs briefly so every admin page does not re-scan students/preboards.
-    $badgeTtl = 45;
+    // Cache badge COUNTs so every admin page stays cheap after the first hit.
+    $badgeTtl = 120;
     $badgeNow = time();
     $cachedPending = $_SESSION['admin_badge_pending_students'] ?? null;
     $cachedPendingAt = (int) ($_SESSION['admin_badge_pending_students_at'] ?? 0);
@@ -17,18 +17,11 @@ if (!empty($conn)) {
     if ($cachedPending !== null && ($badgeNow - $cachedPendingAt) < $badgeTtl) {
         $adminPendingCount = (int) $cachedPending;
     } else {
-        // Needs review = pending registrations without an active grant.
-        if (is_file(__DIR__ . '/includes/commerce_access_gate.php')) {
-            require_once __DIR__ . '/includes/commerce_access_gate.php';
-            $hasG = commerce_sql_user_has_active_grant('users.user_id');
-            $pr = @mysqli_query(
-                $conn,
-                "SELECT COUNT(*) AS cnt FROM users
-                 WHERE role='student' AND status='pending' AND NOT ({$hasG})"
-            );
-        } else {
-            $pr = @mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND status='pending'");
-        }
+        // Sidebar badge: pending registrations only (no correlated access_grants EXISTS).
+        $pr = @mysqli_query(
+            $conn,
+            "SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND status='pending'"
+        );
         if ($pr && $prRow = mysqli_fetch_assoc($pr)) {
             $adminPendingCount = (int) ($prRow['cnt'] ?? 0);
             mysqli_free_result($pr);
@@ -49,16 +42,16 @@ if (!empty($conn)) {
             $_SESSION['admin_badge_preboards_pending_at'] = $badgeNow;
         }
     }
+    // Preboards digest sync lives in notifications_api (not every HTML page).
+}
 
-    // Sync reminder at most once per badge TTL (not on every admin HTML request).
-    $syncedAt = (int) ($_SESSION['admin_badge_preboards_synced_at'] ?? 0);
-    if ($adminPreboardsPendingCount > 0 && !empty($_SESSION['user_id']) && ($badgeNow - $syncedAt) >= $badgeTtl) {
-        require_once __DIR__ . '/includes/notification_helpers.php';
-        notifications_sync_admin_preboards_pending_reminder($conn, (int) $_SESSION['user_id']);
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $_SESSION['admin_badge_preboards_synced_at'] = $badgeNow;
-        }
-    }
+// Free the session file lock on normal admin GET pages so badge/API polls are not serialized.
+if (
+    empty($adminKeepSessionOpen)
+    && strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET'
+    && function_exists('ereview_release_session_lock')
+) {
+    ereview_release_session_lock();
 }
 
 $appShellCurrentScript = ereview_page_basename();

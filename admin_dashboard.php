@@ -26,42 +26,59 @@ try {
 
 $nowSql = date('Y-m-d H:i:s');
 
-require_once __DIR__ . '/includes/commerce_access_gate.php';
-$hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
-$enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
-// True registration queue only — not "missing grant" (legacy enrolled are restored separately).
-$pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
-$expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
+$dashCacheTtl = 60;
+$dashCacheAt = (int) ($_SESSION['admin_dash_counts_at'] ?? 0);
+$dashCache = $_SESSION['admin_dash_counts'] ?? null;
+$useDashCache = is_array($dashCache) && $dashCacheAt > 0 && (time() - $dashCacheAt) < $dashCacheTtl;
 
-// Counts (used in hero, needs-attention, and stat cards)
-$stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $enrolledWhere");
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-$row = mysqli_fetch_assoc($res);
-$enrolledCount = (int)($row['total'] ?? 0);
-mysqli_stmt_close($stmt);
+if ($useDashCache) {
+    $enrolledCount = (int) ($dashCache['enrolled'] ?? 0);
+    $pendingCount = (int) ($dashCache['pending'] ?? 0);
+    $expiredCount = (int) ($dashCache['expired'] ?? 0);
+    $subjectsRow = ['cnt' => (int) ($dashCache['subjects'] ?? 0)];
+    $lessonsRow = ['cnt' => (int) ($dashCache['lessons'] ?? 0)];
+    $quizzesRow = ['cnt' => (int) ($dashCache['quizzes'] ?? 0)];
+    $quizAttemptsLast30 = (int) ($dashCache['quiz30'] ?? 0);
+    $newThisWeek = (int) ($dashCache['new_week'] ?? 0);
+    $expiringIn7 = (int) ($dashCache['expiring7'] ?? 0);
+} else {
+    require_once __DIR__ . '/includes/commerce_access_gate.php';
+    $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
+    $enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
+    // True registration queue only — not "missing grant" (legacy enrolled are restored separately).
+    $pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
+    $expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
-$stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $pendingWhere");
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-$row = mysqli_fetch_assoc($res);
-$pendingCount = (int)($row['total'] ?? 0);
-mysqli_stmt_close($stmt);
+    // Counts (used in hero, needs-attention, and stat cards)
+    $stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $enrolledWhere");
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($res);
+    $enrolledCount = (int)($row['total'] ?? 0);
+    mysqli_stmt_close($stmt);
 
-$stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $expiredWhere");
-mysqli_stmt_bind_param($stmt, 's', $nowSql);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-$row = mysqli_fetch_assoc($res);
-$expiredCount = (int)($row['total'] ?? 0);
-mysqli_stmt_close($stmt);
+    $stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $pendingWhere");
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($res);
+    $pendingCount = (int)($row['total'] ?? 0);
+    mysqli_stmt_close($stmt);
 
-$subjectsCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM subjects");
-$subjectsRow = $subjectsCount ? mysqli_fetch_assoc($subjectsCount) : ['cnt' => 0];
-$lessonsCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM lessons");
-$lessonsRow = $lessonsCount ? mysqli_fetch_assoc($lessonsCount) : ['cnt' => 0];
-$quizzesCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM quizzes");
-$quizzesRow = $quizzesCount ? mysqli_fetch_assoc($quizzesCount) : ['cnt' => 0];
+    $stmt = mysqli_prepare($conn, "SELECT COUNT(*) AS total FROM users WHERE $expiredWhere");
+    mysqli_stmt_bind_param($stmt, 's', $nowSql);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($res);
+    $expiredCount = (int)($row['total'] ?? 0);
+    mysqli_stmt_close($stmt);
+
+    $subjectsCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM subjects");
+    $subjectsRow = $subjectsCount ? mysqli_fetch_assoc($subjectsCount) : ['cnt' => 0];
+    $lessonsCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM lessons");
+    $lessonsRow = $lessonsCount ? mysqli_fetch_assoc($lessonsCount) : ['cnt' => 0];
+    $quizzesCount = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM quizzes");
+    $quizzesRow = $quizzesCount ? mysqli_fetch_assoc($quizzesCount) : ['cnt' => 0];
+}
 
 // Enrollment trend: last 6 months (student registrations per month)
 $enrollmentByMonth = [];
@@ -115,36 +132,53 @@ if ($expireRes) {
   mysqli_free_result($expireRes);
 }
 
-// Quiz activity: total quiz answers in last 30 days (read-only metric)
-$quizAttemptsLast30 = 0;
-$quizRes = @mysqli_query($conn, "
-  SELECT COUNT(*) AS cnt FROM quiz_answers WHERE answered_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-");
-if ($quizRes && $qr = mysqli_fetch_assoc($quizRes)) {
-  $quizAttemptsLast30 = (int)($qr['cnt'] ?? 0);
-  mysqli_free_result($quizRes);
-}
+if (!$useDashCache) {
+  // Quiz activity: total quiz answers in last 30 days (read-only metric)
+  $quizAttemptsLast30 = 0;
+  $quizRes = @mysqli_query($conn, "
+    SELECT COUNT(*) AS cnt FROM quiz_answers WHERE answered_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+  ");
+  if ($quizRes && $qr = mysqli_fetch_assoc($quizRes)) {
+    $quizAttemptsLast30 = (int)($qr['cnt'] ?? 0);
+    mysqli_free_result($quizRes);
+  }
 
-// New this week (registrations in last 7 days) — for "at a glance" recency
-$newThisWeek = 0;
-$weekRes = @mysqli_query($conn, "
-  SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-");
-if ($weekRes && $wr = mysqli_fetch_assoc($weekRes)) {
-  $newThisWeek = (int)($wr['cnt'] ?? 0);
-  if ($weekRes) mysqli_free_result($weekRes);
-}
+  // New this week (registrations in last 7 days) — for "at a glance" recency
+  $newThisWeek = 0;
+  $weekRes = @mysqli_query($conn, "
+    SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+  ");
+  if ($weekRes && $wr = mysqli_fetch_assoc($weekRes)) {
+    $newThisWeek = (int)($wr['cnt'] ?? 0);
+    mysqli_free_result($weekRes);
+  }
 
-// Expiring in next 7 days (for "what to do next")
-$expiringIn7 = 0;
-$e7Res = @mysqli_query($conn, "
-  SELECT COUNT(*) AS cnt FROM users
-  WHERE role='student' AND status='approved' AND access_end IS NOT NULL
-    AND access_end >= NOW() AND access_end <= DATE_ADD(NOW(), INTERVAL 7 DAY)
-");
-if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
-  $expiringIn7 = (int)($e7['cnt'] ?? 0);
-  mysqli_free_result($e7Res);
+  // Expiring in next 7 days (for "what to do next")
+  $expiringIn7 = 0;
+  $e7Res = @mysqli_query($conn, "
+    SELECT COUNT(*) AS cnt FROM users
+    WHERE role='student' AND status='approved' AND access_end IS NOT NULL
+      AND access_end >= NOW() AND access_end <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+  ");
+  if ($e7Res && $e7 = mysqli_fetch_assoc($e7Res)) {
+    $expiringIn7 = (int)($e7['cnt'] ?? 0);
+    mysqli_free_result($e7Res);
+  }
+
+  if (session_status() === PHP_SESSION_ACTIVE) {
+    $_SESSION['admin_dash_counts'] = [
+      'enrolled' => $enrolledCount,
+      'pending' => $pendingCount,
+      'expired' => $expiredCount,
+      'subjects' => (int) ($subjectsRow['cnt'] ?? 0),
+      'lessons' => (int) ($lessonsRow['cnt'] ?? 0),
+      'quizzes' => (int) ($quizzesRow['cnt'] ?? 0),
+      'quiz30' => $quizAttemptsLast30,
+      'new_week' => $newThisWeek,
+      'expiring7' => $expiringIn7,
+    ];
+    $_SESSION['admin_dash_counts_at'] = time();
+  }
 }
 ?>
 <!DOCTYPE html>

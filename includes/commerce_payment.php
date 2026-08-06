@@ -30,6 +30,7 @@ require_once __DIR__ . '/commerce_catalog.php';
 
 const COMMERCE_CHECKOUT_SESSION_TTL_SECONDS = 86400; // 24 hours
 const COMMERCE_CHECKOUT_RECOVERY_TTL_SECONDS = 86400; // 24 hours
+const COMMERCE_CHECKOUT_LINK_TTL_SECONDS = 604800; // 7 days (email remind resume)
 const COMMERCE_PROOF_MAX_BYTES = 5242880; // 5 MB
 const COMMERCE_PROOF_DIR_REL = 'uploads/payment_proofs';
 const COMMERCE_PAYMENT_REF_MAX_ATTEMPTS = 5;
@@ -1147,4 +1148,212 @@ function commerce_submit_payment_proof_and_reference(
 
     $fresh = commerce_get_payment($conn, $paymentId);
     return ['ok' => true, 'payment' => $fresh ?: $payment, 'idempotent' => false];
+}
+
+/**
+ * Ensure payment_checkout_links table exists (migration 029).
+ */
+function commerce_checkout_links_ensure_schema(mysqli $conn): bool
+{
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
+    $tq = @mysqli_query($conn, "SHOW TABLES LIKE 'payment_checkout_links'");
+    if ($tq && mysqli_num_rows($tq) > 0) {
+        if ($tq) {
+            mysqli_free_result($tq);
+        }
+        $ready = true;
+        return true;
+    }
+    if ($tq) {
+        mysqli_free_result($tq);
+    }
+    $sql = "CREATE TABLE IF NOT EXISTS payment_checkout_links (
+        link_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        payment_id INT NOT NULL,
+        token_hash CHAR(64) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used_at DATETIME DEFAULT NULL,
+        created_by INT DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_payment_checkout_links_token (token_hash),
+        KEY idx_payment_checkout_links_user (user_id),
+        KEY idx_payment_checkout_links_payment (payment_id),
+        KEY idx_payment_checkout_links_expires (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
+    $ready = (bool) @mysqli_query($conn, $sql);
+    return $ready;
+}
+
+/**
+ * Latest open payment awaiting proof upload for a student (no proof path).
+ *
+ * @return array<string,mixed>|null
+ */
+function commerce_find_awaiting_proof_payment_for_user(mysqli $conn, int $userId): ?array
+{
+    if ($userId <= 0 || !commerce_schema_ready($conn)) {
+        return null;
+    }
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT * FROM payments
+         WHERE user_id = ?
+           AND status = 'awaiting_proof'
+           AND (proof_path IS NULL OR proof_path = '')
+         ORDER BY payment_id DESC
+         LIMIT 1"
+    );
+    if (!$stmt) {
+        return null;
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = $res ? mysqli_fetch_assoc($res) : null;
+    mysqli_stmt_close($stmt);
+    return $row ?: null;
+}
+
+/**
+ * Create a durable email resume link for an open payment (7-day TTL).
+ * Returns raw token once — only the hash is stored.
+ *
+ * @return array{ok:bool,error?:string,token?:string,url?:string,expires_at?:string,payment_id?:int,link_id?:int}
+ */
+function commerce_create_checkout_resume_link(
+    mysqli $conn,
+    int $userId,
+    int $paymentId,
+    int $adminId = 0
+): array {
+    if ($userId <= 0 || $paymentId <= 0) {
+        return ['ok' => false, 'error' => 'invalid_ids'];
+    }
+    if (!commerce_checkout_links_ensure_schema($conn)) {
+        return ['ok' => false, 'error' => 'checkout_links_schema_missing'];
+    }
+
+    $payment = commerce_get_payment($conn, $paymentId);
+    if (!$payment || (int) ($payment['user_id'] ?? 0) !== $userId) {
+        return ['ok' => false, 'error' => 'payment_not_found'];
+    }
+    if (!commerce_payment_is_open($payment)) {
+        return ['ok' => false, 'error' => 'payment_not_open'];
+    }
+
+    $raw = bin2hex(random_bytes(32));
+    $hash = hash('sha256', $raw);
+    $expiresAt = date('Y-m-d H:i:s', time() + COMMERCE_CHECKOUT_LINK_TTL_SECONDS);
+    $createdBy = $adminId > 0 ? $adminId : 0;
+
+    $ins = mysqli_prepare(
+        $conn,
+        'INSERT INTO payment_checkout_links (user_id, payment_id, token_hash, expires_at, created_by)
+         VALUES (?, ?, ?, ?, NULLIF(?, 0))'
+    );
+    if (!$ins) {
+        return ['ok' => false, 'error' => 'link_prepare_failed'];
+    }
+    mysqli_stmt_bind_param($ins, 'iissi', $userId, $paymentId, $hash, $expiresAt, $createdBy);
+    if (!mysqli_stmt_execute($ins)) {
+        mysqli_stmt_close($ins);
+        return ['ok' => false, 'error' => 'link_insert_failed'];
+    }
+    $linkId = (int) mysqli_insert_id($conn);
+    mysqli_stmt_close($ins);
+
+    $rel = function_exists('ereview_url')
+        ? ereview_url('payment_checkout_link?token=' . rawurlencode($raw))
+        : ('payment_checkout_link?token=' . rawurlencode($raw));
+    $url = $rel;
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $dir = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+        $base = rtrim($scheme . '://' . $_SERVER['HTTP_HOST'] . ($dir === '/' || $dir === '\\' ? '' : $dir), '/');
+        $url = $base . '/' . ltrim($rel, '/');
+    }
+
+    return [
+        'ok' => true,
+        'token' => $raw,
+        'url' => $url,
+        'expires_at' => $expiresAt,
+        'payment_id' => $paymentId,
+        'link_id' => $linkId,
+    ];
+}
+
+/**
+ * Consume a durable checkout link: validate hash, require open payment, issue checkout session.
+ * Refresh-on-use while payment stays open and link unexpired (marks used_at on first hit).
+ *
+ * @return array{ok:bool,error?:string,payment?:array<string,mixed>,token?:string}
+ */
+function commerce_consume_checkout_resume_link(mysqli $conn, string $rawToken): array
+{
+    $rawToken = trim($rawToken);
+    if ($rawToken === '' || strlen($rawToken) < 32) {
+        return ['ok' => false, 'error' => 'Invalid or expired upload link.'];
+    }
+    if (!commerce_checkout_links_ensure_schema($conn)) {
+        return ['ok' => false, 'error' => 'Upload link is not available.'];
+    }
+
+    $hash = hash('sha256', $rawToken);
+    $stmt = mysqli_prepare(
+        $conn,
+        'SELECT * FROM payment_checkout_links
+         WHERE token_hash = ?
+           AND expires_at > NOW()
+         LIMIT 1'
+    );
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'Could not validate upload link.'];
+    }
+    mysqli_stmt_bind_param($stmt, 's', $hash);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $link = $res ? mysqli_fetch_assoc($res) : null;
+    mysqli_stmt_close($stmt);
+    if (!$link) {
+        return ['ok' => false, 'error' => 'Invalid or expired upload link. Ask admin to send a new reminder.'];
+    }
+
+    $userId = (int) ($link['user_id'] ?? 0);
+    $paymentId = (int) ($link['payment_id'] ?? 0);
+    $payment = commerce_get_payment($conn, $paymentId);
+    if (!$payment || (int) ($payment['user_id'] ?? 0) !== $userId) {
+        return ['ok' => false, 'error' => 'Payment for this link was not found.'];
+    }
+    if (!commerce_payment_is_open($payment)) {
+        return ['ok' => false, 'error' => 'This payment is no longer awaiting proof. If you already uploaded, wait for review or contact support.'];
+    }
+
+    $sessionToken = commerce_issue_checkout_session($userId, $paymentId);
+    if ($sessionToken === '') {
+        return ['ok' => false, 'error' => 'Could not start checkout session. Please try again.'];
+    }
+
+    $linkId = (int) ($link['link_id'] ?? 0);
+    if ($linkId > 0 && empty($link['used_at'])) {
+        $upd = mysqli_prepare(
+            $conn,
+            'UPDATE payment_checkout_links SET used_at = NOW() WHERE link_id = ? AND used_at IS NULL LIMIT 1'
+        );
+        if ($upd) {
+            mysqli_stmt_bind_param($upd, 'i', $linkId);
+            mysqli_stmt_execute($upd);
+            mysqli_stmt_close($upd);
+        }
+    }
+
+    return [
+        'ok' => true,
+        'payment' => $payment,
+        'token' => $sessionToken,
+    ];
 }

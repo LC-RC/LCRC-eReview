@@ -431,6 +431,90 @@ function commerce_notify_far_approved(mysqli $conn, int $requestId, int $duratio
 }
 
 /**
+ * Email student a durable link to upload GCash proof (Remind → Upload Proof flow).
+ * Does not grant access. SMTP failure is best-effort only.
+ *
+ * @param array{upload_url:string,expires_at?:string,payment?:array<string,mixed>,amount_label?:string,package_label?:string}
+ * @return array{ok:bool,error?:string,sent?:bool}
+ */
+function commerce_notify_upload_proof_reminder(mysqli $conn, int $userId, array $opts): array
+{
+    if ($userId <= 0) {
+        return ['ok' => false, 'error' => 'invalid_user', 'sent' => false];
+    }
+    $uploadUrl = trim((string) ($opts['upload_url'] ?? ''));
+    if ($uploadUrl === '') {
+        return ['ok' => false, 'error' => 'upload_url_missing', 'sent' => false];
+    }
+
+    $student = commerce_notify_load_student($conn, $userId);
+    if (empty($student['ok'])) {
+        return ['ok' => false, 'error' => $student['error'] ?? 'student_load_failed', 'sent' => false];
+    }
+
+    $config = commerce_notify_load_mail_config();
+    if ($config === null) {
+        error_log('commerce_notify: mail config missing/invalid; upload proof reminder not sent');
+        return ['ok' => false, 'error' => 'mail_config_invalid', 'sent' => false];
+    }
+
+    $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
+    $urlEsc = htmlspecialchars($uploadUrl, ENT_QUOTES, 'UTF-8');
+    $expiresRaw = trim((string) ($opts['expires_at'] ?? ''));
+    $expiresLabel = '';
+    if ($expiresRaw !== '') {
+        $ets = strtotime($expiresRaw);
+        if ($ets !== false) {
+            $expiresLabel = date('F j, Y g:i A', $ets);
+        }
+    }
+    $packageLabel = trim((string) ($opts['package_label'] ?? ''));
+    $amountLabel = trim((string) ($opts['amount_label'] ?? ''));
+    $payment = is_array($opts['payment'] ?? null) ? $opts['payment'] : [];
+    $ref = trim((string) ($payment['payment_ref'] ?? ''));
+
+    $detailsHtml = '';
+    $detailsPlain = '';
+    if ($packageLabel !== '') {
+        $detailsHtml .= '<li><strong>Enrollment:</strong> ' . htmlspecialchars($packageLabel, ENT_QUOTES, 'UTF-8') . '</li>';
+        $detailsPlain .= "Enrollment: {$packageLabel}\n";
+    }
+    if ($amountLabel !== '') {
+        $detailsHtml .= '<li><strong>Amount:</strong> ' . htmlspecialchars($amountLabel, ENT_QUOTES, 'UTF-8') . '</li>';
+        $detailsPlain .= "Amount: {$amountLabel}\n";
+    }
+    if ($ref !== '') {
+        $detailsHtml .= '<li><strong>Payment reference:</strong> ' . htmlspecialchars($ref, ENT_QUOTES, 'UTF-8') . '</li>';
+        $detailsPlain .= "Payment reference: {$ref}\n";
+    }
+
+    $subject = 'LCRC eReview — Please upload your payment proof';
+    $bodyHtml = "<p>Dear {$name},</p>"
+        . '<p>Your registration is waiting for <strong>GCash payment proof</strong> before we can activate your LMS access.</p>';
+    if ($detailsHtml !== '') {
+        $bodyHtml .= '<ul>' . $detailsHtml . '</ul>';
+    }
+    $bodyHtml .= '<p>Please complete payment (if you have not yet) and upload your proof using this secure link:</p>'
+        . "<p><a href=\"{$urlEsc}\" style=\"display:inline-block;padding:10px 16px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px;font-weight:700\">Upload payment proof</a></p>"
+        . "<p style=\"font-size:13px;color:#64748b\">Or copy this link:<br>{$urlEsc}</p>";
+    if ($expiresLabel !== '') {
+        $bodyHtml .= '<p style="font-size:13px;color:#64748b">This link expires on <strong>'
+            . htmlspecialchars($expiresLabel, ENT_QUOTES, 'UTF-8') . '</strong>.</p>';
+    }
+    $bodyHtml .= '<p>After you upload, our team will review your payment and grant access. You will receive another email when access is ready.</p>';
+
+    $plain = "Dear {$student['full_name']},\n\n"
+        . "Your registration is waiting for GCash payment proof before we can activate your LMS access.\n"
+        . $detailsPlain
+        . "\nUpload your proof here:\n{$uploadUrl}\n"
+        . ($expiresLabel !== '' ? ("\nThis link expires on {$expiresLabel}.\n") : '')
+        . "\nAfter you upload, our team will review your payment and grant access.\n\nLCRC eReview Admin Team\n";
+
+    $html = commerce_notify_wrap_html('Upload payment proof', $bodyHtml);
+    return commerce_notify_dispatch((string) $student['email'], $subject, $html, $plain, $config);
+}
+
+/**
  * Notify student after administrative Grant Access (email + in-app message).
  * Safe to call when payment had no proof — SMTP/notification failure never undoes the grant.
  *

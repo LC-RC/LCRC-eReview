@@ -188,13 +188,12 @@ function getUserPresenceColumns() {
         return $cols;
     }
     global $conn;
-    $cols = ['is_online' => false, 'last_seen_at' => false, 'last_logout_at' => false];
-    foreach (array_keys($cols) as $col) {
-        $res = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $col) . "'");
-        if ($res && mysqli_fetch_assoc($res)) {
-            $cols[$col] = true;
-        }
-    }
+    require_once __DIR__ . '/includes/schema_introspection.php';
+    $cols = [
+        'is_online' => ereview_schema_column_exists($conn, 'users', 'is_online'),
+        'last_seen_at' => ereview_schema_column_exists($conn, 'users', 'last_seen_at'),
+        'last_logout_at' => ereview_schema_column_exists($conn, 'users', 'last_logout_at'),
+    ];
     return $cols;
 }
 

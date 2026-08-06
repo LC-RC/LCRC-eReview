@@ -11,8 +11,8 @@ function ereview_msg_json(array $payload, int $status = 200): void
 
 function ereview_msg_tables_ready(mysqli $conn): bool
 {
-    $res = @mysqli_query($conn, "SHOW TABLES LIKE 'admin_reviewee_messages'");
-    return (bool)($res && mysqli_fetch_row($res));
+    require_once __DIR__ . '/schema_introspection.php';
+    return ereview_schema_table_exists($conn, 'admin_reviewee_messages');
 }
 
 function ereview_msg_is_admin_role(string $role): bool
@@ -36,13 +36,11 @@ function ereview_msg_user_profile_column_flags(mysqli $conn): array
     if ($cached !== null) {
         return $cached;
     }
+    require_once __DIR__ . '/schema_introspection.php';
     $keys = ['profile_picture', 'use_default_avatar', 'is_online', 'last_seen_at', 'last_logout_at', 'last_login_at'];
-    $cached = array_fill_keys($keys, false);
+    $cached = [];
     foreach ($keys as $k) {
-        $res = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $k) . "'");
-        if ($res && mysqli_fetch_assoc($res)) {
-            $cached[$k] = true;
-        }
+        $cached[$k] = ereview_schema_column_exists($conn, 'users', $k);
     }
     return $cached;
 }
@@ -450,8 +448,8 @@ function ereview_msg_typing_table_ready(mysqli $conn): bool
     if ($ready !== null) {
         return $ready;
     }
-    $res = @mysqli_query($conn, "SHOW TABLES LIKE 'admin_reviewee_typing'");
-    $ready = (bool)($res && mysqli_fetch_row($res));
+    require_once __DIR__ . '/schema_introspection.php';
+    $ready = ereview_schema_table_exists($conn, 'admin_reviewee_typing');
     return $ready;
 }
 
@@ -565,8 +563,8 @@ function ereview_msg_attachments_table_ready(mysqli $conn): bool
 {
     static $ready = null;
     if ($ready !== null) return $ready;
-    $res = @mysqli_query($conn, "SHOW TABLES LIKE 'admin_reviewee_message_attachments'");
-    $ready = (bool)($res && mysqli_fetch_row($res));
+    require_once __DIR__ . '/schema_introspection.php';
+    $ready = ereview_schema_table_exists($conn, 'admin_reviewee_message_attachments');
     return $ready;
 }
 
@@ -574,8 +572,8 @@ function ereview_msg_pins_table_ready(mysqli $conn): bool
 {
     static $ready = null;
     if ($ready !== null) return $ready;
-    $res = @mysqli_query($conn, "SHOW TABLES LIKE 'admin_reviewee_pinned_threads'");
-    $ready = (bool)($res && mysqli_fetch_row($res));
+    require_once __DIR__ . '/schema_introspection.php';
+    $ready = ereview_schema_table_exists($conn, 'admin_reviewee_pinned_threads');
     return $ready;
 }
 

@@ -362,10 +362,31 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
         <?php endif; ?>
         <?php
           $heroAccessTone = (string) ($commerce['commerce_access']['tone'] ?? 'none');
-          if ($heroAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'):
+          $heroPay = is_array($latestPayment ?? null) ? $latestPayment : [];
+          $heroNeedsRemind = $heroAccessTone !== 'active'
+              && (int) ($heroPay['payment_id'] ?? 0) > 0
+              && (string) ($heroPay['status'] ?? '') === 'awaiting_proof'
+              && trim((string) ($heroPay['proof_path'] ?? '')) === '';
+          if ($heroNeedsRemind):
         ?>
+          <form method="post" action="<?php echo h(ereview_url('admin_remind_upload_proof')); ?>" class="inline"
+                data-admin-confirm-title="Remind to upload proof"
+                data-admin-confirm="Email this student a secure link to upload GCash proof? The link is valid for 7 days."
+                data-admin-confirm-ok="Send reminder"
+                data-admin-confirm-icon="<i class=&quot;bi bi-envelope&quot;></i>">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="user_id" value="<?php echo (int) $user['user_id']; ?>">
+            <input type="hidden" name="payment_id" value="<?php echo (int) ($heroPay['payment_id'] ?? 0); ?>">
+            <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) $user['user_id']; ?>">
+            <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-envelope"></i> Remind to upload</button>
+          </form>
+        <?php endif; ?>
+        <?php if (!$heroNeedsRemind && $heroAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'): ?>
           <form method="post" action="<?php echo h(ereview_url('admin_grant_access')); ?>" class="inline"
-                onsubmit="return confirm('Grant Full LMS access for 6 months? Open payment reviews with proof will also be marked approved.');">
+                data-admin-confirm-title="Grant Access"
+                data-admin-confirm="Grant Full LMS access for 6 months? Open payment reviews with proof will also be marked approved."
+                data-admin-confirm-ok="Confirm grant"
+                data-admin-confirm-icon="<i class=&quot;bi bi-key&quot;></i>">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int) $user['user_id']; ?>">
             <input type="hidden" name="months" value="6">
@@ -597,7 +618,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-wrench"></i> Repair Activation</button>
           </form>
           <?php endif; ?>
-          <form class="mt-2" action="reject" method="POST" onsubmit="return confirm('Reject this student?');">
+          <form class="mt-2" action="reject" method="POST"
+                data-admin-confirm-title="Reject student"
+                data-admin-confirm="Reject this student? They will not be able to access the LMS."
+                data-admin-confirm-ok="Reject"
+                data-admin-confirm-icon="<i class=&quot;bi bi-x-octagon&quot;></i>">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <button type="submit" class="w-full px-4 py-2.5 rounded-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition inline-flex items-center justify-center gap-2"><i class="bi bi-x-circle"></i> Reject</button>
@@ -633,7 +658,11 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             </div>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-check2-circle"></i> Approve account &amp; set manual access</button>
           </form>
-          <form class="mt-2" action="reject" method="POST" onsubmit="return confirm('Reject this student?');">
+          <form class="mt-2" action="reject" method="POST"
+                data-admin-confirm-title="Reject student"
+                data-admin-confirm="Reject this student? They will not be able to access the LMS."
+                data-admin-confirm-ok="Reject"
+                data-admin-confirm-icon="<i class=&quot;bi bi-x-octagon&quot;></i>">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>">
             <button type="submit" class="w-full px-4 py-2.5 rounded-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition inline-flex items-center justify-center gap-2"><i class="bi bi-x-circle"></i> Reject</button>
@@ -787,7 +816,13 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
         prepareSubmit: function (e) {
           if (!this.hasFullLms && (!this.permissions || this.permissions.length === 0)) {
             e.preventDefault();
-            alert('Select Full LMS access or at least one content item before approving.');
+            if (window.adminUiDialog) {
+              window.adminUiDialog.notice({
+                type: 'info',
+                title: 'Select access',
+                message: 'Select Full LMS access or at least one content item before approving.'
+              });
+            }
           }
         }
       };
@@ -795,5 +830,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
   });
 </script>
 <?php include __DIR__ . '/includes/components/admin_proof_modal.php'; ?>
+<?php include __DIR__ . '/includes/admin_ui_dialogs.php'; ?>
 </body>
 </html>

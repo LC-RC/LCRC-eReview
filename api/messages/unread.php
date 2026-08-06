@@ -11,17 +11,26 @@ require_once __DIR__ . '/../../includes/messaging_helpers.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     ereview_msg_json(['ok' => false, 'error' => 'Method not allowed'], 405);
 }
-if (!isLoggedIn() || !verifySession()) {
+if (!isLoggedIn()) {
     ereview_msg_json(['ok' => false, 'error' => 'Unauthorized'], 401);
 }
-if (!ereview_msg_tables_ready($conn)) {
-    ereview_msg_json(['ok' => true, 'unread_total' => 0]);
-}
 
-$userId = (int)getCurrentUserId();
-$role = (string)getCurrentUserRole();
+$userId = (int) getCurrentUserId();
+$role = (string) getCurrentUserRole();
 if (!ereview_msg_is_admin_role($role) && !ereview_msg_is_reviewee_role($role)) {
     ereview_msg_json(['ok' => false, 'error' => 'Forbidden'], 403);
+}
+
+// Warm schema cache while session can still be written.
+$tablesReady = ereview_msg_tables_ready($conn);
+
+// Badge polls are frequent — release session lock before unread COUNT.
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
+if (!$tablesReady) {
+    ereview_msg_json(['ok' => true, 'unread_total' => 0]);
 }
 
 $unreadTotal = ereview_msg_unread_total($conn, $role, $userId);

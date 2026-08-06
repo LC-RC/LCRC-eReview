@@ -16,22 +16,41 @@ if ($userId <= 0) {
     exit;
 }
 
-// Verify CSRF while session is open (POST mutations only; list ignores this flag).
+// Verify CSRF while session is open (POST mutations only; list/badge ignore this flag).
 $token = (string) ($_POST['csrf_token'] ?? '');
 $csrfOk = verifyCSRFToken($token);
+
+// Seed + digest throttle while session can still be written.
+notifications_seed_defaults($conn, (int) $userId, $role);
+
+$runPreboardsSync = false;
+if ($action === 'list' && $role === 'admin') {
+    $syncAt = (int) ($_SESSION['notifications_preboards_sync_at'] ?? 0);
+    if ((time() - $syncAt) >= 300) {
+        $runPreboardsSync = true;
+        $_SESSION['notifications_preboards_sync_at'] = time();
+    }
+}
 
 if (function_exists('ereview_release_session_lock')) {
     ereview_release_session_lock();
 }
 
-notifications_seed_defaults($conn, (int)$userId, $role);
+if ($action === 'badge') {
+    $unread = notifications_unread_count($conn, (int) $userId);
+    echo json_encode([
+        'ok' => true,
+        'unread_count' => $unread,
+    ]);
+    exit;
+}
 
 if ($action === 'list') {
-    if ($role === 'admin') {
+    if ($runPreboardsSync) {
         notifications_sync_admin_preboards_pending_reminder($conn, (int) $userId);
     }
-    $items = notifications_list_for_user($conn, (int)$userId, 30);
-    $unread = notifications_unread_count($conn, (int)$userId);
+    $items = notifications_list_for_user($conn, (int) $userId, 30);
+    $unread = notifications_unread_count($conn, (int) $userId);
     echo json_encode([
         'ok' => true,
         'items' => $items,
@@ -59,14 +78,14 @@ if ($action === 'mark_read') {
         echo json_encode(['ok' => false, 'error' => 'Invalid notification id']);
         exit;
     }
-    $ok = notifications_mark_read($conn, (int)$userId, (int)$notificationId);
-    $unread = notifications_unread_count($conn, (int)$userId);
+    $ok = notifications_mark_read($conn, (int) $userId, (int) $notificationId);
+    $unread = notifications_unread_count($conn, (int) $userId);
     echo json_encode(['ok' => $ok, 'unread_count' => $unread]);
     exit;
 }
 
 if ($action === 'mark_all_read') {
-    $ok = notifications_mark_all_read($conn, (int)$userId);
+    $ok = notifications_mark_all_read($conn, (int) $userId);
     echo json_encode(['ok' => $ok, 'unread_count' => 0]);
     exit;
 }
@@ -77,7 +96,7 @@ if ($action === 'mark_toast_shown') {
         echo json_encode(['ok' => false, 'error' => 'Invalid notification id']);
         exit;
     }
-    $ok = notifications_mark_toast_shown($conn, (int)$userId, (int)$notificationId);
+    $ok = notifications_mark_toast_shown($conn, (int) $userId, (int) $notificationId);
     echo json_encode(['ok' => $ok]);
     exit;
 }
@@ -88,8 +107,8 @@ if ($action === 'delete') {
         echo json_encode(['ok' => false, 'error' => 'Invalid notification id']);
         exit;
     }
-    $ok = notifications_delete($conn, (int)$userId, (int)$notificationId);
-    $unread = notifications_unread_count($conn, (int)$userId);
+    $ok = notifications_delete($conn, (int) $userId, (int) $notificationId);
+    $unread = notifications_unread_count($conn, (int) $userId);
     echo json_encode(['ok' => $ok, 'unread_count' => $unread]);
     exit;
 }

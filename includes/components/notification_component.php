@@ -789,6 +789,16 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
       });
     }
 
+    function fetchBadge() {
+      return fetch(apiUrl + '?action=badge', { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data || !data.ok) return;
+          updateBadge(data.unread_count || 0);
+        })
+        .catch(function() {});
+    }
+
     function fetchList(force) {
       if (inFlight && !force) return Promise.resolve();
       inFlight = true;
@@ -914,7 +924,8 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
       }
     });
 
-    fetchList(false);
-    setInterval(function() { fetchList(false); }, 45000);
+    // Cheap badge poll on every page; full list only when the panel opens.
+    fetchBadge();
+    setInterval(fetchBadge, 90000);
   })();
 </script>

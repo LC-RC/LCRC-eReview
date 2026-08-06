@@ -52,6 +52,8 @@ if (!commerce_schema_ready($conn)) {
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 $months = (int) ($_POST['months'] ?? 6);
 $activateLogin = !isset($_POST['activate_login']) || (string) $_POST['activate_login'] !== '0';
+$closeAwaitingWithoutProof = isset($_POST['close_awaiting_without_proof'])
+    && in_array((string) $_POST['close_awaiting_without_proof'], ['1', 'true', 'on', 'yes'], true);
 
 $grantFull = isset($_POST['grant_full_lms']) && in_array((string) $_POST['grant_full_lms'], ['1', 'true', 'on', 'yes'], true);
 $permissions = [];
@@ -143,6 +145,7 @@ foreach ($userIds as $userId) {
         'activate_login' => $activateLogin,
         'label' => 'Administrative Access (' . $scopeLabel . ')',
         'close_open_payment' => true,
+        'close_awaiting_without_proof' => $closeAwaitingWithoutProof,
         'notify_student' => true,
         'permissions' => $permissions,
     ]);

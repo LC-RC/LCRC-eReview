@@ -34,24 +34,13 @@ $whereMap = [
 ];
 $tabWhere = $whereMap[$tab];
 
-$hasProfilePicture = false;
-$hasUseDefaultAvatar = false;
-$hasIsOnline = false;
-$hasLastSeenAt = false;
-$hasLastLogoutAt = false;
-$hasLastLoginAt = false;
-$cp1 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
-if ($cp1 && mysqli_fetch_assoc($cp1)) $hasProfilePicture = true;
-$cp2 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
-if ($cp2 && mysqli_fetch_assoc($cp2)) $hasUseDefaultAvatar = true;
-$cp3 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'is_online'");
-if ($cp3 && mysqli_fetch_assoc($cp3)) $hasIsOnline = true;
-$cp4 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_seen_at'");
-if ($cp4 && mysqli_fetch_assoc($cp4)) $hasLastSeenAt = true;
-$cp5 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_logout_at'");
-if ($cp5 && mysqli_fetch_assoc($cp5)) $hasLastLogoutAt = true;
-$cp6 = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'last_login_at'");
-if ($cp6 && mysqli_fetch_assoc($cp6)) $hasLastLoginAt = true;
+require_once __DIR__ . '/includes/schema_introspection.php';
+$hasProfilePicture = ereview_schema_column_exists($conn, 'users', 'profile_picture');
+$hasUseDefaultAvatar = ereview_schema_column_exists($conn, 'users', 'use_default_avatar');
+$hasIsOnline = ereview_schema_column_exists($conn, 'users', 'is_online');
+$hasLastSeenAt = ereview_schema_column_exists($conn, 'users', 'last_seen_at');
+$hasLastLogoutAt = ereview_schema_column_exists($conn, 'users', 'last_logout_at');
+$hasLastLoginAt = ereview_schema_column_exists($conn, 'users', 'last_login_at');
 
 // Prioritize active users at the top of the table.
 // Active = recent in-app activity within 2 minutes (last_seen/last_login),
@@ -90,10 +79,8 @@ $totalPages = max(1, (int)ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
 $selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, status, access_start, access_end, access_months, created_at";
-$hasEnrollmentPath = false;
-$cep = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'enrollment_path'");
-if ($cep && mysqli_fetch_assoc($cep)) {
-  $hasEnrollmentPath = true;
+$hasEnrollmentPath = ereview_schema_column_exists($conn, 'users', 'enrollment_path');
+if ($hasEnrollmentPath) {
   $selectCols .= ", enrollment_path";
 }
 if ($hasProfilePicture) $selectCols .= ", profile_picture";
@@ -147,24 +134,12 @@ $counts = [
 ];
 
 $deletedLogs = [];
-$hasDeletedLogTable = false;
-$checkLogTbl = @mysqli_query($conn, "SHOW TABLES LIKE 'deleted_users_log'");
-if ($checkLogTbl && mysqli_fetch_row($checkLogTbl)) {
-  $hasDeletedLogTable = true;
-}
+$hasDeletedLogTable = ereview_schema_table_exists($conn, 'deleted_users_log');
 if ($hasDeletedLogTable && $view === 'deleted') {
-  $hasLogSchool = false;
-  $hasLogReviewType = false;
-  $hasLogAccessRange = false;
-  $hasLogReason = false;
-  $lc1 = @mysqli_query($conn, "SHOW COLUMNS FROM deleted_users_log LIKE 'deleted_school'");
-  if ($lc1 && mysqli_fetch_assoc($lc1)) $hasLogSchool = true;
-  $lc2 = @mysqli_query($conn, "SHOW COLUMNS FROM deleted_users_log LIKE 'deleted_review_type'");
-  if ($lc2 && mysqli_fetch_assoc($lc2)) $hasLogReviewType = true;
-  $lc3 = @mysqli_query($conn, "SHOW COLUMNS FROM deleted_users_log LIKE 'deleted_access_range'");
-  if ($lc3 && mysqli_fetch_assoc($lc3)) $hasLogAccessRange = true;
-  $lc4 = @mysqli_query($conn, "SHOW COLUMNS FROM deleted_users_log LIKE 'deletion_reason'");
-  if ($lc4 && mysqli_fetch_assoc($lc4)) $hasLogReason = true;
+  $hasLogSchool = ereview_schema_column_exists($conn, 'deleted_users_log', 'deleted_school');
+  $hasLogReviewType = ereview_schema_column_exists($conn, 'deleted_users_log', 'deleted_review_type');
+  $hasLogAccessRange = ereview_schema_column_exists($conn, 'deleted_users_log', 'deleted_access_range');
+  $hasLogReason = ereview_schema_column_exists($conn, 'deleted_users_log', 'deletion_reason');
 
   $logSelect = "SELECT log_id, deleted_user_id, deleted_name, deleted_email, " .
             ($hasLogSchool ? "deleted_school" : "'' AS deleted_school") . ", " .
@@ -1356,6 +1331,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     $canBulkGrant = ($accessTone !== 'granted' && (string) $row['status'] !== 'rejected');
                     $canBulkLegacyApprove = (!$isCommerceRow && (string) $row['status'] !== 'approved');
                     $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove;
+                    $payStatusRow = (string) ($dash['payment_status'] ?? '');
+                    $needsProofRemind = $isCommerceRow
+                        && $accessTone !== 'granted'
+                        && (string) $row['status'] !== 'rejected'
+                        && !$hasCommerceProof
+                        && (
+                            $proofUi === 'Not Uploaded'
+                            || $payStatusRow === 'awaiting_proof'
+                            || (string) ($dash['payment_tone'] ?? '') === 'awaiting'
+                        )
+                        && (int) ($dash['payment_id'] ?? 0) > 0;
                     $accountUi = (string) ($dash['account_label'] ?? commerce_admin_label_account_status((string) $row['status']));
                     $fulfilledUi = (string) ($dash['fulfilled_ui'] ?? '');
                     $enrollAmt = (string) ($dash['enrollment_amount_display'] ?? '—');
@@ -1563,12 +1549,23 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     </td>
                     <td class="student-action-cell col-actions">
                       <div class="flex flex-wrap items-center gap-2 justify-end">
+                        <?php if ($needsProofRemind): ?>
+                          <button type="button"
+                                  class="admin-btn admin-btn--secondary admin-btn--sm js-remind-upload-btn"
+                                  data-user-id="<?php echo (int) $row['user_id']; ?>"
+                                  data-payment-id="<?php echo (int) ($dash['payment_id'] ?? 0); ?>"
+                                  data-student-name="<?php echo h($row['full_name']); ?>"
+                                  title="Email the student a secure link to upload GCash proof">
+                            <i class="bi bi-envelope" aria-hidden="true"></i> Remind to upload
+                          </button>
+                        <?php endif; ?>
                         <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
                           <button type="button"
                                   class="admin-btn admin-btn--primary admin-btn--sm js-grant-access-btn"
                                   data-user-id="<?php echo (int) $row['user_id']; ?>"
                                   data-student-name="<?php echo h($row['full_name']); ?>"
-                                  title="Grant Full LMS or by-topic access without payment verification">
+                                  data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>"
+                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload unless emergency override.">
                             Grant Access
                           </button>
                         <?php endif; ?>
@@ -1593,11 +1590,20 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                               <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Legacy payment proof</a>
                             <?php endif; ?>
                             <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $row['user_id']); ?>"><i class="bi bi-journal-text" aria-hidden="true"></i> Grant ledger</a>
+                            <?php if ($needsProofRemind): ?>
+                              <button type="button" class="admin-student-action-item js-remind-upload-btn" role="menuitem"
+                                      data-user-id="<?php echo (int) $row['user_id']; ?>"
+                                      data-payment-id="<?php echo (int) ($dash['payment_id'] ?? 0); ?>"
+                                      data-student-name="<?php echo h($row['full_name']); ?>">
+                                <i class="bi bi-envelope" aria-hidden="true"></i> Remind to upload proof
+                              </button>
+                            <?php endif; ?>
                             <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
                               <button type="button" class="admin-student-action-item admin-student-action-item--approve js-grant-access-btn" role="menuitem"
                                       data-user-id="<?php echo (int) $row['user_id']; ?>"
-                                      data-student-name="<?php echo h($row['full_name']); ?>">
-                                <i class="bi bi-key" aria-hidden="true"></i> Grant Access (no payment needed)
+                                      data-student-name="<?php echo h($row['full_name']); ?>"
+                                      data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>">
+                                <i class="bi bi-key" aria-hidden="true"></i> Grant Access
                               </button>
                             <?php endif; ?>
                             <a role="menuitem" class="admin-student-action-item" href="admin_student_access?user_id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-shield-lock" aria-hidden="true"></i> Edit content permissions (SCA)</a>
@@ -1727,7 +1733,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
       <div>
         <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
-        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic). Open payments — including <strong>Awaiting Payment / no proof uploaded</strong> — are marked <strong>manually approved</strong>. The student also gets an <strong>email</strong> and <strong>in-app notification</strong>.</p>
+        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) and emails the student. Prefer <strong>Remind to upload</strong> when proof is missing — access normally follows payment review.</p>
         <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
       </div>
     </div>
@@ -1745,7 +1751,11 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
       <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
     </div>
-    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies content permissions, emails + notifies the student, and closes open payments (with or without proof). Does not create a second purchase grant.</p>
+    <label id="grantAccessNoProofWrap" class="flex items-start gap-2 text-xs mt-2 mb-2" style="display:none;color:#fcd34d;">
+      <input type="checkbox" id="grantAccessNoProof" value="1" style="margin-top:0.15rem;">
+      <span><strong>Grant without proof (emergency)</strong> — closes Awaiting Payment even if the student never uploaded GCash proof. Use Remind to upload for the normal path.</span>
+    </label>
+    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies content permissions, and emails the student. Payments already under review with proof can still be closed. Does not create a second purchase grant.</p>
     <div id="grantAccessError" class="admin-modal__error"></div>
     <div class="admin-modal__actions">
       <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
@@ -1867,6 +1877,73 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     </div>
   </section>
 </div>
+
+<div id="adminNoticeModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-feedback-modal" role="dialog" aria-modal="true" aria-labelledby="adminNoticeTitle">
+    <span id="adminNoticeIcon" class="admin-feedback-icon admin-feedback-icon--success"><i class="bi bi-info-circle-fill"></i></span>
+    <h3 id="adminNoticeTitle" class="admin-modal__title">Notice</h3>
+    <p id="adminNoticeMessage" class="admin-modal__desc">Message</p>
+    <div class="admin-modal__actions">
+      <button type="button" id="adminNoticeCloseBtn" class="admin-modal__btn admin-modal__btn--ok">OK</button>
+    </div>
+  </section>
+</div>
+
+<div id="remindUploadConfirmModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="remindUploadConfirmTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-envelope"></i></span>
+      <div>
+        <h3 id="remindUploadConfirmTitle" class="admin-modal__title">Remind to upload proof</h3>
+        <p class="admin-modal__desc">Email <strong id="remindUploadConfirmName">this student</strong> a secure link to upload GCash payment proof. The link is valid for 7 days.</p>
+      </div>
+    </div>
+    <div class="admin-modal__actions">
+      <button type="button" id="remindUploadConfirmCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+      <button type="button" id="remindUploadConfirmSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-send"></i> Send reminder</button>
+    </div>
+  </section>
+</div>
+<script>
+  window.adminStudentsNotice = (function () {
+    var overlay = document.getElementById('adminNoticeModalOverlay');
+    var titleEl = document.getElementById('adminNoticeTitle');
+    var msgEl = document.getElementById('adminNoticeMessage');
+    var iconEl = document.getElementById('adminNoticeIcon');
+    var closeBtn = document.getElementById('adminNoticeCloseBtn');
+    function close() {
+      if (!overlay) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    function show(type, title, message) {
+      if (!overlay) return;
+      if (titleEl) titleEl.textContent = title || 'Notice';
+      if (msgEl) msgEl.textContent = message || '';
+      if (iconEl) {
+        if (type === 'error') {
+          iconEl.className = 'admin-feedback-icon admin-feedback-icon--error';
+          iconEl.innerHTML = '<i class="bi bi-x-octagon-fill"></i>';
+        } else if (type === 'info') {
+          iconEl.className = 'admin-feedback-icon admin-feedback-icon--success';
+          iconEl.innerHTML = '<i class="bi bi-info-circle-fill"></i>';
+        } else {
+          iconEl.className = 'admin-feedback-icon admin-feedback-icon--success admin-feedback-icon--pulse';
+          iconEl.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+        }
+      }
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (overlay) {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close();
+      });
+    }
+    return { show: show, close: close };
+  })();
+</script>
 <script>
   (function () {
     var POLL_MS = 10000;
@@ -2162,7 +2239,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           return cb.getAttribute('data-activatable') === '1';
         });
         if (selected.length === 0) {
-          window.alert('Continue is for Repair Activation / legacy approve only. Use Grant Access for students without Access Granted.');
+          if (window.adminStudentsNotice) {
+            window.adminStudentsNotice.show('info', 'Use Grant Access', 'Continue is for Repair Activation / legacy approve only. Use Grant Access for students without Access Granted.');
+          }
           return;
         }
         var ids = selected.map(function (cb) { return Number(cb.value); });
@@ -2281,7 +2360,10 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var cancelBtn = document.getElementById('grantAccessCancelBtn');
     var submitBtn = document.getElementById('grantAccessSubmitBtn');
     var bulkGrantBtn = document.getElementById('studentsBulkGrantBtn');
+    var noProofWrap = document.getElementById('grantAccessNoProofWrap');
+    var noProofChk = document.getElementById('grantAccessNoProof');
     var pendingUserIds = [];
+    var pendingNeedsProof = false;
     if (!overlay || !submitBtn) return;
 
     function grantPicker() {
@@ -2289,7 +2371,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       try { return Alpine.$data(modalRoot); } catch (e) { return null; }
     }
 
-    function openGrant(userIds, label) {
+    function setNoProofUi(show) {
+      pendingNeedsProof = !!show;
+      if (noProofWrap) noProofWrap.style.display = show ? 'flex' : 'none';
+      if (noProofChk) noProofChk.checked = false;
+    }
+
+    function openGrant(userIds, label, needsProof) {
       pendingUserIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
       if (pendingUserIds.length === 0) return;
       if (nameEl) {
@@ -2299,6 +2387,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
       if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
       if (errEl) errEl.textContent = '';
+      setNoProofUi(!!needsProof);
       var picker = grantPicker();
       if (picker && typeof picker.resetDefaults === 'function') picker.resetDefaults();
       overlay.classList.add('is-open');
@@ -2309,12 +2398,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       overlay.classList.remove('is-open');
       overlay.setAttribute('aria-hidden', 'true');
       pendingUserIds = [];
+      setNoProofUi(false);
       if (errEl) errEl.textContent = '';
     }
 
     document.querySelectorAll('.js-grant-access-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        openGrant([btn.getAttribute('data-user-id')], btn.getAttribute('data-student-name') || '');
+        openGrant(
+          [btn.getAttribute('data-user-id')],
+          btn.getAttribute('data-student-name') || '',
+          btn.getAttribute('data-needs-proof') === '1'
+        );
       });
     });
     if (bulkGrantBtn) {
@@ -2322,13 +2416,19 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-grantable="1"]'));
         var ids = boxes.map(function (cb) { return cb.value; });
         if (ids.length === 0) {
-          window.alert('Select at least one student without Access Granted.');
+          if (window.adminStudentsNotice) {
+            window.adminStudentsNotice.show('info', 'No students selected', 'Select at least one student without Access Granted.');
+          }
           return;
         }
+        var anyNeedsProof = boxes.some(function (cb) {
+          var rowBtn = document.querySelector('.js-grant-access-btn[data-user-id="' + cb.value + '"]');
+          return rowBtn && rowBtn.getAttribute('data-needs-proof') === '1';
+        });
         var label = ids.length === 1
           ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
           : (ids.length + ' students — same duration & content selection for all');
-        openGrant(ids, label);
+        openGrant(ids, label, anyNeedsProof);
       });
     }
     if (cancelBtn) cancelBtn.addEventListener('click', closeGrant);
@@ -2340,6 +2440,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       var months = monthsEl ? Number(monthsEl.value || 0) : 0;
       if (!months || months < 1) {
         if (errEl) errEl.textContent = 'Enter a valid duration in months.';
+        return;
+      }
+      if (pendingNeedsProof && noProofChk && !noProofChk.checked) {
+        if (errEl) {
+          errEl.textContent = 'This student has no payment proof. Use Remind to upload, or check “Grant without proof (emergency)”.';
+        }
         return;
       }
       var picker = grantPicker();
@@ -2368,6 +2474,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       fd.append('activate_login', '1');
       fd.append('grant_full_lms', access.grant_full_lms);
       fd.append('permissions', access.permissions);
+      fd.append('close_awaiting_without_proof', (pendingNeedsProof && noProofChk && noProofChk.checked) ? '1' : '0');
       fd.append('return_to', 'admin_students');
       fetch('admin_grant_access', {
         method: 'POST',
@@ -2392,6 +2499,103 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         submitBtn.innerHTML = '<i class="bi bi-key"></i> Confirm grant';
       });
     });
+  })();
+
+  (function () {
+    var csrf = <?php echo json_encode($csrf); ?>;
+    var confirmOverlay = document.getElementById('remindUploadConfirmModalOverlay');
+    var confirmName = document.getElementById('remindUploadConfirmName');
+    var confirmCancel = document.getElementById('remindUploadConfirmCancelBtn');
+    var confirmSubmit = document.getElementById('remindUploadConfirmSubmitBtn');
+    var loadingOverlay = document.getElementById('actionLoadingModalOverlay');
+    var loadingTitle = document.getElementById('actionLoadingTitle');
+    var loadingMessage = document.getElementById('actionLoadingMessage');
+    var pending = null;
+
+    function showNotice(type, title, message) {
+      if (window.adminStudentsNotice) {
+        window.adminStudentsNotice.show(type, title, message);
+      }
+    }
+    function openConfirm(uid, pid, name) {
+      pending = { uid: uid, pid: pid, name: name };
+      if (confirmName) confirmName.textContent = name || 'this student';
+      if (!confirmOverlay) return;
+      confirmOverlay.classList.add('is-open');
+      confirmOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeConfirm() {
+      pending = null;
+      if (!confirmOverlay) return;
+      confirmOverlay.classList.remove('is-open');
+      confirmOverlay.setAttribute('aria-hidden', 'true');
+      if (confirmSubmit) {
+        confirmSubmit.disabled = false;
+        confirmSubmit.innerHTML = '<i class="bi bi-send"></i> Send reminder';
+      }
+    }
+    function showLoading(title, message) {
+      if (!loadingOverlay) return;
+      if (loadingTitle) loadingTitle.textContent = title || 'Sending reminder…';
+      if (loadingMessage) loadingMessage.textContent = message || 'Please wait while we email the student.';
+      loadingOverlay.classList.add('is-open');
+      loadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function hideLoading() {
+      if (!loadingOverlay) return;
+      loadingOverlay.classList.remove('is-open');
+      loadingOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function sendReminder() {
+      if (!pending || !pending.uid) return;
+      var uid = pending.uid;
+      var pid = pending.pid;
+      var name = pending.name;
+      closeConfirm();
+      showLoading('Sending reminder…', 'Emailing ' + (name || 'the student') + ' a secure upload link.');
+      var fd = new FormData();
+      fd.append('csrf_token', csrf);
+      fd.append('user_id', String(uid));
+      if (pid) fd.append('payment_id', String(pid));
+      fd.append('return_to', 'admin_students');
+      fetch('admin_remind_upload_proof', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        hideLoading();
+        var ok = !!(data && data.ok);
+        var msg = (data && data.message)
+          ? data.message
+          : (ok ? 'Reminder sent.' : 'Could not send reminder.');
+        showNotice(ok ? 'success' : 'error', ok ? 'Reminder sent' : 'Reminder failed', msg);
+      })
+      .catch(function () {
+        hideLoading();
+        showNotice('error', 'Request failed', 'Check your connection and try again.');
+      });
+    }
+
+    document.querySelectorAll('.js-remind-upload-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var uid = btn.getAttribute('data-user-id') || '';
+        var pid = btn.getAttribute('data-payment-id') || '';
+        var name = btn.getAttribute('data-student-name') || 'this student';
+        if (!uid) return;
+        openConfirm(uid, pid, name);
+      });
+    });
+    if (confirmCancel) confirmCancel.addEventListener('click', closeConfirm);
+    if (confirmSubmit) confirmSubmit.addEventListener('click', sendReminder);
+    if (confirmOverlay) {
+      confirmOverlay.addEventListener('click', function (e) {
+        if (e.target === confirmOverlay) closeConfirm();
+      });
+    }
   })();
 
   (function () {

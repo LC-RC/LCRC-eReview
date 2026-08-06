@@ -5,10 +5,8 @@
 
 if (!function_exists('notifications_column_exists')) {
     function notifications_column_exists(mysqli $conn, string $table, string $column): bool {
-        $tableEsc = mysqli_real_escape_string($conn, $table);
-        $colEsc = mysqli_real_escape_string($conn, $column);
-        $res = @mysqli_query($conn, "SHOW COLUMNS FROM `{$tableEsc}` LIKE '{$colEsc}'");
-        return $res && mysqli_fetch_assoc($res) ? true : false;
+        require_once __DIR__ . '/schema_introspection.php';
+        return ereview_schema_column_exists($conn, $table, $column);
     }
 }
 
@@ -16,6 +14,22 @@ if (!function_exists('notifications_ensure_table')) {
     function notifications_ensure_table(mysqli $conn) {
         static $ensured = false;
         if ($ensured) return true;
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['notifications_table_ready'])) {
+            $ensured = true;
+            return true;
+        }
+        require_once __DIR__ . '/schema_introspection.php';
+        if (ereview_schema_table_exists($conn, 'notifications')
+            && notifications_column_exists($conn, 'notifications', 'category')
+            && notifications_column_exists($conn, 'notifications', 'actor_user_id')
+            && notifications_column_exists($conn, 'notifications', 'toast_shown')
+        ) {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['notifications_table_ready'] = 1;
+            }
+            $ensured = true;
+            return true;
+        }
         $sql = "CREATE TABLE IF NOT EXISTS notifications (
             notification_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -44,6 +58,9 @@ if (!function_exists('notifications_ensure_table')) {
             if (!notifications_column_exists($conn, 'notifications', 'toast_shown')) {
                 @mysqli_query($conn, "ALTER TABLE notifications ADD COLUMN toast_shown TINYINT(1) NOT NULL DEFAULT 0 AFTER is_read");
             }
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['notifications_table_ready'] = 1;
+            }
         }
         $ensured = $ok ? true : false;
         return $ok ? true : false;
@@ -53,6 +70,10 @@ if (!function_exists('notifications_ensure_table')) {
 if (!function_exists('notifications_seed_defaults')) {
     function notifications_seed_defaults(mysqli $conn, int $userId, string $role) {
         if ($userId <= 0) return;
+        $seedKey = 'notifications_seeded_' . $userId;
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION[$seedKey])) {
+            return;
+        }
         if (!notifications_ensure_table($conn)) return;
 
         $count = 0;
@@ -65,7 +86,12 @@ if (!function_exists('notifications_seed_defaults')) {
             $count = (int)($row['c'] ?? 0);
             mysqli_stmt_close($stmt);
         }
-        if ($count > 0) return;
+        if ($count > 0) {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION[$seedKey] = 1;
+            }
+            return;
+        }
 
         $title1 = 'Welcome to notifications';
         $msg1 = 'Your notification center is now active. Updates will appear here.';
@@ -93,6 +119,9 @@ if (!function_exists('notifications_seed_defaults')) {
         mysqli_stmt_bind_param($stmt, 'issssi', $userId, $role, $title3, $msg3, $link, $isRead);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION[$seedKey] = 1;
+        }
     }
 }
 

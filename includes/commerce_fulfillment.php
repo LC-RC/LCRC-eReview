@@ -522,7 +522,8 @@ function commerce_payment_is_manual_reviewable(array $payment): bool
 /**
  * Close an open payment after admin_manual grant — no purchase grants / no fulfill.
  * 1) Reviewable pending_verification with proof → manually_approved + paid
- * 2) Else awaiting_proof (incl. no proof uploaded) → same manual approve so Needs Review clears
+ * 2) awaiting_proof with proof → same
+ * 3) awaiting_proof without proof → only when $allowAwaitingWithoutProof (emergency override)
  *
  * @return array{ok:bool,skipped?:bool,error?:string,payment_id?:int,payment?:array<string,mixed>,mode?:string}
  */
@@ -531,7 +532,8 @@ function commerce_close_reviewable_payment_after_admin_grant(
     int $userId,
     int $adminId,
     int $grantId = 0,
-    string $reviewNote = ''
+    string $reviewNote = '',
+    bool $allowAwaitingWithoutProof = false
 ): array {
     if ($userId <= 0 || $adminId <= 0) {
         return ['ok' => false, 'error' => 'invalid_ids'];
@@ -578,10 +580,23 @@ function commerce_close_reviewable_payment_after_admin_grant(
     }
 
     $hasProof = trim((string) ($payment['proof_path'] ?? '')) !== '';
+
+    // Default path: remind student to upload — do not silently approve no-proof payments.
+    if ($mode === 'awaiting_proof' && !$hasProof && !$allowAwaitingWithoutProof) {
+        return [
+            'ok' => true,
+            'skipped' => true,
+            'error' => 'awaiting_proof_requires_override',
+            'mode' => $mode,
+            'payment_id' => $paymentId,
+            'payment' => $payment,
+        ];
+    }
+
     $note = trim($reviewNote);
     if ($note === '') {
         if ($mode === 'awaiting_proof' && !$hasProof) {
-            $note = 'Manually approved via administrative Grant Access'
+            $note = 'Manually approved via administrative Grant Access (emergency without proof)'
                 . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
                 . '. No payment proof was uploaded — access granted by admin without a second purchase grant.';
         } else {

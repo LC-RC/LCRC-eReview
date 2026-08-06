@@ -55,7 +55,8 @@ $loadStudentTheme = !empty($loadStudentTheme)
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <?php endif; ?>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo is_file($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
 <?php if ($loadStudentTheme): ?>
 <script>
