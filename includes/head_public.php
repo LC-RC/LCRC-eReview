@@ -11,7 +11,8 @@ $bootstrapIconsFile = __DIR__ . '/../assets/vendor/bootstrap-icons/bootstrap-ico
 $alpineJsFile = __DIR__ . '/../assets/js/alpine.min.js';
 $useBuiltCss = file_exists($tailwindFile) && filesize($tailwindFile) > 1000;
 if (is_file($fontsNunitoFile)): ?>
-<link rel="stylesheet" href="assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>">
+<link rel="stylesheet" href="assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>"></noscript>
 <?php endif;
 if ($useBuiltCss): ?>
 <link rel="stylesheet" href="assets/css/tailwind.css?v=<?php echo filemtime($tailwindFile); ?>">
@@ -791,9 +792,10 @@ if ($useBuiltCss): ?>
   }
 </style>
 <?php if (is_file($bootstrapIconsFile)): ?>
-<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>">
+<link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>"></noscript>
 <?php else: ?>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" media="print" onload="this.media='all'">
 <?php endif; ?>
 <?php if (is_file($alpineJsFile)): ?>
 <script defer src="assets/js/alpine.min.js?v=<?php echo filemtime($alpineJsFile); ?>"></script>

@@ -22,13 +22,11 @@ $__headScript = strtolower((string) basename((string) ($_SERVER['SCRIPT_NAME'] ?
 $loadStudentTheme = !empty($loadStudentTheme)
     || (strpos($__headScript, 'student_') === 0);
 ?>
-<?php if (is_file($fontsNunitoFile)): ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>">
-<?php endif; ?>
 <?php if ($useBuiltCss && !$forceTailwindCdn): ?>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind.css?v=<?php echo filemtime($tailwindFile); ?>">
 <?php if (is_file($arbitraryFile)): ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>">
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>"></noscript>
 <?php endif; ?>
 <?php else: ?>
 <script>
@@ -55,12 +53,17 @@ $loadStudentTheme = !empty($loadStudentTheme)
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
 <?php endif; ?>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo is_file($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
+<?php if (is_file($fontsNunitoFile)): ?>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/fonts-nunito.css?v=<?php echo filemtime($fontsNunitoFile); ?>"></noscript>
+<?php endif; ?>
 <?php if (is_file($bootstrapIconsFile)): ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>">
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/vendor/bootstrap-icons/bootstrap-icons.min.css?v=<?php echo filemtime($bootstrapIconsFile); ?>"></noscript>
 <?php else: ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" media="print" onload="this.media='all'">
 <?php endif; ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/app-shell.css<?php echo is_file($appShellFile) ? '?v=' . filemtime($appShellFile) : ''; ?>">
 <?php if ($loadStudentTheme): ?>
 <script>
   (function () {
@@ -98,7 +101,7 @@ $loadStudentTheme = !empty($loadStudentTheme)
   .app-shell-main--student .rounded-2xl { border-radius: 0.75rem !important; }
   .app-shell-main--student .rounded-xl { border-radius: 0.625rem !important; }
   .app-shell-main--student .rounded-lg { border-radius: 0.5rem !important; }
-  body { font-family: Nunito, "Segoe UI", sans-serif; }
+  body { font-family: Nunito, "Segoe UI", system-ui, sans-serif; }
   <?php if ($loadStudentTheme): ?>
   html.student-theme-boot body { background: var(--student-bg, #e8eef6); }
   <?php endif; ?>

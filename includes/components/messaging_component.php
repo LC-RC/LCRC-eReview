@@ -1158,6 +1158,19 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     return root.classList.contains('ere-msg--open');
   }
   var ereMsgClosing = false;
+  var composerMetaTimer = null;
+  function startComposerMetaTimer(){
+    if (composerMetaTimer) return;
+    composerMetaTimer = setInterval(function(){
+      if (!isMsgPanelOpen()) return;
+      updateComposerMeta();
+    }, 500);
+  }
+  function stopComposerMetaTimer(){
+    if (!composerMetaTimer) return;
+    clearInterval(composerMetaTimer);
+    composerMetaTimer = null;
+  }
   function openPanel(){
     ereMsgClosing = false;
     state.lastApiError = '';
@@ -1166,6 +1179,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     document.body.style.overflow = 'hidden';
     root.classList.add('ere-msg--open');
     setHistoryOpen(false);
+    startComposerMetaTimer();
     if ('Notification' in window && Notification.permission === 'default') {
       try { Notification.requestPermission(); } catch (e1) {}
     }
@@ -1175,6 +1189,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     if (!isMsgPanelOpen() || ereMsgClosing) return;
     ereMsgClosing = true;
     stopMessagingRealtime();
+    stopComposerMetaTimer();
     setHistoryOpen(false);
     root.classList.remove('ere-msg--open');
     root.setAttribute('aria-hidden', 'true');
@@ -1556,11 +1571,16 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     stopMessagingRealtime();
     stopTopbarUnreadPolling();
   });
-  setInterval(updateComposerMeta, 500);
+  // Do NOT bootstrap the full inbox on every page — that API call made admin feel slower.
+  // Open panel calls refreshAll(); topbar only needs a light unread badge poll.
   autoResizeInput();
   updateComposerMeta();
   updateSendState();
-  refreshAll(false).then(function(){ startTopbarUnreadPolling(); });
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(function(){ startTopbarUnreadPolling(); }, { timeout: 5000 });
+  } else {
+    setTimeout(function(){ startTopbarUnreadPolling(); }, 3500);
+  }
 })();
 </script>
 
