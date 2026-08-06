@@ -43,16 +43,13 @@ $loadAdminQuizUiCss = empty($adminSkipQuizUiCss)
 </script>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-tokens.css<?php echo is_file($adminTokensFile) ? '?v=' . filemtime($adminTokensFile) : ''; ?>">
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin.css<?php echo is_file($adminCssFile) ? '?v=' . filemtime($adminCssFile) : ''; ?>">
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-components.css<?php echo is_file($adminComponentsFile) ? '?v=' . filemtime($adminComponentsFile) : ''; ?>" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-components.css<?php echo is_file($adminComponentsFile) ? '?v=' . filemtime($adminComponentsFile) : ''; ?>"></noscript>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-components.css<?php echo is_file($adminComponentsFile) ? '?v=' . filemtime($adminComponentsFile) : ''; ?>">
 <?php if ($loadAdminQuizUiCss && is_file($adminQuizUiFile)): ?>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-quiz-ui.css?v=<?php echo filemtime($adminQuizUiFile); ?>" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-quiz-ui.css?v=<?php echo filemtime($adminQuizUiFile); ?>"></noscript>
 <?php endif; ?>
 <?php if ($loadAdminStudentsCss && is_file($adminStudentsCssFile)): ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-students.css?v=<?php echo filemtime($adminStudentsCssFile); ?>" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-students.css?v=<?php echo filemtime($adminStudentsCssFile); ?>"></noscript>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-students.css?v=<?php echo filemtime($adminStudentsCssFile); ?>">
 <?php endif; ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-saas.css<?php echo is_file($adminSaasFile) ? '?v=' . filemtime($adminSaasFile) : ''; ?>" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-saas.css<?php echo is_file($adminSaasFile) ? '?v=' . filemtime($adminSaasFile) : ''; ?>"></noscript>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/admin-saas.css<?php echo is_file($adminSaasFile) ? '?v=' . filemtime($adminSaasFile) : ''; ?>">
 <script src="<?php echo h($base); ?>/assets/js/admin-theme.js<?php echo is_file($adminThemeJsFile) ? '?v=' . filemtime($adminThemeJsFile) : ''; ?>" defer></script>

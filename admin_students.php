@@ -22,17 +22,23 @@ $perPage = 10;
 $offset = ($page - 1) * $perPage;
 
 $like = '%' . $q . '%';
-$searchSql = "(full_name LIKE ? OR email LIKE ?)";
-// Enrolled = active grant. Pending = awaiting approval (status pending, no grant).
-$hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
-$whereMap = [
-  'enrolled' => "role='student' AND ({$hasActiveGrantSql})",
-  'pending'  => "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})",
-  'expired'  => "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})",
-  'rejected' => "role='student' AND status='rejected'",
-  'all'      => "role='student'",
+$searchSql = "(u.full_name LIKE ? OR u.email LIKE ?)";
+// Active grant as JOIN (much cheaper than correlated EXISTS on every COUNT/list).
+$activeGrantJoin = "LEFT JOIN (
+    SELECT DISTINCT user_id
+    FROM access_grants
+    WHERE status = 'active'
+      AND ends_at > NOW()
+      AND source IN ('purchase','free_access','admin_manual')
+) ag ON ag.user_id = u.user_id";
+$tabWhereMap = [
+  'enrolled' => "u.role='student' AND ag.user_id IS NOT NULL",
+  'pending'  => "u.role='student' AND u.status='pending' AND ag.user_id IS NULL",
+  'expired'  => "u.role='student' AND u.status='approved' AND u.access_end IS NOT NULL AND u.access_end < ? AND ag.user_id IS NULL",
+  'rejected' => "u.role='student' AND u.status='rejected'",
+  'all'      => "u.role='student'",
 ];
-$tabWhere = $whereMap[$tab];
+$tabWhere = $tabWhereMap[$tab];
 
 require_once __DIR__ . '/includes/schema_introspection.php';
 $hasProfilePicture = ereview_schema_column_exists($conn, 'users', 'profile_picture');
@@ -42,60 +48,87 @@ $hasLastSeenAt = ereview_schema_column_exists($conn, 'users', 'last_seen_at');
 $hasLastLogoutAt = ereview_schema_column_exists($conn, 'users', 'last_logout_at');
 $hasLastLoginAt = ereview_schema_column_exists($conn, 'users', 'last_login_at');
 
-// Prioritize active users at the top of the table.
-// Active = recent in-app activity within 2 minutes (last_seen/last_login),
-// with legacy fallback to is_online only when activity timestamps do not exist.
-$presenceOrderExpr = '0';
-if ($hasLastSeenAt) {
-  $presenceOrderExpr = "(CASE WHEN last_seen_at IS NOT NULL AND last_seen_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE) THEN 1 ELSE 0 END)";
-} elseif ($hasLastLoginAt) {
-  $presenceOrderExpr = "(CASE WHEN last_login_at IS NOT NULL AND last_login_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE) THEN 1 ELSE 0 END)";
-} elseif ($hasIsOnline) {
-  $presenceOrderExpr = "(CASE WHEN is_online = 1 THEN 1 ELSE 0 END)";
-}
-if ($hasLastLogoutAt) {
-  $activityCol = $hasLastSeenAt ? 'last_seen_at' : ($hasLastLoginAt ? 'last_login_at' : null);
-  $logoutIdleCond = $activityCol !== null ? "($activityCol IS NULL OR $activityCol <= last_logout_at)" : '1=1';
-  $presenceOrderExpr = "(CASE WHEN last_logout_at IS NOT NULL AND $logoutIdleCond THEN 0 ELSE $presenceOrderExpr END)";
-}
-$orderBySql = "$presenceOrderExpr DESC, created_at DESC";
+// Keep sort simple for list latency; presence sort was forcing expensive expressions.
+$orderBySql = "u.created_at DESC";
 
-if ($tab === 'expired') {
-  $countSql = "SELECT COUNT(*) AS total FROM users WHERE $tabWhere AND $searchSql";
-  $stmt = mysqli_prepare($conn, $countSql);
-  mysqli_stmt_bind_param($stmt, 'sss', $nowSql, $like, $like);
-} else {
-  $countSql = "SELECT COUNT(*) AS total FROM users WHERE $tabWhere AND $searchSql";
-  $stmt = mysqli_prepare($conn, $countSql);
-  mysqli_stmt_bind_param($stmt, 'ss', $like, $like);
+// Tab badge counts: one aggregate query (or short session cache when not searching).
+$counts = null;
+$countCacheTtl = 45;
+if ($q === '' && session_status() === PHP_SESSION_ACTIVE) {
+  $cachedCounts = $_SESSION['admin_students_tab_counts'] ?? null;
+  $cachedAt = (int) ($_SESSION['admin_students_tab_counts_at'] ?? 0);
+  if (is_array($cachedCounts) && $cachedAt > 0 && (time() - $cachedAt) < $countCacheTtl) {
+    $counts = [
+      'enrolled' => (int) ($cachedCounts['enrolled'] ?? 0),
+      'pending' => (int) ($cachedCounts['pending'] ?? 0),
+      'expired' => (int) ($cachedCounts['expired'] ?? 0),
+      'rejected' => (int) ($cachedCounts['rejected'] ?? 0),
+      'all' => (int) ($cachedCounts['all'] ?? 0),
+    ];
+  }
 }
-mysqli_stmt_execute($stmt);
-$countRes = mysqli_stmt_get_result($stmt);
-$countRow = mysqli_fetch_assoc($countRes);
-$total = (int)($countRow['total'] ?? 0);
-mysqli_stmt_close($stmt);
+if ($counts === null) {
+  $countSql = "SELECT
+      SUM(CASE WHEN ag.user_id IS NOT NULL THEN 1 ELSE 0 END) AS enrolled,
+      SUM(CASE WHEN u.status='pending' AND ag.user_id IS NULL THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN u.status='approved' AND u.access_end IS NOT NULL AND u.access_end < ? AND ag.user_id IS NULL THEN 1 ELSE 0 END) AS expired,
+      SUM(CASE WHEN u.status='rejected' THEN 1 ELSE 0 END) AS rejected,
+      COUNT(*) AS all_students
+    FROM users u
+    {$activeGrantJoin}
+    WHERE u.role='student'";
+  if ($q !== '') {
+    $countSql .= " AND {$searchSql}";
+  }
+  $stmt = mysqli_prepare($conn, $countSql);
+  if ($q !== '') {
+    mysqli_stmt_bind_param($stmt, 'sss', $nowSql, $like, $like);
+  } else {
+    mysqli_stmt_bind_param($stmt, 's', $nowSql);
+  }
+  mysqli_stmt_execute($stmt);
+  $countRes = mysqli_stmt_get_result($stmt);
+  $countRow = $countRes ? mysqli_fetch_assoc($countRes) : null;
+  mysqli_stmt_close($stmt);
+  $counts = [
+    'enrolled' => (int) ($countRow['enrolled'] ?? 0),
+    'pending' => (int) ($countRow['pending'] ?? 0),
+    'expired' => (int) ($countRow['expired'] ?? 0),
+    'rejected' => (int) ($countRow['rejected'] ?? 0),
+    'all' => (int) ($countRow['all_students'] ?? 0),
+  ];
+  if ($q === '' && session_status() === PHP_SESSION_ACTIVE) {
+    $_SESSION['admin_students_tab_counts'] = $counts;
+    $_SESSION['admin_students_tab_counts_at'] = time();
+  }
+}
 
-$totalPages = max(1, (int)ceil($total / $perPage));
+$total = (int) ($counts[$tab] ?? 0);
+$totalPages = max(1, (int) ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-$selectCols = "user_id, full_name, email, review_type, school, school_other, payment_proof, status, access_start, access_end, access_months, created_at";
+$selectCols = "u.user_id, u.full_name, u.email, u.review_type, u.school, u.school_other, u.payment_proof, u.status, u.access_start, u.access_end, u.access_months, u.created_at";
 $hasEnrollmentPath = ereview_schema_column_exists($conn, 'users', 'enrollment_path');
 if ($hasEnrollmentPath) {
-  $selectCols .= ", enrollment_path";
+  $selectCols .= ", u.enrollment_path";
 }
-if ($hasProfilePicture) $selectCols .= ", profile_picture";
-if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
-if ($hasIsOnline) $selectCols .= ", is_online";
-if ($hasLastSeenAt) $selectCols .= ", last_seen_at";
-if ($hasLastLogoutAt) $selectCols .= ", last_logout_at";
-if ($hasLastLoginAt) $selectCols .= ", last_login_at";
+if ($hasProfilePicture) $selectCols .= ", u.profile_picture";
+if ($hasUseDefaultAvatar) $selectCols .= ", u.use_default_avatar";
+if ($hasIsOnline) $selectCols .= ", u.is_online";
+if ($hasLastSeenAt) $selectCols .= ", u.last_seen_at";
+if ($hasLastLogoutAt) $selectCols .= ", u.last_logout_at";
+if ($hasLastLoginAt) $selectCols .= ", u.last_login_at";
+
+$listSql = "SELECT {$selectCols}
+  FROM users u
+  {$activeGrantJoin}
+  WHERE {$tabWhere} AND {$searchSql}
+  ORDER BY {$orderBySql}
+  LIMIT ? OFFSET ?";
+$stmt = mysqli_prepare($conn, $listSql);
 if ($tab === 'expired') {
-  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY $orderBySql LIMIT ? OFFSET ?";
-  $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
 } else {
-  $sql = "SELECT $selectCols FROM users WHERE $tabWhere AND $searchSql ORDER BY $orderBySql LIMIT ? OFFSET ?";
-  $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
 }
 mysqli_stmt_execute($stmt);
@@ -104,34 +137,12 @@ $studentRows = [];
 while ($studentsRes && ($sr = mysqli_fetch_assoc($studentsRes))) {
   $studentRows[] = $sr;
 }
+mysqli_stmt_close($stmt);
 $badgeUserIds = [];
 foreach ($studentRows as $srRow) {
   $badgeUserIds[] = (int) ($srRow['user_id'] ?? 0);
 }
 $studentBadgeMap = commerce_admin_students_dashboard_rows($conn, $badgeUserIds);
-
-$getCount = function(string $where, bool $needsNow) use ($conn, $nowSql, $like, $searchSql) : int {
-  $sql = "SELECT COUNT(*) AS total FROM users WHERE $where AND $searchSql";
-  $stmt = mysqli_prepare($conn, $sql);
-  if ($needsNow) {
-    mysqli_stmt_bind_param($stmt, 'sss', $nowSql, $like, $like);
-  } else {
-    mysqli_stmt_bind_param($stmt, 'ss', $like, $like);
-  }
-  mysqli_stmt_execute($stmt);
-  $res = mysqli_stmt_get_result($stmt);
-  $row = mysqli_fetch_assoc($res);
-  mysqli_stmt_close($stmt);
-  return (int)($row['total'] ?? 0);
-};
-
-$counts = [
-  'enrolled' => $getCount($whereMap['enrolled'], false),
-  'pending'  => $getCount($whereMap['pending'], false),
-  'expired'  => $getCount($whereMap['expired'], true),
-  'rejected' => $getCount($whereMap['rejected'], false),
-  'all'      => $getCount($whereMap['all'], false),
-];
 
 $deletedLogs = [];
 $hasDeletedLogTable = ereview_schema_table_exists($conn, 'deleted_users_log');
