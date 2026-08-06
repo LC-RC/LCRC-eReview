@@ -236,13 +236,68 @@ function preboards_datetime_sql_to_local(?string $sql): string
 
 function preboards_count_pending_requests(mysqli $conn): int
 {
-    $res = @mysqli_query($conn, "SELECT COUNT(*) AS c FROM preboards_requests WHERE status='pending'");
+    // Match inbox visibility: only count requests that still join to set/subject/user.
+    $res = @mysqli_query(
+        $conn,
+        "SELECT COUNT(*) AS c
+         FROM preboards_requests r
+         INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+         INNER JOIN preboards_subjects ps ON ps.preboards_subject_id = s.preboards_subject_id
+         INNER JOIN users u ON u.user_id = r.user_id
+         WHERE r.status = 'pending'"
+    );
     if (!$res) {
         return 0;
     }
     $row = mysqli_fetch_assoc($res);
     mysqli_free_result($res);
     return (int) ($row['c'] ?? 0);
+}
+
+/** Clear cached sidebar badge so the next admin HTML request recomputes. */
+function preboards_invalidate_admin_pending_badge(): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+    unset($_SESSION['admin_badge_preboards_pending'], $_SESSION['admin_badge_preboards_pending_at']);
+}
+
+/**
+ * Close pending requests that can no longer appear in the admin inbox
+ * (deleted set/subject/user), so the badge cannot stick forever.
+ */
+function preboards_close_orphan_pending_requests(mysqli $conn): void
+{
+    @mysqli_query(
+        $conn,
+        "UPDATE preboards_requests r
+         LEFT JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+         LEFT JOIN preboards_subjects ps ON ps.preboards_subject_id = s.preboards_subject_id
+         LEFT JOIN users u ON u.user_id = r.user_id
+         SET r.status = 'denied', r.decided_at = NOW()
+         WHERE r.status = 'pending'
+           AND (s.preboards_set_id IS NULL OR ps.preboards_subject_id IS NULL OR u.user_id IS NULL)"
+    );
+}
+
+/**
+ * Write the live pending count into the sidebar badge cache.
+ */
+function preboards_sync_admin_pending_badge(?int $count = null, ?mysqli $conn = null): int
+{
+    if ($conn instanceof mysqli) {
+        preboards_close_orphan_pending_requests($conn);
+    }
+    if ($count === null) {
+        $count = ($conn instanceof mysqli) ? preboards_count_pending_requests($conn) : 0;
+    }
+    $count = max(0, (int) $count);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        $_SESSION['admin_badge_preboards_pending'] = $count;
+        $_SESSION['admin_badge_preboards_pending_at'] = time();
+    }
+    return $count;
 }
 
 /**
@@ -347,6 +402,8 @@ function preboards_decide_request(mysqli $conn, int $reqId, string $decision, in
     } catch (Throwable $e) {
         error_log('preboards_decide_request notify failed req=' . $reqId . ' ' . $e->getMessage());
     }
+
+    preboards_invalidate_admin_pending_badge();
 
     return true;
 }
@@ -464,7 +521,16 @@ function preboards_pending_request_counts(mysqli $conn): array
 {
     $access = 0;
     $retake = 0;
-    $res = @mysqli_query($conn, "SELECT request_type, COUNT(*) AS c FROM preboards_requests WHERE status='pending' GROUP BY request_type");
+    $res = @mysqli_query(
+        $conn,
+        "SELECT r.request_type, COUNT(*) AS c
+         FROM preboards_requests r
+         INNER JOIN preboards_sets s ON s.preboards_set_id = r.preboards_set_id
+         INNER JOIN preboards_subjects ps ON ps.preboards_subject_id = s.preboards_subject_id
+         INNER JOIN users u ON u.user_id = r.user_id
+         WHERE r.status = 'pending'
+         GROUP BY r.request_type"
+    );
     if ($res) {
         while ($row = mysqli_fetch_assoc($res)) {
             $type = (string) ($row['request_type'] ?? '');

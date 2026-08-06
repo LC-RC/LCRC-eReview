@@ -235,6 +235,8 @@ if ($searchQ !== '' && !empty($pendingRequests)) {
         return strpos($n, $sq) !== false || strpos($e, $sq) !== false || strpos($lbl, $sq) !== false;
     }));
 }
+// Global badge (all subjects), not just this subject's inbox.
+preboards_sync_admin_pending_badge(null, $conn);
 
 $pageTitle = 'Preboards Sets - ' . ($subject['subject_name'] ?? 'Subject');
 $adminBreadcrumbs = [

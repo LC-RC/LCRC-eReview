@@ -189,6 +189,8 @@ $subjects = mysqli_stmt_get_result($stmt);
 
 $pendingRequestsInbox = preboards_list_pending_requests($conn);
 $pendingRequestsCount = count($pendingRequestsInbox);
+// Keep sidebar badge in sync with the inbox (avoids stale 120s cache / orphan pending rows).
+preboards_sync_admin_pending_badge($pendingRequestsCount, $conn);
 
 $pageTitle = 'Preboards';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
