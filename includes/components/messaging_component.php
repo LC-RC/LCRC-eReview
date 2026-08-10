@@ -131,10 +131,12 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
   .ere-msg__overlay{
     position:absolute;inset:0;background:rgba(2,6,23,.62);backdrop-filter:blur(5px);
     opacity:0;
+    pointer-events:none;
     transition:opacity .38s cubic-bezier(.22,1,.36,1);
   }
   .ere-msg.ere-msg--open .ere-msg__overlay{
     opacity:1;
+    pointer-events:auto;
   }
   .ere-msg__panel{
     position:absolute;right:0;top:0;height:100%;width:min(1040px,100%);
@@ -144,9 +146,12 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     box-shadow:-36px 0 64px -36px rgba(2,6,23,.75);
     transform:translate3d(100%,0,0);
     transition:transform .42s cubic-bezier(.22,1,.36,1);
+    /* Parent uses pointer-events:none; children default to auto and can still steal clicks. */
+    pointer-events:none;
   }
   .ere-msg.ere-msg--open .ere-msg__panel{
     transform:translate3d(0,0,0);
+    pointer-events:auto;
   }
   @media (prefers-reduced-motion:reduce){
     .ere-msg__overlay,.ere-msg__panel,.ere-msg__thread,.ere-msg__send,.ere-msg__close{transition-duration:.01ms!important;animation:none!important}

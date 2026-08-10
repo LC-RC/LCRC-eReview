@@ -101,6 +101,8 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     padding: 0;
     background: rgba(6, 11, 20, 0.38);
     opacity: 0;
+    /* Closed: must not capture clicks. Parent pointer-events:none does NOT block children with auto. */
+    pointer-events: none;
     transition: opacity 0.26s ease;
   }
   .ere-notif__panel {
@@ -118,12 +120,17 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     transform: translateX(100%);
     transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.18, 1);
     will-change: transform;
+    pointer-events: none;
   }
   .ere-notif.is-open { pointer-events: auto; }
-  .ere-notif.is-open .ere-notif__backdrop { opacity: 1; }
+  .ere-notif.is-open .ere-notif__backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
   .ere-notif.is-open .ere-notif__panel {
     transform: none;
     will-change: auto;
+    pointer-events: auto;
   }
 
   .ere-notif__header {

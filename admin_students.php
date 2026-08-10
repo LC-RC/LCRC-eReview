@@ -373,13 +373,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       vertical-align: middle;
       width: 64px;
       min-width: 64px;
-      max-width: 64px;
+    }
+    .students-table--commerce .student-action-cell,
+    .students-table--commerce .student-actions-head {
+      width: 14.5rem;
+      min-width: 14.5rem;
+      max-width: none;
     }
     .student-actions-head {
       text-align: right !important;
       width: 64px;
       min-width: 64px;
-      max-width: 64px;
     }
     /* Consolidated row actions (aligned with professor exams pattern, admin dark theme) */
     .admin-student-action-menu-wrap {

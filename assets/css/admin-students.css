@@ -198,7 +198,7 @@ body.admin-app.admin-students-page .students-table--aligned col.col-proof { widt
 body.admin-app.admin-students-page .students-table--aligned col.col-commerce-access { width: 9%; }
 body.admin-app.admin-students-page .students-table--aligned col.col-account-status { width: 12%; }
 body.admin-app.admin-students-page .students-table--aligned col.col-actions { width: 64px; }
-body.admin-app.admin-students-page .students-table--commerce col.col-actions { width: 9rem; }
+body.admin-app.admin-students-page .students-table--commerce col.col-actions { width: 14.5rem; }
 
 body.admin-app.admin-students-page .commerce-pill {
   display: inline-flex;
@@ -548,8 +548,18 @@ body.admin-app.admin-students-page .students-table--aligned .student-action-cell
 body.admin-app.admin-students-page .students-table--commerce .col-actions,
 body.admin-app.admin-students-page .students-table--commerce .student-actions-head,
 body.admin-app.admin-students-page .students-table--commerce .student-action-cell {
-  width: 9.5rem !important;
+  width: 14.5rem !important;
+  min-width: 14.5rem !important;
+  max-width: none !important;
   overflow: visible;
+  position: relative;
+  z-index: 3;
+}
+body.admin-app.admin-students-page .student-action-cell .js-grant-access-btn,
+body.admin-app.admin-students-page .student-action-cell .admin-btn {
+  position: relative;
+  z-index: 4;
+  pointer-events: auto;
 }
 
 body.admin-app.admin-students-page .student-action-cell .admin-student-action-menu-wrap {
@@ -662,8 +672,12 @@ body.admin-app.admin-students-page .admin-student-action-menu-trigger {
   position: absolute; inset: 0;
   background: rgba(2, 6, 18, 0.45);
   opacity: 0; transition: opacity 0.2s ease;
+  pointer-events: none;
 }
-.student-drawer.is-open .student-drawer__backdrop { opacity: 1; }
+.student-drawer.is-open .student-drawer__backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
 .student-drawer__panel {
   position: absolute; top: 0.65rem; right: 0.65rem; bottom: 0.65rem;
   width: min(26rem, calc(100vw - 1.3rem));
@@ -673,8 +687,12 @@ body.admin-app.admin-students-page .admin-student-action-menu-trigger {
   box-shadow: var(--admin-shadow-lg);
   backdrop-filter: blur(20px) saturate(160%);
   transform: translateX(110%); transition: transform 0.22s ease; overflow: hidden;
+  pointer-events: none;
 }
-.student-drawer.is-open .student-drawer__panel { transform: translateX(0); }
+.student-drawer.is-open .student-drawer__panel {
+  transform: translateX(0);
+  pointer-events: auto;
+}
 .student-drawer__header {
   display: flex; align-items: flex-start; justify-content: space-between;
   gap: 0.75rem; padding: 1rem 1rem 0.85rem; border-bottom: 1px solid var(--admin-border);
