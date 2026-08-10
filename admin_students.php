@@ -133,12 +133,12 @@ if ($tab === 'expired') {
 }
 mysqli_stmt_execute($stmt);
 $studentsRes = mysqli_stmt_get_result($stmt);
-// Close list statement here — do not close again later (mysqli_stmt_close on a closed stmt fatals).
 $studentRows = [];
 while ($studentsRes && ($sr = mysqli_fetch_assoc($studentsRes))) {
   $studentRows[] = $sr;
 }
 mysqli_stmt_close($stmt);
+$stmt = null;
 $badgeUserIds = [];
 foreach ($studentRows as $srRow) {
   $badgeUserIds[] = (int) ($srRow['user_id'] ?? 0);
