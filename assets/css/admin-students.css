@@ -555,18 +555,38 @@ body.admin-app.admin-students-page .students-table--commerce .student-action-cel
   position: relative;
   z-index: 3;
 }
-body.admin-app.admin-students-page .student-action-cell .js-grant-access-btn,
-body.admin-app.admin-students-page .student-action-cell .admin-btn {
+body.admin-app.admin-students-page .student-action-cell {
   position: relative;
-  z-index: 4;
-  pointer-events: auto;
+  z-index: 5;
+  overflow: visible !important;
+}
+body.admin-app.admin-students-page .student-action-cluster {
+  display: inline-flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  position: relative;
+  z-index: 6;
+  pointer-events: auto !important;
+}
+body.admin-app.admin-students-page .student-action-cell .js-grant-access-btn,
+body.admin-app.admin-students-page .student-action-cell .admin-btn,
+body.admin-app.admin-students-page .student-action-cell .admin-student-action-menu-trigger {
+  position: relative;
+  z-index: 7;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 body.admin-app.admin-students-page .student-action-cell .admin-student-action-menu-wrap {
   display: inline-flex !important;
   justify-content: flex-end !important;
-  width: auto;
+  width: auto !important;
   margin: 0 !important;
+  position: relative;
+  z-index: 7;
+  pointer-events: auto !important;
 }
 
 body.admin-app.admin-students-page .admin-student-action-menu-trigger--icon,
@@ -580,6 +600,13 @@ body.admin-app.admin-students-page .admin-student-action-menu-trigger {
   font-size: 1rem;
   gap: 0;
   margin: 0 !important;
+}
+
+/* Menus are portaled to <body>; closed menus must never steal clicks. */
+body > .admin-student-action-menu:not(.open) {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 .students-empty-cell {

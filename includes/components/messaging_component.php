@@ -124,9 +124,11 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
   .ere-msg{
     position:fixed;inset:0;z-index:1400;
     pointer-events:none;
+    visibility:hidden;
   }
   .ere-msg.ere-msg--open{
     pointer-events:auto;
+    visibility:visible;
   }
   .ere-msg__overlay{
     position:absolute;inset:0;background:rgba(2,6,23,.62);backdrop-filter:blur(5px);

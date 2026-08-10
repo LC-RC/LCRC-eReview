@@ -71,6 +71,7 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     inset: 0;
     z-index: 1200;
     pointer-events: none;
+    visibility: hidden;
   }
   [data-notification-toggle] { position: relative; }
   .ere-notif__badge,
@@ -122,7 +123,10 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     will-change: transform;
     pointer-events: none;
   }
-  .ere-notif.is-open { pointer-events: auto; }
+  .ere-notif.is-open {
+    pointer-events: auto;
+    visibility: visible;
+  }
   .ere-notif.is-open .ere-notif__backdrop {
     opacity: 1;
     pointer-events: auto;

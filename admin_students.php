@@ -433,10 +433,32 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.35),
         0 18px 48px rgba(0, 0, 0, 0.55);
-      display: none;
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden;
     }
     .admin-student-action-menu.open {
-      display: block;
+      display: block !important;
+      pointer-events: auto !important;
+      visibility: visible;
+    }
+    .student-action-cluster {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.45rem;
+      position: relative;
+      z-index: 6;
+      pointer-events: auto;
+    }
+    .student-action-cluster > .admin-btn,
+    .student-action-cluster > .admin-student-action-menu-wrap,
+    .student-action-cluster .admin-student-action-menu-trigger {
+      position: relative;
+      z-index: 7;
+      pointer-events: auto !important;
+      cursor: pointer;
     }
     .admin-student-action-item {
       display: flex;
@@ -903,11 +925,11 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       white-space: nowrap;
       font-size: 0.78rem;
     }
-    /* Modal refresh v2 */
+    /* Modal refresh v2 — above messaging/notification shells (1200–1400) */
     .admin-modal-overlay {
       background: radial-gradient(circle at 20% 10%, rgba(30, 64, 175, 0.22) 0%, rgba(2, 6, 23, 0.78) 42%, rgba(2, 6, 23, 0.9) 100%);
       backdrop-filter: blur(6px);
-      z-index: 1400;
+      z-index: 1600;
     }
     .admin-modal {
       width: min(100%, 32rem);
@@ -1563,24 +1585,14 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       </span>
                     </td>
                     <td class="student-action-cell col-actions">
-                      <div class="flex flex-wrap items-center gap-2 justify-end">
-                        <?php if ($needsProofRemind): ?>
-                          <button type="button"
-                                  class="admin-btn admin-btn--secondary admin-btn--sm js-remind-upload-btn"
-                                  data-user-id="<?php echo (int) $row['user_id']; ?>"
-                                  data-payment-id="<?php echo (int) ($dash['payment_id'] ?? 0); ?>"
-                                  data-student-name="<?php echo h($row['full_name']); ?>"
-                                  title="Email the student a secure link to upload GCash proof">
-                            <i class="bi bi-envelope" aria-hidden="true"></i> Remind to upload
-                          </button>
-                        <?php endif; ?>
+                      <div class="student-action-cluster">
                         <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
                           <button type="button"
                                   class="admin-btn admin-btn--primary admin-btn--sm js-grant-access-btn"
                                   data-user-id="<?php echo (int) $row['user_id']; ?>"
                                   data-student-name="<?php echo h($row['full_name']); ?>"
                                   data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>"
-                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload unless emergency override.">
+                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload (⋯ menu) unless emergency override.">
                             Grant Access
                           </button>
                         <?php endif; ?>
@@ -1957,6 +1969,83 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     }
     return { show: show, close: close };
+  })();
+</script>
+<script>
+  /* Early action wiring — must run even if later page scripts throw. */
+  (function () {
+    function openGrantFromBtn(btn) {
+      if (!btn || typeof window.adminStudentsOpenGrant !== 'function') {
+        var overlay = document.getElementById('grantAccessModalOverlay');
+        var nameEl = document.getElementById('grantAccessStudentName');
+        var monthsEl = document.getElementById('grantAccessMonths');
+        if (!overlay) return;
+        if (nameEl) nameEl.textContent = btn.getAttribute('data-student-name') || 'Student';
+        if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
+        overlay.dataset.pendingUserId = btn.getAttribute('data-user-id') || '';
+        overlay.dataset.needsProof = btn.getAttribute('data-needs-proof') === '1' ? '1' : '0';
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+        return;
+      }
+      window.adminStudentsOpenGrant(
+        [btn.getAttribute('data-user-id')],
+        btn.getAttribute('data-student-name') || '',
+        btn.getAttribute('data-needs-proof') === '1'
+      );
+    }
+
+    function closeAllActionMenus() {
+      document.querySelectorAll('.admin-student-action-menu.open').forEach(function (m) {
+        m.classList.remove('open');
+      });
+      document.querySelectorAll('[data-admin-student-action-menu].is-open').forEach(function (w) {
+        w.classList.remove('is-open');
+        var t = w.querySelector('[data-action-menu-trigger]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      var grantBtn = e.target && e.target.closest ? e.target.closest('.js-grant-access-btn') : null;
+      if (grantBtn && !grantBtn.disabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllActionMenus();
+        openGrantFromBtn(grantBtn);
+        return;
+      }
+      var trigger = e.target && e.target.closest ? e.target.closest('[data-action-menu-trigger]') : null;
+      if (!trigger) return;
+      var wrap = trigger.closest('[data-admin-student-action-menu]');
+      if (!wrap) return;
+      var menu = wrap._adminActionMenu || wrap.querySelector('[data-action-menu-list]');
+      if (!menu) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var wasOpen = menu.classList.contains('open');
+      closeAllActionMenus();
+      if (wasOpen) return;
+      if (menu.parentElement !== document.body) document.body.appendChild(menu);
+      wrap._adminActionMenu = menu;
+      var rect = trigger.getBoundingClientRect();
+      menu.style.visibility = 'hidden';
+      menu.classList.add('open');
+      var mw = menu.offsetWidth || 220;
+      var mh = menu.offsetHeight || 280;
+      menu.classList.remove('open');
+      menu.style.visibility = '';
+      var left = Math.min(window.innerWidth - mw - 10, Math.max(10, rect.right - mw));
+      var top = rect.bottom + 6;
+      if (window.innerHeight - rect.bottom < mh + 12) {
+        top = Math.max(10, window.innerHeight - mh - 10);
+      }
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+      menu.classList.add('open');
+      wrap.classList.add('is-open');
+      trigger.setAttribute('aria-expanded', 'true');
+    }, true);
   })();
 </script>
 <script>
@@ -2379,7 +2468,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var noProofChk = document.getElementById('grantAccessNoProof');
     var pendingUserIds = [];
     var pendingNeedsProof = false;
-    if (!overlay || !submitBtn) return;
 
     function grantPicker() {
       if (!modalRoot || !window.Alpine) return null;
@@ -2393,6 +2481,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     }
 
     function openGrant(userIds, label, needsProof) {
+      if (!overlay) return;
       pendingUserIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
       if (pendingUserIds.length === 0) return;
       if (nameEl) {
@@ -2410,6 +2499,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       if (monthsEl) setTimeout(function () { monthsEl.focus(); }, 40);
     }
     function closeGrant() {
+      if (!overlay) return;
       overlay.classList.remove('is-open');
       overlay.setAttribute('aria-hidden', 'true');
       pendingUserIds = [];
@@ -2417,15 +2507,19 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       if (errEl) errEl.textContent = '';
     }
 
-    document.querySelectorAll('.js-grant-access-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        openGrant(
-          [btn.getAttribute('data-user-id')],
-          btn.getAttribute('data-student-name') || '',
-          btn.getAttribute('data-needs-proof') === '1'
-        );
-      });
-    });
+    window.adminStudentsOpenGrant = openGrant;
+
+    // Re-open with full picker state if early fallback only toggled the overlay.
+    if (overlay && overlay.dataset.pendingUserId) {
+      openGrant(
+        [overlay.dataset.pendingUserId],
+        (nameEl && nameEl.textContent) || '',
+        overlay.dataset.needsProof === '1'
+      );
+      delete overlay.dataset.pendingUserId;
+      delete overlay.dataset.needsProof;
+    }
+
     if (bulkGrantBtn) {
       bulkGrantBtn.addEventListener('click', function () {
         var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-grantable="1"]'));
@@ -2447,9 +2541,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     }
     if (cancelBtn) cancelBtn.addEventListener('click', closeGrant);
-    overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) closeGrant();
-    });
+    if (overlay) {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeGrant();
+      });
+    }
+    if (!submitBtn) return;
     submitBtn.addEventListener('click', function () {
       if (pendingUserIds.length === 0) return;
       var months = monthsEl ? Number(monthsEl.value || 0) : 0;
@@ -2810,71 +2907,36 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   })();
 
   (function () {
+    // Portal menus to body + outside-click close. Open/toggle is handled by the early script.
     var wraps = document.querySelectorAll('[data-admin-student-action-menu]');
-    if (!wraps.length) return;
-    var menuPairs = [];
-    function positionMenu(wrap, menu) {
-      var trigger = wrap.querySelector('[data-action-menu-trigger]');
-      if (!trigger || !menu) return;
-      var rect = trigger.getBoundingClientRect();
-      var menuWidth = 220;
-      var wasOpen = menu.classList.contains('open');
-      if (!wasOpen) {
-        menu.style.visibility = 'hidden';
-        menu.classList.add('open');
-      }
-      var mw = menu.offsetWidth || menuWidth;
-      if (!wasOpen) {
-        menu.classList.remove('open');
-        menu.style.visibility = '';
-      }
-      var left = Math.min(window.innerWidth - mw - 10, Math.max(10, rect.right - mw));
-      var top = rect.bottom + 6;
-      var menuHeight = menu.offsetHeight || 280;
-      var spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < menuHeight + 12) {
-        var need = menuHeight + 16 - spaceBelow;
-        if (need > 0) {
-          window.scrollBy({ top: need, behavior: 'smooth' });
-        }
-        top = Math.max(10, window.innerHeight - menuHeight - 10);
-      }
-      menu.style.left = left + 'px';
-      menu.style.top = top + 'px';
-    }
-    function closeAllMenus() {
-      menuPairs.forEach(function (pair) {
-        var menu = pair.menu;
-        var wrap = pair.wrap;
-        var tr = wrap.querySelector('[data-action-menu-trigger]');
-        if (menu) menu.classList.remove('open');
-        wrap.classList.remove('is-open');
-        if (tr) tr.setAttribute('aria-expanded', 'false');
-      });
-    }
     wraps.forEach(function (wrap) {
-      var trigger = wrap.querySelector('[data-action-menu-trigger]');
       var menu = wrap.querySelector('[data-action-menu-list]');
-      if (!trigger || !menu) return;
-      document.body.appendChild(menu);
-      menuPairs.push({ wrap: wrap, menu: menu });
-      trigger.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var wasOpen = menu.classList.contains('open');
-        closeAllMenus();
-        if (wasOpen) return;
-        positionMenu(wrap, menu);
-        menu.classList.add('open');
-        wrap.classList.add('is-open');
-        trigger.setAttribute('aria-expanded', 'true');
-      });
-      menu.addEventListener('click', function (e) {
-        e.stopPropagation();
-      });
+      if (!menu) return;
+      if (menu.parentElement !== document.body) document.body.appendChild(menu);
+      wrap._adminActionMenu = menu;
+      menu.addEventListener('click', function (e) { e.stopPropagation(); });
     });
+
+    function closeAllMenus() {
+      document.querySelectorAll('.admin-student-action-menu.open').forEach(function (m) {
+        m.classList.remove('open');
+      });
+      document.querySelectorAll('[data-admin-student-action-menu].is-open').forEach(function (w) {
+        w.classList.remove('is-open');
+        var t = w.querySelector('[data-action-menu-trigger]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
+    }
+
     window.addEventListener('resize', closeAllMenus);
     window.addEventListener('scroll', closeAllMenus, true);
-    document.addEventListener('click', closeAllMenus);
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && (
+        e.target.closest('[data-action-menu-trigger]') ||
+        e.target.closest('.admin-student-action-menu')
+      )) return;
+      closeAllMenus();
+    });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeAllMenus();
     });
