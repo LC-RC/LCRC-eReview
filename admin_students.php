@@ -133,6 +133,7 @@ if ($tab === 'expired') {
 }
 mysqli_stmt_execute($stmt);
 $studentsRes = mysqli_stmt_get_result($stmt);
+// Close list statement here — do not close again later (mysqli_stmt_close on a closed stmt fatals).
 $studentRows = [];
 while ($studentsRes && ($sr = mysqli_fetch_assoc($studentsRes))) {
   $studentRows[] = $sr;
@@ -1698,8 +1699,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       </div>
     <?php endif; ?>
   </div>
-
-  <?php if (isset($stmt) && $stmt instanceof mysqli_stmt) { mysqli_stmt_close($stmt); } ?>
 
   <div id="studentDetailsDrawer" class="student-drawer" aria-hidden="true">
     <div class="student-drawer__backdrop" data-drawer-close></div>
