@@ -1,8 +1,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?php echo isset($pageTitle) ? h($pageTitle) . ' - ' : ''; ?>LCRC eReview</title>
-<link rel="icon" type="image/png" href="/image%20assets/lms-logo.png">
-<link rel="apple-touch-icon" href="/image%20assets/lms-logo.png">
+<link rel="icon" type="image/png" href="image%20assets/lms-logo.png">
+<link rel="apple-touch-icon" href="image%20assets/lms-logo.png">
 <?php
 $tailwindFile = __DIR__ . '/../assets/css/tailwind.css';
 $arbitraryFile = __DIR__ . '/../assets/css/tailwind-arbitrary.css';

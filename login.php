@@ -315,7 +315,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
       © Copyright 2026 LCRC eReview. All rights reserved. · Built for aspiring CPAs
     </footer>
   </div>
-  <div id="login-loading" class="login-loading-backdrop">
+  <div id="login-loading" class="login-loading-backdrop" aria-hidden="true" hidden>
     <div class="login-loading-stack">
       <div class="login-loading-orb">
         <div class="login-loading-orb-inner">
@@ -325,7 +325,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
       <div class="login-loading-label">Signing you in...</div>
     </div>
   </div>
-  <div id="login-error-modal" class="login-error-backdrop">
+  <div id="login-error-modal" class="login-error-backdrop" aria-hidden="true" hidden>
     <div class="login-error-card">
       <div class="login-error-icon">
         <div class="login-error-circle">
@@ -380,8 +380,26 @@ if (isset($_SESSION['google_redirect_uri'])) {
           submitSpinner.setAttribute('aria-hidden', isSigningIn ? 'false' : 'true');
         }
         if (submitArrow) submitArrow.classList.add('hidden');
-        if (loadingOverlay) loadingOverlay.classList.toggle('is-active', isSigningIn);
+        if (loadingOverlay) {
+          loadingOverlay.classList.toggle('is-active', isSigningIn);
+          loadingOverlay.setAttribute('aria-hidden', isSigningIn ? 'false' : 'true');
+          if (isSigningIn) loadingOverlay.removeAttribute('hidden');
+          else loadingOverlay.setAttribute('hidden', '');
+        }
       }
+
+      // Mobile back/bfcache can leave the "Signing you in..." overlay stuck.
+      window.addEventListener('pageshow', function (ev) {
+        if (ev.persisted || isSigningIn) setSigningIn(false);
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && isSigningIn) {
+          // If submit did not navigate away within a few seconds, unlock UI.
+          setTimeout(function () {
+            if (isSigningIn && document.visibilityState === 'visible') setSigningIn(false);
+          }, 8000);
+        }
+      });
 
       function setInputState(input, isValid, errorEl, message) {
         if (isValid) {
@@ -594,7 +612,11 @@ if (isset($_SESSION['google_redirect_uri'])) {
             errorHint.innerHTML = 'Check your email and password, or <a href="forgot_password" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.';
           }
         }
-        if (errorModal) errorModal.classList.add('is-active');
+        if (errorModal) {
+          errorModal.classList.add('is-active');
+          errorModal.removeAttribute('hidden');
+          errorModal.setAttribute('aria-hidden', 'false');
+        }
         if (loginCard) {
           loginCard.classList.remove('login-card--shake');
           void loginCard.offsetWidth;
@@ -613,7 +635,13 @@ if (isset($_SESSION['google_redirect_uri'])) {
       if (errorClose && errorModal) {
         errorClose.addEventListener('click', function () {
           errorModal.classList.remove('is-active');
-          if (loadingOverlay) loadingOverlay.classList.remove('is-active');
+          errorModal.setAttribute('hidden', '');
+          errorModal.setAttribute('aria-hidden', 'true');
+          if (loadingOverlay) {
+            loadingOverlay.classList.remove('is-active');
+            loadingOverlay.setAttribute('hidden', '');
+            loadingOverlay.setAttribute('aria-hidden', 'true');
+          }
           if (emailInput) emailInput.focus();
         });
         var modalFocusables = errorModal ? [].slice.call(errorModal.querySelectorAll('button, [href]')).filter(function (el) { return el.getAttribute('tabindex') !== '-1' && !el.disabled; }) : [];

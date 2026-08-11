@@ -239,7 +239,11 @@
     .login-bg-lines .line { animation: none; }
     body.login-prototype .circuit-bg { animation: none; opacity: 0.5; }
     body.login-prototype .login-card,
-    body.login-prototype .login-card-wrap { animation: none !important; }
+    body.login-prototype .login-card-wrap {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
     body.login-prototype .login-card #login-submit:hover,
     body.login-prototype .login-card .login-google-btn:hover,
     body.login-prototype .login-card .login-magic-btn:hover,
@@ -273,7 +277,10 @@
   body.login-prototype .login-card-wrap {
     max-width: 520px !important;
     width: 100%;
-    animation: login-card-enter 640ms var(--auth-ease) both;
+    /* Stay visible even if CSS animations fail (some mobile browsers). */
+    opacity: 1;
+    transform: none;
+    animation: login-card-enter 640ms var(--auth-ease) forwards;
   }
   @keyframes login-card-enter {
     from {
@@ -291,7 +298,8 @@
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    background: rgba(255, 255, 255, 0.36) !important;
+    /* Solid enough fallback so the form never "disappears" on devices with weak backdrop-filter */
+    background: rgba(255, 255, 255, 0.88) !important;
     border: 1px solid rgba(255, 255, 255, 0.52) !important;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.88),
@@ -306,6 +314,11 @@
     backdrop-filter: blur(22px) saturate(1.65);
     -webkit-backdrop-filter: blur(22px) saturate(1.65);
     transition: box-shadow var(--auth-dur) var(--auth-ease);
+  }
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    body.login-prototype .login-card {
+      background: rgba(255, 255, 255, 0.42) !important;
+    }
   }
   /* Soft upper-left glass reflection */
   body.login-prototype .login-card::before {
@@ -1026,7 +1039,9 @@
   .login-ratelimit-block.form-hidden ~ .login-form-wrap,
   .login-form-wrap.visually-hidden { display: none !important; }
 
-  /* Loading / error overlays */
+  /* Loading / error overlays
+     Important: inactive overlays must not intercept taps. On some iOS/Android
+     browsers, opacity:0 + backdrop-filter still blocks the form underneath. */
   .login-loading-backdrop,
   .login-error-backdrop {
     position: fixed;
@@ -1037,16 +1052,23 @@
     justify-content: center;
     padding: 24px;
     background: radial-gradient(circle at 20% 10%, rgba(254, 243, 199, 0.35), transparent 50%), rgba(15, 23, 42, 0.32);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
     opacity: 0;
-    pointer-events: none;
-    transition: opacity 240ms var(--auth-ease);
+    visibility: hidden;
+    pointer-events: none !important;
+    transition: opacity 240ms var(--auth-ease), visibility 240ms var(--auth-ease);
   }
   .login-loading-backdrop.is-active,
   .login-error-backdrop.is-active {
     opacity: 1;
-    pointer-events: auto;
+    visibility: visible;
+    pointer-events: auto !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+  /* display:flex above would otherwise override the HTML hidden attribute */
+  .login-loading-backdrop[hidden],
+  .login-error-backdrop[hidden] {
+    display: none !important;
   }
   .login-loading-stack {
     display: flex;
