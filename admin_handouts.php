@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
@@ -35,14 +35,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = mysqli_prepare($conn, "UPDATE lesson_handouts SET handout_title=?, file_path=?, file_name=?, file_size=?, allow_download=? WHERE handout_id=? AND lesson_id=?");
         mysqli_stmt_bind_param($stmt, 'sssiiii', $title, $uploadedPath, $originalName, $fileSize, $allowDownload, $handoutId, $lessonId);
         mysqli_stmt_execute($stmt);
+        users_activity_log($conn, 'material_handout_updated', [
+            'lesson_id' => $lessonId,
+            'subject_id' => $subjectId,
+            'handout_id' => $handoutId,
+            'handout_title' => $title,
+            'file_name' => (string) ($originalName ?? ''),
+            'lesson_title' => (string) ($lesson['title'] ?? ''),
+            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+        ]);
     } elseif ($handoutId > 0 && !$uploadedPath) {
         $stmt = mysqli_prepare($conn, "UPDATE lesson_handouts SET handout_title=?, allow_download=? WHERE handout_id=? AND lesson_id=?");
         mysqli_stmt_bind_param($stmt, 'siii', $title, $allowDownload, $handoutId, $lessonId);
         mysqli_stmt_execute($stmt);
+        users_activity_log($conn, 'material_handout_updated', [
+            'lesson_id' => $lessonId,
+            'subject_id' => $subjectId,
+            'handout_id' => $handoutId,
+            'handout_title' => $title,
+            'lesson_title' => (string) ($lesson['title'] ?? ''),
+            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+        ]);
     } elseif ($uploadedPath) {
         $stmt = mysqli_prepare($conn, "INSERT INTO lesson_handouts (lesson_id, handout_title, file_path, file_name, file_size, allow_download) VALUES (?, ?, ?, ?, ?, ?)");
         mysqli_stmt_bind_param($stmt, 'isssii', $lessonId, $title, $uploadedPath, $originalName, $fileSize, $allowDownload);
         mysqli_stmt_execute($stmt);
+        users_activity_log($conn, 'handout_uploaded', [
+            'lesson_id' => $lessonId,
+            'subject_id' => $subjectId,
+            'handout_title' => $title,
+            'file_name' => (string) ($originalName ?? ''),
+            'lesson_title' => (string) ($lesson['title'] ?? ''),
+            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+        ]);
     }
     header('Location: admin_handouts?lesson_id='.$lessonId.'&subject_id='.$subjectId);
     exit;
@@ -93,7 +118,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
-      Handouts — <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
+      Handouts â€” <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
     <p class="text-gray-400 mt-2 mb-0">Upload PDFs or documents and control download access per handout.</p>
   </div>

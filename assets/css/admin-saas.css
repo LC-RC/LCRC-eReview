@@ -188,7 +188,8 @@ body.admin-app #app-sidebar nav {
   padding: 0.5rem 0.65rem 1rem !important;
 }
 
-body.admin-app #app-sidebar nav a {
+body.admin-app #app-sidebar nav a,
+body.admin-app #app-sidebar nav .app-shell-nav-link--locked {
   border-left: 0 !important;
   border-radius: 0.75rem !important;
   margin: 0.15rem 0 !important;
@@ -203,6 +204,23 @@ body.admin-app #app-sidebar nav a:hover {
   background: var(--admin-primary-soft) !important;
   color: var(--admin-sidebar-active-text) !important;
   transform: translateX(2px);
+}
+
+/* Locked ACL items: visible for UI completeness, not clickable */
+body.admin-app #app-sidebar nav .app-shell-nav-link--locked {
+  opacity: 0.42;
+  cursor: not-allowed;
+  user-select: none;
+  filter: grayscale(0.35);
+}
+body.admin-app #app-sidebar nav .app-shell-nav-link--locked .app-shell-nav-lock {
+  margin-left: auto;
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+body.admin-app:not(.sidebar-expanded) #app-sidebar nav .app-shell-nav-link--locked .app-shell-nav-lock,
+body.admin-app.sidebar-collapsed #app-sidebar nav .app-shell-nav-link--locked .app-shell-nav-lock {
+  display: none;
 }
 
 body.admin-app #app-sidebar nav a.bg-white\/15,

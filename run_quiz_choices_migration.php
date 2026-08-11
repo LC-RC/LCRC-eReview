@@ -4,7 +4,7 @@
  * Run once. Safe to run again (ignores "Duplicate column").
  */
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage('quizzes');
 
 $pageTitle = 'Run Quiz Choices Migration';
 $steps = [];

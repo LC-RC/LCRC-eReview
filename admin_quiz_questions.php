@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 $csrf = generateCSRFToken();
 $quizId = sanitizeInt($_GET['quiz_id'] ?? 0);
-if ($quizId <= 0) { header('Location: admin_subjects'); exit; }
+if ($quizId <= 0) { header('Location: admin_quizzes'); exit; }
 
 $stmt = mysqli_prepare($conn, "SELECT q.*, s.subject_name FROM quizzes q JOIN subjects s ON s.subject_id=q.subject_id WHERE q.quiz_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $quizId);
@@ -12,7 +12,7 @@ mysqli_stmt_execute($stmt);
 $quizRes = mysqli_stmt_get_result($stmt);
 $quiz = mysqli_fetch_assoc($quizRes);
 mysqli_stmt_close($stmt);
-if (!$quiz) { header('Location: admin_subjects'); exit; }
+if (!$quiz) { header('Location: admin_quizzes'); exit; }
 $subjectId = (int)$quiz['subject_id'];
 
 $questionColumns = [];
@@ -41,6 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($stmt, 'ii', $questionId, $quizId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
+            users_activity_log($conn, 'quiz_question_deleted', [
+                'quiz_id' => $quizId,
+                'subject_id' => $subjectId,
+                'question_id' => $questionId,
+                'quiz_title' => (string) ($quiz['title'] ?? ''),
+                'subject_name' => (string) ($quiz['subject_name'] ?? ''),
+            ]);
             $_SESSION['message'] = 'Question deleted.';
         }
         header('Location: admin_quiz_questions?quiz_id='.$quizId.'&subject_id='.$subjectId);
@@ -56,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_array($q)) continue;
             $questionText = trim($q['text'] ?? '');
             if ($questionText === '') continue;
-            // Build choices from POST using all A–J so E,F,G,H,I,J are included for validation
+            // Build choices from POST using all Aâ€“J so E,F,G,H,I,J are included for validation
             $choices = [];
             foreach ($allChoiceCols as $col) {
                 $choices[$col] = trim($q[$col] ?? '');
@@ -97,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (count($batch) === 0) {
             $_SESSION['error'] = 'Add at least one question with at least 2 choices and a correct answer selected.';
         } else {
-            // Auto-run migration if user saved with E–J or more than 4 choices and DB not updated yet
+            // Auto-run migration if user saved with Eâ€“J or more than 4 choices and DB not updated yet
             if ($needsExtendedChoices && !in_array('choice_e', $choiceCols, true)) {
                 $alterSqls = [
                     "ALTER TABLE `quiz_questions` ADD COLUMN `choice_e` text DEFAULT NULL AFTER `choice_d`",
@@ -182,6 +189,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         mysqli_stmt_close($stmt);
                     }
                     mysqli_commit($conn);
+                    users_activity_log($conn, 'quiz_questions_uploaded', [
+                        'quiz_id' => $quizId,
+                        'subject_id' => $subjectId,
+                        'quiz_title' => (string) ($quiz['title'] ?? ''),
+                        'subject_name' => (string) ($quiz['subject_name'] ?? ''),
+                        'count' => count($batch),
+                    ]);
                     $_SESSION['message'] = count($batch) . ' question(s) added.';
                     $_SESSION['clear_batch_draft'] = 1;
                 } catch (Exception $e) {
@@ -196,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $questionText = trim($_POST['question_text'] ?? '');
-    // Read all choice columns from POST (A–J) so E,F,G,H,I,J save correctly.
+    // Read all choice columns from POST (Aâ€“J) so E,F,G,H,I,J save correctly.
     // "Active" choices = fields that actually exist in the form (have a POST key).
     $choiceVals = [];
     $activeCols = [];
@@ -249,6 +263,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, $types, ...$refs);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        users_activity_log($conn, 'quiz_question_updated', [
+            'quiz_id' => $quizId,
+            'subject_id' => $subjectId,
+            'question_id' => $questionId,
+            'quiz_title' => (string) ($quiz['title'] ?? ''),
+            'subject_name' => (string) ($quiz['subject_name'] ?? ''),
+        ]);
         $_SESSION['message'] = 'Question updated.';
         $_SESSION['clear_batch_draft'] = 1;
     } else {
@@ -262,6 +283,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, $types, ...$refs);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        users_activity_log($conn, 'quiz_question_added', [
+            'quiz_id' => $quizId,
+            'subject_id' => $subjectId,
+            'quiz_title' => (string) ($quiz['title'] ?? ''),
+            'subject_name' => (string) ($quiz['subject_name'] ?? ''),
+            'count' => 1,
+        ]);
         $_SESSION['message'] = 'Question added.';
         $_SESSION['clear_batch_draft'] = 1;
     }
@@ -298,7 +326,14 @@ mysqli_stmt_execute($stmt);
 $questions = mysqli_stmt_get_result($stmt);
 
 $pageTitle = 'Quiz Questions - ' . $quiz['title'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($quiz['subject_name']), 'admin_quizzes?subject_id=' . $subjectId ], [ h($quiz['title']), 'admin_quizzes?subject_id=' . $subjectId ], ['Questions'] ];
+$adminBreadcrumbs = [['Dashboard', 'admin_dashboard']];
+if (function_exists('admin_can') && admin_can('subjects')) {
+    $adminBreadcrumbs[] = ['Content Hub', 'admin_subjects'];
+}
+$adminBreadcrumbs[] = ['Quizzes', 'admin_quizzes'];
+$adminBreadcrumbs[] = [(string) $quiz['subject_name'], 'admin_quizzes?subject_id=' . $subjectId];
+$adminBreadcrumbs[] = [(string) $quiz['title'], 'admin_quizzes?subject_id=' . $subjectId];
+$adminBreadcrumbs[] = ['Questions'];
 $clearBatchDraftAfterSave = !empty($_SESSION['clear_batch_draft']);
 unset($_SESSION['clear_batch_draft']);
 ?>
@@ -314,10 +349,10 @@ unset($_SESSION['clear_batch_draft']);
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-question-circle"></i></span>
-      <span>Quiz Questions — <?php echo h($quiz['title']); ?></span>
+      <span>Quiz Questions - <?php echo h($quiz['title']); ?></span>
       <span class="text-gray-500 font-medium text-lg">(<?php echo h($quiz['subject_name']); ?>)</span>
     </h1>
-    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($quiz['subject_name']); ?> — Add and manage questions in one go.</p>
+    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($quiz['subject_name']); ?> - Add and manage questions in one go.</p>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
@@ -346,7 +381,7 @@ unset($_SESSION['clear_batch_draft']);
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[220px]">
       <label for="qq-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search questions</label>
-      <input type="search" id="qq-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text…" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="qq-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text..." class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
@@ -361,7 +396,10 @@ unset($_SESSION['clear_batch_draft']);
     <div class="admin-quiz-card quiz-admin-batch-card">
       <div class="admin-quiz-card-header admin-quiz-card-header-accent quiz-admin-card-head">
         <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
-        <button type="button" @click="batchOpen = false" class="admin-quiz-close-btn" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-medium opacity-80" x-show="draftSavedLabel" x-cloak x-text="draftSavedLabel"></span>
+          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-close-btn" aria-label="Close" title="Close — draft is kept"><i class="bi bi-x-lg"></i></button>
+        </div>
       </div>
       <form method="POST" action="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -412,10 +450,12 @@ unset($_SESSION['clear_batch_draft']);
             </div>
           </template>
         </div>
-        <div class="mt-6 pt-4 border-t border-gray-200 flex flex-wrap items-center gap-3">
+        <p class="mt-4 text-xs opacity-70 m-0"><i class="bi bi-cloud-check"></i> Auto-saves in this browser while you type. Refresh or Back keeps your draft until you click <strong>Save all questions</strong>.</p>
+        <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center gap-3">
           <button type="button" @click="addBatchQuestion()" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-plus-lg"></i> Add question</button>
           <div class="flex-1"></div>
-          <button type="button" @click="batchOpen = false" class="admin-quiz-btn admin-quiz-btn-outline">Cancel</button>
+          <button type="button" @click="discardBatchDraft()" class="admin-quiz-btn admin-quiz-btn-outline" title="Clear draft and close">Discard draft</button>
+          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-btn admin-quiz-btn-outline" title="Close — draft is kept">Close</button>
           <button type="submit" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-check-lg"></i> Save all questions</button>
         </div>
       </form>
@@ -443,7 +483,7 @@ unset($_SESSION['clear_batch_draft']);
             if ($plainQt === '') {
               $plainQt = trim(preg_replace('/\s+/u', ' ', $rawQt));
             }
-            $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '…' : '');
+            $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '...' : '');
           ?>
             <tr class="quiz-admin-q-row">
               <td class="font-medium quiz-admin-q-preview"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></td>
@@ -687,6 +727,9 @@ unset($_SESSION['clear_batch_draft']);
         batchError: '',
         batchQuestions: [ newBatchQuestion() ],
         autosaveTimer: null,
+        draftSavedAt: 0,
+        draftSavedLabel: '',
+        draftHydrateTimer: null,
         isEdit: false,
         question_id: 0,
         question_text: '',
@@ -781,9 +824,8 @@ unset($_SESSION['clear_batch_draft']);
           if (window.tinymce) tinymce.triggerSave();
           var root = document.querySelector('.quiz-admin-batch-card');
           if (!root) return;
-          var textareas = root.querySelectorAll('textarea[name^="questions["]');
           var self = this;
-          textareas.forEach(function (ta) {
+          root.querySelectorAll('textarea[name^="questions["]').forEach(function (ta) {
             var m = ta.name.match(/^questions\[(\d+)\]\[(text|explanation)\]$/);
             if (!m) return;
             var idx = parseInt(m[1], 10);
@@ -791,50 +833,147 @@ unset($_SESSION['clear_batch_draft']);
             if (!Number.isFinite(idx) || idx < 0 || !self.batchQuestions[idx]) return;
             self.batchQuestions[idx][field] = ta.value || '';
           });
+          root.querySelectorAll('input[type="text"][name^="questions["]').forEach(function (inp) {
+            var m = inp.name.match(/^questions\[(\d+)\]\[choice_([a-j])(_feedback)?\]$/i);
+            if (!m) return;
+            var idx = parseInt(m[1], 10);
+            var letter = String(m[2] || '').toUpperCase();
+            var isFeedback = !!m[3];
+            if (!Number.isFinite(idx) || !self.batchQuestions[idx]) return;
+            var choices = self.batchQuestions[idx].choices || [];
+            for (var i = 0; i < choices.length; i++) {
+              if (choices[i].letter !== letter) continue;
+              if (isFeedback) choices[i].feedback = inp.value || '';
+              else choices[i].text = inp.value || '';
+              break;
+            }
+          });
+          root.querySelectorAll('input[type="radio"][name^="questions["][name$="[correct_answer]"]').forEach(function (radio) {
+            if (!radio.checked) return;
+            var m = radio.name.match(/^questions\[(\d+)\]\[correct_answer\]$/);
+            if (!m) return;
+            var idx = parseInt(m[1], 10);
+            if (!Number.isFinite(idx) || !self.batchQuestions[idx]) return;
+            self.batchQuestions[idx].correct_answer = String(radio.value || '').toUpperCase();
+          });
+        },
+        hydrateBatchRichEditorsFromModel() {
+          var root = document.querySelector('.quiz-admin-batch-card');
+          if (!root) return;
+          var self = this;
+          refreshQuizRichEditors();
+          window.setTimeout(function () {
+            self.batchQuestions.forEach(function (q, index) {
+              ['text', 'explanation'].forEach(function (field) {
+                var ta = root.querySelector('textarea[name="questions[' + index + '][' + field + ']"]');
+                if (!ta) return;
+                var html = String((q && q[field]) || '');
+                ta.value = html;
+                if (window.tinymce && ta.id) {
+                  var ed = tinymce.get(ta.id);
+                  if (ed) {
+                    try { ed.setContent(html); } catch (e) {}
+                  }
+                }
+              });
+            });
+          }, 80);
+        },
+        updateDraftSavedLabel(ts) {
+          this.draftSavedAt = ts || Date.now();
+          try {
+            this.draftSavedLabel = 'Draft saved ' + new Date(this.draftSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+          } catch (e) {
+            this.draftSavedLabel = 'Draft saved';
+          }
         },
         saveBatchDraft() {
           try {
             this.syncBatchRichTextFromDom();
+            if (!this.hasBatchDraftContent(this.batchQuestions) && !this.batchOpen) {
+              return;
+            }
             var payload = {
               ts: Date.now(),
               open: !!this.batchOpen,
               batchQuestions: this.batchQuestions
             };
             localStorage.setItem(QUIZ_BATCH_DRAFT_KEY, JSON.stringify(payload));
+            this.updateDraftSavedLabel(payload.ts);
           } catch (e) {}
         },
         loadBatchDraft() {
           try {
             var raw = localStorage.getItem(QUIZ_BATCH_DRAFT_KEY);
-            if (!raw) return;
+            if (!raw) return false;
             var parsed = JSON.parse(raw);
             var src = Array.isArray(parsed && parsed.batchQuestions) ? parsed.batchQuestions : [];
-            if (src.length === 0) return;
+            if (src.length === 0) return false;
             var restored = src.slice(0, 50).map(this.normalizeBatchQuestion.bind(this));
-            if (restored.length === 0) return;
+            if (restored.length === 0) return false;
             this.batchQuestions = restored;
             if ((parsed && parsed.open) || this.hasBatchDraftContent(restored)) {
               this.batchOpen = true;
             }
-          } catch (e) {}
+            if (parsed && parsed.ts) this.updateDraftSavedLabel(parsed.ts);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        },
+        discardBatchDraft() {
+          try { localStorage.removeItem(QUIZ_BATCH_DRAFT_KEY); } catch (e) {}
+          this.batchQuestions = [ newBatchQuestion() ];
+          this.batchOpen = false;
+          this.batchError = '';
+          this.draftSavedAt = 0;
+          this.draftSavedLabel = '';
         },
         initBatchAutosave() {
+          var self = this;
           if (CLEAR_BATCH_DRAFT_AFTER_SAVE) {
             try { localStorage.removeItem(QUIZ_BATCH_DRAFT_KEY); } catch (e) {}
             this.batchOpen = false;
             this.batchQuestions = [ newBatchQuestion() ];
+            this.draftSavedAt = 0;
+            this.draftSavedLabel = '';
+          } else {
+            var restored = this.loadBatchDraft();
+            if (restored) {
+              this.$nextTick(function () {
+                self.hydrateBatchRichEditorsFromModel();
+                if (self.draftHydrateTimer) clearTimeout(self.draftHydrateTimer);
+                // TinyMCE may init after Alpine; re-hydrate once more.
+                self.draftHydrateTimer = setTimeout(function () {
+                  self.hydrateBatchRichEditorsFromModel();
+                }, 350);
+              });
+            }
           }
-          this.loadBatchDraft();
-          var self = this;
           if (this.autosaveTimer) clearInterval(this.autosaveTimer);
           this.autosaveTimer = setInterval(function () {
             self.saveBatchDraft();
-          }, 1200);
+          }, 1000);
           window.addEventListener('beforeunload', function () {
             self.saveBatchDraft();
           });
-          this.$watch('batchOpen', function () { self.saveBatchDraft(); });
-          this.$watch('batchQuestions', function () { self.saveBatchDraft(); });
+          window.addEventListener('pagehide', function () {
+            self.saveBatchDraft();
+          });
+          document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') self.saveBatchDraft();
+          });
+          this.$watch('batchOpen', function (open) {
+            self.saveBatchDraft();
+            if (open) {
+              self.$nextTick(function () {
+                self.hydrateBatchRichEditorsFromModel();
+              });
+            }
+          });
+          this.$watch('batchQuestions', function () {
+            self.saveBatchDraft();
+          }, { deep: true });
           this.$nextTick(function () {
             refreshQuizRichEditors();
           });

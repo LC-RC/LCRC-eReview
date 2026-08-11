@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Admin: Remind student to upload payment proof (email with durable checkout link).
  * Does NOT grant access or close the payment.
@@ -6,7 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/commerce_catalog.php';
 require_once __DIR__ . '/includes/commerce_payment.php';
@@ -113,13 +113,13 @@ if ($items !== []) {
         $packageLabel = implode(', ', $names);
     }
     if ($total > 0) {
-        $amountLabel = '₱' . number_format($total / 100, 2);
+        $amountLabel = 'â‚±' . number_format($total / 100, 2);
     }
 }
 if ($amountLabel === '') {
     $cents = (int) ($payment['expected_amount_centavos'] ?? $payment['amount_centavos'] ?? 0);
     if ($cents > 0) {
-        $amountLabel = '₱' . number_format($cents / 100, 2);
+        $amountLabel = 'â‚±' . number_format($cents / 100, 2);
     }
 }
 if ($packageLabel === '') {

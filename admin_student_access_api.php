@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 declare(strict_types=1);
 
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/student_content_access.php';
 require_once __DIR__ . '/includes/commerce_access_gate.php';
 require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
@@ -183,7 +183,7 @@ if ($action === 'create_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $adminId = getCurrentUserId();
     $sessionEmail = trim((string) ($_SESSION['email'] ?? ''));
     if ($sessionEmail !== '' && strcasecmp($email, $sessionEmail) === 0) {
-        sca_api_json(['ok' => false, 'error' => 'Use a student email — not your admin login email.'], 422);
+        sca_api_json(['ok' => false, 'error' => 'Use a student email â€” not your admin login email.'], 422);
     }
     if (!in_array($status, ['approved', 'pending'], true)) {
         $status = 'approved';
@@ -249,7 +249,7 @@ if ($action === 'create_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_query($conn, "UPDATE users SET status='pending', access_start=NULL, access_end=NULL, access_months=NULL WHERE user_id=" . (int) $newId . " LIMIT 1");
             sca_api_json([
                 'ok' => false,
-                'error' => 'Student created as pending — could not create access grant (' . (string) ($g['error'] ?? 'grant_failed') . ').',
+                'error' => 'Student created as pending â€” could not create access grant (' . (string) ($g['error'] ?? 'grant_failed') . ').',
                 'user_id' => $newId,
             ], 500);
         }
@@ -289,7 +289,7 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($sessionEmail !== '' && strcasecmp($email, $sessionEmail) === 0) {
         sca_api_json(['ok' => false, 'error' => 'Student email cannot be the same as your admin login email.'], 422);
     }
-    // Dedicated field — never reuse generic "password" for optional student reset.
+    // Dedicated field â€” never reuse generic "password" for optional student reset.
     $password = (string) ($_POST['new_password'] ?? $_POST['password'] ?? '');
     $months = (int) ($_POST['extend_months'] ?? $_POST['months'] ?? 0);
 
@@ -315,7 +315,7 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'months' => $grantMonths,
             'activate_login' => true,
             'close_open_payment' => false,
-            'label' => 'Admin update — access grant',
+            'label' => 'Admin update â€” access grant',
         ]);
         if (empty($g['ok'])) {
             if ($stmt) {

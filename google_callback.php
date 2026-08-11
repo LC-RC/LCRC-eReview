@@ -164,6 +164,21 @@ if ($upd) {
 }
 setUserPresenceStatus($uid, true);
 
+require_once __DIR__ . '/includes/admin_acl.php';
+admin_acl_ensure_schema($conn);
+if (($user['role'] ?? '') === 'admin') {
+    admin_acl_refresh_session($conn, $uid);
+}
+users_activity_log(
+    $conn,
+    'login_success',
+    ['via' => 'google'],
+    $uid,
+    (string) ($user['email'] ?? ''),
+    (string) ($user['role'] ?? ''),
+    null
+);
+
 $target = dashboardUrlForRole($user['role']);
 $fullName = trim($user['full_name'] ?? '');
 $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';

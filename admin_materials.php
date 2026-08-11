@@ -1,7 +1,7 @@
-<?php
+﻿<?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/vimeo_helpers.php';
-requireRole('admin');
+requireAdminPage();
 
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
 if ($lessonId <= 0) { header('Location: admin_subjects'); exit; }
@@ -48,7 +48,8 @@ if (!function_exists('adminMaterialsUploadErrorMessage')) {
     function adminMaterialsUploadErrorMessage(int $code): string {
         switch ($code) {
             case UPLOAD_ERR_INI_SIZE:
-                return 'Upload failed: file exceeds server upload_max_filesize limit.';
+                $lim = ini_get('upload_max_filesize') ?: 'unknown';
+                return 'Upload failed: file exceeds server upload_max_filesize limit (current max: ' . $lim . '). Compress the file or ask the host to raise upload_max_filesize / post_max_size.';
             case UPLOAD_ERR_FORM_SIZE:
                 return 'Upload failed: file exceeds form MAX_FILE_SIZE limit.';
             case UPLOAD_ERR_PARTIAL:
@@ -129,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors' => [
                 'Upload failed: request payload exceeded server limits before PHP could read form data.',
                 'Uploaded payload size: ' . number_format($contentLength) . ' bytes.',
-                'Server limits — post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
+                'Server limits â€” post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
                 ($postMaxBytes > 0 && $contentLength > $postMaxBytes)
                     ? 'Root cause: file is larger than post_max_size.'
                     : (($uploadMaxBytes > 0 && $contentLength > $uploadMaxBytes)
@@ -194,6 +195,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($thumbUrl !== '') {
                             $successes[] = 'Thumbnail refreshed from Vimeo.';
                         }
+                        users_activity_log($conn, 'material_video_updated', [
+                            'lesson_id' => $lessonId,
+                            'subject_id' => $subjectId,
+                            'video_id' => $videoId,
+                            'video_title' => $title,
+                            'lesson_title' => (string) ($lesson['title'] ?? ''),
+                            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                        ]);
                     }
                     mysqli_stmt_close($stmt);
                 } else {
@@ -210,6 +219,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($thumbUrl !== '') {
                             $successes[] = 'Thumbnail fetched from Vimeo.';
                         }
+                        users_activity_log($conn, 'material_video_added', [
+                            'lesson_id' => $lessonId,
+                            'subject_id' => $subjectId,
+                            'video_title' => $title,
+                            'lesson_title' => (string) ($lesson['title'] ?? ''),
+                            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                            'upload_type' => $uploadType,
+                        ]);
                     }
                     mysqli_stmt_close($stmt);
                 } else {
@@ -262,6 +279,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errors[] = 'Handout update failed: ' . mysqli_stmt_error($stmt);
                     } else {
                         $successes[] = 'Handout updated successfully.';
+                        users_activity_log($conn, 'material_handout_updated', [
+                            'lesson_id' => $lessonId,
+                            'subject_id' => $subjectId,
+                            'handout_id' => $handoutId,
+                            'handout_title' => $title,
+                            'file_name' => (string) $originalName,
+                            'lesson_title' => (string) ($lesson['title'] ?? ''),
+                            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                        ]);
                     }
                     mysqli_stmt_close($stmt);
                 } else {
@@ -275,6 +301,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errors[] = 'Handout update failed: ' . mysqli_stmt_error($stmt);
                     } else {
                         $successes[] = 'Handout updated successfully.';
+                        users_activity_log($conn, 'material_handout_updated', [
+                            'lesson_id' => $lessonId,
+                            'subject_id' => $subjectId,
+                            'handout_id' => $handoutId,
+                            'handout_title' => $title,
+                            'lesson_title' => (string) ($lesson['title'] ?? ''),
+                            'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                        ]);
                     }
                     mysqli_stmt_close($stmt);
                 } else {
@@ -289,6 +323,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Handout insert failed: ' . mysqli_stmt_error($stmt);
                 } else {
                     $successes[] = 'Handout uploaded successfully.';
+                    users_activity_log($conn, 'material_handout_uploaded', [
+                        'lesson_id' => $lessonId,
+                        'subject_id' => $subjectId,
+                        'handout_title' => $title,
+                        'file_name' => (string) $originalName,
+                        'file_size' => (int) $fileSize,
+                        'lesson_title' => (string) ($lesson['title'] ?? ''),
+                        'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                    ]);
                 }
                 mysqli_stmt_close($stmt);
             } else {
@@ -423,6 +466,9 @@ if ($searchQ === '') {
 }
 $pageTitle = 'Materials - ' . $lesson['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Materials'] ];
+$materialsUploadMaxLabel = ini_get('upload_max_filesize') ?: 'â€”';
+$materialsPostMaxLabel = ini_get('post_max_size') ?: 'â€”';
+$materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUploadMaxLabel);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -518,9 +564,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <div class="min-w-0">
         <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
           <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
-          <span>Materials — <?php echo h($lesson['title']); ?></span>
+          <span>Materials â€” <?php echo h($lesson['title']); ?></span>
         </h1>
-        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> · Videos and handouts for this lesson</p>
+        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> Â· Videos and handouts for this lesson</p>
       </div>
       <div class="admin-page-header__actions">
         <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Lessons</a>
@@ -533,7 +579,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[200px]">
       <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titles…" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titlesâ€¦" class="input-custom w-full" autocomplete="off">
     </div>
     <div class="w-full sm:w-44">
       <label for="mat-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Show</label>
@@ -653,7 +699,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Upload File (PDF, DOC, PPT, etc.)</label>
-            <input type="file" name="handout_file" id="handoutFileInput" class="input-custom admin-upload-input" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" required>
+            <input type="file" name="handout_file" id="handoutFileInput" class="input-custom admin-upload-input" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" required data-max-bytes="<?php echo (int)$materialsUploadMaxBytes; ?>" data-max-label="<?php echo h($materialsUploadMaxLabel); ?>">
+            <p class="text-xs text-gray-500 mt-1.5 mb-0">Max file size on this server: <span class="text-gray-300 font-medium"><?php echo h($materialsUploadMaxLabel); ?></span> (post limit <?php echo h($materialsPostMaxLabel); ?>). Larger files will be rejected by PHP before upload finishes.</p>
+            <p id="handoutUploadHint" class="text-xs text-amber-400 mt-1 mb-0 hidden" role="alert"></p>
           </div>
           <div class="flex items-center gap-2">
             <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="rounded border-white/20 text-emerald-500 focus:ring-emerald-500 bg-[#1a1a1a]">
@@ -686,7 +734,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                     <?php if (!empty($h['file_path'])): ?>
                       <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-download"></i> Download</a>
                     <?php else: ?>
-                      <span class="text-gray-500">—</span>
+                      <span class="text-gray-500">â€”</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
@@ -743,6 +791,46 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 
     bindAutoTitle('handoutFileInput', 'handoutTitleInput');
     bindAutoTitle('videoFileInput', 'videoTitleInput');
+
+    var handoutForm = document.querySelector('form input[name="type"][value="handout"]');
+    handoutForm = handoutForm ? handoutForm.closest('form') : null;
+    var handoutFile = document.getElementById('handoutFileInput');
+    var handoutHint = document.getElementById('handoutUploadHint');
+    function formatBytes(n) {
+      if (!n || n < 0) return '0 B';
+      if (n < 1024) return n + ' B';
+      if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+      return (n / 1048576).toFixed(1) + ' MB';
+    }
+    function validateHandoutFile() {
+      if (!handoutFile || !handoutHint) return true;
+      var file = handoutFile.files && handoutFile.files[0] ? handoutFile.files[0] : null;
+      var maxBytes = parseInt(handoutFile.getAttribute('data-max-bytes') || '0', 10) || 0;
+      var maxLabel = handoutFile.getAttribute('data-max-label') || 'server limit';
+      if (!file || maxBytes <= 0) {
+        handoutHint.classList.add('hidden');
+        handoutHint.textContent = '';
+        return true;
+      }
+      if (file.size > maxBytes) {
+        handoutHint.textContent = 'This file is ' + formatBytes(file.size) + ', but the server max is ' + maxLabel + '. Compress the PDF/PPT or raise PHP upload_max_filesize on the host.';
+        handoutHint.classList.remove('hidden');
+        return false;
+      }
+      handoutHint.classList.add('hidden');
+      handoutHint.textContent = '';
+      return true;
+    }
+    if (handoutFile) {
+      handoutFile.addEventListener('change', validateHandoutFile);
+    }
+    if (handoutForm) {
+      handoutForm.addEventListener('submit', function (e) {
+        if (!validateHandoutFile()) {
+          e.preventDefault();
+        }
+      });
+    }
   })();
 </script>
 <script>

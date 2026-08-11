@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');

@@ -86,6 +86,15 @@ function requireRole($role) {
 }
 
 /**
+ * Require admin role + optional page ACL key (see includes/admin_acl.php).
+ * @param string|null $pageKey Null = auto-detect from current script basename
+ */
+function requireAdminPage($pageKey = null) {
+    require_once __DIR__ . '/includes/admin_acl.php';
+    admin_acl_require_page($pageKey);
+}
+
+/**
  * Get current user ID
  * @return int|null
  */

@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 $token = $_POST['csrf_token'] ?? '';
 if (!verifyCSRFToken($token)) {

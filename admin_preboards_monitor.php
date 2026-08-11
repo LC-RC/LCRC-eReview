@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/preboards_migrate.php';
 require_once __DIR__ . '/includes/preboards_admin_reports.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
@@ -116,7 +116,7 @@ $mkUrl = static function (array $overrides = []) use ($subjectId, $setId, $searc
 };
 
 $subjectName = $subject['subject_name'] ?? 'Preboards';
-$pageTitle = 'Preboards Monitoring — ' . $subjectName;
+$pageTitle = 'Preboards Monitoring â€” ' . $subjectName;
 $adminBreadcrumbs = [
     ['Dashboard', 'admin_dashboard'],
     ['Preboards', 'admin_preboards_subjects'],
@@ -163,7 +163,7 @@ $adminBreadcrumbs = [
       <select id="pb-mon-set" name="preboards_set_id" class="input-custom w-full">
         <option value="">All sets</option>
         <?php foreach ($sets as $st): ?>
-          <option value="<?php echo (int) $st['preboards_set_id']; ?>" <?php echo (int) $st['preboards_set_id'] === $setId ? 'selected' : ''; ?>>Set <?php echo h($st['set_label']); ?><?php echo !empty($st['title']) ? ' — ' . h($st['title']) : ''; ?></option>
+          <option value="<?php echo (int) $st['preboards_set_id']; ?>" <?php echo (int) $st['preboards_set_id'] === $setId ? 'selected' : ''; ?>>Set <?php echo h($st['set_label']); ?><?php echo !empty($st['title']) ? ' â€” ' . h($st['title']) : ''; ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -177,7 +177,7 @@ $adminBreadcrumbs = [
     </div>
     <div class="flex-1 min-w-[200px]">
       <label for="pb-mon-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search student</label>
-      <input type="search" id="pb-mon-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Name or email…" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="pb-mon-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Name or emailâ€¦" class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
@@ -202,13 +202,13 @@ $adminBreadcrumbs = [
     </div>
     <div class="pb-monitor-stat">
       <span class="pb-monitor-stat-icon" aria-hidden="true"><i class="bi bi-percent"></i></span>
-      <div><div class="pb-monitor-stat-value"><?php echo $stats['avg_score'] !== null ? preboards_format_score($stats['avg_score']) : '—'; ?></div><div class="pb-monitor-stat-label">Average score</div></div>
+      <div><div class="pb-monitor-stat-value"><?php echo $stats['avg_score'] !== null ? preboards_format_score($stats['avg_score']) : 'â€”'; ?></div><div class="pb-monitor-stat-label">Average score</div></div>
     </div>
   </div>
 
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5">
     <div class="quiz-admin-table-head px-5 py-4">
-      <span class="font-semibold text-gray-100"><i class="bi bi-trophy-fill text-amber-400 mr-1"></i> Top 10 — Highest scores</span>
+      <span class="font-semibold text-gray-100"><i class="bi bi-trophy-fill text-amber-400 mr-1"></i> Top 10 â€” Highest scores</span>
       <p class="text-sm text-gray-500 mt-0.5 mb-0">
         <?php if ($setId > 0): ?>
           Best score per student for the selected set.
@@ -260,7 +260,7 @@ $adminBreadcrumbs = [
                 <?php if ($setId <= 0): ?>
                   <td>
                     <div class="pb-monitor-subject"><?php echo h($subjectName); ?></div>
-                    <span class="pb-monitor-set-badge mt-1"><i class="bi bi-collection"></i> Set <?php echo h($row['set_label'] ?? '—'); ?></span>
+                    <span class="pb-monitor-set-badge mt-1"><i class="bi bi-collection"></i> Set <?php echo h($row['set_label'] ?? 'â€”'); ?></span>
                   </td>
                 <?php endif; ?>
                 <td><span class="pb-score-pill pb-score-pill--<?php echo h($tier); ?>"><?php echo preboards_format_score($score); ?></span></td>
@@ -283,11 +283,11 @@ $adminBreadcrumbs = [
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5">
     <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <span class="font-semibold text-gray-100"><i class="bi bi-table text-emerald-400 mr-1"></i> All attempts — detailed log</span>
+        <span class="font-semibold text-gray-100"><i class="bi bi-table text-emerald-400 mr-1"></i> All attempts â€” detailed log</span>
         <p class="text-sm text-gray-500 mt-0.5 mb-0">
           <?php echo number_format($totalAttempts); ?> record<?php echo $totalAttempts === 1 ? '' : 's'; ?>
-          <?php if ($searchQ !== ''): ?> · filtered by “<?php echo h($searchQ); ?>”<?php endif; ?>
-          <?php if ($setId > 0): ?> · Set filter active<?php endif; ?>
+          <?php if ($searchQ !== ''): ?> Â· filtered by â€œ<?php echo h($searchQ); ?>â€<?php endif; ?>
+          <?php if ($setId > 0): ?> Â· Set filter active<?php endif; ?>
         </p>
       </div>
       <span class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
@@ -356,14 +356,14 @@ $adminBreadcrumbs = [
                   <?php if ($isSubmitted): ?>
                     <span class="pb-score-pill pb-score-pill--<?php echo h($tier); ?>"><?php echo preboards_format_score($score); ?></span>
                   <?php else: ?>
-                    <span class="pb-score-pill pb-score-pill--pending">—</span>
+                    <span class="pb-score-pill pb-score-pill--pending">â€”</span>
                   <?php endif; ?>
                 </td>
                 <td>
                   <?php if ($isSubmitted || $total > 0): ?>
                     <span class="pb-monitor-correct"><?php echo $correct; ?> / <?php echo $total; ?><small>answered</small></span>
                   <?php else: ?>
-                    <span class="text-gray-500">—</span>
+                    <span class="text-gray-500">â€”</span>
                   <?php endif; ?>
                 </td>
                 <td>
@@ -383,7 +383,7 @@ $adminBreadcrumbs = [
                       <?php if ($submittedDt['time'] !== ''): ?><span><?php echo h($submittedDt['time']); ?></span><?php endif; ?>
                     </div>
                   <?php else: ?>
-                    <span class="text-gray-500">—</span>
+                    <span class="text-gray-500">â€”</span>
                   <?php endif; ?>
                 </td>
                 <td class="text-right">

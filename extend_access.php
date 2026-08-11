@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 /**
  * Edit / extend login account window (users.access_start / access_end).
  * Does not create commerce grants or change SCA.
  */
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/admin_account_window.php';
 
 $token = $_POST['csrf_token'] ?? '';

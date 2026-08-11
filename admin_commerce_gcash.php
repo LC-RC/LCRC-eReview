@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 /**
- * Admin Commerce — GCash QR / payment settings (Phase 3).
+ * Admin Commerce â€” GCash QR / payment settings (Phase 3).
  * Receipt OCR verification comes in later phases; settings thresholds stored here.
  */
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/commerce_catalog.php';
 
 if (!commerce_schema_ready($conn)) {
@@ -14,7 +14,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce — GCash Settings';
+$pageTitle = 'Commerce â€” GCash Settings';
 $settings = commerce_get_payment_settings($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -121,7 +121,7 @@ $qrSrc = !empty($settings['gcash_qr_path']) ? ereview_url($settings['gcash_qr_pa
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['GCash Settings']];
 $adminHeroIcon = 'qr-code';
 $adminHeroTitle = 'GCash Settings';
-$adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later verifies receipts only — not a GCash API.';
+$adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later verifies receipts only â€” not a GCash API.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -145,7 +145,7 @@ $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later ve
 
       <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
         OCR confidence threshold, receipt max age, and Vision fallback apply to Phase 6 receipt verification.
-        Auto-verify sets the payment to <strong>paid</strong> only — it does <strong>not</strong> grant LMS access, sync SCA, or activate the student (Phase 7). Uncertain matches go to needs_review. This is not direct GCash settlement confirmation.
+        Auto-verify sets the payment to <strong>paid</strong> only â€” it does <strong>not</strong> grant LMS access, sync SCA, or activate the student (Phase 7). Uncertain matches go to needs_review. This is not direct GCash settlement confirmation.
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -161,7 +161,7 @@ $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later ve
 
       <div>
         <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Payment instructions</label>
-        <textarea class="input-custom w-full" name="payment_instructions" rows="4" placeholder="Shown on the payment step…"><?php echo h($settings['payment_instructions'] ?? ''); ?></textarea>
+        <textarea class="input-custom w-full" name="payment_instructions" rows="4" placeholder="Shown on the payment stepâ€¦"><?php echo h($settings['payment_instructions'] ?? ''); ?></textarea>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">

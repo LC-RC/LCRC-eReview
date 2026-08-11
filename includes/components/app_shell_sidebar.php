@@ -92,11 +92,15 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
       <?php foreach ($section['items'] ?? [] as $item):
         $activePages = array_map('ereview_page_basename', $item['active'] ?? []);
         $isActive = in_array($appShellCurrentScript, $activePages, true);
+        $isLocked = !empty($item['acl_locked']);
 
         if ($appShellTheme === 'admin') {
           $classes = 'app-shell-nav-link app-shell-nav-link--admin flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition';
           if ($isActive) {
             $classes .= ' bg-white/15 text-white border-l-white font-semibold';
+          }
+          if ($isLocked) {
+            $classes .= ' app-shell-nav-link--locked is-locked';
           }
         } elseif ($appShellTheme === 'professor') {
           $classes = 'app-shell-nav-link app-shell-nav-link--professor flex items-center gap-3 px-5 py-3 text-white/75 hover:bg-white/10 hover:text-white hover:border-l-green-300 border-l-4 border-transparent transition';
@@ -117,6 +121,16 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
             <i class="bi <?php echo h($item['icon']); ?> shrink-0 w-8 h-8 flex items-center justify-center student-nav-icon" style="font-size:1.25rem"></i>
             <span class="font-medium truncate whitespace-nowrap app-shell-nav-text transition-all duration-300"><?php echo h($item['label']); ?></span>
           </a>
+        <?php elseif ($isLocked): ?>
+          <span
+             role="link"
+             aria-disabled="true"
+             title="<?php echo h($item['title'] ?? 'Locked'); ?>"
+             class="<?php echo $classes; ?>">
+            <i class="bi <?php echo h($item['icon']); ?> text-lg w-6 text-center"></i>
+            <span class="app-shell-nav-text"><?php echo h($item['label']); ?></span>
+            <i class="bi bi-lock-fill app-shell-nav-lock" aria-hidden="true"></i>
+          </span>
         <?php else: ?>
           <a href="<?php echo h(ereview_url($item['href'])); ?>"
              title="<?php echo h($item['title'] ?? ''); ?>"

@@ -1,11 +1,123 @@
-<?php
+﻿<?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
-requireRole('admin');
+requireAdminPage();
 
 $csrf = generateCSRFToken();
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
-if ($subjectId <= 0) { header('Location: admin_subjects'); exit; }
+
+// Quizzes nav opens without a subject — same Content Hub-style table (no Subjects ACL redirect).
+if ($subjectId <= 0) {
+    $subjects = [];
+    $subQ = @mysqli_query(
+        $conn,
+        "SELECT s.subject_id, s.subject_name, s.status,
+                (SELECT COUNT(*) FROM quizzes q WHERE q.subject_id = s.subject_id) AS quiz_cnt,
+                (SELECT COUNT(*) FROM lessons l WHERE l.subject_id = s.subject_id) AS lesson_cnt
+         FROM subjects s
+         ORDER BY s.subject_name ASC, s.subject_id ASC"
+    );
+    if ($subQ) {
+        while ($row = mysqli_fetch_assoc($subQ)) {
+            $subjects[] = $row;
+        }
+        mysqli_free_result($subQ);
+    }
+    $totalSubjects = count($subjects);
+    $pageTitle = 'Quizzes';
+    $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Quizzes']];
+    if (function_exists('admin_can') && admin_can('subjects')) {
+        $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], ['Quizzes']];
+    }
+    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+</head>
+<body class="font-sans antialiased admin-app admin-quizzes-page">
+  <?php include 'admin_sidebar.php'; ?>
+
+  <?php
+    $adminHeroIcon = 'question-circle';
+    $adminHeroTitle = 'Quizzes';
+    $adminHeroSubtitle = 'Choose a subject to create quizzes and upload questions.';
+    $adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int) $totalSubjects . ' subject' . ((int) $totalSubjects === 1 ? '' : 's') . '</span>';
+    $adminHeroActions = '';
+    if (function_exists('admin_can') && admin_can('subjects')) {
+        $adminHeroActions = '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>';
+    }
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
+
+  <?php if (isset($_SESSION['message'])): ?>
+    <div class="quiz-admin-alert quiz-admin-alert--success mb-5 flex items-center gap-2">
+      <i class="bi bi-check-circle-fill shrink-0"></i><span><?php echo h($_SESSION['message']); unset($_SESSION['message']); ?></span>
+    </div>
+  <?php endif; ?>
+  <?php if (isset($_SESSION['error'])): ?>
+    <div class="quiz-admin-alert quiz-admin-alert--error mb-5 flex items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill shrink-0"></i><span><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></span>
+    </div>
+  <?php endif; ?>
+
+  <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
+    <div class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 text-sm opacity-70">
+      Showing <?php echo $totalSubjects > 0 ? '1' : '0'; ?>-<?php echo (int) $totalSubjects; ?> of <?php echo (int) $totalSubjects; ?> subjects
+    </div>
+    <div class="overflow-x-auto pl-3 pr-8">
+      <table class="quiz-admin-data-table admin-data-table w-full text-left">
+        <thead>
+          <tr>
+            <th class="px-5 py-3 font-semibold admin-col-primary">Subject</th>
+            <th class="px-5 py-3 font-semibold text-center">Status</th>
+            <th class="px-5 py-3 font-semibold text-center">Lessons</th>
+            <th class="px-5 py-3 font-semibold text-center">Quizzes</th>
+            <th class="px-5 py-3 font-semibold text-center w-[140px]">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if ($subjects === []): ?>
+            <tr>
+              <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
+                <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
+                <div class="font-semibold text-gray-200">No subjects yet</div>
+                <p class="text-sm mt-1 text-gray-500">Ask a full-access admin to create subjects first.</p>
+              </td>
+            </tr>
+          <?php else: ?>
+            <?php foreach ($subjects as $s):
+              $st = strtolower((string) ($s['status'] ?? 'active'));
+              $isActive = $st === '' || $st === 'active' || $st === '1';
+            ?>
+              <tr class="quiz-admin-row">
+                <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($s['subject_name']); ?></td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-block px-2.5 py-1 rounded-md text-xs font-semibold <?php echo $isActive ? 'quiz-type-pill quiz-type-pill--post' : 'quiz-qcount quiz-qcount--empty'; ?>">
+                    <?php echo $isActive ? 'Active' : 'Inactive'; ?>
+                  </span>
+                </td>
+                <td class="px-5 py-3.5 text-center tabular-nums"><?php echo (int) ($s['lesson_cnt'] ?? 0); ?></td>
+                <td class="px-5 py-3.5 text-center tabular-nums font-bold"><?php echo (int) ($s['quiz_cnt'] ?? 0); ?></td>
+                <td class="px-5 py-3 text-center">
+                  <a href="admin_quizzes?subject_id=<?php echo (int) $s['subject_id']; ?>" class="admin-btn admin-btn--secondary admin-btn--sm">
+                    <i class="bi bi-ui-checks-grid"></i> Open
+                  </a>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</main>
+</body>
+</html>
+    <?php
+    exit;
+}
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -13,7 +125,11 @@ mysqli_stmt_execute($stmt);
 $subRes = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($subRes);
 mysqli_stmt_close($stmt);
-if (!$subject) { header('Location: admin_subjects'); exit; }
+if (!$subject) {
+    $_SESSION['error'] = 'Subject not found.';
+    header('Location: admin_quizzes');
+    exit;
+}
 
 // Ensure time_limit_minutes and time_limit_seconds exist (auto-migrate)
 $quizCols = [];
@@ -51,10 +167,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $quizId = sanitizeInt($_POST['quiz_id'] ?? 0);
         if ($quizId > 0) {
+            $delTitle = '';
+            $tStmt = mysqli_prepare($conn, 'SELECT title FROM quizzes WHERE quiz_id=? AND subject_id=? LIMIT 1');
+            if ($tStmt) {
+                mysqli_stmt_bind_param($tStmt, 'ii', $quizId, $subjectId);
+                mysqli_stmt_execute($tStmt);
+                $tRes = mysqli_stmt_get_result($tStmt);
+                $tRow = $tRes ? mysqli_fetch_assoc($tRes) : null;
+                mysqli_stmt_close($tStmt);
+                $delTitle = (string) ($tRow['title'] ?? '');
+            }
             $stmt = mysqli_prepare($conn, "DELETE FROM quizzes WHERE quiz_id=? AND subject_id=?");
             mysqli_stmt_bind_param($stmt, 'ii', $quizId, $subjectId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
+            users_activity_log($conn, 'quiz_deleted', [
+                'quiz_id' => $quizId,
+                'subject_id' => $subjectId,
+                'quiz_title' => $delTitle,
+                'subject_name' => (string) ($subject['subject_name'] ?? ''),
+            ]);
             $_SESSION['message'] = 'Quiz deleted.';
         }
         header('Location: admin_quizzes?subject_id='.$subjectId);
@@ -80,12 +212,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, 'ssiiiiiii', $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount, $quizId, $subjectId);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
+        users_activity_log($conn, 'quiz_updated', [
+            'quiz_id' => $quizId,
+            'subject_id' => $subjectId,
+            'quiz_title' => $title,
+            'subject_name' => (string) ($subject['subject_name'] ?? ''),
+        ]);
         $_SESSION['message'] = 'Quiz updated.';
     } else {
         $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds, shuffle_mcq_questions, shuffle_mcq_choices, mcq_pick_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         mysqli_stmt_bind_param($stmt, 'issiiiii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount);
         mysqli_stmt_execute($stmt);
+        $newQuizId = (int) mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
+        users_activity_log($conn, 'quiz_created', [
+            'quiz_id' => $newQuizId > 0 ? $newQuizId : 0,
+            'subject_id' => $subjectId,
+            'quiz_title' => $title,
+            'subject_name' => (string) ($subject['subject_name'] ?? ''),
+        ]);
         $_SESSION['message'] = 'Quiz created.';
     }
     header('Location: admin_quizzes?subject_id='.$subjectId);
@@ -154,7 +299,14 @@ $quizTypeLabels = ['topical' => 'Topical'];
 $quizTypeTitles = ['topical' => 'Focused set grouped by topic'];
 
 $pageTitle = 'Quizzes - ' . $subject['subject_name'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($subject['subject_name']), 'admin_quizzes?subject_id=' . $subjectId ], ['Quizzes'] ];
+$canSubjects = function_exists('admin_can') && admin_can('subjects');
+$canLessons = function_exists('admin_can') && admin_can('lessons');
+$adminBreadcrumbs = [['Dashboard', 'admin_dashboard']];
+if ($canSubjects) {
+    $adminBreadcrumbs[] = ['Content Hub', 'admin_subjects'];
+}
+$adminBreadcrumbs[] = ['Quizzes', 'admin_quizzes'];
+$adminBreadcrumbs[] = [(string) $subject['subject_name']];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -166,7 +318,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 
   <?php
     $adminHeroIcon = 'question-circle';
-    $adminHeroTitle = 'Quizzes — ' . (string) $subject['subject_name'];
+    $adminHeroTitle = 'Quizzes - ' . (string) $subject['subject_name'];
     $adminHeroSubtitle = 'Create quizzes, then open Questions to build the question bank.';
     $adminHeroMeta =
       '<span class="quiz-admin-count-pill" title="Quizzes in this subject">'
@@ -175,10 +327,18 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       . '<span class="quiz-admin-count-pill quiz-admin-count-pill--questions" title="All uploaded questions across every quiz in this subject">'
       . (int) $totalSubjectQuestions . ' question' . ((int) $totalSubjectQuestions === 1 ? '' : 's') . ' total'
       . '</span>';
-    $adminHeroActions =
-      '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
-      . '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-file-text"></i> Lessons</a>'
-      . '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
+    // Same action set as super admin; locked buttons stay visible when ACL denies.
+    if ($canSubjects) {
+        $adminHeroActions = '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>';
+    } else {
+        $adminHeroActions = '<a href="admin_quizzes" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>';
+    }
+    if ($canLessons) {
+        $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-file-text"></i> Lessons</a>';
+    } else {
+        $adminHeroActions .= '<span class="admin-btn admin-btn--secondary is-disabled" title="Locked — no access to Lessons" aria-disabled="true"><i class="bi bi-lock-fill"></i> Lessons</span>';
+    }
+    $adminHeroActions .= '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -200,7 +360,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
       <div class="flex-1 min-w-[200px]">
         <label for="quiz-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
-        <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title…" class="input-custom w-full" autocomplete="off">
+        <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title..." class="input-custom w-full" autocomplete="off">
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
@@ -211,10 +371,10 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <div class="w-full text-sm opacity-70">
         <?php if ($totalQuizzes > 0): ?>
           Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalQuizzes); ?> of <?php echo $totalQuizzes; ?>
-          <span class="mx-1">·</span>
+          <span class="mx-1">&middot;</span>
         <?php endif; ?>
         Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
-        <span class="mx-1">·</span>
+        <span class="mx-1">&middot;</span>
         <strong><?php echo (int)$totalSubjectQuestions; ?></strong> questions total
       </div>
     </form>
@@ -236,7 +396,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
             $typeTitle = $quizTypeTitles[$qt] ?? '';
             $qCnt = (int)($qz['questions_cnt'] ?? 0);
             $questionsCellClass = $qCnt === 0 ? 'quiz-qcount quiz-qcount--empty' : 'quiz-qcount quiz-qcount--ok';
-            $questionsCellTitle = $qCnt === 0 ? 'No questions yet — add them via Questions' : $qCnt . ' question(s)';
+            $questionsCellTitle = $qCnt === 0 ? 'No questions yet - add them via Questions' : $qCnt . ' question(s)';
           ?>
             <tr class="quiz-admin-row">
               <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
@@ -350,7 +510,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                 </template>
               </select>
               <p class="text-xs text-gray-500 mt-1" x-show="pickOptions.length === 0" x-cloak>Add at least 10 questions to enable per-set random pick.</p>
-              <p class="text-xs text-gray-500 mt-1" x-show="pickOptions.length > 0 && !shuffle_mcq_questions" x-cloak>Enable “Shuffle MCQ questions” to activate per-set picking.</p>
+              <p class="text-xs text-gray-500 mt-1" x-show="pickOptions.length > 0 && !shuffle_mcq_questions" x-cloak>Enable "Shuffle MCQ questions" to activate per-set picking.</p>
             </div>
           </div>
           <div>

@@ -175,12 +175,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!empty($_POST['remember_me'])) {
             setRememberMeCookie($user['user_id']);
         }
+        require_once __DIR__ . '/includes/admin_acl.php';
+        admin_acl_ensure_schema($conn);
+        if (($user['role'] ?? '') === 'admin') {
+            admin_acl_refresh_session($conn, (int) $user['user_id']);
+        }
+        users_activity_log(
+            $conn,
+            'login_success',
+            ['via' => 'password'],
+            (int) $user['user_id'],
+            (string) ($user['email'] ?? $email),
+            (string) ($user['role'] ?? ''),
+            null
+        );
         $target = dashboardUrlForRole($user['role']);
+        if (($user['role'] ?? '') === 'admin' && !admin_can('dashboard')) {
+            $firstKey = null;
+            $keys = admin_acl_session_keys();
+            if (is_array($keys) && $keys !== []) {
+                $firstKey = $keys[0];
+            }
+            $scriptMap = [
+                'manage_admins' => 'admin_admins',
+                'students' => 'admin_students',
+                'student_access' => 'admin_student_access',
+                'support' => 'admin_support_analytics',
+                'subjects' => 'admin_subjects',
+                'lessons' => 'admin_lessons',
+                'videos' => 'admin_videos',
+                'handouts' => 'admin_handouts',
+                'materials' => 'admin_materials',
+                'quizzes' => 'admin_quizzes',
+                'test_bank' => 'admin_test_bank',
+                'preboards' => 'admin_preboards_subjects',
+                'preweek' => 'admin_preweek',
+                'question_bank' => 'admin_question_sort',
+                'commerce_packages' => 'admin_commerce_packages',
+                'commerce_topics' => 'admin_commerce_topics',
+                'commerce_gcash' => 'admin_commerce_gcash',
+                'commerce_payments' => 'admin_commerce_payments',
+                'commerce_free_access' => 'admin_commerce_free_access',
+                'commerce_grants' => 'admin_commerce_grants',
+                'commerce_reports' => 'admin_commerce_reports',
+            ];
+            if ($firstKey && isset($scriptMap[$firstKey])) {
+                $target = ereview_url($scriptMap[$firstKey]);
+            }
+        }
         $fullName = trim($user['full_name'] ?? '');
         $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
         header('Location: auth_success?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));
         exit;
     } else {
+        require_once __DIR__ . '/includes/admin_acl.php';
+        admin_acl_ensure_schema($conn);
+        users_activity_log(
+            $conn,
+            'login_fail',
+            ['reason' => 'invalid_credentials'],
+            $user ? (int) $user['user_id'] : null,
+            $email,
+            $user ? (string) ($user['role'] ?? '') : null,
+            null
+        );
         $lockTs = recordFailedLoginAttempt();
         if ($lockTs !== null) {
             $_SESSION['rate_limit_until'] = $lockTs;

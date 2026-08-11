@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 $userId = sanitizeInt($_GET['user_id'] ?? 0);
 if ($userId <= 0) {

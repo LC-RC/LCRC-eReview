@@ -3,7 +3,7 @@
  * Legacy status flip — hardened: cannot approve a student without an active access grant.
  */
 require_once __DIR__ . '/auth.php';
-requireRole('admin');
+requireAdminPage('students');
 require_once __DIR__ . '/includes/commerce_access_gate.php';
 
 $id = (int) ($_GET['id'] ?? 0);

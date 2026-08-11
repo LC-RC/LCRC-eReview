@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
 require_once __DIR__ . '/includes/commerce_access_gate.php';
@@ -926,7 +926,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       white-space: nowrap;
       font-size: 0.78rem;
     }
-    /* Modal refresh v2 — above messaging/notification shells (1200–1400) */
+    /* Modal refresh v2 â€” above messaging/notification shells (1200â€“1400) */
     .admin-modal-overlay {
       background: radial-gradient(circle at 20% 10%, rgba(30, 64, 175, 0.22) 0%, rgba(2, 6, 23, 0.78) 42%, rgba(2, 6, 23, 0.9) 100%);
       backdrop-filter: blur(6px);
@@ -1186,7 +1186,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <input type="hidden" name="view" value="deleted">
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="dq" value="<?php echo h($dq); ?>" placeholder="Search deleted users…" aria-label="Search deleted users">
+            <input type="search" name="dq" value="<?php echo h($dq); ?>" placeholder="Search deleted usersâ€¦" aria-label="Search deleted users">
           </div>
           <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm">Filter</button>
           <?php if ($dq !== ''): ?>
@@ -1227,10 +1227,10 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       $sTs = strtotime($m[1]);
                       $eTs = strtotime($m[2]);
                       if ($sTs && $eTs) {
-                        $deletedAccessLabel = date('M j, Y', $sTs) . ' – ' . date('M j, Y', $eTs);
+                        $deletedAccessLabel = date('M j, Y', $sTs) . ' â€“ ' . date('M j, Y', $eTs);
                       }
                     } elseif (preg_match('/^([A-Za-z]+\s+\d{1,2},\s+\d{4})\s*-\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})$/', $deletedAccessLabel, $m2)) {
-                      $deletedAccessLabel = $m2[1] . ' – ' . $m2[2];
+                      $deletedAccessLabel = $m2[1] . ' â€“ ' . $m2[2];
                     }
                   ?>
                   <tr>
@@ -1277,7 +1277,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search students…" aria-label="Search students">
+            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search studentsâ€¦" aria-label="Search students">
           </div>
           <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
           <?php if ($q !== ''): ?>
@@ -1300,12 +1300,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         <div class="students-table-meta">
           <span>
             <?php if ($total > 0): ?>
-              <?php echo $offset + 1; ?>–<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?>
+              <?php echo $offset + 1; ?>â€“<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?>
             <?php else: ?>
               0 students
             <?php endif; ?>
           </span>
-          <span class="students-table-meta__hint hidden md:inline">Enrollment, payment, proof, access, and account at a glance · Review opens payment/FAR when needed</span>
+          <span class="students-table-meta__hint hidden md:inline">Enrollment, payment, proof, access, and account at a glance Â· Review opens payment/FAR when needed</span>
         </div>
         <div class="students-table-scroll">
           <table class="w-full text-left admin-students-table students-table--compact students-table--aligned students-table--commerce">
@@ -1382,19 +1382,19 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         && (int) ($dash['payment_id'] ?? 0) > 0;
                     $accountUi = (string) ($dash['account_label'] ?? commerce_admin_label_account_status((string) $row['status']));
                     $fulfilledUi = (string) ($dash['fulfilled_ui'] ?? '');
-                    $enrollAmt = (string) ($dash['enrollment_amount_display'] ?? '—');
-                    $enrollLab = (string) ($dash['enrollment_label'] ?? '—');
+                    $enrollAmt = (string) ($dash['enrollment_amount_display'] ?? 'â€”');
+                    $enrollLab = (string) ($dash['enrollment_label'] ?? 'â€”');
                     $enrollTopicsFull = (string) ($dash['enrollment_topics_full'] ?? '');
                     $enrollLessonLabels = is_array($dash['lesson_labels'] ?? null) ? $dash['lesson_labels'] : [];
                     if ($enrollTopicsFull === '' && $enrollLessonLabels !== []) {
                         $enrollTopicsFull = implode(', ', $enrollLessonLabels);
                     }
                     $enrollCombined = $enrollLab;
-                    if ($enrollAmt !== '' && $enrollAmt !== '—' && strpos($enrollLab, '₱') === false) {
-                        $enrollCombined = $enrollLab . ' · ' . $enrollAmt;
+                    if ($enrollAmt !== '' && $enrollAmt !== 'â€”' && strpos($enrollLab, 'â‚±') === false) {
+                        $enrollCombined = $enrollLab . ' Â· ' . $enrollAmt;
                     }
                     $enrollTitle = $enrollTopicsFull !== ''
-                        ? ($enrollCombined . ' — ' . $enrollTopicsFull)
+                        ? ($enrollCombined . ' â€” ' . $enrollTopicsFull)
                         : $enrollCombined;
                     $hasAccessRange = !empty($row['access_start']) || !empty($row['access_end']);
                     $accessStartTs = !empty($row['access_start']) ? strtotime((string)$row['access_start']) : false;
@@ -1461,7 +1461,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     } elseif ($hasLastLoginAt && !empty($row['last_login_at'])) {
                       $activityTs = strtotime((string)$row['last_login_at']);
                     }
-                    $activityLabel = '—';
+                    $activityLabel = 'â€”';
                     if ($isSessionActive) {
                       $activityLabel = 'Active now';
                     } elseif ($activityTs !== false) {
@@ -1474,8 +1474,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     $accessScan = $hasAccessRange
                       ? ($accessEndTs !== false ? $accessEndShort : $accessStartShort)
                       : 'No access';
-                    $accessFull = $hasAccessRange ? ($accessStartShort . ' – ' . $accessEndShort) : 'No access set';
-                    $createdLabel = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : '—';
+                    $accessFull = $hasAccessRange ? ($accessStartShort . ' â€“ ' . $accessEndShort) : 'No access set';
+                    $createdLabel = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : 'â€”';
                   ?>
                   <tr
                     data-user-id="<?php echo (int)$row['user_id']; ?>"
@@ -1495,8 +1495,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     data-drawer-created="<?php echo h($createdLabel); ?>"
                     data-drawer-proof="<?php echo h($proofUi); ?>"
                     data-drawer-enrollment="<?php echo h($enrollCombined); ?>"
-                    data-drawer-topics="<?php echo h($enrollTopicsFull !== '' ? $enrollTopicsFull : '—'); ?>"
-                    data-drawer-payment="<?php echo h((string) ($dash['payment_ui'] ?? '—')); ?>"
+                    data-drawer-topics="<?php echo h($enrollTopicsFull !== '' ? $enrollTopicsFull : 'â€”'); ?>"
+                    data-drawer-payment="<?php echo h((string) ($dash['payment_ui'] ?? 'â€”')); ?>"
                     data-drawer-commerce-access="<?php echo h((string) ($dash['access_ui'] ?? 'None')); ?>"
                     data-drawer-account="<?php echo h($accountUi); ?>"
                     data-drawer-avatar="<?php echo h(($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath : ''); ?>"
@@ -1512,7 +1512,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                                <?php if ($canBulkGrant): ?>data-grantable="1"<?php endif; ?>
                                <?php if ($showRepairActivation || $canBulkLegacyApprove): ?>data-activatable="1"<?php endif; ?>>
                       <?php else: ?>
-                        <span class="admin-bulk-check-na" title="Already has Access Granted — use Grant ledger or Edit content permissions if needed">—</span>
+                        <span class="admin-bulk-check-na" title="Already has Access Granted â€” use Grant ledger or Edit content permissions if needed">â€”</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-student">
@@ -1548,7 +1548,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <?php elseif ($payTone === 'rejected'): ?><i class="bi bi-x-circle-fill" aria-hidden="true"></i>
                         <?php elseif ($payTone === 'awaiting'): ?><i class="bi bi-clock" aria-hidden="true"></i>
                         <?php endif; ?>
-                        <?php echo h((string) ($dash['payment_ui'] ?? '—')); ?>
+                        <?php echo h((string) ($dash['payment_ui'] ?? 'â€”')); ?>
                       </span>
                       <?php if ($fulfilledUi !== ''): ?>
                         <div class="text-[10px] text-emerald-400/90 mt-0.5 font-semibold"><?php echo h($fulfilledUi); ?></div>
@@ -1559,7 +1559,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <span class="text-slate-400 text-sm">N/A</span>
                       <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
                         <a class="commerce-proof-link" data-admin-proof
-                           data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
+                           data-proof-title="Proof Â· <?php echo h($row['full_name']); ?>"
                            href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"
                            title="View commerce payment proof">
                           <i class="bi bi-eye" aria-hidden="true"></i> View Proof
@@ -1593,7 +1593,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                                   data-user-id="<?php echo (int) $row['user_id']; ?>"
                                   data-student-name="<?php echo h($row['full_name']); ?>"
                                   data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>"
-                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload (⋯ menu) unless emergency override.">
+                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload (â‹¯ menu) unless emergency override.">
                             Grant Access
                           </button>
                         <?php endif; ?>
@@ -1612,7 +1612,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                             <?php endif; ?>
                             <?php if ($hasCommerceProof && !empty($dash['payment_id'])): ?>
                               <a role="menuitem" class="admin-student-action-item" data-admin-proof
-                                 data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
+                                 data-proof-title="Proof Â· <?php echo h($row['full_name']); ?>"
                                  href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"><i class="bi bi-receipt" aria-hidden="true"></i> View Proof</a>
                             <?php elseif (!$isCommerceRow && $hasProof): ?>
                               <a role="menuitem" class="admin-student-action-item" href="admin_payment_proof?user_id=<?php echo (int)$row['user_id']; ?>" target="_blank" rel="noopener"><i class="bi bi-receipt" aria-hidden="true"></i> Legacy payment proof</a>
@@ -1708,7 +1708,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <span class="student-drawer__avatar" id="studentDrawerAvatar" aria-hidden="true">U</span>
           <div class="min-w-0">
             <h2 id="studentDrawerTitle" class="student-drawer__title">Student</h2>
-            <p class="student-drawer__email" id="studentDrawerEmail">—</p>
+            <p class="student-drawer__email" id="studentDrawerEmail">â€”</p>
           </div>
         </div>
         <button type="button" class="student-drawer__close" data-drawer-close aria-label="Close details"><i class="bi bi-x-lg"></i></button>
@@ -1717,29 +1717,29 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         <section class="student-drawer__section">
           <h3>Enrollment &amp; Commerce</h3>
           <dl class="student-drawer__dl">
-            <div><dt>Enrollment</dt><dd id="studentDrawerEnrollment">—</dd></div>
-            <div id="studentDrawerTopicsRow"><dt>Topics</dt><dd id="studentDrawerTopics">—</dd></div>
-            <div><dt>Payment</dt><dd id="studentDrawerPayment">—</dd></div>
-            <div><dt>Proof</dt><dd id="studentDrawerProof">—</dd></div>
-            <div><dt>Commerce access</dt><dd id="studentDrawerCommerceAccess">—</dd></div>
-            <div><dt>Account</dt><dd id="studentDrawerAccount">—</dd></div>
+            <div><dt>Enrollment</dt><dd id="studentDrawerEnrollment">â€”</dd></div>
+            <div id="studentDrawerTopicsRow"><dt>Topics</dt><dd id="studentDrawerTopics">â€”</dd></div>
+            <div><dt>Payment</dt><dd id="studentDrawerPayment">â€”</dd></div>
+            <div><dt>Proof</dt><dd id="studentDrawerProof">â€”</dd></div>
+            <div><dt>Commerce access</dt><dd id="studentDrawerCommerceAccess">â€”</dd></div>
+            <div><dt>Account</dt><dd id="studentDrawerAccount">â€”</dd></div>
           </dl>
         </section>
         <section class="student-drawer__section">
           <h3>Profile</h3>
           <dl class="student-drawer__dl">
-            <div><dt>Login status</dt><dd id="studentDrawerStatus">—</dd></div>
-            <div><dt>School</dt><dd id="studentDrawerSchool">—</dd></div>
-            <div><dt>Review type</dt><dd id="studentDrawerReview">—</dd></div>
-            <div><dt>Registered</dt><dd id="studentDrawerCreated">—</dd></div>
+            <div><dt>Login status</dt><dd id="studentDrawerStatus">â€”</dd></div>
+            <div><dt>School</dt><dd id="studentDrawerSchool">â€”</dd></div>
+            <div><dt>Review type</dt><dd id="studentDrawerReview">â€”</dd></div>
+            <div><dt>Registered</dt><dd id="studentDrawerCreated">â€”</dd></div>
           </dl>
         </section>
         <section class="student-drawer__section">
           <h3>Account window (login)</h3>
           <dl class="student-drawer__dl">
-            <div><dt>Window</dt><dd id="studentDrawerAccess">—</dd></div>
-            <div><dt>Timeline</dt><dd id="studentDrawerAccessMeta">—</dd></div>
-            <div><dt>Last activity</dt><dd id="studentDrawerActivity">—</dd></div>
+            <div><dt>Window</dt><dd id="studentDrawerAccess">â€”</dd></div>
+            <div><dt>Timeline</dt><dd id="studentDrawerAccessMeta">â€”</dd></div>
+            <div><dt>Last activity</dt><dd id="studentDrawerActivity">â€”</dd></div>
           </dl>
           <p class="text-xs opacity-70 mt-2 mb-0"><strong>Access</strong> = grant ledger (purchase / free access / admin grant). <strong>Content permissions (SCA)</strong> controls which topics open. Use <em>Grant Access</em> when payment is not verified but the student should still study.</p>
         </section>
@@ -1759,7 +1759,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
       <div>
         <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
-        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) and emails the student. Prefer <strong>Remind to upload</strong> when proof is missing — access normally follows payment review.</p>
+        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) and emails the student. Prefer <strong>Remind to upload</strong> when proof is missing â€” access normally follows payment review.</p>
         <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
       </div>
     </div>
@@ -1769,17 +1769,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     </div>
     <div class="approve-access-box">
       <p class="text-xs font-semibold text-slate-300 mb-1">Content access</p>
-      <p class="text-xs opacity-70 m-0 mb-2">Same picker as Student Access — Full LMS or choose subjects/topics.</p>
+      <p class="text-xs opacity-70 m-0 mb-2">Same picker as Student Access â€” Full LMS or choose subjects/topics.</p>
       <?php
         $scaTreeScope = 'grant';
         require __DIR__ . '/includes/admin_sca_permission_tree.php';
       ?>
-      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalogâ€¦</p>
       <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
     </div>
     <label id="grantAccessNoProofWrap" class="flex items-start gap-2 text-xs mt-2 mb-2" style="display:none;color:#fcd34d;">
       <input type="checkbox" id="grantAccessNoProof" value="1" style="margin-top:0.15rem;">
-      <span><strong>Grant without proof (emergency)</strong> — closes Awaiting Payment even if the student never uploaded GCash proof. Use Remind to upload for the normal path.</span>
+      <span><strong>Grant without proof (emergency)</strong> â€” closes Awaiting Payment even if the student never uploaded GCash proof. Use Remind to upload for the normal path.</span>
     </label>
     <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies content permissions, and emails the student. Payments already under review with proof can still be closed. Does not create a second purchase grant.</p>
     <div id="grantAccessError" class="admin-modal__error"></div>
@@ -1820,7 +1820,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         $scaTreeScope = 'approve';
         require __DIR__ . '/includes/admin_sca_permission_tree.php';
       ?>
-      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalogâ€¦</p>
       <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
     </div>
     <div id="approveConfirmError" class="admin-modal__error"></div>
@@ -1971,7 +1971,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   })();
 </script>
 <script>
-  /* Early action wiring — must run even if later page scripts throw. */
+  /* Early action wiring â€” must run even if later page scripts throw. */
   (function () {
     function openGrantFromBtn(btn) {
       if (!btn || typeof window.adminStudentsOpenGrant !== 'function') {
@@ -2535,7 +2535,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         });
         var label = ids.length === 1
           ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
-          : (ids.length + ' students — same duration & content selection for all');
+          : (ids.length + ' students â€” same duration & content selection for all');
         openGrant(ids, label, anyNeedsProof);
       });
     }
@@ -2555,7 +2555,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
       if (pendingNeedsProof && noProofChk && !noProofChk.checked) {
         if (errEl) {
-          errEl.textContent = 'This student has no payment proof. Use Remind to upload, or check “Grant without proof (emergency)”.';
+          errEl.textContent = 'This student has no payment proof. Use Remind to upload, or check â€œGrant without proof (emergency)â€.';
         }
         return;
       }
@@ -2572,7 +2572,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         }
       }
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Granting…';
+      submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Grantingâ€¦';
       if (errEl) errEl.textContent = '';
       var fd = new FormData();
       fd.append('csrf_token', csrf);
@@ -2647,7 +2647,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     }
     function showLoading(title, message) {
       if (!loadingOverlay) return;
-      if (loadingTitle) loadingTitle.textContent = title || 'Sending reminder…';
+      if (loadingTitle) loadingTitle.textContent = title || 'Sending reminderâ€¦';
       if (loadingMessage) loadingMessage.textContent = message || 'Please wait while we email the student.';
       loadingOverlay.classList.add('is-open');
       loadingOverlay.setAttribute('aria-hidden', 'false');
@@ -2664,7 +2664,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       var pid = pending.pid;
       var name = pending.name;
       closeConfirm();
-      showLoading('Sending reminder…', 'Emailing ' + (name || 'the student') + ' a secure upload link.');
+      showLoading('Sending reminderâ€¦', 'Emailing ' + (name || 'the student') + ' a secure upload link.');
       var fd = new FormData();
       fd.append('csrf_token', csrf);
       fd.append('user_id', String(uid));
@@ -2964,14 +2964,14 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var accessLink = document.getElementById('studentDrawerAccessLink');
 
     function setText(el, value) {
-      if (el) el.textContent = value || '—';
+      if (el) el.textContent = value || 'â€”';
     }
 
     function openFromRow(row) {
       if (!row) return;
       var id = row.getAttribute('data-user-id') || '';
       var name = row.getAttribute('data-drawer-name') || 'Student';
-      var email = row.getAttribute('data-drawer-email') || '—';
+      var email = row.getAttribute('data-drawer-email') || 'â€”';
       var avatar = row.getAttribute('data-drawer-avatar') || '';
       var initial = row.getAttribute('data-drawer-initial') || 'U';
       setText(titleEl, name);
@@ -2981,16 +2981,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       setText(reviewEl, row.getAttribute('data-drawer-review'));
       setText(createdEl, row.getAttribute('data-drawer-created'));
       setText(accessEl, row.getAttribute('data-drawer-access'));
-      setText(accessMetaEl, row.getAttribute('data-drawer-access-meta') || '—');
+      setText(accessMetaEl, row.getAttribute('data-drawer-access-meta') || 'â€”');
       setText(activityEl, row.getAttribute('data-drawer-activity'));
       setText(proofEl, row.getAttribute('data-drawer-proof'));
       setText(enrollEl, row.getAttribute('data-drawer-enrollment'));
-      var topicsVal = row.getAttribute('data-drawer-topics') || '—';
+      var topicsVal = row.getAttribute('data-drawer-topics') || 'â€”';
       var pathVal = row.getAttribute('data-enrollment-path') || '';
       setText(topicsEl, topicsVal);
       var topicsRow = document.getElementById('studentDrawerTopicsRow');
       if (topicsRow) {
-        topicsRow.style.display = (pathVal === 'by_topic' && topicsVal && topicsVal !== '—') ? '' : 'none';
+        topicsRow.style.display = (pathVal === 'by_topic' && topicsVal && topicsVal !== 'â€”') ? '' : 'none';
       }
       setText(paymentEl, row.getAttribute('data-drawer-payment'));
       setText(commerceAccessEl, row.getAttribute('data-drawer-commerce-access'));

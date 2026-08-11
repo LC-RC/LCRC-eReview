@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/preboards_migrate.php';
 require_once __DIR__ . '/includes/preboards_helpers.php';
 
@@ -392,7 +392,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
         <span class="font-semibold text-gray-800">Preboards</span>
         <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-200 text-gray-700"><?php echo (int)$total; ?></span>
       </div>
-      <p class="text-gray-500 text-sm hidden md:block m-0">These are shown to students under “Preboards”.</p>
+      <p class="text-gray-500 text-sm hidden md:block m-0">These are shown to students under â€œPreboardsâ€.</p>
       <div class="text-gray-500 text-sm text-right">
         <?php if ($total > 0): ?>
           <span>Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo $total; ?> preboards</span>
@@ -428,7 +428,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Preboards'] ];
                 <td class="px-5 py-3 text-center">
                   <div class="font-semibold text-gray-800"><?php echo h($s['subject_name']); ?></div>
                   <?php if (!empty($s['description'])): ?>
-                    <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 90, '…')); ?></div>
+                    <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 90, 'â€¦')); ?></div>
                   <?php endif; ?>
                 </td>
                 <td class="px-5 py-3 text-center">

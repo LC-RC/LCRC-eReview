@@ -1,12 +1,12 @@
-<?php
+﻿<?php
 /**
- * Admin Grant Access — creates source=admin_manual grant(s) + SCA.
+ * Admin Grant Access â€” creates source=admin_manual grant(s) + SCA.
  * Supports Full LMS or by-topic permissions (same picker as Student Access).
  * Does not verify payment or run paid fulfillment.
  * Accepts user_id (single) or user_ids (JSON array / comma list) for bulk.
  */
 require_once __DIR__ . '/auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/commerce_catalog.php';
 require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
@@ -189,6 +189,19 @@ foreach ($userIds as $userId) {
 
 $okCount = count($granted);
 $failCount = count($failed);
+
+if ($okCount > 0) {
+    require_once __DIR__ . '/includes/admin_acl.php';
+    $grantedIds = array_map(static function ($g) {
+        return (int) ($g['user_id'] ?? 0);
+    }, $granted);
+    users_activity_log($conn, 'access_granted', [
+        'user_ids' => $grantedIds,
+        'scope' => $scopeLabel ?? '',
+        'granted_count' => $okCount,
+        'failed_count' => $failCount,
+    ], getCurrentUserId(), null, 'admin', $okCount === 1 ? (int) ($grantedIds[0] ?? 0) : null);
+}
 
 if ($okCount === 0) {
     $first = $failed[0]['message'] ?? 'Could not grant access.';

@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 $pageTitle = 'Admin Dashboard';
 
 $csrf = generateCSRFToken();
@@ -45,7 +45,7 @@ if ($useDashCache) {
     require_once __DIR__ . '/includes/commerce_access_gate.php';
     $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
     $enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
-    // True registration queue only — not "missing grant" (legacy enrolled are restored separately).
+    // True registration queue only â€” not "missing grant" (legacy enrolled are restored separately).
     $pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
     $expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
@@ -143,7 +143,7 @@ if (!$useDashCache) {
     mysqli_free_result($quizRes);
   }
 
-  // New this week (registrations in last 7 days) — for "at a glance" recency
+  // New this week (registrations in last 7 days) â€” for "at a glance" recency
   $newThisWeek = 0;
   $weekRes = @mysqli_query($conn, "
     SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -198,16 +198,22 @@ if (!$useDashCache) {
   <section class="quiz-admin-hero page-hero admin-glass-hero admin-dashboard-hero" aria-labelledby="admin-dash-greeting">
     <div class="admin-page-header">
       <div class="min-w-0">
-        <p class="admin-breadcrumb mb-2" style="margin:0 0 0.45rem;color:var(--admin-text-muted);font-size:0.78rem;">LCRC eReview · Admin</p>
+        <p class="admin-breadcrumb mb-2" style="margin:0 0 0.45rem;color:var(--admin-text-muted);font-size:0.78rem;">LCRC eReview &middot; Admin</p>
         <h1 id="admin-dash-greeting" class="admin-dash-greeting"><span><?php echo h($dashGreeting); ?>, <?php echo h($dashFirst); ?></span></h1>
-        <p class="admin-page-header__subtitle">Here’s what’s happening across enrollments, access, and content.</p>
+        <p class="admin-page-header__subtitle">Here's what's happening across enrollments, access, and content.</p>
         <?php if ($lastLoginAt): ?>
-          <p class="text-sm mt-2 mb-0" style="color:var(--admin-text-muted)"><i class="bi bi-clock-history mr-1"></i>Last login <?php echo date('M j, Y · g:i A', strtotime($lastLoginAt)); ?></p>
+          <p class="text-sm mt-2 mb-0" style="color:var(--admin-text-muted)"><i class="bi bi-clock-history mr-1"></i>Last login <?php echo date('M j, Y', strtotime($lastLoginAt)); ?> &middot; <?php echo date('g:i A', strtotime($lastLoginAt)); ?></p>
         <?php endif; ?>
       </div>
       <div class="admin-page-header__actions">
-        <a href="admin_students?tab=pending" class="admin-btn admin-btn--primary"><i class="bi bi-hourglass-split"></i> Review pending<?php echo $pendingCount > 0 ? ' (' . (int)$pendingCount . ')' : ''; ?></a>
-        <a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-book"></i> Content Hub</a>
+        <?php if (admin_can('students')): ?>
+          <a href="admin_students?tab=pending" class="admin-btn admin-btn--primary"><i class="bi bi-hourglass-split"></i> Review pending<?php echo $pendingCount > 0 ? ' (' . (int)$pendingCount . ')' : ''; ?></a>
+        <?php endif; ?>
+        <?php if (admin_can('subjects')): ?>
+          <a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-book"></i> Content Hub</a>
+        <?php elseif (admin_can('quizzes')): ?>
+          <a href="admin_quizzes" class="admin-btn admin-btn--secondary"><i class="bi bi-ui-checks-grid"></i> Quizzes</a>
+        <?php endif; ?>
       </div>
     </div>
   </section>
@@ -227,7 +233,7 @@ if (!$useDashCache) {
     </div>
   <?php endif; ?>
 
-  <?php if ($pendingCount > 0): ?>
+  <?php if ($pendingCount > 0 && admin_can('students')): ?>
     <div class="admin-dashboard-alert mb-5 p-4 rounded-xl flex items-center gap-4 flex-wrap">
       <div class="flex items-center gap-2 shrink-0">
         <span class="admin-alert-icon w-10 h-10 rounded-full flex items-center justify-center"><i class="bi bi-exclamation-circle text-xl"></i></span>
@@ -240,29 +246,36 @@ if (!$useDashCache) {
     </div>
   <?php endif; ?>
 
+  <?php
+    $canStudents = admin_can('students');
+    $canSubjects = admin_can('subjects');
+    $canQuizzes = admin_can('quizzes');
+    $subjectsHref = $canSubjects ? 'admin_subjects' : ($canQuizzes ? 'admin_quizzes' : '#');
+    $subjectsLocked = !$canSubjects && !$canQuizzes;
+  ?>
   <section class="admin-dash-kpis" aria-label="Key metrics">
-    <a href="admin_students?tab=enrolled" class="dashboard-card dashboard-card--featured dashboard-card--enrolled page-card p-5 flex flex-col no-underline" style="color:inherit">
+    <a href="<?php echo $canStudents ? 'admin_students?tab=enrolled' : '#'; ?>" class="dashboard-card dashboard-card--featured dashboard-card--enrolled page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-people-fill"></i> Active Students</div>
       <div class="admin-kpi-value"><?php echo (int)$enrolledCount; ?></div>
       <div class="text-sm" style="color:var(--admin-text-secondary)"><?php echo (int)$newThisWeek; ?> new this week · <?php echo (int)$quizAttemptsLast30; ?> quiz answers (30d)</div>
       <span class="dashboard-card__btn mt-auto mt-4 w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2"><i class="bi bi-arrow-right"></i> View enrolled</span>
     </a>
-    <a href="admin_students?tab=pending" class="dashboard-card dashboard-card--pending page-card p-5 flex flex-col no-underline" style="color:inherit">
+    <a href="<?php echo $canStudents ? 'admin_students?tab=pending' : '#'; ?>" class="dashboard-card dashboard-card--pending page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-hourglass-split"></i> Pending</div>
       <div class="admin-kpi-value"><?php echo (int)$pendingCount; ?></div>
       <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Review</span>
     </a>
-    <a href="admin_students?tab=expired" class="dashboard-card dashboard-card--expired page-card p-5 flex flex-col no-underline" style="color:inherit">
+    <a href="<?php echo $canStudents ? 'admin_students?tab=expired' : '#'; ?>" class="dashboard-card dashboard-card--expired page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-calendar-x"></i> Expiring / Expired</div>
       <div class="admin-kpi-value"><?php echo (int)$expiredCount; ?></div>
       <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$expiringIn7; ?> end within 7 days</div>
       <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Open</span>
     </a>
-    <a href="admin_subjects" class="dashboard-card dashboard-card--subjects page-card p-5 flex flex-col no-underline" style="color:inherit">
+    <a href="<?php echo h($subjectsHref); ?>" class="dashboard-card dashboard-card--subjects page-card p-5 flex flex-col no-underline<?php echo $subjectsLocked ? ' opacity-50 cursor-not-allowed' : ''; ?>" style="color:inherit"<?php echo $subjectsLocked ? ' aria-disabled="true" onclick="return false;" title="Locked — no access to content"' : ''; ?>>
       <div class="dashboard-card__title"><i class="bi bi-book"></i> Courses / Subjects</div>
       <div class="admin-kpi-value"><?php echo (int)$subjectsRow['cnt']; ?></div>
-      <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$lessonsRow['cnt']; ?> lessons · <?php echo (int)$quizzesRow['cnt']; ?> quizzes</div>
-      <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Manage</span>
+      <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$lessonsRow['cnt']; ?> lessons &middot; <?php echo (int)$quizzesRow['cnt']; ?> quizzes</div>
+      <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2"><?php echo $canQuizzes && !$canSubjects ? 'Quizzes' : 'Manage'; ?></span>
     </a>
   </section>
 
@@ -271,7 +284,7 @@ if (!$useDashCache) {
       <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
           <h2 class="page-section-title text-lg m-0">Enrollment / Registration Overview</h2>
-          <p class="text-sm mt-1 mb-0" style="color:var(--admin-text-muted)">New student registrations · last 6 months</p>
+          <p class="text-sm mt-1 mb-0" style="color:var(--admin-text-muted)">New student registrations &middot; last 6 months</p>
         </div>
         <p class="text-sm font-semibold m-0" style="color:var(--admin-text)">Total <span class="admin-kpi-number"><?php echo (int)array_sum($enrollmentByMonth); ?></span></p>
       </div>
@@ -299,7 +312,7 @@ if (!$useDashCache) {
               <span class="admin-status-pill admin-status-pill--<?php echo h($pill); ?>"><?php echo h($rs['status']); ?></span>
             </div>
           <?php endforeach; ?>
-          <a href="admin_students" class="mt-3 inline-flex text-sm font-medium admin-link">View all students →</a>
+          <a href="admin_students" class="mt-3 inline-flex text-sm font-medium admin-link">View all students &rarr;</a>
         <?php endif; ?>
       </div>
 
@@ -307,6 +320,7 @@ if (!$useDashCache) {
         <h2 class="page-section-title text-lg m-0 mb-1">Pending Actions</h2>
         <p class="text-sm mb-3" style="color:var(--admin-text-muted)">What to do next</p>
         <ul class="admin-dash-actions-list">
+          <?php if ($canStudents): ?>
           <li>
             <a class="admin-dash-action" href="admin_students?tab=pending">
               <span class="admin-dash-action__icon"><i class="bi bi-hourglass-split"></i></span>
@@ -325,15 +339,18 @@ if (!$useDashCache) {
               </span>
             </a>
           </li>
+          <?php endif; ?>
+          <?php if ($canSubjects || $canQuizzes): ?>
           <li>
-            <a class="admin-dash-action" href="admin_subjects">
+            <a class="admin-dash-action" href="<?php echo h($subjectsHref); ?>">
               <span class="admin-dash-action__icon"><i class="bi bi-journal-richtext"></i></span>
               <span class="min-w-0">
-                <span class="font-semibold block">Update course content</span>
+                <span class="font-semibold block"><?php echo $canSubjects ? 'Update course content' : 'Manage quizzes'; ?></span>
                 <span class="admin-dash-action__meta"><?php echo (int)$subjectsRow['cnt']; ?> subjects</span>
               </span>
             </a>
           </li>
+          <?php endif; ?>
         </ul>
         <?php if (!empty($expiringSoon)): ?>
           <div class="mt-4 pt-3" style="border-top:1px solid var(--admin-border)">

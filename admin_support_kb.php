@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 /**
  * @deprecated Use admin_support_analytics?tab=kb
  */
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 $edit = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
 $q = ['tab' => 'kb'];
 if ($edit !== null) {

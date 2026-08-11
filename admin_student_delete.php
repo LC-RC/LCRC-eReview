@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/auth.php';
-requireRole('admin');
+requireAdminPage();
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -206,6 +206,12 @@ try {
     }
 
     mysqli_commit($conn);
+    require_once __DIR__ . '/includes/admin_acl.php';
+    users_activity_log($conn, 'student_deleted', [
+        'reason' => $finalReason,
+        'email' => (string) ($target['email'] ?? ''),
+        'name' => (string) ($target['full_name'] ?? ''),
+    ], $adminId, null, 'admin', $targetUserId);
     echo json_encode([
         'ok' => true,
         'message' => 'User successfully deleted',

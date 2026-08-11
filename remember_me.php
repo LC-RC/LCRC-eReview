@@ -337,6 +337,21 @@ function loginFromRememberMe() {
         mysqli_stmt_close($upd);
     }
 
+    require_once __DIR__ . '/includes/admin_acl.php';
+    admin_acl_ensure_schema($conn);
+    if (($user['role'] ?? '') === 'admin') {
+        admin_acl_refresh_session($conn, (int) $user['user_id']);
+    }
+    users_activity_log(
+        $conn,
+        'login_success',
+        ['via' => 'remember'],
+        (int) $user['user_id'],
+        (string) ($user['email'] ?? ''),
+        (string) ($user['role'] ?? ''),
+        null
+    );
+
     return true;
 }
 

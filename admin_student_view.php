@@ -1,6 +1,6 @@
 ﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';

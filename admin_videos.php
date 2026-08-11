@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 require_once 'auth.php';
-requireRole('admin');
+requireAdminPage();
 
 $subjectId = (int)($_GET['subject_id'] ?? 0);
 $lessonId = (int)($_GET['lesson_id'] ?? 0);
@@ -34,10 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = mysqli_prepare($conn, "UPDATE lesson_videos SET video_title=?, video_url=? WHERE video_id=? AND lesson_id=?");
             mysqli_stmt_bind_param($stmt, 'ssii', $title, $finalUrl, $videoId, $lessonId);
             mysqli_stmt_execute($stmt);
+            users_activity_log($conn, 'material_video_updated', [
+                'lesson_id' => $lessonId,
+                'subject_id' => $subjectId,
+                'video_id' => $videoId,
+                'video_title' => $title,
+                'lesson_title' => (string) ($lesson['title'] ?? ''),
+                'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+            ]);
         } else {
             $stmt = mysqli_prepare($conn, "INSERT INTO lesson_videos (lesson_id, video_title, video_url) VALUES (?, ?, ?)");
             mysqli_stmt_bind_param($stmt, 'iss', $lessonId, $title, $finalUrl);
             mysqli_stmt_execute($stmt);
+            users_activity_log($conn, 'video_added', [
+                'lesson_id' => $lessonId,
+                'subject_id' => $subjectId,
+                'video_title' => $title,
+                'lesson_title' => (string) ($lesson['title'] ?? ''),
+                'subject_name' => (string) ($lesson['subject_name'] ?? ''),
+                'upload_type' => $uploadType,
+            ]);
         }
     }
     header('Location: admin_videos?lesson_id='.$lessonId.'&subject_id='.$subjectId);
@@ -79,7 +95,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-play-circle"></i></span>
-      Videos — <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
+      Videos â€” <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
     <p class="text-gray-400 mt-2 mb-0">Add or edit video links or uploads for this lesson.</p>
   </div>
