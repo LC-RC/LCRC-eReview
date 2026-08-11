@@ -610,19 +610,53 @@ function users_activity_log_present(array $row): array
 }
 
 /**
+ * Content tools already reachable from Subjects (Content Hub).
+ * Full-access / super admins only need Subjects in the sidebar.
+ *
+ * @return list<string>
+ */
+function admin_acl_content_hub_child_keys(): array
+{
+    return ['lessons', 'videos', 'handouts', 'materials', 'quizzes', 'test_bank'];
+}
+
+function admin_acl_is_full_access(): bool
+{
+    return admin_acl_session_keys() === null;
+}
+
+/**
  * Annotate sidebar nav by ACL. Keep all items visible; mark locked ones
  * so the UI stays complete but unauthorized links are not clickable.
+ *
+ * Full-access admins: hide Content Hub children (Lessons/Videos/…) — they
+ * open those from Subjects. Restricted staff still see their granted pages.
  *
  * @param list<array<string,mixed>> $navConfig
  * @return list<array<string,mixed>>
  */
 function admin_acl_filter_nav(array $navConfig): array
 {
+    $fullAccess = admin_acl_is_full_access();
+    $hubChildren = array_fill_keys(admin_acl_content_hub_child_keys(), true);
+
     $out = [];
     foreach ($navConfig as $section) {
         $items = [];
+        $sectionLabel = (string) ($section['label'] ?? $section['title'] ?? '');
         foreach (($section['items'] ?? []) as $item) {
             $key = (string) ($item['acl_key'] ?? '');
+
+            // Super / full-access: Content Hub only — drop redundant siblings.
+            if (
+                $fullAccess
+                && strcasecmp($sectionLabel, 'Content') === 0
+                && $key !== ''
+                && isset($hubChildren[$key])
+            ) {
+                continue;
+            }
+
             $allowed = ($key === '' || admin_can($key));
             $item['acl_allowed'] = $allowed;
             $item['acl_locked'] = !$allowed;
@@ -632,6 +666,23 @@ function admin_acl_filter_nav(array $navConfig): array
                 $item['href'] = '#';
                 unset($item['badge']);
             }
+
+            // Full-access: treat Subjects as the Content Hub entry.
+            if ($fullAccess && $key === 'subjects') {
+                $item['label'] = 'Content Hub';
+                $item['title'] = 'Subjects, lessons, videos, handouts, materials, quizzes & test bank';
+                $item['active'] = [
+                    'admin_subjects',
+                    'admin_lessons',
+                    'admin_videos',
+                    'admin_handouts',
+                    'admin_materials',
+                    'admin_quizzes',
+                    'admin_quiz_questions',
+                    'admin_test_bank',
+                ];
+            }
+
             $items[] = $item;
         }
         if ($items !== []) {

@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce â€” Grant Ledger (Phase 9).
+ * Admin Commerce — Grant Ledger (Phase 9).
  * Read-only GET view of access_grants. No mutations, no OCR/proof exposure.
  */
 require_once 'auth.php';
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$pageTitle = 'Commerce â€” Grant Ledger';
+$pageTitle = 'Commerce — Grant Ledger';
 $dash = commerce_grants_admin_build_ledger($conn, $_GET);
 $f = $dash['filters'];
 $rows = $dash['rows'];
@@ -88,7 +88,7 @@ function p9_ledger_qs(array $filters, array $overrides = []): string
     <?php endif; ?>
 
     <form method="get" action="<?php echo h($self); ?>" class="quiz-admin-table-shell rounded-2xl p-4 sm:p-5 mb-5 space-y-3">
-      <div class="text-xs uppercase opacity-60 font-semibold">Filters (GET Â· read-only)</div>
+      <div class="text-xs uppercase opacity-60 font-semibold">Filters (GET · read-only)</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
         <div class="sm:col-span-2">
           <label class="block text-xs opacity-70 mb-1" for="student">Student (name or email)</label>
@@ -165,7 +165,7 @@ function p9_ledger_qs(array $filters, array $overrides = []): string
     <div class="quiz-admin-table-shell rounded-2xl p-4 sm:p-5 mb-5">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div class="text-sm opacity-70">
-          Showing <?php echo $total > 0 ? (($page - 1) * $perPage + 1) : 0; ?>â€“<?php echo min($page * $perPage, $total); ?>
+          Showing <?php echo $total > 0 ? (($page - 1) * $perPage + 1) : 0; ?>–<?php echo min($page * $perPage, $total); ?>
           of <strong><?php echo $total; ?></strong> grant(s)
         </div>
         <div class="text-sm opacity-70">Page <?php echo $page; ?> / <?php echo $totalPages; ?></div>
@@ -216,22 +216,22 @@ function p9_ledger_qs(array $filters, array $overrides = []): string
                     <?php if (!empty($g['payment_id'])): ?>
                       <a class="underline" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $g['payment_id']); ?>">#<?php echo (int) $g['payment_id']; ?></a>
                     <?php else: ?>
-                      â€”
+                      —
                     <?php endif; ?>
                   </td>
-                  <td class="py-2 pr-2"><?php echo !empty($g['payment_item_id']) ? '#' . (int) $g['payment_item_id'] : 'â€”'; ?></td>
+                  <td class="py-2 pr-2"><?php echo !empty($g['payment_item_id']) ? '#' . (int) $g['payment_item_id'] : '—'; ?></td>
                   <td class="py-2 pr-2">
                     <?php if (!empty($g['free_access_request_id'])): ?>
                       <a class="underline" href="<?php echo h(ereview_url('admin_commerce_free_access') . '?id=' . (int) $g['free_access_request_id']); ?>">#<?php echo (int) $g['free_access_request_id']; ?></a>
                     <?php else: ?>
-                      â€”
+                      —
                     <?php endif; ?>
                   </td>
-                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['starts_at'] ?? 'â€”')); ?></td>
-                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['ends_at'] ?? 'â€”')); ?></td>
-                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['revoked_at'] ?? 'â€”')); ?></td>
-                  <td class="py-2 pr-2 max-w-[12rem] break-words"><?php echo h((string) ($g['revoke_reason'] ?? 'â€”')); ?></td>
-                  <td class="py-2 whitespace-nowrap"><?php echo h((string) ($g['created_at'] ?? 'â€”')); ?></td>
+                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['starts_at'] ?? '—')); ?></td>
+                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['ends_at'] ?? '—')); ?></td>
+                  <td class="py-2 pr-2 whitespace-nowrap"><?php echo h((string) ($g['revoked_at'] ?? '—')); ?></td>
+                  <td class="py-2 pr-2 max-w-[12rem] break-words"><?php echo h((string) ($g['revoke_reason'] ?? '—')); ?></td>
+                  <td class="py-2 whitespace-nowrap"><?php echo h((string) ($g['created_at'] ?? '—')); ?></td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>

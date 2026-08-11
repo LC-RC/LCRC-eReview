@@ -29,7 +29,7 @@ $tabQs = static function (string $t) use ($days): string {
     return 'admin_support_analytics?' . http_build_query($q);
 };
 
-// â€”â€”â€” Overview metrics (tab: overview) â€”â€”â€”
+// ——— Overview metrics (tab: overview) ———
 $tablesReady = ereview_chat_tables_ready($conn);
 $sinceExpr = "DATE_SUB(NOW(), INTERVAL {$days} DAY)";
 
@@ -156,7 +156,7 @@ if ($tablesReady && $tab === 'overview') {
     }
 }
 
-// â€”â€”â€” KB backlog (tab: backlog) â€”â€”â€”
+// ——— KB backlog (tab: backlog) ———
 $backlogReady = false;
 $backlogRows = [];
 if ($tab === 'backlog') {
@@ -183,7 +183,7 @@ if ($tab === 'backlog') {
     }
 }
 
-// â€”â€”â€” Knowledge base (tab: kb) â€”â€”â€”
+// ——— Knowledge base (tab: kb) ———
 $v2 = ereview_chat_v2_ready($conn);
 $articles = [];
 $globalBanned = '';
@@ -234,7 +234,7 @@ if ($tab === 'kb') {
     }
 }
 
-// â€”â€”â€” Lookup (tab: lookup) â€”â€”â€”
+// ——— Lookup (tab: lookup) ———
 $lookupResult = null;
 $lookupError = '';
 $lookupEmail = '';
@@ -332,8 +332,8 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
     <div class="admin-stat-card">
-      <p class="admin-stat-card__label">CSAT average (1â€“5)</p>
-      <p class="admin-stat-card__value"><?php echo $csatAvg !== null ? h((string) $csatAvg) : 'â€”'; ?></p>
+      <p class="admin-stat-card__label">CSAT average (1–5)</p>
+      <p class="admin-stat-card__value"><?php echo $csatAvg !== null ? h((string) $csatAvg) : '—'; ?></p>
       <p class="admin-stat-card__meta"><?php echo (int) $csatN; ?> responses</p>
     </div>
     <div class="admin-stat-card">
@@ -343,8 +343,8 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
     </div>
     <div class="admin-stat-card">
       <p class="admin-stat-card__label">Drop-off estimate</p>
-      <p class="admin-stat-card__value"><?php echo $dropoffRate !== null ? h((string) $dropoffRate) : 'â€”'; ?></p>
-      <p class="admin-stat-card__meta">(opens âˆ’ closes) Ã· opens</p>
+      <p class="admin-stat-card__value"><?php echo $dropoffRate !== null ? h((string) $dropoffRate) : '—'; ?></p>
+      <p class="admin-stat-card__meta">(opens − closes) Ã· opens</p>
     </div>
     <div class="admin-stat-card">
       <p class="admin-stat-card__label">KB backlog (pending)</p>
@@ -361,7 +361,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
       <?php else: ?>
         <ul class="m-0 pl-5 text-sm space-y-1">
           <?php foreach ($topIntents as $ti): ?>
-            <li><strong><?php echo h((string) ($ti['intent'] ?? '')); ?></strong> â€” <?php echo (int) ($ti['c'] ?? 0); ?></li>
+            <li><strong><?php echo h((string) ($ti['intent'] ?? '')); ?></strong> — <?php echo (int) ($ti['c'] ?? 0); ?></li>
           <?php endforeach; ?>
         </ul>
       <?php endif; ?>
@@ -373,7 +373,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
       <?php else: ?>
         <ul class="m-0 pl-5 text-sm space-y-2">
           <?php foreach ($topUserMsgs as $tu): ?>
-            <li class="text-gray-700"><?php echo h(mb_substr((string) ($tu['message_text'] ?? ''), 0, 160)); ?><?php echo mb_strlen((string) ($tu['message_text'] ?? '')) > 160 ? 'â€¦' : ''; ?> <span class="text-gray-500">(Ã—<?php echo (int) ($tu['c'] ?? 0); ?>)</span></li>
+            <li class="text-gray-700"><?php echo h(mb_substr((string) ($tu['message_text'] ?? ''), 0, 160)); ?><?php echo mb_strlen((string) ($tu['message_text'] ?? '')) > 160 ? '…' : ''; ?> <span class="text-gray-500">(×<?php echo (int) ($tu['c'] ?? 0); ?>)</span></li>
           <?php endforeach; ?>
         </ul>
       <?php endif; ?>
@@ -402,7 +402,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
             <?php foreach ($ticketRows as $t): ?>
               <tr class="border-b border-gray-100">
                 <td class="py-2 font-semibold">#<?php echo (int) $t['ticket_id']; ?></td>
-                <td class="py-2"><?php echo h(($t['requester_name'] ?: 'Unknown') . ' Â· ' . ($t['requester_email'] ?: '-')); ?></td>
+                <td class="py-2"><?php echo h(($t['requester_name'] ?: 'Unknown') . ' · ' . ($t['requester_email'] ?: '-')); ?></td>
                 <td class="py-2"><?php echo h($t['subject'] ?? ''); ?></td>
                 <td class="py-2"><?php echo h(ucfirst((string) ($t['status'] ?? 'open'))); ?></td>
                 <td class="py-2"><?php echo h((string) ($t['created_at'] ?? '')); ?></td>
@@ -426,7 +426,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
           <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
             <p class="m-0 text-sm text-gray-700"><?php echo h($u['message_text'] ?? ''); ?></p>
             <p class="m-0 mt-1 text-xs text-gray-500">
-              Session: <?php echo h($u['session_id'] ?? ''); ?> Â· Intent: <?php echo h($u['intent'] ?? 'unknown'); ?> Â· Confidence: <?php echo h((string) $u['confidence_score']); ?> Â· <?php echo h($u['created_at'] ?? ''); ?>
+              Session: <?php echo h($u['session_id'] ?? ''); ?> · Intent: <?php echo h($u['intent'] ?? 'unknown'); ?> · Confidence: <?php echo h((string) $u['confidence_score']); ?> · <?php echo h($u['created_at'] ?? ''); ?>
             </p>
           </div>
         <?php endforeach; ?>
@@ -436,7 +436,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
 
   <?php elseif ($tab === 'backlog'): ?>
 
-    <p class="text-sm text-gray-600 mb-4 m-0">Low-confidence or unanswered chat samplesâ€”use this to grow the knowledge base weekly.</p>
+    <p class="text-sm text-gray-600 mb-4 m-0">Low-confidence or unanswered chat samples—use this to grow the knowledge base weekly.</p>
     <?php if (!$backlogReady): ?>
       <div class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
         Run <code class="text-sm">migrations/017_support_chat_ux_analytics.sql</code> to enable the backlog table.
@@ -469,7 +469,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
                     <td class="py-3 pr-2 whitespace-nowrap"><?php echo h($row['intent'] ?? ''); ?></td>
                     <td class="py-3 pr-2"><?php echo h((string) ($row['confidence'] ?? '')); ?></td>
                     <td class="py-3 pr-2"><?php echo h($row['status'] ?? ''); ?></td>
-                    <td class="py-3 pr-2 font-mono text-xs"><?php echo h(substr((string) ($row['session_id'] ?? ''), 0, 12)); ?>â€¦</td>
+                    <td class="py-3 pr-2 font-mono text-xs"><?php echo h(substr((string) ($row['session_id'] ?? ''), 0, 12)); ?>…</td>
                     <td class="py-3">
                       <form method="post" action="admin_support_analytics" class="flex flex-col gap-2 items-start">
                         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -593,7 +593,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
           <h3 class="text-md font-semibold text-gray-800 m-0 mb-2">Recent versions (history)</h3>
           <ul class="text-sm text-gray-600 space-y-1">
             <?php foreach ($versions as $v): ?>
-              <li>#<?php echo (int) $v['version_id']; ?> â€” <?php echo h($v['created_at'] ?? ''); ?> â€” <?php echo h($v['title'] ?? ''); ?></li>
+              <li>#<?php echo (int) $v['version_id']; ?> — <?php echo h($v['created_at'] ?? ''); ?> — <?php echo h($v['title'] ?? ''); ?></li>
             <?php endforeach; ?>
           </ul>
           <p class="text-xs text-gray-400 mt-2">Full snapshots are stored for compliance; restore from DB if needed.</p>
@@ -631,7 +631,7 @@ if ($tab === 'lookup' && isset($_SESSION['support_lookup_state'])) {
           <dt class="text-gray-500">Email</dt><dd><?php echo h($lookupResult['email'] ?? ''); ?></dd>
           <dt class="text-gray-500">Role</dt><dd><?php echo h($lookupResult['role'] ?? ''); ?></dd>
           <dt class="text-gray-500">Status</dt><dd><?php echo h($lookupResult['status'] ?? ''); ?></dd>
-          <dt class="text-gray-500">Access</dt><dd><?php echo h(trim((string) ($lookupResult['access_start'] ?? '') . ' â†’ ' . (string) ($lookupResult['access_end'] ?? ''))); ?></dd>
+          <dt class="text-gray-500">Access</dt><dd><?php echo h(trim((string) ($lookupResult['access_start'] ?? '') . ' → ' . (string) ($lookupResult['access_end'] ?? ''))); ?></dd>
           <dt class="text-gray-500">Months</dt><dd><?php echo h((string) ($lookupResult['access_months'] ?? '')); ?></dd>
           <dt class="text-gray-500">Registered</dt><dd><?php echo h((string) ($lookupResult['created_at'] ?? '')); ?></dd>
         </dl>

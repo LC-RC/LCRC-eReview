@@ -41,17 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($fullName === '' || $email === '' || $password === '') {
             $_SESSION['error'] = 'Name, email, and password are required.';
-            header('Location: admin_admins?view=admins');
+            header('Location: admin_admins?view=admins&add=1');
             exit;
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $_SESSION['error'] = 'Enter a valid email address.';
-            header('Location: admin_admins?view=admins');
+            header('Location: admin_admins?view=admins&add=1');
             exit;
         }
         if (strlen($password) < 8) {
             $_SESSION['error'] = 'Password must be at least 8 characters.';
-            header('Location: admin_admins?view=admins');
+            header('Location: admin_admins?view=admins&add=1');
             exit;
         }
 
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($chk);
         if ($dup) {
             $_SESSION['error'] = 'That email is already registered.';
-            header('Location: admin_admins?view=admins');
+            header('Location: admin_admins?view=admins&add=1');
             exit;
         }
 
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_close($ins);
             }
             $_SESSION['error'] = 'Could not create admin account.';
-            header('Location: admin_admins?view=admins');
+            header('Location: admin_admins?view=admins&add=1');
             exit;
         }
         $newId = (int) mysqli_insert_id($conn);
@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = $password !== ''
             ? 'Admin account, password, and permissions updated.'
             : 'Admin account and permissions updated.';
-        header('Location: admin_admins?view=admins&edit=' . $targetId);
+        header('Location: admin_admins?view=admins');
         exit;
     }
 }
@@ -238,6 +238,7 @@ if ($adminRes) {
 $editAdmin = null;
 $editKeys = [];
 $editFull = true;
+$openAdd = (string) ($_GET['add'] ?? '') === '1';
 if ($editId > 0) {
     foreach ($admins as $a) {
         if ((int) $a['user_id'] === $editId) {
@@ -247,6 +248,25 @@ if ($editId > 0) {
             break;
         }
     }
+}
+
+$aclKeyLabels = [];
+foreach (admin_acl_catalog() as $group) {
+    foreach (($group['keys'] ?? []) as $item) {
+        $aclKeyLabels[(string) $item['key']] = (string) $item['label'];
+    }
+}
+
+$adminsJs = [];
+foreach ($admins as $a) {
+    $adminsJs[] = [
+        'user_id' => (int) $a['user_id'],
+        'full_name' => (string) $a['full_name'],
+        'email' => (string) $a['email'],
+        'status' => (string) ($a['status'] ?? 'approved'),
+        'acl_full' => !empty($a['acl_full']),
+        'acl_keys' => array_values($a['acl_keys'] ?? []),
+    ];
 }
 
 // ---- Users log ----
@@ -330,22 +350,36 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <style>
-    body.admin-app.admin-admins-page #main .admin-content {
+    /* Beat admin-saas .admin-content { max-width: 1400px } — use full main column */
+    html body.admin-app.admin-admins-page #main.admin-main-shell > .admin-content,
+    html body.admin-app.admin-admins-page #main > .admin-content,
+    html body.admin-app.admin-admins-page #main .admin-content {
       max-width: none !important;
       width: 100% !important;
       margin-left: 0 !important;
       margin-right: 0 !important;
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
+      padding-left: 1.25rem !important;
+      padding-right: 1.25rem !important;
+      box-sizing: border-box !important;
+      align-self: stretch !important;
+    }
+    @media (min-width: 768px) {
+      html body.admin-app.admin-admins-page #main > .admin-content {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+      }
+    }
+    html body.admin-app.admin-admins-page #main .quiz-admin-hero,
+    html body.admin-app.admin-admins-page #main .page-hero,
+    html body.admin-app.admin-admins-page #main .acl-tabs,
+    html body.admin-app.admin-admins-page #main .acl-staff-shell,
+    html body.admin-app.admin-admins-page #main .acl-log-shell {
+      width: 100% !important;
+      max-width: none !important;
       box-sizing: border-box;
     }
-    body.admin-app.admin-admins-page .quiz-admin-hero,
-    body.admin-app.admin-admins-page .page-hero,
-    body.admin-app.admin-admins-page .acl-tabs,
-    body.admin-app.admin-admins-page .acl-grid,
-    body.admin-app.admin-admins-page .acl-log-shell {
-      width: 100%;
-      max-width: none;
+    body.admin-app.admin-admins-page.acl-modal-open {
+      overflow: hidden;
     }
 
     .acl-tabs {
@@ -362,15 +396,6 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(37,99,235,.16));
       color: #fff; box-shadow: inset 0 0 0 1px rgba(147,197,253,.28);
     }
-
-    .acl-grid {
-      display: grid;
-      grid-template-columns: minmax(18rem, 30%) minmax(0, 1fr);
-      gap: 1.1rem;
-      align-items: start;
-      width: 100%;
-    }
-    @media (max-width: 1100px) { .acl-grid { grid-template-columns: 1fr; } }
 
     .acl-section-label {
       margin: 0 0 0.55rem;
@@ -397,70 +422,114 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       margin: 0; font-size: 1rem; font-weight: 750; letter-spacing: -0.02em; color: var(--admin-text);
     }
     .acl-card__sub { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--admin-text-muted); }
-    .acl-card__body { padding: 1rem 1.1rem 1.15rem; }
+    .acl-card__body { padding: 0; }
+    .acl-card__body--pad { padding: 1rem 1.1rem 1.15rem; }
     .acl-count {
       font-size: 0.72rem; font-weight: 800; color: var(--admin-text-muted);
       padding: 0.2rem 0.55rem; border-radius: 999px; border: 1px solid var(--admin-border);
       background: rgba(255,255,255,.03);
     }
 
-    .acl-admin-list { display: flex; flex-direction: column; gap: 0.55rem; }
-    .acl-admin-row {
-      display: flex; align-items: center; gap: 0.7rem;
-      padding: 0.7rem 0.75rem;
-      border: 1px solid var(--admin-border);
-      border-radius: 0.8rem;
-      background: rgba(255,255,255,.03);
-      transition: border-color .15s ease, background .15s ease;
-    }
-    .acl-admin-row:hover {
-      border-color: rgba(59,130,246,.35);
-      background: rgba(59,130,246,.06);
-    }
-    .acl-admin-row.is-editing {
-      border-color: rgba(59,130,246,.55);
-      background: rgba(59,130,246,.1);
-      box-shadow: inset 0 0 0 1px rgba(147,197,253,.18);
-    }
     .acl-avatar {
       width: 2.35rem; height: 2.35rem; border-radius: 0.7rem; flex-shrink: 0;
       display: grid; place-items: center;
       background: linear-gradient(135deg, #3b82f6, #1d4ed8);
       color: #fff; font-weight: 800; font-size: 0.85rem;
     }
-    .acl-admin-meta { flex: 1; min-width: 0; }
+    .acl-admin-cell {
+      display: flex; align-items: center; gap: 0.7rem; min-width: 0;
+    }
     .acl-admin-name {
       font-size: 0.9rem; font-weight: 700; color: var(--admin-text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .acl-admin-email {
-      font-size: 0.76rem; color: var(--admin-text-muted);
+      font-size: 0.8rem; color: var(--admin-text-muted);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .acl-admin-actions {
-      display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0;
+      max-width: 18rem;
     }
     .acl-pill {
       display: inline-flex; align-items: center; gap: 0.25rem;
-      padding: 0.16rem 0.5rem; border-radius: 999px;
-      font-size: 0.68rem; font-weight: 750; line-height: 1.2;
+      padding: 0.2rem 0.55rem; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 750; line-height: 1.2;
       border: 1px solid var(--admin-border); color: var(--admin-text-secondary);
       background: rgba(255,255,255,.04);
+      white-space: nowrap;
     }
     .acl-pill--full {
       color: #86efac; border-color: rgba(34,197,94,.4);
       background: rgba(22,163,74,.16);
     }
+    html[data-admin-theme="light"] .acl-pill--full {
+      color: #15803d; border-color: rgba(22,163,74,.35);
+      background: rgba(22,163,74,.1);
+    }
+    .acl-pill--status {
+      color: #86efac; border-color: rgba(34,197,94,.35);
+      background: rgba(22,163,74,.12);
+    }
+    html[data-admin-theme="light"] .acl-pill--status {
+      color: #15803d; background: rgba(22,163,74,.1);
+    }
+    .acl-pill--muted {
+      color: var(--admin-text-muted);
+    }
+    .acl-access-detail {
+      display: block; margin-top: 0.2rem;
+      font-size: 0.7rem; color: var(--admin-text-muted);
+      max-width: 16rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .acl-empty {
-      padding: 1.5rem 0.75rem; text-align: center;
+      padding: 2rem 1rem; text-align: center;
       font-size: 0.84rem; color: var(--admin-text-muted);
     }
 
-    .acl-form-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 0.85rem;
+    .acl-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    @media (max-width: 720px) { .acl-form-grid { grid-template-columns: 1fr; } }
-    .acl-form-grid .acl-field--full { grid-column: 1 / -1; }
+    .acl-staff-table {
+      width: 100%;
+      min-width: 52rem;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    .acl-staff-table th,
+    .acl-staff-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--admin-border);
+      text-align: left;
+      vertical-align: middle;
+    }
+    .acl-staff-table th {
+      color: var(--admin-text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 800;
+      background: rgba(0,0,0,.08);
+      white-space: nowrap;
+    }
+    html[data-admin-theme="light"] .acl-staff-table th {
+      background: rgba(15,23,42,.03);
+    }
+    .acl-staff-table tbody tr {
+      transition: background .15s ease;
+    }
+    .acl-staff-table tbody tr:hover td {
+      background: rgba(59,130,246,.06);
+    }
+    .acl-staff-table td:last-child {
+      white-space: nowrap;
+    }
+    .acl-edit-btn {
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .acl-edit-btn:hover {
+      border-color: rgba(59,130,246,.45) !important;
+      background: rgba(59,130,246,.1) !important;
+    }
 
     .acl-field { margin: 0; }
     .acl-field label {
@@ -473,6 +542,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       border: 1px solid var(--admin-border-strong, var(--admin-border));
       background: rgba(15,23,42,.35); color: var(--admin-text);
       padding: 0.45rem 0.75rem; font-size: 0.88rem;
+      box-sizing: border-box;
     }
     html[data-admin-theme="light"] .acl-field input[type="text"],
     html[data-admin-theme="light"] .acl-field input[type="email"],
@@ -486,10 +556,31 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       outline: none; border-color: rgba(59,130,246,.65);
       box-shadow: 0 0 0 3px rgba(59,130,246,.18);
     }
+    .acl-form-stack { display: flex; flex-direction: column; gap: 0.85rem; }
+
+    .acl-pass-wrap { position: relative; }
+    .acl-pass-wrap input {
+      padding-right: 2.75rem !important;
+    }
+    .acl-pass-toggle {
+      position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+      width: 2.1rem; height: 2.1rem; border: 0; border-radius: 0.55rem;
+      background: transparent; color: var(--admin-text-muted); cursor: pointer;
+      display: grid; place-items: center; padding: 0;
+      transition: color .15s ease, background .15s ease;
+    }
+    .acl-pass-toggle:hover {
+      color: var(--admin-text);
+      background: rgba(59,130,246,.1);
+    }
+    .acl-pass-toggle:focus-visible {
+      outline: 2px solid rgba(59,130,246,.55);
+      outline-offset: 1px;
+    }
 
     .acl-full-toggle {
       display: flex; align-items: flex-start; gap: 0.65rem;
-      margin: 1rem 0 0.85rem; padding: 0.75rem 0.85rem;
+      margin: 0.15rem 0; padding: 0.75rem 0.85rem;
       border-radius: 0.8rem; border: 1px solid rgba(59,130,246,.28);
       background: rgba(59,130,246,.08); cursor: pointer;
     }
@@ -501,7 +592,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       border: 1px solid var(--admin-border);
       border-radius: 0.85rem;
       background: rgba(0,0,0,.12);
-      max-height: min(32rem, 58vh);
+      max-height: min(18rem, 40vh);
       overflow: auto;
       padding: 0.65rem 0.75rem 0.85rem;
     }
@@ -515,9 +606,8 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     .acl-group:first-child { margin-top: 0.15rem; }
     html[data-admin-theme="light"] .acl-group { color: #1d4ed8; border-bottom-color: rgba(37,99,235,.15); }
     .acl-key-grid {
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.2rem 0.55rem;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 0.55rem;
     }
-    @media (max-width: 1280px) { .acl-key-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 640px) { .acl-key-grid { grid-template-columns: 1fr; } }
     .acl-check {
       display: flex; align-items: center; gap: 0.45rem;
@@ -527,10 +617,69 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     .acl-check:hover { background: rgba(59,130,246,.08); }
     .acl-check input { width: 1rem; height: 1rem; accent-color: #2563eb; flex-shrink: 0; }
 
-    .acl-actions {
-      display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
-      margin-top: 1rem; padding-top: 0.9rem;
+    .acl-modal {
+      position: fixed; inset: 0; z-index: 80;
+      display: none; align-items: center; justify-content: center;
+      padding: 1rem;
+      background: rgba(2, 6, 23, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .acl-modal.is-open { display: flex; }
+    .acl-modal__panel {
+      width: min(36rem, 100%);
+      max-height: min(92vh, 52rem);
+      display: flex; flex-direction: column;
+      border-radius: 1rem;
+      border: 1px solid var(--admin-border-strong, var(--admin-border));
+      background: var(--admin-glass-strong, var(--admin-surface, #0f172a));
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      overflow: hidden;
+    }
+    html[data-admin-theme="light"] .acl-modal__panel {
+      background: #fff;
+      box-shadow: 0 24px 60px rgba(15,23,42,.18);
+    }
+    .acl-modal__head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
+      padding: 1rem 1.15rem;
+      border-bottom: 1px solid var(--admin-border);
+      flex-shrink: 0;
+    }
+    .acl-modal__head h2 {
+      margin: 0; font-size: 1.05rem; font-weight: 780; color: var(--admin-text);
+      letter-spacing: -0.02em;
+    }
+    .acl-modal__sub {
+      margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--admin-text-muted);
+    }
+    .acl-modal__close {
+      width: 2.2rem; height: 2.2rem; border-radius: 0.65rem;
+      border: 1px solid var(--admin-border); background: rgba(255,255,255,.04);
+      color: var(--admin-text-secondary); cursor: pointer;
+      display: grid; place-items: center; flex-shrink: 0;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .acl-modal__close:hover {
+      color: var(--admin-text);
+      border-color: rgba(59,130,246,.4);
+      background: rgba(59,130,246,.1);
+    }
+    .acl-modal__body {
+      padding: 1.05rem 1.15rem;
+      overflow-y: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .acl-modal__foot {
+      display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem;
+      padding: 0.9rem 1.15rem;
       border-top: 1px solid var(--admin-border);
+      flex-shrink: 0;
+      background: rgba(0,0,0,.08);
+    }
+    html[data-admin-theme="light"] .acl-modal__foot {
+      background: rgba(15,23,42,.02);
     }
 
     .acl-log-shell { width: 100%; }
@@ -569,11 +718,10 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 </head>
 <body class="admin-app admin-admins-page">
 <?php include 'admin_sidebar.php'; ?>
-<main id="main" class="admin-main-shell">
-  <?php include __DIR__ . '/includes/admin_topbar.php'; ?>
-  <div class="admin-content p-4 md:p-6">
     <?php
-      $adminHeroActions = '';
+      $adminHeroActions = ($view === 'admins')
+        ? '<button type="button" class="admin-btn admin-btn--primary" id="aclOpenAddBtn"><i class="bi bi-plus-lg"></i> Add Admin</button>'
+        : '';
       include __DIR__ . '/includes/components/admin_page_hero.php';
     ?>
 
@@ -590,137 +738,126 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     </nav>
 
     <?php if ($view === 'admins'): ?>
-      <div class="acl-grid">
-        <section class="acl-card">
-          <div class="acl-card__head">
-            <div>
-              <h2>Staff admins</h2>
-              <p class="acl-card__sub">Accounts with admin role</p>
-            </div>
-            <span class="acl-count"><?php echo count($admins); ?></span>
+      <section class="acl-card acl-staff-shell">
+        <div class="acl-card__head">
+          <div>
+            <h2>Staff Admins</h2>
+            <p class="acl-card__sub">Accounts with admin role — edit access areas and credentials</p>
           </div>
-          <div class="acl-card__body">
-            <?php if ($admins === []): ?>
-              <p class="acl-empty">No admin accounts found.</p>
-            <?php else: ?>
-              <div class="acl-admin-list">
-                <?php foreach ($admins as $a):
-                  $isEditing = $editAdmin && (int) $editAdmin['user_id'] === (int) $a['user_id'];
-                  $initial = strtoupper(substr(trim((string) $a['full_name']), 0, 1));
-                  if ($initial === '') {
-                      $initial = '?';
-                  }
-                ?>
-                  <div class="acl-admin-row<?php echo $isEditing ? ' is-editing' : ''; ?>">
-                    <div class="acl-avatar" aria-hidden="true"><?php echo h($initial); ?></div>
-                    <div class="acl-admin-meta">
-                      <div class="acl-admin-name"><?php echo h($a['full_name']); ?></div>
-                      <div class="acl-admin-email"><?php echo h($a['email']); ?></div>
-                    </div>
-                    <div class="acl-admin-actions">
-                      <?php if (!empty($a['acl_full'])): ?>
-                        <span class="acl-pill acl-pill--full">Full access</span>
-                      <?php else: ?>
-                        <span class="acl-pill"><?php echo count($a['acl_keys']); ?> area(s)</span>
-                      <?php endif; ?>
-                      <a class="admin-btn admin-btn--secondary admin-btn--sm" href="admin_admins?view=admins&edit=<?php echo (int) $a['user_id']; ?>">
-                        <?php echo $isEditing ? 'Editing…' : 'Edit'; ?>
-                      </a>
-                    </div>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-            <?php endif; ?>
-          </div>
-        </section>
-
-        <section class="acl-card">
-          <?php if ($editAdmin): ?>
-            <div class="acl-card__head">
-              <div>
-                <h2>Edit admin</h2>
-                <p class="acl-card__sub">Update credentials and unlocked admin areas</p>
-              </div>
-            </div>
-            <div class="acl-card__body">
-              <form method="POST" action="admin_admins" autocomplete="off">
-                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                <input type="hidden" name="action" value="save_admin">
-                <input type="hidden" name="user_id" value="<?php echo (int) $editAdmin['user_id']; ?>">
-
-                <p class="acl-section-label">Account</p>
-                <div class="acl-form-grid">
-                  <div class="acl-field acl-field--full">
-                    <label for="edit_full_name">Full name</label>
-                    <input type="text" id="edit_full_name" name="full_name" required maxlength="150"
-                           value="<?php echo h($editAdmin['full_name']); ?>">
-                  </div>
-                  <div class="acl-field">
-                    <label for="edit_email">Email</label>
-                    <input type="email" id="edit_email" name="email" required maxlength="120"
-                           value="<?php echo h($editAdmin['email']); ?>">
-                  </div>
-                  <div class="acl-field">
-                    <label for="edit_password">New password</label>
-                    <input type="password" id="edit_password" name="password" minlength="8" autocomplete="new-password"
-                           placeholder="Leave blank to keep current">
-                    <p class="acl-hint">Optional. Min. 8 characters if changing.</p>
-                  </div>
-                </div>
-
-                <p class="acl-section-label" style="margin-top:1rem;">Access</p>
-                <p class="acl-card__sub" style="margin-bottom:0.75rem;">Unchecked areas stay visible in the sidebar but locked (not clickable) and blocked by URL.</p>
-                <label class="acl-full-toggle" for="editFullAccess">
-                  <input type="checkbox" name="full_access" value="1" id="editFullAccess" <?php echo $editFull ? 'checked' : ''; ?>>
-                  <span>
-                    <strong>Full access</strong>
-                    <span>Unlock every admin area for this account</span>
-                  </span>
-                </label>
-                <div id="editKeysWrap" class="acl-keys-panel" <?php echo $editFull ? 'style="opacity:.45;pointer-events:none;"' : ''; ?>>
-                  <?php foreach ($catalog as $group): ?>
-                    <div class="acl-group"><?php echo h($group['group']); ?></div>
-                    <div class="acl-key-grid">
-                      <?php foreach ($group['keys'] as $item): ?>
-                        <label class="acl-check">
-                          <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>"
-                            <?php echo (!$editFull && in_array($item['key'], $editKeys, true)) ? 'checked' : ''; ?>>
-                          <span><?php echo h($item['label']); ?></span>
-                        </label>
-                      <?php endforeach; ?>
-                    </div>
-                  <?php endforeach; ?>
-                </div>
-                <div class="acl-actions">
-                  <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm">Save changes</button>
-                  <a class="admin-btn admin-btn--ghost admin-btn--sm" href="admin_admins?view=admins">Cancel</a>
-                </div>
-              </form>
-            </div>
+          <span class="acl-count"><?php echo count($admins); ?></span>
+        </div>
+        <div class="acl-card__body">
+          <?php if ($admins === []): ?>
+            <p class="acl-empty">No admin accounts found. Use <strong>Add Admin</strong> to create one.</p>
           <?php else: ?>
-            <div class="acl-card__head">
-              <div>
-                <h2>Add admin</h2>
-                <p class="acl-card__sub">Create a staff login and unlock only the areas they need</p>
-              </div>
+            <div class="acl-table-wrap">
+              <table class="acl-staff-table">
+                <thead>
+                  <tr>
+                    <th>Admin</th>
+                    <th>Email</th>
+                    <th>Access / Areas</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($admins as $a):
+                    $initial = strtoupper(substr(trim((string) $a['full_name']), 0, 1));
+                    if ($initial === '') {
+                        $initial = '?';
+                    }
+                    $isFull = !empty($a['acl_full']);
+                    $keys = $a['acl_keys'] ?? [];
+                    $areaLabels = [];
+                    if (!$isFull) {
+                        foreach ($keys as $k) {
+                            $areaLabels[] = $aclKeyLabels[$k] ?? $k;
+                        }
+                    }
+                    $statusRaw = strtolower((string) ($a['status'] ?? 'approved'));
+                    $statusLabel = $statusRaw === 'approved' ? 'Active' : ucfirst($statusRaw);
+                  ?>
+                    <tr>
+                      <td>
+                        <div class="acl-admin-cell">
+                          <div class="acl-avatar" aria-hidden="true"><?php echo h($initial); ?></div>
+                          <div class="acl-admin-name"><?php echo h($a['full_name']); ?></div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="acl-admin-email" title="<?php echo h($a['email']); ?>"><?php echo h($a['email']); ?></div>
+                      </td>
+                      <td>
+                        <?php if ($isFull): ?>
+                          <span class="acl-pill acl-pill--full">Full access</span>
+                          <span class="acl-access-detail">All admin areas</span>
+                        <?php else: ?>
+                          <span class="acl-pill"><?php echo count($keys); ?> area<?php echo count($keys) === 1 ? '' : 's'; ?></span>
+                          <?php if ($areaLabels !== []): ?>
+                            <span class="acl-access-detail" title="<?php echo h(implode(', ', $areaLabels)); ?>">
+                              <?php echo h(implode(', ', array_slice($areaLabels, 0, 3))); ?><?php echo count($areaLabels) > 3 ? '…' : ''; ?>
+                            </span>
+                          <?php endif; ?>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <span class="acl-pill <?php echo $statusRaw === 'approved' ? 'acl-pill--status' : 'acl-pill--muted'; ?>">
+                          <?php echo h($statusLabel); ?>
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="admin-btn admin-btn--secondary admin-btn--sm acl-edit-btn"
+                          data-acl-edit="<?php echo (int) $a['user_id']; ?>"
+                        >
+                          <i class="bi bi-pencil-square"></i> Edit
+                        </button>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
             </div>
-            <div class="acl-card__body">
-              <form method="POST" action="admin_admins" autocomplete="off">
-                <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-                <input type="hidden" name="action" value="create_admin">
-                <div class="acl-form-grid">
-                  <div class="acl-field acl-field--full">
-                    <label for="full_name">Full name</label>
-                    <input type="text" id="full_name" name="full_name" required maxlength="150" placeholder="e.g. Ana Reyes">
-                  </div>
-                  <div class="acl-field">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required maxlength="120" placeholder="staff@example.com">
-                  </div>
-                  <div class="acl-field">
-                    <label for="password">Temporary password</label>
+          <?php endif; ?>
+        </div>
+      </section>
+
+      <!-- Add Admin modal -->
+      <div class="acl-modal" id="aclAddModal" aria-hidden="true">
+        <div class="acl-modal__panel" role="dialog" aria-modal="true" aria-labelledby="aclAddTitle">
+          <div class="acl-modal__head">
+            <div>
+              <h2 id="aclAddTitle">Add Admin</h2>
+              <p class="acl-modal__sub">Create a staff login and unlock only the areas they need</p>
+            </div>
+            <button type="button" class="acl-modal__close" data-acl-close="aclAddModal" aria-label="Close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <form method="POST" action="admin_admins" autocomplete="off" id="aclAddForm">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="action" value="create_admin">
+            <div class="acl-modal__body">
+              <div class="acl-form-stack">
+                <div class="acl-field">
+                  <label for="full_name">Full Name</label>
+                  <input type="text" id="full_name" name="full_name" required maxlength="150" placeholder="e.g. Ana Reyes">
+                </div>
+                <div class="acl-field">
+                  <label for="email">Email</label>
+                  <input type="email" id="email" name="email" required maxlength="120" placeholder="staff@example.com">
+                </div>
+                <div class="acl-field">
+                  <label for="password">Temporary Password</label>
+                  <div class="acl-pass-wrap">
                     <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Min. 8 characters">
+                    <button type="button" class="acl-pass-toggle" data-acl-pass="password" aria-label="Show password" title="Show password">
+                      <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                    </button>
                   </div>
+                  <p class="acl-hint">Share this once — it cannot be retrieved later (stored hashed).</p>
                 </div>
                 <label class="acl-full-toggle" for="createFullAccess">
                   <input type="checkbox" name="full_access" value="1" id="createFullAccess">
@@ -729,28 +866,107 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                     <span>Grant every admin area (skip picking below)</span>
                   </span>
                 </label>
-                <div id="createKeysWrap" class="acl-keys-panel">
-                  <?php foreach ($catalog as $group): ?>
-                    <div class="acl-group"><?php echo h($group['group']); ?></div>
-                    <div class="acl-key-grid">
-                      <?php foreach ($group['keys'] as $item): ?>
-                        <label class="acl-check">
-                          <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>"
-                            <?php echo $item['key'] === 'dashboard' ? 'checked' : ''; ?>>
-                          <span><?php echo h($item['label']); ?></span>
-                        </label>
-                      <?php endforeach; ?>
-                    </div>
-                  <?php endforeach; ?>
+                <div>
+                  <p class="acl-section-label">Admin Areas</p>
+                  <div id="createKeysWrap" class="acl-keys-panel">
+                    <?php foreach ($catalog as $group): ?>
+                      <div class="acl-group"><?php echo h($group['group']); ?></div>
+                      <div class="acl-key-grid">
+                        <?php foreach ($group['keys'] as $item): ?>
+                          <label class="acl-check">
+                            <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>"
+                              <?php echo $item['key'] === 'dashboard' ? 'checked' : ''; ?>>
+                            <span><?php echo h($item['label']); ?></span>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
                 </div>
-                <div class="acl-actions">
-                  <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Create admin</button>
-                </div>
-              </form>
+              </div>
             </div>
-          <?php endif; ?>
-        </section>
+            <div class="acl-modal__foot">
+              <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-acl-close="aclAddModal">Cancel</button>
+              <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm">
+                <i class="bi bi-person-plus"></i> Create Admin
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
+
+      <!-- Edit Admin modal -->
+      <div class="acl-modal" id="aclEditModal" aria-hidden="true">
+        <div class="acl-modal__panel" role="dialog" aria-modal="true" aria-labelledby="aclEditTitle">
+          <div class="acl-modal__head">
+            <div>
+              <h2 id="aclEditTitle">Edit Admin</h2>
+              <p class="acl-modal__sub">Update credentials and unlocked admin areas</p>
+            </div>
+            <button type="button" class="acl-modal__close" data-acl-close="aclEditModal" aria-label="Close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <form method="POST" action="admin_admins" autocomplete="off" id="aclEditForm">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="action" value="save_admin">
+            <input type="hidden" name="user_id" id="edit_user_id" value="">
+            <div class="acl-modal__body">
+              <div class="acl-form-stack">
+                <div class="acl-field">
+                  <label for="edit_full_name">Full Name</label>
+                  <input type="text" id="edit_full_name" name="full_name" required maxlength="150" value="">
+                </div>
+                <div class="acl-field">
+                  <label for="edit_email">Email</label>
+                  <input type="email" id="edit_email" name="email" required maxlength="120" value="">
+                </div>
+                <div class="acl-field">
+                  <label for="edit_password">New Password <span style="font-weight:600;color:var(--admin-text-muted);">(optional)</span></label>
+                  <div class="acl-pass-wrap">
+                    <input type="password" id="edit_password" name="password" minlength="8" autocomplete="new-password"
+                           placeholder="Leave blank to keep current">
+                    <button type="button" class="acl-pass-toggle" data-acl-pass="edit_password" aria-label="Show password" title="Show password">
+                      <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                  <p class="acl-hint">Existing passwords are hashed and cannot be shown. Enter a new one only to change it.</p>
+                </div>
+                <p class="acl-card__sub" style="margin:0;">Unchecked areas stay visible in the sidebar but locked (not clickable) and blocked by URL.</p>
+                <label class="acl-full-toggle" for="editFullAccess">
+                  <input type="checkbox" name="full_access" value="1" id="editFullAccess">
+                  <span>
+                    <strong>Full access</strong>
+                    <span>Unlock every admin area for this account</span>
+                  </span>
+                </label>
+                <div>
+                  <p class="acl-section-label">Admin Areas</p>
+                  <div id="editKeysWrap" class="acl-keys-panel">
+                    <?php foreach ($catalog as $group): ?>
+                      <div class="acl-group"><?php echo h($group['group']); ?></div>
+                      <div class="acl-key-grid">
+                        <?php foreach ($group['keys'] as $item): ?>
+                          <label class="acl-check">
+                            <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>" data-acl-key="<?php echo h($item['key']); ?>">
+                            <span><?php echo h($item['label']); ?></span>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="acl-modal__foot">
+              <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-acl-close="aclEditModal">Cancel</button>
+              <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script type="application/json" id="aclAdminsData"><?php echo json_encode($adminsJs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
     <?php else: ?>
       <?php $logActionLabels = users_activity_log_action_labels(); ?>
       <section class="acl-card acl-log-shell">
@@ -761,7 +977,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
           </div>
           <span class="acl-count"><?php echo (int) $logTotal; ?></span>
         </div>
-        <div class="acl-card__body">
+        <div class="acl-card__body acl-card__body--pad">
           <form method="GET" class="acl-filters">
             <input type="hidden" name="view" value="log">
             <div class="acl-field acl-field--grow">
@@ -863,11 +1079,59 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
         </div>
       </section>
     <?php endif; ?>
-  </div>
-</main>
+<?php if ($view === 'admins'): ?>
 <script>
 (function () {
-  function wire(fullId, wrapId) {
+  var adminsById = {};
+  try {
+    var raw = document.getElementById('aclAdminsData');
+    var list = raw ? JSON.parse(raw.textContent || '[]') : [];
+    list.forEach(function (a) { adminsById[String(a.user_id)] = a; });
+  } catch (e) {}
+
+  var openAddOnLoad = <?php echo $openAdd ? 'true' : 'false'; ?>;
+  var openEditOnLoad = <?php echo $editAdmin ? (int) $editAdmin['user_id'] : 0; ?>;
+
+  function setBodyLock(on) {
+    document.body.classList.toggle('acl-modal-open', !!on);
+  }
+
+  function anyModalOpen() {
+    return !!document.querySelector('.acl-modal.is-open');
+  }
+
+  function openModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    document.querySelectorAll('.acl-modal.is-open').forEach(function (m) {
+      if (m.id !== id) closeModal(m.id);
+    });
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    setBodyLock(true);
+    var focusEl = modal.querySelector('input, button, select, textarea');
+    if (focusEl) {
+      setTimeout(function () { focusEl.focus(); }, 40);
+    }
+  }
+
+  function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (!anyModalOpen()) setBodyLock(false);
+    if (id === 'aclEditModal') {
+      var pass = document.getElementById('edit_password');
+      if (pass) {
+        pass.value = '';
+        pass.type = 'password';
+        syncPassIcon(pass);
+      }
+    }
+  }
+
+  function wireFullAccess(fullId, wrapId) {
     var full = document.getElementById(fullId);
     var wrap = document.getElementById(wrapId);
     if (!full || !wrap) return;
@@ -878,10 +1142,96 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     }
     full.addEventListener('change', sync);
     sync();
+    return sync;
   }
-  wire('createFullAccess', 'createKeysWrap');
-  wire('editFullAccess', 'editKeysWrap');
+
+  var syncCreateKeys = wireFullAccess('createFullAccess', 'createKeysWrap');
+  var syncEditKeys = wireFullAccess('editFullAccess', 'editKeysWrap');
+
+  function syncPassIcon(input) {
+    var btn = document.querySelector('[data-acl-pass="' + input.id + '"]');
+    if (!btn) return;
+    var icon = btn.querySelector('i');
+    var shown = input.type === 'text';
+    if (icon) {
+      icon.className = shown ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+    btn.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+    btn.setAttribute('title', shown ? 'Hide password' : 'Show password');
+  }
+
+  document.querySelectorAll('.acl-pass-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-acl-pass');
+      var input = id ? document.getElementById(id) : null;
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      syncPassIcon(input);
+    });
+  });
+
+  function fillEditForm(admin) {
+    if (!admin) return;
+    document.getElementById('edit_user_id').value = String(admin.user_id);
+    document.getElementById('edit_full_name').value = admin.full_name || '';
+    document.getElementById('edit_email').value = admin.email || '';
+    var pass = document.getElementById('edit_password');
+    pass.value = '';
+    pass.type = 'password';
+    syncPassIcon(pass);
+
+    var full = document.getElementById('editFullAccess');
+    full.checked = !!admin.acl_full;
+    var keys = admin.acl_keys || [];
+    var keySet = {};
+    keys.forEach(function (k) { keySet[String(k)] = true; });
+    document.querySelectorAll('#editKeysWrap input[data-acl-key]').forEach(function (cb) {
+      var k = cb.getAttribute('data-acl-key');
+      cb.checked = !admin.acl_full && !!keySet[k];
+    });
+    if (typeof syncEditKeys === 'function') syncEditKeys();
+  }
+
+  var addBtn = document.getElementById('aclOpenAddBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', function () { openModal('aclAddModal'); });
+  }
+
+  document.querySelectorAll('[data-acl-edit]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = String(btn.getAttribute('data-acl-edit') || '');
+      fillEditForm(adminsById[id]);
+      openModal('aclEditModal');
+    });
+  });
+
+  document.querySelectorAll('[data-acl-close]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      closeModal(btn.getAttribute('data-acl-close'));
+    });
+  });
+
+  document.querySelectorAll('.acl-modal').forEach(function (modal) {
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeModal(modal.id);
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var open = document.querySelector('.acl-modal.is-open');
+    if (open) closeModal(open.id);
+  });
+
+  if (openAddOnLoad) openModal('aclAddModal');
+  if (openEditOnLoad > 0 && adminsById[String(openEditOnLoad)]) {
+    fillEditForm(adminsById[String(openEditOnLoad)]);
+    openModal('aclEditModal');
+  }
 })();
 </script>
+<?php endif; ?>
+</div>
+</main>
 </body>
 </html>

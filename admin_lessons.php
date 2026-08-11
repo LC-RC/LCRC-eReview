@@ -141,7 +141,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 
   <?php
     $adminHeroIcon = 'file-text';
-    $adminHeroTitle = 'Lessons â€” ' . (string) $subject['subject_name'];
+    $adminHeroTitle = 'Lessons — ' . (string) $subject['subject_name'];
     $adminHeroSubtitle = 'Create lessons, then open Materials to add videos and handouts.';
     $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessons . ' lesson' . ((int) $totalLessons === 1 ? '' : 's') . '</span>';
     $adminHeroActions =
@@ -169,7 +169,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
       <div class="flex-1 min-w-[200px]">
         <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
-        <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or descriptionâ€¦" class="input-custom w-full" autocomplete="off">
+        <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description…" class="input-custom w-full" autocomplete="off">
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
@@ -180,7 +180,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <div class="w-full text-sm opacity-70">
         <?php if ($totalLessons > 0): ?>
           Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalLessons); ?> of <?php echo $totalLessons; ?>
-          <span class="mx-1">Â·</span>
+          <span class="mx-1">·</span>
         <?php endif; ?>
         Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
       </div>
@@ -201,14 +201,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
             $hCnt = (int)($l['handouts_cnt'] ?? 0);
             $vClass = $vCnt === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
             $hClass = $hCnt === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
-            $vTitle = $vCnt === 0 ? 'No videos yet â€” add via Materials' : $vCnt . ' video(s)';
-            $hTitle = $hCnt === 0 ? 'No handouts yet â€” add via Materials' : $hCnt . ' handout(s)';
+            $vTitle = $vCnt === 0 ? 'No videos yet — add via Materials' : $vCnt . ' video(s)';
+            $hTitle = $hCnt === 0 ? 'No handouts yet — add via Materials' : $hCnt . ' handout(s)';
           ?>
             <tr class="quiz-admin-row">
               <td class="px-5 py-3 admin-col-primary">
                 <div class="font-semibold"><?php echo h($l['title']); ?></div>
                 <?php if (!empty($l['description'])): ?>
-                  <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, 'â€¦')); ?></div>
+                  <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '…')); ?></div>
                 <?php endif; ?>
               </td>
               <td class="px-5 py-3 text-center" title="<?php echo h($vTitle); ?>">

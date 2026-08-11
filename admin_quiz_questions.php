@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_array($q)) continue;
             $questionText = trim($q['text'] ?? '');
             if ($questionText === '') continue;
-            // Build choices from POST using all Aâ€“J so E,F,G,H,I,J are included for validation
+            // Build choices from POST using all A–J so E,F,G,H,I,J are included for validation
             $choices = [];
             foreach ($allChoiceCols as $col) {
                 $choices[$col] = trim($q[$col] ?? '');
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (count($batch) === 0) {
             $_SESSION['error'] = 'Add at least one question with at least 2 choices and a correct answer selected.';
         } else {
-            // Auto-run migration if user saved with Eâ€“J or more than 4 choices and DB not updated yet
+            // Auto-run migration if user saved with E–J or more than 4 choices and DB not updated yet
             if ($needsExtendedChoices && !in_array('choice_e', $choiceCols, true)) {
                 $alterSqls = [
                     "ALTER TABLE `quiz_questions` ADD COLUMN `choice_e` text DEFAULT NULL AFTER `choice_d`",
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $questionText = trim($_POST['question_text'] ?? '');
-    // Read all choice columns from POST (Aâ€“J) so E,F,G,H,I,J save correctly.
+    // Read all choice columns from POST (A–J) so E,F,G,H,I,J save correctly.
     // "Active" choices = fields that actually exist in the form (have a POST key).
     $choiceVals = [];
     $activeCols = [];

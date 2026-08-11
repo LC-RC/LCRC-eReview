@@ -348,7 +348,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
           <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
           <span><?php echo h($user['full_name'] ?? 'Student Details'); ?></span>
         </h1>
-        <p class="admin-page-header__subtitle">Registration, commerce, and account activation Â· ID <?php echo (int)$user['user_id']; ?></p>
+        <p class="admin-page-header__subtitle">Registration, commerce, and account activation · ID <?php echo (int)$user['user_id']; ?></p>
       </div>
       <div class="admin-page-header__actions">
         <a href="admin_students" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Back to list</a>

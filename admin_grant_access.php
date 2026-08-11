@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Grant Access â€” creates source=admin_manual grant(s) + SCA.
+ * Admin Grant Access — creates source=admin_manual grant(s) + SCA.
  * Supports Full LMS or by-topic permissions (same picker as Student Access).
  * Does not verify payment or run paid fulfillment.
  * Accepts user_id (single) or user_ids (JSON array / comma list) for bulk.

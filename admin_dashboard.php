@@ -45,7 +45,7 @@ if ($useDashCache) {
     require_once __DIR__ . '/includes/commerce_access_gate.php';
     $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
     $enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
-    // True registration queue only â€” not "missing grant" (legacy enrolled are restored separately).
+    // True registration queue only — not "missing grant" (legacy enrolled are restored separately).
     $pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
     $expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
@@ -143,7 +143,7 @@ if (!$useDashCache) {
     mysqli_free_result($quizRes);
   }
 
-  // New this week (registrations in last 7 days) â€” for "at a glance" recency
+  // New this week (registrations in last 7 days) — for "at a glance" recency
   $newThisWeek = 0;
   $weekRes = @mysqli_query($conn, "
     SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)

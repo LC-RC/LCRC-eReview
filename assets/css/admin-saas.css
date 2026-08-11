@@ -131,6 +131,17 @@ body.admin-app .admin-content {
   max-width: 1400px;
 }
 
+/* Admins + Users Log: full main-column width (no 1400px cap / right gutter) */
+body.admin-app.admin-admins-page #main > .admin-content,
+body.admin-app.admin-admins-page #main.admin-main-shell > .admin-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
 /* ========== FLOATING GLASS SIDEBAR ========== */
 body.admin-app #app-sidebar.app-shell-sidebar--admin {
   top: 0.75rem !important;

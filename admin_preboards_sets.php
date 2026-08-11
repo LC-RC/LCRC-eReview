@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($useSchedule && $opensAt === null) {
                 $_SESSION['error'] = 'Set an open date/time when scheduling is enabled.';
             } elseif ($useSchedule && $closesAt === null) {
-                $_SESSION['error'] = 'Set a close date/time â€” exam duration is based on the open and close window.';
+                $_SESSION['error'] = 'Set a close date/time — exam duration is based on the open and close window.';
             } elseif ($opensAt !== null && $closesAt !== null && strtotime($closesAt) <= strtotime($opensAt)) {
                 $_SESSION['error'] = 'Close time must be after open time.';
             } else {
@@ -258,7 +258,7 @@ $adminBreadcrumbs = [
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
-      Preboards â€” <span class="text-gray-300"><?php echo h($subject['subject_name'] ?? 'Subject'); ?></span>
+      Preboards — <span class="text-gray-300"><?php echo h($subject['subject_name'] ?? 'Subject'); ?></span>
     </h1>
     <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">Each set is one preboard. Students can take one attempt per set (no retake).</p>
   </div>
@@ -305,7 +305,7 @@ $adminBreadcrumbs = [
     <?php if ($showCompletion): ?><input type="hidden" name="completion" value="1"><?php endif; ?>
     <div class="flex-1 min-w-[200px]">
       <label for="pb-sets-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"><?php echo $showCompletion ? 'Filter students' : 'Search sets'; ?></label>
-      <input type="search" id="pb-sets-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="<?php echo $showCompletion ? 'Name or emailâ€¦' : 'Set label or titleâ€¦'; ?>" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="pb-sets-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="<?php echo $showCompletion ? 'Name or email…' : 'Set label or title…'; ?>" class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
@@ -346,7 +346,7 @@ $adminBreadcrumbs = [
                     <span class="text-gray-500">(<?php echo (int)$att['correct_count']; ?>/<?php echo (int)$att['total_count']; ?>)</span>
                     <div class="text-xs text-gray-500"><?php echo $att['submitted_at'] ? date('M j, Y', strtotime($att['submitted_at'])) : ''; ?></div>
                   <?php else: ?>
-                    <span class="text-gray-600">â€”</span>
+                    <span class="text-gray-600">—</span>
                   <?php endif; ?>
                 </td>
               <?php endforeach; ?>
@@ -396,7 +396,7 @@ $adminBreadcrumbs = [
                     <span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-500/35 font-semibold">Retake</span>
                   <?php endif; ?>
                 </td>
-                <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : 'â€”'; ?></td>
+                <td class="px-5 py-3 text-sm text-gray-400"><?php echo !empty($r['requested_at']) ? date('M j, Y g:i A', strtotime($r['requested_at'])) : '—'; ?></td>
                 <td class="px-5 py-3 text-center">
                   <div class="admin-row-actions">
                     <form method="POST" action="admin_preboards_sets?preboards_subject_id=<?php echo (int)$subjectId; ?><?php echo h($preboardsNavQ); ?>#preboards-requests" class="m-0">
@@ -456,7 +456,7 @@ $adminBreadcrumbs = [
           ?>
             <tr class="quiz-admin-row">
               <td class="px-5 py-3 font-semibold text-gray-100"><?php echo h($row['set_label']); ?></td>
-              <td class="px-5 py-3 text-gray-400"><?php echo h($row['title'] ?: 'â€”'); ?></td>
+              <td class="px-5 py-3 text-gray-400"><?php echo h($row['title'] ?: '—'); ?></td>
               <td class="px-5 py-3 text-gray-400"><?php echo formatTimeLimitSeconds($timeSecs); ?></td>
               <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-sm bg-white/10 text-gray-200 border border-white/10"><?php echo (int)($row['questions_cnt'] ?? 0); ?></span></td>
               <td class="px-5 py-3">
@@ -538,7 +538,7 @@ $adminBreadcrumbs = [
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Set label</label>
             <div class="flex items-center gap-2">
-              <div class="px-3 py-2 rounded-lg bg-white/10 text-gray-100 font-semibold border border-white/10" x-text="set_label || 'â€”'"></div>
+              <div class="px-3 py-2 rounded-lg bg-white/10 text-gray-100 font-semibold border border-white/10" x-text="set_label || '—'"></div>
               <span class="text-sm text-gray-500" x-show="!isEdit">Auto-generated (A-Z)</span>
               <span class="text-sm text-gray-500" x-show="isEdit">Locked</span>
             </div>
@@ -559,7 +559,7 @@ $adminBreadcrumbs = [
               <span class="text-gray-400">sec(s)</span>
             </div>
             <input type="hidden" name="time_limit_seconds" :value="Math.max(60, time_limit_hours * 3600 + time_limit_mins * 60 + time_limit_secs)">
-            <p class="text-xs text-gray-500 mt-1">Used when the set is manually opened. If a schedule is set, duration comes from the open â†’ close window instead.</p>
+            <p class="text-xs text-gray-500 mt-1">Used when the set is manually opened. If a schedule is set, duration comes from the open → close window instead.</p>
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
@@ -582,13 +582,13 @@ $adminBreadcrumbs = [
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save_schedule">
         <input type="hidden" name="preboards_set_id" :value="schedule_set_id">
-        <p class="text-sm text-gray-400 mb-4">Set <span class="font-semibold text-gray-200" x-text="schedule_set_label"></span> â€” students can take this preboard only between the open and close times (Philippines time). The exam timer uses that window (e.g. 1:00 AM â€“ 2:00 AM = 1 hour).</p>
+        <p class="text-sm text-gray-400 mb-4">Set <span class="font-semibold text-gray-200" x-text="schedule_set_label"></span> — students can take this preboard only between the open and close times (Philippines time). The exam timer uses that window (e.g. 1:00 AM – 2:00 AM = 1 hour).</p>
         <div class="space-y-4">
           <label class="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-white/10 bg-white/5">
             <input type="checkbox" name="use_schedule" value="1" class="mt-1" x-model="schedule_enabled">
             <span>
               <span class="block font-semibold text-gray-100">Enable scheduled window</span>
-              <span class="block text-xs text-gray-500 mt-0.5">Overrides manual Open/Locked. Duration is computed from open â†’ close.</span>
+              <span class="block text-xs text-gray-500 mt-0.5">Overrides manual Open/Locked. Duration is computed from open → close.</span>
             </span>
           </label>
           <div x-show="schedule_enabled" x-cloak class="space-y-4">

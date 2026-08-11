@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce â€” By Topic pricing on existing LMS lessons (Phase 3 + Phase 7 bulk).
+ * Admin Commerce — By Topic pricing on existing LMS lessons (Phase 3 + Phase 7 bulk).
  * Source of truth: lessons table. No duplicate topic/product catalog.
  */
 require_once 'auth.php';
@@ -15,7 +15,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce â€” By Topic Pricing';
+$pageTitle = 'Commerce — By Topic Pricing';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         if ($priceCentavos <= 0 || $durationValue <= 0) {
-            $_SESSION['error'] = 'Bulk update requires a price greater than â‚±0 and a positive duration.';
+            $_SESSION['error'] = 'Bulk update requires a price greater than ₱0 and a positive duration.';
             header('Location: admin_commerce_topics');
             exit;
         }
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($isPurchasable && ($priceCentavos < 0 || $durationValue <= 0)) {
-        $_SESSION['error'] = 'Purchasable topics need a price (â‰¥ 0) and positive duration.';
+        $_SESSION['error'] = 'Purchasable topics need a price (≥ 0) and positive duration.';
         header('Location: admin_commerce_topics?edit=' . $lessonId);
         exit;
     }
@@ -291,7 +291,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
 
       <div class="quiz-admin-table-shell rounded-2xl p-4 flex flex-wrap gap-3 items-end">
         <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Bulk price (â‚±)</label>
+          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Bulk price (₱)</label>
           <input class="input-custom w-36" type="number" min="0.01" step="0.01" name="price_pesos" placeholder="200.00">
         </div>
         <div>
@@ -338,14 +338,14 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
                           <div class="text-xs opacity-60 truncate"><?php echo h($r['subject_name']); ?></div>
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap">
-                          <?php echo $r['price_centavos'] !== null ? 'â‚±' . h(commerce_centavos_to_pesos_display((int)$r['price_centavos'])) : 'â€”'; ?>
+                          <?php echo $r['price_centavos'] !== null ? '₱' . h(commerce_centavos_to_pesos_display((int)$r['price_centavos'])) : '—'; ?>
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap text-xs">
                           <?php
                             if (!empty($r['access_duration_value'])) {
                                 echo (int)$r['access_duration_value'] . ' ' . h($r['access_duration_unit'] ?? 'day') . '(s)';
                             } else {
-                                echo 'â€”';
+                                echo '—';
                             }
                           ?>
                         </td>
@@ -388,7 +388,7 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
             <input type="checkbox" name="is_purchasable" value="1" <?php echo !empty($editRow['is_purchasable']) ? 'checked' : ''; ?>> Purchasable in By Topic catalog
           </label>
           <div>
-            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Price (â‚±)</label>
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Price (₱)</label>
             <input class="input-custom w-full" type="number" min="0" step="0.01" name="price_pesos" value="<?php echo h($editRow['price_centavos'] !== null ? number_format(((int)$editRow['price_centavos']) / 100, 2, '.', '') : '0'); ?>">
           </div>
           <div class="grid grid-cols-2 gap-2">

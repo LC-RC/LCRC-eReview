@@ -113,13 +113,13 @@ if ($items !== []) {
         $packageLabel = implode(', ', $names);
     }
     if ($total > 0) {
-        $amountLabel = 'â‚±' . number_format($total / 100, 2);
+        $amountLabel = '₱' . number_format($total / 100, 2);
     }
 }
 if ($amountLabel === '') {
     $cents = (int) ($payment['expected_amount_centavos'] ?? $payment['amount_centavos'] ?? 0);
     if ($cents > 0) {
-        $amountLabel = 'â‚±' . number_format($cents / 100, 2);
+        $amountLabel = '₱' . number_format($cents / 100, 2);
     }
 }
 if ($packageLabel === '') {

@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors' => [
                 'Upload failed: request payload exceeded server limits before PHP could read form data.',
                 'Uploaded payload size: ' . number_format($contentLength) . ' bytes.',
-                'Server limits â€” post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
+                'Server limits — post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
                 ($postMaxBytes > 0 && $contentLength > $postMaxBytes)
                     ? 'Root cause: file is larger than post_max_size.'
                     : (($uploadMaxBytes > 0 && $contentLength > $uploadMaxBytes)
@@ -466,8 +466,8 @@ if ($searchQ === '') {
 }
 $pageTitle = 'Materials - ' . $lesson['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Materials'] ];
-$materialsUploadMaxLabel = ini_get('upload_max_filesize') ?: 'â€”';
-$materialsPostMaxLabel = ini_get('post_max_size') ?: 'â€”';
+$materialsUploadMaxLabel = ini_get('upload_max_filesize') ?: '—';
+$materialsPostMaxLabel = ini_get('post_max_size') ?: '—';
 $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUploadMaxLabel);
 ?>
 <!DOCTYPE html>
@@ -564,9 +564,9 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
       <div class="min-w-0">
         <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
           <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
-          <span>Materials â€” <?php echo h($lesson['title']); ?></span>
+          <span>Materials — <?php echo h($lesson['title']); ?></span>
         </h1>
-        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> Â· Videos and handouts for this lesson</p>
+        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> · Videos and handouts for this lesson</p>
       </div>
       <div class="admin-page-header__actions">
         <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Lessons</a>
@@ -579,7 +579,7 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[200px]">
       <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titlesâ€¦" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titles…" class="input-custom w-full" autocomplete="off">
     </div>
     <div class="w-full sm:w-44">
       <label for="mat-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Show</label>
@@ -734,7 +734,7 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                     <?php if (!empty($h['file_path'])): ?>
                       <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-download"></i> Download</a>
                     <?php else: ?>
-                      <span class="text-gray-500">â€”</span>
+                      <span class="text-gray-500">—</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">

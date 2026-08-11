@@ -263,14 +263,14 @@ $preweekNavStep = 'list';
       <label for="preweek-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search entries</label>
       <div class="relative">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" name="q" id="preweek-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Nameâ€¦" autocomplete="off" class="input-custom w-full pl-10">
+        <input type="search" name="q" id="preweek-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Name…" autocomplete="off" class="input-custom w-full pl-10">
       </div>
     </div>
     <div class="w-full sm:w-44">
       <label for="preweek-filter-sort" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Sort</label>
       <select name="sort" id="preweek-filter-sort" class="input-custom w-full">
         <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Newest first</option>
-        <option value="name_asc" <?php echo $sort === 'name_asc' ? 'selected' : ''; ?>>Name Aâ€“Z</option>
+        <option value="name_asc" <?php echo $sort === 'name_asc' ? 'selected' : ''; ?>>Name A–Z</option>
       </select>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
@@ -319,7 +319,7 @@ $preweekNavStep = 'list';
                 $hc = (int)($row['handouts_cnt'] ?? 0);
                 $hasPreweekContent = ($tc + $vc + $hc) > 0;
                 $createdRaw = $row['created_at'] ?? '';
-                $createdLabel = $createdRaw ? date('M j, Y', strtotime($createdRaw)) : 'â€”';
+                $createdLabel = $createdRaw ? date('M j, Y', strtotime($createdRaw)) : '—';
               ?>
               <tr class="quiz-admin-row">
                 <td class="px-5 py-3 align-top">
@@ -328,9 +328,9 @@ $preweekNavStep = 'list';
                 </td>
                 <td class="px-5 py-3 align-top text-sm text-gray-400">
                   <span class="tabular-nums"><?php echo (int)$tc; ?></span> lecture<?php echo $tc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">Â·</span>
+                  <span class="text-gray-600 mx-1">·</span>
                   <span class="tabular-nums"><?php echo (int)$vc; ?></span> video<?php echo $vc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">Â·</span>
+                  <span class="text-gray-600 mx-1">·</span>
                   <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
                 </td>
                 <td class="px-5 py-3 align-top">
@@ -375,7 +375,7 @@ $preweekNavStep = 'list';
           <div class="space-y-4">
             <div>
               <label for="preweek_name_input" class="block text-sm font-medium text-gray-300 mb-1.5">Display name <span class="text-red-400">*</span></label>
-              <input type="text" name="preweek_name" id="preweek_name_input" required maxlength="255" class="input-custom w-full" placeholder="e.g. Pre-Week Orientation, Batch Aâ€¦" autocomplete="off">
+              <input type="text" name="preweek_name" id="preweek_name_input" required maxlength="255" class="input-custom w-full" placeholder="e.g. Pre-Week Orientation, Batch A…" autocomplete="off">
               <p class="text-xs text-gray-500 mt-2 mb-0">Shown to students. Not tied to a subject.</p>
             </div>
           </div>

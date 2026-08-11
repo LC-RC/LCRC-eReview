@@ -92,7 +92,7 @@ if (is_string($rawPerms)) {
 $normalizedPerms = sca_normalize_permission_payload($permissions);
 
 // SCA picker is only required for legacy (non-commerce) enrollments.
-// Commerce paid/FAR content access must come from fulfillment / FAR â€” never from this action.
+// Commerce paid/FAR content access must come from fulfillment / FAR — never from this action.
 $needsLegacySca = false;
 $pathCheck = mysqli_prepare($conn, 'SELECT enrollment_path FROM users WHERE user_id = ? AND role = \'student\' LIMIT 1');
 if ($pathCheck) {
@@ -289,7 +289,7 @@ if ($approved === 0) {
 
 if ($commerceActivated > 0 && $legacyActivated === 0) {
     $message = count($userIds) === 1
-        ? 'Account activated. Content access comes from commerce fulfillment or Free Access â€” not from this action.'
+        ? 'Account activated. Content access comes from commerce fulfillment or Free Access — not from this action.'
         : ($approved . ' account(s) activated. Content access comes from commerce fulfillment or Free Access.');
 } elseif ($legacyActivated > 0 && $commerceActivated === 0) {
     $accessLabel = $grantFull ? 'Full LMS' : (count($normalizedPerms) . ' content item(s)');

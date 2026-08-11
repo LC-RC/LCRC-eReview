@@ -95,7 +95,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-play-circle"></i></span>
-      Videos â€” <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
+      Videos — <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
     </h1>
     <p class="text-gray-400 mt-2 mb-0">Add or edit video links or uploads for this lesson.</p>
   </div>

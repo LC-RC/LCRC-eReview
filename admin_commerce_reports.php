@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce â€” Reports (Phase 8.5).
+ * Admin Commerce — Reports (Phase 8.5).
  * Read-only GET dashboard. No mutations, no OCR/proof exposure, no Chart.js.
  */
 require_once 'auth.php';
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$pageTitle = 'Commerce â€” Reports';
+$pageTitle = 'Commerce — Reports';
 $dash = commerce_reports_build_dashboard($conn, $_GET);
 $f = $dash['filters'];
 $p = $dash['payments'];
@@ -41,7 +41,7 @@ $self = ereview_url('admin_commerce_reports');
 
 function p85_h_money(int $centavos): string
 {
-    return 'â‚±' . commerce_reports_centavos_to_php($centavos);
+    return '₱' . commerce_reports_centavos_to_php($centavos);
 }
 ?>
 <!DOCTYPE html>
@@ -63,7 +63,7 @@ function p85_h_money(int $centavos): string
     <?php endif; ?>
 
     <form method="get" action="<?php echo h($self); ?>" class="quiz-admin-table-shell rounded-2xl p-4 sm:p-5 mb-5 space-y-3">
-      <div class="text-xs uppercase opacity-60 font-semibold">Filters (GET Â· all-time by default)</div>
+      <div class="text-xs uppercase opacity-60 font-semibold">Filters (GET · all-time by default)</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
         <div>
           <label class="block text-xs opacity-70 mb-1" for="date_from">Date from (created_at)</label>
@@ -264,7 +264,7 @@ function p85_h_money(int $centavos): string
 
     <div class="quiz-admin-table-shell rounded-2xl p-4 sm:p-5 mb-5">
       <h2 class="text-sm font-bold uppercase opacity-70 mb-1">Grant health (not revenue)</h2>
-      <p class="text-xs opacity-50 mb-3">Counts from access_grants. Overdue Active = status active but ends_at â‰¤ NOW() (scheduler/reconcile lag).</p>
+      <p class="text-xs opacity-50 mb-3">Counts from access_grants. Overdue Active = status active but ends_at ≤ NOW() (scheduler/reconcile lag).</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div>
           <div class="text-xs uppercase opacity-60 font-semibold mb-2">Purchase grants</div>

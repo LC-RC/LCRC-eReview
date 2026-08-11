@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce â€” Packages catalog (Phase 3 foundations).
+ * Admin Commerce — Packages catalog (Phase 3 foundations).
  * DB-driven only; no hardcoded package products or prices.
  */
 require_once 'auth.php';
@@ -15,7 +15,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce â€” Packages';
+$pageTitle = 'Commerce — Packages';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -249,15 +249,15 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               </thead>
               <tbody>
                 <?php if ($packages === []): ?>
-                  <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No packages yet. Create one â€” nothing is hardcoded.</td></tr>
+                  <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No packages yet. Create one — nothing is hardcoded.</td></tr>
                 <?php else: ?>
                   <?php foreach ($packages as $p): ?>
                     <tr class="border-t border-white/5 <?php echo ((int)$p['package_id'] === $editId) ? 'bg-white/5' : ''; ?>">
                       <td class="px-4 py-3 min-w-0">
                         <div class="font-semibold truncate"><?php echo h($p['name']); ?></div>
-                        <div class="text-xs opacity-60 truncate"><?php echo h($p['code']); ?> Â· <?php echo h($p['access_scope']); ?> Â· <?php echo (int)$p['duration_value']; ?> <?php echo h($p['duration_unit']); ?>(s)</div>
+                        <div class="text-xs opacity-60 truncate"><?php echo h($p['code']); ?> · <?php echo h($p['access_scope']); ?> · <?php echo (int)$p['duration_value']; ?> <?php echo h($p['duration_unit']); ?>(s)</div>
                       </td>
-                      <td class="px-3 py-3 whitespace-nowrap font-semibold">â‚±<?php echo h(commerce_centavos_to_pesos_display((int)$p['price_centavos'])); ?></td>
+                      <td class="px-3 py-3 whitespace-nowrap font-semibold">₱<?php echo h(commerce_centavos_to_pesos_display((int)$p['price_centavos'])); ?></td>
                       <td class="px-3 py-3">
                         <div class="flex flex-wrap gap-1">
                           <span class="admin-badge <?php echo !empty($p['is_active']) ? 'admin-badge--success' : 'admin-badge--neutral'; ?>"><?php echo !empty($p['is_active']) ? 'Active' : 'Off'; ?></span>
@@ -328,7 +328,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
                 <textarea class="input-custom w-full" name="description" rows="2"><?php echo h($form['description'] ?? ''); ?></textarea>
               </div>
               <div>
-                <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Price (â‚±)</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Price (₱)</label>
                 <input class="input-custom w-full" name="price_pesos" type="number" min="0" step="0.01" required value="<?php echo h(number_format(((int)$form['price_centavos']) / 100, 2, '.', '')); ?>">
               </div>
               <div class="grid grid-cols-2 gap-2">
@@ -393,7 +393,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               <div class="flex items-center justify-between gap-2 mb-2">
                 <div>
                   <h3 class="font-bold text-sm">Package features (non-LMS)</h3>
-                  <p class="text-xs opacity-60">e.g. Live Zoom, Onsite, Coaching â€” not fake LMS content.</p>
+                  <p class="text-xs opacity-60">e.g. Live Zoom, Onsite, Coaching — not fake LMS content.</p>
                 </div>
                 <button type="button" class="admin-outline-btn px-3 py-1.5 rounded-lg text-xs font-semibold" @click="features.push({key:'',label:'',description:''})">Add</button>
               </div>

@@ -148,7 +148,7 @@ if ($listQ) {
 }
 $rowTotal = count($topicRows);
 $lectureModalOpenEdit = ($edit !== null);
-$pageTitle = 'Pre-week lectures â€” ' . $unitTitle;
+$pageTitle = 'Pre-week lectures — ' . $unitTitle;
 $preweekNavStep = 'lectures';
 $preweekNavUnitId = $unitId;
 $preweekNavUnitTitle = $unitTitle;
@@ -201,7 +201,7 @@ $preweekNavUnitTitle = $unitTitle;
   <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-folder2-open"></i></span>
-      Lectures <span class="text-gray-500 font-semibold">â€”</span> <span class="text-amber-200 font-semibold"><?php echo h($unitTitle); ?></span>
+      Lectures <span class="text-gray-500 font-semibold">—</span> <span class="text-amber-200 font-semibold"><?php echo h($unitTitle); ?></span>
     </h1>
     <p class="text-gray-400 mt-3 mb-0 max-w-3xl text-sm sm:text-base">Add or edit lectures for this pre-week. Use <strong class="text-gray-300 font-semibold">Materials</strong> on each row to attach videos and handouts.</p>
   </div>
@@ -221,7 +221,7 @@ $preweekNavUnitTitle = $unitTitle;
       <label for="lecture-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
       <div class="relative">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" name="q" id="lecture-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Title or descriptionâ€¦" autocomplete="off" class="input-custom w-full pl-10">
+        <input type="search" name="q" id="lecture-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Title or description…" autocomplete="off" class="input-custom w-full pl-10">
       </div>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
@@ -290,7 +290,7 @@ $preweekNavUnitTitle = $unitTitle;
                 </td>
                 <td class="px-5 py-3 align-top text-sm text-gray-400">
                   <span class="tabular-nums"><?php echo (int)$vc; ?></span> video<?php echo $vc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">Â·</span>
+                  <span class="text-gray-600 mx-1">·</span>
                   <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
                 </td>
                 <td class="px-5 py-3 align-middle text-center">
@@ -327,7 +327,7 @@ $preweekNavUnitTitle = $unitTitle;
           <div class="space-y-4">
             <div>
               <label for="lecture_topic_title" class="block text-sm font-medium text-gray-300 mb-1.5">Title <span class="text-red-400">*</span></label>
-              <input type="text" name="topic_title" id="lecture_topic_title" required maxlength="255" value="<?php echo h($edit['title'] ?? ''); ?>" class="input-custom w-full" placeholder="e.g. Pre-week lecture 1, Orientationâ€¦" autocomplete="off">
+              <input type="text" name="topic_title" id="lecture_topic_title" required maxlength="255" value="<?php echo h($edit['title'] ?? ''); ?>" class="input-custom w-full" placeholder="e.g. Pre-week lecture 1, Orientation…" autocomplete="off">
             </div>
             <div>
               <label for="lecture_topic_description" class="block text-sm font-medium text-gray-300 mb-1.5">Description <span class="text-gray-500 font-normal">(optional)</span></label>
