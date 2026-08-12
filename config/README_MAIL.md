@@ -6,9 +6,9 @@ Password reset emails are sent via **Gmail SMTP** when configured below.
 
 Edit **`config/mail_config.php`** and set:
 
-- **`smtp_username`** – your full Gmail address (e.g. `monzalesvinceivan@gmail.com`)
-- **`smtp_password`** – your **Gmail App Password** (see step 2)
-- **`from_email`** – same as `smtp_username` (Gmail requires this)
+- **`smtp_username`** - your full Gmail address (e.g. `monzalesvinceivan@gmail.com`)
+- **`smtp_password`** - your **Gmail App Password** (see step 2)
+- **`from_email`** - same as `smtp_username` (Gmail requires this)
 
 ## 2. Create a Gmail App Password
 
@@ -19,7 +19,7 @@ You cannot use your normal Gmail password. You must use an **App Password**:
 
 2. Create an **App Password**:  
    [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)  
-   - Choose “Mail” and “Other (Custom name)” → e.g. “LCRC eReview”
+   - Choose "Mail" and "Other (Custom name)" → e.g. "LCRC eReview"
    - Copy the **16-character password** (no spaces)
 
 3. Paste that 16-character password into **`smtp_password`** in `config/mail_config.php`.

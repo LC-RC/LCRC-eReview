@@ -1,5 +1,5 @@
 <?php
-/** Permission tree markup — requires Alpine parent: isChecked(), toggle(), hasFullLms, toggleFullLms(), catalog */
+/** Permission tree markup - requires Alpine parent: isChecked(), toggle(), hasFullLms, toggleFullLms(), catalog */
 $scaTreeScope = $scaTreeScope ?? 'tree';
 $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
 ?>
@@ -76,7 +76,7 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
       <details>
         <summary x-text="pbs.label"></summary>
         <label><input type="checkbox" :checked="isChecked('preboard_subject', pbs.id)" @change="toggle('preboard_subject', pbs.id, $event.target.checked)"> Entire preboard subject</label>
-        <p class="sca-pb-hint text-xs text-gray-500 m-0 mb-2 pl-1">Permission to view sets — each set still follows admin open/schedule or student request.</p>
+        <p class="sca-pb-hint text-xs text-gray-500 m-0 mb-2 pl-1">Permission to view sets - each set still follows admin open/schedule or student request.</p>
         <template x-for="st in pbs.sets" :key="'<?php echo $scope; ?>-set-'+st.id">
           <label class="sca-pb-set-label">
             <input type="checkbox" :checked="isChecked('preboard_set', st.id)" @change="toggle('preboard_set', st.id, $event.target.checked)">

@@ -1,4 +1,4 @@
-# LCRC eReview – Step-by-Step Local Setup Guide
+# LCRC eReview - Step-by-Step Local Setup Guide
 
 This document explains how to run the **LCRC eReview** system (PHP + MySQL) on your local machine (localhost).
 
@@ -63,7 +63,7 @@ So your project root should contain files like:
 3. Select the **`ereview`** database.
 4. Import the **complete** schema and seed data:
    - Open **`ereview_complete.sql`** from the project root in a text editor.
-   - Copy its entire content and run it in phpMyAdmin’s **SQL** tab,  
+   - Copy its entire content and run it in phpMyAdmin's **SQL** tab,  
      **or** use the **Import** tab and choose `ereview_complete.sql`.
 
 This file:
@@ -132,7 +132,7 @@ Ensure the web server (or PHP process) can write to these folders.
 2. Open a browser and go to:
    - **XAMPP**: `http://localhost/Ereview/`
    - **WAMP**: `http://localhost/Ereview/`
-   - **Laragon**: `http://ereview.test/` (if you use Laragon’s “Auto” virtual host) or `http://localhost/Ereview/`
+   - **Laragon**: `http://ereview.test/` (if you use Laragon's "Auto" virtual host) or `http://localhost/Ereview/`
 
 The landing page (`index.php`) should load with **Login** and **Register** buttons.
 
@@ -154,7 +154,7 @@ You should see the same landing page.
 
 ## Step 7: Verify It Works
 
-1. **Landing page**: You should see “LCRC eReview” with Login and Register.
+1. **Landing page**: You should see "LCRC eReview" with Login and Register.
 2. **Login as admin**:
    - Click **Login**.
    - Email: `admin@ereview.ph`, Password: `admin123`.
@@ -162,13 +162,13 @@ You should see the same landing page.
 3. **Register a student**:
    - Click **Register**, fill the form, upload a payment proof (image or PDF).
    - Submit; then an admin can approve the student from the admin panel.
-4. **Student login**: After approval, log in with that student’s email/password; you should see the **Student Dashboard**.
+4. **Student login**: After approval, log in with that student's email/password; you should see the **Student Dashboard**.
 
 ---
 
 ## Optional: Inventory Module
 
-The **`inventory/`** folder is a separate “Office Supplies Inventory” app:
+The **`inventory/`** folder is a separate "Office Supplies Inventory" app:
 
 - It uses its **own** database: **`inventory_db`**.
 - Config: **`inventory/config.php`** (host, user, pass, db name).
@@ -184,8 +184,8 @@ The **`inventory/`** folder is a separate “Office Supplies Inventory” app:
 | Issue | What to check |
 |-------|----------------|
 | **Blank page or 500 error** | Enable errors: in `index.php` or `db.php` add at the top (temporarily): `ini_set('display_errors', 1); error_reporting(E_ALL);` Then check PHP/MySQL errors. |
-| **“Connection failed”** | MySQL is running; `db.php` has correct `$host`, `$user`, `$pass`, `$db`; database `ereview` exists and schema was imported. |
-| **“Database connection failed” in inventory** | Create `inventory_db` and run `inventory/sql/schema.sql`; check `inventory/config.php`. |
+| **"Connection failed"** | MySQL is running; `db.php` has correct `$host`, `$user`, `$pass`, `$db`; database `ereview` exists and schema was imported. |
+| **"Database connection failed" in inventory** | Create `inventory_db` and run `inventory/sql/schema.sql`; check `inventory/config.php`. |
 | **Upload fails (payment proof / handouts / videos)** | `uploads`, `uploads/handouts`, `uploads/videos` exist and are writable by the web server/PHP. |
 | **Login does nothing or wrong redirect** | Confirm you imported **`ereview_complete.sql`** (so `users` table and admin user exist). Clear browser cache/cookies and try again. |
 | **Session / redirect issues** | Ensure no output before `session_start()` (no BOM or spaces before `<?php` in included files). |

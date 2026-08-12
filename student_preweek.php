@@ -156,7 +156,7 @@ $pageTitle = 'Pre-week';
           </span>
           <div class="min-w-0">
             <h3 class="text-lg font-bold text-[#143D59] m-0">Pre-week list</h3>
-            <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Cards or list — same as your subject materials.</p>
+            <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Cards or list - same as your subject materials.</p>
           </div>
         </div>
         <div class="materials-view-toggle" role="group" aria-label="Layout">
@@ -188,7 +188,7 @@ $pageTitle = 'Pre-week';
             id="preweek-home-search"
             type="search"
             class="materials-search-input"
-            placeholder="Search by name…"
+            placeholder="Search by name..."
             autocomplete="off"
             x-model.debounce.300ms="preweekSearch"
           >
@@ -214,8 +214,8 @@ $pageTitle = 'Pre-week';
           >
             <option value="id_desc">Newest first</option>
             <option value="id_asc">Oldest first</option>
-            <option value="title_asc">Title A–Z</option>
-            <option value="title_desc">Title Z–A</option>
+            <option value="title_asc">Title A-Z</option>
+            <option value="title_desc">Title Z-A</option>
           </select>
         </div>
       </div>

@@ -57,7 +57,7 @@ if ($tokenRaw !== '') {
             } elseif ($checkoutRecovery) {
                 $message = 'Your account has been verified. Use Continue to Payment to safely resume your checkout.';
             } elseif ($enrollmentPath === 'free_access') {
-                $message = 'Your account has been verified. Free Access does not require payment—an administrator will review your request.';
+                $message = 'Your account has been verified. Free Access does not require payment-an administrator will review your request.';
             } else {
                 $message = 'Your account has been verified. You may now sign in.';
             }
@@ -92,7 +92,7 @@ $pageTitle = $success ? 'Email verified' : 'Verification failed';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo $success ? 'Email verified' : 'Verification failed'; ?> – LCRC eReview</title>
+  <title><?php echo $success ? 'Email verified' : 'Verification failed'; ?> - LCRC eReview</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin page ACL — granular locked/unlocked access + activity log helpers.
+ * Admin page ACL - granular locked/unlocked access + activity log helpers.
  *
  * Rule: zero rows in admin_page_permissions => full access (legacy/super admins).
  * Any rows => only those page_keys are allowed.
@@ -35,6 +35,11 @@ function admin_acl_catalog(): array
                         'admin_payment_proof', 'admin_students_presence', 'extend_access', 'reject',
                     ],
                 ],
+                [
+                    'key' => 'student_activity',
+                    'label' => 'Live Activity & Monitoring',
+                    'scripts' => ['admin_student_live', 'admin_student_live_api'],
+                ],
                 ['key' => 'student_access', 'label' => 'Student Access', 'scripts' => ['admin_student_access', 'admin_student_access_api']],
                 [
                     'key' => 'support',
@@ -54,7 +59,14 @@ function admin_acl_catalog(): array
                 ['key' => 'videos', 'label' => 'Videos', 'scripts' => ['admin_videos']],
                 ['key' => 'handouts', 'label' => 'Handouts', 'scripts' => ['admin_handouts']],
                 ['key' => 'materials', 'label' => 'Materials', 'scripts' => ['admin_materials', 'admin_materials_diagnose']],
-                ['key' => 'quizzes', 'label' => 'Quizzes', 'scripts' => ['admin_quizzes', 'admin_quiz_questions']],
+                [
+                    'key' => 'quizzes',
+                    'label' => 'Quizzes',
+                    'scripts' => [
+                        'admin_quizzes', 'admin_quiz_questions',
+                        'admin_quiz_monitor', 'admin_quiz_attempt_review',
+                    ],
+                ],
                 ['key' => 'test_bank', 'label' => 'Test Bank', 'scripts' => ['admin_test_bank']],
             ],
         ],
@@ -275,7 +287,7 @@ function admin_acl_require_page(?string $pageKey = null): void
         $pageKey = admin_acl_key_for_script($script) ?? '';
     }
     if ($pageKey === '') {
-        return; // unmapped admin helper — allow if role ok
+        return; // unmapped admin helper - allow if role ok
     }
     if (!admin_can($pageKey)) {
         $_SESSION['error'] = 'You do not have permission to access that admin area.';
@@ -287,6 +299,7 @@ function admin_acl_require_page(?string $pageKey = null): void
             $scriptMap = [
                 'manage_admins' => 'admin_admins',
                 'students' => 'admin_students',
+                'student_activity' => 'admin_student_live',
                 'student_access' => 'admin_student_access',
                 'support' => 'admin_support_analytics',
                 'subjects' => 'admin_subjects',
@@ -294,7 +307,7 @@ function admin_acl_require_page(?string $pageKey = null): void
                 'videos' => 'admin_videos',
                 'handouts' => 'admin_handouts',
                 'materials' => 'admin_materials',
-                'quizzes' => 'admin_quizzes',
+                'quizzes' => 'admin_quiz_monitor',
                 'test_bank' => 'admin_test_bank',
                 'preboards' => 'admin_preboards_subjects',
                 'preweek' => 'admin_preweek',
@@ -565,7 +578,7 @@ function users_activity_log_present(array $row): array
         }
     }
 
-    $targetLabel = '—';
+    $targetLabel = '-';
     $targetHref = null;
     $tid = (int) ($row['target_user_id'] ?? 0);
     if ($tid > 0) {
@@ -629,7 +642,7 @@ function admin_acl_is_full_access(): bool
  * Annotate sidebar nav by ACL. Keep all items visible; mark locked ones
  * so the UI stays complete but unauthorized links are not clickable.
  *
- * Full-access admins: hide Content Hub children (Lessons/Videos/…) — they
+ * Full-access admins: hide Content Hub children (Lessons/Videos/...) - they
  * open those from Subjects. Restricted staff still see their granted pages.
  *
  * @param list<array<string,mixed>> $navConfig
@@ -647,7 +660,7 @@ function admin_acl_filter_nav(array $navConfig): array
         foreach (($section['items'] ?? []) as $item) {
             $key = (string) ($item['acl_key'] ?? '');
 
-            // Super / full-access: Content Hub only — drop redundant siblings.
+            // Super / full-access: Content Hub only - drop redundant siblings.
             if (
                 $fullAccess
                 && strcasecmp($sectionLabel, 'Content') === 0
@@ -662,7 +675,7 @@ function admin_acl_filter_nav(array $navConfig): array
             $item['acl_locked'] = !$allowed;
             if (!$allowed) {
                 $label = (string) ($item['label'] ?? 'this area');
-                $item['title'] = 'Locked — no access to ' . $label;
+                $item['title'] = 'Locked - no access to ' . $label;
                 $item['href'] = '#';
                 unset($item['badge']);
             }

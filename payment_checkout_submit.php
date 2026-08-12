@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5/6 — Submit GCash reference + payment proof, then run receipt verification.
+ * Phase 5/6 - Submit GCash reference + payment proof, then run receipt verification.
  * Verification failure never rolls back a successful submission.
  * Does NOT fulfill access / SCA / activation.
  */

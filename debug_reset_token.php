@@ -1,6 +1,6 @@
 <?php
 /**
- * Reset token debug – run validation step-by-step and return JSON for console.
+ * Reset token debug - run validation step-by-step and return JSON for console.
  * GET or POST: token=... or url=full_reset_url
  * DELETE THIS FILE when done debugging.
  */

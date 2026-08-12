@@ -1,6 +1,6 @@
 <?php
 /**
- * Professor admin shell — uses admin styling; brand links to professor dashboard.
+ * Professor admin shell - uses admin styling; brand links to professor dashboard.
  */
 require_once __DIR__ . '/includes/url_helpers.php';
 $appShellCurrentScript = ereview_page_basename();

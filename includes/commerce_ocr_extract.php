@@ -1,6 +1,6 @@
 <?php
 /**
- * Commerce OCR field extraction (Phase 6) — GCash PH receipt heuristics.
+ * Commerce OCR field extraction (Phase 6) - GCash PH receipt heuristics.
  *
  * Does NOT: run OCR engines, write payments, fulfillment, access_grants, SCA.
  */
@@ -217,7 +217,7 @@ function commerce_ocr_extract_from_text(string $rawText): array
         }
     }
     if ($refRaw === null) {
-        // Fallback: longest alphanumeric token 8–20 chars (excluding pure short numbers)
+        // Fallback: longest alphanumeric token 8-20 chars (excluding pure short numbers)
         if (preg_match_all('/\b([A-Za-z0-9]{8,20})\b/', $text, $m)) {
             $best = '';
             foreach ($m[1] as $tok) {

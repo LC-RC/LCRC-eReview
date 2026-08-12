@@ -165,7 +165,7 @@ function commerce_notify_stamp_fulfillment_email(mysqli $conn, int $paymentId): 
     $ok = mysqli_stmt_execute($stmt);
     $aff = $ok ? (int) mysqli_stmt_affected_rows($stmt) : 0;
     mysqli_stmt_close($stmt);
-    return $ok && $aff >= 0; // 0 means already stamped by race — still fine
+    return $ok && $aff >= 0; // 0 means already stamped by race - still fine
 }
 
 /**
@@ -229,7 +229,7 @@ function commerce_notify_payment_fulfilled(mysqli $conn, int $paymentId): array
         }
     }
 
-    $subject = 'LCRC eReview — Access granted (payment fulfilled)';
+    $subject = 'LCRC eReview - Access granted (payment fulfilled)';
     $durationHtml = $durationPlain !== ''
         ? '<p><strong>Access duration:</strong> ' . htmlspecialchars($durationPlain, ENT_QUOTES, 'UTF-8') . '</p>'
         : '';
@@ -343,7 +343,7 @@ function commerce_notify_payment_rejected(mysqli $conn, int $paymentId): array
 
     $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
     $ref = htmlspecialchars((string) ($payment['payment_ref'] ?? ''), ENT_QUOTES, 'UTF-8');
-    $subject = 'LCRC eReview — Payment not approved';
+    $subject = 'LCRC eReview - Payment not approved';
     $bodyHtml = "<p>Dear {$name},</p>"
         . '<p>We reviewed your payment submission'
         . ($ref !== '' ? " (reference <strong>{$ref}</strong>)" : '')
@@ -403,7 +403,7 @@ function commerce_notify_far_approved(mysqli $conn, int $requestId, int $duratio
     $ends = trim((string) ($far['ends_at'] ?? ''));
     $endsLabel = $ends !== '' ? date('F j, Y', strtotime($ends)) : ($months . ' month(s) from approval');
 
-    $subject = 'LCRC eReview — Free Access approved';
+    $subject = 'LCRC eReview - Free Access approved';
     $bodyHtml = "<p>Dear {$name},</p>"
         . '<p>Your Free Access request'
         . ($ref !== '' ? " (<strong>{$ref}</strong>)" : '')
@@ -488,7 +488,7 @@ function commerce_notify_upload_proof_reminder(mysqli $conn, int $userId, array 
         $detailsPlain .= "Payment reference: {$ref}\n";
     }
 
-    $subject = 'LCRC eReview — Please upload your payment proof';
+    $subject = 'LCRC eReview - Please upload your payment proof';
     $bodyHtml = "<p>Dear {$name},</p>"
         . '<p>Your registration is waiting for <strong>GCash payment proof</strong> before we can activate your LMS access.</p>';
     if ($detailsHtml !== '') {
@@ -516,7 +516,7 @@ function commerce_notify_upload_proof_reminder(mysqli $conn, int $userId, array 
 
 /**
  * Notify student after administrative Grant Access (email + in-app message).
- * Safe to call when payment had no proof — SMTP/notification failure never undoes the grant.
+ * Safe to call when payment had no proof - SMTP/notification failure never undoes the grant.
  *
  * @param array{months?:int,scope?:string,no_proof?:bool,payment_closed?:bool,ends_at?:string,grant_id?:int} $opts
  * @return array{ok:bool,error?:string,sent?:bool,in_app?:bool}
@@ -565,7 +565,7 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
             $title = 'Access granted';
             $msg = 'Your LMS access has been granted: ' . $scopeLabel . ' for ' . $durationPlain . '.';
             if ($noProof) {
-                $msg .= ' Manual approval — payment proof was not required.';
+                $msg .= ' Manual approval - payment proof was not required.';
             }
             if ($approved) {
                 $msg .= ' You can sign in now.';
@@ -596,9 +596,9 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
         ];
     }
 
-    $subject = 'LCRC eReview — Access granted';
+    $subject = 'LCRC eReview - Access granted';
     $bodyHtml = "<p>Dear {$name},</p>"
-        . '<p>Good news — your <strong>LMS access has been granted</strong>.</p>'
+        . '<p>Good news - your <strong>LMS access has been granted</strong>.</p>'
         . '<ul>'
         . '<li><strong>Access type:</strong> ' . htmlspecialchars($scopeLabel, ENT_QUOTES, 'UTF-8') . '</li>'
         . '<li><strong>Duration:</strong> ' . htmlspecialchars($durationPlain, ENT_QUOTES, 'UTF-8') . '</li>'
@@ -617,7 +617,7 @@ function commerce_notify_admin_manual_grant(mysqli $conn, int $userId, int $admi
     $plain = "Dear {$student['full_name']},\n\nYour LMS access has been granted.\n"
         . "Access type: {$scopeLabel}\n"
         . "Duration: {$durationPlain}\n"
-        . ($noProof ? "Manual approval — payment proof was not required.\n" : '')
+        . ($noProof ? "Manual approval - payment proof was not required.\n" : '')
         . $plainExtra
         . "\nLCRC eReview Admin Team\n";
     $html = commerce_notify_wrap_html('Access granted', $bodyHtml);
@@ -667,7 +667,7 @@ function commerce_notify_far_rejected(mysqli $conn, int $requestId): array
 
     $name = htmlspecialchars((string) $student['full_name'], ENT_QUOTES, 'UTF-8');
     $ref = htmlspecialchars((string) ($far['request_ref'] ?? ''), ENT_QUOTES, 'UTF-8');
-    $subject = 'LCRC eReview — Free Access not approved';
+    $subject = 'LCRC eReview - Free Access not approved';
     $bodyHtml = "<p>Dear {$name},</p>"
         . '<p>Your Free Access request'
         . ($ref !== '' ? " (<strong>{$ref}</strong>)" : '')

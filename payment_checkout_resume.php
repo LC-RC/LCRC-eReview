@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5 — Continue Payment / checkout recovery.
+ * Phase 5 - Continue Payment / checkout recovery.
  *
  * Re-issues a checkout session for the SAME browser post-verify recovery handle.
  * Does NOT use payment_ref as auth. Does NOT grant LMS access. Free Access blocked.
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Continue Payment – LCRC eReview</title>
+  <title>Continue Payment - LCRC eReview</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }

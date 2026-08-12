@@ -1,4 +1,4 @@
-# Registration Page — Modern UX/UI Recommendations
+# Registration Page - Modern UX/UI Recommendations
 
 This document outlines actionable recommendations to refine and enhance the LCRC eReview registration page. Some items are already implemented; others are suggested next steps.
 
@@ -23,23 +23,23 @@ These changes improve perceived quality, clarity, and consistency without changi
 
 ## 1. **Layout & Information Architecture**
 
-### Left panel (hero) — ✅ Implemented
+### Left panel (hero) - ✅ Implemented
 - **Before:** Empty gradient panel.
 - **After:** Hero block with value proposition, short copy, and benefit list (timed drills, mock cohorts, progress tracking).
-- **Recommendation:** Keep this. Optionally add a subtle illustration or abstract graphic (e.g. charts, progress curve) to reinforce “tracking” and “CPA journey” without clutter.
+- **Recommendation:** Keep this. Optionally add a subtle illustration or abstract graphic (e.g. charts, progress curve) to reinforce "tracking" and "CPA journey" without clutter.
 
 ### Form structure
-- **Current:** Single “Your full name” field + Email, School, Review type, Password, Confirm, File upload.
-- **Recommendation:** If you need first/last name separately (e.g. for certificates or emails), split into “First name” and “Last name” in the same row; otherwise the single full-name field is fine and reduces friction.
+- **Current:** Single "Your full name" field + Email, School, Review type, Password, Confirm, File upload.
+- **Recommendation:** If you need first/last name separately (e.g. for certificates or emails), split into "First name" and "Last name" in the same row; otherwise the single full-name field is fine and reduces friction.
 
 ---
 
 ## 2. **Form Field Clarity**
 
-### Labels and placeholders — ✅ Email label fixed
-- **Before:** Email float label said “you@example.com,” which looked like a placeholder and could be confused with the password area.
-- **After:** Float label is “Email address”; placeholder remains a space for float-label behavior.
-- **Recommendation:** Use clear, short labels for every field (e.g. “Email address,” “Password,” “Confirm password”). Avoid using example values as the only label.
+### Labels and placeholders - ✅ Email label fixed
+- **Before:** Email float label said "you@example.com," which looked like a placeholder and could be confused with the password area.
+- **After:** Float label is "Email address"; placeholder remains a space for float-label behavior.
+- **Recommendation:** Use clear, short labels for every field (e.g. "Email address," "Password," "Confirm password"). Avoid using example values as the only label.
 
 ### Consistency
 - **Recommendation:** Use the same pattern for all fields: either always float labels or always top labels. Right now School and Review type use top labels; name/email use float labels. Consider:
@@ -51,9 +51,9 @@ These changes improve perceived quality, clarity, and consistency without changi
 ## 3. **Visual Hierarchy & Spacing**
 
 - **Title/subtitle:** Already clear. Consider slightly larger title (e.g. 1.75rem) on desktop to strengthen hierarchy.
-- **Info block:** The “Track your scores…” + metrics box is good. Consider a light left border in brand blue or a small icon to tie it to “progress” and separate it from the form.
-- **Sections:** Add a bit more margin between logical groups (e.g. after School/Review type, before Password) so the form doesn’t feel dense.
-- **Footer terms:** Keep font small; ensure “Terms of Service” and “Privacy Policy” have a visible hover state (e.g. underline or color change).
+- **Info block:** The "Track your scores..." + metrics box is good. Consider a light left border in brand blue or a small icon to tie it to "progress" and separate it from the form.
+- **Sections:** Add a bit more margin between logical groups (e.g. after School/Review type, before Password) so the form doesn't feel dense.
+- **Footer terms:** Keep font small; ensure "Terms of Service" and "Privacy Policy" have a visible hover state (e.g. underline or color change).
 
 ---
 
@@ -61,17 +61,17 @@ These changes improve perceived quality, clarity, and consistency without changi
 
 - **Focus:** Focus ring (blue) is already in place; keep it for accessibility.
 - **Recommendation:** Add a subtle transition (e.g. 0.2s) on border-color and box-shadow for inputs so focus/hover feel smooth.
-- **Selects:** Style the dropdown arrow and option list to match the dark theme (e.g. dark background, light text) so they don’t look like native default controls.
-- **File zone:** Drag-and-drop area is clear. Consider a short “Accepted: images, PDF” under the hint to reduce doubt.
+- **Selects:** Style the dropdown arrow and option list to match the dark theme (e.g. dark background, light text) so they don't look like native default controls.
+- **File zone:** Drag-and-drop area is clear. Consider a short "Accepted: images, PDF" under the hint to reduce doubt.
 
 ---
 
 ## 5. **Primary Action (Submit)**
 
-- **Current:** “Submit registration” with arrow; hover lift and shadow.
+- **Current:** "Submit registration" with arrow; hover lift and shadow.
 - **Recommendations:**
-  - Use a concise label: “Create account” or “Submit registration” (current is fine).
-  - Optional: brief loading state (e.g. spinner + “Creating account…”), which you can tie to the existing modal.
+  - Use a concise label: "Create account" or "Submit registration" (current is fine).
+  - Optional: brief loading state (e.g. spinner + "Creating account..."), which you can tie to the existing modal.
   - Ensure the button has a minimum touch target (e.g. 44px height) on mobile.
 
 ---
@@ -79,14 +79,14 @@ These changes improve perceived quality, clarity, and consistency without changi
 ## 6. **Trust & Progress**
 
 - **Progress bar:** The thin top progress bar is good; keep it and ensure it reflects real progress (e.g. required fields filled or steps).
-- **Security hint:** “Secure sign-in. We never share your data.” is good; keep it near the password block.
-- **Terms line:** “By continuing, you agree to…” is clear. Ensure links go to real Terms and Privacy pages.
+- **Security hint:** "Secure sign-in. We never share your data." is good; keep it near the password block.
+- **Terms line:** "By continuing, you agree to..." is clear. Ensure links go to real Terms and Privacy pages.
 
 ---
 
 ## 7. **Responsive & Accessibility**
 
-- **Mobile:** Left panel collapses to a compact strip with hero text; list hidden to save space. Consider keeping one short line of benefits (e.g. “Timed drills · Mock exams · Progress tracking”) on small screens.
+- **Mobile:** Left panel collapses to a compact strip with hero text; list hidden to save space. Consider keeping one short line of benefits (e.g. "Timed drills · Mock exams · Progress tracking") on small screens.
 - **Touch:** Ensure inputs and buttons are at least 44px tall where possible; spacing between tappable elements is already reasonable.
 - **Reduced motion:** You already respect `prefers-reduced-motion` for animations; keep this.
 - **Focus order:** Tab order should follow visual order (header → form fields → submit → Login link → footer). No `tabindex` needed if DOM order matches.
@@ -98,7 +98,7 @@ These changes improve perceived quality, clarity, and consistency without changi
 
 - **Inputs:** 0.2s transition on border and box-shadow for focus/hover.
 - **Submit button:** Optional subtle scale on active (e.g. 0.98) in addition to existing hover lift.
-- **Links:** Underline or color change on hover for “Login,” “Terms of Service,” “Privacy Policy.”
+- **Links:** Underline or color change on hover for "Login," "Terms of Service," "Privacy Policy."
 - **Success/error modals:** Current entrance animation is good; keep it.
 
 ---
@@ -107,7 +107,7 @@ These changes improve perceived quality, clarity, and consistency without changi
 
 | Item | Status / Action |
 |------|------------------|
-| Email label “Email address” | ✅ Done |
+| Email label "Email address" | ✅ Done |
 | Left-panel hero content | ✅ Done |
 | Design tokens (colors, spacing, radius) | ✅ Done |
 | Right panel gradient + depth | ✅ Done |
@@ -128,15 +128,15 @@ These changes improve perceived quality, clarity, and consistency without changi
 - **Staggered reveal:** On load, animate form sections with a short delay (e.g. 50ms between each) and respect `prefers-reduced-motion`.
 - **Custom select styling:** Style `<select>` dropdowns to match the dark theme (background, option list, custom chevron) for a fully cohesive look.
 - **Floating labels everywhere:** Use float labels for School and Review type as well, or add a small icon inside each input (e.g. school icon, badge icon) for a more app-like feel.
-- **Illustration in hero:** Add a small SVG or image in the left panel (e.g. abstract chart, certificate, or progress curve) to reinforce “CPA journey” and “tracking.”
+- **Illustration in hero:** Add a small SVG or image in the left panel (e.g. abstract chart, certificate, or progress curve) to reinforce "CPA journey" and "tracking."
 
 ---
 
 ## 11. **Optional Future Enhancements**
 
 - **Illustration:** One small, on-brand graphic in the left hero (e.g. progress chart or abstract CPA motif).
-- **Step indicator:** If registration later becomes multi-step, add a step indicator (e.g. “Step 1 of 2”) near the title.
-- **Social proof:** “Join 5,000+ aspiring CPAs” or similar in the hero or under the submit button (if accurate).
-- **Password visibility:** Keep the eye icon; ensure it’s clearly associated with the password field for screen readers (`aria-label`).
+- **Step indicator:** If registration later becomes multi-step, add a step indicator (e.g. "Step 1 of 2") near the title.
+- **Social proof:** "Join 5,000+ aspiring CPAs" or similar in the hero or under the submit button (if accurate).
+- **Password visibility:** Keep the eye icon; ensure it's clearly associated with the password field for screen readers (`aria-label`).
 
 These recommendations keep the current dark theme and structure while improving clarity, consistency, and perceived polish. The implemented modern enhancements (design tokens, gradients, typography, inputs, and CTA) give the registration page a more refined, contemporary feel; prioritize accessibility and label consistency when adding further changes.

@@ -937,7 +937,7 @@ unset($_SESSION['error']);
       letter-spacing: -0.025em;
     }
     body.registration-prototype .login-card label { color: var(--reg-text-label) !important; font-weight: 600; }
-    /* Registration form fields — light glass inputs */
+    /* Registration form fields - light glass inputs */
     body.registration-prototype .login-card .auth-input,
     body.registration-prototype .reg-frame8-main .auth-input {
       background: rgba(255, 255, 255, 0.82) !important;
@@ -1688,7 +1688,7 @@ unset($_SESSION['error']);
             <div class="text-sm text-slate-600 mb-4 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 space-y-1"
                  x-show="enrollmentPath === 'package' || enrollmentPath === 'by_topic'" x-cloak>
               <p class="font-semibold text-slate-800">Payment comes after email verification.</p>
-              <p>After creating your account, verify your email. You’ll then be redirected to the payment page where you can complete your GCash payment and upload your proof of payment.</p>
+              <p>After creating your account, verify your email. You'll then be redirected to the payment page where you can complete your GCash payment and upload your proof of payment.</p>
             </div>
 
             <span class="reg-section-label" id="reg-label-security"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Security</span>
@@ -1707,7 +1707,7 @@ unset($_SESSION['error']);
                 <div class="reg-pw-strength-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5" aria-label="Password strength">
                   <div class="reg-pw-strength-fill" id="reg-pw-strength-fill"></div>
                 </div>
-                <p class="reg-pw-strength-label" id="reg-pw-strength-label">—</p>
+                <p class="reg-pw-strength-label" id="reg-pw-strength-label">-</p>
               </div>
               <p class="reg-pw-checklist-heading" id="reg-pw-checklist-heading">Password requirements</p>
               <div class="reg-pw-checklist" id="reg-pw-checklist" aria-live="polite">
@@ -1948,7 +1948,7 @@ unset($_SESSION['error']);
         <i class="bi bi-envelope-check-fill" style="font-size:1.75rem;color:#1F58C3;"></i>
       </div>
       <h2>Registration successful!</h2>
-      <p class="reg-flow-steps__modal-steps"><strong>STEP 1 COMPLETE</strong> — Create Account ✓</p>
+      <p class="reg-flow-steps__modal-steps"><strong>STEP 1 COMPLETE</strong> - Create Account ✓</p>
       <p>We've sent a verification link to your email address.</p>
       <p><strong>NEXT:</strong> Check your email to verify your account.</p>
       <button type="button" id="reg-modal-email-sent-ok" class="btn-primary">OK, I'll check my email</button>
@@ -2292,7 +2292,7 @@ unset($_SESSION['error']);
               hintEl.textContent = 'Complete the fields above to continue.';
               hintEl.classList.remove('reg-hint-complete');
             } else {
-              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 7 complete — fill all required fields to submit.';
+              hintEl.innerHTML = '<span class="reg-hint-count">' + count + '</span> of 7 complete - fill all required fields to submit.';
               hintEl.classList.toggle('reg-hint-complete', count >= 7);
             }
             hintEl.classList.remove('hidden');
@@ -2425,7 +2425,7 @@ unset($_SESSION['error']);
       var strengthLevels = ['weak', 'fair', 'good', 'strong', 'very-strong'];
       var strengthLabels = { 'weak': 'Weak', 'fair': 'Fair', 'good': 'Good', 'strong': 'Strong', 'very-strong': 'Very strong' };
       function getPasswordStrengthLevel(pw) {
-        if (!pw || pw.length === 0) return { level: '', label: '—' };
+        if (!pw || pw.length === 0) return { level: '', label: '-' };
         var score = 0;
         if (pw.length >= 8) score++;
         if (pw.length >= 10) score++;
@@ -2632,7 +2632,7 @@ unset($_SESSION['error']);
           var pendingEmail = emailInput ? emailInput.value.trim() : '';
 
           regSubmitBtn.disabled = true;
-          regSubmitText.textContent = 'Submitting…';
+          regSubmitText.textContent = 'Submitting...';
           regSubmitSpinner.classList.remove('hidden');
           regSubmitArrow.classList.add('hidden');
           if (loadingModal) loadingModal.classList.add('is-active');

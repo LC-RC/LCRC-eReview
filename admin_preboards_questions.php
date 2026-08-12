@@ -222,10 +222,10 @@ $adminBreadcrumbs = [
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
-      <span>Preboard Questions — Set <?php echo h($setRow['set_label'] ?? ''); ?></span>
+      <span>Preboard Questions - Set <?php echo h($setRow['set_label'] ?? ''); ?></span>
       <span class="text-gray-500 font-medium text-lg">(<?php echo h($setRow['subject_name'] ?? ''); ?>)</span>
     </h1>
-    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($setRow['subject_name'] ?? ''); ?> — Add and manage questions for this set. Students get one attempt per set.</p>
+    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($setRow['subject_name'] ?? ''); ?> - Add and manage questions for this set. Students get one attempt per set.</p>
   </div>
 
   <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
@@ -255,7 +255,7 @@ $adminBreadcrumbs = [
     <input type="hidden" name="preboards_subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[220px]">
       <label for="pb-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search questions</label>
-      <input type="search" id="pb-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text…" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="pb-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text..." class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
@@ -347,7 +347,7 @@ $adminBreadcrumbs = [
               if ($plainQt === '') {
                   $plainQt = trim(preg_replace('/\s+/u', ' ', $rawQt));
               }
-              $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '…' : '');
+              $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '...' : '');
           ?>
             <tr class="quiz-admin-q-row">
               <td class="font-medium quiz-admin-q-preview"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></td>

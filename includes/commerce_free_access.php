@@ -104,7 +104,7 @@ function commerce_far_get_request(mysqli $conn, int $requestId): ?array
 }
 
 /**
- * Existing grant for this FAR + full_lms (any status) — app-level idempotency.
+ * Existing grant for this FAR + full_lms (any status) - app-level idempotency.
  */
 function commerce_far_existing_full_lms_grant(mysqli $conn, int $requestId): ?array
 {
@@ -202,7 +202,7 @@ function commerce_far_approve(
     $userId = (int) $req['user_id'];
     $status = (string) ($req['status'] ?? '');
 
-    // Fast path: already approved and fulfilled — no transaction needed.
+    // Fast path: already approved and fulfilled - no transaction needed.
     if ($status === 'approved') {
         $existing = commerce_far_existing_full_lms_grant($conn, $requestId);
         if ($existing) {
@@ -217,7 +217,7 @@ function commerce_far_approve(
                 'activation' => $activation,
             ];
         }
-        // Approved but missing grant — repair path below (with row lock).
+        // Approved but missing grant - repair path below (with row lock).
     } elseif ($status !== 'pending') {
         return ['ok' => false, 'error' => 'not_pending', 'request' => $req];
     }
@@ -407,7 +407,7 @@ function commerce_far_approve(
         mysqli_stmt_close($gs);
     }
 
-    // COMMIT succeeded (real grant create) — activate login, then notify (both best-effort).
+    // COMMIT succeeded (real grant create) - activate login, then notify (both best-effort).
     $activation = commerce_far_activate_login_after_grant($conn, $userId, $months, is_array($grant) ? $grant : null);
     if (empty($activation['ok'])) {
         error_log(
@@ -497,7 +497,7 @@ function commerce_far_reject(
     }
     mysqli_stmt_close($upd);
 
-    // Rejection transition succeeded — notification is best-effort.
+    // Rejection transition succeeded - notification is best-effort.
     $notify = ['ok' => false, 'error' => 'notify_not_attempted', 'sent' => false];
     try {
         $notify = commerce_notify_far_rejected($conn, $requestId);

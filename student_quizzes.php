@@ -91,7 +91,7 @@ $pageTitle = 'Quizzers';
                   <span class="font-medium text-gray-800"><?php echo number_format($lastResult['score'], 0); ?>%</span>
                   <span class="text-gray-500">(<?php echo $lastResult['correct']; ?>/<?php echo $lastResult['total']; ?>)</span>
                 <?php else: ?>
-                  <span class="text-gray-400">—</span>
+                  <span class="text-gray-400">-</span>
                 <?php endif; ?>
               </td>
               <td class="px-4 py-3 text-right">

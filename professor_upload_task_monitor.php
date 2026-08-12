@@ -139,11 +139,11 @@ unset($_SESSION['message'], $_SESSION['error']);
 function put_monitor_fmt_dt(?string $raw): string
 {
     if ($raw === null || $raw === '') {
-        return '—';
+        return '-';
     }
     $ts = strtotime($raw);
 
-    return $ts ? date('M j, Y g:i A', $ts) : '—';
+    return $ts ? date('M j, Y g:i A', $ts) : '-';
 }
 ?>
 <!DOCTYPE html>
@@ -534,12 +534,12 @@ function put_monitor_fmt_dt(?string $raw): string
             <form method="get" class="put-search-sort-form" action="professor_upload_task_monitor">
               <input type="hidden" name="task_id" value="<?php echo (int)$taskId; ?>">
               <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
-              <input type="search" name="q" value="<?php echo h($searchQ); ?>" class="put-search-input" placeholder="Search student, email, or filename…" autocomplete="off">
+              <input type="search" name="q" value="<?php echo h($searchQ); ?>" class="put-search-input" placeholder="Search student, email, or filename..." autocomplete="off">
               <select name="sort" class="put-sort-select" aria-label="Sort submissions">
                 <option value="submitted_desc" <?php echo $sortOpt === 'submitted_desc' ? 'selected' : ''; ?>>Newest submitted</option>
                 <option value="submitted_asc" <?php echo $sortOpt === 'submitted_asc' ? 'selected' : ''; ?>>Oldest submitted</option>
-                <option value="name_asc" <?php echo $sortOpt === 'name_asc' ? 'selected' : ''; ?>>Student A–Z</option>
-                <option value="name_desc" <?php echo $sortOpt === 'name_desc' ? 'selected' : ''; ?>>Student Z–A</option>
+                <option value="name_asc" <?php echo $sortOpt === 'name_asc' ? 'selected' : ''; ?>>Student A-Z</option>
+                <option value="name_desc" <?php echo $sortOpt === 'name_desc' ? 'selected' : ''; ?>>Student Z-A</option>
               </select>
               <button type="submit" class="put-apply-btn"><i class="bi bi-search"></i> Apply</button>
             </form>

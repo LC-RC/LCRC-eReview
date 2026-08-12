@@ -188,10 +188,10 @@ try {
                 $avail = false;
             }
             $st = $e['attempt_status'] ?? '';
-            $deadlineLabel = '—';
+            $deadlineLabel = '-';
             if (!empty($e['deadline'])) {
                 $ts = strtotime((string)$e['deadline']);
-                $deadlineLabel = $ts !== false ? date('M j, Y g:i A', $ts) : '—';
+                $deadlineLabel = $ts !== false ? date('M j, Y g:i A', $ts) : '-';
             }
             $titleSafe = h((string)($e['title'] ?? ''));
             $renderProbe['rows'][] = [

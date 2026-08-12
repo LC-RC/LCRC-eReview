@@ -1,6 +1,6 @@
 <?php
 /**
- * CLI — expire overdue access_grants and reconcile commerce-backed SCA (Phase 8.2).
+ * CLI - expire overdue access_grants and reconcile commerce-backed SCA (Phase 8.2).
  *
  * Usage:
  *   php scripts/commerce_expire_reconcile.php

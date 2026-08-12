@@ -1,4 +1,4 @@
-# Admin Dashboard — UI/UX Audit
+# Admin Dashboard - UI/UX Audit
 
 **Auditor perspective:** Senior Frontend Developer / UX focus  
 **Goal:** Can a user understand system "health" within **5 seconds**?
@@ -9,7 +9,7 @@
 
 ### Current state
 - **F-pattern:** Users typically scan top-left → horizontal along top → left edge downward.
-- **Hero** (top): Title, subtitle, last login, and quick actions occupy the first focal area. **No KPIs are shown here** — the user must scroll to the "At a glance" grid to see numbers.
+- **Hero** (top): Title, subtitle, last login, and quick actions occupy the first focal area. **No KPIs are shown here** - the user must scroll to the "At a glance" grid to see numbers.
 - **At a glance:** Six KPI cards in a 3×2 grid. Enrolled and Pending (highest priority) are in the **first row**, which supports the F-pattern. Content metrics (Subjects, Lessons, Quizzes) follow in row two.
 
 ### Gaps
@@ -64,7 +64,7 @@
 - **Balance:** Layout is 2/3 + 1/3 (chart | recent regs), then 1/2 + 1/2 (expiring | quiz). **Spatial distribution feels even.**
 
 ### Gaps
-- **No explicit grouping label** for "Students" vs "Content" — grouping is implied by order only. A small section label or a light divider would reinforce the grouping (closure).
+- **No explicit grouping label** for "Students" vs "Content" - grouping is implied by order only. A small section label or a light divider would reinforce the grouping (closure).
 
 ### Recommendations
 - Add **light section labels** above the two KPI rows (e.g. "Students" / "Content") or a subtle visual separator so the two groups are unmistakable without changing layout.
@@ -93,12 +93,12 @@
 ### What works
 - **Needs attention** is visually distinct and only appears when action is required.
 - **At a glance** places Enrolled and Pending in the first row, so they are found quickly after the hero.
-- **No approval logic or flows were changed** — only layout and presentation.
+- **No approval logic or flows were changed** - only layout and presentation.
 
 ### Structural friction
 1. **First screen has no numbers.** The hero explains "Overview and quick actions" but does not show Enrolled/Pending. The 5-second answer requires scanning past the hero (and possibly flash/alert) to the cards.
 2. **Critical alert can be displaced.** When a success/error message is shown, it appears above Needs attention, so the most urgent item is not always in the top focal area.
-3. **Six equal cards** don’t signal that Enrolled and Pending are the main health indicators; that’s implied by position only.
+3. **Six equal cards** don't signal that Enrolled and Pending are the main health indicators; that's implied by position only.
 
 ### Verdict
 The dashboard is **close** to the 5-second goal. The main gaps are: (1) no key numbers in the hero, and (2) alert ordering when flash messages are present. Addressing those two would significantly reduce friction without changing functionality.

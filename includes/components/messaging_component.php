@@ -120,7 +120,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
 </div>
 
 <style>
-  /* Slide drawer: open = .ere-msg--open on #ereMsgRoot (no [hidden] — transitions need computed layout). */
+  /* Slide drawer: open = .ere-msg--open on #ereMsgRoot (no [hidden] - transitions need computed layout). */
   .ere-msg{
     position:fixed;inset:0;z-index:1400;
     pointer-events:none;
@@ -1042,7 +1042,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     if (!el) return;
     if (t && t.active && t.user_name){
       el.hidden = false;
-      el.textContent = String(t.user_name) + ' is typing…';
+      el.textContent = String(t.user_name) + ' is typing...';
     } else {
       el.hidden = true;
       el.textContent = '';
@@ -1296,7 +1296,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
         renderThreads();
         renderMessages();
       }).catch(function(){
-        state.lastApiError = 'Network error — could not reach api/messages/bootstrap.';
+        state.lastApiError = 'Network error - could not reach api/messages/bootstrap.';
         state.loadingThreads = false;
         state.loadingMessages = false;
         headEl.textContent = 'Could not load messages';
@@ -1344,7 +1344,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
         updateSendState();
         refreshAll(true);
       }).catch(function(){
-        state.lastApiError = 'Could not send — network error.';
+        state.lastApiError = 'Could not send - network error.';
         renderThreads();
       });
   }
@@ -1578,7 +1578,7 @@ $msgThemeClass = ($msgRole === 'admin' || $msgRole === 'professor_admin') ? 'ere
     stopMessagingRealtime();
     stopTopbarUnreadPolling();
   });
-  // Do NOT bootstrap the full inbox on every page — that API call made admin feel slower.
+  // Do NOT bootstrap the full inbox on every page - that API call made admin feel slower.
   // Open panel calls refreshAll(); topbar only needs a light unread badge poll.
   autoResizeInput();
   updateComposerMeta();

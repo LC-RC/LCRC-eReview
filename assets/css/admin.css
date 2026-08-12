@@ -1,9 +1,9 @@
 /**
- * Admin dashboard – Grok-style: deep black, high contrast, minimal chrome.
+ * Admin dashboard - Grok-style: deep black, high contrast, minimal chrome.
  * Applied only when body has class .admin-app (admin account only).
  *
  * Dark visual color rules are scoped with:
- *   html:not([data-admin-theme="light"]) …
+ *   html:not([data-admin-theme="light"]) ...
  * so Light Mode is owned by admin-tokens.css + admin-saas.css (not inverted dark).
  */
 
@@ -409,7 +409,7 @@ html[data-admin-theme="light"] body.admin-app .admin-topbar-name {
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-chevron { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: transform 0.2s ease; }
 body.admin-app .admin-topbar-chevron.is-open { transform: rotate(180deg); }
 
-/* Positioning must apply in light + dark — otherwise the open menu
+/* Positioning must apply in light + dark - otherwise the open menu
    expands the glass topbar into a huge white overlay in light mode. */
 body.admin-app .admin-topbar-dropdown {
   position: absolute;
@@ -467,7 +467,7 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown-item:
   transform: translateX(2px);
 }
 
-/* Profile dropdown — premium (dark) + shared menu rows */
+/* Profile dropdown - premium (dark) + shared menu rows */
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown.ereview-profile-menu--dark {
   width: 300px;
   padding: 0;
@@ -626,7 +626,7 @@ body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-footer span {
   display: inline;
 }
 
-/* Sidebar backdrop disabled — no dimming; page stays clickable (close via toggle or Escape) */
+/* Sidebar backdrop disabled - no dimming; page stays clickable (close via toggle or Escape) */
 body.admin-app #sidebar-backdrop {
   position: fixed;
   inset: 0;
@@ -655,7 +655,7 @@ body.admin-app #main {
   margin-left: 64px;
 }
 
-/* When expanded, shift content (no overlap) — matches student rail widths */
+/* When expanded, shift content (no overlap) - matches student rail widths */
 body.admin-app.sidebar-expanded #main {
   margin-left: 240px;
 }
@@ -687,7 +687,7 @@ body.admin-app #main .bg-\[\#e8f2fa\]\/70 {
   background: transparent !important;
 }
 
-/* Dashboard stat cards: subtle hover (reference “slight brightening / faint border glow”) */
+/* Dashboard stat cards: subtle hover (reference "slight brightening / faint border glow") */
 html:not([data-admin-theme="light"]) body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
   background: #1a1a1a !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
@@ -932,7 +932,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main a.border-green-500.tex
   color: #fff !important;
 }
 
-/* Amber (pending) – keep as primary accent on dashboard */
+/* Amber (pending) - keep as primary accent on dashboard */
 body.admin-app #main a.border-amber-500.text-amber-600 {
   border-color: #e6a23c !important;
   color: #e6a23c !important;
@@ -943,7 +943,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main a.border-amber-500.tex
   color: #fff !important;
 }
 
-/* Subject blue #0ea5e9 – subjects/content hub (distinct from pending amber) */
+/* Subject blue #0ea5e9 - subjects/content hub (distinct from pending amber) */
 .admin-subject-left,
 .border-l-admin-subject { border-left-color: #0ea5e9 !important; }
 .admin-subject-text { color: #0ea5e9 !important; }
@@ -968,7 +968,7 @@ a.admin-subject-btn:hover,
   border-color: #0284c7 !important;
 }
 
-/* Subject: text-only (like Pending) – color on text only, neutral border, subtle bg on hover */
+/* Subject: text-only (like Pending) - color on text only, neutral border, subtle bg on hover */
 .admin-subject-text-only {
   border: 2px solid #d1d5db !important;
   color: #0ea5e9 !important;
@@ -1023,7 +1023,7 @@ body.admin-app #main a.quick-action-btn:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-/* Default: no semantic color – neutral text only */
+/* Default: no semantic color - neutral text only */
 html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--students,
 html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--subject,
 html:not([data-admin-theme="light"]) body.admin-app #main a.quick-action-btn--pending {
@@ -1053,9 +1053,9 @@ body.admin-app #main a.quick-action-btn--pending:hover {
   box-shadow: 0 4px 12px rgba(230, 162, 60, 0.15);
 }
 
-/* Dashboard only: “View enrolled” uses neutral style so only “Review pending” pops */
+/* Dashboard only: "View enrolled" uses neutral style so only "Review pending" pops */
 
-/* --- Students page: filter tabs – neutral labels, semantic icon/count, blue = selection --- */
+/* --- Students page: filter tabs - neutral labels, semantic icon/count, blue = selection --- */
 body.admin-app #main .student-filter-tab {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
@@ -1397,7 +1397,7 @@ body.admin-app #main > .grid {
   gap: 1.5rem;
 }
 
-/* --- Border radius: consistent rounded (reference 8–15px) --- */
+/* --- Border radius: consistent rounded (reference 8-15px) --- */
 body.admin-app #main .rounded-xl {
   border-radius: 8px;
 }
@@ -1417,7 +1417,7 @@ body.admin-app #main .text-sky-500 { color: #38bdf8 !important; }
 body.admin-app #main .text-violet-500 { color: #a78bfa !important; }
 html:not([data-admin-theme="light"]) body.admin-app #main .text-primary { color: #d1d5db !important; }
 
-/* --- Focus (accessibility; reference “subtle visual feedback”) --- */
+/* --- Focus (accessibility; reference "subtle visual feedback") --- */
 html:not([data-admin-theme="light"]) body.admin-app #main a:focus-visible,
 html:not([data-admin-theme="light"]) body.admin-app #main button:focus-visible {
   outline: none;
@@ -1574,7 +1574,7 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-breadcrumb-current {
   color: #e5e7eb;
 }
 
-/* Dashboard: primary KPIs row (Students) — slightly emphasized structure */
+/* Dashboard: primary KPIs row (Students) - slightly emphasized structure */
 body.admin-app #main .admin-dashboard-primary-kpis .text-3xl.font-bold {
   font-size: 1.875rem;
 }
@@ -1583,7 +1583,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main .admin-dashboard-prima
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* --- Dashboard: zero state (soften "0" so it doesn’t dominate) --- */
+/* --- Dashboard: zero state (soften "0" so it doesn't dominate) --- */
 html:not([data-admin-theme="light"]) body.admin-app #main [data-zero="true"] {
   color: #6b7280 !important;
   font-weight: 600;

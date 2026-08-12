@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 8.3 — Paid access revoke acceptance tests (A–AA), reversible.
- * Does not exercise Phase 8.4–8.5.
+ * Phase 8.3 - Paid access revoke acceptance tests (A-AA), reversible.
+ * Does not exercise Phase 8.4-8.5.
  */
 declare(strict_types=1);
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -305,7 +305,7 @@ try {
     $createdGrantIds[] = $gO2;
     sca_upsert_permissions($conn, $uO1, [['content_type' => 'full_lms', 'content_id' => 0]], null);
     sca_upsert_permissions($conn, $uO2, [['content_type' => 'full_lms', 'content_id' => 0]], null);
-    // Revoke O1 only — O2 must stay
+    // Revoke O1 only - O2 must stay
     commerce_revoke_payment_grants($conn, $payO1['payment_id'], $adminId, 'only o1');
     $mark(
         'O',

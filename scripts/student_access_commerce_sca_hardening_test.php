@@ -10,7 +10,7 @@ require_once __DIR__ . '/../includes/student_content_access.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -123,7 +123,7 @@ try {
     $createdUserIds[] = $uB;
     saa_grant($conn, $uB, 'lesson', $L1, 'DATE_ADD(NOW(), INTERVAL 6 MONTH)', $createdGrantIds);
     sca_upsert_permissions($conn, $uB, [['content_type' => 'lesson', 'content_id' => $L1]], null);
-    // Admin posts only L2 — L1 commerce must remain
+    // Admin posts only L2 - L1 commerce must remain
     sca_save_user_permissions_preserving_commerce($conn, $uB, [
         ['content_type' => 'lesson', 'content_id' => $L2],
     ], $adminId);
@@ -141,7 +141,7 @@ try {
         ['content_type' => 'lesson', 'content_id' => $L1],
         ['content_type' => 'lesson', 'content_id' => $L2],
     ], $adminId);
-    // Post empty manual set except we need at least merge commerce — post [] → commerce-only
+    // Post empty manual set except we need at least merge commerce - post [] → commerce-only
     sca_save_user_permissions_preserving_commerce($conn, $uC, [], $adminId);
     $mark(
         'C',

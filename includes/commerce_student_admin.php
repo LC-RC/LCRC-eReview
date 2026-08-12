@@ -28,7 +28,7 @@ function commerce_admin_label_payment_status(string $status): string
         'cancelled' => 'Cancelled',
         'expired' => 'Expired',
     ];
-    return $map[$status] ?? ($status !== '' ? $status : '—');
+    return $map[$status] ?? ($status !== '' ? $status : '-');
 }
 
 function commerce_admin_label_verification_status(string $status): string
@@ -42,7 +42,7 @@ function commerce_admin_label_verification_status(string $status): string
         'manually_approved' => 'Manually approved',
         'manually_rejected' => 'Manually rejected',
     ];
-    return $map[$status] ?? ($status !== '' ? $status : '—');
+    return $map[$status] ?? ($status !== '' ? $status : '-');
 }
 
 /**
@@ -197,7 +197,7 @@ function commerce_admin_label_account_status(string $status): string
     if ($s === 'pending') {
         return 'Pending Activation';
     }
-    return $status !== '' ? $status : '—';
+    return $status !== '' ? $status : '-';
 }
 
 /**
@@ -366,7 +366,7 @@ function commerce_admin_dashboard_status(array $ctx): array
     $viewFar = $farId > 0 ? ('admin_commerce_free_access?id=' . $farId) : $viewStudent;
 
     $base = [
-        'payment_ui' => '—',
+        'payment_ui' => '-',
         'payment_tone' => 'neutral',
         'access_ui' => 'None',
         'access_tone' => 'none',
@@ -374,7 +374,7 @@ function commerce_admin_dashboard_status(array $ctx): array
         'action_label' => 'View',
         'action_href' => $viewStudent,
         'proof_status' => 'none',
-        'proof_ui' => '—',
+        'proof_ui' => '-',
         'fulfilled_ui' => '',
     ];
 
@@ -389,7 +389,7 @@ function commerce_admin_dashboard_status(array $ctx): array
             $base['action_key'] = 'view';
             $base['action_label'] = 'View';
             $base['action_href'] = $viewStudent;
-            $base['fulfilled_ui'] = '—';
+            $base['fulfilled_ui'] = '-';
         } elseif ($farStatus === 'pending') {
             $base['access_ui'] = 'Pending';
             $base['access_tone'] = 'pending';
@@ -456,7 +456,7 @@ function commerce_admin_dashboard_status(array $ctx): array
             return $base;
         }
 
-        // OCR/engine failure — not an admin rejection; still reviewable for Manual Approve.
+        // OCR/engine failure - not an admin rejection; still reviewable for Manual Approve.
         if ($vStatus === 'failed') {
             $base['payment_ui'] = 'OCR Failed';
             $base['payment_tone'] = 'review';
@@ -696,8 +696,8 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
         $pay = $payMap[$uid] ?? null;
         $far = $farMap[$uid] ?? null;
 
-        $enrollmentLabel = '—';
-        $amountDisplay = '—';
+        $enrollmentLabel = '-';
+        $amountDisplay = '-';
         $lessonLabels = [];
         $lessonIdsOrdered = [];
         $lessonGroups = [];
@@ -769,7 +769,7 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
             }
         } elseif ($path === 'free_access') {
             $enrollmentLabel = 'Free Access';
-            $amountDisplay = '—';
+            $amountDisplay = '-';
         } elseif ($path !== '') {
             $enrollmentLabel = $path;
         }
@@ -819,7 +819,7 @@ function commerce_admin_students_dashboard_rows(mysqli $conn, array $userIds): a
             'payment_ref' => $pay ? (string) ($pay['payment_ref'] ?? '') : '',
             'payment_ui' => $mapped['payment_ui'],
             'payment_tone' => $mapped['payment_tone'],
-            'payment_label' => $mapped['payment_ui'] === '—' ? null : $mapped['payment_ui'],
+            'payment_label' => $mapped['payment_ui'] === '-' ? null : $mapped['payment_ui'],
             'verification_label' => $pay ? commerce_admin_label_verification_status((string) ($pay['verification_status'] ?? '')) : null,
             'has_proof' => $hasProof,
             'proof_url' => $proofUrl,
@@ -1037,7 +1037,7 @@ function commerce_admin_student_detail_summary(mysqli $conn, array $user): array
 
     $grantSummary = commerce_admin_grant_access_summary($conn, $userId);
 
-    $enrollmentLabel = '—';
+    $enrollmentLabel = '-';
     if ($path === 'package') {
         $enrollmentLabel = 'Package';
     } elseif ($path === 'by_topic') {

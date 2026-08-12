@@ -20,7 +20,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $results = [];
 $mark = static function (string $id, bool $ok, string $detail = '') use (&$results): void {
     $results[$id] = ['ok' => $ok, 'detail' => $detail];
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $id" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $id" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 };
 
 echo "=== Phase 5 MANUAL SMOKE ===\n";

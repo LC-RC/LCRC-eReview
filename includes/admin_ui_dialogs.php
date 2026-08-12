@@ -1,6 +1,6 @@
 <?php
 /**
- * Shared admin confirm / notice dialogs (styled — not browser alert/confirm).
+ * Shared admin confirm / notice dialogs (styled - not browser alert/confirm).
  * Include once before </body> on admin pages.
  */
 if (!empty($GLOBALS['admin_ui_dialogs_included'])) {

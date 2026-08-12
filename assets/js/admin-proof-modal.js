@@ -1,5 +1,5 @@
 /**
- * Admin payment proof modal — open via [data-admin-proof] links/buttons.
+ * Admin payment proof modal - open via [data-admin-proof] links/buttons.
  */
 (function () {
   'use strict';
@@ -58,7 +58,7 @@
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('admin-proof-modal-open');
 
-    // payment_proof_file has no extension — try <img>, fall back to iframe (PDF/other).
+    // payment_proof_file has no extension - try <img>, fall back to iframe (PDF/other).
     showAsImage(url, true);
 
     var closeBtn = modal.querySelector('.admin-proof-modal__close');

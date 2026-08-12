@@ -29,6 +29,20 @@ $title = $handout['handout_title'] ?: 'Handout';
 $file = $handout['file_path'];
 $allowDownload = (int)$handout['allow_download'] === 1;
 
+require_once __DIR__ . '/includes/student_activity.php';
+student_activity_log_event($conn, (int) getCurrentUserId(), 'handout_open', [
+    'handout_id' => $handoutId > 0 ? $handoutId : $preweekHandoutId,
+    'page_key' => 'handout_viewer',
+    'page_title' => $title,
+    'page_url' => (string) ($_SERVER['REQUEST_URI'] ?? ''),
+    'meta' => ['preweek' => $preweekHandoutId > 0 ? 1 : 0],
+]);
+student_activity_touch_session($conn, (int) getCurrentUserId(), [
+    'page_key' => 'handout_viewer',
+    'page_title' => $title,
+    'page_url' => (string) ($_SERVER['REQUEST_URI'] ?? ''),
+]);
+
 $physicalPath = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file);
 if (!file_exists($physicalPath)) {
     http_response_code(404);

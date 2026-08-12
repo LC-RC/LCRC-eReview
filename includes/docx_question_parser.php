@@ -3,7 +3,7 @@
  * Parse .docx (WordprocessingML) into paragraph runs with highlight preservation,
  * then split into numbered MCQ blocks and group by trailing (Topic) on the stem.
  *
- * Does not modify source text — only reads structure from word/document.xml.
+ * Does not modify source text - only reads structure from word/document.xml.
  */
 
 if (!function_exists('ereview_docx_xml_namespace')) {
@@ -372,7 +372,7 @@ if (!function_exists('ereview_docx_extract_paragraphs')) {
                     $plain .= "\t";
                     $html .= ' ';
                 } elseif ($ln === 'br' || $ln === 'cr') {
-                    // Soft line break inside a paragraph — without this, "b. …" and "c. …" glue as "…taxpayerc."
+                    // Soft line break inside a paragraph - without this, "b. ..." and "c. ..." glue as "...taxpayerc."
                     $plain .= "\n";
                     $html .= "<br>\n";
                     // Keep runs aligned with plain text for downstream slicing (highlights / split segments).
@@ -405,7 +405,7 @@ if (!function_exists('ereview_docx_extract_paragraphs')) {
 
 /**
  * Lines like "150.What" (no space after period) must still start a new question.
- * Single-digit 1–9 without "?" and without a lettered (Topic) at end are case setup lines, not new questions.
+ * Single-digit 1-9 without "?" and without a lettered (Topic) at end are case setup lines, not new questions.
  */
 if (!function_exists('ereview_docx_is_question_start')) {
     function ereview_docx_is_question_start(string $plain): bool {
@@ -452,7 +452,7 @@ if (!function_exists('ereview_docx_extract_leading_question_number')) {
 }
 
 /**
- * After item 100+, lines "1."–"9." without "?" are almost always case notes for the shared problem, not new exam items.
+ * After item 100+, lines "1."-"9." without "?" are almost always case notes for the shared problem, not new exam items.
  */
 if (!function_exists('ereview_docx_is_numbered_gp_note_after_high_exam_item')) {
     function ereview_docx_is_numbered_gp_note_after_high_exam_item(string $plain, string $currentNumber): bool {
@@ -492,7 +492,7 @@ if (!function_exists('ereview_docx_plain_body_after_leading_item_number')) {
 
 /**
  * Consolidation / intercompany case setup. Word often applies the next list number (e.g. 95.) even though
- * the line is shared context for items 95–98, not the stem of exam item 95.
+ * the line is shared context for items 95-98, not the stem of exam item 95.
  */
 if (!function_exists('ereview_docx_plain_smells_like_consolidation_or_gp_prologue')) {
     function ereview_docx_plain_smells_like_consolidation_or_gp_prologue(string $plain): bool {
@@ -535,13 +535,13 @@ if (!function_exists('ereview_docx_plain_smells_like_gp_range_intro')) {
         if ($t === '' || strpos($t, '?') !== false) {
             return false;
         }
-        if (preg_match('/\bItems?\s+\d+\s*(?:and|to|-|–)\s*\d+\s+are\s+based\s+on\s+the\s+following\s+information\b/ui', $t)) {
+        if (preg_match('/\bItems?\s+\d+\s*(?:and|to|-|-)\s*\d+\s+are\s+based\s+on\s+the\s+following\s+information\b/ui', $t)) {
             return true;
         }
-        if (preg_match('/\bUse\s+the\s+following\s+information\s+for\s+questions?\s+\d+\s*(?:to|-|–)\s*\d+\b/ui', $t)) {
+        if (preg_match('/\bUse\s+the\s+following\s+information\s+for\s+questions?\s+\d+\s*(?:to|-|-)\s*\d+\b/ui', $t)) {
             return true;
         }
-        if (preg_match('/\bFor\s+questions?\s+\d+\s*(?:to|-|–)\s*\d+\b/ui', $t) && stripos($t, 'information') !== false) {
+        if (preg_match('/\bFor\s+questions?\s+\d+\s*(?:to|-|-)\s*\d+\b/ui', $t) && stripos($t, 'information') !== false) {
             return true;
         }
 
@@ -550,9 +550,9 @@ if (!function_exists('ereview_docx_plain_smells_like_gp_range_intro')) {
 }
 
 /**
- * After finishing MCQ choices, a new line can start the next item (e.g. "5. Simple Company…")
- * even when ereview_docx_is_question_start is false for digits 1–9 (umbrella guard).
- * Do not treat case sub-lines like "1. There is no spoilage…" as a new question.
+ * After finishing MCQ choices, a new line can start the next item (e.g. "5. Simple Company...")
+ * even when ereview_docx_is_question_start is false for digits 1-9 (umbrella guard).
+ * Do not treat case sub-lines like "1. There is no spoilage..." as a new question.
  */
 if (!function_exists('ereview_docx_is_new_question_after_choices_line')) {
     function ereview_docx_is_new_question_after_choices_line(string $plain, string $currentNumber): bool {
@@ -633,7 +633,7 @@ if (!function_exists('ereview_docx_infer_leading_question_number_from_para')) {
 
 /**
  * Same as ereview_docx_is_new_question_after_choices_line but also handles hidden Word list numbers
- * (common across page breaks: plain text starts with "Simple Company…" while list_ord is 5).
+ * (common across page breaks: plain text starts with "Simple Company..." while list_ord is 5).
  *
  * @param array{plain:string,is_list?:bool,list_level?:?int,list_fmt?:?string,list_ord?:?int} $para
  */
@@ -650,7 +650,7 @@ if (!function_exists('ereview_docx_is_new_question_after_choices_para')) {
         if ($cur <= 0) {
             return false;
         }
-        // Hidden list numbers / nested list (ilvl > 0): visible marker may be "48. Information…" while plain lacks "48.".
+        // Hidden list numbers / nested list (ilvl > 0): visible marker may be "48. Information..." while plain lacks "48.".
         $vis = ereview_docx_with_visible_list_marker($para);
         $visPlain = trim(preg_replace('/\s+/u', ' ', $vis['plain']));
         if ($visPlain !== '') {
@@ -722,7 +722,7 @@ if (!function_exists('ereview_docx_is_new_question_after_choices_para')) {
 }
 
 /**
- * "51. For 2020, what is…?" is still exam item 50 (list continued); "42. What is…?" is the next item after 41.
+ * "51. For 2020, what is...?" is still exam item 50 (list continued); "42. What is...?" is the next item after 41.
  *
  * @param string $visPlain Result of ereview_docx_with_visible_list_marker() merged plain
  */
@@ -748,7 +748,7 @@ if (!function_exists('ereview_docx_list_ord_continuation_same_exam_item')) {
 
 /**
  * New exam item while choices never opened: prose options stayed in the stem (in_choices false), so suppressed
- * startsByList would glue the next prompt onto the prior question. Skips same-item continuations like "51. For 2020…".
+ * startsByList would glue the next prompt onto the prior question. Skips same-item continuations like "51. For 2020...".
  */
 if (!function_exists('ereview_docx_visible_plain_opens_next_exam_after_stem_phase')) {
     function ereview_docx_visible_plain_opens_next_exam_after_stem_phase(array $para, string $currentNumber): bool {
@@ -832,7 +832,7 @@ if (!function_exists('ereview_docx_is_topic_tagged_stem_line')) {
         if ($t === '') {
             return false;
         }
-        // Answers like "Product J (Sell at split-off); Product K (Process beyond split-off)" — not a stem.
+        // Answers like "Product J (Sell at split-off); Product K (Process beyond split-off)" - not a stem.
         if (preg_match('/\)\s*;\s*\S/u', $t)) {
             return false;
         }
@@ -859,7 +859,7 @@ if (!function_exists('ereview_docx_is_topic_tagged_stem_line')) {
 }
 
 /**
- * Second (or later) prompt in the same numbered item, after a first MCQ block — e.g.
+ * Second (or later) prompt in the same numbered item, after a first MCQ block - e.g.
  * "Compute the cost of goods manufactured: (Job Costing)" following choices for the same case.
  * Must not start a new question number; fold into the current block instead.
  */
@@ -886,7 +886,7 @@ if (!function_exists('ereview_docx_is_choice_line')) {
         if ($t === '') {
             return false;
         }
-        // Single-letter labels (a. through z.), including u.–z. sets from some publishers.
+        // Single-letter labels (a. through z.), including u.-z. sets from some publishers.
         return preg_match('/^[a-zA-Z][\.\)]\s+\S/u', $t) === 1;
     }
 }
@@ -931,7 +931,7 @@ if (!function_exists('ereview_docx_stem_last_nonempty_plain')) {
 
 /**
  * First MCQ option row should not start until the stem has a real prompt (?) or a trailing (Topic) tag.
- * Word tables often reuse lettered lists for cells like "a. 2020" / "b. Depreciable life…" before the actual question.
+ * Word tables often reuse lettered lists for cells like "a. 2020" / "b. Depreciable life..." before the actual question.
  */
 if (!function_exists('ereview_docx_stem_end_invites_choices')) {
     function ereview_docx_stem_end_invites_choices(string $lastStemPlain): bool {
@@ -951,8 +951,8 @@ if (!function_exists('ereview_docx_stem_end_invites_choices')) {
 }
 
 /**
- * Word often hides "a."–"d." as list labels; plain text is only "400 favorable".
- * Treat ilvl-0 lower/upper letter list rows 1–4 as options when the stem looks like a prompt
+ * Word often hides "a."-"d." as list labels; plain text is only "400 favorable".
+ * Treat ilvl-0 lower/upper letter list rows 1-4 as options when the stem looks like a prompt
  * or we are already collecting choices.
  *
  * @param array{plain:string,is_list?:bool,list_level?:?int,list_fmt?:?string,list_ord?:?int} $para
@@ -1081,7 +1081,7 @@ if (!function_exists('ereview_docx_normalize_for_topic_scan')) {
 }
 
 /**
- * True when parenthetical is a figure (e.g. 2,200, $1k, 15%) — not a topic label.
+ * True when parenthetical is a figure (e.g. 2,200, $1k, 15%) - not a topic label.
  */
 if (!function_exists('ereview_docx_paren_inner_is_numeric_like')) {
     function ereview_docx_paren_inner_is_numeric_like(string $inner): bool {
@@ -1449,7 +1449,7 @@ if (!function_exists('ereview_docx_strip_choice_label_prefix_from_html')) {
         $h = $html;
         // Strip repeatedly until visible text no longer starts with "a." / "b." / etc.
         // Handles: "<mark>a.</mark> a. Partner", "<mark>a.</mark>" alone, "c. c. 60%", list markers, red spans.
-        // Note: require whitespace after "x." when more text follows so we do not strip "I.e. …".
+        // Note: require whitespace after "x." when more text follows so we do not strip "I.e. ...".
         for ($iter = 0; $iter < 32; $iter++) {
             $flat = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($h), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
             $hasLeading = $flat !== ''
@@ -1520,7 +1520,7 @@ if (!function_exists('ereview_docx_strip_choice_label_prefix_from_html')) {
 }
 
 /**
- * Build choice rows for UI: always show a. b. c. d. … per question (Word may use i. j. or continuing lists).
+ * Build choice rows for UI: always show a. b. c. d. ... per question (Word may use i. j. or continuing lists).
  *
  * @param list<array{plain:string,html:string,runs?:array}> $choiceParagraphs
  * @return list<string>
@@ -1618,7 +1618,7 @@ if (!function_exists('ereview_docx_build_question_blocks')) {
             }
             $startsByList = !$startsByText && ereview_docx_is_list_question_start($para);
             // While the MCQ stem is still open (choices not started), list metadata is often a single
-            // document-wide sequence: the prompt "For 2020, what is…? (Topic)" may be list ord 51 even
+            // document-wide sequence: the prompt "For 2020, what is...? (Topic)" may be list ord 51 even
             // though it still belongs to item 50. Do not start a new numbered block on list heuristics alone.
             if ($startsByList && $current !== null && empty($current['in_choices'])) {
                 $startsByList = false;
@@ -1835,7 +1835,7 @@ if (!function_exists('ereview_docx_build_question_blocks')) {
 }
 
 /**
- * When Word repeats the same item number on a later stem line (e.g. long case + "29. What is…?"),
+ * When Word repeats the same item number on a later stem line (e.g. long case + "29. What is...?"),
  * remove the duplicate "n." from visible text so the joined stem does not show two question numbers.
  *
  * @param array{plain:string,html:string} $vis From ereview_docx_with_visible_list_marker()
@@ -2057,7 +2057,7 @@ if (!function_exists('ereview_docx_block_accepts_case_tail_preamble')) {
 }
 
 /**
- * Fold orphan mid-case paragraphs (e.g. items 2–3 + FX table) into the next real MCQ.
+ * Fold orphan mid-case paragraphs (e.g. items 2-3 + FX table) into the next real MCQ.
  * Several consecutive uncategorized tails chain into one merge target.
  *
  * @param list<array<string,mixed>> $questions
@@ -2119,7 +2119,7 @@ if (!function_exists('ereview_docx_apply_case_tail_merges')) {
 }
 
 /**
- * Long case / SFP / assumptions wrongly collected as MCQ choices (e.g. after a.–d.).
+ * Long case / SFP / assumptions wrongly collected as MCQ choices (e.g. after a.-d.).
  *
  * @param array{plain?:string,html?:string} $para
  */

@@ -433,15 +433,15 @@ function college_exam_attempt_is_effectively_submitted(?array $attempt): bool
 function college_exam_format_student_result_datetime($raw): string
 {
     if ($raw === null) {
-        return '—';
+        return '-';
     }
     $s = trim((string)$raw);
     if ($s === '' || preg_match('/^0000-00-00/', $s)) {
-        return '—';
+        return '-';
     }
     $ts = strtotime($s);
 
-    return $ts === false ? '—' : date('M j, Y g:i A', $ts);
+    return $ts === false ? '-' : date('M j, Y g:i A', $ts);
 }
 
 /**
@@ -513,7 +513,7 @@ function college_exam_parse_datetime_local(?string $raw): ?string
 }
 
 /**
- * Deterministic shuffle using crc32 — same attempt always sees same order.
+ * Deterministic shuffle using crc32 - same attempt always sees same order.
  *
  * @param array<int, mixed> $items
  * @return array<int, mixed>
@@ -613,7 +613,7 @@ function college_exam_prepare_questions_for_attempt(array $questions, array $exa
 }
 
 /**
- * Correct letter (A–D) as shown to the student for this attempt (respects shuffle settings).
+ * Correct letter (A-D) as shown to the student for this attempt (respects shuffle settings).
  */
 function college_exam_shuffled_correct_answer_for_question(mysqli $conn, int $attemptId, int $userId, int $questionId): ?string
 {

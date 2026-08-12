@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/commerce_fulfillment.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -130,7 +130,7 @@ try {
     $pkgId = (int) mysqli_insert_id($conn);
     $createdPackageIds[] = $pkgId;
 
-    // ---------- A: no commerce — activation same as before ----------
+    // ---------- A: no commerce - activation same as before ----------
     $uA = act_user($conn, "act.a.{$ts}@example.com");
     $createdUserIds[] = $uA;
     $okA = act_simulate_activate($conn, $uA, 3, [['content_type' => 'lesson', 'content_id' => $L1]], false, $adminId);
@@ -155,7 +155,7 @@ try {
     $fB = commerce_fulfill_payment($conn, $pidB);
     $grantsBeforeB = (int) (mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM access_grants WHERE user_id=$uB"))[0] ?? 0);
     $hasFullBefore = act_has_sca($conn, $uB, 'full_lms', 0);
-    // Admin activates with a *different* narrow permission (lesson L1 only) — must keep full_lms from commerce
+    // Admin activates with a *different* narrow permission (lesson L1 only) - must keep full_lms from commerce
     $okB = act_simulate_activate($conn, $uB, 6, [['content_type' => 'lesson', 'content_id' => $L1]], false, $adminId);
     $grantsAfterB = (int) (mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM access_grants WHERE user_id=$uB"))[0] ?? 0);
     $mark(
@@ -180,7 +180,7 @@ try {
         VALUES ($uC, 'purchase', NULL, NULL, 'lesson', $L1, 'commerce', NOW(), DATE_ADD(NOW(), INTERVAL 6 MONTH), 'active')");
     $createdGrantIds[] = (int) mysqli_insert_id($conn);
     sca_upsert_permissions($conn, $uC, [['content_type' => 'lesson', 'content_id' => $L1]], null);
-    // Activate with admin selecting L2 only — L1 (commerce) must remain; L2 (admin selection) remains
+    // Activate with admin selecting L2 only - L1 (commerce) must remain; L2 (admin selection) remains
     $okC = act_simulate_activate($conn, $uC, 3, [['content_type' => 'lesson', 'content_id' => $L2]], false, $adminId);
     $mark(
         'C',
@@ -188,7 +188,7 @@ try {
         'L1=' . (act_has_sca($conn, $uC, 'lesson', $L1) ? '1' : '0') . ' L2=' . (act_has_sca($conn, $uC, 'lesson', $L2) ? '1' : '0')
     );
 
-    // ---------- D: repeated activation — no duplicate SCA ----------
+    // ---------- D: repeated activation - no duplicate SCA ----------
     $countBeforeD = act_sca_count($conn, $uC);
     act_simulate_activate($conn, $uC, 3, [['content_type' => 'lesson', 'content_id' => $L2]], false, $adminId);
     act_simulate_activate($conn, $uC, 3, [['content_type' => 'lesson', 'content_id' => $L2]], false, $adminId);

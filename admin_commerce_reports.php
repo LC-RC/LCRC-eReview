@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce — Reports (Phase 8.5).
+ * Admin Commerce - Reports (Phase 8.5).
  * Read-only GET dashboard. No mutations, no OCR/proof exposure, no Chart.js.
  */
 require_once 'auth.php';
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$pageTitle = 'Commerce — Reports';
+$pageTitle = 'Commerce - Reports';
 $dash = commerce_reports_build_dashboard($conn, $_GET);
 $f = $dash['filters'];
 $p = $dash['payments'];

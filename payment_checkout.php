@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5/6 — GCash checkout (order summary + QR + proof + reference).
+ * Phase 5/6 - GCash checkout (order summary + QR + proof + reference).
  * Authorized only via short-lived post-verification checkout session.
  * After submit, Phase 6 may auto-verify the receipt. Does not grant LMS access.
  */
@@ -56,7 +56,7 @@ $amountDisplay = $payment
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo h($pageTitle); ?> – LCRC eReview</title>
+  <title><?php echo h($pageTitle); ?> - LCRC eReview</title>
   <link rel="stylesheet" href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <style>
     * { box-sizing: border-box; }
@@ -180,18 +180,18 @@ $amountDisplay = $payment
         </ol>
         <span class="pill">Payment ref <?php echo h((string) $payment['payment_ref']); ?></span>
         <h1>Complete GCash payment</h1>
-        <p class="sub">Pay the amount below via GCash, then submit your reference number and proof. Receipt verification runs after you submit. LMS access is granted only after fulfillment (a later step) — this page never activates your account.</p>
+        <p class="sub">Pay the amount below via GCash, then submit your reference number and proof. Receipt verification runs after you submit. LMS access is granted only after fulfillment (a later step) - this page never activates your account.</p>
 
         <?php if ($errorMsg !== ''): ?>
           <div class="alert alert-error" role="alert"><?php echo h($errorMsg); ?></div>
         <?php endif; ?>
         <?php if ($successSubmitted): ?>
           <?php if ($verifyDecision === 'auto_verified'): ?>
-            <div class="alert alert-ok" role="status">Payment received and receipt verified. Your account remains pending until access is fulfilled — you will be notified when LMS access is ready.</div>
+            <div class="alert alert-ok" role="status">Payment received and receipt verified. Your account remains pending until access is fulfilled - you will be notified when LMS access is ready.</div>
           <?php elseif ($verifyDecision === 'failed'): ?>
             <div class="alert alert-warn" role="status">Payment submitted. We could not read the receipt automatically; an administrator will review it. Your submission was saved.</div>
           <?php elseif ($verifyDecision === 'needs_review' || $verifyDecision === 'processing'): ?>
-            <div class="alert alert-warn" role="status">Payment submitted and queued for review. Your submission was saved — access is not granted yet.</div>
+            <div class="alert alert-warn" role="status">Payment submitted and queued for review. Your submission was saved - access is not granted yet.</div>
           <?php else: ?>
             <div class="alert alert-ok" role="status">Payment submitted successfully and is pending verification.</div>
           <?php endif; ?>
@@ -258,7 +258,7 @@ $amountDisplay = $payment
                  value="<?php echo h((string) ($payment['gcash_reference'] ?? '')); ?>"
                  autocomplete="off" placeholder="Enter the reference from your GCash receipt">
 
-          <label for="payment_proof">Payment proof (JPG, PNG, WEBP, or PDF — max 5 MB)</label>
+          <label for="payment_proof">Payment proof (JPG, PNG, WEBP, or PDF - max 5 MB)</label>
           <input type="file" name="payment_proof" id="payment_proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
                  <?php echo empty($payment['proof_path']) ? 'required' : ''; ?>>
 
@@ -280,7 +280,7 @@ $amountDisplay = $payment
       if (!form) return;
       form.addEventListener('submit', function () {
         var btn = document.getElementById('checkout-submit');
-        if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+        if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
       });
     })();
   </script>

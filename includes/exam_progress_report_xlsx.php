@@ -1,6 +1,6 @@
 <?php
 /**
- * Excel (.xlsx) export for exam progress — OOXML via ZipArchive, yellow/blue theme, landscape print.
+ * Excel (.xlsx) export for exam progress - OOXML via ZipArchive, yellow/blue theme, landscape print.
  * Main sheet uses VLOOKUP against a second "Lookup" sheet (student number → name, email).
  */
 
@@ -55,7 +55,7 @@ function ereview_xlsx_mark_cell_xml(string $col, int $r, string $rowStyle, strin
 {
     $m = trim($mark);
     if ($m !== 'Pass' && $m !== 'Fail') {
-        return '<c r="' . $col . $r . '" s="' . $rowStyle . '" t="inlineStr"><is><t xml:space="preserve">' . ereview_xlsx_t($m === '' ? '—' : $m) . '</t></is></c>';
+        return '<c r="' . $col . $r . '" s="' . $rowStyle . '" t="inlineStr"><is><t xml:space="preserve">' . ereview_xlsx_t($m === '' ? '-' : $m) . '</t></is></c>';
     }
     $rgb = ($m === 'Pass') ? 'FF047857' : 'FFB91C1C';
 
@@ -131,7 +131,7 @@ function ereview_output_exam_progress_xlsx(string $examTitle, array $rows, array
         $cells[] = '<c r="C' . $r . '" s="' . $st . '"><f>' . ereview_xlsx_f($fName) . '</f></c>';
         $cells[] = '<c r="D' . $r . '" s="' . $st . '"><f>' . ereview_xlsx_f($fMail) . '</f></c>';
         $cells[] = '<c r="E' . $r . '" s="' . $st . '" t="inlineStr"><is><t xml:space="preserve">' . ereview_xlsx_t($row['status']) . '</t></is></c>';
-        $markLabel = (string)($row['mark'] ?? '—');
+        $markLabel = (string)($row['mark'] ?? '-');
         $cells[] = ereview_xlsx_score_cell_xml('F', $r, $st, (string)($row['score'] ?? ''), $markLabel);
         $cells[] = ereview_xlsx_mark_cell_xml('G', $r, $st, $markLabel);
         $sheetRows[] = '<row r="' . $r . '" ht="18">' . implode('', $cells) . '</row>';

@@ -165,7 +165,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
     <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex items-center gap-2 flex-wrap">
       <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder2-open"></i></span>
-      Test Bank — <span class="admin-subject-text admin-subject-text--testbank"><?php echo h($subject['subject_name']); ?></span>
+      Test Bank - <span class="admin-subject-text admin-subject-text--testbank"><?php echo h($subject['subject_name']); ?></span>
     </h1>
     <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">Upload and manage review materials (question + answer files) for this subject only.</p>
   </div>
@@ -200,7 +200,7 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
     <?php if (isset($_GET['edit'])): ?><input type="hidden" name="edit" value="<?php echo (int)$_GET['edit']; ?>"><?php endif; ?>
     <div class="flex-1 min-w-[200px]">
       <label for="tb-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <input type="search" id="tb-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description…" class="input-custom w-full" autocomplete="off">
+      <input type="search" id="tb-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description..." class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
       <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
@@ -274,20 +274,20 @@ $tbNavQ = $searchQ !== '' ? '&q=' . rawurlencode($searchQ) : '';
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3">
                       <span class="font-medium text-gray-100 break-words"><?php echo h($row['title']); ?></span>
                       <?php if (!empty($row['description'])): ?>
-                        <p class="text-xs sm:text-sm text-gray-500 mt-0.5 line-clamp-2"><?php echo h(mb_substr($row['description'], 0, 60)); ?><?php echo mb_strlen($row['description']) > 60 ? '…' : ''; ?></p>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-0.5 line-clamp-2"><?php echo h(mb_substr($row['description'], 0, 60)); ?><?php echo mb_strlen($row['description']) > 60 ? '...' : ''; ?></p>
                       <?php endif; ?>
                     </td>
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3 whitespace-nowrap">
                       <?php if (!empty($row['question_file_path'])): ?>
                         <a href="<?php echo h($row['question_file_path']); ?>" target="_blank" class="tb-file-link inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition"><i class="bi bi-download"></i> Download</a>
-                      <?php else: ?><span class="text-gray-600">—</span><?php endif; ?>
+                      <?php else: ?><span class="text-gray-600">-</span><?php endif; ?>
                     </td>
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3 whitespace-nowrap">
                       <?php if (!empty($row['solution_file_path'])): ?>
                         <a href="<?php echo h($row['solution_file_path']); ?>" target="_blank" class="tb-file-link inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition"><i class="bi bi-download"></i> Download</a>
-                      <?php else: ?><span class="text-gray-600">—</span><?php endif; ?>
+                      <?php else: ?><span class="text-gray-600">-</span><?php endif; ?>
                     </td>
-                    <td class="px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-400 whitespace-nowrap"><?php echo $row['updated_at'] ? date('M j, Y', strtotime($row['updated_at'])) : '—'; ?></td>
+                    <td class="px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-400 whitespace-nowrap"><?php echo $row['updated_at'] ? date('M j, Y', strtotime($row['updated_at'])) : '-'; ?></td>
                     <td class="px-4 sm:px-5 py-2.5 sm:py-3">
                       <a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" class="tb-action-link inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition mr-1">Edit</a>
                       <a href="admin_test_bank?subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$row['id']; ?><?php echo h($tbNavQ); ?>" onclick="return confirm('Delete this test bank entry?');" class="tb-action-link tb-action-link--danger inline-flex items-center gap-1 px-2 py-1 rounded text-xs sm:text-sm border transition">Delete</a>

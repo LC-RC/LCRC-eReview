@@ -72,7 +72,7 @@ $pageTitle = $lesson['title'] . ' - Handouts';
               </button>
             <?php endif; ?>
             <?php if (!empty($h['allow_download']) && !empty($h['file_path'])): ?>
-              <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition">
+              <a href="handout_download?handout_id=<?php echo (int)$h['handout_id']; ?>" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition">
                 <i class="bi bi-download"></i> Download
               </a>
             <?php elseif (empty($h['allow_download'])): ?>
@@ -109,5 +109,15 @@ $pageTitle = $lesson['title'] . ' - Handouts';
   </div>
 </main>
 </div>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'page_view',
+    'page_key' => 'student_handouts',
+    'page_title' => $pageTitle ?? 'Handouts',
+    'subject_id' => (int) ($lesson['subject_id'] ?? $subjectId ?? 0),
+    'lesson_id' => (int) ($lessonId ?? 0),
+];
+include __DIR__ . '/includes/student_activity_boot.php';
+?>
 </body>
 </html>

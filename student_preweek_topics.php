@@ -1,6 +1,6 @@
 <?php
 /**
- * Items inside a pre-week (DB: preweek_topics) — student picks one, then opens viewer.
+ * Items inside a pre-week (DB: preweek_topics) - student picks one, then opens viewer.
  */
 require_once 'auth.php';
 require_once __DIR__ . '/includes/student_content_access.php';
@@ -69,7 +69,7 @@ foreach ($topicRows as $row) {
 }
 
 $rowTotal = count($itemsForAlpine);
-$pageTitle = $unitTitle . ' — Materials';
+$pageTitle = $unitTitle . ' - Materials';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -161,7 +161,7 @@ $pageTitle = $unitTitle . ' — Materials';
             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 border border-white/30"><i class="bi bi-collection-play"></i></span>
             <?php echo h($unitTitle); ?>
           </h1>
-          <p class="text-white/90 mt-2 mb-0 max-w-2xl">Pick a pre-week lecture below to open its videos and handouts. Use cards or list — same as your subject materials.</p>
+          <p class="text-white/90 mt-2 mb-0 max-w-2xl">Pick a pre-week lecture below to open its videos and handouts. Use cards or list - same as your subject materials.</p>
         </div>
       </div>
       <div class="hero-strip-pw mt-4 px-4 py-2.5 text-sm flex flex-wrap gap-x-3 gap-y-1">
@@ -219,7 +219,7 @@ $pageTitle = $unitTitle . ' — Materials';
             id="preweek-mat-search"
             type="search"
             class="materials-search-input"
-            placeholder="Search by title…"
+            placeholder="Search by title..."
             autocomplete="off"
             x-model.debounce.300ms="materialsSearch"
           >
@@ -245,8 +245,8 @@ $pageTitle = $unitTitle . ' — Materials';
           >
             <option value="id_desc">Newest first</option>
             <option value="id_asc">Oldest first</option>
-            <option value="title_asc">Title A–Z</option>
-            <option value="title_desc">Title Z–A</option>
+            <option value="title_asc">Title A-Z</option>
+            <option value="title_desc">Title Z-A</option>
           </select>
         </div>
       </div>

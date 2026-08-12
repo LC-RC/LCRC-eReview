@@ -69,19 +69,19 @@ $useDefault = !empty($u['use_default_avatar']);
 $initial = ereview_avatar_initial((string)($u['full_name'] ?? ''));
 $schoolLabel = trim((string)($u['school'] ?? ''));
 if ($schoolLabel === '') {
-    $schoolLabel = '—';
+    $schoolLabel = '-';
 }
 $accessEndFmt = '';
 if (!empty($u['access_end'])) {
     $ts = strtotime((string)$u['access_end']);
-    $accessEndFmt = $ts !== false ? date('M j, Y', $ts) : '—';
+    $accessEndFmt = $ts !== false ? date('M j, Y', $ts) : '-';
 } else {
-    $accessEndFmt = '—';
+    $accessEndFmt = '-';
 }
 $createdFmt = '';
 if (!empty($u['created_at'])) {
     $ts2 = strtotime((string)$u['created_at']);
-    $createdFmt = $ts2 !== false ? date('M j, Y', $ts2) : '—';
+    $createdFmt = $ts2 !== false ? date('M j, Y', $ts2) : '-';
 }
 ?>
 <!DOCTYPE html>
@@ -143,7 +143,7 @@ if (!empty($u['created_at'])) {
     <div class="info-grid">
       <div class="info-tile">
         <div class="info-tile-k">Student number</div>
-        <div class="info-tile-v"><?php $snv = trim((string)($u['student_number'] ?? '')); echo $snv !== '' ? h($snv) : '—'; ?></div>
+        <div class="info-tile-v"><?php $snv = trim((string)($u['student_number'] ?? '')); echo $snv !== '' ? h($snv) : '-'; ?></div>
       </div>
       <div class="info-tile">
         <div class="info-tile-k">Email</div>
@@ -151,7 +151,7 @@ if (!empty($u['created_at'])) {
       </div>
       <div class="info-tile">
         <div class="info-tile-k">Section</div>
-        <div class="info-tile-v"><?php echo h((string)($u['section'] ?? '—')); ?></div>
+        <div class="info-tile-v"><?php echo h((string)($u['section'] ?? '-')); ?></div>
       </div>
       <div class="info-tile">
         <div class="info-tile-k">School</div>

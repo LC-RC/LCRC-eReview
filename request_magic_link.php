@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <div class="text-center login-welcome">
             <h1 class="text-xl font-bold tracking-tight">Email me a sign-in link</h1>
-            <p class="login-value-statement">Enter your email and we'll send you a one-time link to sign in—no password needed.</p>
+            <p class="login-value-statement">Enter your email and we'll send you a one-time link to sign in-no password needed.</p>
           </div>
 
           <?php if ($sent): ?>

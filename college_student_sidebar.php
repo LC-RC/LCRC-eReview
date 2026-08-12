@@ -1,6 +1,6 @@
 <?php
 /**
- * College student app shell — same visual system as student_sidebar.
+ * College student app shell - same visual system as student_sidebar.
  */
 require_once __DIR__ . '/includes/url_helpers.php';
 $currentPage = ereview_page_basename();

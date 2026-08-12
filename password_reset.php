@@ -1,6 +1,6 @@
 <?php
 /**
- * Password reset – token creation, validation, and email.
+ * Password reset - token creation, validation, and email.
  * Requires $conn (mysqli).
  */
 
@@ -111,7 +111,7 @@ function validatePasswordResetToken($rawToken) {
     $nowStr = date('Y-m-d H:i:s', time());
     $hexChars = '0123456789abcdef';
 
-    // New tokens: 64 hex chars — try direct match, then single-char correction
+    // New tokens: 64 hex chars - try direct match, then single-char correction
     if (strlen($validatorPart) === 64 && ctype_xdigit($validatorPart)) {
         $validatorPart = strtolower($validatorPart);
         $stmt = @mysqli_prepare($conn, "SELECT id, user_id, token_hash FROM password_reset_tokens WHERE selector = ? AND expires_at > ? LIMIT 1");
@@ -192,14 +192,14 @@ function deletePasswordResetToken($tokenId) {
  * Uses SMTP (Gmail etc.) when config/mail_config is set; otherwise falls back to PHP mail().
  */
 function sendPasswordResetEmail($toEmail, $resetUrl) {
-    $subject = 'Reset your password – LCRC eReview';
+    $subject = 'Reset your password - LCRC eReview';
     $body = "Hello,\r\n\r\n";
     $body .= "You requested a password reset for your LCRC eReview account.\r\n\r\n";
     $body .= "Click the link below to set a new password (valid for " . PASSWORD_RESET_EXPIRY_HOURS . " hour(s)):\r\n\r\n";
     $body .= $resetUrl . "\r\n\r\n";
     $body .= "You can click the link directly. If your email shows a security notice (e.g. AVG), the link still works.\r\n\r\n";
     $body .= "If you didn't request this, you can ignore this email. Your password will not be changed.\r\n\r\n";
-    $body .= "— LCRC eReview\r\n";
+    $body .= "- LCRC eReview\r\n";
 
     $configFile = __DIR__ . '/config/mail_config.php';
     if (file_exists($configFile)) {

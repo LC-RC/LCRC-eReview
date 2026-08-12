@@ -106,7 +106,7 @@ function commerce_activate_user_after_commerce_success(mysqli $conn, int $userId
     }
 
     if ($requireGrant && $endTs <= 0) {
-        // No usable commerce grant window — do not invent login approval.
+        // No usable commerce grant window - do not invent login approval.
         return [
             'ok' => false,
             'error' => 'no_active_commerce_grant',

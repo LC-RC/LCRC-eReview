@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 7 — fulfillment + manual review + By Topic bulk acceptance tests (A–Z).
+ * Phase 7 - fulfillment + manual review + By Topic bulk acceptance tests (A-Z).
  */
 declare(strict_types=1);
 
@@ -16,7 +16,7 @@ require_once __DIR__ . '/../includes/student_content_access.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -189,7 +189,7 @@ try {
         VALUES ('TEST_P7_BAD', 'P7 Bad Map', 't', 40000, 'PHP', 1, 'month', 'mapped', 1, 1, 3)");
     $badId = (int) mysqli_insert_id($conn);
     $createdPackageIds[] = $badId;
-    // Orphan content id that will not exist at fulfill time — insert fake then delete entity? Use nonexistent lesson id 999999999
+    // Orphan content id that will not exist at fulfill time - insert fake then delete entity? Use nonexistent lesson id 999999999
     mysqli_query($conn, "INSERT INTO package_content_items (package_id, content_type, content_id, sort_order) VALUES ($badId, 'lesson', 999999999, 0)");
 
     // ---------- A auto_verified full_lms fulfills ----------
@@ -355,7 +355,7 @@ try {
     // ---------- L invalid mapped fails closed ----------
     $uL = p7_user($conn, "phase7.l.{$ts}@example.com", 'package', $badId, null);
     $createdUserIds[] = $uL;
-    // Checkout validation may reject bad map at create — if create fails, force payment with snapshot orphan
+    // Checkout validation may reject bad map at create - if create fails, force payment with snapshot orphan
     $coL = commerce_create_or_resume_checkout($conn, $uL, 'package', $badId, null);
     if (!empty($coL['ok'])) {
         $pidL = (int) $coL['payment']['payment_id'];
@@ -394,7 +394,7 @@ try {
     $g1 = mysqli_fetch_assoc(mysqli_query($conn, "SELECT ends_at FROM access_grants WHERE user_id=$uM AND content_id=$L1 ORDER BY grant_id ASC LIMIT 1"));
     $ends1 = strtotime((string) ($g1['ends_at'] ?? ''));
     // Second purchase same lessons
-    // Need new payment — first is fulfilled/paid so create new checkout
+    // Need new payment - first is fulfilled/paid so create new checkout
     $refO = 'P7O' . substr($ts, -8) . 'ZZ';
     $subO = p7_submit($conn, $uM, 'by_topic', null, [$L1], $refO, $createdPaymentIds, $proofFiles);
     $amtO = (int) ($subO['payment']['expected_amount_centavos'] ?? 0);

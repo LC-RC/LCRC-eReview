@@ -113,7 +113,7 @@ if (!isset($commerce) || !is_array($commerce)) {
           <?php if (!empty($isPaidPath)): ?>
             <div>
               <div class="text-gray-500">Package</div>
-              <div class="font-semibold text-gray-800"><?php echo h($commerce['package_name'] !== '' ? (string) $commerce['package_name'] : '—'); ?></div>
+              <div class="font-semibold text-gray-800"><?php echo h($commerce['package_name'] !== '' ? (string) $commerce['package_name'] : '-'); ?></div>
             </div>
             <?php if (($commerce['enrollment_path'] ?? '') === 'by_topic'): ?>
               <div class="md:col-span-2">
@@ -162,7 +162,7 @@ if (!isset($commerce) || !is_array($commerce)) {
                 <?php elseif ($lessonLabelsFallback !== []): ?>
                   <div class="font-semibold text-gray-800"><?php echo h(implode(', ', $lessonLabelsFallback)); ?></div>
                 <?php else: ?>
-                  <div class="font-semibold text-gray-800">—</div>
+                  <div class="font-semibold text-gray-800">-</div>
                 <?php endif; ?>
               </div>
             <?php endif; ?>
@@ -206,7 +206,7 @@ if (!isset($commerce) || !is_array($commerce)) {
               <div>Amount: ₱<?php echo h(commerce_centavos_to_pesos_display((int) $latestPayment['amount_centavos'])); ?></div>
               <div>Payment status: <strong><?php echo h(commerce_admin_label_payment_status($latestPayment['status'])); ?></strong></div>
               <div>Verification: <strong><?php echo h(commerce_admin_label_verification_status($latestPayment['verification_status'])); ?></strong></div>
-              <div>GCash reference: <?php echo h(($latestPayment['gcash_reference'] ?? '') !== '' ? $latestPayment['gcash_reference'] : '—'); ?></div>
+              <div>GCash reference: <?php echo h(($latestPayment['gcash_reference'] ?? '') !== '' ? $latestPayment['gcash_reference'] : '-'); ?></div>
               <div>Fulfillment: <strong><?php echo !empty($latestPayment['fulfilled']) ? 'Fulfilled' : 'Not fulfilled'; ?></strong>
                 <?php if (!empty($latestPayment['fulfilled_at'])): ?> (<?php echo h((string) $latestPayment['fulfilled_at']); ?>)<?php endif; ?>
               </div>
@@ -217,7 +217,7 @@ if (!isset($commerce) || !is_array($commerce)) {
               <?php
                 $proofUploaded = !empty($latestPayment['has_proof']);
                 $vTone = (string) ($latestPayment['verification_status'] ?? '');
-                $proofVerifyLabel = '—';
+                $proofVerifyLabel = '-';
                 if (!$proofUploaded) {
                     $proofVerifyLabel = 'Not Uploaded';
                 } elseif (in_array($vTone, ['auto_verified', 'manually_approved'], true)) {
@@ -263,7 +263,7 @@ if (!isset($commerce) || !is_array($commerce)) {
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 mb-4 text-sm">
               <div>Login / account: <strong><?php echo h($accountLabel); ?></strong></div>
               <?php if ($activationRequired): ?>
-                <p class="text-xs text-amber-800 mt-1 mb-0">Payment may be fulfilled with access granted — login activation requires repair.</p>
+                <p class="text-xs text-amber-800 mt-1 mb-0">Payment may be fulfilled with access granted - login activation requires repair.</p>
               <?php endif; ?>
             </div>
           <?php else: ?>
@@ -309,11 +309,11 @@ if (!isset($commerce) || !is_array($commerce)) {
 
         <div class="text-xs uppercase font-semibold text-gray-500 mb-2 mt-2">Account window (login)</div>
         <div class="rounded-lg border border-dashed border-slate-300 p-3 text-sm mb-2">
-          <div class="text-gray-500 text-xs mb-1">Legacy login account window — not the same as commerce grant dates</div>
+          <div class="text-gray-500 text-xs mb-1">Legacy login account window - not the same as commerce grant dates</div>
           <div class="font-semibold text-gray-800">
             <?php
-              $as = !empty($user['access_start']) ? (string) $user['access_start'] : '—';
-              $ae = !empty($user['access_end']) ? (string) $user['access_end'] : '—';
+              $as = !empty($user['access_start']) ? (string) $user['access_start'] : '-';
+              $ae = !empty($user['access_end']) ? (string) $user['access_end'] : '-';
               echo h($as . ' → ' . $ae);
             ?>
           </div>

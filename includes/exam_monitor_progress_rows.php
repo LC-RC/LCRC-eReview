@@ -40,13 +40,13 @@ function exam_monitor_progress_export_rows(mysqli $conn, int $examId, int $examQ
     foreach ($students as $st) {
         $attemptStatus = (string)($st['attempt_status'] ?? '');
 
-        $mark = '—';
+        $mark = '-';
         if ($isFinished && $attemptStatus !== 'submitted') {
             $status = 'Failed (Absent)';
-            $score = '—';
+            $score = '-';
         } elseif ($attemptStatus === 'in_progress') {
             $status = 'Taking';
-            $score = '—';
+            $score = '-';
         } elseif ($attemptStatus === 'submitted') {
             $status = 'Submitted';
             $score = college_exam_format_score_total_line(
@@ -62,7 +62,7 @@ function exam_monitor_progress_export_rows(mysqli $conn, int $examId, int $examQ
             ) ? 'Pass' : 'Fail';
         } else {
             $status = 'Not started';
-            $score = '—';
+            $score = '-';
         }
 
         $rows[] = [

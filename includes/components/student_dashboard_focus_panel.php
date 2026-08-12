@@ -46,7 +46,7 @@ $fpAccessPct = isset($focusAccessPctUsed) ? (int)$focusAccessPctUsed : null;
     <div class="flex items-start justify-between gap-2">
       <div>
         <p class="focus-title">In-progress quizzes</p>
-        <p class="focus-copy"><?php echo $fpQuizInProgress; ?> active attempt<?php echo $fpQuizInProgress === 1 ? '' : 's'; ?> — resume where you left off.</p>
+        <p class="focus-copy"><?php echo $fpQuizInProgress; ?> active attempt<?php echo $fpQuizInProgress === 1 ? '' : 's'; ?> - resume where you left off.</p>
       </div>
       <?php if ($fpQuizInProgress > 0): ?>
         <span class="focus-badge" aria-hidden="true"><?php echo $fpQuizInProgress; ?></span>

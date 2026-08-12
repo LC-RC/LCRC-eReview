@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 8.5 — Commerce reports acceptance tests (A–AE), reversible.
- * Does not mutate Phase 8.1–8.4 algorithms. No migrations.
+ * Phase 8.5 - Commerce reports acceptance tests (A-AE), reversible.
+ * Does not mutate Phase 8.1-8.4 algorithms. No migrations.
  */
 declare(strict_types=1);
 
@@ -13,7 +13,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];

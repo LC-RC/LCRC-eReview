@@ -1,5 +1,5 @@
 /**
- * Student theme bootstrap — apply before paint to avoid FOUC.
+ * Student theme bootstrap - apply before paint to avoid FOUC.
  * Persistence: localStorage key ereview_student_theme = 'light' | 'dark'
  * Default: light
  */

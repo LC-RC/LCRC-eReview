@@ -1,6 +1,6 @@
 <?php
 /**
- * Commerce OCR helpers (Phase 6) — Tesseract CLI + optional OpenAI vision fallback.
+ * Commerce OCR helpers (Phase 6) - Tesseract CLI + optional OpenAI vision fallback.
  *
  * Scope: read payment proof images/PDFs into raw text + confidence.
  * Does NOT: verification rules, fulfillment, access_grants, SCA, activate_user.
@@ -274,7 +274,7 @@ function commerce_ocr_parse_tsv_confidence(string $tsv): ?float
  */
 function commerce_ocr_run_on_file(string $absPath, string $mime): array
 {
-    // CLI test fixture — leave $GLOBALS['commerce_test_ocr_result'] intact for reuse.
+    // CLI test fixture - leave $GLOBALS['commerce_test_ocr_result'] intact for reuse.
     if (
         commerce_ocr_test_mode_active()
         && isset($GLOBALS['commerce_test_ocr_result'])
@@ -440,7 +440,7 @@ function commerce_ocr_run_on_file(string $absPath, string $mime): array
  */
 function commerce_ocr_run_vision_fallback(string $absPath, string $mime): array
 {
-    // CLI test fixture — leave $GLOBALS['commerce_test_vision_result'] intact for reuse.
+    // CLI test fixture - leave $GLOBALS['commerce_test_vision_result'] intact for reuse.
     if (
         commerce_ocr_test_mode_active()
         && isset($GLOBALS['commerce_test_vision_result'])
@@ -506,7 +506,7 @@ function commerce_ocr_run_vision_fallback(string $absPath, string $mime): array
                 'error' => 'unsupported_mime',
             ];
         }
-        // Vision image_url data URIs work for images; PDF is not reliably supported — fail closed.
+        // Vision image_url data URIs work for images; PDF is not reliably supported - fail closed.
         if ($mime === 'application/pdf') {
             return [
                 'ok' => false,

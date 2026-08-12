@@ -89,7 +89,7 @@ $pageTitle = 'Quiz History';
             $spent = ($submittedTs > 0 && $startedTs > 0 && $submittedTs >= $startedTs) ? ($submittedTs - $startedTs) : 0;
             $mins = (int)floor($spent / 60);
             $secs = (int)($spent % 60);
-            $spentStr = $spent > 0 ? ($mins > 0 ? ($mins . 'm ' . $secs . 's') : ($secs . 's')) : '—';
+            $spentStr = $spent > 0 ? ($mins > 0 ? ($mins . 'm ' . $secs . 's') : ($secs . 's')) : '-';
           ?>
           <article class="rounded-2xl border border-[#1665A0]/12 bg-gradient-to-b from-[#f4f8fe] to-white shadow-[0_1px_4px_rgba(15,23,42,0.08),0_6px_18px_rgba(15,23,42,0.06)] p-4 sm:p-5">
             <div class="flex items-start justify-between gap-3">
@@ -121,7 +121,7 @@ $pageTitle = 'Quiz History';
               </div>
             </div>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs text-[#64748b]"><?php echo !empty($row['submitted_at']) ? date('M j, Y g:i A', strtotime($row['submitted_at'])) : '—'; ?></span>
+              <span class="text-xs text-[#64748b]"><?php echo !empty($row['submitted_at']) ? date('M j, Y g:i A', strtotime($row['submitted_at'])) : '-'; ?></span>
               <a href="student_take_quiz?quiz_id=<?php echo (int)$row['quiz_id']; ?>&view_result=1&subject_id=<?php echo (int)($row['subject_id'] ?? 0); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1665A0] text-white hover:bg-[#0f4d7a] transition">
                 <i class="bi bi-eye"></i> Open Result
               </a>

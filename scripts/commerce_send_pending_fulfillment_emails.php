@@ -1,6 +1,6 @@
 <?php
 /**
- * CLI — send pending fulfillment notification emails (Phase 8.4).
+ * CLI - send pending fulfillment notification emails (Phase 8.4).
  *
  * Does NOT fulfill payments. Only emails already-fulfilled payments
  * where fulfillment_email_sent_at IS NULL.

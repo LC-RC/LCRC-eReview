@@ -1,6 +1,6 @@
 <?php
 /**
- * PDF download: Student progress (name, email, status, score) — finished exams only.
+ * PDF download: Student progress (name, email, status, score) - finished exams only.
  */
 require_once __DIR__ . '/auth.php';
 requireRole('professor_admin');

@@ -16,7 +16,7 @@ The app works **without Node/npm**. The includes (`includes/head_public.php` and
 
 For a smaller CSS file and faster load, you can build Tailwind yourself:
 
-1. **Install Node.js** (LTS) from [nodejs.org](https://nodejs.org) if you haven’t already.
+1. **Install Node.js** (LTS) from [nodejs.org](https://nodejs.org) if you haven't already.
 
 2. **Install dependencies and build:**
    ```bash
@@ -50,7 +50,7 @@ For a smaller CSS file and faster load, you can build Tailwind yourself:
 
 All of the following use `includes/head_app.php` or `includes/head_public.php`, Tailwind for layout/components, and Alpine.js for modals and toggles where needed.
 
-- **Public:** `index.php` (landing), `registration.php` (form + “Other” school toggle with Alpine)
+- **Public:** `index.php` (landing), `registration.php` (form + "Other" school toggle with Alpine)
 - **Viewer:** `handout_viewer.php` (minimal Tailwind + Bootstrap Icons; no Alpine)
 - **Admin:** `admin_dashboard.php`, `admin_sidebar.php`, `admin_students.php`, `admin_subjects.php`, `admin_lessons.php`, `admin_videos.php`, `admin_handouts.php`, `admin_quizzes.php`, `admin_quiz_questions.php`, `admin_student_view.php`, `admin_materials.php`
 - **Student:** `student_dashboard.php`, `student_sidebar.php`, `student_subjects.php`, `student_lessons.php`, `student_lesson.php`, `student_subject.php`, `student_quizzes.php`, `student_take_quiz.php`, `student_handouts.php`, `student_videos.php`

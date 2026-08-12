@@ -220,7 +220,7 @@ function ereview_msg_enrich_threads_for_ui(mysqli $conn, array $threads): array
 }
 
 /**
- * Online first, then most recent message, then name (A–Z).
+ * Online first, then most recent message, then name (A-Z).
  *
  * @param list<array<string,mixed>> $threads
  */
@@ -294,8 +294,8 @@ function ereview_msg_fetch_admin_threads(mysqli $conn): array
             }
         }
         $previewShort = function_exists('mb_substr')
-            ? (mb_substr($preview, 0, 90) . (mb_strlen($preview) > 90 ? '…' : ''))
-            : (substr($preview, 0, 90) . (strlen($preview) > 90 ? '…' : ''));
+            ? (mb_substr($preview, 0, 90) . (mb_strlen($preview) > 90 ? '...' : ''))
+            : (substr($preview, 0, 90) . (strlen($preview) > 90 ? '...' : ''));
         $threads[] = [
             'student_id' => $studentId,
             'student_name' => ereview_msg_get_user_display_name($conn, $studentId),
@@ -351,7 +351,7 @@ function ereview_msg_fetch_admin_contacts(mysqli $conn, int $limit = 50): array
     if (!empty($rows)) {
         return $rows;
     }
-    // Fallback: some databases use legacy role storage — pick any account flagged as admin.
+    // Fallback: some databases use legacy role storage - pick any account flagged as admin.
     $fb = @mysqli_query($conn, "SELECT user_id, role, COALESCE(NULLIF(full_name,''), CONCAT('Admin #', user_id)) AS n
         FROM users WHERE role='admin' ORDER BY user_id ASC LIMIT 1");
     if ($fb && ($row = mysqli_fetch_assoc($fb))) {

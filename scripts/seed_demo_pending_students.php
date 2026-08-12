@@ -136,7 +136,7 @@ $cases = [
     [
         'slug' => 'no-payment',
         'name' => 'Demo No Payment Yet',
-        'note' => 'Pending account, no checkout — best for Grant Access',
+        'note' => 'Pending account, no checkout - best for Grant Access',
         'setup' => static function (mysqli $conn, int $uid, int $pkgId): void {
             // no payment row
         },
@@ -155,7 +155,7 @@ $cases = [
     [
         'slug' => 'needs-review',
         'name' => 'Demo Needs Review',
-        'note' => 'Proof uploaded, verification needs_review — Payment Needs Review + Access None',
+        'note' => 'Proof uploaded, verification needs_review - Payment Needs Review + Access None',
         'setup' => static function (mysqli $conn, int $uid, int $pkgId): void {
             $co = commerce_create_or_resume_checkout($conn, $uid, 'package', $pkgId, null);
             $pid = (int) ($co['payment']['payment_id'] ?? 0);
@@ -179,7 +179,7 @@ $cases = [
     [
         'slug' => 'ocr-failed',
         'name' => 'Demo OCR Failed',
-        'note' => 'Proof uploaded, OCR failed — manual review path',
+        'note' => 'Proof uploaded, OCR failed - manual review path',
         'setup' => static function (mysqli $conn, int $uid, int $pkgId): void {
             $co = commerce_create_or_resume_checkout($conn, $uid, 'package', $pkgId, null);
             $pid = (int) ($co['payment']['payment_id'] ?? 0);
@@ -203,9 +203,9 @@ $cases = [
     [
         'slug' => 'awaiting-grant',
         'name' => 'Demo Awaiting Grant',
-        'note' => 'Pending account + Access None — Grant Access target (never Active without grant)',
+        'note' => 'Pending account + Access None - Grant Access target (never Active without grant)',
         'setup' => static function (mysqli $conn, int $uid, int $pkgId): void {
-            // Stay pending / no grant — Enrolled requires active access_grants.
+            // Stay pending / no grant - Enrolled requires active access_grants.
         },
     ],
     [
@@ -236,7 +236,7 @@ foreach ($cases as $case) {
     $uid = seed_user($conn, $case['name'], $email, $hash, $pkgId);
     ($case['setup'])($conn, $uid, $pkgId);
     $tab = ($case['slug'] === 'active-no-grant') ? 'Enrolled (Active + Access None)' : 'Needs review tab';
-    echo str_pad($case['name'], 28) . str_pad($email, 48) . $tab . ' — ' . $case['note'] . "\n";
+    echo str_pad($case['name'], 28) . str_pad($email, 48) . $tab . ' - ' . $case['note'] . "\n";
     echo '  user_id=' . $uid . "\n";
 }
 

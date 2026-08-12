@@ -347,7 +347,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                 <td class="px-5 py-3 admin-col-primary">
                   <div class="font-semibold"><?php echo h($s['subject_name']); ?></div>
                   <?php if (!empty($s['description'])): ?>
-                    <div class="text-sm opacity-70 mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 80, '…')); ?></div>
+                    <div class="text-sm opacity-70 mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 80, '...')); ?></div>
                   <?php endif; ?>
                 </td>
                 <td class="px-5 py-3 text-center">
@@ -465,7 +465,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
             <div class="flex flex-wrap items-center gap-3">
               <div class="relative w-full max-w-[280px] aspect-[5/2] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#1665A0] to-[#143D59] shadow-inner">
                 <img x-show="coverPreview || existing_cover_src" :src="coverPreview || existing_cover_src" alt="" class="absolute inset-0 w-full h-full object-cover">
-                <div x-show="!coverPreview && !existing_cover_src" class="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-semibold px-3 text-center">No cover yet — students see a default blue banner</div>
+                <div x-show="!coverPreview && !existing_cover_src" class="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-semibold px-3 text-center">No cover yet - students see a default blue banner</div>
               </div>
               <div class="flex-1 min-w-[12rem] space-y-2">
                 <input type="file" name="subject_cover" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1665A0] file:text-white hover:file:bg-[#145a8f] cursor-pointer" x-ref="coverFileInput" @change="

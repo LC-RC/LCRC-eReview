@@ -288,7 +288,7 @@
 }
 
 /* =============================================================================
-   Admin Quizzes + Quiz Questions — dark shell alignment (admin_app main area)
+   Admin Quizzes + Quiz Questions - dark shell alignment (admin_app main area)
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-quizzes-page #main .quiz-admin-hero,
@@ -511,7 +511,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #m
   color: #9ca3af !important;
 }
 
-/* Quiz questions page — cards & table */
+/* Quiz questions page - cards & table */
 html:not([data-admin-theme="light"]) body.admin-app.admin-quiz-questions-page #main .admin-quiz-btn-primary {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   border-color: transparent;
@@ -730,7 +730,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page
 }
 
 /* =============================================================================
-   Lessons — dark hub
+   Lessons - dark hub
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .quiz-admin-hero {
@@ -823,7 +823,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-lessons-page #main .qu
 }
 
 /* =============================================================================
-   Materials — dark hub
+   Materials - dark hub
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .quiz-admin-hero {
@@ -884,7 +884,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-materials-page #main .
 }
 
 /* =============================================================================
-   Test Bank — dark hub
+   Test Bank - dark hub
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .quiz-admin-hero {
@@ -982,7 +982,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-test-bank-page #main .
 }
 
 /* =============================================================================
-   Preboards sets — dark hub
+   Preboards sets - dark hub
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #main .quiz-admin-hero {
@@ -1060,7 +1060,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-sets-page #m
 }
 
 /* =============================================================================
-   Preboards monitoring — scores, leaderboard, attempt log
+   Preboards monitoring - scores, leaderboard, attempt log
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-preboards-monitor-page #main .quiz-admin-hero {
@@ -1470,7 +1470,7 @@ body.admin-app.admin-preboards-monitor-page #main .pb-monitor-id {
 }
 
 /* =============================================================================
-   Pre-week hub — list, lectures, materials (admin_preweek*)
+   Pre-week hub - list, lectures, materials (admin_preweek*)
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-lectures-page #main .quiz-admin-hero,
@@ -1626,7 +1626,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-preweek-materials-page
 }
 
 /* =============================================================================
-   Question sorting (admin_question_sort.php) — same shell as pre-week materials
+   Question sorting (admin_question_sort.php) - same shell as pre-week materials
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #main .quiz-admin-hero {
@@ -1763,7 +1763,7 @@ html:not([data-admin-theme="light"]) body.admin-app.admin-question-sort-page #ma
 }
 
 /* =============================================================================
-   Global admin unified UI — all admin pages (Preboards monitoring style)
+   Global admin unified UI - all admin pages (Preboards monitoring style)
    ============================================================================= */
 
 html:not([data-admin-theme="light"]) body.admin-app #main .quiz-admin-hero,
@@ -2179,7 +2179,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main .page-table nav a.bg-p
   color: #fff !important;
 }
 
-/* Student Access — dark theme */
+/* Student Access - dark theme */
 html:not([data-admin-theme="light"]) body.admin-app #main .sca-student-item {
   border-color: rgba(255, 255, 255, 0.1) !important;
   background: rgba(20, 20, 20, 0.9) !important;
@@ -2246,7 +2246,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main .border-gray-100 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Student Access — full dark shell */
+/* Student Access - full dark shell */
 html:not([data-admin-theme="light"]) body.admin-app #main .sca-sidebar,
 html:not([data-admin-theme="light"]) body.admin-app #main .sca-panel.bg-white {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -2488,7 +2488,7 @@ html:not([data-admin-theme="light"]) body.admin-app #main .bg-red-50.border-red-
 html:not([data-admin-theme="light"]) body.admin-app #main .text-green-800 { color: #a7f3d0 !important; }
 html:not([data-admin-theme="light"]) body.admin-app #main .text-red-800 { color: #fecaca !important; }
 
-/* Compact table row actions — icon bar + dropdown menu */
+/* Compact table row actions - icon bar + dropdown menu */
 body.admin-app #main .admin-row-actions {
   display: inline-flex;
   align-items: center;
@@ -2916,3 +2916,80 @@ body.admin-app .admin-preweek-context-nav--light .text-gray-300 {
   color: #6b7280 !important;
 }
 
+
+/* Content Hub lesson/quiz manual reorder */
+.content-reorder-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+.content-reorder-hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0;
+}
+.content-reorder-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.content-reorder-table th.content-reorder-col-ord,
+.content-reorder-table td.content-reorder-col-ord {
+  width: 4.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.content-reorder-table th.content-reorder-col-handle,
+.content-reorder-table td.content-reorder-col-handle {
+  width: 3rem;
+  text-align: center;
+}
+.content-reorder-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  cursor: grab;
+  user-select: none;
+}
+.content-reorder-handle:active { cursor: grabbing; }
+.content-reorder-ord {
+  display: inline-flex;
+  min-width: 1.75rem;
+  justify-content: center;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  background: rgba(139, 108, 255, 0.18);
+  color: #ddd6fe;
+  border: 1px solid rgba(139, 108, 255, 0.35);
+}
+.content-reorder-table tr.is-dragging {
+  opacity: 0.55;
+  background: rgba(139, 108, 255, 0.12);
+}
+.content-reorder-table tr.is-drag-over {
+  box-shadow: inset 0 2px 0 0 rgba(139, 108, 255, 0.85);
+}
+html[data-admin-theme="light"] body.admin-app #main .content-reorder-handle {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+  color: #64748b;
+}
+html[data-admin-theme="light"] body.admin-app #main .content-reorder-ord {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}

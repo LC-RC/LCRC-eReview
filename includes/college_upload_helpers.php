@@ -1,6 +1,6 @@
 <?php
 /**
- * College assignment uploads — shared rules for professor + student pages.
+ * College assignment uploads - shared rules for professor + student pages.
  * Allowed: PDF + JPG/PNG only (no GIF/WebP/documents/archives).
  */
 
@@ -66,7 +66,7 @@ function college_upload_instruction_excerpt(?string $instructions, int $maxChars
             return $t;
         }
 
-        return rtrim(mb_substr($t, 0, $maxChars - 1)) . '…';
+        return rtrim(mb_substr($t, 0, $maxChars - 1)) . '...';
     }
     if (strlen($t) <= $maxChars) {
         return $t;

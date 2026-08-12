@@ -548,9 +548,9 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
               <span class="pb-set-card__chip"><i class="bi bi-list-ol" aria-hidden="true"></i><?php echo $qCount; ?> question<?php echo $qCount === 1 ? '' : 's'; ?></span>
               <span class="pb-set-card__chip"><i class="bi bi-clock" aria-hidden="true"></i><?php echo h($durationLabel); ?></span>
             </div>
-            <p class="pb-set-card__meta">One attempt per set — request a retake after you submit if needed.</p>
+            <p class="pb-set-card__meta">One attempt per set - request a retake after you submit if needed.</p>
             <?php if ($scaGranted && $hasGrant && !$effectiveOpen): ?>
-              <p class="pb-set-card__note"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Admin approved your access — you may take this set once.</span></p>
+              <p class="pb-set-card__note"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Admin approved your access - you may take this set once.</span></p>
             <?php endif; ?>
           </div>
 
@@ -632,7 +632,7 @@ $pageTitle = 'Preboards - ' . ($subject['subject_name'] ?? 'Subject');
                 <span>No questions yet</span>
               </div>
               <div class="pb-set-card__actions">
-                <span class="pb-set-btn pb-set-btn--muted">—</span>
+                <span class="pb-set-btn pb-set-btn--muted">-</span>
               </div>
             <?php endif; ?>
           </div>

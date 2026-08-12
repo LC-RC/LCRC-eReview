@@ -93,9 +93,9 @@ if ($school !== 'Other') {
 
 if (!ereview_registration_school_is_submitted_value_allowed($conn, $school, $school_other)) {
     if ($isAjax) {
-        sendJson(['success' => false, 'error' => 'Please choose a valid school from the list. If you pick “Other”, enter your school name.']);
+        sendJson(['success' => false, 'error' => 'Please choose a valid school from the list. If you pick "Other", enter your school name.']);
     }
-    $_SESSION['error'] = 'Please choose a valid school from the list. If you pick “Other”, enter your school name.';
+    $_SESSION['error'] = 'Please choose a valid school from the list. If you pick "Other", enter your school name.';
     header('Location: registration');
     exit;
 }
@@ -262,7 +262,7 @@ if ($enrollment_path === 'package') {
     }
     $selected_lesson_ids_json = json_encode($ids);
 } else {
-    // free_access — no payment / proof / package
+    // free_access - no payment / proof / package
     $free_access_note = trim((string) ($_POST['free_access_note'] ?? ''));
     if (function_exists('mb_strlen') ? mb_strlen($free_access_note, 'UTF-8') > 1000 : strlen($free_access_note) > 1000) {
         if ($isAjax) sendJson(['success' => false, 'error' => 'Free Access note is too long.']);
@@ -275,7 +275,7 @@ if ($enrollment_path === 'package') {
 // Phase 4: new enrollment modes must NOT accept/store legacy payment_proof uploads.
 $uploadedPath = '';
 if (!in_array($enrollment_path, ['package', 'by_topic', 'free_access'], true)) {
-    // Legacy path (should not occur with current UI) — keep prior optional upload behavior.
+    // Legacy path (should not occur with current UI) - keep prior optional upload behavior.
     if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $_FILES['payment_proof']['tmp_name']);

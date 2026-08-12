@@ -1,12 +1,12 @@
 <?php
 /**
- * Pre-week admin: compact trail (Dashboard → Pre-week → …).
+ * Pre-week admin: compact trail (Dashboard → Pre-week → ...).
  * Set before include:
  *   $preweekNavStep = 'list' | 'lectures' | 'materials'
  *   For lectures/materials: $preweekNavUnitId (int), $preweekNavUnitTitle (string)
  *   For materials: $preweekNavTopicId (int), $preweekNavTopicTitle (string)
  *
- * Theme is CSS-driven via html[data-admin-theme] — do not hardcode dark/light surfaces here.
+ * Theme is CSS-driven via html[data-admin-theme] - do not hardcode dark/light surfaces here.
  */
 if (empty($preweekNavStep) || !in_array($preweekNavStep, ['list', 'lectures', 'materials'], true)) {
     return;

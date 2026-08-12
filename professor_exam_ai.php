@@ -33,8 +33,8 @@ function professor_exam_ai_fallback_generate(string $stem): array
 {
     $snippet = mb_substr(preg_replace('/\s+/', ' ', $stem), 0, 80);
     return [
-        'choice_a' => 'Yes — this follows directly from the statement above.',
-        'choice_b' => 'No — this contradicts the expected outcome.',
+        'choice_a' => 'Yes - this follows directly from the statement above.',
+        'choice_b' => 'No - this contradicts the expected outcome.',
         'choice_c' => 'Only under specific conditions not stated in the question.',
         'choice_d' => 'Cannot be determined from the information given.',
         'correct' => 'A',
@@ -148,7 +148,7 @@ if ($action === 'generate_options') {
 if ($action === 'suggest_distractors') {
     $correctLetter = strtoupper(trim((string)($_POST['correct_letter'] ?? 'A')));
     if (!preg_match('/^[A-D]$/', $correctLetter)) {
-        echo json_encode(['ok' => false, 'error' => 'Pick a correct answer A–D first.']);
+        echo json_encode(['ok' => false, 'error' => 'Pick a correct answer A-D first.']);
         exit;
     }
     $ca = trim((string)($_POST['choice_a'] ?? ''));

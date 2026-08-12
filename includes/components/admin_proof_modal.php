@@ -27,7 +27,7 @@ $proofModalJsUrl = ereview_url('assets/js/admin-proof-modal.js')
       </div>
     </div>
     <div class="admin-proof-modal__body">
-      <p id="adminProofLoading" class="admin-proof-modal__loading">Loading proof…</p>
+      <p id="adminProofLoading" class="admin-proof-modal__loading">Loading proof...</p>
       <p id="adminProofError" class="admin-proof-modal__error" hidden>Could not display this proof. Use <strong>Open in new tab</strong>, or re-upload if the file is missing.</p>
       <img id="adminProofImg" class="admin-proof-modal__img" alt="Payment proof" hidden>
       <iframe id="adminProofFrame" class="admin-proof-modal__frame" title="Payment proof" hidden></iframe>

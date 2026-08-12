@@ -1,5 +1,5 @@
 /**
- * Student SaaS visual system — glass shell + dual-theme surfaces.
+ * Student SaaS visual system - glass shell + dual-theme surfaces.
  * Loads after app-shell.css. Scoped to body.app-shell--student / data-student-theme.
  */
 
@@ -44,7 +44,7 @@ html[data-student-theme="dark"] .ereview-scroll-top {
     linear-gradient(145deg, rgba(22, 101, 160, 0.95) 0%, rgba(12, 24, 42, 0.98) 100%);
 }
 
-/* Hero back / icon tiles (quiz, preboard, lesson viewers) — don't rely on purged Tailwind sizes */
+/* Hero back / icon tiles (quiz, preboard, lesson viewers) - don't rely on purged Tailwind sizes */
 body.app-shell--student a.exam-leave-link,
 body.app-shell--student .student-hero-icon-btn {
   display: inline-flex !important;
@@ -103,7 +103,7 @@ body.app-shell--student .section-title {
   padding: 0.65rem 0.95rem !important;
 }
 
-/* All card grids — force breathing room */
+/* All card grids - force breathing room */
 body.app-shell--student #main .grid {
   gap: 1.5rem !important;
   row-gap: 1.5rem !important;
@@ -117,7 +117,7 @@ body.app-shell--student #main .grid {
   }
 }
 
-/* List / preboard cards — inner padding */
+/* List / preboard cards - inner padding */
 body.app-shell--student .dash-card {
   border-radius: 1rem !important;
 }
@@ -253,7 +253,7 @@ body.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sideb
   border-top-color: rgba(255, 255, 255, 0.14) !important;
 }
 
-/* Dark sidebar — same glass plane as Subjects / list heroes */
+/* Dark sidebar - same glass plane as Subjects / list heroes */
 html[data-student-theme="dark"] body.app-shell--student #app-sidebar.app-shell-sidebar--student {
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.45),
@@ -617,8 +617,8 @@ body.app-shell--student .student-page-hero-icon {
   flex-shrink: 0;
 }
 
-/* List-page hero strip — labeled tiles (Subjects / Preboards / Pre-week).
-   Exclude brand dashboard hero — that uses glass-on-navy tiles. */
+/* List-page hero strip - labeled tiles (Subjects / Preboards / Pre-week).
+   Exclude brand dashboard hero - that uses glass-on-navy tiles. */
 body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip,
 body.app-shell--student .student-page-hero .hero-strip {
   display: grid !important;
@@ -694,7 +694,7 @@ body.app-shell--student .student-hero:not(.student-hero--brand) .hero-strip__sep
   display: none;
 }
 
-/* Dashboard brand hero — glass stats strip matching enrollment card */
+/* Dashboard brand hero - glass stats strip matching enrollment card */
 body.app-shell--student .student-hero.student-hero--brand .hero-strip {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -778,7 +778,7 @@ body.app-shell--student .student-page-header {
   flex-wrap: wrap;
 }
 
-/* Dashboard greeting — Subjects-style glass (deep navy + soft gold) */
+/* Dashboard greeting - Subjects-style glass (deep navy + soft gold) */
 body.app-shell--student .student-hero.student-hero--brand {
   border-radius: var(--student-radius-xl) !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
@@ -826,7 +826,7 @@ html[data-student-theme="dark"] body.app-shell--student .student-hero.student-he
   border-color: var(--student-border) !important;
 }
 
-/* Subject tab bar — quieter inactive, clear active */
+/* Subject tab bar - quieter inactive, clear active */
 html[data-student-theme="dark"] body.app-shell--student .subject-tab-btn {
   border-radius: 0.75rem !important;
 }
@@ -1157,7 +1157,7 @@ html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-gr
   color: var(--student-text) !important;
 }
 
-/* Subject hub tabs — inactive state in dark */
+/* Subject hub tabs - inactive state in dark */
 html[data-student-theme="dark"] body.app-shell--student .subject-tab-btn.bg-\[\#e8f2fa\]\/80,
 html[data-student-theme="dark"] body.app-shell--student button.subject-tab-btn:not(.bg-\[\#1665A0\]) {
   background: var(--student-primary-soft) !important;
@@ -1172,7 +1172,7 @@ html[data-student-theme="dark"] body.app-shell--student .student-hero--has-cover
 }
 
 /*
- * Soft ambient canvas — keep BEHIND content.
+ * Soft ambient canvas - keep BEHIND content.
  * Do NOT force position/z-index on #main children: that broke
  * .ere-notif / .ere-msg (position:fixed → relative) and buried
  * topbar dropdowns under page content.
@@ -1351,7 +1351,7 @@ html[data-student-theme="dark"] body.app-shell--student .subject-catalog-card {
   box-shadow: var(--student-shadow) !important;
 }
 
-/* Dashboard KPIs — glass clickable tiles */
+/* Dashboard KPIs - glass clickable tiles */
 html[data-student-theme="dark"] body.app-shell--student .dash-overview__lede {
   color: var(--student-text-secondary) !important;
 }
@@ -1528,7 +1528,7 @@ html[data-student-theme="dark"] body.app-shell--student .student-shell-page {
   background: transparent !important;
 }
 
-/* Materials list UI — global (pre-week + subject hub duplicates) */
+/* Materials list UI - global (pre-week + subject hub duplicates) */
 html[data-student-theme="dark"] body.app-shell--student .materials-view-toggle__label,
 html[data-student-theme="dark"] body.app-shell--student .materials-sort-group__label,
 html[data-student-theme="dark"] body.app-shell--student .materials-results-hint,
@@ -1650,7 +1650,7 @@ html[data-student-theme="dark"] body.app-shell--student .lesson-no-match {
   color: var(--student-text-secondary) !important;
 }
 
-/* Subject hub — Quizzers dark: calmer contrast, fewer neon pills */
+/* Subject hub - Quizzers dark: calmer contrast, fewer neon pills */
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-table-shell.qq-list-shell,
 html[data-student-theme="dark"] body.app-shell--student .testbank-card,
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-card.quiz-card-item,
@@ -1705,7 +1705,7 @@ html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-
   border: none !important;
 }
 
-/* Status filters — one quiet style; active = brand blue only */
+/* Status filters - one quiet style; active = brand blue only */
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-status-filter-pill,
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--passed:not(.is-active),
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section button.quiz-filter-pill--failed:not(.is-active),
@@ -1796,7 +1796,7 @@ html[data-student-theme="dark"] body.app-shell--student .quizzers-section .qq-da
   color: var(--student-text-secondary) !important;
 }
 
-/* Soft status / score — readable, not neon */
+/* Soft status / score - readable, not neon */
 html[data-student-theme="dark"] body.app-shell--student .quizzers-section .quiz-status-badge.passed,
 html[data-student-theme="dark"] body.app-shell--student .quiz-status-badge.passed,
 html[data-student-theme="dark"] body.app-shell--student .quiz-score-badge-lg.pass {
@@ -1926,7 +1926,7 @@ html[data-student-theme="dark"] body.app-shell--student .relative.bg-white {
   color: var(--student-text) !important;
 }
 
-/* Profile — student theme bridge */
+/* Profile - student theme bridge */
 html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__chip-wrap,
 html[data-student-theme="dark"] body.app-shell--student .ere-prof--student-refresh[data-ere-profile-theme="student"] .ere-prof__card,
 html[data-student-theme="dark"] body.app-shell--student .ere-prof[data-ere-profile-theme="student"] .ere-prof__card {

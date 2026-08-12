@@ -159,7 +159,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
             <?php if ($bioRaw !== ''): ?>
               <p class="ere-prof__student-dash-bio m-0"><?php echo h($bioRaw); ?></p>
             <?php else: ?>
-              <p class="ere-prof__student-dash-bio ere-prof__student-dash-bio--empty m-0">No bio yet — add a short introduction when you edit your profile.</p>
+              <p class="ere-prof__student-dash-bio ere-prof__student-dash-bio--empty m-0">No bio yet - add a short introduction when you edit your profile.</p>
             <?php endif; ?>
           </div>
           <div class="ere-prof__student-dash-toolbar" role="group" aria-label="Profile status and actions">
@@ -371,7 +371,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
               <span class="ere-prof__stat-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></span>
               <div class="ere-prof__stat-text">
                 <p class="ere-prof__stat-label">Sign-in</p>
-                <p class="ere-prof__stat-value"><?php echo $signInEmail !== '' ? 'Email on file' : '—'; ?></p>
+                <p class="ere-prof__stat-value"><?php echo $signInEmail !== '' ? 'Email on file' : '-'; ?></p>
               </div>
             </div>
             <?php if ($enrollEnd && $enrollDaysLeft !== null): ?>
@@ -429,7 +429,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
         <div class="ere-prof__row">
           <p class="ere-prof__dt">Sign-in email</p>
           <div class="ere-prof__dd ere-prof__copy-wrap">
-            <span><?php echo $signInEmail !== '' ? h($signInEmail) : '—'; ?></span>
+            <span><?php echo $signInEmail !== '' ? h($signInEmail) : '-'; ?></span>
             <?php if ($signInEmail !== ''): ?>
               <button type="button" class="ere-prof__copy" data-ere-prof-copy="<?php echo h($signInEmail); ?>" aria-label="Copy sign-in email" title="Copy email">
                 <i class="bi bi-clipboard" aria-hidden="true"></i>
@@ -441,7 +441,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
           <div class="ere-prof__row">
             <p class="ere-prof__dt">Phone</p>
             <div class="ere-prof__dd ere-prof__copy-wrap">
-              <span><?php echo $phoneDisp !== '' ? h($phoneDisp) : '—'; ?></span>
+              <span><?php echo $phoneDisp !== '' ? h($phoneDisp) : '-'; ?></span>
               <?php if ($phoneDisp !== ''): ?>
                 <button type="button" class="ere-prof__copy" data-ere-prof-copy="<?php echo h($phoneDisp); ?>" aria-label="Copy phone number" title="Copy phone">
                   <i class="bi bi-clipboard" aria-hidden="true"></i>
@@ -471,7 +471,7 @@ $debugAttr = $ereviewProfileDebugUrl !== '' ? ' data-ere-debug-url="' . h($erevi
             </div>
             <div class="ere-prof__row">
               <p class="ere-prof__dt">Last login</p>
-              <p class="ere-prof__dd"><?php echo h($lastLogin ?? '—'); ?></p>
+              <p class="ere-prof__dd"><?php echo h($lastLogin ?? '-'); ?></p>
             </div>
             <?php if ($lastIp): ?>
               <div class="ere-prof__row">

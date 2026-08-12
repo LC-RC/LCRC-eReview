@@ -481,14 +481,14 @@ unset($_SESSION['delete_feedback']);
             <?php
               $isRunning = !empty($e['_is_running']);
               $isFinished = !empty($e['_is_finished']);
-              $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '—';
+              $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '-';
               $openingOn = !empty($e['available_from']) ? date('M j, Y g:i A', strtotime((string)$e['available_from'])) : 'Immediate';
-              $deadlineOn = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '—';
+              $deadlineOn = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '-';
             ?>
             <tr class="table-row">
               <td class="px-4 py-3">
                 <div class="title-main"><?php echo h($e['title']); ?></div>
-                <div class="muted-meta mt-0.5">Updated <?php echo !empty($e['updated_at']) ? h(date('M j, g:i A', strtotime((string)$e['updated_at']))) : '—'; ?></div>
+                <div class="muted-meta mt-0.5">Updated <?php echo !empty($e['updated_at']) ? h(date('M j, g:i A', strtotime((string)$e['updated_at']))) : '-'; ?></div>
               </td>
               <td class="px-4 py-3 instructions-cell"><div class="instructions-snippet" title="<?php echo h((string)($e['description'] ?? '')); ?>"><?php echo h((string)($e['description'] ?? 'No instructions provided.')); ?></div></td>
               <td class="px-4 py-3 font-semibold text-green-800"><?php echo (int)$e['q_count']; ?></td>
@@ -545,9 +545,9 @@ unset($_SESSION['delete_feedback']);
               <?php
                 $isRunning = !empty($e['_is_running']);
                 $isFinished = !empty($e['_is_finished']);
-                $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '—';
+                $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '-';
                 $openingOn = !empty($e['available_from']) ? date('M j, Y g:i A', strtotime((string)$e['available_from'])) : 'Immediate';
-                $deadlineOn = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '—';
+                $deadlineOn = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '-';
               ?>
               <article class="exam-card">
                 <div class="exam-card-head">

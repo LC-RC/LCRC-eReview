@@ -1,10 +1,13 @@
 ﻿<?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/content_sort_order.php';
 requireAdminPage();
 
 $csrf = generateCSRFToken();
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) { header('Location: admin_subjects'); exit; }
+
+content_sort_order_ensure_schema($conn);
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -14,14 +17,31 @@ $subject = mysqli_fetch_assoc($subRes);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: admin_subjects'); exit; }
 
+$reorderMode = isset($_GET['reorder']) && (string) $_GET['reorder'] === '1';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_lessons?subject_id='.$subjectId);
+        header('Location: admin_lessons?subject_id='.$subjectId . ($reorderMode ? '&reorder=1' : ''));
         exit;
     }
     $action = $_POST['action'] ?? 'save';
+    if ($action === 'reorder') {
+        $ids = $_POST['ordered_ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $result = content_sort_order_save($conn, 'lessons', 'lesson_id', $subjectId, $ids);
+        if (!empty($result['ok'])) {
+            $_SESSION['message'] = 'Lesson order saved.';
+            header('Location: admin_lessons?subject_id=' . $subjectId);
+        } else {
+            $_SESSION['error'] = (string) ($result['error'] ?? 'Could not save lesson order.');
+            header('Location: admin_lessons?subject_id=' . $subjectId . '&reorder=1');
+        }
+        exit;
+    }
     if ($action === 'delete') {
         $lessonId = sanitizeInt($_POST['lesson_id'] ?? 0);
         if ($lessonId > 0) {
@@ -49,8 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Lesson updated.';
     } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO lessons (subject_id, title, description) VALUES (?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'iss', $subjectId, $title, $desc);
+        $nextOrd = content_sort_order_next($conn, 'lessons', $subjectId);
+        $stmt = mysqli_prepare($conn, "INSERT INTO lessons (subject_id, title, description, sort_order) VALUES (?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issi', $subjectId, $title, $desc, $nextOrd);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         $_SESSION['message'] = 'Lesson created.';
@@ -77,6 +98,9 @@ $perPage = 15;
 $offset = ($page - 1) * $perPage;
 
 $searchQ = trim($_GET['q'] ?? '');
+if ($reorderMode) {
+    $searchQ = '';
+}
 
 $countParts = ['subject_id=?'];
 $countTypes = 'i';
@@ -102,6 +126,7 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $perPage;
 }
 
+$orderBy = content_sort_order_sql('l', 'lesson_id');
 $listParts = ['l.subject_id=?'];
 $listTypes = 'i';
 $listVals = [$subjectId];
@@ -118,18 +143,31 @@ $listSql = '
       (SELECT COUNT(*) FROM lesson_handouts h WHERE h.lesson_id=l.lesson_id) AS handouts_cnt
     FROM lessons l
     WHERE ' . implode(' AND ', $listParts) . '
-    ORDER BY l.lesson_id DESC
-    LIMIT ? OFFSET ?';
-$listTypes .= 'ii';
-$listVals[] = $perPage;
-$listVals[] = $offset;
+    ORDER BY ' . $orderBy;
+if (!$reorderMode) {
+    $listSql .= ' LIMIT ? OFFSET ?';
+    $listTypes .= 'ii';
+    $listVals[] = $perPage;
+    $listVals[] = $offset;
+}
 $stmt = mysqli_prepare($conn, $listSql);
 mysqli_stmt_bind_param($stmt, $listTypes, ...$listVals);
 mysqli_stmt_execute($stmt);
-$lessons = mysqli_stmt_get_result($stmt);
+$lessonsRes = mysqli_stmt_get_result($stmt);
+$lessonRows = [];
+if ($lessonsRes) {
+    while ($row = mysqli_fetch_assoc($lessonsRes)) {
+        $lessonRows[] = $row;
+    }
+}
+mysqli_stmt_close($stmt);
+$reorderRows = $reorderMode ? $lessonRows : [];
 
 $pageTitle = 'Lessons - ' . $subject['subject_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($subject['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], ['Lessons'] ];
+if ($reorderMode) {
+    $adminBreadcrumbs[] = ['Reorder'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -141,13 +179,22 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
 
   <?php
     $adminHeroIcon = 'file-text';
-    $adminHeroTitle = 'Lessons — ' . (string) $subject['subject_name'];
-    $adminHeroSubtitle = 'Create lessons, then open Materials to add videos and handouts.';
+    $adminHeroTitle = 'Lessons - ' . (string) $subject['subject_name'];
+    $adminHeroSubtitle = $reorderMode
+      ? 'Drag lessons into the order students should see, then save.'
+      : 'Create lessons, then open Materials to add videos and handouts.';
     $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessons . ' lesson' . ((int) $totalLessons === 1 ? '' : 's') . '</span>';
     $adminHeroActions =
       '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
-      . '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>'
-      . '<button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>';
+      . '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>';
+    if ($reorderMode) {
+        $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-x-lg"></i> Cancel</a>';
+    } else {
+        if ($totalLessons > 1) {
+            $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>';
+        }
+        $adminHeroActions .= '<button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>';
+    }
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -165,16 +212,84 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
   <?php endif; ?>
 
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
+    <?php if ($reorderMode): ?>
+      <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" id="content-reorder-form">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="action" value="reorder">
+        <div class="content-reorder-toolbar">
+          <p class="content-reorder-hint"><i class="bi bi-grip-vertical"></i> Drag using the handle. Students see this exact order.</p>
+          <div class="content-reorder-actions">
+            <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
+            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto pl-3 pr-8">
+          <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
+                <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
+                <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
+                <th class="px-5 py-3 font-semibold text-center">Videos</th>
+                <th class="px-5 py-3 font-semibold text-center">Handouts</th>
+              </tr>
+            </thead>
+            <tbody id="content-reorder-list">
+              <?php if ($reorderRows === []): ?>
+                <tr>
+                  <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
+                    <div class="font-semibold text-gray-200">No lessons to reorder</div>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($reorderRows as $idx => $l): ?>
+                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$l['lesson_id']; ?>">
+                    <td class="px-3 py-3 content-reorder-col-handle">
+                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$l['lesson_id']; ?>">
+                    </td>
+                    <td class="px-3 py-3 content-reorder-col-ord">
+                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
+                    </td>
+                    <td class="px-5 py-3 admin-col-primary">
+                      <div class="font-semibold"><?php echo h($l['title']); ?></div>
+                      <?php if (!empty($l['description'])): ?>
+                        <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['videos_cnt'] ?? 0); ?></td>
+                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['handouts_cnt'] ?? 0); ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+        <?php if ($reorderRows !== []): ?>
+          <div class="content-reorder-toolbar" style="border-top:1px solid rgba(255,255,255,0.08);border-bottom:0;">
+            <p class="content-reorder-hint"><?php echo count($reorderRows); ?> lesson<?php echo count($reorderRows) === 1 ? '' : 's'; ?></p>
+            <div class="content-reorder-actions">
+              <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
+              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+            </div>
+          </div>
+        <?php endif; ?>
+      </form>
+      <script src="assets/js/admin-content-reorder.js?v=1"></script>
+    <?php else: ?>
     <form method="get" action="admin_lessons" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
       <div class="flex-1 min-w-[200px]">
         <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
-        <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description…" class="input-custom w-full" autocomplete="off">
+        <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description..." class="input-custom w-full" autocomplete="off">
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
         <?php if ($searchQ !== ''): ?>
           <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
+        <?php endif; ?>
+        <?php if ($totalLessons > 1): ?>
+          <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>
         <?php endif; ?>
       </div>
       <div class="w-full text-sm opacity-70">
@@ -189,6 +304,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
       <table class="quiz-admin-data-table admin-data-table w-full text-left">
         <thead>
           <tr>
+            <th class="px-3 py-3 font-semibold text-center w-[4.5rem]">#</th>
             <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
             <th class="px-5 py-3 font-semibold text-center">Videos</th>
             <th class="px-5 py-3 font-semibold text-center">Handouts</th>
@@ -196,19 +312,26 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
           </tr>
         </thead>
         <tbody>
-          <?php $hasAny = false; while ($l = mysqli_fetch_assoc($lessons)): $hasAny = true;
+          <?php $hasAny = false; $rowIndex = $offset; foreach ($lessonRows as $l): $hasAny = true; $rowIndex++;
             $vCnt = (int)($l['videos_cnt'] ?? 0);
             $hCnt = (int)($l['handouts_cnt'] ?? 0);
             $vClass = $vCnt === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
             $hClass = $hCnt === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
-            $vTitle = $vCnt === 0 ? 'No videos yet — add via Materials' : $vCnt . ' video(s)';
-            $hTitle = $hCnt === 0 ? 'No handouts yet — add via Materials' : $hCnt . ' handout(s)';
+            $vTitle = $vCnt === 0 ? 'No videos yet - add via Materials' : $vCnt . ' video(s)';
+            $hTitle = $hCnt === 0 ? 'No handouts yet - add via Materials' : $hCnt . ' handout(s)';
+            $displayOrd = (int)($l['sort_order'] ?? 0);
+            if ($displayOrd <= 0) {
+                $displayOrd = $rowIndex;
+            }
           ?>
             <tr class="quiz-admin-row">
+              <td class="px-3 py-3 text-center">
+                <span class="content-reorder-ord"><?php echo $displayOrd; ?></span>
+              </td>
               <td class="px-5 py-3 admin-col-primary">
                 <div class="font-semibold"><?php echo h($l['title']); ?></div>
                 <?php if (!empty($l['description'])): ?>
-                  <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '…')); ?></div>
+                  <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
                 <?php endif; ?>
               </td>
               <td class="px-5 py-3 text-center" title="<?php echo h($vTitle); ?>">
@@ -230,10 +353,10 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                 </div>
               </td>
             </tr>
-          <?php endwhile; ?>
+          <?php endforeach; ?>
           <?php if (!$hasAny): ?>
             <tr>
-              <td colspan="4" class="px-5 py-14 text-center quiz-admin-empty">
+              <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
                 <div class="font-semibold text-gray-200"><?php echo $searchQ !== '' ? 'No lessons match your search' : 'No lessons yet'; ?></div>
                 <p class="text-sm mt-1 text-gray-500"><?php echo $searchQ !== '' ? 'Try different keywords or clear the filter.' : 'Create your first lesson to start uploading videos and handouts.'; ?></p>
@@ -246,7 +369,6 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
         </tbody>
       </table>
     </div>
-    <?php mysqli_stmt_close($stmt); ?>
     <?php if ($totalPages > 1): ?>
       <nav class="quiz-admin-pagination px-5 py-4 flex justify-center" aria-label="Lesson pagination">
         <ul class="flex flex-wrap items-center gap-1">
@@ -269,6 +391,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
           <?php endif; ?>
         </ul>
       </nav>
+    <?php endif; ?>
     <?php endif; ?>
   </div>
 

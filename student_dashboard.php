@@ -277,7 +277,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
           <div class="insight-snapshot">
             <h3 class="insight-snapshot__heading m-0" id="insight-snapshot-heading">Performance snapshot</h3>
             <?php if ($activityLast8Weeks === 0): ?>
-            <p class="insight-snapshot__empty m-0 mt-2 text-sm text-slate-600 max-w-xl">Submit a quiz or preboard once — this panel will show totals, averages, and streaks at a glance.</p>
+            <p class="insight-snapshot__empty m-0 mt-2 text-sm text-slate-600 max-w-xl">Submit a quiz or preboard once - this panel will show totals, averages, and streaks at a glance.</p>
             <?php else:
                 $snapScoreShown = false;
                 $snapScoreVal = '';
@@ -469,7 +469,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
         </div>
         <article class="dash-card dash-anim delay-4 p-5 progress-indicators-card" data-progress-observe aria-labelledby="dash-section-progress-indicators">
           <div class="dash-progress-intro">
-            <p class="dash-progress-intro__sub m-0">Expand a row for details — the bar and percentage replay each time.</p>
+            <p class="dash-progress-intro__sub m-0">Expand a row for details - the bar and percentage replay each time.</p>
             <button type="button" class="progress-metrics-help-btn dash-progress-intro__help" data-dash-metrics-open aria-controls="dashMetricsExplainModal" aria-expanded="false">How we calculate these</button>
           </div>
           <div class="space-y-2">
@@ -584,7 +584,7 @@ $dashboardPrefetchJson = isset($_GET['dashboard_prefetch']) && $_GET['dashboard_
 html[data-student-theme="light"] .student-dashboard-page {
   background: linear-gradient(180deg, #eef5fc 0%, #e4f0fa 45%, #ebf4fc 100%);
 }
-/* Brand hero — keep content off the edges */
+/* Brand hero - keep content off the edges */
 .student-hero.student-hero--brand {
   border-radius: 1rem;
   padding: 1.75rem 1.5rem !important;
@@ -887,7 +887,7 @@ html[data-student-theme="light"] .student-dashboard-page {
   border-color: var(--student-border-strong, rgba(22,101,160,.32));
   box-shadow: var(--student-shadow-lg, 0 20px 34px -24px rgba(20,61,89,.35));
 }
-/* Learning Overview — modern clickable KPI tiles */
+/* Learning Overview - modern clickable KPI tiles */
 .dash-overview__head {
   display: flex;
   flex-wrap: wrap;
@@ -1935,7 +1935,7 @@ html[data-student-theme="light"] .student-dashboard-page {
     var total = items.length;
     modalSub.textContent = total ? (total + ' submission' + (total === 1 ? '' : 's') + ' this week.') : 'No submissions this week.';
     if (!total) {
-      modalBody.innerHTML = '<p class="text-sm text-slate-600 m-0">Try a quiz or preboard set — activity will show here.</p>';
+      modalBody.innerHTML = '<p class="text-sm text-slate-600 m-0">Try a quiz or preboard set - activity will show here.</p>';
       return;
     }
     modalBody.innerHTML = items.map(function(it) {

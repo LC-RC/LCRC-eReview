@@ -2958,7 +2958,7 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Student profile header v2 — SaaS layout (scoped .ere-prof--hdr-v2)        */
+/* Student profile header v2 - SaaS layout (scoped .ere-prof--hdr-v2)        */
 /* -------------------------------------------------------------------------- */
 
 .ere-prof--hdr-v2.ere-prof[data-ere-profile-theme="student"] .ere-prof__hero {
@@ -3304,7 +3304,7 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Student profile (reviewee shell) — 2026 UI refresh                         */
+/* Student profile (reviewee shell) - 2026 UI refresh                         */
 /* Scoped to .ere-prof--student-refresh so staff layout stays unchanged.     */
 /* Palette aligns with student modal + shell: #1665a0 · #143d59 · #dbeafe.   */
 /* -------------------------------------------------------------------------- */
@@ -3593,7 +3593,7 @@
   border-radius: 0.55rem;
 }
 
-/* Unified profile hero — same visual language as student_dashboard student-hero */
+/* Unified profile hero - same visual language as student_dashboard student-hero */
 .ere-prof--student-refresh[data-ere-profile-theme='student'] .ere-prof__hero {
   background: transparent !important;
   border: 0 !important;

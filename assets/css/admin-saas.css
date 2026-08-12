@@ -2402,7 +2402,7 @@ html[data-admin-theme="light"] body.admin-app #main a.border-sky-400 {
   background: #e0f2fe !important;
 }
 
-/* Bare primary CTAs (commerce Save / Apply / Approve) — never ghost white-on-white.
+/* Bare primary CTAs (commerce Save / Apply / Approve) - never ghost white-on-white.
    Keep content-hub variants (--subject/--quiz/--lessons/--testbank) on their own hover accents. */
 html[data-admin-theme="light"] body.admin-app #main .admin-content-btn:not(.admin-content-btn--subject):not(.admin-content-btn--quiz):not(.admin-content-btn--lessons):not(.admin-content-btn--testbank),
 html[data-admin-theme="light"] body.admin-app #main .admin-btn--primary,
@@ -2522,7 +2522,7 @@ body.admin-app.admin-commerce-payments-page #main .payments-row-actions .admin-c
   border-radius: 0.55rem !important;
 }
 
-/* Bulk table checkboxes — visible in light + dark */
+/* Bulk table checkboxes - visible in light + dark */
 body.admin-app #main .admin-bulk-check,
 body.admin-app #main input.admin-bulk-check[type="checkbox"],
 body.admin-app.admin-students-page .admin-bulk-check,
@@ -2583,7 +2583,7 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar {
   -webkit-backdrop-filter: none !important;
 }
 
-/* Floating glass pill — beat admin.css dark full-bleed rules */
+/* Floating glass pill - beat admin.css dark full-bleed rules */
 body.admin-app .admin-topbar-modern .admin-topbar-inner,
 body.admin-app .admin-topbar .admin-topbar-inner,
 html[data-admin-theme="light"] body.admin-app .admin-topbar-modern .admin-topbar-inner,
@@ -2732,7 +2732,7 @@ body.admin-app #main .quiz-admin-data-table thead th {
   color: var(--admin-text-muted) !important;
 }
 
-/* Count / type pills — readable in BOTH themes */
+/* Count / type pills - readable in BOTH themes */
 body.admin-app #main .quiz-admin-count-pill,
 body.admin-app #main .admin-count-pill {
   display: inline-flex !important;

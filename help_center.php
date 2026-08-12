@@ -43,7 +43,7 @@ if ($role === 'student') {
       <ul class="mt-4 space-y-2 text-sm text-slate-700 list-disc pl-5">
         <li>Open <strong>Subjects</strong> from the sidebar to browse your enrolled materials.</li>
         <li>Use <strong>Preboards</strong> and <strong>Preweek</strong> for focused practice and updates.</li>
-        <li>Notifications appear in the bell — click to read messages from your instructors.</li>
+        <li>Notifications appear in the bell - click to read messages from your instructors.</li>
       </ul>
       <p class="mt-6 mb-0"><a href="student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
     </div>

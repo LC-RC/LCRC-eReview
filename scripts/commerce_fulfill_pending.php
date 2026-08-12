@@ -1,6 +1,6 @@
 <?php
 /**
- * CLI — fulfill paid payments that are eligible but unfulfilled (Phase 7).
+ * CLI - fulfill paid payments that are eligible but unfulfilled (Phase 7).
  *
  * Usage:
  *   php scripts/commerce_fulfill_pending.php

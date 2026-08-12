@@ -1,6 +1,6 @@
 <?php
 /**
- * Excel (.xlsx) download: Student progress — finished exams only.
+ * Excel (.xlsx) download: Student progress - finished exams only.
  */
 require_once __DIR__ . '/auth.php';
 requireRole('professor_admin');

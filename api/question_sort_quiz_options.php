@@ -1,6 +1,6 @@
 <?php
 /**
- * List topical quizzes for a subject (admin) — used by Question sorting deploy modal.
+ * List topical quizzes for a subject (admin) - used by Question sorting deploy modal.
  */
 declare(strict_types=1);
 

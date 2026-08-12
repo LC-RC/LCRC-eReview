@@ -39,7 +39,7 @@ if ($reviewAccessSt === 'no_schedule') {
 ?>
 <div class="review-result-hero">
   <p class="review-hero-title m-0">Exam results</p>
-  <p class="review-hero-sub m-0">Submitted <?php echo !empty($attempt['submitted_at']) ? h(college_exam_format_student_result_datetime($attempt['submitted_at'])) : '—'; ?></p>
+  <p class="review-hero-sub m-0">Submitted <?php echo !empty($attempt['submitted_at']) ? h(college_exam_format_student_result_datetime($attempt['submitted_at'])) : '-'; ?></p>
   <div class="review-summary-grid">
     <div class="review-sum-card">
       <div class="review-sum-k">Score</div>
@@ -61,11 +61,11 @@ if ($reviewAccessSt === 'no_schedule') {
     </div>
     <div class="review-sum-card">
       <div class="review-sum-k">Started</div>
-      <div class="review-sum-v"><?php echo !empty($attempt['started_at']) ? h(college_exam_format_student_result_datetime($attempt['started_at'])) : '—'; ?></div>
+      <div class="review-sum-v"><?php echo !empty($attempt['started_at']) ? h(college_exam_format_student_result_datetime($attempt['started_at'])) : '-'; ?></div>
     </div>
     <div class="review-sum-card">
       <div class="review-sum-k">Time used</div>
-      <div class="review-sum-v"><?php echo $timeUsedSec !== null ? h(gmdate('H:i:s', $timeUsedSec)) : '—'; ?></div>
+      <div class="review-sum-v"><?php echo $timeUsedSec !== null ? h(gmdate('H:i:s', $timeUsedSec)) : '-'; ?></div>
     </div>
     <div class="review-sum-card">
       <div class="review-sum-k">Professor</div>
@@ -130,7 +130,7 @@ if ($reviewAccessSt === 'no_schedule') {
         <?php elseif ($picked): ?>
           <span class="font-bold text-red-800">Your answer</span>
         <?php elseif (!$hasAns && !$isCorrect): ?>
-          <span class="text-slate-400 font-semibold text-xs">—</span>
+          <span class="text-slate-400 font-semibold text-xs">-</span>
         <?php endif; ?>
       </div>
       <?php endforeach; ?>

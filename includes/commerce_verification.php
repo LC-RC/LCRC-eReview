@@ -112,7 +112,7 @@ function commerce_verification_claim(mysqli $conn, array $payment, array $opts =
     $vStatus = (string) ($payment['verification_status'] ?? '');
     $stuckMinutes = COMMERCE_VERIFICATION_PROCESSING_STUCK_MINUTES;
 
-    // Already auto_verified — idempotent skip unless force
+    // Already auto_verified - idempotent skip unless force
     if ($vStatus === 'auto_verified' && !$force) {
         return [
             'ok' => true,
@@ -134,7 +134,7 @@ function commerce_verification_claim(mysqli $conn, array $payment, array $opts =
         ];
     }
 
-    // manually_* — never auto-claim
+    // manually_* - never auto-claim
     if (in_array($vStatus, ['manually_approved', 'manually_rejected'], true) && !$force) {
         return [
             'ok' => true,
@@ -267,7 +267,7 @@ function commerce_verification_persist(
     }
     $summary = commerce_verification_build_summary($decision, $reasons);
 
-    // Nullable detected fields — bind as strings so SQL NULL is preserved cleanly.
+    // Nullable detected fields - bind as strings so SQL NULL is preserved cleanly.
     $detAmountSql = $extracted['amount_centavos'] !== null ? (string) (int) $extracted['amount_centavos'] : null;
     $detRef = $extracted['reference_raw'] !== null ? (string) $extracted['reference_raw'] : null;
     $detPaidAt = $extracted['paid_at'] !== null ? (string) $extracted['paid_at'] : null;
@@ -405,7 +405,7 @@ function commerce_verification_persist(
                 $paymentId
             );
         } else {
-            // needs_review — status stays pending_verification (or paid if force re-run)
+            // needs_review - status stays pending_verification (or paid if force re-run)
             $upd = mysqli_prepare(
                 $conn,
                 "UPDATE payments SET
@@ -532,7 +532,7 @@ function commerce_verify_payment(mysqli $conn, int $paymentId, array $opts = [])
 
     $attemptCount = commerce_verification_attempt_count($conn, $paymentId);
     if ($attemptCount >= COMMERCE_VERIFICATION_MAX_ATTEMPTS && !$force) {
-        // Cap retries — leave/push to needs_review without another OCR burn if already there
+        // Cap retries - leave/push to needs_review without another OCR burn if already there
         if ((string) ($payment['verification_status'] ?? '') !== 'needs_review') {
             $sum = commerce_verification_build_summary('needs_review', ['max_attempts_exceeded']);
             $st = mysqli_prepare(
@@ -724,7 +724,7 @@ function commerce_verify_payment(mysqli $conn, int $paymentId, array $opts = [])
         }
         // Also search raw text for account name / phone if recipient line missed
         if (!$matchedRecipient && $settingsName !== '' && commerce_ocr_names_match($rawText, $settingsName)) {
-            // rawText contains name as substring via names_match only if one contains other —
+            // rawText contains name as substring via names_match only if one contains other -
             // names_match on full receipt vs short name: short name contained in receipt text
             $matchedRecipient = true;
         }
@@ -732,7 +732,7 @@ function commerce_verify_payment(mysqli $conn, int $paymentId, array $opts = [])
             $matchedRecipient = true;
         }
     } else {
-        // No recipient line — try settings name/phone anywhere in text
+        // No recipient line - try settings name/phone anywhere in text
         if ($settingsName !== '' && strlen($settingsName) >= 3) {
             $matchedRecipient = (stripos($rawText, $settingsName) !== false);
         }

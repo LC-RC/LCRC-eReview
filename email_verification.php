@@ -147,7 +147,7 @@ function createPendingRegistration($data) {
     $cp3 = @mysqli_query($conn, "SHOW COLUMNS FROM pending_registrations LIKE 'enrollment_path'");
     if ($cp3 && mysqli_fetch_assoc($cp3)) $hasEnrollmentPath = true;
 
-    // Enrollment selection requires schema columns — fail closed rather than discarding selection.
+    // Enrollment selection requires schema columns - fail closed rather than discarding selection.
     if ($enrollmentPath !== null && !$hasEnrollmentPath) {
         error_log('createPendingRegistration: enrollment_path column missing on pending_registrations');
         setLastPendingRegistrationError('Enrollment selection is not available. Please contact support.');
@@ -212,7 +212,7 @@ function createPendingRegistration($data) {
     if (!mysqli_stmt_execute($stmt)) {
         $firstError = mysqli_error($conn);
         mysqli_stmt_close($stmt);
-        // Fail closed when enrollment selection was provided — never drop enrollment fields via fallback.
+        // Fail closed when enrollment selection was provided - never drop enrollment fields via fallback.
         if ($enrollmentPath !== null) {
             error_log('createPendingRegistration enrollment insert failed: ' . $firstError);
             setLastPendingRegistrationError('Could not save enrollment selection. Please try again. If this continues, contact support.');
@@ -404,7 +404,7 @@ function completeVerificationAndCreateUser($pendingRow) {
     }
 
     // Package / By Topic: create or resume GCash checkout (Phase 5). Never for free_access.
-    // Does not fulfill access or run OCR — only awaiting_proof payment + checkout session.
+    // Does not fulfill access or run OCR - only awaiting_proof payment + checkout session.
     if (in_array($enrollmentPath, ['package', 'by_topic'], true) && $userId > 0) {
         require_once __DIR__ . '/includes/commerce_payment.php';
         if (commerce_schema_ready($conn)) {
@@ -412,7 +412,7 @@ function completeVerificationAndCreateUser($pendingRow) {
             if (empty($checkout['ok'])) {
                 error_log(
                     'completeVerificationAndCreateUser: checkout bootstrap failed for user '
-                    . $userId . ' — ' . ($checkout['error'] ?? 'unknown')
+                    . $userId . ' - ' . ($checkout['error'] ?? 'unknown')
                 );
                 // Recovery session armed inside bootstrap; verify_email shows Continue Payment.
             }
@@ -435,7 +435,7 @@ function completeVerificationAndCreateUser($pendingRow) {
  * Send verification email with branded HTML (Verify Account button + secure link).
  */
 function sendVerificationEmail($toEmail, $verificationUrl) {
-    $subject = 'Verify your email – LCRC eReview';
+    $subject = 'Verify your email - LCRC eReview';
     $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body style="margin:0;font-family:\'Segoe UI\',Tahoma,sans-serif;background:#f1f5f9;padding:24px;">';
     $html .= '<div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">';
     $html .= '<div style="background:linear-gradient(135deg,#1F58C3 0%,#1E40AF 100%);padding:24px;text-align:center;">';

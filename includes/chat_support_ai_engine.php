@@ -460,8 +460,8 @@ function ereview_chat_generate_reply(mysqli $conn, string $message, string $sess
             $message
         );
         $text = $asksName
-            ? "I'm LCRC Support Assistant—an automated helper for LCRC eReview (not a human staff member). You can still reach our team anytime through Talk to Human or email contact@ereview.ph."
-            : "I'm an automated assistant for LCRC eReview—not a human—but I'm here to help with packages, registration, video lessons, enrollment, and common questions. For anything sensitive or account-specific, tap Talk to Human or email contact@ereview.ph.";
+            ? "I'm LCRC Support Assistant-an automated helper for LCRC eReview (not a human staff member). You can still reach our team anytime through Talk to Human or email contact@ereview.ph."
+            : "I'm an automated assistant for LCRC eReview-not a human-but I'm here to help with packages, registration, video lessons, enrollment, and common questions. For anything sensitive or account-specific, tap Talk to Human or email contact@ereview.ph.";
         return [
             'text' => $text,
             'intent' => $intent,
@@ -474,7 +474,7 @@ function ereview_chat_generate_reply(mysqli $conn, string $message, string $sess
     }
     if ($intent === 'meta_language') {
         return [
-            'text' => "Yes—you can ask in Tagalog or Filipino. I will do my best to answer in Tagalog. For official details (packages, prices, payments), I may repeat important lines in English so nothing gets lost in translation. For account-specific help, Talk to Human or contact@ereview.ph works best.\n\nOo, puwede kang magtanong sa Tagalog. Susubukan kong sumagot sa Tagalog. Para sa presyo, bayad, at enrollment, puwede kong isama ang English sa mahahalagang detalye. Kung kailangan ng staff, gamitin ang Talk to Human.",
+            'text' => "Yes-you can ask in Tagalog or Filipino. I will do my best to answer in Tagalog. For official details (packages, prices, payments), I may repeat important lines in English so nothing gets lost in translation. For account-specific help, Talk to Human or contact@ereview.ph works best.\n\nOo, puwede kang magtanong sa Tagalog. Susubukan kong sumagot sa Tagalog. Para sa presyo, bayad, at enrollment, puwede kong isama ang English sa mahahalagang detalye. Kung kailangan ng staff, gamitin ang Talk to Human.",
             'intent' => $intent,
             'confidence' => 0.94,
             'matched_article_id' => 0,
@@ -496,7 +496,7 @@ function ereview_chat_generate_reply(mysqli $conn, string $message, string $sess
     }
     if ($intent === 'greeting') {
         return [
-            'text' => "Hello! I'm LCRC Support Assistant. Ask about packages, registration, video lectures, payments, or account access—or tell me what you need.",
+            'text' => "Hello! I'm LCRC Support Assistant. Ask about packages, registration, video lectures, payments, or account access-or tell me what you need.",
             'intent' => $intent,
             'confidence' => 0.9,
             'matched_article_id' => 0,
@@ -518,7 +518,7 @@ function ereview_chat_generate_reply(mysqli $conn, string $message, string $sess
     }
     if ($intent === 'goodbye') {
         return [
-            'text' => 'Take care—and good luck with your review. Come back anytime if you have more questions!',
+            'text' => 'Take care-and good luck with your review. Come back anytime if you have more questions!',
             'intent' => $intent,
             'confidence' => 0.9,
             'matched_article_id' => 0,
@@ -615,7 +615,7 @@ function ereview_chat_create_escalation_ticket(
 ): int {
     $subject = ereview_chat_safe_trim($subject, 250);
     if ($subject === '') {
-        $subject = 'Chat escalation — ' . $category;
+        $subject = 'Chat escalation - ' . $category;
     }
     $name = '';
     $email = '';

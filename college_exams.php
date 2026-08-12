@@ -40,7 +40,7 @@ function college_exam_relative_deadline(?string $deadline, string $now): string 
     if (!$deadline) { return 'No deadline'; }
     $d = strtotime($deadline);
     $n = strtotime($now);
-    if ($d === false || $n === false) { return '—'; }
+    if ($d === false || $n === false) { return '-'; }
     $diff = $d - $n;
     $abs = abs($diff);
     $days = (int)floor($abs / 86400);
@@ -422,17 +422,17 @@ usort($list, static function ($a, $b) use ($sort) {
           $eid = (int)($e['exam_id'] ?? 0);
           $st = (string)($e['attempt_status'] ?? '');
           $bucket = (string)($e['_bucket'] ?? 'all');
-          $deadline = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '—';
+          $deadline = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '-';
           $relative = (string)($e['_relative_deadline'] ?? '');
-          $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '—';
+          $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '-';
           $openingOn = !empty($e['available_from']) ? date('M j, Y g:i A', strtotime((string)$e['available_from'])) : 'Immediate';
           $desc = trim((string)($e['description'] ?? ''));
           $descText = $desc !== '' ? $desc : 'No instructions provided.';
           $showDeadlineRelative = ($relative !== '' && $st !== 'submitted');
           $deadlineSubClass = 'date-sub' . ($showDeadlineRelative && strpos($relative, 'late') !== false ? ' is-late' : '');
           $statusHtml = '<span class="status-pill status-closed"><i class="bi bi-lock"></i> Closed</span>';
-          $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">—</span>';
-          $markHtml = '<span class="text-slate-400 text-xs font-semibold">—</span>';
+          $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
+          $markHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
           if ($st === 'submitted') {
               $scoreLine = college_exam_format_score_total_line(
                   isset($e['correct_count']) ? (int)$e['correct_count'] : null,
@@ -483,8 +483,8 @@ usort($list, static function ($a, $b) use ($sort) {
               <span class="date-chip <?php echo empty($e['available_from']) ? 'muted' : ''; ?>"><i class="bi bi-play-circle"></i> <?php echo h($openingOn); ?></span>
             </div>
             <div class="exam-cell exam-cell--deadline col-deadline" title="<?php echo h((string)($e['deadline'] ?? '')); ?>">
-              <?php if ($deadline === '—'): ?>
-                <span class="date-chip muted"><i class="bi bi-hourglass-split"></i> —</span>
+              <?php if ($deadline === '-'): ?>
+                <span class="date-chip muted"><i class="bi bi-hourglass-split"></i> -</span>
               <?php else: ?>
                 <span class="date-stack">
                   <span class="date-chip"><i class="bi bi-hourglass-split"></i> <?php echo h($deadline); ?></span>
@@ -508,9 +508,9 @@ usort($list, static function ($a, $b) use ($sort) {
               $eid = (int)($e['exam_id'] ?? 0);
               $st = (string)($e['attempt_status'] ?? '');
               $bucket = (string)($e['_bucket'] ?? 'all');
-              $deadline = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '—';
+              $deadline = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : '-';
               $relative = (string)($e['_relative_deadline'] ?? '');
-              $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '—';
+              $publishedOn = !empty($e['created_at']) ? date('M j, Y g:i A', strtotime((string)$e['created_at'])) : '-';
               $openingOn = !empty($e['available_from']) ? date('M j, Y g:i A', strtotime((string)$e['available_from'])) : 'Immediate';
               $desc = trim((string)($e['description'] ?? ''));
               $descText = $desc !== '' ? $desc : 'No instructions provided.';
@@ -518,8 +518,8 @@ usort($list, static function ($a, $b) use ($sort) {
               $deadlineSubClass = 'date-sub' . ($showDeadlineRelative && strpos($relative, 'late') !== false ? ' is-late' : '');
 
               $statusHtml = '<span class="status-pill status-closed"><i class="bi bi-lock"></i> Closed</span>';
-              $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">—</span>';
-              $markHtml = '<span class="text-slate-400 text-xs font-semibold">—</span>';
+              $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
+              $markHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
               if ($st === 'submitted') {
                   $scoreLine = college_exam_format_score_total_line(
                       isset($e['correct_count']) ? (int)$e['correct_count'] : null,
@@ -573,7 +573,7 @@ usort($list, static function ($a, $b) use ($sort) {
                   <div><div class="meta-k">Professor</div><div class="meta-v"><?php echo h((string)($e['_prof_name'] ?? 'Professor')); ?></div></div>
                   <div><div class="meta-k">Published On</div><div class="meta-v"><span class="date-chip"><i class="bi bi-calendar-event"></i> <?php echo h($publishedOn); ?></span></div></div>
                   <div><div class="meta-k">Opening</div><div class="meta-v"><span class="date-chip <?php echo empty($e['available_from']) ? 'muted' : ''; ?>"><i class="bi bi-play-circle"></i> <?php echo h($openingOn); ?></span></div></div>
-                  <div><div class="meta-k">Deadline</div><div class="meta-v"><?php if ($deadline === '—'): ?><span class="date-chip muted"><i class="bi bi-hourglass-split"></i> —</span><?php else: ?><span class="date-chip"><i class="bi bi-hourglass-split"></i> <?php echo h($deadline); ?></span><?php endif; ?><?php if ($showDeadlineRelative): ?><div class="<?php echo h($deadlineSubClass); ?> mt-1"><?php echo h($relative); ?></div><?php endif; ?></div></div>
+                  <div><div class="meta-k">Deadline</div><div class="meta-v"><?php if ($deadline === '-'): ?><span class="date-chip muted"><i class="bi bi-hourglass-split"></i> -</span><?php else: ?><span class="date-chip"><i class="bi bi-hourglass-split"></i> <?php echo h($deadline); ?></span><?php endif; ?><?php if ($showDeadlineRelative): ?><div class="<?php echo h($deadlineSubClass); ?> mt-1"><?php echo h($relative); ?></div><?php endif; ?></div></div>
                 </div>
                 <div class="card-footer">
                   <div class="text-[.72rem] text-slate-500 font-semibold">

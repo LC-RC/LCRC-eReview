@@ -1,5 +1,5 @@
 /**
- * LCRC eReview — unified app shell (sidebar + topbar layout, student theme, shared motion).
+ * LCRC eReview - unified app shell (sidebar + topbar layout, student theme, shared motion).
  * Admin dark rules stay in admin.css; this file adds student shell + cross-cutting behavior.
  */
 
@@ -284,7 +284,7 @@ body.app-shell--student.sidebar-expanded #main.app-shell-main--student {
   margin-left: var(--app-shell-sidebar-expanded);
 }
 
-/* Student: no dimming overlay — main content stays clickable while sidebar is open */
+/* Student: no dimming overlay - main content stays clickable while sidebar is open */
 body.app-shell--student #sidebar-backdrop {
   position: fixed;
   inset: 0;
@@ -554,7 +554,7 @@ body.sidebar-expanded #app-sidebar {
   transition: transform 0.25s ease;
 }
 
-/* Section labels in student sidebar — match admin caps style */
+/* Section labels in student sidebar - match admin caps style */
 #app-sidebar.app-shell-sidebar--student .admin-sidebar-section-label {
   display: block;
   padding: 0.5rem 0.75rem 0.25rem;
@@ -694,7 +694,7 @@ body.sidebar-expanded #app-sidebar {
   }
 }
 
-/* ---- Student topbar — aligned with sidebar blue (#1665a0 / #143D59) ---- */
+/* ---- Student topbar - aligned with sidebar blue (#1665a0 / #143D59) ---- */
 .student-topbar-modern {
   --topbar-bg: #1665a0;
   --topbar-border: rgba(255, 255, 255, 0.14);
@@ -1076,7 +1076,7 @@ body.sidebar-expanded #app-sidebar {
   position: relative;
 }
 
-/* Student topbar — enrollment access (single row, matches search bar height) */
+/* Student topbar - enrollment access (single row, matches search bar height) */
 .student-topbar-access-wrap {
   position: relative;
   z-index: 1001;
@@ -1135,7 +1135,7 @@ body.sidebar-expanded #app-sidebar {
   box-shadow: 0 1px 6px rgba(15, 23, 42, 0.18);
 }
 
-/* Animated hourglass — smooth 360° loop (reads as sand moving top → bottom as it turns) */
+/* Animated hourglass - smooth 360° loop (reads as sand moving top → bottom as it turns) */
 .student-topbar-access-hourglass {
   display: inline-flex;
   align-items: center;

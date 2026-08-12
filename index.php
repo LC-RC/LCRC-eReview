@@ -7,7 +7,7 @@ if (isLoggedIn() && verifySession()) {
     exit;
 }
 
-// Legacy homepage register modal retired — send any leftover session open to canonical registration.
+// Legacy homepage register modal retired - send any leftover session open to canonical registration.
 if (isset($_SESSION['open_modal']) && $_SESSION['open_modal'] === 'registerModal') {
     unset($_SESSION['open_modal']);
     header('Location: registration');
@@ -440,7 +440,7 @@ $loginModalCsrf = generateCSRFToken();
     </div>
   </section>
 
-  <!-- Footer: LCRC LMS – card style, subscribe + 3 columns + copyright (reference design, LCRC theme) -->
+  <!-- Footer: LCRC LMS - card style, subscribe + 3 columns + copyright (reference design, LCRC theme) -->
   <footer class="mt-auto px-4 sm:px-6 lg:px-8 py-8 pb-10">
     <div class="footer-card max-w-6xl mx-auto rounded-2xl overflow-hidden border border-gray-200/80 shadow-xl" style="box-shadow: 0 20px 50px -12px rgba(31, 88, 195, 0.15), 0 0 0 1px rgba(0,0,0,0.04);">
       <style>
@@ -671,7 +671,7 @@ $loginModalCsrf = generateCSRFToken();
         <div class="flex-1 relative group/input min-w-0">
           <input type="text" 
                  x-model="input" 
-                 :placeholder="plainLanguage ? 'Type your question in simple words…' : 'Type your message…'" 
+                 :placeholder="plainLanguage ? 'Type your question in simple words...' : 'Type your message...'" 
                  class="w-full px-5 py-3.5 rounded-2xl border-2 border-gray-200 bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-accent-orange/40 focus:border-accent-orange transition-all duration-200 placeholder:text-gray-400 group-hover/input:border-gray-300 shadow-sm" 
                  maxlength="500"
                  autocomplete="off">
@@ -964,7 +964,7 @@ window.chatbot = function chatbot() {
 }
 </script>
 
-<!-- Modals (Alpine) — login only; registration is canonical at registration.php -->
+<!-- Modals (Alpine) - login only; registration is canonical at registration.php -->
 <div x-data="{
   activeModal: null,
   loginFormKey: 0,
@@ -1115,7 +1115,7 @@ window.chatbot = function chatbot() {
           <div class="animate-slide-up-fade-3">
           <label class="inline-flex items-start gap-2.5 text-sm text-gray-700 mb-3 cursor-pointer">
             <input type="checkbox" name="remember_me" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#1F58C3] focus:ring-[#1F58C3]/40">
-            <span class="leading-5">Remember me — stay signed in for 30 days (next visit skips login)</span>
+            <span class="leading-5">Remember me - stay signed in for 30 days (next visit skips login)</span>
           </label>
           <button type="submit" name="login" class="w-full py-4 px-5 rounded-2xl font-semibold text-white bg-gradient-to-r from-accent-orange to-accent-orange-light hover:from-accent-orange-dark hover:to-accent-orange focus:outline-none focus:ring-4 focus:ring-accent-orange/25 transition-all duration-200 shadow-[0_14px_28px_rgba(245,158,11,0.25)] hover:shadow-[0_18px_36px_rgba(245,158,11,0.35)] hover:scale-[1.01] active:scale-[0.99] active:translate-y-[2px] active:shadow-[0_8px_20px_rgba(245,158,11,0.3)]">
             Login

@@ -126,9 +126,9 @@ if ($s) {
               <td class="px-4 py-3 font-medium"><?php echo h($a['full_name']); ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h($a['email']); ?></td>
               <td class="px-4 py-3"><?php echo h($a['exam_title']); ?></td>
-              <td class="px-4 py-3"><?php echo $a['score'] !== null ? h((string)$a['score']) . '%' : '—'; ?></td>
+              <td class="px-4 py-3"><?php echo $a['score'] !== null ? h((string)$a['score']) . '%' : '-'; ?></td>
               <td class="px-4 py-3"><?php echo h($a['status']); ?></td>
-              <td class="px-4 py-3 text-gray-600"><?php echo $a['submitted_at'] ? h(date('M j, g:i A', strtotime($a['submitted_at']))) : '—'; ?></td>
+              <td class="px-4 py-3 text-gray-600"><?php echo $a['submitted_at'] ? h(date('M j, g:i A', strtotime($a['submitted_at']))) : '-'; ?></td>
             </tr>
             <?php endforeach; ?>
           <?php endif; ?>
@@ -160,7 +160,7 @@ if ($s) {
               <td class="px-4 py-3">
                 <?php if (!empty($s['file_name']) && !empty($s['submission_id'])): ?>
                   <a href="<?php echo h($s['file_path'] ?? ''); ?>" class="file-link text-green-700 hover:underline" target="_blank" rel="noopener"><?php echo h($s['file_name']); ?></a>
-                <?php else: ?>—<?php endif; ?>
+                <?php else: ?>-<?php endif; ?>
               </td>
               <td class="px-4 py-3 text-gray-600"><?php echo h(date('M j, g:i A', strtotime($s['submitted_at']))); ?></td>
             </tr>

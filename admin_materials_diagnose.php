@@ -1,6 +1,6 @@
 <?php
 /**
- * admin_materials_diagnose — TEMPORARY ONE-OFF SERVER DIAGNOSTIC
+ * admin_materials_diagnose - TEMPORARY ONE-OFF SERVER DIAGNOSTIC
  *
  * Chrome DevTools Console CANNOT show PHP errors. A 500 means the server crashed
  * before sending HTML; the Console only shows net::ERR_HTTP_RESPONSE_CODE_FAILURE.
@@ -10,7 +10,7 @@
  * 2. Upload this file next to admin_materials on the VPS.
  * 3. In the SAME browser where you are logged in as admin, open:
  *    https://lcrc-ereview.com/admin_materials_diagnose?token=YOUR_SECRET&lesson_id=37
- * 4. Read the plain-text output on the page (or use curl — see bottom of this file).
+ * 4. Read the plain-text output on the page (or use curl - see bottom of this file).
  * 5. DELETE this file from the server when done (anyone with the URL can run it).
  */
 
@@ -48,7 +48,7 @@ register_shutdown_function(function (): void {
 
 $lessonId = max(1, (int)($_GET['lesson_id'] ?? 37));
 
-echo "=== LCRC eReview — admin_materials pipeline diagnose ===\n\n";
+echo "=== LCRC eReview - admin_materials pipeline diagnose ===\n\n";
 echo "PHP: " . PHP_VERSION . "\n";
 echo "SAPI: " . PHP_SAPI . "\n";
 echo "lesson_id: {$lessonId}\n\n";
@@ -66,7 +66,7 @@ if (empty($conn) || !($conn instanceof mysqli)) {
     echo "FAIL: \$conn is not a mysqli instance.\n";
     exit(1);
 }
-echo 'OK: connected — ' . mysqli_get_host_info($conn) . "\n\n";
+echo 'OK: connected - ' . mysqli_get_host_info($conn) . "\n\n";
 
 echo "--- [2] Lesson + subject (same SQL as admin_materials) ---\n";
 $lessonSql = 'SELECT l.*, s.subject_name FROM lessons l JOIN subjects s ON s.subject_id=l.subject_id WHERE l.lesson_id=' . (int)$lessonId . ' LIMIT 1';
@@ -120,12 +120,12 @@ echo "\n--- [6] auth + admin role ---\n";
 require_once __DIR__ . '/auth.php';
 if (!function_exists('isLoggedIn') || !isLoggedIn()) {
     echo "WARN: Not logged in in this session. Log in as admin in this browser, then reload this diagnose URL.\n";
-    echo "      (Steps 7–8 test the same includes as the real page and need an admin session.)\n\n";
+    echo "      (Steps 7-8 test the same includes as the real page and need an admin session.)\n\n";
 } else {
     $role = (string)($_SESSION['role'] ?? '');
     echo "Logged in. role={$role}\n";
     if ($role !== 'admin') {
-        echo "WARN: Not admin — step 7 may not match production failure.\n\n";
+        echo "WARN: Not admin - step 7 may not match production failure.\n\n";
     }
 }
 
@@ -162,5 +162,5 @@ echo "Or: journalctl -u php*-fpm -n 50\n";
  *
  * curl -sS "https://lcrc-ereview.com/admin_materials_diagnose?token=YOUR_SECRET&lesson_id=37"
  *
- * (Add -b "PHPSESSID=..." copied from browser if steps 7–8 need login.)
+ * (Add -b "PHPSESSID=..." copied from browser if steps 7-8 need login.)
  */

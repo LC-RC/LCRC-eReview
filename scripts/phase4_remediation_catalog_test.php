@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 4 remediation — reversible live catalog tests A–O.
+ * Phase 4 remediation - reversible live catalog tests A-O.
  * Run once, then cleanup. Do not leave test data.
  */
 declare(strict_types=1);
@@ -12,7 +12,7 @@ require_once __DIR__ . '/../email_verification.php';
 function out(string $label, bool $ok, string $detail = ''): void
 {
     $status = $ok ? 'PASS' : 'FAIL';
-    echo "[$status] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo "[$status] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -59,7 +59,7 @@ try {
     // 1) Full LMS package
     mysqli_query($conn, "INSERT INTO sellable_packages
         (code, name, description, price_centavos, currency, duration_value, duration_unit, access_scope, is_active, is_purchasable, sort_order)
-        VALUES ('TEST_FULL_LMS_P4', 'Test Self-Paced — Full LMS', 'Phase4 reversible test', 150000, 'PHP', 6, 'month', 'full_lms', 1, 1, 1)");
+        VALUES ('TEST_FULL_LMS_P4', 'Test Self-Paced - Full LMS', 'Phase4 reversible test', 150000, 'PHP', 6, 'month', 'full_lms', 1, 1, 1)");
     $fullId = (int) mysqli_insert_id($conn);
     $createdPackageIds[] = $fullId;
 
@@ -90,12 +90,12 @@ try {
     mysqli_query($conn, "UPDATE lessons SET price_centavos=25000, access_duration_value=30, access_duration_unit='day', is_purchasable=1 WHERE lesson_id=" . (int) $lessonBuy);
     mysqli_query($conn, "UPDATE lessons SET price_centavos=NULL, access_duration_value=NULL, access_duration_unit=NULL, is_purchasable=0 WHERE lesson_id=" . (int) $lessonOff);
 
-    // A — active purchasable package appears
+    // A - active purchasable package appears
     $cats = commerce_catalog_packages_for_registration($conn);
     $ids = array_map(static fn($p) => (int) $p['package_id'], $cats);
     $mark('A', in_array($fullId, $ids, true), 'full LMS in registration catalog');
 
-    // B — change price → registration reflects
+    // B - change price → registration reflects
     mysqli_query($conn, "UPDATE sellable_packages SET price_centavos=175000 WHERE package_id=" . (int) $fullId);
     $cats = commerce_catalog_packages_for_registration($conn);
     $found = null;
@@ -107,7 +107,7 @@ try {
     }
     $mark('B', $found && (int) $found['price_centavos'] === 175000, 'price_centavos=' . (int) ($found['price_centavos'] ?? 0));
 
-    // C — change duration
+    // C - change duration
     mysqli_query($conn, "UPDATE sellable_packages SET duration_value=9 WHERE package_id=" . (int) $fullId);
     $cats = commerce_catalog_packages_for_registration($conn);
     $found = null;
@@ -119,21 +119,21 @@ try {
     }
     $mark('C', $found && (int) $found['duration_value'] === 9, 'duration_value=' . (int) ($found['duration_value'] ?? 0));
 
-    // D — is_purchasable=0 disappears
+    // D - is_purchasable=0 disappears
     mysqli_query($conn, "UPDATE sellable_packages SET is_purchasable=0 WHERE package_id=" . (int) $fullId);
     $cats = commerce_catalog_packages_for_registration($conn);
     $ids = array_map(static fn($p) => (int) $p['package_id'], $cats);
     $mark('D', !in_array($fullId, $ids, true), 'not purchasable');
     mysqli_query($conn, "UPDATE sellable_packages SET is_purchasable=1 WHERE package_id=" . (int) $fullId);
 
-    // E — is_active=0 disappears
+    // E - is_active=0 disappears
     mysqli_query($conn, "UPDATE sellable_packages SET is_active=0 WHERE package_id=" . (int) $fullId);
     $cats = commerce_catalog_packages_for_registration($conn);
     $ids = array_map(static fn($p) => (int) $p['package_id'], $cats);
     $mark('E', !in_array($fullId, $ids, true), 'inactive');
     mysqli_query($conn, "UPDATE sellable_packages SET is_active=1 WHERE package_id=" . (int) $fullId);
 
-    // F — purchasable lesson appears
+    // F - purchasable lesson appears
     $topics = commerce_catalog_topics_for_registration($conn);
     $topicIds = [];
     foreach ($topics as $g) {
@@ -143,7 +143,7 @@ try {
     }
     $mark('F', in_array($lessonBuy, $topicIds, true) && !in_array($lessonOff, $topicIds, true), "buy=$lessonBuy off=$lessonOff");
 
-    // G — change lesson price
+    // G - change lesson price
     mysqli_query($conn, "UPDATE lessons SET price_centavos=33300 WHERE lesson_id=" . (int) $lessonBuy);
     $topics = commerce_catalog_topics_for_registration($conn);
     $priceSeen = null;
@@ -156,7 +156,7 @@ try {
     }
     $mark('G', $priceSeen === 33300, 'price=' . (string) $priceSeen);
 
-    // H — disable purchasing
+    // H - disable purchasing
     mysqli_query($conn, "UPDATE lessons SET is_purchasable=0 WHERE lesson_id=" . (int) $lessonBuy);
     $topics = commerce_catalog_topics_for_registration($conn);
     $topicIds = [];
@@ -170,14 +170,14 @@ try {
     // Make second lesson purchasable for multi-select total
     mysqli_query($conn, "UPDATE lessons SET price_centavos=15000, access_duration_value=14, access_duration_unit='day', is_purchasable=1 WHERE lesson_id=" . (int) $lessonOff);
 
-    // I — multi topic total
+    // I - multi topic total
     $topicCheck = commerce_validate_topic_selection($conn, [$lessonBuy, $lessonOff]);
     $mark('I', !empty($topicCheck['ok']) && (int) $topicCheck['total_centavos'] === 40000, 'total=' . (int) ($topicCheck['total_centavos'] ?? -1));
 
-    // J — client amount ignored; server recalculates
+    // J - client amount ignored; server recalculates
     $mark('J', !empty($topicCheck['ok']) && (int) $topicCheck['total_centavos'] === 40000 && !isset($topicCheck['client_total']), 'server total only from DB');
 
-    // K — Free Access path: pending with free_access, no payment rows created by selection helpers
+    // K - Free Access path: pending with free_access, no payment rows created by selection helpers
     $payBefore = (int) (mysqli_fetch_row(mysqli_query($conn, 'SELECT COUNT(*) FROM payments'))[0] ?? 0);
     $tokenUrl = createPendingRegistration([
         'email' => 'phase4.test.free.' . time() . '@example.com',
@@ -214,16 +214,16 @@ try {
         'pending free_access; payments unchanged'
     );
 
-    // L — invalid mapped rejected
+    // L - invalid mapped rejected
     $bad = commerce_validate_package_selection($conn, $mappedBadId);
     $mark('L', empty($bad['ok']), $bad['error'] ?? 'expected reject');
 
-    // M — full LMS without content items valid
+    // M - full LMS without content items valid
     $good = commerce_validate_package_selection($conn, $fullId);
     $items = commerce_get_package_content($conn, $fullId);
     $mark('M', !empty($good['ok']) && $items === [], 'full_lms valid with empty map');
 
-    // N — package + topics survive pending insert
+    // N - package + topics survive pending insert
     $pkgToken = createPendingRegistration([
         'email' => 'phase4.test.pkg.' . time() . '@example.com',
         'full_name' => 'Phase Four Package',
@@ -273,10 +273,10 @@ try {
         && str_contains((string) ($pendingTopic['selected_lesson_ids_json'] ?? ''), (string) $lessonBuy);
     $mark('N', $nOk, 'package/topics persisted on pending_registrations');
 
-    // O — payment_proof forced on new modes must not be treated as accepted commerce proof.
+    // O - payment_proof forced on new modes must not be treated as accepted commerce proof.
     // register_process forces empty proof for package/by_topic/free_access.
     // Simulate: createPending with empty proof despite client attempting path (K used non-empty string to show storage of field value if passed;
-    // register_process clears it before createPending — verify source ignores for new modes by reading register_process logic via empty proof path).
+    // register_process clears it before createPending - verify source ignores for new modes by reading register_process logic via empty proof path).
     $oSrc = file_get_contents(__DIR__ . '/../register_process.php');
     $oOk = is_string($oSrc)
         && str_contains($oSrc, "in_array(\$enrollment_path, ['package', 'by_topic', 'free_access'], true)")
@@ -320,7 +320,7 @@ try {
     }
     // Remove any leftover phase4 test pending emails
     mysqli_query($conn, "DELETE FROM pending_registrations WHERE email LIKE 'phase4.test.%'");
-    // free_access_requests uses user_id / student_note — no phase4 rows should exist (verification not completed).
+    // free_access_requests uses user_id / student_note - no phase4 rows should exist (verification not completed).
     @mysqli_query($conn, "DELETE FROM free_access_requests WHERE student_note LIKE 'Phase4%'");
 
     foreach ($createdPackageIds as $pid) {

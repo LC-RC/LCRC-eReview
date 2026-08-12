@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce — By Topic pricing on existing LMS lessons (Phase 3 + Phase 7 bulk).
+ * Admin Commerce - By Topic pricing on existing LMS lessons (Phase 3 + Phase 7 bulk).
  * Source of truth: lessons table. No duplicate topic/product catalog.
  */
 require_once 'auth.php';
@@ -15,7 +15,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce — By Topic Pricing';
+$pageTitle = 'Commerce - By Topic Pricing';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -338,14 +338,14 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
                           <div class="text-xs opacity-60 truncate"><?php echo h($r['subject_name']); ?></div>
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap">
-                          <?php echo $r['price_centavos'] !== null ? '₱' . h(commerce_centavos_to_pesos_display((int)$r['price_centavos'])) : '—'; ?>
+                          <?php echo $r['price_centavos'] !== null ? '₱' . h(commerce_centavos_to_pesos_display((int)$r['price_centavos'])) : '-'; ?>
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap text-xs">
                           <?php
                             if (!empty($r['access_duration_value'])) {
                                 echo (int)$r['access_duration_value'] . ' ' . h($r['access_duration_unit'] ?? 'day') . '(s)';
                             } else {
-                                echo '—';
+                                echo '-';
                             }
                           ?>
                         </td>

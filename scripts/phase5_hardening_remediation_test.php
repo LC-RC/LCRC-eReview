@@ -2,7 +2,7 @@
 /**
  * Phase 5 hardening remediation tests (recovery, payment_ref collision,
  * session regenerate, selection idempotency, security smoke).
- * Reversible — cleans all temporary rows/files.
+ * Reversible - cleans all temporary rows/files.
  */
 declare(strict_types=1);
 
@@ -17,7 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -125,7 +125,7 @@ try {
     $mark('A_REISSUE', $tok2 !== '' && (int) $_SESSION['checkout_user_id'] === $u1 && (int) $_SESSION['checkout_payment_id'] === $pay1, 'session bound');
 
     // Different user cannot use u1 payment via require after binding u2
-    commerce_issue_checkout_session($u2, $pay1); // wrongly attempt — ownership check on require uses session user vs payment user
+    commerce_issue_checkout_session($u2, $pay1); // wrongly attempt - ownership check on require uses session user vs payment user
     // Fix: issue for u2's own payment first
     $boot2 = commerce_bootstrap_checkout_after_verification($conn, $u2);
     $pay2 = (int) ($boot2['payment']['payment_id'] ?? 0);

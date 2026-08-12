@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce — Packages catalog (Phase 3 foundations).
+ * Admin Commerce - Packages catalog (Phase 3 foundations).
  * DB-driven only; no hardcoded package products or prices.
  */
 require_once 'auth.php';
@@ -15,7 +15,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce — Packages';
+$pageTitle = 'Commerce - Packages';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -249,7 +249,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               </thead>
               <tbody>
                 <?php if ($packages === []): ?>
-                  <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No packages yet. Create one — nothing is hardcoded.</td></tr>
+                  <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No packages yet. Create one - nothing is hardcoded.</td></tr>
                 <?php else: ?>
                   <?php foreach ($packages as $p): ?>
                     <tr class="border-t border-white/5 <?php echo ((int)$p['package_id'] === $editId) ? 'bg-white/5' : ''; ?>">
@@ -393,7 +393,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               <div class="flex items-center justify-between gap-2 mb-2">
                 <div>
                   <h3 class="font-bold text-sm">Package features (non-LMS)</h3>
-                  <p class="text-xs opacity-60">e.g. Live Zoom, Onsite, Coaching — not fake LMS content.</p>
+                  <p class="text-xs opacity-60">e.g. Live Zoom, Onsite, Coaching - not fake LMS content.</p>
                 </div>
                 <button type="button" class="admin-outline-btn px-3 py-1.5 rounded-lg text-xs font-semibold" @click="features.push({key:'',label:'',description:''})">Add</button>
               </div>

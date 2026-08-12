@@ -4,10 +4,13 @@ require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
 require_once __DIR__ . '/includes/vimeo_helpers.php';
 require_once __DIR__ . '/includes/student_content_access.php';
+require_once __DIR__ . '/includes/student_activity.php';
+require_once __DIR__ . '/includes/content_sort_order.php';
 requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+content_sort_order_ensure_schema($conn);
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) { header('Location: student_subjects'); exit; }
@@ -32,7 +35,7 @@ $subject = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: student_subjects'); exit; }
 
-$stmt = mysqli_prepare($conn, "SELECT * FROM lessons WHERE subject_id=? ORDER BY lesson_id ASC");
+$stmt = mysqli_prepare($conn, "SELECT * FROM lessons WHERE subject_id=? ORDER BY " . content_sort_order_sql('', 'lesson_id'));
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
 mysqli_stmt_execute($stmt);
 $lessons = mysqli_stmt_get_result($stmt);
@@ -49,6 +52,8 @@ if ($lessons) {
 // Load stored lesson thumbnails (first non-empty per lesson) + first Vimeo video URL per lesson (for client-side oEmbed).
 $thumbByLesson = [];
 $vimeoOembedUrlByLesson = [];
+$videoIdsByLesson = [];
+$allSubjectVideoIds = [];
 if (!empty($lessonsRows)) {
     $hasThumbnailUrlColumn = false;
     $thumbColRes = @mysqli_query($conn, "SHOW COLUMNS FROM lesson_videos LIKE 'thumbnail_url'");
@@ -64,12 +69,20 @@ if (!empty($lessonsRows)) {
     if (!empty($lessonIds)) {
         $in = implode(',', array_map('intval', $lessonIds));
         $thumbSelect = $hasThumbnailUrlColumn ? "thumbnail_url" : "NULL AS thumbnail_url";
-        $tv = @mysqli_query($conn, "SELECT lesson_id, video_url, {$thumbSelect} FROM lesson_videos WHERE lesson_id IN ($in) ORDER BY lesson_id ASC, video_id ASC");
+        $tv = @mysqli_query($conn, "SELECT lesson_id, video_id, video_url, {$thumbSelect} FROM lesson_videos WHERE lesson_id IN ($in) ORDER BY lesson_id ASC, video_id ASC");
         if ($tv) {
             while ($tr = mysqli_fetch_assoc($tv)) {
                 $lid = (int)($tr['lesson_id'] ?? 0);
+                $vid = (int)($tr['video_id'] ?? 0);
                 if ($lid <= 0) {
                     continue;
+                }
+                if ($vid > 0) {
+                    if (!isset($videoIdsByLesson[$lid])) {
+                        $videoIdsByLesson[$lid] = [];
+                    }
+                    $videoIdsByLesson[$lid][] = $vid;
+                    $allSubjectVideoIds[] = $vid;
                 }
                 if (!isset($thumbByLesson[$lid])) {
                     $tu = trim((string)($tr['thumbnail_url'] ?? ''));
@@ -90,11 +103,56 @@ if (!empty($lessonsRows)) {
     }
 }
 
+$progressMap = student_activity_get_progress_map($conn, (int) $userId, $allSubjectVideoIds);
+
 // Client-side Materials tab: search + sort (Alpine).
 $lessonsForAlpine = [];
 foreach ($lessonsRows as $l) {
     $lid = (int)($l['lesson_id'] ?? 0);
     $lessonOpen = sca_has_access($conn, (int)$userId, 'lesson', $lid);
+    $vids = $videoIdsByLesson[$lid] ?? [];
+    $videoCount = count($vids);
+    $doneCount = 0;
+    $startedCount = 0;
+    $bestPct = 0.0;
+    foreach ($vids as $vid) {
+        $p = $progressMap[$vid] ?? null;
+        if (!is_array($p)) {
+            continue;
+        }
+        $pct = (float) ($p['percent'] ?? 0);
+        $pos = (float) ($p['position_sec'] ?? 0);
+        $bestPct = max($bestPct, $pct);
+        if ($pct >= 95.0 || !empty($p['completed'])) {
+            $doneCount++;
+            $startedCount++;
+        } elseif ($pct > 0 || $pos >= 5) {
+            $startedCount++;
+        }
+    }
+    if ($videoCount <= 0) {
+        $watchStatus = 'no_videos';
+        $watchLabel = 'No videos yet';
+        $watchPct = 0;
+    } elseif ($doneCount >= $videoCount) {
+        $watchStatus = 'done';
+        $watchLabel = 'Done watching';
+        $watchPct = 100;
+    } elseif ($startedCount > 0) {
+        $watchStatus = 'in_progress';
+        $watchLabel = $doneCount > 0
+            ? ($doneCount . '/' . $videoCount . ' done')
+            : 'In progress';
+        $watchPct = (int) round(($doneCount / max(1, $videoCount)) * 100);
+        if ($watchPct === 0 && $bestPct > 0) {
+            $watchPct = max(5, (int) round($bestPct / max(1, $videoCount)));
+        }
+    } else {
+        $watchStatus = 'not_started';
+        $watchLabel = 'Not started';
+        $watchPct = 0;
+    }
+
     $lessonsForAlpine[] = [
         'id' => $lid,
         'title' => (string)($l['title'] ?? ''),
@@ -103,10 +161,15 @@ foreach ($lessonsRows as $l) {
         'thumb' => (string)($thumbByLesson[$lid] ?? ''),
         'vimeoOembedUrl' => (string)($vimeoOembedUrlByLesson[$lid] ?? ''),
         'locked' => !$lessonOpen,
+        'videoCount' => $videoCount,
+        'doneCount' => $doneCount,
+        'watchStatus' => $watchStatus,
+        'watchLabel' => $watchLabel,
+        'watchPct' => $watchPct,
     ];
 }
 
-$stmt = mysqli_prepare($conn, "SELECT * FROM quizzes WHERE subject_id=? ORDER BY quiz_id DESC");
+$stmt = mysqli_prepare($conn, "SELECT * FROM quizzes WHERE subject_id=? ORDER BY " . content_sort_order_sql('', 'quiz_id'));
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
 mysqli_stmt_execute($stmt);
 $quizzesAll = mysqli_stmt_get_result($stmt);
@@ -338,7 +401,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       transform: translateY(0) scale(0.98);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
-    /* App modal – dark gradient format (same style for all confirmations/alerts) */
+    /* App modal - dark gradient format (same style for all confirmations/alerts) */
     .quiz-confirm-overlay {
       position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 1rem;
       background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
@@ -858,7 +921,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
     }
     .quiz-filter-pills { overflow-wrap: anywhere; }
 
-    /* Quizzers — unified control panel (search + sort + apply | status + counters), separate from list/cards */
+    /* Quizzers - unified control panel (search + sort + apply | status + counters), separate from list/cards */
     .quizzers-section .quiz-control-panel {
       margin: 0.65rem 1rem 0.85rem;
       padding: 0.95rem 1rem 1rem;
@@ -1159,7 +1222,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       font-size: 1rem;
       opacity: 0.92;
     }
-    /* Left | center type | right view — grid from sm up so typical tablets/laptops stay horizontal */
+    /* Left | center type | right view - grid from sm up so typical tablets/laptops stay horizontal */
     .quizzers-header.quizzers-header--triple {
       display: flex;
       flex-direction: column;
@@ -1227,7 +1290,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
         0 4px 14px rgba(20, 61, 89, 0.07);
     }
 
-    /* Quiz list/cards subtle fade when switching type (opacity-only avoids subpixel “blur” from scaled layers) */
+    /* Quiz list/cards subtle fade when switching type (opacity-only avoids subpixel "blur" from scaled layers) */
     .quiz-quizzers-page-body {
       padding: 0.45rem 0 1.1rem;
       transition: opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1250,7 +1313,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       }
     }
 
-    /* No matches (search / status / type) — full-width flex so card is truly centered */
+    /* No matches (search / status / type) - full-width flex so card is truly centered */
     .quizzers-section .quiz-quizzers-filter-empty {
       box-sizing: border-box;
       width: 100%;
@@ -1656,7 +1719,73 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       min-height: 0;
       padding: 1rem 1rem 1.125rem;
     }
-    .lesson-card__title {
+    .lesson-watch-badge {
+      position: absolute;
+      left: 0.75rem;
+      bottom: 0.75rem;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+      pointer-events: none;
+    }
+    .lesson-watch-badge--done {
+      color: #065f46;
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+    }
+    .lesson-watch-badge--progress {
+      color: #9a3412;
+      background: #ffedd5;
+      border: 1px solid #fdba74;
+    }
+    .lesson-watch-badge--new {
+      color: #1e3a5f;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(22, 101, 160, 0.25);
+    }
+    .lesson-list__action .lesson-watch-badge {
+      position: static;
+      box-shadow: none;
+    }
+    .lesson-watch-bar {
+      margin: 0.45rem 0 0.15rem;
+    }
+    .lesson-watch-bar--list {
+      margin-top: 0.4rem;
+      max-width: 14rem;
+    }
+    .lesson-watch-bar__track {
+      height: 0.35rem;
+      border-radius: 999px;
+      background: rgba(22, 101, 160, 0.12);
+      overflow: hidden;
+    }
+    .lesson-watch-bar__fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #1665A0, #3b9fd9);
+      transition: width 0.25s ease;
+    }
+    .lesson-watch-bar__fill.is-done {
+      background: linear-gradient(90deg, #059669, #34d399);
+    }
+    .lesson-watch-bar__meta {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.7rem;
+      color: rgba(20, 61, 89, 0.65);
+      font-weight: 600;
+    }
+.lesson-card__title {
       margin: 0;
       font-size: 0.98rem;
       font-weight: 700;
@@ -2025,7 +2154,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
       margin-bottom: 0.75rem;
     }
 
-    /* Quizzers card grid — same horizontal gutter as .quiz-table-view / control panel */
+    /* Quizzers card grid - same horizontal gutter as .quiz-table-view / control panel */
     .quizzers-section .quiz-cards-view {
       padding: 0 1rem 0.25rem;
     }
@@ -2513,7 +2642,7 @@ $pageTitle = 'Subject - ' . $subject['subject_name'];
   .student-subject-page .rounded-2xl { border-radius: 0.75rem !important; }
   .student-subject-page .rounded-xl { border-radius: 0.625rem !important; }
   .student-subject-page .rounded-lg { border-radius: 0.5rem !important; }
-  /* Light content protection – non-intrusive */
+  /* Light content protection - non-intrusive */
   .student-protected {
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -2894,7 +3023,7 @@ document.addEventListener('alpine:init', function() {
     <button type="button" @click="activeTab = 'testbank'; window.location.hash = '#testbank'" :class="activeTab === 'testbank' ? 'bg-[#1665A0] text-white border-[#1665A0]' : 'bg-[#e8f2fa]/80 text-[#143D59] border-[#1665A0]/20 hover:bg-[#e8f2fa]'" class="subject-tab-btn px-3 py-2 sm:px-4 rounded-lg text-sm sm:text-base font-medium border-2 inline-flex items-center gap-1.5 sm:gap-2 min-h-[44px]"><i class="bi bi-folder2-open shrink-0"></i> Test Bank</button>
   </nav>
 
-  <!-- Tab: Materials (lessons — card or list view; click to open viewer) -->
+  <!-- Tab: Materials (lessons - card or list view; click to open viewer) -->
   <div x-show="activeTab === 'materials'" x-cloak class="materials-section dash-anim delay-2 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1),0_4px_16px_rgba(20,61,89,0.06)] overflow-hidden mb-5 bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0]">
     <div class="px-4 sm:px-6 py-4 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3 min-w-0">
@@ -2903,7 +3032,7 @@ document.addEventListener('alpine:init', function() {
         </span>
         <div class="min-w-0">
           <h2 class="text-lg font-bold text-[#143D59] m-0">Materials</h2>
-          <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">Lessons, videos, and handouts. Click a lesson to view.</p>
+          <p class="text-sm text-[#143D59]/70 mt-0.5 mb-0">See Done watching / In progress before you open a lesson. Resume where you stopped.</p>
         </div>
       </div>
       <?php if (!empty($lessonsRows)): ?>
@@ -2944,7 +3073,7 @@ document.addEventListener('alpine:init', function() {
             id="materials-search-input"
             type="search"
             class="materials-search-input"
-            placeholder="Search by lesson title…"
+            placeholder="Search by lesson title..."
             autocomplete="off"
             x-model.debounce.300ms="materialsSearch"
           >
@@ -2970,8 +3099,8 @@ document.addEventListener('alpine:init', function() {
           >
             <option value="lesson_asc">Oldest first</option>
             <option value="lesson_desc">Newest first</option>
-            <option value="title_asc">Title A–Z</option>
-            <option value="title_desc">Title Z–A</option>
+            <option value="title_asc">Title A-Z</option>
+            <option value="title_desc">Title Z-A</option>
           </select>
         </div>
       </div>
@@ -2997,12 +3126,28 @@ document.addEventListener('alpine:init', function() {
                   <span class="lesson-card__badge" aria-hidden="true" x-text="idx + 1"></span>
                   <span class="lesson-card__icon" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
                 </div>
+                <span class="lesson-watch-badge"
+                      x-show="!lesson.locked && lesson.watchStatus && lesson.watchStatus !== 'no_videos'"
+                      :class="{
+                        'lesson-watch-badge--done': lesson.watchStatus === 'done',
+                        'lesson-watch-badge--progress': lesson.watchStatus === 'in_progress',
+                        'lesson-watch-badge--new': lesson.watchStatus === 'not_started'
+                      }"
+                      x-text="lesson.watchLabel"></span>
               </div>
               <div class="lesson-card__body">
                 <h3 class="lesson-card__title" x-text="lesson.title"></h3>
+                <div class="lesson-watch-bar" x-show="!lesson.locked && lesson.videoCount > 0" x-cloak>
+                  <div class="lesson-watch-bar__track">
+                    <div class="lesson-watch-bar__fill"
+                         :class="lesson.watchStatus === 'done' ? 'is-done' : ''"
+                         :style="'width:' + (lesson.watchPct || 0) + '%'"></div>
+                  </div>
+                  <span class="lesson-watch-bar__meta" x-text="(lesson.doneCount || 0) + '/' + (lesson.videoCount || 0) + ' videos done'"></span>
+                </div>
                 <div class="lesson-card__meta">
-                  <span class="lesson-card__hint">Lesson</span>
-                  <span class="lesson-card__cta">Open <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
+                  <span class="lesson-card__hint" x-text="lesson.watchStatus === 'done' ? 'Done watching' : (lesson.watchStatus === 'in_progress' ? 'Continue watching' : 'Lesson')"></span>
+                  <span class="lesson-card__cta"><span x-text="lesson.watchStatus === 'in_progress' ? 'Resume' : 'Open'"></span> <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
                 </div>
               </div>
             </a>
@@ -3022,12 +3167,32 @@ document.addEventListener('alpine:init', function() {
                 </div>
                 <div class="lesson-list__body">
                   <h3 class="lesson-list__title" x-text="lesson.title"></h3>
-                  <span class="lesson-list__sub">Lesson · Videos &amp; handouts</span>
+                  <span class="lesson-list__sub"
+                        x-text="lesson.locked ? 'Locked' : (
+                          lesson.watchStatus === 'done' ? 'Done watching · ' + (lesson.doneCount || 0) + '/' + (lesson.videoCount || 0) + ' videos' :
+                          lesson.watchStatus === 'in_progress' ? 'In progress · ' + (lesson.doneCount || 0) + '/' + (lesson.videoCount || 0) + ' done · Resume' :
+                          lesson.videoCount > 0 ? 'Not started · ' + (lesson.videoCount || 0) + ' video(s)' :
+                          'Lesson · No videos yet'
+                        )"></span>
+                  <div class="lesson-watch-bar lesson-watch-bar--list" x-show="!lesson.locked && lesson.videoCount > 0" x-cloak>
+                    <div class="lesson-watch-bar__track">
+                      <div class="lesson-watch-bar__fill"
+                           :class="lesson.watchStatus === 'done' ? 'is-done' : ''"
+                           :style="'width:' + (lesson.watchPct || 0) + '%'"></div>
+                    </div>
+                  </div>
                 </div>
-                <span class="lesson-list__action">
-                  <span class="lesson-list__pill">Open <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
-                </span>
-              </a>
+                <span class="lesson-list__action flex flex-col items-end gap-1">
+                  <span class="lesson-watch-badge"
+                        x-show="!lesson.locked && lesson.watchStatus && lesson.watchStatus !== 'no_videos'"
+                        :class="{
+                          'lesson-watch-badge--done': lesson.watchStatus === 'done',
+                          'lesson-watch-badge--progress': lesson.watchStatus === 'in_progress',
+                          'lesson-watch-badge--new': lesson.watchStatus === 'not_started'
+                        }"
+                        x-text="lesson.watchLabel"></span>
+                  <span class="lesson-list__pill"><span x-text="lesson.watchStatus === 'in_progress' ? 'Resume' : 'Open'"></span> <i class="bi bi-arrow-right-short" aria-hidden="true"></i></span>
+                </span></a>
             </li>
           </template>
         </ul>
@@ -3093,7 +3258,7 @@ document.addEventListener('alpine:init', function() {
             type="text"
             id="quizTitleFilter"
             class="quiz-title-filter-input"
-            placeholder="Search by quiz title…"
+            placeholder="Search by quiz title..."
             autocomplete="off"
           >
           <i class="bi bi-search" aria-hidden="true"></i>
@@ -3113,8 +3278,8 @@ document.addEventListener('alpine:init', function() {
             <option value="default">Default order</option>
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
-            <option value="title_asc">Title A–Z</option>
-            <option value="title_desc">Title Z–A</option>
+            <option value="title_asc">Title A-Z</option>
+            <option value="title_desc">Title Z-A</option>
             <option value="duration_asc">Short duration first</option>
             <option value="duration_desc">Long duration first</option>
           </select>
@@ -3146,7 +3311,7 @@ document.addEventListener('alpine:init', function() {
           <span class="quiz-counter-chip quiz-counter-chip--questions" title="All questions uploaded across every quiz in this subject"><i class="bi bi-ui-checks-grid" aria-hidden="true"></i> Questions<b><?php echo (int)$totalSubjectQuestions; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-check-circle" aria-hidden="true"></i> Passed<b><?php echo (int)$quizzesPassed; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-x-circle" aria-hidden="true"></i> Failed<b><?php echo (int)$quizzesFailed; ?></b></span>
-          <span class="quiz-counter-chip"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Avg<b><?php echo $averageScore !== null ? (int)$averageScore . '%' : '—'; ?></b></span>
+          <span class="quiz-counter-chip"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i> Avg<b><?php echo $averageScore !== null ? (int)$averageScore . '%' : '-'; ?></b></span>
           <span class="quiz-counter-chip"><i class="bi bi-bookmarks" aria-hidden="true"></i> Topic<b><?php echo (int)($quizTypeCounts['topical'] ?? 0); ?></b></span>
         </div>
       </div>
@@ -3694,7 +3859,7 @@ document.addEventListener('alpine:init', function() {
         } else {
           var from = Math.min(start + 1, total);
           var to = Math.min(end, total);
-          pagerInfo.textContent = 'Showing ' + from + '–' + to + ' of ' + total;
+          pagerInfo.textContent = 'Showing ' + from + '-' + to + ' of ' + total;
         }
       }
       if (pagerPrev) pagerPrev.disabled = currentPage <= 1 || total === 0;

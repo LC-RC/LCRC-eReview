@@ -28,7 +28,7 @@ $isSubmitted = ($attempt['status'] ?? '') === 'submitted';
 $score = isset($attempt['score']) ? (float) $attempt['score'] : null;
 $monitorUrl = 'admin_preboards_monitor?preboards_subject_id=' . $subjectId;
 
-$pageTitle = 'Preboard Review — ' . ($attempt['full_name'] ?? 'Student');
+$pageTitle = 'Preboard Review - ' . ($attempt['full_name'] ?? 'Student');
 $adminBreadcrumbs = [
     ['Dashboard', 'admin_dashboard'],
     ['Preboards', 'admin_preboards_subjects'],
@@ -105,7 +105,7 @@ $adminBreadcrumbs = [
       Full attempt review
     </h1>
     <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">
-      <?php echo h($attempt['full_name'] ?? ''); ?> — <?php echo h($attempt['subject_name'] ?? ''); ?>, Set <?php echo h($attempt['set_label'] ?? ''); ?>
+      <?php echo h($attempt['full_name'] ?? ''); ?> - <?php echo h($attempt['subject_name'] ?? ''); ?>, Set <?php echo h($attempt['set_label'] ?? ''); ?>
       <?php if (!empty($attempt['set_title'])): ?> · <?php echo h($attempt['set_title']); ?><?php endif; ?>
     </p>
   </div>
@@ -113,12 +113,12 @@ $adminBreadcrumbs = [
   <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
     <a href="<?php echo h($monitorUrl); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to monitoring</a>
     <?php if (!$isSubmitted): ?>
-      <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">In progress — answers may be incomplete</span>
+      <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">In progress - answers may be incomplete</span>
     <?php endif; ?>
   </div>
 
   <div class="pb-review-summary mb-5">
-    <div class="pb-review-summary-item"><strong><?php echo $isSubmitted ? preboards_format_score($score) : '—'; ?></strong><span>Score</span></div>
+    <div class="pb-review-summary-item"><strong><?php echo $isSubmitted ? preboards_format_score($score) : '-'; ?></strong><span>Score</span></div>
     <div class="pb-review-summary-item"><strong><?php echo (int) ($attempt['correct_count'] ?? 0); ?> / <?php echo (int) ($attempt['total_count'] ?? 0); ?></strong><span>Correct</span></div>
     <div class="pb-review-summary-item"><strong>#<?php echo (int) ($attempt['attempt_no'] ?? 1); ?></strong><span>Attempt</span></div>
     <div class="pb-review-summary-item"><strong><?php echo h(preboards_format_datetime($attempt['submitted_at'] ?? null)); ?></strong><span>Submitted</span></div>
@@ -147,7 +147,7 @@ $adminBreadcrumbs = [
           ?>
             <tr class="quiz-admin-row <?php echo $current ? 'opacity-100' : ''; ?>">
               <td class="px-5 py-2 text-gray-300">#<?php echo (int) ($h['attempt_no'] ?? 1); ?><?php echo $current ? ' (viewing)' : ''; ?></td>
-              <td class="px-5 py-2 text-gray-300"><?php echo ($h['status'] ?? '') === 'submitted' ? preboards_format_score(isset($h['score']) ? (float) $h['score'] : null) : '—'; ?></td>
+              <td class="px-5 py-2 text-gray-300"><?php echo ($h['status'] ?? '') === 'submitted' ? preboards_format_score(isset($h['score']) ? (float) $h['score'] : null) : '-'; ?></td>
               <td class="px-5 py-2"><span class="admin-status-pill inline-block px-2 py-0.5 rounded-full text-xs"><?php echo h($h['status'] ?? ''); ?></span></td>
               <td class="px-5 py-2 text-gray-400"><?php echo h(preboards_format_datetime($h['submitted_at'] ?? null)); ?></td>
               <td class="px-5 py-2 text-right">

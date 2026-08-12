@@ -1,6 +1,6 @@
 <?php
 /**
- * One-click migration: add choice_e..choice_j and allow correct_answer A–J.
+ * One-click migration: add choice_e..choice_j and allow correct_answer A-J.
  * Run once. Safe to run again (ignores "Duplicate column").
  */
 require_once 'auth.php';
@@ -47,11 +47,11 @@ foreach ($migrations as $label => $sql) {
     <div class="max-w-2xl mx-auto">
       <div class="bg-white rounded-xl shadow-card border border-gray-100 p-6 mb-6">
         <h1 class="text-xl font-bold text-gray-800 mb-2"><i class="bi bi-database-gear mr-2"></i>Quiz choices migration</h1>
-        <p class="text-gray-600 text-sm mb-6">Adds columns for choices E–J and allows correct answer A–J. Safe to run more than once.</p>
+        <p class="text-gray-600 text-sm mb-6">Adds columns for choices E-J and allows correct answer A-J. Safe to run more than once.</p>
 
         <?php if ($allOk): ?>
           <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3 mb-6">
-            <strong>Migration completed successfully.</strong> You can now save questions with more than 4 choices (E–J) and set any of them as the correct answer.
+            <strong>Migration completed successfully.</strong> You can now save questions with more than 4 choices (E-J) and set any of them as the correct answer.
           </div>
         <?php else: ?>
           <div class="rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-3 mb-6">

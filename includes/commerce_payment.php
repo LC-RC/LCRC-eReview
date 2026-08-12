@@ -125,7 +125,7 @@ function commerce_normalize_gcash_reference(string $raw): string
 
 function commerce_next_payment_ref(mysqli $conn): string
 {
-    // CLI test-only queue — never consulted on web SAPIs.
+    // CLI test-only queue - never consulted on web SAPIs.
     if (
         commerce_payment_test_mode_active()
         && isset($GLOBALS['commerce_test_payment_ref_queue'])
@@ -306,7 +306,7 @@ function commerce_create_package_payment(mysqli $conn, int $userId, array $packa
             'content_id' => (int) ($c['content_id'] ?? 0),
         ];
     }
-    // full_lms: empty content snapshot is correct — do not invent rows.
+    // full_lms: empty content snapshot is correct - do not invent rows.
     $featureRows = commerce_get_package_features($conn, $packageId);
     $featureSnap = [];
     foreach ($featureRows as $f) {
@@ -861,7 +861,7 @@ function commerce_clear_checkout_session(): void
 
 /**
  * Validate checkout session against payment. Returns payment row or null.
- * Client must not be trusted — session owns user_id + payment_id + token;
+ * Client must not be trusted - session owns user_id + payment_id + token;
  * payment must belong to that user and still be open.
  *
  * @return array{ok:bool,error?:string,payment?:array<string,mixed>}
@@ -1036,7 +1036,7 @@ function commerce_submit_payment_proof_and_reference(
         if ($ownedNorm !== '' && $ownedNorm !== $norm) {
             return ['ok' => false, 'error' => 'This payment already has a different GCash reference locked. Contact support if you need help.'];
         }
-        // Same ref already owned by this payment — idempotent update path below
+        // Same ref already owned by this payment - idempotent update path below
     } else {
         // Another payment owns this normalized reference?
         $chk = mysqli_prepare($conn, 'SELECT payment_id FROM payment_gcash_references WHERE gcash_reference_norm = ? LIMIT 1');
@@ -1220,7 +1220,7 @@ function commerce_find_awaiting_proof_payment_for_user(mysqli $conn, int $userId
 
 /**
  * Create a durable email resume link for an open payment (7-day TTL).
- * Returns raw token once — only the hash is stored.
+ * Returns raw token once - only the hash is stored.
  *
  * @return array{ok:bool,error?:string,token?:string,url?:string,expires_at?:string,payment_id?:int,link_id?:int}
  */

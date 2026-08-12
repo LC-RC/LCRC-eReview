@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 9 — commerce auto-activation after successful fulfill / FAR approve.
+ * Phase 9 - commerce auto-activation after successful fulfill / FAR approve.
  * Reversible fixtures; restores baseline counts (does not require zero payments).
  */
 declare(strict_types=1);
@@ -16,7 +16,7 @@ require_once __DIR__ . '/../includes/commerce_activation.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -239,7 +239,7 @@ try {
         'err=' . ($fF['error'] ?? '') . ' status=' . p9a_status($conn, $uF)
     );
 
-    // ---- G: repeated fulfillment — no duplicate grant; stays approved ----
+    // ---- G: repeated fulfillment - no duplicate grant; stays approved ----
     $gBefore = p9a_grant_count($conn, $uA);
     $endBefore = (string) (mysqli_fetch_assoc(mysqli_query($conn, "SELECT access_end FROM users WHERE user_id=$uA"))['access_end'] ?? '');
     $fG = commerce_fulfill_payment($conn, $pidA, ['granted_by' => $adminId]);
@@ -255,7 +255,7 @@ try {
         "grants $gBefore->$gAfter skipped=" . (!empty($fG['skipped']) ? '1' : '0')
     );
 
-    // ---- H: already approved — no downgrade ----
+    // ---- H: already approved - no downgrade ----
     $uH = p9a_user($conn, "p9a.h.{$ts}@example.com", 'package', $pkgId);
     $createdUserIds[] = $uH;
     mysqli_query(

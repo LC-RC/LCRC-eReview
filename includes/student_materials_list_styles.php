@@ -523,7 +523,7 @@ define('EREVIEW_MATERIALS_LIST_STYLES', true);
       }
     }
 
-    /* Dark mode — materials list (pre-week + subject materials) */
+    /* Dark mode - materials list (pre-week + subject materials) */
     html[data-student-theme="dark"] .materials-view-toggle__label,
     html[data-student-theme="dark"] .materials-sort-group__label,
     html[data-student-theme="dark"] .materials-results-hint,

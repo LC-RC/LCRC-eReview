@@ -1,6 +1,6 @@
 <?php
 /**
- * CLI worker — verify pending GCash payments (Phase 6).
+ * CLI worker - verify pending GCash payments (Phase 6).
  * Does not require checkout session. No fulfillment / SCA / activation.
  *
  * Usage:

@@ -1,5 +1,5 @@
 /**
- * Floating “back to top” control for student / professor app shells.
+ * Floating "back to top" control for student / professor app shells.
  */
 (function () {
   'use strict';

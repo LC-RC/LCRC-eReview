@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5 — reversible payment foundation acceptance tests (A–T).
+ * Phase 5 - reversible payment foundation acceptance tests (A-T).
  */
 declare(strict_types=1);
 
@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/commerce_payment.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -118,7 +118,7 @@ try {
     $uFree = p5_create_user($conn, 'phase5.free.' . time() . '@example.com', 'free_access', null, null);
     $createdUserIds[] = $uFree;
 
-    // A — Full LMS package payment
+    // A - Full LMS package payment
     $a = commerce_create_or_resume_checkout($conn, $uPkg, 'package', $fullId, null);
     $mark('A', !empty($a['ok']) && (string) $a['payment']['purchase_type'] === 'package'
         && (int) $a['payment']['expected_amount_centavos'] === 150000
@@ -132,14 +132,14 @@ try {
             'lines=' . count($itemsA));
     }
 
-    // B — single topic
+    // B - single topic
     $b = commerce_create_or_resume_checkout($conn, $uTopic, 'by_topic', null, [$lessonBuy]);
     $mark('B', !empty($b['ok']) && (int) $b['payment']['expected_amount_centavos'] === 25000, $b['error'] ?? '');
     if (!empty($b['payment']['payment_id'])) {
         $createdPaymentIds[] = (int) $b['payment']['payment_id'];
     }
 
-    // C — multi topic
+    // C - multi topic
     $c = commerce_create_or_resume_checkout($conn, $uMulti, 'by_topic', null, [$lessonBuy, $lessonOff]);
     $mark('C', !empty($c['ok']) && (int) $c['payment']['expected_amount_centavos'] === 40000
         && count(commerce_get_payment_items($conn, (int) $c['payment']['payment_id'])) === 2, $c['error'] ?? '');
@@ -147,7 +147,7 @@ try {
         $createdPaymentIds[] = (int) $c['payment']['payment_id'];
     }
 
-    // D — Free Access: no payment helpers; create FAR only
+    // D - Free Access: no payment helpers; create FAR only
     $payBeforeFree = (int) (mysqli_fetch_row(mysqli_query($conn, 'SELECT COUNT(*) FROM payments'))[0] ?? 0);
     $freeCheckout = commerce_create_or_resume_checkout_for_user($conn, $uFree);
     $ref = commerce_next_free_access_ref($conn);
@@ -159,7 +159,7 @@ try {
     $mark('D', empty($freeCheckout['ok']) && $payAfterFree === $payBeforeFree, $freeCheckout['error'] ?? 'blocked');
     $mark('Q_FREE', $payAfterFree === $payBeforeFree, 'payments unchanged for free access');
 
-    // E-G — price/duration reflected on NEW payment after catalog change
+    // E-G - price/duration reflected on NEW payment after catalog change
     mysqli_query($conn, "UPDATE sellable_packages SET price_centavos=175000, duration_value=9 WHERE package_id=" . (int) $fullId);
     // Close previous open package payment so a new one is created with new snapshot
     mysqli_query($conn, "UPDATE payments SET status='cancelled' WHERE payment_id=" . (int) $a['payment']['payment_id']);
@@ -178,19 +178,19 @@ try {
         $createdPaymentIds[] = (int) $g['payment']['payment_id'];
     }
 
-    // H — inactive package rejected
+    // H - inactive package rejected
     mysqli_query($conn, "UPDATE sellable_packages SET is_active=0 WHERE package_id=" . (int) $fullId);
     $h = commerce_create_or_resume_checkout($conn, $uPkg, 'package', $fullId, null);
     $mark('H', empty($h['ok']), $h['error'] ?? 'ok unexpectedly');
     mysqli_query($conn, "UPDATE sellable_packages SET is_active=1, is_purchasable=1 WHERE package_id=" . (int) $fullId);
 
-    // I — non-purchasable topic rejected
+    // I - non-purchasable topic rejected
     mysqli_query($conn, "UPDATE lessons SET is_purchasable=0 WHERE lesson_id=" . (int) $lessonBuy);
     $i = commerce_create_or_resume_checkout($conn, $uTopic, 'by_topic', null, [$lessonBuy]);
     $mark('I', empty($i['ok']), $i['error'] ?? 'ok unexpectedly');
     mysqli_query($conn, "UPDATE lessons SET is_purchasable=1, price_centavos=33300 WHERE lesson_id=" . (int) $lessonBuy);
 
-    // P — resume same open selection
+    // P - resume same open selection
     $p1 = commerce_create_or_resume_checkout($conn, $uMulti, 'by_topic', null, [$lessonBuy, $lessonOff]);
     $p2 = commerce_create_or_resume_checkout($conn, $uMulti, 'by_topic', null, [$lessonBuy, $lessonOff]);
     $mark('P', !empty($p1['ok']) && !empty($p2['ok']) && (int) $p1['payment']['payment_id'] === (int) $p2['payment']['payment_id'] && !empty($p2['resumed']),
@@ -218,7 +218,7 @@ try {
         $proofFiles[] = dirname(__DIR__) . '/' . $payAfterSub['proof_path'];
     }
 
-    // J — duplicate GCash reference hard reject
+    // J - duplicate GCash reference hard reject
     $uDup = p5_create_user($conn, 'phase5.dup.' . time() . '@example.com', 'by_topic', null, json_encode([$lessonOff]));
     $createdUserIds[] = $uDup;
     $dupPay = commerce_create_or_resume_checkout($conn, $uDup, 'by_topic', null, [$lessonOff]);
@@ -238,18 +238,18 @@ try {
     $mark('J', empty($j['ok']) && (int) ($dupFlag['duplicate_reference'] ?? 0) === 1
         && (string) ($dupFlag['status'] ?? '') === 'awaiting_proof', $j['error'] ?? '');
 
-    // Q — same payment retry with own reference is idempotent
+    // Q - same payment retry with own reference is idempotent
     $q = commerce_submit_payment_proof_and_reference($conn, $payIdForProof, $userForProof, $ref1, null);
     $mark('Q', !empty($q['ok']) && !empty($q['idempotent']), $q['error'] ?? 'idempotent');
 
-    // K-N — repeat purchase after closing prior payment; old history untouched
+    // K-N - repeat purchase after closing prior payment; old history untouched
     $oldId = (int) $g['payment']['payment_id'];
     $oldAmt = (int) $g['payment']['expected_amount_centavos'];
     $oldItemsCount = count(commerce_get_payment_items($conn, $oldId));
-    // already pending_verification — create NEW purchase for same topic requires different open logic:
+    // already pending_verification - create NEW purchase for same topic requires different open logic:
     // pending_verification is still "open" so resume would return same. Mark paid first to allow new purchase.
     mysqli_query($conn, "UPDATE payments SET status='paid', paid_at=NOW() WHERE payment_id=" . $oldId);
-    // Keep gcash lock — new payment uses new ref
+    // Keep gcash lock - new payment uses new ref
     $k = commerce_create_or_resume_checkout($conn, $uTopic, 'by_topic', null, [$lessonBuy]);
     $mark('K', !empty($k['ok']) && (int) $k['payment']['payment_id'] !== $oldId, 'new=' . (int) ($k['payment']['payment_id'] ?? 0));
     if (!empty($k['payment']['payment_id'])) {
@@ -268,7 +268,7 @@ try {
     $mark('R', $endGrants === $baseGrants, "grants=$endGrants");
     $mark('S', $endSca === $baseSca, "sca=$endSca");
 
-    // T — login/activation files untouched (presence + no Phase5 edits implied); smoke helpers
+    // T - login/activation files untouched (presence + no Phase5 edits implied); smoke helpers
     $mark('T', file_exists(__DIR__ . '/../activate_user.php') && file_exists(__DIR__ . '/../login_process.php')
         && !str_contains((string) file_get_contents(__DIR__ . '/../activate_user.php'), 'commerce_payment')
         && !str_contains((string) file_get_contents(__DIR__ . '/../login_process.php'), 'commerce_payment'),
@@ -341,9 +341,9 @@ try {
     $proofDir = dirname(__DIR__) . '/uploads/payment_proofs';
     if (is_dir($proofDir)) {
         foreach (glob($proofDir . '/proof_*.png') ?: [] as $f) {
-            // only delete if orphaned from this test run — safer: delete files modified in last hour matching proof_
+            // only delete if orphaned from this test run - safer: delete files modified in last hour matching proof_
             if (is_file($f) && (time() - filemtime($f)) < 3600) {
-                // Don't delete non-test production proofs — test uses random names; only delete if no payment points to it
+                // Don't delete non-test production proofs - test uses random names; only delete if no payment points to it
                 $rel = 'uploads/payment_proofs/' . basename($f);
                 $chk = mysqli_query($conn, "SELECT 1 FROM payments WHERE proof_path='" . mysqli_real_escape_string($conn, $rel) . "' LIMIT 1");
                 if ($chk && !mysqli_fetch_row($chk)) {

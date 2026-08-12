@@ -9,6 +9,7 @@ require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../includes/quiz_helpers.php';
 require_once __DIR__ . '/../includes/docx_question_parser.php';
 require_once __DIR__ . '/../includes/question_sort_cache.php';
+require_once __DIR__ . '/../includes/content_sort_order.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -260,7 +261,7 @@ foreach ($questions as $q) {
 
 if ($batch === []) {
     $hint = $missing !== [] ? ' Items with missing yellow answer highlight or fewer than 2 choices: ' . implode(', ', array_slice($missing, 0, 15))
-        . (count($missing) > 15 ? '…' : '') . '.' : '';
+        . (count($missing) > 15 ? '...' : '') . '.' : '';
     ereview_qsort_deploy_json(['ok' => false, 'error' => 'No questions could be deployed. Ensure each item has at least two choices and a yellow-highlighted correct answer.' . $hint], 400);
 }
 
@@ -351,7 +352,7 @@ if ($quizIdExisting > 0) {
         sort($clist, SORT_NATURAL);
         ereview_qsort_deploy_json([
             'ok' => false,
-            'error' => 'Those item numbers are already in the quiz “' . $resolvedTitle . '”: #' . implode(', #', $clist) . '. Choose a different quiz or new title, or remove duplicates from the bank.',
+            'error' => 'Those item numbers are already in the quiz "' . $resolvedTitle . '": #' . implode(', #', $clist) . '. Choose a different quiz or new title, or remove duplicates from the bank.',
             'error_code' => 'DUPLICATE_IN_QUIZ',
             'duplicate_numbers' => $clist,
             'quiz_title' => $resolvedTitle,
@@ -366,11 +367,13 @@ mysqli_begin_transaction($conn);
 try {
     $quizType = 'topical';
     if (!$mergedIntoExisting) {
+        content_sort_order_ensure_schema($conn);
+        $nextOrd = content_sort_order_next($conn, 'quizzes', $subjectId);
         $stmt = mysqli_prepare(
             $conn,
-            'INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
         );
-        mysqli_stmt_bind_param($stmt, 'issii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds);
+        mysqli_stmt_bind_param($stmt, 'issiii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $nextOrd);
         mysqli_stmt_execute($stmt);
         $quizId = (int)mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
@@ -463,7 +466,7 @@ if ($mergedIntoExisting) {
     $_SESSION['message'] = count($batch) . ' question(s) added to quiz "' . $resolvedTitle . '" under ' . h($subject['subject_name']) . '.';
 }
 if (count($missing) > 0) {
-    $_SESSION['message'] .= ' Some items were skipped (#' . implode(', ', array_slice($missing, 0, 20)) . (count($missing) > 20 ? '…' : '') . ').';
+    $_SESSION['message'] .= ' Some items were skipped (#' . implode(', ', array_slice($missing, 0, 20)) . (count($missing) > 20 ? '...' : '') . ').';
 }
 if (isset($_SESSION['error'])) {
     unset($_SESSION['error']);
@@ -480,6 +483,6 @@ ereview_qsort_deploy_json([
     'redirect_questions' => $qqUrl,
     'redirect_quizzes' => $qzUrl,
     'message' => $mergedIntoExisting
-        ? ('Appended ' . count($batch) . ' question(s) to “' . $resolvedTitle . '” (' . h($subject['subject_name']) . ').')
-        : ('Deployed ' . count($batch) . ' question(s) as “' . $resolvedTitle . '” (' . h($subject['subject_name']) . ').'),
+        ? ('Appended ' . count($batch) . ' question(s) to "' . $resolvedTitle . '" (' . h($subject['subject_name']) . ').')
+        : ('Deployed ' . count($batch) . ' question(s) as "' . $resolvedTitle . '" (' . h($subject['subject_name']) . ').'),
 ]);

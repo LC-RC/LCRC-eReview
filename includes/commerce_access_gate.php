@@ -11,7 +11,7 @@ require_once __DIR__ . '/commerce_catalog.php';
 /**
  * SQL fragment: users row has an active commerce/admin grant.
  * Always pass a table-qualified column (e.g. users.user_id / u.user_id).
- * Bare `user_id` is rewritten to users.user_id — otherwise MySQL binds it to
+ * Bare `user_id` is rewritten to users.user_id - otherwise MySQL binds it to
  * access_grants.user_id inside EXISTS and every student looks "enrolled".
  */
 function commerce_sql_user_has_active_grant(string $userIdExpr = 'users.user_id'): string
@@ -122,7 +122,7 @@ function commerce_student_try_restore_legacy_access(mysqli $conn, int $userId, a
     if (commerce_student_has_active_access($conn, $userId)) {
         return ['ok' => true, 'skipped' => true, 'restored' => false];
     }
-    // Login/session/CLI callers often pass a partial users row — reload for restore decisions.
+    // Login/session/CLI callers often pass a partial users row - reload for restore decisions.
     $needsReload = $user === []
         || !array_key_exists('role', $user)
         || !array_key_exists('enrollment_path', $user)
@@ -309,7 +309,7 @@ function commerce_student_can_login(mysqli $conn, array $user): array
 
 /**
  * If student is approved but has no active grant, demote to pending (clears login window).
- * Skips legacy enrolled students (SCA / access window) — restore grants instead of demoting.
+ * Skips legacy enrolled students (SCA / access window) - restore grants instead of demoting.
  *
  * @return array{ok:bool,demoted?:bool,skipped?:bool,error?:string}
  */
@@ -342,7 +342,7 @@ function commerce_student_demote_if_no_active_grant(mysqli $conn, int $userId): 
         return ['ok' => true, 'skipped' => true, 'demoted' => false];
     }
 
-    // Never demote previously enrolled LMS students — backfill grants instead.
+    // Never demote previously enrolled LMS students - backfill grants instead.
     if (commerce_student_has_legacy_enrollment_signal($conn, $userId, $user)) {
         $restore = commerce_student_try_restore_legacy_access($conn, $userId, $user);
         if (!empty($restore['restored']) || commerce_student_has_active_access($conn, $userId)) {

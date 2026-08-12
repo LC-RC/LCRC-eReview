@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin Commerce — Free Access approval queue (Phase 8.1).
+ * Admin Commerce - Free Access approval queue (Phase 8.1).
  * Approve grants full_lms via access_grants (source=free_access). No payments/OCR.
  * Does NOT change users.status / login activation.
  */
@@ -18,7 +18,7 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $csrf = generateCSRFToken();
-$pageTitle = 'Commerce — Free Access';
+$pageTitle = 'Commerce - Free Access';
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -224,16 +224,16 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
           <div>
             <div class="text-xs uppercase opacity-60 font-semibold mb-1">Request</div>
             <div>Submitted: <?php echo h((string) ($detail['created_at'] ?? '')); ?></div>
-            <div class="mt-2 whitespace-pre-wrap"><?php echo h((string) ($detail['student_note'] ?? '—')); ?></div>
+            <div class="mt-2 whitespace-pre-wrap"><?php echo h((string) ($detail['student_note'] ?? '-')); ?></div>
           </div>
         </div>
 
         <?php if (!$canAct): ?>
           <div class="text-sm border-t border-white/10 pt-4 space-y-1">
             <div>Final status: <strong><?php echo h((string) $detail['status']); ?></strong></div>
-            <div>Reviewer: <?php echo h((string) ($detailReviewer['full_name'] ?? ($detail['reviewed_by'] ? '#' . (int) $detail['reviewed_by'] : '—'))); ?></div>
-            <div>Reviewed at: <?php echo h((string) ($detail['reviewed_at'] ?? '—')); ?></div>
-            <div>Admin note: <?php echo h((string) ($detail['admin_note'] ?? '—')); ?></div>
+            <div>Reviewer: <?php echo h((string) ($detailReviewer['full_name'] ?? ($detail['reviewed_by'] ? '#' . (int) $detail['reviewed_by'] : '-'))); ?></div>
+            <div>Reviewed at: <?php echo h((string) ($detail['reviewed_at'] ?? '-')); ?></div>
+            <div>Admin note: <?php echo h((string) ($detail['admin_note'] ?? '-')); ?></div>
             <div class="mt-2">
               <a class="underline text-sm font-semibold" href="<?php echo h(ereview_url('admin_commerce_grants') . '?free_access_request_id=' . (int) $detail['request_id']); ?>">Open Grant Ledger for this FAR</a>
             </div>
@@ -247,10 +247,10 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
                 <div class="text-xs uppercase opacity-60 font-semibold">Access / Grant</div>
                 <div>Source: <strong><?php echo h((string) $detailGrant['source']); ?></strong></div>
                 <div>Status: <strong><?php echo h((string) $detailGrant['status']); ?></strong></div>
-                <div>Starts: <?php echo h((string) ($detailGrant['starts_at'] ?? '—')); ?></div>
-                <div>Ends: <?php echo h((string) ($detailGrant['ends_at'] ?? '—')); ?></div>
-                <div>Revoked at: <?php echo h((string) ($detailGrant['revoked_at'] ?? '—')); ?></div>
-                <div>Revoke reason: <?php echo h((string) ($detailGrant['revoke_reason'] ?? '—')); ?></div>
+                <div>Starts: <?php echo h((string) ($detailGrant['starts_at'] ?? '-')); ?></div>
+                <div>Ends: <?php echo h((string) ($detailGrant['ends_at'] ?? '-')); ?></div>
+                <div>Revoked at: <?php echo h((string) ($detailGrant['revoked_at'] ?? '-')); ?></div>
+                <div>Revoke reason: <?php echo h((string) ($detailGrant['revoke_reason'] ?? '-')); ?></div>
                 <?php if ($canRevokeFar): ?>
                   <form method="post" class="mt-3 space-y-3 max-w-xl">
                     <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -332,8 +332,8 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
                   </td>
                   <td class="px-4 py-3"><?php echo h((string) $row['status']); ?></td>
                   <td class="px-4 py-3 whitespace-nowrap opacity-80"><?php echo h((string) $row['created_at']); ?></td>
-                  <td class="px-4 py-3 whitespace-nowrap opacity-80"><?php echo h((string) ($row['reviewed_at'] ?? '—')); ?></td>
-                  <td class="px-4 py-3 opacity-80"><?php echo h((string) ($row['reviewer_name'] ?? '—')); ?></td>
+                  <td class="px-4 py-3 whitespace-nowrap opacity-80"><?php echo h((string) ($row['reviewed_at'] ?? '-')); ?></td>
+                  <td class="px-4 py-3 opacity-80"><?php echo h((string) ($row['reviewer_name'] ?? '-')); ?></td>
                   <td class="px-4 py-3">
                     <a class="text-sky-300 underline"
                        href="<?php echo h(ereview_url('admin_commerce_free_access') . '?id=' . (int) $row['request_id'] . ($filter === 'pending' ? '' : '&v=' . rawurlencode($filter))); ?>">Open</a>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Student shell entry — unified sidebar + topbar + main open (see includes/components/app_shell_sidebar).
+ * Student shell entry - unified sidebar + topbar + main open (see includes/components/app_shell_sidebar).
  */
 require_once __DIR__ . '/includes/url_helpers.php';
 $currentPage = ereview_page_basename();
@@ -65,6 +65,40 @@ $appShellNavConfig = [
         'items' => [
             ['label' => 'Preboards', 'href' => 'student_preboards', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards', 'student_preboards_view']],
             ['label' => 'Preweek', 'href' => 'student_preweek', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek', 'student_preweek_topics', 'student_preweek_viewer']],
+            [
+                'label' => 'CPA Playground',
+                'href' => 'student_playground',
+                'icon' => 'bi-controller',
+                'active' => [
+                    'student_playground',
+                    'student_playground_play',
+                    'student_playground_result',
+                    'student_playground_battle',
+                    'student_playground_battle_lobby',
+                    'student_playground_battle_play',
+                    'student_playground_battle_result',
+                ],
+            ],
+        ],
+    ],
+    [
+        'label' => 'My CPA Review',
+        'items' => [
+            [
+                'label' => 'My CPA Review',
+                'href' => 'student_cpa_review',
+                'icon' => 'bi-book',
+                'active' => [
+                    'student_cpa_review',
+                    'student_cpa_notes',
+                    'student_cpa_bookmarks',
+                    'student_cpa_important',
+                    'student_cpa_mistakes',
+                    'student_cpa_quick_review',
+                    'student_cpa_progress',
+                    'student_cpa_last_minute',
+                ],
+            ],
         ],
     ],
 ];

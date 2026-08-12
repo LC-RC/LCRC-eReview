@@ -53,7 +53,7 @@ if (!empty($reply['auto_create_ticket']) && function_exists('ereview_chat_v2_rea
             $sessionId,
             $userId,
             $cat,
-            'LCRC chat — ' . $cat . ' — follow-up needed',
+            'LCRC chat - ' . $cat . ' - follow-up needed',
             $transcript
         );
         ereview_chat_log_event($conn, $sessionId, 'auto_ticket_created', ['category' => $cat]);

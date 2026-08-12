@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_array($q)) continue;
             $questionText = trim($q['text'] ?? '');
             if ($questionText === '') continue;
-            // Build choices from POST using all A–J so E,F,G,H,I,J are included for validation
+            // Build choices from POST using all A-J so E,F,G,H,I,J are included for validation
             $choices = [];
             foreach ($allChoiceCols as $col) {
                 $choices[$col] = trim($q[$col] ?? '');
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (count($batch) === 0) {
             $_SESSION['error'] = 'Add at least one question with at least 2 choices and a correct answer selected.';
         } else {
-            // Auto-run migration if user saved with E–J or more than 4 choices and DB not updated yet
+            // Auto-run migration if user saved with E-J or more than 4 choices and DB not updated yet
             if ($needsExtendedChoices && !in_array('choice_e', $choiceCols, true)) {
                 $alterSqls = [
                     "ALTER TABLE `quiz_questions` ADD COLUMN `choice_e` text DEFAULT NULL AFTER `choice_d`",
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $questionText = trim($_POST['question_text'] ?? '');
-    // Read all choice columns from POST (A–J) so E,F,G,H,I,J save correctly.
+    // Read all choice columns from POST (A-J) so E,F,G,H,I,J save correctly.
     // "Active" choices = fields that actually exist in the form (have a POST key).
     $choiceVals = [];
     $activeCols = [];
@@ -398,7 +398,7 @@ unset($_SESSION['clear_batch_draft']);
         <span class="font-semibold flex items-center gap-2"><i class="bi bi-stack"></i> Add multiple questions</span>
         <div class="flex items-center gap-3">
           <span class="text-xs font-medium opacity-80" x-show="draftSavedLabel" x-cloak x-text="draftSavedLabel"></span>
-          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-close-btn" aria-label="Close" title="Close — draft is kept"><i class="bi bi-x-lg"></i></button>
+          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-close-btn" aria-label="Close" title="Close - draft is kept"><i class="bi bi-x-lg"></i></button>
         </div>
       </div>
       <form method="POST" action="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="p-6" @submit.prevent="validateBatchSubmit($event)">
@@ -455,7 +455,7 @@ unset($_SESSION['clear_batch_draft']);
           <button type="button" @click="addBatchQuestion()" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-plus-lg"></i> Add question</button>
           <div class="flex-1"></div>
           <button type="button" @click="discardBatchDraft()" class="admin-quiz-btn admin-quiz-btn-outline" title="Clear draft and close">Discard draft</button>
-          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-btn admin-quiz-btn-outline" title="Close — draft is kept">Close</button>
+          <button type="button" @click="batchOpen = false; saveBatchDraft()" class="admin-quiz-btn admin-quiz-btn-outline" title="Close - draft is kept">Close</button>
           <button type="submit" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-check-lg"></i> Save all questions</button>
         </div>
       </form>

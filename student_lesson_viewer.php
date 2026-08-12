@@ -4,6 +4,9 @@
  */
 require_once 'auth.php';
 require_once __DIR__ . '/includes/student_content_access.php';
+require_once __DIR__ . '/includes/lesson_video_embed.php';
+require_once __DIR__ . '/includes/student_activity.php';
+require_once __DIR__ . '/includes/student_cpa_review.php';
 requireRole('student');
 
 sca_ensure_schema($conn);
@@ -35,6 +38,11 @@ if (!sca_has_access($conn, (int)$userId, 'lesson', $lessonId)) {
     exit;
 }
 
+student_cpa_review_ensure_schema($conn);
+$cpaCsrf = generateCSRFToken();
+$lessonBookmarked = student_cpa_bookmark_has($conn, (int) $userId, 'lesson', $lessonId);
+$lessonViewerUrl = 'student_lesson_viewer?lesson_id=' . (int) $lessonId . '&subject_id=' . (int) $subjectId;
+
 $videosResult = mysqli_query($conn, "SELECT video_id, video_title, video_url FROM lesson_videos WHERE lesson_id = " . (int)$lessonId . " ORDER BY video_id ASC");
 $handoutsResult = mysqli_query($conn, "SELECT handout_id, handout_title, file_path, file_name, file_size, allow_download FROM lesson_handouts WHERE lesson_id = " . (int)$lessonId . " ORDER BY handout_id DESC");
 
@@ -58,6 +66,20 @@ if ($selectedVideoId > 0) {
 }
 if (!$selectedVideo && count($videos) > 0) {
     $selectedVideo = $videos[0];
+}
+
+$videoIds = [];
+foreach ($videos as $vRow) {
+    $videoIds[] = (int) ($vRow['video_id'] ?? 0);
+}
+$progressMap = student_activity_get_progress_map($conn, (int) $userId, $videoIds);
+$selectedResumeSec = 0.0;
+$selectedProgress = null;
+if ($selectedVideo) {
+    $selectedProgress = $progressMap[(int) $selectedVideo['video_id']] ?? null;
+    if (is_array($selectedProgress)) {
+        $selectedResumeSec = student_activity_resume_seconds($selectedProgress);
+    }
 }
 
 $lessonTitle = $lesson['title'] ?: 'Lesson';
@@ -147,6 +169,7 @@ $pageTitle = $lessonTitle . ' - Materials';
       background: transparent;
     }
   </style>
+  <?php require __DIR__ . '/includes/components/cpa_review_styles.php'; ?>
 </head>
 <body class="font-sans antialiased student-protected lesson-viewer-page student-shell-page" x-data="{ viewMode: 'normal', selectedHandoutId: '<?php echo $firstHandoutId; ?>' }">
   <?php include 'student_sidebar.php'; ?>
@@ -176,7 +199,28 @@ $pageTitle = $lessonTitle . ' - Materials';
         <button type="button" @click="viewMode = 'normal'" :class="viewMode === 'normal' ? 'bg-[#1665A0] text-white shadow-md' : 'bg-[#e8f2fa] text-[#143D59] hover:bg-[#d4e8f7]'" class="px-4 py-2 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5"><i class="bi bi-layout-split"></i> Normal</button>
         <button type="button" @click="viewMode = 'split'" :class="viewMode === 'split' ? 'bg-[#1665A0] text-white shadow-md' : 'bg-[#e8f2fa] text-[#143D59] hover:bg-[#d4e8f7]'" class="px-4 py-2 rounded-lg text-sm font-semibold transition inline-flex items-center gap-1.5"><i class="bi bi-columns-gap"></i> Split screen</button>
       </div>
-      <button type="button" id="lesson-fullscreen-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#e8f2fa] text-[#143D59] hover:bg-[#d4e8f7] border border-[#1665A0]/20 transition" title="Full screen"><i class="bi bi-fullscreen"></i> Full screen</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" class="cpa-toolbar-btn" data-cpa-action="open_note_modal" title="Add note">
+          <i class="bi bi-journal-plus"></i> <span>Add Note</span>
+        </button>
+        <button type="button" class="cpa-toolbar-btn <?php echo $lessonBookmarked ? 'is-active' : ''; ?>"
+          data-cpa-action="bookmark_toggle"
+          data-item-type="lesson"
+          data-item-id="<?php echo (int) $lessonId; ?>"
+          data-title="<?php echo h($lesson['title'] ?? 'Lesson'); ?>"
+          data-url="<?php echo h($lessonViewerUrl); ?>"
+          data-subject-id="<?php echo (int) $subjectId; ?>"
+          data-lesson-id="<?php echo (int) $lessonId; ?>"
+          aria-pressed="<?php echo $lessonBookmarked ? 'true' : 'false'; ?>">
+          <i class="bi bi-bookmark<?php echo $lessonBookmarked ? '-fill' : ''; ?>"></i>
+          <span data-cpa-label><?php echo $lessonBookmarked ? 'Bookmarked' : 'Bookmark'; ?></span>
+        </button>
+        <button type="button" class="cpa-toolbar-btn" data-cpa-action="open_concept_modal" title="Save important concept">
+          <i class="bi bi-star"></i>
+          <span>Important</span>
+        </button>
+        <button type="button" id="lesson-fullscreen-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#e8f2fa] text-[#143D59] hover:bg-[#d4e8f7] border border-[#1665A0]/20 transition" title="Full screen"><i class="bi bi-fullscreen"></i> Full screen</button>
+      </div>
     </div>
 
     <!-- Viewer content (can go full screen like Test Bank) -->
@@ -192,21 +236,7 @@ $pageTitle = $lessonTitle . ' - Materials';
         <div class="px-4 py-2.5 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 text-sm font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-play-circle-fill"></i> Video</div>
         <div class="flex-1 min-h-0 p-3 flex flex-col">
           <?php if ($selectedVideo): ?>
-            <?php
-              $url = $selectedVideo['video_url'];
-              $embed = $url;
-              $isLocal = strpos($url, 'uploads/videos/') === 0;
-              if (!$isLocal && (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false)) {
-                if (preg_match('/(?:v=|\.be\/)([A-Za-z0-9_-]{6,})/', $url, $m)) $embed = 'https://www.youtube.com/embed/' . $m[1] . '?rel=0';
-              } elseif (!$isLocal && strpos($url, 'vimeo.com') !== false) {
-                if (preg_match('/vimeo.com\/(\d+)/', $url, $m)) $embed = 'https://player.vimeo.com/video/' . $m[1];
-              }
-            ?>
-            <?php if ($isLocal): ?>
-              <video class="video-embed" controls><source src="<?php echo h($url); ?>" type="video/mp4">Your browser does not support the video tag.</video>
-            <?php else: ?>
-              <iframe class="video-embed" src="<?php echo h($embed); ?>" allowfullscreen></iframe>
-            <?php endif; ?>
+            <?php ereview_render_lesson_video_player($selectedVideo, $selectedResumeSec); ?>
           <?php else: ?>
             <div class="flex-1 flex items-center justify-center text-[#143D59]/60"><i class="bi bi-play-circle text-4xl block mb-2"></i><p>No video</p></div>
           <?php endif; ?>
@@ -240,21 +270,23 @@ $pageTitle = $lessonTitle . ' - Materials';
           <div class="px-4 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-play-circle-fill"></i> Video</div>
           <div class="p-4 bg-white/50">
             <?php if ($selectedVideo): ?>
-              <?php
-                $url = $selectedVideo['video_url'];
-                $embed = $url;
-                $isLocal = strpos($url, 'uploads/videos/') === 0;
-                if (!$isLocal && (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false)) {
-                  if (preg_match('/(?:v=|\.be\/)([A-Za-z0-9_-]{6,})/', $url, $m)) $embed = 'https://www.youtube.com/embed/' . $m[1] . '?rel=0';
-                } elseif (!$isLocal && strpos($url, 'vimeo.com') !== false) {
-                  if (preg_match('/vimeo.com\/(\d+)/', $url, $m)) $embed = 'https://player.vimeo.com/video/' . $m[1];
-                }
-              ?>
-              <?php if ($isLocal): ?>
-                <video class="video-embed" controls><source src="<?php echo h($url); ?>" type="video/mp4">Your browser does not support the video tag.</video>
-              <?php else: ?>
-                <iframe class="video-embed" src="<?php echo h($embed); ?>" allowfullscreen></iframe>
+              <?php if ($selectedResumeSec > 0): ?>
+                <div id="video-resume-banner" class="mb-3 rounded-xl border border-[#1665A0]/25 bg-[#e8f2fa] px-3 py-2.5 text-sm text-[#143D59] flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    <i class="bi bi-skip-forward-circle"></i>
+                    Continue from <strong><?php echo h(student_activity_format_duration($selectedResumeSec)); ?></strong>
+                    <?php if (!empty($selectedProgress['percent'])): ?>
+                      (<?php echo h(number_format((float) $selectedProgress['percent'], 0)); ?>% watched)
+                    <?php endif; ?>
+                  </span>
+                  <button type="button" id="video-resume-restart" class="text-xs font-semibold underline opacity-80 hover:opacity-100">Start from beginning</button>
+                </div>
+              <?php elseif (is_array($selectedProgress) && (float) ($selectedProgress['percent'] ?? 0) >= 95): ?>
+                <div class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <i class="bi bi-check-circle"></i> You finished this video previously.
+                </div>
               <?php endif; ?>
+              <?php ereview_render_lesson_video_player($selectedVideo, $selectedResumeSec); ?>
               <p class="mt-2 text-sm font-semibold text-[#143D59]"><?php echo h($selectedVideo['video_title'] ?: 'Untitled Video'); ?></p>
             <?php else: ?>
               <div class="text-center text-[#143D59]/60 py-12">
@@ -267,11 +299,34 @@ $pageTitle = $lessonTitle . ' - Materials';
       </div>
       <div class="lg:col-span-4">
         <div class="rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#1665A0] max-h-[70vh] overflow-y-auto">
-          <div class="px-4 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-list"></i> Playlist</div>
+          <div class="px-4 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-list"></i> Playlist · your progress</div>
           <div class="divide-y divide-[#1665A0]/10">
-            <?php foreach ($videos as $v): $isActive = $selectedVideo && (int)$v['video_id'] === (int)$selectedVideo['video_id']; ?>
-              <a href="student_lesson_viewer?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo (int)$v['video_id']; ?>" class="flex items-center gap-2 px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
-                <i class="bi bi-play-circle"></i> <?php echo h($v['video_title'] ?: 'Untitled Video'); ?>
+            <?php foreach ($videos as $v):
+              $vid = (int) $v['video_id'];
+              $isActive = $selectedVideo && $vid === (int) $selectedVideo['video_id'];
+              $vp = $progressMap[$vid] ?? null;
+              $vpPct = is_array($vp) ? (float) ($vp['percent'] ?? 0) : 0.0;
+              $vpPos = is_array($vp) ? (float) ($vp['position_sec'] ?? 0) : 0.0;
+              $vpDone = $vpPct >= 95;
+            ?>
+              <a href="student_lesson_viewer?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&video=<?php echo $vid; ?>" class="block px-4 py-3 text-left transition <?php echo $isActive ? 'bg-[#1665A0]/15 text-[#1665A0] font-semibold border-l-4 border-[#1665A0]' : 'hover:bg-[#e8f2fa]/60 text-[#143D59]'; ?>">
+                <div class="flex items-center gap-2">
+                  <i class="bi <?php echo $vpDone ? 'bi-check-circle-fill text-emerald-600' : 'bi-play-circle'; ?>"></i>
+                  <span class="flex-1 min-w-0 truncate"><?php echo h($v['video_title'] ?: 'Untitled Video'); ?></span>
+                  <?php if ($vpPct > 0): ?>
+                    <span class="text-xs opacity-70 whitespace-nowrap"><?php echo h(number_format($vpPct, 0)); ?>%</span>
+                  <?php endif; ?>
+                </div>
+                <?php if ($vpPos > 0 || $vpPct > 0): ?>
+                  <div class="mt-1.5 h-1 rounded-full bg-[#1665A0]/15 overflow-hidden">
+                    <div class="h-full <?php echo $vpDone ? 'bg-emerald-500' : 'bg-[#1665A0]'; ?>" style="width: <?php echo h((string) min(100, max(0, $vpPct))); ?>%"></div>
+                  </div>
+                  <div class="text-[11px] opacity-60 mt-1">
+                    <?php if ($vpDone): ?>Completed
+                    <?php else: ?>Stopped at <?php echo h(student_activity_format_duration($vpPos)); ?>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
               </a>
             <?php endforeach; ?>
             <?php if (count($videos) === 0): ?>
@@ -285,7 +340,7 @@ $pageTitle = $lessonTitle . ' - Materials';
       </div>
     </div>
 
-    <!-- Handouts (only in Normal view) — outside #lesson-viewer-wrap so fullscreen shows video + playlist only -->
+    <!-- Handouts (only in Normal view) - outside #lesson-viewer-wrap so fullscreen shows video + playlist only -->
     <div x-show="viewMode === 'normal'" class="mt-5 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#143D59]">
       <div class="px-4 sm:px-6 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> Handouts</div>
       <div class="p-4 sm:p-5">
@@ -309,7 +364,7 @@ $pageTitle = $lessonTitle . ' - Materials';
                   <?php if (!empty($h['file_path'])): ?>
                     <a href="handout_viewer?handout_id=<?php echo (int)$h['handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
                     <?php if (!empty($h['allow_download'])): ?>
-                      <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
+                      <a href="handout_download?handout_id=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
                     <?php endif; ?>
                   <?php endif; ?>
                 </div>
@@ -369,6 +424,47 @@ $pageTitle = $lessonTitle . ' - Materials';
     }, true);
   })();
   </script>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'lesson_open',
+    'page_key' => 'student_lesson_viewer',
+    'page_title' => ($lesson['title'] ?? 'Lesson') . (!empty($selectedVideo)
+        ? (' / ' . (!empty($selectedVideo['video_title']) ? $selectedVideo['video_title'] : ('Video #' . (int) $selectedVideo['video_id'])))
+        : ''),
+    'subject_id' => (int) $subjectId,
+    'lesson_id' => (int) $lessonId,
+    'video_id' => (int) ($selectedVideo['video_id'] ?? 0),
+    'resume_sec' => $selectedResumeSec,
+];
+if (!empty($selectedVideo['video_id'])) {
+    require_once __DIR__ . '/includes/student_activity.php';
+    student_activity_log_event($conn, (int) getCurrentUserId(), 'video_open', $studentActivityBoot);
+    // Seed a progress row so Live board shows the video immediately (does not reset watch).
+    student_activity_seed_video_progress(
+        $conn,
+        (int) getCurrentUserId(),
+        (int) $selectedVideo['video_id'],
+        (int) $lessonId,
+        (int) $subjectId
+    );
+}
+$studentActivityNeedsVimeo = false;
+$studentActivityNeedsYoutube = false;
+if (!empty($selectedVideo['video_url'])) {
+    $embedInfo = ereview_lesson_video_embed((string) $selectedVideo['video_url']);
+    $studentActivityNeedsVimeo = ($embedInfo['type'] === 'vimeo');
+    $studentActivityNeedsYoutube = ($embedInfo['type'] === 'youtube');
+}
+include __DIR__ . '/includes/student_activity_boot.php';
+$csrfToken = $cpaCsrf;
+$cpaNoteSubjectId = (int) $subjectId;
+$cpaNoteLessonId = (int) $lessonId;
+$cpaNoteLessonTitle = (string) ($lesson['title'] ?? 'Lesson');
+require __DIR__ . '/includes/components/cpa_review_note_modal.php';
+require __DIR__ . '/includes/components/cpa_review_concept_modal.php';
+?>
+<script>window.CPA_REVIEW = Object.assign(window.CPA_REVIEW || {}, { apiUrl: 'student_cpa_review_api', csrf: <?php echo json_encode($cpaCsrf); ?> });</script>
+<script src="assets/js/student-cpa-review.js"></script>
 </main>
 </body>
 </html>

@@ -392,7 +392,7 @@ foreach ($tasks as $tr) {
                 <span>Assignment uploads</span>
               </h1>
               <p class="text-white/88 mt-2 mb-0 text-xs sm:text-sm leading-relaxed max-w-3xl">
-                Open a task tile for full instructions and your upload. Only <strong class="text-white"><?php echo h($allowedTypesLabel); ?></strong> — enforced on the server.
+                Open a task tile for full instructions and your upload. Only <strong class="text-white"><?php echo h($allowedTypesLabel); ?></strong> - enforced on the server.
               </p>
             </div>
             <div class="cu-hero-aside">

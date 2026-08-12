@@ -273,7 +273,7 @@ foreach ($list as $row) {
             <div>
               <h1 class="text-2xl sm:text-3xl font-black text-white m-0 tracking-tight">Assignment uploads</h1>
               <p class="text-white/90 mt-2 mb-0 max-w-xl text-sm sm:text-base leading-relaxed">
-                Publish tasks here — they appear instantly on <strong class="text-white">College → Uploads</strong> for every student. Files are limited to <strong class="text-white"><?php echo h(college_upload_allowed_types_label()); ?></strong> only.
+                Publish tasks here - they appear instantly on <strong class="text-white">College → Uploads</strong> for every student. Files are limited to <strong class="text-white"><?php echo h(college_upload_allowed_types_label()); ?></strong> only.
               </p>
             </div>
           </div>
@@ -351,7 +351,7 @@ foreach ($list as $row) {
                 <i class="bi bi-file-earmark-pdf"></i> PDF
                 <i class="bi bi-image ms-1"></i> JPG · PNG
               </div>
-              <p class="put-hint m-0">Fixed policy — Word, Excel, zip, and other types are rejected.</p>
+              <p class="put-hint m-0">Fixed policy - Word, Excel, zip, and other types are rejected.</p>
             </div>
             <div class="flex items-center gap-3 pt-1">
               <input type="checkbox" name="is_open" id="put-open" value="1" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?php echo !isset($edit['is_open']) || !empty($edit['is_open']) ? 'checked' : ''; ?>>
@@ -379,7 +379,7 @@ foreach ($list as $row) {
                 <i class="bi bi-inbox"></i>
               </div>
               <p class="text-slate-600 font-semibold m-0">No tasks yet</p>
-              <p class="text-sm text-slate-500 mt-1 mb-0">Create one on the left — it will show up for all college students.</p>
+              <p class="text-sm text-slate-500 mt-1 mb-0">Create one on the left - it will show up for all college students.</p>
             </div>
           <?php else: ?>
             <table class="put-table">

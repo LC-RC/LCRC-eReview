@@ -4,10 +4,10 @@
  *
  * Architecture (approved):
  * - Enrollment modes: package | by_topic | free_access (not SKUs).
- * - full_lms packages (Self-Paced, Pure Online, Hybrid, …): access_scope=full_lms;
+ * - full_lms packages (Self-Paced, Pure Online, Hybrid, ...): access_scope=full_lms;
  *   package_content_items NOT required; distinguish via duration + package_feature_items.
  * - mapped packages: package_content_items required at fulfill time.
- * - OCR/AI (later) = receipt verification only — not GCash API settlement proof.
+ * - OCR/AI (later) = receipt verification only - not GCash API settlement proof.
  * - Free Access never creates payment rows.
  * - Repeat purchase stacks: new_ends_at = MAX(NOW(), current_effective_ends_at) + duration.
  * - One payment fulfill once (fulfilled_at); second purchase = new payment/items/grants.

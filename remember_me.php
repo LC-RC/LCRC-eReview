@@ -1,6 +1,6 @@
 <?php
 /**
- * Remember Me – secure long-lived login via HTTP-only cookie and DB token.
+ * Remember Me - secure long-lived login via HTTP-only cookie and DB token.
  * Requires $conn (mysqli) and session already started.
  */
 
@@ -18,7 +18,7 @@ function rememberMeCookiePath() {
     if ($dir === '/' || $dir === '\\' || $dir === '.' || $dir === '') {
         return '/';
     }
-    // e.g. /Ereview — cookie must cover the app subdirectory
+    // e.g. /Ereview - cookie must cover the app subdirectory
     return rtrim($dir, '/') ?: '/';
 }
 

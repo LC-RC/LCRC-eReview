@@ -88,9 +88,9 @@ $products = mysqli_query($conn, "SELECT p.id, p.sku, p.name, p.quantity, p.unit,
         <div class="card-inv">
             <div class="card-header">Quick guide</div>
             <div class="card-body">
-                <p><strong>Stock In</strong> – Dagdag ng supply (e.g. bagong delivery).</p>
-                <p><strong>Stock Out</strong> – Bawas (e.g. na-issue sa employee, nagamit).</p>
-                <p><strong>Adjust</strong> – Itakda ang bagong quantity (e.g. after physical count).</p>
+                <p><strong>Stock In</strong> - Dagdag ng supply (e.g. bagong delivery).</p>
+                <p><strong>Stock Out</strong> - Bawas (e.g. na-issue sa employee, nagamit).</p>
+                <p><strong>Adjust</strong> - Itakda ang bagong quantity (e.g. after physical count).</p>
             </div>
         </div>
     </div>

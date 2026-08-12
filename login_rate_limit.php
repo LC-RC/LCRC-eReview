@@ -1,6 +1,6 @@
 <?php
 /**
- * Login rate limiting – tracks failed attempts by IP and enforces lockout.
+ * Login rate limiting - tracks failed attempts by IP and enforces lockout.
  * Requires $conn (mysqli) and db to be loaded.
  */
 
@@ -11,7 +11,7 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 /** Max failed attempts before lockout */
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5;
 
-/** Time window (seconds) – attempts older than this are ignored when counting */
+/** Time window (seconds) - attempts older than this are ignored when counting */
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 900; // 15 minutes
 
 /** Lockout duration (seconds) after exceeding max attempts */

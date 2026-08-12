@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 8.2 — Grant expiry + SCA reconciliation acceptance tests (A–Z), reversible.
- * Does not exercise Phase 8.3–8.5.
+ * Phase 8.2 - Grant expiry + SCA reconciliation acceptance tests (A-Z), reversible.
+ * Does not exercise Phase 8.3-8.5.
  */
 declare(strict_types=1);
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -378,7 +378,7 @@ try {
     $gY2 = p82_grant($conn, $uY2, 'purchase', 'lesson', $L1, 'DATE_SUB(NOW(), INTERVAL 2 MONTH)', 'DATE_SUB(NOW(), INTERVAL 1 DAY)', 'active');
     $createdGrantIds[] = $gY1;
     $createdGrantIds[] = $gY2;
-    // Global expire with limit=1 (no user filter) — only one grant expired this call
+    // Global expire with limit=1 (no user filter) - only one grant expired this call
     $rY = commerce_expire_overdue_grants($conn, 1, 0);
     $expiredOne = (p82_grant_status($conn, $gY1) === 'expired') XOR (p82_grant_status($conn, $gY2) === 'expired');
     $mark(

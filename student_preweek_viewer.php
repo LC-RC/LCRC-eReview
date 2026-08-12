@@ -1,6 +1,6 @@
 <?php
 /**
- * Full-page Preweek materials viewer (videos + handouts) — same UI/behavior as student_lesson_viewer.php.
+ * Full-page Preweek materials viewer (videos + handouts) - same UI/behavior as student_lesson_viewer.php.
  */
 require_once 'auth.php';
 require_once __DIR__ . '/includes/student_content_access.php';
@@ -88,7 +88,7 @@ $topicTitle = trim((string)($topicRow['topic_title'] ?? '')) ?: 'Lecture';
 $unitTitle = trim((string)($topicRow['unit_title'] ?? '')) ?: 'Preweek';
 $lessonTitle = $topicTitle;
 $backUrl = 'student_preweek_topics?preweek_unit_id=' . (int)$preweekUnitId;
-$pageTitle = $topicTitle . ' — ' . $unitTitle;
+$pageTitle = $topicTitle . ' - ' . $unitTitle;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -311,7 +311,7 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
       </div>
     </div>
 
-    <!-- Handouts (only in Normal view) — outside #lesson-viewer-wrap so fullscreen shows video + playlist only -->
+    <!-- Handouts (only in Normal view) - outside #lesson-viewer-wrap so fullscreen shows video + playlist only -->
     <div x-show="viewMode === 'normal'" class="mt-5 rounded-2xl border border-[#1665A0]/15 shadow-[0_2px_8px_rgba(20,61,89,0.1)] overflow-hidden bg-gradient-to-b from-[#f0f7fc] to-white border-l-4 border-l-[#143D59]">
       <div class="px-4 sm:px-6 py-3 border-b border-[#1665A0]/10 bg-[#e8f2fa]/50 font-semibold text-[#143D59] flex items-center gap-2"><i class="bi bi-file-earmark-pdf"></i> Handouts</div>
       <div class="p-4 sm:p-5">
@@ -335,7 +335,7 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
                   <?php if (!empty($h['file_path'])): ?>
                     <a href="handout_viewer?preweek_handout_id=<?php echo (int)$h['preweek_handout_id']; ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold bg-[#1665A0] text-white hover:bg-[#143D59] transition shadow-[0_2px_8px_rgba(22,101,160,0.25)]"><i class="bi bi-eye"></i> View</a>
                     <?php if (!empty($h['allow_download'])): ?>
-                      <a href="<?php echo h($h['file_path']); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
+                      <a href="handout_download?preweek_handout_id=<?php echo (int)$h['preweek_handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-[#1665A0] text-[#1665A0] hover:bg-[#1665A0] hover:text-white transition"><i class="bi bi-download"></i> Download</a>
                     <?php endif; ?>
                   <?php endif; ?>
                 </div>
@@ -396,5 +396,14 @@ $pageTitle = $topicTitle . ' — ' . $unitTitle;
   })();
   </script>
 </main>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'page_view',
+    'page_key' => 'student_preweek_viewer',
+    'page_title' => $pageTitle ?? 'Pre-week',
+    'subject_id' => (int) ($subjectId ?? 0),
+];
+include __DIR__ . '/includes/student_activity_boot.php';
+?>
 </body>
 </html>

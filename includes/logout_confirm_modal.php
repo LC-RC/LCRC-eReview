@@ -1,6 +1,6 @@
 <?php
 /**
- * Logout confirmation modal — include once per layout.
+ * Logout confirmation modal - include once per layout.
  * Set $ereviewLogoutModalVariant to 'admin' or 'student' before including.
  */
 $ereviewLogoutModalVariant = ($ereviewLogoutModalVariant ?? 'admin') === 'student' ? 'student' : 'admin';
@@ -123,7 +123,7 @@ $ereviewLogoutModalThemeClass = $ereviewLogoutModalVariant === 'student'
   font-family: inherit;
 }
 
-/* Admin (dark / Grok-style — matches body.admin-app) */
+/* Admin (dark / Grok-style - matches body.admin-app) */
 .ereview-logout-root--admin .ereview-logout-backdrop {
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(6px);

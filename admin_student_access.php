@@ -212,7 +212,7 @@ $adminBreadcrumbs = [
       display: flex; align-items: center; justify-content: center; font-size: 2rem;
     }
 
-    /* Toast stack — near sticky Save actions (bottom), always viewport-visible */
+    /* Toast stack - near sticky Save actions (bottom), always viewport-visible */
     .sca-toast-stack {
       position: fixed; bottom: 5.25rem; right: 1.25rem; top: auto; z-index: 10050;
       display: flex; flex-direction: column-reverse; gap: 0.65rem; width: min(100vw - 2rem, 22rem);
@@ -319,12 +319,12 @@ $adminBreadcrumbs = [
           return this.loadingStudent || this.saveAction !== null;
         },
         get panelLoadingLabel() {
-          if (this.saveAction === 'create') return 'Creating student account…';
-          if (this.saveAction === 'account') return 'Saving account details…';
-          if (this.saveAction === 'permissions') return 'Saving content access…';
-          if (this.saveAction === 'bulk') return 'Applying access to selected students…';
-          if (this.loadingStudent) return 'Loading student data…';
-          return 'Please wait…';
+          if (this.saveAction === 'create') return 'Creating student account...';
+          if (this.saveAction === 'account') return 'Saving account details...';
+          if (this.saveAction === 'permissions') return 'Saving content access...';
+          if (this.saveAction === 'bulk') return 'Applying access to selected students...';
+          if (this.loadingStudent) return 'Loading student data...';
+          return 'Please wait...';
         },
 
         async init() {
@@ -339,7 +339,7 @@ $adminBreadcrumbs = [
           const id = ++this.toastSeq;
           const kind = type || 'ok';
           this.toasts.push({ id, title, message, type: kind });
-          this.stickyFlash = (title ? title + ' — ' : '') + (message || '');
+          this.stickyFlash = (title ? title + ' - ' : '') + (message || '');
           this.stickyFlashType = kind;
           if (this.stickyFlashTimer) clearTimeout(this.stickyFlashTimer);
           this.stickyFlashTimer = setTimeout(() => {
@@ -704,7 +704,7 @@ $adminBreadcrumbs = [
       </h2>
       <div class="relative mb-3">
         <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-        <input type="search" class="input-custom w-full pl-9" placeholder="Name or email…" x-model="searchQ" @input.debounce.300ms="searchStudents()">
+        <input type="search" class="input-custom w-full pl-9" placeholder="Name or email..." x-model="searchQ" @input.debounce.300ms="searchStudents()">
       </div>
 
       <div class="sca-bulk-bar" x-show="selectedIds.length > 0" x-cloak>
@@ -752,7 +752,7 @@ $adminBreadcrumbs = [
       </div>
       <div class="flex items-center justify-center gap-2 text-sm text-gray-400 py-6" x-show="loadingSearch">
         <span class="sca-spinner" style="width:1.25rem;height:1.25rem;border-width:2px"></span>
-        Searching…
+        Searching...
       </div>
     </aside>
 
@@ -804,14 +804,14 @@ $adminBreadcrumbs = [
           <span class="flex items-center gap-2"><i class="bi bi-diagram-3"></i> LMS content access</span>
           <span class="sca-perm-count ml-auto" x-text="activePermCount"></span>
         </div>
-        <p class="text-xs text-gray-500 mb-3">Choose specific subjects, lessons, preboards, pre-week, or test bank — or enable Full LMS for everything.</p>
+        <p class="text-xs text-gray-500 mb-3">Choose specific subjects, lessons, preboards, pre-week, or test bank - or enable Full LMS for everything.</p>
         <?php $scaTreeScope = 'create'; require __DIR__ . '/includes/admin_sca_permission_tree.php'; ?>
       </div>
 
       <div class="sca-sticky-actions">
         <button type="button" class="sca-btn sca-btn--primary" @click="createStudent()" :disabled="saveAction !== null">
           <i class="bi" :class="saveAction === 'create' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-plus-circle'"></i>
-          <span x-text="saveAction === 'create' ? 'Creating…' : 'Create student'"></span>
+          <span x-text="saveAction === 'create' ? 'Creating...' : 'Create student'"></span>
         </button>
         <button type="button" class="sca-btn sca-btn--outline" @click="cancelCreate()" :disabled="saveAction !== null">Cancel</button>
         <span class="sca-sticky-flash" x-show="stickyFlash" x-cloak
@@ -862,7 +862,7 @@ $adminBreadcrumbs = [
       <div class="sca-sticky-actions">
         <button type="button" class="sca-btn sca-btn--primary" @click="saveBulkPermissions()" :disabled="saveAction !== null || selectedIds.length === 0">
           <i class="bi" :class="saveAction === 'bulk' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-shield-check'"></i>
-          <span x-text="saveAction === 'bulk' ? 'Applying…' : ('Apply to ' + selectedIds.length + ' student' + (selectedIds.length === 1 ? '' : 's'))"></span>
+          <span x-text="saveAction === 'bulk' ? 'Applying...' : ('Apply to ' + selectedIds.length + ' student' + (selectedIds.length === 1 ? '' : 's'))"></span>
         </button>
         <button type="button" class="sca-btn sca-btn--outline" @click="cancelBulk()" :disabled="saveAction !== null">Cancel</button>
         <span class="sca-sticky-flash" x-show="stickyFlash" x-cloak
@@ -888,7 +888,7 @@ $adminBreadcrumbs = [
                 <p class="text-sm text-gray-500 m-0" x-text="student.email"></p>
                 <span class="sca-access-pill mt-2">
                   <i class="bi bi-calendar3"></i>
-                  <span x-text="(student.access_start || '—') + ' → ' + (student.access_end || '—')"></span>
+                  <span x-text="(student.access_start || '-') + ' → ' + (student.access_end || '-')"></span>
                 </span>
               </div>
             </div>
@@ -929,7 +929,7 @@ $adminBreadcrumbs = [
             </div>
             <button type="button" class="sca-btn sca-btn--outline" @click="saveStudent()" :disabled="saveAction !== null">
               <i class="bi" :class="saveAction === 'account' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-save'"></i>
-              <span x-text="saveAction === 'account' ? 'Saving…' : 'Save account details'"></span>
+              <span x-text="saveAction === 'account' ? 'Saving...' : 'Save account details'"></span>
             </button>
           </div>
 
@@ -944,7 +944,7 @@ $adminBreadcrumbs = [
           <div class="sca-sticky-actions">
             <button type="button" class="sca-btn sca-btn--primary" @click="savePermissions()" :disabled="saveAction !== null">
               <i class="bi" :class="saveAction === 'permissions' ? 'bi-arrow-repeat sca-btn__spin' : 'bi-shield-check'"></i>
-              <span x-text="saveAction === 'permissions' ? 'Saving…' : 'Save content access'"></span>
+              <span x-text="saveAction === 'permissions' ? 'Saving...' : 'Save content access'"></span>
             </button>
             <a class="sca-btn sca-btn--outline no-underline" :href="'admin_student_view?id=' + selectedId">
               <i class="bi bi-person-lines-fill"></i> View profile
@@ -958,7 +958,7 @@ $adminBreadcrumbs = [
 
       <div class="flex flex-col items-center justify-center py-16 text-gray-400" x-show="loadingStudent && !student">
         <span class="sca-spinner mb-3"></span>
-        <span class="text-sm font-medium">Loading student…</span>
+        <span class="text-sm font-medium">Loading student...</span>
       </div>
     </section>
 

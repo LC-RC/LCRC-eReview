@@ -511,7 +511,7 @@ function sca_preboard_set_can_enter(mysqli $conn, int $userId, int $setId, int $
 }
 
 /**
- * Explicit per-set or per-subject grant (not full LMS) — bypasses admin is_open lock.
+ * Explicit per-set or per-subject grant (not full LMS) - bypasses admin is_open lock.
  */
 function sca_preboard_has_granular_grant(mysqli $conn, int $userId, int $setId, int $preboardsSubjectId): bool
 {
@@ -885,7 +885,7 @@ function sca_save_user_permissions_preserving_commerce(
 
 /**
  * Merge/upsert SCA permissions without deleting existing rows.
- * Used by commerce fulfillment — NEVER replace-all.
+ * Used by commerce fulfillment - NEVER replace-all.
  *
  * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $permissions
  */

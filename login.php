@@ -203,7 +203,7 @@ if (isset($_SESSION['google_redirect_uri'])) {
           </div>
           <h2 class="login-ratelimit-block-title">Too many login attempts</h2>
           <p class="login-ratelimit-block-desc">For your security, we've temporarily limited sign-in from this device. You can try again when the timer below reaches zero.</p>
-          <div class="login-ratelimit-countdown" id="login-ratelimit-countdown" role="timer" aria-live="polite">—</div>
+          <div class="login-ratelimit-countdown" id="login-ratelimit-countdown" role="timer" aria-live="polite">-</div>
           <p class="mt-3 text-xs text-amber-700/80">Attempts are limited to <?php echo LOGIN_RATE_LIMIT_MAX_ATTEMPTS; ?> in <?php echo (int) (LOGIN_RATE_LIMIT_WINDOW_SECONDS / 60); ?> minutes. Lockout lasts <?php echo (int) (LOGIN_RATE_LIMIT_LOCKOUT_SECONDS / 60); ?> minutes.</p>
           <p class="mt-2 text-xs"><a href="forgot_password" class="text-amber-600 hover:underline font-medium">Reset your password</a> to unlock sooner.</p>
         </div>

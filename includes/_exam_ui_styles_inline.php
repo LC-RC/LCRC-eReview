@@ -1,4 +1,4 @@
-/* Exam UI – professional exam-style layout (shared with quiz take page) */
+/* Exam UI - professional exam-style layout (shared with quiz take page) */
 :root {
   /* Aligned with site theme blues (#1665A0 / #143D59) */
   --exam-primary: #1665A0;
@@ -33,7 +33,7 @@ html[data-student-theme="dark"] {
   --exam-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   --exam-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.4);
 }
-/* Sticky exam header – clear hierarchy, balanced spacing */
+/* Sticky exam header - clear hierarchy, balanced spacing */
 .exam-bar {
   position: sticky;
   top: 0;

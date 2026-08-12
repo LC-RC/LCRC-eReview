@@ -66,7 +66,7 @@ $endUtc = $dtUtc->format('Ymd\THis\Z');
 $uidSafe = preg_replace('/[^0-9]/', '', (string)$uid);
 $uidLine = 'access-end-' . $uidSafe . '@lcrc-ereview';
 
-$summary = 'LCRC eReview — enrollment access ends';
+$summary = 'LCRC eReview - enrollment access ends';
 $desc = 'Your LCRC eReview enrollment access window closes at this time (Philippines, PHT). Renew with your administrator if needed.';
 
 $ics = implode("\r\n", [

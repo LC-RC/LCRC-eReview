@@ -1,6 +1,6 @@
 <?php
 /**
- * Magic link sign-in – token creation, validation, and email.
+ * Magic link sign-in - token creation, validation, and email.
  * Requires $conn (mysqli).
  */
 
@@ -115,12 +115,12 @@ function deleteMagicLinkToken($tokenId) {
 }
 
 function sendMagicLinkEmail($toEmail, $magicUrl) {
-    $subject = 'Your sign-in link – LCRC eReview';
+    $subject = 'Your sign-in link - LCRC eReview';
     $body = "Hello,\r\n\r\n";
     $body .= "Use the link below to sign in to your LCRC eReview account (valid for " . MAGIC_LINK_EXPIRY_MINUTES . " minutes):\r\n\r\n";
     $body .= $magicUrl . "\r\n\r\n";
     $body .= "If you didn't request this, you can ignore this email.\r\n\r\n";
-    $body .= "— LCRC eReview\r\n";
+    $body .= "- LCRC eReview\r\n";
 
     $configFile = __DIR__ . '/config/mail_config.php';
     if (file_exists($configFile)) {

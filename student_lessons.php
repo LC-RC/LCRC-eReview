@@ -1,9 +1,12 @@
 <?php
 require_once 'auth.php';
+require_once __DIR__ . '/includes/content_sort_order.php';
 requireRole('student');
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) { header('Location: student_subjects'); exit; }
+
+content_sort_order_ensure_schema($conn);
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM subjects WHERE subject_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $subjectId);
@@ -13,7 +16,7 @@ $subject = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: student_subjects'); exit; }
 
-$lessonsResult = mysqli_query($conn, "SELECT * FROM lessons WHERE subject_id=".$subjectId." ORDER BY lesson_id DESC");
+$lessonsResult = mysqli_query($conn, "SELECT * FROM lessons WHERE subject_id=".$subjectId." ORDER BY " . content_sort_order_sql('', 'lesson_id'));
 $pageTitle = $subject['subject_name'] . ' - Lessons';
 ?>
 <!DOCTYPE html>

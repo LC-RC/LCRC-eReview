@@ -350,10 +350,10 @@ $monitorCsrf = generateCSRFToken();
     <div class="card p-4 mb-4">
       <div class="kpi-grid">
         <div class="kpi"><div class="kpi-k">Still taking</div><div class="kpi-v" id="kpiTakingCount"><?php echo (int)$metrics['taking_count']; ?></div></div>
-        <div class="kpi"><div class="kpi-k">Average score</div><div class="kpi-v" id="kpiAvgScore"><?php echo $metrics['avg_score'] !== null ? h(number_format((float)$metrics['avg_score'], 2)) . '%' : '—'; ?></div></div>
+        <div class="kpi"><div class="kpi-k">Average score</div><div class="kpi-v" id="kpiAvgScore"><?php echo $metrics['avg_score'] !== null ? h(number_format((float)$metrics['avg_score'], 2)) . '%' : '-'; ?></div></div>
         <div class="kpi"><div class="kpi-k">Passed</div><div class="kpi-v" id="kpiPassCount"><?php echo (int)$metrics['pass_count']; ?></div></div>
         <div class="kpi"><div class="kpi-k">Failed (submitted)</div><div class="kpi-v" id="kpiFailSubmitted"><?php echo (int)$metrics['fail_count']; ?></div></div>
-        <div class="kpi"><div class="kpi-k">Failed (absent)</div><div class="kpi-v" id="kpiFailAbsent"><?php echo $isFinished ? (int)$absentCount : '—'; ?></div></div>
+        <div class="kpi"><div class="kpi-k">Failed (absent)</div><div class="kpi-v" id="kpiFailAbsent"><?php echo $isFinished ? (int)$absentCount : '-'; ?></div></div>
         <div class="kpi"><div class="kpi-k">Finished coverage</div><div class="kpi-v"><span id="kpiSubmittedCount"><?php echo (int)$metrics['submitted_count']; ?></span>/<span id="kpiRosterTotal"><?php echo (int)$totalStudents; ?></span></div></div>
         <div class="kpi"><div class="kpi-k">Tab leaves (total)</div><div class="kpi-v" id="kpiTabLeavesTotal"><?php echo (int)$totalTabLeaves; ?></div></div>
       </div>
@@ -371,9 +371,9 @@ $monitorCsrf = generateCSRFToken();
       <p class="text-sm text-slate-600 m-0 mb-3">After the exam, students always see a <strong>results summary</strong>. The <strong>full question-by-question review</strong> stays locked until you choose when it opens (and optionally when it closes).</p>
       <p class="m-0 mb-3">
         <?php if ($reviewAccessStatus === 'no_schedule'): ?>
-          <span class="review-sched-pill"><i class="bi bi-dash-circle"></i> No schedule set — review sheet is locked</span>
+          <span class="review-sched-pill"><i class="bi bi-dash-circle"></i> No schedule set - review sheet is locked</span>
         <?php elseif ($reviewAccessStatus === 'pending'): ?>
-          <span class="review-sched-pill"><i class="bi bi-hourglass-split"></i> Scheduled — opens <?php echo h(professor_exam_monitor_format_dt($exam['review_sheet_available_from'] ?? null)); ?></span>
+          <span class="review-sched-pill"><i class="bi bi-hourglass-split"></i> Scheduled - opens <?php echo h(professor_exam_monitor_format_dt($exam['review_sheet_available_from'] ?? null)); ?></span>
         <?php elseif ($reviewAccessStatus === 'open'): ?>
           <span class="review-sched-pill" style="border-color:#86efac;background:#ecfdf5;color:#047857;"><i class="bi bi-unlock-fill"></i> Open now for students</span>
         <?php else: ?>
@@ -403,11 +403,11 @@ $monitorCsrf = generateCSRFToken();
     </div>
     <?php endif; ?>
 
-    <h2 class="section-title"><i class="bi bi-shield-exclamation"></i> Security — tab visibility</h2>
+    <h2 class="section-title"><i class="bi bi-shield-exclamation"></i> Security - tab visibility</h2>
     <div class="card p-4 mb-4 sec-alert-card" id="examSecurityAlerts">
       <div class="flex items-center justify-between gap-3 mb-2">
         <span class="text-sm font-extrabold text-amber-900">Live alerts when students leave the exam tab</span>
-        <span class="text-xs text-amber-800/80" id="examSecurityPollStatus">Updating…</span>
+        <span class="text-xs text-amber-800/80" id="examSecurityPollStatus">Updating...</span>
       </div>
       <div id="examSecurityFeed" class="text-amber-950">
         <?php
@@ -430,7 +430,7 @@ $monitorCsrf = generateCSRFToken();
                 <strong><?php echo h((string)$sx['full_name']); ?></strong>
                 left the exam tab <strong><?php echo (int)$sx['tab_switch_count']; ?></strong> time(s).
                 <?php $lt = professor_exam_monitor_format_dt($sx['last_tab_switch_at'] ?? null); ?>
-                Last: <?php echo $lt !== '' ? h($lt) : '—'; ?>
+                Last: <?php echo $lt !== '' ? h($lt) : '-'; ?>
               </div>
             </div>
           <?php endforeach; ?>
@@ -476,9 +476,9 @@ $monitorCsrf = generateCSRFToken();
             <?php foreach ($students as $st): ?>
               <?php
                 $attemptStatus = (string)($st['attempt_status'] ?? '');
-                $markLabel = '—';
+                $markLabel = '-';
                 $markClass = '';
-                $scoreColHtml = '<span class="date-chip muted">—</span>';
+                $scoreColHtml = '<span class="date-chip muted">-</span>';
                 if ($isFinished && $attemptStatus !== 'submitted') {
                     $markLabel = 'Failed (Absent)';
                     $markClass = 'mark-absent';
@@ -523,7 +523,7 @@ $monitorCsrf = generateCSRFToken();
                   <?php if ($sn !== ''): ?>
                     <span class="date-chip"><i class="bi bi-hash"></i> <?php echo h($sn); ?></span>
                   <?php else: ?>
-                    <span class="date-chip muted">—</span>
+                    <span class="date-chip muted">-</span>
                   <?php endif; ?>
                 </td>
                 <td class="px-4 py-3 text-gray-600">
@@ -542,10 +542,10 @@ $monitorCsrf = generateCSRFToken();
                 </td>
                 <td class="px-4 py-3"><?php echo $scoreColHtml; ?></td>
                 <td class="px-4 py-3">
-                  <?php if ($markLabel !== '—'): ?>
+                  <?php if ($markLabel !== '-'): ?>
                     <span class="score-chip"><span class="<?php echo h($markClass); ?>"><?php echo h($markLabel); ?></span></span>
                   <?php else: ?>
-                    <span class="date-chip muted">—</span>
+                    <span class="date-chip muted">-</span>
                   <?php endif; ?>
                 </td>
                 <td class="px-4 py-3 text-gray-600">
@@ -554,7 +554,7 @@ $monitorCsrf = generateCSRFToken();
                   ?>
                   <?php if ($fmtStarted !== ''): ?>
                     <span class="date-chip"><i class="bi bi-play-circle"></i> <?php echo h($fmtStarted); ?></span>
-                  <?php else: ?><span class="date-chip muted">—</span><?php endif; ?>
+                  <?php else: ?><span class="date-chip muted">-</span><?php endif; ?>
                 </td>
                 <td class="px-4 py-3 text-gray-600">
                   <?php
@@ -562,7 +562,7 @@ $monitorCsrf = generateCSRFToken();
                   ?>
                   <?php if ($fmtSubmitted !== ''): ?>
                     <span class="date-chip"><i class="bi bi-check2-circle"></i> <?php echo h($fmtSubmitted); ?></span>
-                  <?php else: ?><span class="date-chip muted">—</span><?php endif; ?>
+                  <?php else: ?><span class="date-chip muted">-</span><?php endif; ?>
                 </td>
                 <td class="px-4 py-3 text-gray-600">
                   <?php
@@ -570,7 +570,7 @@ $monitorCsrf = generateCSRFToken();
                   ?>
                   <?php if ($fmtSeen !== ''): ?>
                     <span class="date-chip"><i class="bi bi-clock-history"></i> <?php echo h($fmtSeen); ?></span>
-                  <?php else: ?><span class="date-chip muted">—</span><?php endif; ?>
+                  <?php else: ?><span class="date-chip muted">-</span><?php endif; ?>
                 </td>
                 <td class="px-4 py-3 text-gray-600">
                   <span class="date-chip js-tab-count"><?php echo $tabLeaveN; ?></span>
@@ -579,18 +579,18 @@ $monitorCsrf = generateCSRFToken();
                   <?php if ($tabLeaveLast !== ''): ?>
                     <span class="date-chip js-tab-last"><i class="bi bi-window"></i> <?php echo h($tabLeaveLast); ?></span>
                   <?php else: ?>
-                    <span class="date-chip muted js-tab-last">—</span>
+                    <span class="date-chip muted js-tab-last">-</span>
                   <?php endif; ?>
                 </td>
                 <td class="px-4 py-3">
                   <?php if ($canReviewSheet): ?>
-                    <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="pem-review-btn" title="Open this student’s full examination sheet (questions, choices, explanations)">
+                    <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="pem-review-btn" title="Open this student's full examination sheet (questions, choices, explanations)">
                       <i class="bi bi-layout-text-window-reverse"></i> Review
                     </a>
                   <?php elseif ($attemptStatus === 'in_progress'): ?>
                     <span class="pem-review-muted pending"><i class="bi bi-hourglass-split"></i> After submit</span>
                   <?php else: ?>
-                    <span class="pem-review-muted">—</span>
+                    <span class="pem-review-muted">-</span>
                   <?php endif; ?>
                 </td>
               </tr>
@@ -646,14 +646,14 @@ $monitorCsrf = generateCSRFToken();
             var countCell = tr.querySelector('.js-tab-count');
             if (countCell) countCell.textContent = String(n);
             var lastCells = tr.querySelectorAll('.js-tab-last');
-            var lastTxt = s.last_tab_switch_fmt || '—';
+            var lastTxt = s.last_tab_switch_fmt || '-';
             lastCells.forEach(function (lc) {
-              if (lastTxt && lastTxt !== '—') {
+              if (lastTxt && lastTxt !== '-') {
                 lc.className = 'date-chip js-tab-last';
                 lc.innerHTML = '<i class="bi bi-window"></i> ' + esc(lastTxt);
               } else {
                 lc.className = 'date-chip muted js-tab-last';
-                lc.textContent = '—';
+                lc.textContent = '-';
               }
             });
             if (n > prev) {
@@ -670,7 +670,7 @@ $monitorCsrf = generateCSRFToken();
             } else {
               feedEl.innerHTML = alerts.map(function (a) {
                 var n = parseInt(a.tab_switch_count, 10) || 0;
-                var lt = a.last_tab_switch_fmt || '—';
+                var lt = a.last_tab_switch_fmt || '-';
                 return '<div class="sec-alert-row" data-feed-user="' + esc(String(a.user_id)) + '"><span class="sec-alert-dot" aria-hidden="true"></span><div><strong>' +
                   esc(a.full_name || '') + '</strong> left the exam tab <strong>' + n + '</strong> time(s). Last: ' + esc(lt) + '</div></div>';
               }).join('');
@@ -678,7 +678,7 @@ $monitorCsrf = generateCSRFToken();
           }
         })
         .catch(function () {
-          if (pollEl) pollEl.textContent = 'Update failed — retrying…';
+          if (pollEl) pollEl.textContent = 'Update failed - retrying...';
         });
     }
     tick();

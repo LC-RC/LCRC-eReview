@@ -1,6 +1,6 @@
 <?php
 /**
- * Unified topbar — set $appShellTopbarTheme to 'admin' or 'student' before include.
+ * Unified topbar - set $appShellTopbarTheme to 'admin' or 'student' before include.
  */
 require_once __DIR__ . '/../format_display_name.php';
 
@@ -21,7 +21,7 @@ $ereviewProfilePageHref = $ereviewProfilePageHref ?? ($t === 'student' ? 'studen
 $ereviewProfileMenuTone = ($t === 'admin') ? 'dark' : 'light';
 $ereviewStaffSubtitle = ($t === 'professor') ? 'Professor workspace' : 'System administrator';
 
-/** Student / reviewee: access window (users.access_start / access_end) — countdown, progress, popover */
+/** Student / reviewee: access window (users.access_start / access_end) - countdown, progress, popover */
 $studentAccessEndMs = null;
 $studentAccessStartMs = null;
 $studentAccessEndLabel = '';
@@ -128,7 +128,7 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
       <?php endif; ?>
       <form class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }" @submit.prevent="goSearch()" role="search">
         <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
-        <input type="search" placeholder="Search students, email…" aria-label="Search students" class="admin-topbar-search"
+        <input type="search" placeholder="Search students, email..." aria-label="Search students" class="admin-topbar-search"
                x-model="searchQuery"
                @focus="searchFocused = true" @blur="searchFocused = false">
       </form>
@@ -343,7 +343,7 @@ include __DIR__ . '/messaging_component.php';
               </div>
               <div class="student-topbar-access-popover__row student-topbar-access-popover__row--block">
                 <dt>When access ends</dt>
-                <dd>You won’t be able to open subjects, lessons, quizzes, or preboards until your enrollment is renewed. Contact your administrator if you need an extension.</dd>
+                <dd>You won't be able to open subjects, lessons, quizzes, or preboards until your enrollment is renewed. Contact your administrator if you need an extension.</dd>
               </div>
             </dl>
             <div class="student-topbar-access-popover__actions">

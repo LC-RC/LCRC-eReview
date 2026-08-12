@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 8.1 Free Access grant idempotency hardening tests (A–N), reversible.
- * Does not exercise Phase 8.2–8.5.
+ * Phase 8.1 Free Access grant idempotency hardening tests (A-N), reversible.
+ * Does not exercise Phase 8.2-8.5.
  */
 declare(strict_types=1);
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -274,14 +274,14 @@ try {
     // Second connection tries approve while first holds FOR UPDATE (should wait then see grant / unique).
     $apG2Started = microtime(true);
     // Run second approve on $c2 via duplicated logic: begin + lock will block until $c1 commits.
-    // Use a non-blocking approach: start approve after releasing — simulate with raw second insert after commit,
+    // Use a non-blocking approach: start approve after releasing - simulate with raw second insert after commit,
     // and also call commerce_far_approve on main $conn after first path.
     // True overlap: hold c1 lock, attempt INSERT on c2 (should wait), then commit c1.
     mysqli_begin_transaction($c2);
-    // Attempt lock on c2 in a way we can detect wait — use GET_LOCK pattern instead:
+    // Attempt lock on c2 in a way we can detect wait - use GET_LOCK pattern instead:
     // Issue INSERT on c2 without waiting forever: c2 INSERT will wait for c1's gap/row from unique? 
     // Actually FOR UPDATE is on FAR row; c2's INSERT of grant doesn't need FAR lock unless FK checks.
-    // Concurrent repair via commerce_far_approve uses FOR UPDATE on FAR — so:
+    // Concurrent repair via commerce_far_approve uses FOR UPDATE on FAR - so:
     mysqli_rollback($c2); // reset
 
     // Hold FAR lock on c1; call approve on main conn in... we can't block easily in one thread.

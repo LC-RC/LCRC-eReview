@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 8.1 — Free Access approval acceptance tests (A–S), reversible.
- * Does not exercise Phase 8.2–8.5.
+ * Phase 8.1 - Free Access approval acceptance tests (A-S), reversible.
+ * Does not exercise Phase 8.2-8.5.
  */
 declare(strict_types=1);
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -190,7 +190,7 @@ try {
     // ---------- D student login auto-activated after FAR approve ----------
     $mark('D', p81_user_status($conn, $uA) === 'approved', 'status=' . p81_user_status($conn, $uA));
 
-    // ---------- E–H no payment / items / gcash / OCR ----------
+    // ---------- E-H no payment / items / gcash / OCR ----------
     $payNow = (int) (mysqli_fetch_row(mysqli_query($conn, 'SELECT COUNT(*) FROM payments'))[0] ?? 0);
     $itemsNow = (int) (mysqli_fetch_row(mysqli_query($conn, 'SELECT COUNT(*) FROM payment_items'))[0] ?? 0);
     $gcashNow = (int) (mysqli_fetch_row(mysqli_query($conn, 'SELECT COUNT(*) FROM payment_gcash_references'))[0] ?? 0);
@@ -382,7 +382,7 @@ try {
         "scaQ {$scaQBefore}->{$scaQAfter}"
     );
 
-    // ---------- S no Phase 5–7 regression (static isolation) ----------
+    // ---------- S no Phase 5-7 regression (static isolation) ----------
     $farFile = file_get_contents(dirname(__DIR__) . '/includes/commerce_free_access.php');
     $login = file_get_contents(dirname(__DIR__) . '/login_process.php');
     $mark(

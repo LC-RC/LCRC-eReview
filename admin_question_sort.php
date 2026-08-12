@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Admin: automated question sorting from .docx — parse, group by trailing (Topic), export JSON/HTML/DOCX.
+ * Admin: automated question sorting from .docx - parse, group by trailing (Topic), export JSON/HTML/DOCX.
  */
 require_once 'auth.php';
 requireAdminPage();
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['download'])) {
         if (!is_array($tr)) {
             header('HTTP/1.1 404 Not Found');
             header('Content-Type: text/plain; charset=UTF-8');
-            echo 'No parse trace in this session. Upload the .docx again and enable “Capture parser trace”.';
+            echo 'No parse trace in this session. Upload the .docx again and enable "Capture parser trace".';
             exit;
         }
         $export = [
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['download'])) {
         $esc = static function ($s) {
             return htmlspecialchars((string)$s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         };
-        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Grouped — ' . $esc($baseName) . '</title>';
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Grouped - ' . $esc($baseName) . '</title>';
         echo '<style>body{font-family:Calibri,Arial,sans-serif;max-width:900px;margin:2rem auto;line-height:1.45;}';
         echo 'h1{font-size:1.35rem;}h2{font-size:1.1rem;margin-top:2rem;color:#1e3a5f;}';
         echo '.q{margin:1.25rem 0;padding-left:0.5rem;border-left:3px solid #cbd5e1;}';
@@ -294,7 +294,7 @@ if ($qsortHasResults) {
     .ereview-qsort-topic-body { padding: 1rem 1.25rem 1.25rem; }
     [x-cloak] { display: none !important; }
 
-    /* Deploy modal — viewport-centered via x-teleport="body" + flex overlay */
+    /* Deploy modal - viewport-centered via x-teleport="body" + flex overlay */
     .ereview-deploy-backdrop {
       position: absolute;
       inset: 0;
@@ -680,7 +680,7 @@ if ($qsortHasResults) {
       <div class="flex flex-col gap-3">
         <label class="inline-flex items-start gap-2.5 cursor-pointer text-sm text-gray-400 max-w-2xl">
           <input type="checkbox" name="ereview_qsort_debug" value="1" class="mt-1 rounded border-gray-600 text-amber-500 focus:ring-amber-500/40">
-          <span><strong class="text-gray-300">Capture parser trace</strong> — logs every paragraph decision (list metadata, <code class="text-gray-500">in_choices</code>, split-after-choices flags). Use when a question sticks to the wrong item or topic. After upload, open <a class="text-sky-400 hover:underline" href="admin_question_sort?qsort_debug=1">Parser debug</a> or download <code class="text-gray-500">.parse-trace.json</code>.</span>
+          <span><strong class="text-gray-300">Capture parser trace</strong> - logs every paragraph decision (list metadata, <code class="text-gray-500">in_choices</code>, split-after-choices flags). Use when a question sticks to the wrong item or topic. After upload, open <a class="text-sky-400 hover:underline" href="admin_question_sort?qsort_debug=1">Parser debug</a> or download <code class="text-gray-500">.parse-trace.json</code>.</span>
         </label>
         <div class="flex flex-wrap gap-2 items-center">
         <button type="submit" class="admin-materials-submit-btn inline-flex items-center gap-2" id="ereviewQsortSubmit">
@@ -930,7 +930,7 @@ if ($qsortHasResults) {
           <label for="ereview_qsort_filter" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Filter</label>
           <div class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search"></i></span>
-            <input type="search" id="ereview_qsort_filter" x-model.debounce.200ms="filter" placeholder="Topic, general problem, or question…" class="input-custom w-full pl-10" autocomplete="off">
+            <input type="search" id="ereview_qsort_filter" x-model.debounce.200ms="filter" placeholder="Topic, general problem, or question..." class="input-custom w-full pl-10" autocomplete="off">
           </div>
         </div>
       </div>
@@ -948,7 +948,7 @@ if ($qsortHasResults) {
         </span>
       </div>
       <div class="ereview-qsort-topic-body border-t border-white/[0.06]" x-show="gpOpen" x-cloak>
-        <p class="text-xs text-gray-500 m-0 px-4 pt-3 pb-1">These blocks were split out of a preceding item’s choices. Later numbered questions (for example 205–212) refer to this context.</p>
+        <p class="text-xs text-gray-500 m-0 px-4 pt-3 pb-1">These blocks were split out of a preceding item's choices. Later numbered questions (for example 205-212) refer to this context.</p>
         <p class="text-xs text-amber-200/80 m-0 px-4 pb-2" x-show="generalProblems.length > 0 && generalProblemsFiltered.length === 0" x-cloak>No general problems match your filter.</p>
         <template x-for="(gp, gix) in generalProblemsFiltered" :key="'gp-' + (gp.id || gix) + '-' + gix">
           <div class="ereview-qsort-q mt-3 first:mt-0 p-3 sm:p-3.5 border-t border-white/[0.06]">
@@ -1048,12 +1048,12 @@ if ($qsortHasResults) {
                 x-model="deployTargetQuizId"
                 @change="onDeployQuizTargetChange()"
               >
-                <option value="">Create new topical quiz…</option>
+                <option value="">Create new topical quiz...</option>
                 <template x-for="qz in existingQuizzes" :key="'qzopt-' + qz.quiz_id">
                   <option :value="String(qz.quiz_id)" x-text="(qz.title || 'Untitled') + ' · ' + qz.question_count + ' question' + (qz.question_count === 1 ? '' : 's')"></option>
                 </template>
               </select>
-              <p class="ereview-deploy-quiz-load" x-show="deployQuizzesLoading" x-cloak><i class="bi bi-arrow-repeat animate-spin"></i> Loading quizzes for this subject…</p>
+              <p class="ereview-deploy-quiz-load" x-show="deployQuizzesLoading" x-cloak><i class="bi bi-arrow-repeat animate-spin"></i> Loading quizzes for this subject...</p>
               <p class="ereview-deploy-hint text-rose-300/90 m-0" x-show="deployQuizzesErr && !deployQuizzesLoading" x-cloak x-text="deployQuizzesErr"></p>
               <p class="ereview-deploy-hint m-0" x-show="deployTargetQuizId" x-cloak>New questions are <strong class="text-violet-200">appended</strong> to the quiz you select. Item numbers must not already exist in that quiz.</p>
             </div>
@@ -1109,7 +1109,7 @@ if ($qsortHasResults) {
             <button type="button" @click="submitDeploy()" :disabled="deployBusy || deploySubjects.length === 0" class="px-5 py-2.5 rounded-lg font-semibold bg-violet-600 text-white hover:bg-violet-500 transition inline-flex items-center justify-center gap-2 min-w-[7.5rem] shadow-lg shadow-violet-900/35 disabled:opacity-45 disabled:pointer-events-none">
               <i class="bi bi-send-fill" x-show="!deployBusy"></i>
               <i class="bi bi-hourglass-split animate-pulse" x-show="deployBusy" x-cloak></i>
-              <span x-text="deployBusy ? (deployTargetQuizId ? 'Appending…' : 'Deploying…') : (deployTargetQuizId ? 'Append questions' : 'Deploy')"></span>
+              <span x-text="deployBusy ? (deployTargetQuizId ? 'Appending...' : 'Deploying...') : (deployTargetQuizId ? 'Append questions' : 'Deploy')"></span>
             </button>
           </footer>
         </div>
@@ -1173,7 +1173,7 @@ if ($qsortHasResults) {
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5 ereview-qsort-debug-panel">
     <div class="preweek-section-toolbar px-4 sm:px-5 py-3.5 border-b border-white/[0.08]">
       <h2 class="text-lg font-bold text-gray-100 m-0 flex items-center gap-2"><i class="bi bi-bug text-amber-400"></i> Parser debug</h2>
-      <p class="text-xs text-gray-500 m-0 mt-1 max-w-3xl">Rows match <code class="text-gray-400">word/document.xml</code> body paragraphs in order. Look for question 4’s last choice, then the next row: if <code class="text-gray-400">action</code> is <strong class="text-gray-300">append_while_in_choices_not_choice_shape</strong>, the splitter did not run. Check <code class="text-gray-400">after_choices.split_para</code> (should be <code class="text-gray-400">true</code> for a new item after <code class="text-gray-400">a.–d.</code>).</p>
+      <p class="text-xs text-gray-500 m-0 mt-1 max-w-3xl">Rows match <code class="text-gray-400">word/document.xml</code> body paragraphs in order. Look for question 4's last choice, then the next row: if <code class="text-gray-400">action</code> is <strong class="text-gray-300">append_while_in_choices_not_choice_shape</strong>, the splitter did not run. Check <code class="text-gray-400">after_choices.split_para</code> (should be <code class="text-gray-400">true</code> for a new item after <code class="text-gray-400">a.-d.</code>).</p>
     </div>
     <div class="p-4 sm:p-5">
       <?php if ($parseTraceForView === null): ?>
@@ -1190,7 +1190,7 @@ if ($qsortHasResults) {
               <?php foreach ($questionsOutlineForView as $row): ?>
               <tr class="border-t border-white/[0.06]">
                 <td class="p-2 font-mono tabular-nums"><?php echo h((string)($row['number'] ?? '')); ?></td>
-                <td class="p-2"><?php echo h((string)($row['topic'] ?? '—')); ?></td>
+                <td class="p-2"><?php echo h((string)($row['topic'] ?? '-')); ?></td>
                 <td class="p-2 text-gray-400"><?php echo h((string)($row['stem_preview'] ?? '')); ?></td>
                 <td class="p-2 text-gray-500"><?php echo h((string)($row['topic_source'] ?? '')); ?></td>
               </tr>
@@ -1222,7 +1222,7 @@ if ($qsortHasResults) {
                 }
                 $act = (string)($row['action'] ?? '');
                 if ($act === 'summary') {
-                    echo '<tr class="bg-amber-900/20 border-t border-amber-500/30"><td class="p-2 font-mono" colspan="8">summary — paragraphs: ' . h((string)($row['total_paragraphs'] ?? '')) . ', blocks: ' . h((string)($row['total_question_blocks'] ?? '')) . '</td></tr>';
+                    echo '<tr class="bg-amber-900/20 border-t border-amber-500/30"><td class="p-2 font-mono" colspan="8">summary - paragraphs: ' . h((string)($row['total_paragraphs'] ?? '')) . ', blocks: ' . h((string)($row['total_question_blocks'] ?? '')) . '</td></tr>';
                     continue;
                 }
                 $list = $row['list'] ?? [];
@@ -1260,7 +1260,7 @@ if ($qsortHasResults) {
       form.addEventListener('submit', function () {
         btn.disabled = true;
         var sp = btn.querySelector('span');
-        if (sp) sp.textContent = 'Processing…';
+        if (sp) sp.textContent = 'Processing...';
       });
     }
   })();

@@ -11,6 +11,15 @@ if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set('Asia/Manila');
 }
 
+// Keep PHP string/output charset UTF-8 (avoids â€" when fancy dashes leak through).
+if (function_exists('ini_set')) {
+    @ini_set('default_charset', 'UTF-8');
+}
+// HTML pages include this before any output; JSON/file endpoints override Content-Type later.
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
 // Start session with secure configuration
 if (session_status() === PHP_SESSION_NONE) {
     $isHttps = (

@@ -1,6 +1,6 @@
 <?php
 /**
- * Legacy status flip — hardened: cannot approve a student without an active access grant.
+ * Legacy status flip - hardened: cannot approve a student without an active access grant.
  */
 require_once __DIR__ . '/auth.php';
 requireAdminPage('students');

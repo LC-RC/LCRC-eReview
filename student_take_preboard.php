@@ -164,6 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_preboard']) &&
     mysqli_stmt_bind_param($upd, 'diisii', $score, $correct, $total, $submittedAt, $attemptId, $userId);
     mysqli_stmt_execute($upd);
     mysqli_stmt_close($upd);
+    require_once __DIR__ . '/includes/student_activity.php';
+    student_activity_log_event($conn, (int) $userId, 'preboard_submitted', [
+        'subject_id' => (int) $subjectId,
+        'attempt_id' => (int) $attemptId,
+        'page_key' => 'student_take_preboard',
+        'page_title' => 'Preboard submitted',
+        'meta' => ['set_id' => (int) $setId, 'score' => $score],
+    ]);
     $_SESSION['preboard_result'] = ['set_id' => $setId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'answered' => $answered];
     header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&result=1');
     exit;
@@ -304,6 +312,14 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             mysqli_stmt_close($ins);
 
             mysqli_commit($conn);
+            require_once __DIR__ . '/includes/student_activity.php';
+            student_activity_log_event($conn, (int) $userId, 'preboard_started', [
+                'subject_id' => (int) $subjectId,
+                'attempt_id' => (int) $newAttemptId,
+                'page_key' => 'student_take_preboard',
+                'page_title' => 'Preboard started',
+                'meta' => ['set_id' => (int) $setId],
+            ]);
             header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $newAttemptId);
             exit;
         } catch (Exception $e) {
@@ -354,6 +370,14 @@ if ($userId && $totalQuestions > 0 && !$showResult) {
             mysqli_stmt_close($stmt);
         }
         if ($attemptId > 0) {
+            require_once __DIR__ . '/includes/student_activity.php';
+            student_activity_log_event($conn, (int) $userId, 'preboard_started', [
+                'subject_id' => (int) $subjectId,
+                'attempt_id' => (int) $attemptId,
+                'page_key' => 'student_take_preboard',
+                'page_title' => 'Preboard started',
+                'meta' => ['set_id' => (int) $setId],
+            ]);
             header('Location: student_take_preboard?preboards_set_id=' . $setId . '&preboards_subject_id=' . $subjectId . '&attempt_id=' . $attemptId);
             exit;
         }
@@ -416,7 +440,7 @@ if (preboards_set_uses_schedule($setRow)) {
         $opensTs = strtotime($opensRaw);
         $closesTs = strtotime($closesRaw);
         if ($opensTs && $closesTs) {
-            $preboardScheduleWindowLabel = date('M j, g:i A', $opensTs) . ' – ' . date('g:i A', $closesTs);
+            $preboardScheduleWindowLabel = date('M j, g:i A', $opensTs) . ' - ' . date('g:i A', $closesTs);
         }
     }
 }
@@ -743,7 +767,7 @@ $preboardExamActive = (
     </div>
     <div class="preboard-motivation-banner" id="preboardMotivationBanner" role="status" aria-live="polite">
       <span class="preboard-motivation-banner__icon" id="preboardMotivationIcon"><i class="bi bi-stars" aria-hidden="true"></i></span>
-      <span id="preboardMotivationText">You've got this — treat this like the real CPA board exam.</span>
+      <span id="preboardMotivationText">You've got this - treat this like the real CPA board exam.</span>
     </div>
     <?php endif; ?>
 
@@ -765,7 +789,7 @@ $preboardExamActive = (
                 <div class="w-12 h-12 rounded-full flex items-center justify-center bg-white/80 shadow-sm">
                   <i class="bi bi-trophy-fill text-[#f97373] text-xl"></i>
                 </div>
-                <div class="exam-question-label"><?php echo h($setRow['subject_name']); ?> — Preboard Complete</div>
+                <div class="exam-question-label"><?php echo h($setRow['subject_name']); ?> - Preboard Complete</div>
               </div>
               <span class="result-badge"><?php echo h($resultLabel); ?></span>
               <h2 class="text-2xl font-bold text-[#1e293b] mb-2"><i class="bi bi-bar-chart-fill mr-2"></i>Results</h2>
@@ -890,7 +914,7 @@ $preboardExamActive = (
       <div class="exam-bar mb-4">
         <div class="exam-header">
           <div class="exam-header-left">
-            <span class="exam-title"><?php echo h($setRow['subject_name']); ?> — Set <?php echo h($setRow['set_label']); ?></span>
+            <span class="exam-title"><?php echo h($setRow['subject_name']); ?> - Set <?php echo h($setRow['set_label']); ?></span>
             <span class="exam-subject"><i class="bi bi-book mr-1"></i><?php echo h($setRow['subject_name']); ?> · Preboards</span>
           </div>
           <div class="flex flex-wrap items-center gap-3">
@@ -992,10 +1016,10 @@ $preboardExamActive = (
 
       <?php if ($preboardExamActive): ?>
       <div class="preboard-exam-watermark" aria-hidden="true">
-        <span>LCRC eReview — Confidential</span>
-        <span>LCRC eReview — Confidential</span>
-        <span>LCRC eReview — Confidential</span>
-        <span>LCRC eReview — Confidential</span>
+        <span>LCRC eReview - Confidential</span>
+        <span>LCRC eReview - Confidential</span>
+        <span>LCRC eReview - Confidential</span>
+        <span>LCRC eReview - Confidential</span>
       </div>
       <div class="preboard-privacy-shield" id="preboardPrivacyShield" aria-hidden="true">
         <div class="preboard-privacy-shield__card">
@@ -1013,10 +1037,10 @@ $preboardExamActive = (
             <li>Screenshots and screen recording are <strong>not allowed</strong>.</li>
             <li>You cannot go back or leave this page until you submit.</li>
             <li>Switching tabs, windows, or apps is monitored.</li>
-            <li>Your timer keeps running — submit before time expires.</li>
+            <li>Your timer keeps running - submit before time expires.</li>
           </ul>
           <button type="button" id="preboardExamRulesContinue" class="exam-btn-submit w-full justify-center mt-4">
-            <i class="bi bi-check-circle-fill"></i> I understand — begin exam
+            <i class="bi bi-check-circle-fill"></i> I understand - begin exam
           </button>
         </div>
       </div>
@@ -1035,7 +1059,7 @@ $preboardExamActive = (
       <div class="quiz-submit-overlay" id="quizSubmitOverlay" aria-live="assertive" aria-busy="true">
         <div class="quiz-submit-card">
           <div class="quiz-submit-spinner"></div>
-          <div class="quiz-submit-title">Submitting your preboard…</div>
+          <div class="quiz-submit-title">Submitting your preboard...</div>
           <p class="quiz-submit-text">Please wait a moment while we save your answers and calculate your score.</p>
         </div>
       </div>
@@ -1357,7 +1381,7 @@ $preboardExamActive = (
           if (rem === 300 && !timeWarned[300]) {
             timeWarned[300] = true;
             showTimeWarning('5 minutes remaining.', false);
-            showMotivation('t5', 'Final stretch — keep it up! You\'re almost there.', 'preboard-motivation-banner--final', 'bi-lightning-charge-fill');
+            showMotivation('t5', 'Final stretch - keep it up! You\'re almost there.', 'preboard-motivation-banner--final', 'bi-lightning-charge-fill');
           }
           if (rem === 600 && !timeWarned[600]) {
             timeWarned[600] = true;
@@ -1365,13 +1389,13 @@ $preboardExamActive = (
           }
           if (rem === 900 && !timeWarned[900]) {
             timeWarned[900] = true;
-            showMotivation('t15', '15 minutes to go — pace yourself and stay focused.', '', 'bi-bullseye');
+            showMotivation('t15', '15 minutes to go - pace yourself and stay focused.', '', 'bi-bullseye');
           }
           if (totalSec > 0 && rem <= Math.floor(totalSec * 0.25) && !timeWarned.quarter) {
             timeWarned.quarter = true;
-            showMotivation('tq25', 'Last quarter of your time. Keep it up — finish strong!', 'preboard-motivation-banner--final', 'bi-trophy-fill');
+            showMotivation('tq25', 'Last quarter of your time. Keep it up - finish strong!', 'preboard-motivation-banner--final', 'bi-trophy-fill');
           }
-          if (rem === 60 && !timeWarned[60]) { timeWarned[60] = true; showTimeWarning('1 minute remaining!', true); showMotivation('t1', 'One minute left! Submit when you\'re ready — you\'ve got this.', 'preboard-motivation-banner--urgent', 'bi-flag-fill'); }
+          if (rem === 60 && !timeWarned[60]) { timeWarned[60] = true; showTimeWarning('1 minute remaining!', true); showMotivation('t1', 'One minute left! Submit when you\'re ready - you\'ve got this.', 'preboard-motivation-banner--urgent', 'bi-flag-fill'); }
           if (rem === 30 && !timeWarned[30]) { timeWarned[30] = true; showTimeWarning('30 seconds left! Submit soon.', true); }
           if (rem <= 0) { setLeavingAllowed(true); form && form.submit(); return; }
           setTimeout(updateTimer, 1000);
@@ -1406,8 +1430,8 @@ $preboardExamActive = (
           if (answeredCountEl) answeredCountEl.textContent = answered;
           if (PREBOARD_EXAM_LOCKED && total > 0) {
             var pct = answered / total;
-            if (pct >= 0.25 && pct < 0.5) showMotivation('p25', 'Good start — 25% answered. Keep going, future CPA!', '', 'bi-graph-up-arrow');
-            if (pct >= 0.5 && pct < 0.75) showMotivation('p50', 'Halfway there! Stay sharp — every item counts.', '', 'bi-award-fill');
+            if (pct >= 0.25 && pct < 0.5) showMotivation('p25', 'Good start - 25% answered. Keep going, future CPA!', '', 'bi-graph-up-arrow');
+            if (pct >= 0.5 && pct < 0.75) showMotivation('p50', 'Halfway there! Stay sharp - every item counts.', '', 'bi-award-fill');
             if (pct >= 0.75 && pct < 1) showMotivation('p75', 'Almost done with all questions. Review if you have time.', 'preboard-motivation-banner--final', 'bi-emoji-smile-fill');
             if (pct >= 1) showMotivation('p100', 'All questions answered! Review once more, then submit confidently.', 'preboard-motivation-banner--final', 'bi-check-circle-fill');
           }
@@ -1500,5 +1524,15 @@ $preboardExamActive = (
     <?php endif; ?>
   </div>
 </main>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'page_view',
+    'page_key' => 'student_take_preboard',
+    'page_title' => 'Preboard',
+    'subject_id' => (int) ($subjectId ?? 0),
+    'attempt_id' => (int) ($attemptId ?? 0),
+];
+include __DIR__ . '/includes/student_activity_boot.php';
+?>
 </body>
 </html>

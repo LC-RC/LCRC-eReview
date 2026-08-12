@@ -1,5 +1,5 @@
 /**
- * Admin theme bootstrap — apply before paint to avoid FOUC.
+ * Admin theme bootstrap - apply before paint to avoid FOUC.
  * Persistence: localStorage key ereview_admin_theme = 'light' | 'dark'
  */
 (function () {

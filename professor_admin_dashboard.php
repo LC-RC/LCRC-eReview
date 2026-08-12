@@ -959,8 +959,8 @@ $trendText = function (int $current, int $previous): string {
                   <tr class="result-row hover:bg-green-50/80 transition-colors">
                     <td class="px-6 py-3.5 font-semibold text-gray-800"><?php echo h($r['full_name']); ?></td>
                     <td class="px-6 py-3.5 text-gray-700"><?php echo h($r['exam_title'] ?? ''); ?></td>
-                    <td class="px-6 py-3.5 font-bold text-green-700"><?php echo ($r['score'] !== null && $r['score'] !== '') ? h((string)$r['score']) . '%' : '—'; ?></td>
-                    <td class="px-6 py-3.5 text-gray-600"><?php echo !empty($r['submitted_at']) ? h(date('M j, g:i A', strtotime($r['submitted_at']))) : '—'; ?><i class="bi bi-arrow-right table-row-caret"></i></td>
+                    <td class="px-6 py-3.5 font-bold text-green-700"><?php echo ($r['score'] !== null && $r['score'] !== '') ? h((string)$r['score']) . '%' : '-'; ?></td>
+                    <td class="px-6 py-3.5 text-gray-600"><?php echo !empty($r['submitted_at']) ? h(date('M j, g:i A', strtotime($r['submitted_at']))) : '-'; ?><i class="bi bi-arrow-right table-row-caret"></i></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -1022,7 +1022,7 @@ $trendText = function (int $current, int $previous): string {
                     <?php endif; ?>
                   </div>
                   <span class="text-[11px] text-gray-500 shrink-0">
-                    <?php echo !empty($s['submitted_at']) ? h(date('M j, g:i A', strtotime($s['submitted_at']))) : '—'; ?>
+                    <?php echo !empty($s['submitted_at']) ? h(date('M j, g:i A', strtotime($s['submitted_at']))) : '-'; ?>
                   </span>
                 </div>
               </div>

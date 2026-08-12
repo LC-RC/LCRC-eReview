@@ -1,6 +1,6 @@
 <?php
 /**
- * Full-page Test Bank viewer. View only – no download/print in UI.
+ * Full-page Test Bank viewer. View only - no download/print in UI.
  * Uses same layout as student subject: sidebar + topbar + title card.
  */
 require_once 'auth.php';
@@ -144,7 +144,7 @@ $pageTitle = $title . ' - Test Bank';
           </span>
           <div class="min-w-0 flex-1">
             <h1 class="text-lg sm:text-xl md:text-2xl font-bold m-0 tracking-tight truncate"><?php echo h($title); ?></h1>
-            <p class="text-xs sm:text-sm md:text-base text-white/90 mt-1 mb-0"><?php echo $description !== '' ? h(mb_substr($description, 0, 80)) . (mb_strlen($description) > 80 ? '…' : '') : 'Practice questions and answers. View only — no download.'; ?></p>
+            <p class="text-xs sm:text-sm md:text-base text-white/90 mt-1 mb-0"><?php echo $description !== '' ? h(mb_substr($description, 0, 80)) . (mb_strlen($description) > 80 ? '...' : '') : 'Practice questions and answers. View only - no download.'; ?></p>
           </div>
         </div>
         <div class="text-xs sm:text-sm text-white/80 flex flex-col items-start sm:items-end gap-1 shrink-0">
@@ -185,7 +185,7 @@ $pageTitle = $title . ' - Test Bank';
             <div class="px-4 py-2 bg-[#e8f2fa] border-b border-[#1665A0]/20 text-sm font-semibold text-[#143D59]"><i class="bi bi-file-earmark-text mr-1"></i> Questions</div>
             <?php if ($questionExt === 'pdf'): ?>
               <div id="tb-question-viewer" class="viewer-iframe bg-[#111827] flex items-center justify-center">
-                <div class="text-gray-200 text-sm">Loading questions…</div>
+                <div class="text-gray-200 text-sm">Loading questions...</div>
               </div>
             <?php else: ?>
               <iframe class="viewer-iframe" src="<?php echo $fileUrl('question'); ?>" title="Questions"></iframe>
@@ -195,7 +195,7 @@ $pageTitle = $title . ' - Test Bank';
             <div class="px-4 py-2 bg-[#dcfce7] border-b border-emerald-500/20 text-sm font-semibold text-[#166534]"><i class="bi bi-file-earmark-check mr-1"></i> Answers</div>
             <?php if ($solutionExt === 'pdf'): ?>
               <div id="tb-solution-viewer" class="viewer-iframe bg-[#111827] flex items-center justify-center">
-                <div class="text-gray-200 text-sm">Loading answers…</div>
+                <div class="text-gray-200 text-sm">Loading answers...</div>
               </div>
             <?php else: ?>
               <iframe class="viewer-iframe" src="<?php echo $fileUrl('solution'); ?>" title="Answers"></iframe>
@@ -206,7 +206,7 @@ $pageTitle = $title . ' - Test Bank';
         <div class="viewer-pane" style="min-height: 65vh;">
           <?php if ($questionExt === 'pdf'): ?>
             <div id="tb-question-viewer" class="viewer-iframe bg-[#111827] flex items-center justify-center" style="min-height: 64vh;">
-              <div class="text-gray-200 text-sm">Loading questions…</div>
+              <div class="text-gray-200 text-sm">Loading questions...</div>
             </div>
           <?php else: ?>
             <iframe class="viewer-iframe" src="<?php echo $fileUrl('question'); ?>" title="Questions" style="min-height: 64vh;"></iframe>
@@ -216,7 +216,7 @@ $pageTitle = $title . ' - Test Bank';
         <div class="viewer-pane" style="min-height: 65vh;">
           <?php if ($solutionExt === 'pdf'): ?>
             <div id="tb-solution-viewer" class="viewer-iframe bg-[#111827] flex items-center justify-center" style="min-height: 64vh;">
-              <div class="text-gray-200 text-sm">Loading answers…</div>
+              <div class="text-gray-200 text-sm">Loading answers...</div>
             </div>
           <?php else: ?>
             <iframe class="viewer-iframe" src="<?php echo $fileUrl('solution'); ?>" title="Answers" style="min-height: 64vh;"></iframe>
@@ -323,7 +323,7 @@ $pageTitle = $title . ' - Test Bank';
       container.style.background = '#111827';
       var loading = document.createElement('div');
       loading.className = 'text-gray-200 text-sm py-4 text-center';
-      loading.textContent = 'Loading…';
+      loading.textContent = 'Loading...';
       container.appendChild(loading);
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js';
       var loadingTask = pdfjsLib.getDocument(url);
@@ -379,5 +379,14 @@ $pageTitle = $title . ' - Test Bank';
   </script>
 </main>
 </div>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'test_bank_open',
+    'page_key' => 'student_test_bank_viewer',
+    'page_title' => $pageTitle ?? 'Test Bank',
+    'subject_id' => (int) ($subjectId ?? 0),
+];
+include __DIR__ . '/includes/student_activity_boot.php';
+?>
 </body>
 </html>

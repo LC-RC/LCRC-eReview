@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 6 — receipt OCR / verification acceptance tests (A–T).
+ * Phase 6 - receipt OCR / verification acceptance tests (A-T).
  * Uses injectable OCR fixtures (CLI test mode). Leaves no test data.
  */
 declare(strict_types=1);
@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/commerce_verification.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -406,7 +406,7 @@ try {
     $noVision = strpos($flagsQ1, 'vision_used') === false;
     $notAutoWhenOff = ($vQ1['decision'] ?? '') !== 'auto_verified';
 
-    // Force re-run with vision enabled — still must not auto_verify unless all rules pass;
+    // Force re-run with vision enabled - still must not auto_verify unless all rules pass;
     // here primary is low conf but vision text is good → may auto_verify WITH vision_used
     mysqli_query($conn, 'UPDATE payment_settings SET vision_fallback_enabled=1 WHERE setting_id=1');
     // Reset payment to claimable failed/not_started
@@ -484,7 +484,7 @@ if ($paymentIds !== []) {
     mysqli_query($conn, "DELETE FROM payment_items WHERE payment_id IN ($in)");
     mysqli_query($conn, "DELETE FROM payments WHERE payment_id IN ($in)");
 }
-// Phase 7 may upsert SCA for test users — remove those rows on cleanup.
+// Phase 7 may upsert SCA for test users - remove those rows on cleanup.
 if ($createdUserIds !== []) {
     $uids = implode(',', array_map('intval', $createdUserIds));
     mysqli_query($conn, "DELETE FROM student_content_permissions WHERE user_id IN ($uids)");
@@ -530,14 +530,14 @@ foreach (array_unique($proofFiles) as $pf) {
         }
     }
 }
-// Sweep leftover TEST proofs matching phase6 users (already deleted) — also remove orphaned TEST_P6 files by glob
+// Sweep leftover TEST proofs matching phase6 users (already deleted) - also remove orphaned TEST_P6 files by glob
 $proofDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'payment_proofs';
 if (is_dir($proofDir)) {
     foreach (glob($proofDir . DIRECTORY_SEPARATOR . '*') ?: [] as $f) {
         if (!is_file($f) || basename($f) === '.gitkeep') {
             continue;
         }
-        // Only remove files created in last hour that are tiny test pngs left dangling — safer: skip if payments still reference
+        // Only remove files created in last hour that are tiny test pngs left dangling - safer: skip if payments still reference
         $rel = 'uploads/payment_proofs/' . basename($f);
         $chk = mysqli_query($conn, "SELECT COUNT(*) AS c FROM payments WHERE proof_path='" . mysqli_real_escape_string($conn, $rel) . "'");
         $c = $chk ? (int) (mysqli_fetch_assoc($chk)['c'] ?? 0) : 1;

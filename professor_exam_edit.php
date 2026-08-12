@@ -293,7 +293,7 @@ $heroTitle = $isEditMode ? 'Edit exam' : 'New exam';
 $heroSubtitle = $isEditMode && !empty($prefill['title'])
     ? h($prefill['title'])
     : ($dupSourceExam
-        ? 'Duplicating from “' . h($dupSourceExam['title']) . '” — save as a new exam.'
+        ? 'Duplicating from "' . h($dupSourceExam['title']) . '" - save as a new exam.'
         : 'Set details, schedule, and build multiple-choice questions for your students.');
 
 $tsec = max(0, (int)($prefill['time_limit_seconds'] ?? 0));
@@ -592,7 +592,7 @@ $prefillSecs = $_rest % 60;
       <div class="table-card p-4 sm:p-5 mb-5">
         <div class="exam-form-section">
           <label class="exam-label" for="exam-title">Title <span class="field-hint-icon" title="Empty title + Draft saves as Untitled draft">?</span></label>
-          <input id="exam-title" type="text" name="title" class="exam-field" value="<?php echo h($prefill['title'] ?? ''); ?>" placeholder="e.g. Midterm — Biology 101" data-initial="<?php echo h($prefill['title'] ?? ''); ?>">
+          <input id="exam-title" type="text" name="title" class="exam-field" value="<?php echo h($prefill['title'] ?? ''); ?>" placeholder="e.g. Midterm - Biology 101" data-initial="<?php echo h($prefill['title'] ?? ''); ?>">
         </div>
         <div class="exam-form-section">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -627,7 +627,7 @@ $prefillSecs = $_rest % 60;
         <div class="exam-form-section">
           <label class="publish-strip cursor-pointer" for="pub">
             <input type="checkbox" name="is_published" id="pub" value="1" class="mt-0.5 rounded border-green-300 text-green-600 focus:ring-green-500 shrink-0" <?php echo !empty($prefill['is_published']) ? 'checked' : ''; ?>>
-            <span class="text-sm font-semibold text-gray-800">Publish — make visible in the exam list (still respects dates below)</span>
+            <span class="text-sm font-semibold text-gray-800">Publish - make visible in the exam list (still respects dates below)</span>
           </label>
         </div>
         <div class="exam-form-section shuffle-row">
@@ -674,7 +674,7 @@ $prefillSecs = $_rest % 60;
               <span class="q-card-label">Question <span class="js-q-num">1</span></span>
               <div class="q-toolbar-btns">
                 <span class="q-ai-wrap">
-                  <button type="button" class="q-tool-btn js-ai-gen" title="AI: generate A–D from stem"><i class="bi bi-stars"></i></button>
+                  <button type="button" class="q-tool-btn js-ai-gen" title="AI: generate A-D from stem"><i class="bi bi-stars"></i></button>
                   <button type="button" class="q-tool-btn js-ai-dist" title="AI: refresh distractors"><i class="bi bi-lightbulb"></i></button>
                 </span>
                 <button type="button" class="q-tool-btn js-q-ocr" title="Scan question from image (OCR)" aria-label="Scan question from image"><i class="bi bi-image"></i></button>
@@ -745,11 +745,11 @@ $prefillSecs = $_rest % 60;
         </div>
         <div class="import-modal-body">
           <div id="import-panel-csv">
-            <p class="text-sm text-gray-600 m-0 mb-2">First row optional: <code class="bg-gray-100 px-1 rounded">question,choice_a,choice_b,choice_c,choice_d,correct</code> (comma-separated). Correct is A–D.</p>
+            <p class="text-sm text-gray-600 m-0 mb-2">First row optional: <code class="bg-gray-100 px-1 rounded">question,choice_a,choice_b,choice_c,choice_d,correct</code> (comma-separated). Correct is A-D.</p>
             <textarea id="import-csv-text" class="exam-field font-mono text-xs" rows="8" placeholder="question,choice_a,choice_b,choice_c,choice_d,correct&#10;&quot;What is 2+2?&quot;,3,4,5,6,B"></textarea>
           </div>
           <div id="import-panel-paste" class="hidden">
-            <p class="text-sm text-gray-600 m-0 mb-2">Blocks separated by a blank line. Each block: question line(s), then lines starting with <code class="bg-gray-100 px-1 rounded">A)</code> … <code class="bg-gray-100 px-1 rounded">D)</code>, then <code class="bg-gray-100 px-1 rounded">Answer: B</code> (or Correct:).</p>
+            <p class="text-sm text-gray-600 m-0 mb-2">Blocks separated by a blank line. Each block: question line(s), then lines starting with <code class="bg-gray-100 px-1 rounded">A)</code> ... <code class="bg-gray-100 px-1 rounded">D)</code>, then <code class="bg-gray-100 px-1 rounded">Answer: B</code> (or Correct:).</p>
             <textarea id="import-paste-text" class="exam-field font-mono text-xs" rows="10" placeholder="What is the capital of France?&#10;A) Berlin&#10;B) Paris&#10;C) Madrid&#10;D) Rome&#10;Answer: B"></textarea>
           </div>
           <p id="import-parse-error" class="text-sm text-red-700 font-medium mt-2 hidden m-0"></p>
@@ -1401,7 +1401,7 @@ $prefillSecs = $_rest % 60;
       if (!file || !ocrTargetBlock) return;
       if (ocrProgressWrap) ocrProgressWrap.removeAttribute('hidden');
       if (ocrProgressBar) ocrProgressBar.style.width = '5%';
-      if (ocrStatus) ocrStatus.textContent = 'Loading OCR engine…';
+      if (ocrStatus) ocrStatus.textContent = 'Loading OCR engine...';
       var logger = function (m) {
         if (ocrProgressBar && (m.status === 'recognizing text' || m.status === 'loading tesseract core')) {
           var prog = typeof m.progress === 'number' ? m.progress : (m.status === 'loading tesseract core' ? 0.1 : 0);
@@ -1411,7 +1411,7 @@ $prefillSecs = $_rest % 60;
       };
       loadTesseractScript()
         .then(function () {
-          if (ocrStatus) ocrStatus.textContent = 'Reading text from image…';
+          if (ocrStatus) ocrStatus.textContent = 'Reading text from image...';
           var T = window.Tesseract;
           if (typeof T.recognize === 'function') {
             return T.recognize(file, 'eng', { logger: logger }).then(function (res) {
@@ -1534,7 +1534,7 @@ $prefillSecs = $_rest % 60;
       var el = document.getElementById('exam-validation-modal');
       var msg = document.getElementById('exam-validation-modal-msg');
       if (msg) {
-        msg.textContent = 'Select the correct answer for question ' + (nums.length === 1 ? 'number ' : 'numbers ') + nums.join(', ') + ' (A–D for MCQ, or A/B for True/False).';
+        msg.textContent = 'Select the correct answer for question ' + (nums.length === 1 ? 'number ' : 'numbers ') + nums.join(', ') + ' (A-D for MCQ, or A/B for True/False).';
       }
       if (el) el.classList.add('is-open');
     }
@@ -1775,7 +1775,7 @@ $prefillSecs = $_rest % 60;
         return '<tr class="border-b border-green-50"><td class="p-2">' + (idx + 1) + '</td><td class="p-2 max-w-xs truncate">' +
           (r.question_text || '').replace(/</g, '&lt;') + '</td><td class="p-2 truncate">' + (r.choice_a || '').replace(/</g, '&lt;') +
           '</td><td class="p-2 truncate">' + (r.choice_b || '').replace(/</g, '&lt;') + '</td><td class="p-2 truncate">' + (r.choice_c || '').replace(/</g, '&lt;') +
-          '</td><td class="p-2 truncate">' + (r.choice_d || '').replace(/</g, '&lt;') + '</td><td class="p-2 font-mono">' + (r.correct_answer ? r.correct_answer : '—') + '</td></tr>';
+          '</td><td class="p-2 truncate">' + (r.choice_d || '').replace(/</g, '&lt;') + '</td><td class="p-2 font-mono">' + (r.correct_answer ? r.correct_answer : '-') + '</td></tr>';
       }).join('');
     }
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Minimal PDF (PDF 1.4, Helvetica) for exam progress reports — no Composer deps.
+ * Minimal PDF (PDF 1.4, Helvetica) for exam progress reports - no Composer deps.
  * Landscape A4, yellow/blue theme, centered layout. Text via Windows-1252 transliteration.
  */
 
@@ -13,9 +13,9 @@ function ereview_pdf_winansi(string $utf8, int $maxLen = 500): string
         return '';
     }
     if (function_exists('mb_strlen') && mb_strlen($utf8, 'UTF-8') > $maxLen) {
-        $utf8 = mb_substr($utf8, 0, $maxLen, 'UTF-8') . '…';
+        $utf8 = mb_substr($utf8, 0, $maxLen, 'UTF-8') . '...';
     } elseif (strlen($utf8) > $maxLen * 3) {
-        $utf8 = substr($utf8, 0, $maxLen * 3) . '…';
+        $utf8 = substr($utf8, 0, $maxLen * 3) . '...';
     }
     $t = @iconv('UTF-8', 'Windows-1252//TRANSLIT', $utf8);
     if ($t === false) {
@@ -47,7 +47,7 @@ function ereview_pdf_center_tm_x(string $text, float $fontSize, float $pageW): f
 function ereview_pdf_score_display_parts(string $winansiScore): array
 {
     $s = trim($winansiScore);
-    if ($s === '' || $s === '—' || $s === '-') {
+    if ($s === '' || $s === '-' || $s === '-') {
         return ['mode' => 'single', 'single' => $s !== '' ? $s : '-'];
     }
     if (preg_match('/^(.+?)\s*\|\s*(.+)$/', $s, $m)) {
@@ -225,7 +225,7 @@ function ereview_output_exam_progress_pdf(string $examTitle, array $rows): void
             $numStr = (string)$rowSerial;
             $numX = $colX[0] + $colW[0] - strlen($numStr) * 4.0 - 4;
             $snRaw = trim((string)($row['student_number'] ?? ''));
-            $studNoDisp = $snRaw !== '' ? ereview_pdf_winansi($snRaw, 14) : '—';
+            $studNoDisp = $snRaw !== '' ? ereview_pdf_winansi($snRaw, 14) : '-';
             $cells = [
                 ereview_pdf_winansi((string)$row['name'], 40),
                 ereview_pdf_winansi((string)$row['email'], 50),

@@ -91,7 +91,7 @@ if ($attempt && $attemptSubmitted && !empty($attempt['started_at']) && !empty($a
     $timeUsedSec = max(0, strtotime($attempt['submitted_at']) - strtotime($attempt['started_at']));
 }
 
-$scoreLine = '—';
+$scoreLine = '-';
 $markPass = null;
 $scoreF = null;
 $correctC = 0;
@@ -371,7 +371,7 @@ $backHref = 'professor_exam_monitor?exam_id=' . (int)$examId;
                         <?php elseif ($picked): ?>
                           <span class="text-red-700">Student</span>
                         <?php else: ?>
-                          <span class="text-slate-300">—</span>
+                          <span class="text-slate-300">-</span>
                         <?php endif; ?>
                       </div>
                     </div>

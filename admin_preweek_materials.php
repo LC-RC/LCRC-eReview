@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Preweek materials admin — same UX and upload rules as admin_materials
+ * Preweek materials admin - same UX and upload rules as admin_materials
  * (video URL or file upload, handout file, allow download toggle, search/filter).
  * Data: preweek_topics → preweek_videos / preweek_handouts (under preweek_units).
  */
@@ -109,7 +109,7 @@ if (!function_exists('ereview_format_bytes')) {
     {
         $n = (int)$n;
         if ($n <= 0) {
-            return '—';
+            return '-';
         }
         $units = ['B', 'KB', 'MB', 'GB'];
         $x = (float)$n;
@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors' => [
                 'Upload failed: request payload exceeded server limits before PHP could read form data.',
                 'Uploaded payload size: ' . number_format($contentLength) . ' bytes.',
-                'Server limits — post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
+                'Server limits - post_max_size: ' . $postMax . ', upload_max_filesize: ' . $uploadMax . '.',
                 ($postMaxBytes > 0 && $contentLength > $postMaxBytes)
                     ? 'Root cause: file is larger than post_max_size.'
                     : (($uploadMaxBytes > 0 && $contentLength > $uploadMaxBytes)
@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = adminMaterialsUploadErrorMessage((int)$_FILES['video_file']['error']);
                 } else {
                     $errors[] = $videoId > 0
-                        ? 'Choose a new video file to replace the current one, or switch to “Link” and paste a URL.'
+                        ? 'Choose a new video file to replace the current one, or switch to "Link" and paste a URL.'
                         : 'Please choose a video file.';
                 }
             } elseif ($finalUrl === '') {
@@ -534,7 +534,7 @@ if ($searchQ === '') {
     mysqli_stmt_execute($stmtH);
     $handouts = mysqli_stmt_get_result($stmtH);
 }
-$pageTitle = 'Preweek materials — ' . h($topicTitle);
+$pageTitle = 'Preweek materials - ' . h($topicTitle);
 $topicsListUrl = 'admin_preweek_topics?' . http_build_query(['preweek_unit_id' => $unitId]);
 $preweekNavStep = 'materials';
 $preweekNavUnitId = $unitId;
@@ -543,8 +543,8 @@ $preweekNavTopicId = $topicId;
 $preweekNavTopicTitle = $topicTitle;
 $preweekVideoCount = ($videos && is_object($videos)) ? mysqli_num_rows($videos) : 0;
 $preweekHandoutCount = ($handouts && is_object($handouts)) ? mysqli_num_rows($handouts) : 0;
-$preweekUploadMax = ini_get('upload_max_filesize') ?: '—';
-$preweekPostMax = ini_get('post_max_size') ?: '—';
+$preweekUploadMax = ini_get('upload_max_filesize') ?: '-';
+$preweekPostMax = ini_get('post_max_size') ?: '-';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -773,7 +773,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
   <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
     <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
       <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-collection-play"></i></span>
-      Materials <span class="text-gray-500 font-semibold">—</span> <span class="text-amber-200 font-semibold"><?php echo h($topicTitle); ?></span>
+      Materials <span class="text-gray-500 font-semibold">-</span> <span class="text-amber-200 font-semibold"><?php echo h($topicTitle); ?></span>
     </h1>
     <p class="text-gray-400 mt-3 mb-0 text-sm sm:text-base max-w-3xl">
       <span class="text-gray-500">Pre-week:</span> <?php echo h($unitTitle); ?>
@@ -825,7 +825,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
       <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
       <div class="relative">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Title or filename…" class="input-custom w-full pl-10" autocomplete="off">
+        <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Title or filename..." class="input-custom w-full pl-10" autocomplete="off">
       </div>
     </div>
     <div class="w-full sm:w-48">
@@ -963,13 +963,13 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
                     <div class="font-semibold text-gray-100"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
                   </td>
                   <td class="px-4 py-3 align-top">
-                    <div class="text-gray-200 text-sm"><?php echo !empty($h['file_name']) ? h($h['file_name']) : '—'; ?></div>
+                    <div class="text-gray-200 text-sm"><?php echo !empty($h['file_name']) ? h($h['file_name']) : '-'; ?></div>
                   </td>
                   <td class="px-4 py-3 align-top">
                     <?php if ($fp !== ''): ?>
                       <div class="preweek-cell-mono" title="<?php echo h($fp); ?>"><?php echo h($fp); ?></div>
                     <?php else: ?>
-                      <span class="text-gray-500">—</span>
+                      <span class="text-gray-500">-</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-4 py-3 align-top text-center text-sm text-gray-300"><?php echo h(ereview_format_bytes($h['file_size'] ?? 0)); ?></td>
@@ -1024,7 +1024,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-medium text-gray-200 mb-1" for="videoTitleInput">Display title <span class="text-red-400">*</span></label>
-              <input type="text" name="video_title" id="videoTitleInput" class="input-custom w-full" maxlength="255" placeholder="e.g. Preweek intro — overview" autocomplete="off">
+              <input type="text" name="video_title" id="videoTitleInput" class="input-custom w-full" maxlength="255" placeholder="e.g. Preweek intro - overview" autocomplete="off">
               <p class="preweek-field-hint">Shown to students in the preweek list.</p>
             </div>
             <div>
@@ -1036,7 +1036,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
             </div>
             <div id="preweekAddUrlWrap">
               <label class="block text-sm font-medium text-gray-200 mb-1" for="preweekVideoUrl">Video URL <span class="text-red-400">*</span></label>
-              <input type="url" name="video_url" id="preweekVideoUrl" class="input-custom w-full" placeholder="https://www.youtube.com/watch?v=…" inputmode="url" autocomplete="url">
+              <input type="url" name="video_url" id="preweekVideoUrl" class="input-custom w-full" placeholder="https://www.youtube.com/watch?v=..." inputmode="url" autocomplete="url">
             </div>
             <div id="preweekAddFileWrap" class="hidden">
               <label class="block text-sm font-medium text-gray-200 mb-1" for="videoFileInput">Video file <span class="text-red-400">*</span></label>
@@ -1044,7 +1044,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
               <p class="preweek-field-hint">MP4, WebM, MOV, and other common formats.</p>
             </div>
             <p id="preweekVideoAutosaveHint" class="preweek-field-hint text-gray-500 mt-2 mb-0 max-w-xl">
-              Title, source, and URL are saved in this browser until the video is added successfully or you discard the draft. (Uploaded files cannot be remembered—select the file again after reopening.)
+              Title, source, and URL are saved in this browser until the video is added successfully or you discard the draft. (Uploaded files cannot be remembered-select the file again after reopening.)
             </p>
             <div class="flex flex-wrap gap-2 pt-2">
               <button type="submit" class="admin-materials-submit-btn preweek-submit-btn" data-default-label="Add video"><i class="bi bi-plus-circle"></i><span class="preweek-btn-label">Add video</span></button>
@@ -1069,7 +1069,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-medium text-gray-200 mb-1" for="handoutTitleInput">Title</label>
-              <input type="text" name="handout_title" id="handoutTitleInput" class="input-custom w-full" maxlength="255" placeholder="Optional — for a single file, defaults to file name" autocomplete="off">
+              <input type="text" name="handout_title" id="handoutTitleInput" class="input-custom w-full" maxlength="255" placeholder="Optional - for a single file, defaults to file name" autocomplete="off">
             </div>
             <div class="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
               <input type="checkbox" id="handoutFolderMode" class="mt-1 rounded border-white/20 text-amber-500 focus:ring-amber-500 bg-[#1a1a1a]">
@@ -1081,7 +1081,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
             <div>
               <label class="block text-sm font-medium text-gray-200 mb-1" for="handoutFileInput">Files <span class="text-red-400">*</span></label>
               <input type="file" name="handout_file[]" id="handoutFileInput" class="input-custom admin-upload-input w-full" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" multiple>
-              <p class="preweek-field-hint">PDF, Word, PowerPoint, Excel, TXT — multiple files or one folder. Each file becomes one handout. Max files per request is limited by your PHP <code class="text-gray-400">max_file_uploads</code> setting.</p>
+              <p class="preweek-field-hint">PDF, Word, PowerPoint, Excel, TXT - multiple files or one folder. Each file becomes one handout. Max files per request is limited by your PHP <code class="text-gray-400">max_file_uploads</code> setting.</p>
             </div>
             <div class="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
               <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="mt-0.5 rounded border-white/20 text-emerald-500 focus:ring-emerald-500 bg-[#1a1a1a]">
@@ -1121,7 +1121,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
                 <option value="url">Link (YouTube, Vimeo, or URL)</option>
                 <option value="file">Upload file from computer</option>
               </select>
-              <p class="preweek-field-hint">To replace an uploaded file, choose “Upload file” and pick a new video. To change only the title or link, adjust fields and save.</p>
+              <p class="preweek-field-hint">To replace an uploaded file, choose "Upload file" and pick a new video. To change only the title or link, adjust fields and save.</p>
             </div>
             <div id="preweekVideoEditUrlBlock">
               <label class="block text-sm font-medium text-gray-200 mb-1" for="preweekVideoEditUrl">Video URL <span class="text-red-400">*</span></label>
@@ -1331,7 +1331,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '—';
       var def = btn.getAttribute('data-default-label') || (label ? label.textContent : '');
       btn.disabled = !!loading;
       if (label) {
-        label.textContent = loading ? 'Please wait…' : def;
+        label.textContent = loading ? 'Please wait...' : def;
       }
       var icon = btn.querySelector('i');
       if (icon && loading) {

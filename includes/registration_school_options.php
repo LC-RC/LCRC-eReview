@@ -131,7 +131,7 @@ if (!function_exists('ereview_ensure_registration_school_catalog')) {
     }
 
     /**
-     * Full ordered list for <select>: presets first, then rest A–Z, then "Other".
+     * Full ordered list for <select>: presets first, then rest A-Z, then "Other".
      *
      * @return array<int,string>
      */

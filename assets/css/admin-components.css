@@ -1,5 +1,5 @@
 /**
- * Admin shared components — buttons, badges, cards, tables, forms, empty states.
+ * Admin shared components - buttons, badges, cards, tables, forms, empty states.
  * Depends on admin-tokens.css
  */
 body.admin-app {
@@ -367,7 +367,7 @@ body.admin-app #app-sidebar nav a.is-active {
   color: var(--admin-sidebar-active-text) !important;
 }
 
-/* Primary CTA remap — brand blue instead of flat gray */
+/* Primary CTA remap - brand blue instead of flat gray */
 body.admin-app .bg-primary,
 body.admin-app .admin-content-btn--primary,
 body.admin-app a.bg-primary,

@@ -161,7 +161,7 @@ $ereviewPeditBoot = [
               <label class="ere-pedit-label" for="ereviewProfileBio">Short bio <span class="ere-pedit-opt">optional</span></label>
               <span class="ere-pedit-count" id="ereviewProfileBioCount" aria-live="polite">0 / 500</span>
             </div>
-            <textarea class="ere-pedit-textarea" id="ereviewProfileBio" name="profile_bio" rows="3" maxlength="500" placeholder="A line or two about you — shown on your profile."></textarea>
+            <textarea class="ere-pedit-textarea" id="ereviewProfileBio" name="profile_bio" rows="3" maxlength="500" placeholder="A line or two about you - shown on your profile."></textarea>
             <p class="ere-pedit-err" id="ereviewErrBio" hidden role="alert"></p>
           </div>
         </section>
@@ -225,7 +225,7 @@ $ereviewPeditBoot = [
           </button>
           <button type="submit" class="ere-pedit-btn ere-pedit-btn--primary" id="ereviewProfileSubmit">
             <span class="ere-pedit-submit-label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Save changes</span>
-            <span class="ere-pedit-submit-loading" hidden><i class="bi bi-arrow-repeat ere-pedit-spin" aria-hidden="true"></i> Saving…</span>
+            <span class="ere-pedit-submit-loading" hidden><i class="bi bi-arrow-repeat ere-pedit-spin" aria-hidden="true"></i> Saving...</span>
           </button>
         </div>
       </footer>
@@ -236,7 +236,7 @@ $ereviewPeditBoot = [
 <div id="ereviewAppToastHost" class="ere-pedit-toast-host" aria-live="polite"></div>
 
 <style>
-/* —— Edit profile modal —— */
+/* -- Edit profile modal -- */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 .ere-pedit-overlay {
@@ -457,7 +457,7 @@ $ereviewPeditBoot = [
   to { opacity: 1; transform: none; }
 }
 
-/* —— Student (reviewee) theme: blue-forward —— */
+/* -- Student (reviewee) theme: blue-forward -- */
 .ere-pedit-overlay[data-ere-pedit-theme="student"] .ere-pedit-top--branded {
   background: linear-gradient(135deg, #1665A0 0%, #143D59 48%, #1a4d6e 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
@@ -498,7 +498,7 @@ $ereviewPeditBoot = [
   border-bottom-color: #d6e8f7;
 }
 
-/* —— Staff / admin theme: dark, neutral —— */
+/* -- Staff / admin theme: dark, neutral -- */
 .ere-pedit-overlay[data-ere-pedit-theme="staff"] .ere-pedit-top--branded {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0f172a 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -1032,7 +1032,7 @@ $ereviewPeditBoot = [
   align-items: flex-start;
   gap: 0.35rem;
 }
-/* display:flex above overrides the native [hidden] rule in some browsers — keep errors truly hidden until shown */
+/* display:flex above overrides the native [hidden] rule in some browsers - keep errors truly hidden until shown */
 .ere-pedit-err[hidden] {
   display: none !important;
 }
@@ -2241,7 +2241,7 @@ $ereviewPeditBoot = [
       setEmailStatus('');
       return;
     }
-    setEmailStatus('Checking…', 'is-muted');
+    setEmailStatus('Checking...', 'is-muted');
     emailAvailability = null;
     var url = apiEmail + '?email=' + encodeURIComponent(em);
     fetch(url, { credentials: 'same-origin' })
@@ -2486,7 +2486,7 @@ $ereviewPeditBoot = [
           ok = false;
         } else if (emailAvailability !== true) {
           var e1c = document.getElementById('ereviewErrEmail');
-          e1c.textContent = 'Verifying email… try Save again in a moment.';
+          e1c.textContent = 'Verifying email... try Save again in a moment.';
           e1c.hidden = false;
           if (emEl) emEl.classList.add('is-invalid');
           markFirst(emEl, 'email_pending');
@@ -2660,7 +2660,7 @@ $ereviewPeditBoot = [
           var u = pack.j.user;
           if (u && u.full_name) {
             var fn = u.full_name;
-            var short = fn.length > 22 ? fn.slice(0, 20) + '…' : fn;
+            var short = fn.length > 22 ? fn.slice(0, 20) + '...' : fn;
             document.querySelectorAll('.student-topbar-name, .admin-topbar-name').forEach(function (el) {
               el.textContent = short;
               el.setAttribute('title', fn);

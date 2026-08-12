@@ -117,7 +117,7 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     background: #fff;
     color: #102a43;
     box-shadow: -22px 0 44px rgba(6, 18, 40, 0.16);
-    /* translateX for slide; when open use transform:none + will-change:auto so text isn’t stuck on a blurry GPU layer (Chromium) */
+    /* translateX for slide; when open use transform:none + will-change:auto so text isn't stuck on a blurry GPU layer (Chromium) */
     transform: translateX(100%);
     transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.18, 1);
     will-change: transform;
@@ -413,7 +413,7 @@ $notificationCsrfToken = function_exists('generateCSRFToken') ? generateCSRFToke
     border-color: rgba(13, 17, 23, 0.95);
   }
 
-  /* Reviewee / student — blue shell, crisp contrast (no glass blur on panel) */
+  /* Reviewee / student - blue shell, crisp contrast (no glass blur on panel) */
   .ere-notif--student .ere-notif__backdrop {
     background: rgba(8, 20, 40, 0.55);
     backdrop-filter: none;

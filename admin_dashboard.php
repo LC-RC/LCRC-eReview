@@ -45,7 +45,7 @@ if ($useDashCache) {
     require_once __DIR__ . '/includes/commerce_access_gate.php';
     $hasActiveGrantSql = commerce_sql_user_has_active_grant('users.user_id');
     $enrolledWhere = "role='student' AND ({$hasActiveGrantSql})";
-    // True registration queue only — not "missing grant" (legacy enrolled are restored separately).
+    // True registration queue only - not "missing grant" (legacy enrolled are restored separately).
     $pendingWhere = "role='student' AND status='pending' AND NOT ({$hasActiveGrantSql})";
     $expiredWhere = "role='student' AND status='approved' AND access_end IS NOT NULL AND access_end < ? AND NOT ({$hasActiveGrantSql})";
 
@@ -143,7 +143,7 @@ if (!$useDashCache) {
     mysqli_free_result($quizRes);
   }
 
-  // New this week (registrations in last 7 days) — for "at a glance" recency
+  // New this week (registrations in last 7 days) - for "at a glance" recency
   $newThisWeek = 0;
   $weekRes = @mysqli_query($conn, "
     SELECT COUNT(*) AS cnt FROM users WHERE role='student' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -254,24 +254,24 @@ if (!$useDashCache) {
     $subjectsLocked = !$canSubjects && !$canQuizzes;
   ?>
   <section class="admin-dash-kpis" aria-label="Key metrics">
-    <a href="<?php echo $canStudents ? 'admin_students?tab=enrolled' : '#'; ?>" class="dashboard-card dashboard-card--featured dashboard-card--enrolled page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
+    <a href="<?php echo $canStudents ? 'admin_students?tab=enrolled' : '#'; ?>" class="dashboard-card dashboard-card--featured dashboard-card--enrolled page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-people-fill"></i> Active Students</div>
       <div class="admin-kpi-value"><?php echo (int)$enrolledCount; ?></div>
       <div class="text-sm" style="color:var(--admin-text-secondary)"><?php echo (int)$newThisWeek; ?> new this week · <?php echo (int)$quizAttemptsLast30; ?> quiz answers (30d)</div>
       <span class="dashboard-card__btn mt-auto mt-4 w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2"><i class="bi bi-arrow-right"></i> View enrolled</span>
     </a>
-    <a href="<?php echo $canStudents ? 'admin_students?tab=pending' : '#'; ?>" class="dashboard-card dashboard-card--pending page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
+    <a href="<?php echo $canStudents ? 'admin_students?tab=pending' : '#'; ?>" class="dashboard-card dashboard-card--pending page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-hourglass-split"></i> Pending</div>
       <div class="admin-kpi-value"><?php echo (int)$pendingCount; ?></div>
       <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Review</span>
     </a>
-    <a href="<?php echo $canStudents ? 'admin_students?tab=expired' : '#'; ?>" class="dashboard-card dashboard-card--expired page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked — no access to Students"'; ?>>
+    <a href="<?php echo $canStudents ? 'admin_students?tab=expired' : '#'; ?>" class="dashboard-card dashboard-card--expired page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
       <div class="dashboard-card__title"><i class="bi bi-calendar-x"></i> Expiring / Expired</div>
       <div class="admin-kpi-value"><?php echo (int)$expiredCount; ?></div>
       <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$expiringIn7; ?> end within 7 days</div>
       <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Open</span>
     </a>
-    <a href="<?php echo h($subjectsHref); ?>" class="dashboard-card dashboard-card--subjects page-card p-5 flex flex-col no-underline<?php echo $subjectsLocked ? ' opacity-50 cursor-not-allowed' : ''; ?>" style="color:inherit"<?php echo $subjectsLocked ? ' aria-disabled="true" onclick="return false;" title="Locked — no access to content"' : ''; ?>>
+    <a href="<?php echo h($subjectsHref); ?>" class="dashboard-card dashboard-card--subjects page-card p-5 flex flex-col no-underline<?php echo $subjectsLocked ? ' opacity-50 cursor-not-allowed' : ''; ?>" style="color:inherit"<?php echo $subjectsLocked ? ' aria-disabled="true" onclick="return false;" title="Locked - no access to content"' : ''; ?>>
       <div class="dashboard-card__title"><i class="bi bi-book"></i> Courses / Subjects</div>
       <div class="admin-kpi-value"><?php echo (int)$subjectsRow['cnt']; ?></div>
       <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$lessonsRow['cnt']; ?> lessons &middot; <?php echo (int)$quizzesRow['cnt']; ?> quizzes</div>

@@ -17,7 +17,7 @@ $rating = (int)($_POST['rating'] ?? 0);
 $comment = ereview_chat_safe_trim((string)($_POST['comment'] ?? ''), 500);
 
 if ($sessionId === '' || $rating < 1 || $rating > 5) {
-    ereview_chat_json_response(['ok' => false, 'error' => 'session_id and rating 1–5 are required'], 422);
+    ereview_chat_json_response(['ok' => false, 'error' => 'session_id and rating 1-5 are required'], 422);
 }
 
 $chk = @mysqli_query(

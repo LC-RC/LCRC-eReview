@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Legacy SSE endpoint — disabled on purpose.
+ * Legacy SSE endpoint - disabled on purpose.
  *
  * Long-running SSE loops tie up PHP-FPM workers for tens of seconds per browser tab,
  * which exhausts the pool and makes normal page navigations queue for minutes.

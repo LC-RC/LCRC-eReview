@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin shell entry — sidebar, topbar, and main wrapper are rendered by the unified component.
+ * Admin shell entry - sidebar, topbar, and main wrapper are rendered by the unified component.
  */
 require_once __DIR__ . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/admin_acl.php';
@@ -78,6 +78,8 @@ $appShellNavConfig = [
         'label' => 'Students',
         'items' => [
             ['label' => 'Students', 'href' => 'admin_students', 'icon' => 'bi-people', 'title' => 'Enrollments, approvals, and access', 'active' => ['admin_students', 'admin_student_view'], 'badge' => $adminPendingCount, 'acl_key' => 'students'],
+            ['label' => 'Live Activity', 'href' => 'admin_student_live', 'icon' => 'bi-broadcast', 'title' => 'See where students are right now', 'active' => ['admin_student_live'], 'acl_key' => 'student_activity'],
+            ['label' => 'Quiz Monitor', 'href' => 'admin_quiz_monitor', 'icon' => 'bi-bar-chart-line', 'title' => 'Quiz attempts, scores, and reviews', 'active' => ['admin_quiz_monitor', 'admin_quiz_attempt_review'], 'acl_key' => 'quizzes'],
             ['label' => 'Student Access', 'href' => 'admin_student_access', 'icon' => 'bi-shield-lock', 'title' => 'Manage per-student LMS content permissions', 'active' => ['admin_student_access'], 'acl_key' => 'student_access'],
             ['label' => 'Support Analytics', 'href' => 'admin_support_analytics', 'icon' => 'bi-headset', 'title' => 'Analytics, KB backlog, knowledge base, and enrollment lookup', 'active' => ['admin_support_analytics', 'admin_support_backlog', 'admin_support_kb', 'admin_support_lookup'], 'acl_key' => 'support'],
         ],
@@ -90,14 +92,14 @@ $appShellNavConfig = [
             ['label' => 'Videos', 'href' => 'admin_videos', 'icon' => 'bi-camera-video', 'title' => 'Lesson videos', 'active' => ['admin_videos'], 'acl_key' => 'videos'],
             ['label' => 'Handouts', 'href' => 'admin_handouts', 'icon' => 'bi-file-earmark-text', 'title' => 'Lesson handouts', 'active' => ['admin_handouts'], 'acl_key' => 'handouts'],
             ['label' => 'Materials', 'href' => 'admin_materials', 'icon' => 'bi-folder2-open', 'title' => 'Course materials uploads', 'active' => ['admin_materials'], 'acl_key' => 'materials'],
-            ['label' => 'Quizzes', 'href' => 'admin_quizzes', 'icon' => 'bi-ui-checks-grid', 'title' => 'Quizzes and questions', 'active' => ['admin_quizzes', 'admin_quiz_questions'], 'acl_key' => 'quizzes'],
+            ['label' => 'Quizzes', 'href' => 'admin_quizzes', 'icon' => 'bi-ui-checks-grid', 'title' => 'Quizzes and questions', 'active' => ['admin_quizzes', 'admin_quiz_questions', 'admin_quiz_monitor', 'admin_quiz_attempt_review'], 'acl_key' => 'quizzes'],
             ['label' => 'Test Bank', 'href' => 'admin_test_bank', 'icon' => 'bi-collection', 'title' => 'Test bank', 'active' => ['admin_test_bank'], 'acl_key' => 'test_bank'],
         ],
     ],
     [
         'label' => 'Preboards & Pre-week',
         'items' => [
-            ['label' => 'Preboards', 'href' => $adminPreboardsPendingCount > 0 ? 'admin_preboards_subjects#preboards-requests' : 'admin_preboards_subjects', 'icon' => 'bi-clipboard-check', 'title' => $adminPreboardsPendingCount > 0 ? ('Preboards: ' . $adminPreboardsPendingCount . ' pending request(s) — open inbox') : 'Preboards: subjects, sets, questions, monitoring', 'active' => ['admin_preboards_subjects', 'admin_preboards_sets', 'admin_preboards_questions', 'admin_preboards_monitor', 'admin_preboards_attempt_review'], 'badge' => $adminPreboardsPendingCount, 'acl_key' => 'preboards'],
+            ['label' => 'Preboards', 'href' => $adminPreboardsPendingCount > 0 ? 'admin_preboards_subjects#preboards-requests' : 'admin_preboards_subjects', 'icon' => 'bi-clipboard-check', 'title' => $adminPreboardsPendingCount > 0 ? ('Preboards: ' . $adminPreboardsPendingCount . ' pending request(s) - open inbox') : 'Preboards: subjects, sets, questions, monitoring', 'active' => ['admin_preboards_subjects', 'admin_preboards_sets', 'admin_preboards_questions', 'admin_preboards_monitor', 'admin_preboards_attempt_review'], 'badge' => $adminPreboardsPendingCount, 'acl_key' => 'preboards'],
             ['label' => 'Pre-week', 'href' => 'admin_preweek', 'icon' => 'bi-lightning-charge', 'title' => 'Pre-week: list entries → lectures → materials (per lecture)', 'active' => ['admin_preweek', 'admin_preweek_topics', 'admin_preweek_materials'], 'acl_key' => 'preweek'],
             ['label' => 'Question Bank', 'href' => 'admin_question_sort', 'icon' => 'bi-diagram-3', 'title' => 'Upload .docx MCQs; group by topic in parentheses; export JSON / HTML / Word', 'active' => ['admin_question_sort'], 'acl_key' => 'question_bank'],
         ],

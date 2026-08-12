@@ -126,6 +126,11 @@ if (isset($_GET['retake']) && (int)$_GET['retake'] === 1 && $totalQuestionsBase 
     $attemptId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
     if ($attemptId > 0) {
+        require_once __DIR__ . '/includes/student_activity.php';
+        student_activity_log_event($conn, (int) $userId, 'quiz_started', [
+            'quiz_id' => $quizId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId,
+            'page_key' => 'student_take_quiz', 'page_title' => 'Quiz started',
+        ]);
         header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
         exit;
     }
@@ -157,6 +162,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_attempt']) && $
     $attemptId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($stmt);
     if ($attemptId > 0) {
+        require_once __DIR__ . '/includes/student_activity.php';
+        student_activity_log_event($conn, (int) $userId, 'quiz_started', [
+            'quiz_id' => $quizId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId,
+            'page_key' => 'student_take_quiz', 'page_title' => 'Quiz started',
+        ]);
         header('Location: student_take_quiz?quiz_id='.$quizId.'&attempt_id='.$attemptId.'&subject_id='.$subjectId);
         exit;
     }
@@ -201,6 +211,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_quiz'])) {
     mysqli_stmt_bind_param($stmt, 'diisii', $score, $correct, $total, $submittedAt, $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
+    require_once __DIR__ . '/includes/student_activity.php';
+    student_activity_log_event($conn, (int) $userId, 'quiz_submitted', [
+        'quiz_id' => $quizId, 'subject_id' => $subjectId, 'attempt_id' => $attemptId,
+        'page_key' => 'student_take_quiz', 'page_title' => 'Quiz submitted',
+        'meta' => ['score' => $score, 'correct' => $correct, 'total' => $total],
+    ]);
     $_SESSION['quiz_result'] = ['quiz_id' => $quizId, 'score' => $score, 'correct' => $correct, 'total' => $total, 'attempt_id' => $attemptId];
     header('Location: student_take_quiz?quiz_id='.$quizId.'&result=1&subject_id='.$subjectId);
     exit;
@@ -396,7 +412,7 @@ if ($userId) {
     if ($res) $attemptCount = (int)mysqli_fetch_assoc($res)['cnt'];
     $res2 = mysqli_query($conn, "SELECT score, correct_count, total_count, submitted_at FROM quiz_attempts WHERE user_id=".(int)$userId." AND quiz_id=".(int)$quizId." AND status='submitted' ORDER BY submitted_at DESC LIMIT 1");
     if ($res2) $lastAttempt = mysqli_fetch_assoc($res2);
-    // Load quiz history (submitted attempts) – order by attempt_id DESC for consistent, accurate attempt order
+    // Load quiz history (submitted attempts) - order by attempt_id DESC for consistent, accurate attempt order
     $histRes = mysqli_query($conn, "SELECT attempt_id, started_at, submitted_at, score, correct_count, total_count FROM quiz_attempts WHERE user_id=".(int)$userId." AND quiz_id=".(int)$quizId." AND status='submitted' ORDER BY attempt_id DESC LIMIT 10");
     if ($histRes) {
         $attemptNum = 0;
@@ -425,7 +441,7 @@ if ($userId) {
 <head>
   <?php require_once __DIR__ . '/includes/head_app.php'; ?>
   <style>
-    /* Exam UI – professional exam-style layout */
+    /* Exam UI - professional exam-style layout */
     :root {
       /* Aligned with site theme blues (#1665A0 / #143D59) */
       --exam-primary: #1665A0;
@@ -470,7 +486,7 @@ if ($userId) {
     .dash-anim { opacity: 0; transform: translateY(10px); animation: dashFadeUp .55s ease-out forwards; }
     .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
     @keyframes dashFadeUp { to { opacity: 1; transform: translateY(0); } }
-    /* Sticky exam header – clear hierarchy, balanced spacing */
+    /* Sticky exam header - clear hierarchy, balanced spacing */
     .exam-bar {
       position: sticky;
       top: 0;
@@ -836,7 +852,7 @@ if ($userId) {
       border: 2px solid var(--exam-primary); background: transparent; transition: all 0.2s;
     }
     .exam-page-header .exam-back-link:hover { background: var(--exam-primary); color: white; }
-    /* Result screen: action buttons row – all same visual weight */
+    /* Result screen: action buttons row - all same visual weight */
     .result-card-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.75rem; margin-top: 1.5rem; }
     .result-card-actions .exam-btn-prev, .result-card-actions .exam-btn-next,
     .result-card-actions .exam-btn-view-history { padding: 0.75rem 1.5rem; border-radius: var(--exam-radius-sm); font-weight: 600; font-size: 0.9375rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; transition: all 0.2s; }
@@ -944,7 +960,7 @@ if ($userId) {
     .exam-breadcrumb a { color: var(--exam-primary); text-decoration: none; font-weight: 500; transition: color 0.15s; }
     .exam-breadcrumb a:hover { color: #2d3fc7; }
     .exam-breadcrumb span { color: var(--exam-muted); }
-    /* Quiz Questions List – interactive */
+    /* Quiz Questions List - interactive */
     .exam-q-list { padding: 0.5rem 0.75rem 1.25rem; max-height: 280px; overflow-y: auto; }
     .exam-q-list a {
       display: flex;
@@ -970,7 +986,7 @@ if ($userId) {
     .exam-q-list a.current .q-num { background: var(--exam-primary); color: white; }
     .exam-q-list a .q-check { margin-left: auto; color: #059669; font-size: 0.875rem; transition: transform 0.2s; }
     .exam-q-list a.answered:hover .q-check { transform: scale(1.1); }
-    /* Answer style – green when selected (saved), checkmark on right, interactive */
+    /* Answer style - green when selected (saved), checkmark on right, interactive */
     .exam-choice.selected {
       border-color: var(--exam-success);
       background: #f0fdf4;
@@ -1043,7 +1059,7 @@ if ($userId) {
     .exam-time-warning-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .exam-time-warning-toast.warning { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
     .exam-time-warning-toast.danger { background: #fef2f2; color: #b91c1c; border: 1px solid #dc2626; }
-    /* Global quiz submit loading overlay – similar to welcome modal feel */
+    /* Global quiz submit loading overlay - similar to welcome modal feel */
     .quiz-submit-overlay {
       position: fixed;
       inset: 0;
@@ -1099,7 +1115,7 @@ if ($userId) {
       font-size: 0.9rem;
       color: #cbd5f5;
     }
-    /* App modal – dark gradient format (same style for all confirmations/alerts) */
+    /* App modal - dark gradient format (same style for all confirmations/alerts) */
     .quiz-confirm-overlay {
       position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 1rem;
       background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px);
@@ -1392,7 +1408,7 @@ if ($userId) {
         0 8px 20px rgba(51,147,255,0.4);
       transform: translateY(-1px);
     }
-    /* Review: correct = green, wrong = red – consistent padding */
+    /* Review: correct = green, wrong = red - consistent padding */
     .review-item-correct { background: rgba(34, 197, 94, 0.12) !important; border-color: var(--exam-success) !important; padding: 1.25rem !important; color: var(--exam-text) !important; }
     .review-item-wrong { background: rgba(239, 68, 68, 0.14) !important; border-color: var(--exam-danger) !important; padding: 1.25rem !important; color: var(--exam-text) !important; }
     .review-item-correct .text-\[\#1e293b\],
@@ -1436,7 +1452,7 @@ if ($userId) {
     html[data-student-theme="dark"] .exam-question-card .text-\[\#475569\] {
       color: var(--exam-muted) !important;
     }
-    /* Embedded Quiz History – collapsible + accordion, detailed layout */
+    /* Embedded Quiz History - collapsible + accordion, detailed layout */
     .quiz-history-wrap { border: 1px solid var(--exam-border); border-radius: var(--exam-radius); background: var(--exam-surface); box-shadow: var(--exam-shadow); margin-top: 1.5rem; overflow: hidden; }
     .quiz-history-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.5rem; background: var(--exam-primary-light); border: none; font-size: 0.9375rem; font-weight: 700; color: var(--exam-text); cursor: pointer; transition: background 0.2s; text-align: left; }
     .quiz-history-toggle:hover { background: var(--exam-primary-light); color: var(--exam-primary); }
@@ -1465,7 +1481,7 @@ if ($userId) {
     .quiz-history-score-pass { color: var(--exam-success) !important; }
     .quiz-history-score-fair { color: var(--exam-warning) !important; }
     .quiz-history-score-fail { color: var(--exam-danger) !important; }
-    /* Start screen – full-width card with history inside */
+    /* Start screen - full-width card with history inside */
     .quiz-history-wrap.quiz-history-inside { margin-top: 0; margin-left: 0; margin-right: 0; border: none; border-radius: 0; box-shadow: none; border-top: 1px solid var(--exam-border); }
     .quiz-start-card {
       background: var(--exam-surface);
@@ -1600,7 +1616,7 @@ if ($userId) {
               <div class="w-12 h-12 rounded-full flex items-center justify-center bg-white/80 shadow-sm">
                 <i class="bi bi-trophy-fill text-[#f97373] text-xl"></i>
               </div>
-              <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?> — Quiz Complete</div>
+              <div class="exam-question-label"><?php echo h($quiz['subject_name']); ?> - Quiz Complete</div>
             </div>
             <span class="result-badge"><?php echo h($resultLabel); ?></span>
             <div class="result-headline">
@@ -1705,7 +1721,9 @@ if ($userId) {
               $correctAns = $q['correct_answer'] ?? '';
               $isCorrect = !empty($q['is_correct']);
             ?>
-              <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>">
+              <div class="border rounded-xl p-5 <?php echo $isCorrect ? 'review-item-correct' : 'review-item-wrong'; ?>"
+                   data-question-id="<?php echo (int) ($q['question_id'] ?? 0); ?>"
+                   data-attempt-id="<?php echo (int) ($result['attempt_id'] ?? 0); ?>">
                 <div class="text-xs font-bold uppercase tracking-wide text-[#64748b] mb-1">Question <?php echo $i + 1; ?> of <?php echo count($reviewQuestions); ?></div>
                 <div class="text-base font-semibold text-[#1e293b] mb-4 leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
                 <div class="space-y-2 mb-4">
@@ -1737,6 +1755,23 @@ if ($userId) {
                     <div class="text-sm text-[#475569] leading-relaxed quiz-rich-text"><?php echo renderQuizRichText($q['explanation']); ?></div>
                   </div>
                 <?php endif; ?>
+                <?php if (!$isCorrect): ?>
+                  <div class="pt-3 mt-3 border-t border-[#e2e8f0]">
+                    <button type="button"
+                      class="cpa-toolbar-btn js-cpa-mistake-add"
+                      data-cpa-action="mistake_add"
+                      data-question-id="<?php echo (int) ($q['question_id'] ?? 0); ?>"
+                      data-attempt-id="<?php echo (int) ($result['attempt_id'] ?? 0); ?>"
+                      data-quiz-id="<?php echo (int) $quizId; ?>"
+                      data-subject-id="<?php echo (int) $subjectId; ?>"
+                      data-selected="<?php echo h((string) $sel); ?>"
+                      data-correct="<?php echo h((string) $correctAns); ?>"
+                      data-explanation="<?php echo h(mb_substr(strip_tags((string) ($q['explanation'] ?? '')), 0, 2000)); ?>">
+                      <i class="bi bi-exclamation-diamond"></i>
+                      <span data-cpa-label>Add to Mistake Notebook</span>
+                    </button>
+                  </div>
+                <?php endif; ?>
               </div>
             <?php endforeach; ?>
           </div>
@@ -1752,7 +1787,7 @@ if ($userId) {
       <?php if (!empty($quizHistoryAttempts)): ?>
       <div class="quiz-history-wrap w-full mt-6" id="quizHistoryWrap">
         <button type="button" class="quiz-history-toggle" id="quizHistoryToggle" aria-expanded="false">
-          <span><i class="bi bi-clock-history mr-2"></i>Quiz History — Past attempts for this quiz</span>
+          <span><i class="bi bi-clock-history mr-2"></i>Quiz History - Past attempts for this quiz</span>
           <i class="bi bi-chevron-down"></i>
         </button>
         <div class="quiz-history-body">
@@ -1764,7 +1799,7 @@ if ($userId) {
               $hMins = floor($hSpent / 60);
               $hSecs = $hSpent % 60;
               $hTimeStr = $hMins > 0 ? $hMins . 'm ' . $hSecs . 's' : ($hSecs . 's');
-              $hDateStr = !empty($h['submitted_at']) ? date('M j, Y g:i A', strtotime($h['submitted_at'])) : '—';
+              $hDateStr = !empty($h['submitted_at']) ? date('M j, Y g:i A', strtotime($h['submitted_at'])) : '-';
             ?>
             <div class="quiz-history-attempt" id="history-attempt-<?php echo (int)$h['attempt_id']; ?>">
               <button type="button" class="quiz-history-attempt-head" data-attempt-id="<?php echo (int)$h['attempt_id']; ?>">
@@ -1870,7 +1905,7 @@ if ($userId) {
           </div>
           <?php if ($attemptCount > 0 && $lastAttempt): ?>
             <div class="quiz-start-last">
-              <strong>Last attempt:</strong> <?php echo number_format((float)$lastAttempt['score'], 0); ?>% — <?php echo (int)$lastAttempt['correct_count']; ?> of <?php echo (int)$lastAttempt['total_count']; ?> correct
+              <strong>Last attempt:</strong> <?php echo number_format((float)$lastAttempt['score'], 0); ?>% - <?php echo (int)$lastAttempt['correct_count']; ?> of <?php echo (int)$lastAttempt['total_count']; ?> correct
             </div>
           <?php endif; ?>
           <div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
@@ -1889,7 +1924,7 @@ if ($userId) {
       <?php if (!empty($quizHistoryAttempts)): ?>
       <div class="quiz-history-wrap quiz-history-inside mt-5" id="quizHistoryWrapStart">
         <button type="button" class="quiz-history-toggle" id="quizHistoryToggleStart" aria-expanded="false">
-          <span><i class="bi bi-clock-history mr-2"></i>Quiz History — Past attempts for this quiz</span>
+          <span><i class="bi bi-clock-history mr-2"></i>Quiz History - Past attempts for this quiz</span>
           <i class="bi bi-chevron-down"></i>
         </button>
         <div class="quiz-history-body">
@@ -1901,7 +1936,7 @@ if ($userId) {
               $hMins = floor($hSpent / 60);
               $hSecs = $hSpent % 60;
               $hTimeStr = $hMins > 0 ? $hMins . 'm ' . $hSecs . 's' : ($hSecs . 's');
-              $hDateStr = !empty($h['submitted_at']) ? date('M j, Y g:i A', strtotime($h['submitted_at'])) : '—';
+              $hDateStr = !empty($h['submitted_at']) ? date('M j, Y g:i A', strtotime($h['submitted_at'])) : '-';
             ?>
             <div class="quiz-history-attempt">
               <button type="button" class="quiz-history-attempt-head">
@@ -2123,7 +2158,7 @@ if ($userId) {
       <div class="quiz-submit-overlay" id="quizSubmitOverlay" aria-live="assertive" aria-busy="true">
         <div class="quiz-submit-card">
           <div class="quiz-submit-spinner"></div>
-          <div class="quiz-submit-title">Submitting your quiz…</div>
+          <div class="quiz-submit-title">Submitting your quiz...</div>
           <p class="quiz-submit-text">Please wait a moment while we save your answers and calculate your score.</p>
         </div>
       </div>
@@ -2422,7 +2457,7 @@ if ($userId) {
             if (submitBtn) {
               submitBtn.disabled = true;
               submitBtn.classList.add('opacity-90', 'cursor-not-allowed');
-              submitBtn.innerHTML = '<span class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-fast"></span>Submitting…</span>';
+              submitBtn.innerHTML = '<span class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin-fast"></span>Submitting...</span>';
             }
             if (submitOverlay) {
               submitOverlay.classList.add('show');
@@ -2433,7 +2468,7 @@ if ($userId) {
             }, 900);
             return;
           }
-          // Second time (programmatic submit) – let it pass through immediately
+          // Second time (programmatic submit) - let it pass through immediately
           setLeavingAllowed(true);
         });
         var serverRemaining = parseInt(circleTimer.getAttribute('data-remaining'), 10);
@@ -2578,5 +2613,22 @@ if ($userId) {
 </script>
 </main>
 </div>
+<?php
+$studentActivityBoot = [
+    'event_type' => 'page_view',
+    'page_key' => 'student_take_quiz',
+    'page_title' => ($quiz['title'] ?? 'Quiz'),
+    'subject_id' => (int) ($subjectId ?? 0),
+    'quiz_id' => (int) ($quizId ?? 0),
+    'attempt_id' => (int) ($attemptId ?? 0),
+];
+include __DIR__ . '/includes/student_activity_boot.php';
+if (!empty($showResult) && !empty($reviewQuestions)) {
+    require_once __DIR__ . '/includes/components/cpa_review_styles.php';
+    $cpaQuizCsrf = $csrf ?? generateCSRFToken();
+    echo '<script>window.CPA_REVIEW={apiUrl:"student_cpa_review_api",csrf:' . json_encode($cpaQuizCsrf) . '};</script>';
+    echo '<script src="assets/js/student-cpa-review.js"></script>';
+}
+?>
 </body>
 </html>

@@ -296,25 +296,25 @@ unset($_SESSION['message']);
                 <?php if ($sectionTxt !== ''): ?>
                   <span class="cell-chip cell-chip-section"><i class="bi bi-layers"></i> <?php echo h($sectionTxt); ?></span>
                 <?php else: ?>
-                  <span class="cell-empty">—</span>
+                  <span class="cell-empty">-</span>
                 <?php endif; ?>
               </td>
               <td class="px-4 py-3">
                 <?php if ($schoolTxt !== ''): ?>
                   <span class="cell-chip cell-chip-school"><i class="bi bi-building"></i> <?php echo h($schoolTxt); ?></span>
                 <?php else: ?>
-                  <span class="cell-empty">—</span>
+                  <span class="cell-empty">-</span>
                 <?php endif; ?>
               </td>
               <td class="px-4 py-3">
                 <?php if ($emailTxt !== ''): ?>
                   <span class="cell-chip cell-chip-email"><i class="bi bi-envelope"></i> <a href="mailto:<?php echo h($emailTxt); ?>"><?php echo h($emailTxt); ?></a></span>
                 <?php else: ?>
-                  <span class="cell-empty">—</span>
+                  <span class="cell-empty">-</span>
                 <?php endif; ?>
               </td>
               <td class="px-4 py-3"><span class="status-pill inline-flex px-2 py-0.5 text-xs font-semibold border <?php echo h($statusClass); ?>"><?php echo h($u['status']); ?></span></td>
-              <td class="px-4 py-3 text-gray-600"><?php echo !empty($u['access_end']) ? h(date('M j, Y', strtotime($u['access_end']))) : '—'; ?></td>
+              <td class="px-4 py-3 text-gray-600"><?php echo !empty($u['access_end']) ? h(date('M j, Y', strtotime($u['access_end']))) : '-'; ?></td>
               <td class="px-4 py-3 text-gray-600"><?php echo h(date('M j, Y', strtotime($u['created_at']))); ?></td>
               <td class="px-4 py-3 text-right">
                 <div class="action-btns justify-end">

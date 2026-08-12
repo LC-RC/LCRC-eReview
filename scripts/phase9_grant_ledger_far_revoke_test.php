@@ -1,7 +1,7 @@
 <?php
 /**
- * Phase 9 — Grant Ledger + Free Access revoke acceptance tests (A–AV), reversible.
- * Does not mutate Phase 8.1–8.5 algorithms. No migrations.
+ * Phase 9 - Grant Ledger + Free Access revoke acceptance tests (A-AV), reversible.
+ * Does not mutate Phase 8.1-8.5 algorithms. No migrations.
  */
 declare(strict_types=1);
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -366,7 +366,7 @@ try {
         'FAR/payment/student deep links'
     );
 
-    // ---------- N–W lone FAR revoke ----------
+    // ---------- N-W lone FAR revoke ----------
     $uN = p9_user($conn, "p9.n.{$ts}@example.com");
     $createdUserIds[] = $uN;
     mysqli_query($conn, "UPDATE users SET status='pending', access_end=DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE user_id=$uN");
@@ -422,7 +422,7 @@ try {
     $createdFarIds[] = $farY2;
     $gY2 = p9_grant($conn, $uN, 'free_access', null, null, $farY2, 'full_lms', 0, 'active', 'NOW()', 'DATE_ADD(NOW(), INTERVAL 3 MONTH)');
     $createdGrantIds[] = $gY2;
-    // Re-revoke farN (already revoked) and ensure Y2 stays active — already revoked farN; create separate user for clean Y
+    // Re-revoke farN (already revoked) and ensure Y2 stays active - already revoked farN; create separate user for clean Y
     $uY = p9_user($conn, "p9.y.{$ts}@example.com");
     $createdUserIds[] = $uY;
     $farY1 = p9_far($conn, $uY, "FAR-P9-Y1-{$ts}");

@@ -1,7 +1,7 @@
 <?php
 /**
  * Premium SaaS glassmorphism auth theme (login, forgot/reset/magic).
- * Brand: LCRC Blue #1F58C3, Gold #F59E0B — translucent glass surfaces.
+ * Brand: LCRC Blue #1F58C3, Gold #F59E0B - translucent glass surfaces.
  */
 ?>
 <style>
@@ -52,7 +52,7 @@
     display: none !important;
   }
 
-  /* Soften legacy corner chips — keep presence, reduce visual noise */
+  /* Soften legacy corner chips - keep presence, reduce visual noise */
   body.login-prototype .auth-corner-decor::before,
   body.login-prototype .auth-corner-decor::after {
     width: 64px;
@@ -155,7 +155,7 @@
     100% { stroke-dashoffset: -200; }
   }
 
-  /* Soft atmospheric wash — organic, not hard circular discs */
+  /* Soft atmospheric wash - organic, not hard circular discs */
   .login-bg-blob {
     position: fixed;
     left: 50%;
@@ -264,7 +264,7 @@
     }
   }
 
-  /* Centered viewport stage — footer overlays so it never pushes the card */
+  /* Centered viewport stage - footer overlays so it never pushes the card */
   body.login-prototype .login-page-layout {
     min-height: 100vh;
     min-height: 100dvh;
@@ -293,7 +293,7 @@
     }
   }
 
-  /* Frosted glass card — proportions locked; finish materials only */
+  /* Frosted glass card - proportions locked; finish materials only */
   body.login-prototype .login-card {
     position: relative;
     overflow: hidden;
@@ -360,7 +360,7 @@
       0 0 0 1px rgba(31, 88, 195, 0.08) !important;
   }
 
-  /* Hierarchy — intentional major/minor gaps (card size unchanged) */
+  /* Hierarchy - intentional major/minor gaps (card size unchanged) */
   body.login-prototype .login-header {
     margin-bottom: 20px !important;
   }
@@ -479,7 +479,7 @@
   }
   body.login-prototype .login-card .float-label-wrap .float-label {
     position: absolute;
-    left: 48px; /* matches icon column — equal left alignment resting + floated */
+    left: 48px; /* matches icon column - equal left alignment resting + floated */
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.9375rem;
@@ -501,7 +501,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* Floated label clears the border — soft glass chip, same left edge */
+  /* Floated label clears the border - soft glass chip, same left edge */
   body.login-prototype .login-card .float-label-wrap.focused .float-label,
   body.login-prototype .login-card .float-label-wrap.has-value .float-label,
   body.login-prototype .login-card .float-label-wrap:has(.auth-input:focus) .float-label,
@@ -687,7 +687,7 @@
     display: none;
   }
 
-  /* Remember me + Forgot — vertically centered row */
+  /* Remember me + Forgot - vertically centered row */
   body.login-prototype .login-card .login-meta-row {
     display: flex;
     align-items: center;
@@ -769,7 +769,7 @@
     height: 32px;
   }
 
-  /* ── Primary CTA — soft layered shadow, subtle lift ── */
+  /* ── Primary CTA - soft layered shadow, subtle lift ── */
   body.login-prototype .login-card #login-submit,
   body.login-prototype .login-card .auth-submit-btn {
     position: relative;
@@ -839,7 +839,7 @@
     to { transform: rotate(360deg); }
   }
 
-  /* OR divider — Actions → Social (major break) */
+  /* OR divider - Actions → Social (major break) */
   body.login-prototype .login-card .or-divider {
     margin: 28px 0 28px !important;
     gap: 14px !important;
@@ -859,7 +859,7 @@
     opacity: 0.55;
   }
 
-  /* Secondary glass buttons — matched height, padding, icon, type */
+  /* Secondary glass buttons - matched height, padding, icon, type */
   body.login-prototype .login-card .login-social-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1230,7 +1230,7 @@
     body.login-prototype .login-card h1 { font-size: 1.3rem !important; }
   }
 
-  /* Short laptops only — gentle trim so the card still fits */
+  /* Short laptops only - gentle trim so the card still fits */
   @media (max-height: 820px) {
     body.login-prototype .login-card {
       padding: 36px 36px 32px !important;

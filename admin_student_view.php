@@ -5,12 +5,17 @@ require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
 require_once __DIR__ . '/includes/commerce_payment.php';
+require_once __DIR__ . '/includes/student_activity.php';
+require_once __DIR__ . '/remember_me.php';
+require_once __DIR__ . '/includes/schema_introspection.php';
 
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
     header('Location: admin_dashboard');
     exit;
 }
+
+student_activity_ensure_schema($conn);
 
 $hasProfilePicture = false;
 $hasUseDefaultAvatar = false;
@@ -25,6 +30,11 @@ foreach ($enrollCols as $ecol) {
     $chk = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $ecol) . "'");
     if ($chk && mysqli_fetch_assoc($chk)) {
         $selectCols .= ', ' . $ecol;
+    }
+}
+foreach (['is_online', 'last_seen_at', 'last_logout_at', 'last_login_at', 'last_login_ip', 'last_login_user_agent'] as $pcol) {
+    if (ereview_schema_column_exists($conn, 'users', $pcol)) {
+        $selectCols .= ', ' . $pcol;
     }
 }
 if ($hasProfilePicture) $selectCols .= ", profile_picture";
@@ -60,6 +70,25 @@ $commerceProofUrl = ($latestPayment && !empty($latestPayment['has_proof']))
 $csrf = generateCSRFToken();
 $pageTitle = 'Student Details - ' . $user['full_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_students'], [ h($user['full_name']) ] ];
+
+$activityQuizAttempts = student_activity_fetch_quiz_attempts_for_user($conn, $userId, 12);
+$activityPreboardAttempts = student_activity_fetch_preboard_attempts_for_user($conn, $userId, 8);
+$activityEvents = student_activity_fetch_events($conn, $userId, 30);
+$activityVideoProgress = student_activity_fetch_video_progress_for_user($conn, $userId, 40);
+$activityDevices = function_exists('getRememberedDevices') ? getRememberedDevices($userId) : [];
+$lastSeenLabel = '-';
+if (!empty($user['last_seen_at'])) {
+    $ago = time() - strtotime((string) $user['last_seen_at']);
+    if ($ago < 120) {
+        $lastSeenLabel = 'Active now';
+    } elseif ($ago < 3600) {
+        $lastSeenLabel = max(1, (int) floor($ago / 60)) . 'm ago';
+    } elseif ($ago < 86400) {
+        $lastSeenLabel = max(1, (int) floor($ago / 3600)) . 'h ago';
+    } else {
+        $lastSeenLabel = date('M j, Y g:i A', strtotime((string) $user['last_seen_at']));
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -473,9 +502,9 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
         <h2 id="account-window-edit" class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Account activation</h2>
         <div class="space-y-2 mb-4 text-sm">
           <div><span class="text-gray-500">Login status:</span> <span class="font-semibold text-gray-800"><?php echo h((string) $commerce['account_label']); ?></span></div>
-          <div><span class="text-gray-500">Account window start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '—'; ?></span></div>
-          <div><span class="text-gray-500">Account window end:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_end'] ? h($user['access_end']) : '—'; ?></span></div>
-          <div><span class="text-gray-500">Stored months equiv.:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '—'; ?></span></div>
+          <div><span class="text-gray-500">Account window start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '-'; ?></span></div>
+          <div><span class="text-gray-500">Account window end:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_end'] ? h($user['access_end']) : '-'; ?></span></div>
+          <div><span class="text-gray-500">Stored months equiv.:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_months'] !== null ? (int)$user['access_months'] : '-'; ?></span></div>
           <div><span class="text-gray-500">Commerce content access:</span> <span class="font-semibold text-gray-800"><?php echo h((string) ($commerce['commerce_access']['label'] ?? 'None')); ?></span></div>
           <div class="pt-1">
             <a class="text-sm font-semibold underline text-sky-600" href="<?php echo h(ereview_url('admin_commerce_grants') . '?user_id=' . (int) $user['user_id']); ?>">View Commerce Grants</a>
@@ -515,7 +544,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
           ?>
           <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 mb-3 space-y-3" x-data="{ awMode: 'extend' }">
             <div class="text-sm font-bold text-gray-800">Edit account window</div>
-            <p class="text-xs text-gray-500 m-0">Login account dates only — not commerce grants or Edit content permissions (SCA).</p>
+            <p class="text-xs text-gray-500 m-0">Login account dates only - not commerce grants or Edit content permissions (SCA).</p>
             <div class="flex flex-wrap gap-2 text-xs">
               <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="extend" x-model="awMode"> Extend</label>
               <label class="inline-flex items-center gap-1.5 cursor-pointer"><input type="radio" name="aw_mode_ui" value="set" x-model="awMode"> Set new duration</label>
@@ -585,7 +614,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
             </div>
           <?php elseif ($payToneUi === 'verified' && $latestFulfilled && $accessToneUi === 'active'): ?>
             <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 mb-3">
-              <div class="font-bold">Commerce access granted — login repair needed</div>
+              <div class="font-bold">Commerce access granted - login repair needed</div>
               <p class="text-xs mt-1 mb-0">Payment was verified and fulfilled, but login is still pending. Use repair activation below.</p>
             </div>
           <?php elseif (!empty($isFreeAccess) && (($commerce['far']['status'] ?? '') === 'pending')): ?>
@@ -653,7 +682,7 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
                 $scaTreeScope = 'viewapprove';
                 require __DIR__ . '/includes/admin_sca_permission_tree.php';
               ?>
-              <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog…</p>
+              <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog...</p>
               <p class="text-xs text-emerald-400 m-0 mt-2" x-text="'Access: ' + activePermCount"></p>
             </div>
             <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-check2-circle"></i> Approve account &amp; set manual access</button>
@@ -715,6 +744,179 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students', 'admin_stud
       </div>
     </div>
   </div>
+
+  <section class="rounded-xl shadow-card border p-5 page-table mt-5" id="student-activity">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h2 class="text-lg font-bold text-gray-800 m-0 flex items-center gap-2"><i class="bi bi-activity"></i> Activity</h2>
+      <a class="admin-btn admin-btn--secondary admin-btn--sm" href="admin_student_live">Live board</a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-sm">
+      <div class="rounded-lg border p-3">
+        <div class="text-xs uppercase text-gray-500">Presence</div>
+        <div class="font-semibold text-gray-800"><?php echo h($lastSeenLabel); ?></div>
+      </div>
+      <div class="rounded-lg border p-3">
+        <div class="text-xs uppercase text-gray-500">Last login</div>
+        <div class="font-semibold text-gray-800"><?php echo !empty($user['last_login_at']) ? h(date('M j, Y g:i A', strtotime((string) $user['last_login_at']))) : '-'; ?></div>
+        <?php if (!empty($user['last_login_ip'])): ?>
+          <div class="text-xs text-gray-500 mt-1"><?php echo h((string) $user['last_login_ip']); ?></div>
+        <?php endif; ?>
+      </div>
+      <div class="rounded-lg border p-3">
+        <div class="text-xs uppercase text-gray-500">Remembered devices</div>
+        <div class="font-semibold text-gray-800"><?php echo count($activityDevices); ?></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div>
+        <h3 class="text-sm font-bold text-gray-700 mb-2">Recent quiz attempts</h3>
+        <?php if ($activityQuizAttempts === []): ?>
+          <p class="text-sm text-gray-500 m-0">No quiz attempts yet.</p>
+        <?php else: ?>
+          <div class="overflow-x-auto">
+            <table class="admin-table w-full text-sm">
+              <thead><tr><th>Quiz</th><th>Status</th><th>Score</th><th></th></tr></thead>
+              <tbody>
+                <?php foreach ($activityQuizAttempts as $qa): ?>
+                  <tr>
+                    <td>
+                      <div class="font-semibold"><?php echo h($qa['quiz_title'] ?? ''); ?></div>
+                      <div class="text-xs text-gray-500"><?php echo h($qa['subject_name'] ?? ''); ?></div>
+                    </td>
+                    <td><?php echo h((string) ($qa['status'] ?? '')); ?></td>
+                    <td><?php echo isset($qa['score']) ? h(number_format((float) $qa['score'], 1) . '%') : '-'; ?></td>
+                    <td><a class="admin-btn admin-btn--secondary admin-btn--sm" href="admin_quiz_attempt_review?attempt_id=<?php echo (int) $qa['attempt_id']; ?>">Review</a></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+      <div>
+        <h3 class="text-sm font-bold text-gray-700 mb-2">Recent preboard attempts</h3>
+        <?php if ($activityPreboardAttempts === []): ?>
+          <p class="text-sm text-gray-500 m-0">No preboard attempts yet.</p>
+        <?php else: ?>
+          <div class="overflow-x-auto">
+            <table class="admin-table w-full text-sm">
+              <thead><tr><th>Set</th><th>Status</th><th>Score</th><th></th></tr></thead>
+              <tbody>
+                <?php foreach ($activityPreboardAttempts as $pa): ?>
+                  <tr>
+                    <td>
+                      <div class="font-semibold">Set <?php echo h($pa['set_label'] ?? ''); ?></div>
+                      <div class="text-xs text-gray-500"><?php echo h($pa['subject_name'] ?? ''); ?></div>
+                    </td>
+                    <td><?php echo h((string) ($pa['status'] ?? '')); ?></td>
+                    <td><?php echo isset($pa['score']) ? h(number_format((float) $pa['score'], 1) . '%') : '-'; ?></td>
+                    <td><a class="admin-btn admin-btn--secondary admin-btn--sm" href="admin_preboards_attempt_review?preboards_attempt_id=<?php echo (int) $pa['preboards_attempt_id']; ?>">Review</a></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <h3 class="text-sm font-bold text-gray-700 mb-2">Video watch progress (this student only)</h3>
+    <?php if ($activityVideoProgress === []): ?>
+      <p class="text-sm text-gray-500 mb-4">No video watch data yet for this student.</p>
+    <?php else:
+      $videoFolders = [];
+      foreach ($activityVideoProgress as $vp) {
+          $subj = trim((string) ($vp['subject_name'] ?? 'Subject'));
+          $les = trim((string) ($vp['lesson_title'] ?? 'Lesson'));
+          $key = $subj . "\0" . $les;
+          if (!isset($videoFolders[$key])) {
+              $videoFolders[$key] = ['subject' => $subj, 'lesson' => $les, 'items' => []];
+          }
+          $videoFolders[$key]['items'][] = $vp;
+      }
+    ?>
+      <div class="space-y-3 mb-4">
+        <?php foreach ($videoFolders as $folder): ?>
+          <details class="rounded-xl border page-table" open>
+            <summary class="cursor-pointer px-3 py-2.5 font-semibold text-sm list-none">
+              <i class="bi bi-folder2-open"></i>
+              <?php echo h($folder['subject']); ?>
+              <span class="opacity-50">/</span>
+              <?php echo h($folder['lesson']); ?>
+              <span class="text-xs font-normal opacity-60 ml-1"><?php echo count($folder['items']); ?> video(s)</span>
+            </summary>
+            <div class="overflow-x-auto border-t">
+              <table class="admin-table w-full text-sm">
+                <thead>
+                  <tr>
+                    <th>Video</th>
+                    <th>Stopped at</th>
+                    <th>Watched</th>
+                    <th>%</th>
+                    <th>Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($folder['items'] as $vp):
+                    $vPos = (float) ($vp['position_sec'] ?? 0);
+                    $vDur = isset($vp['duration_sec']) ? (float) $vp['duration_sec'] : null;
+                    $vWatch = (float) ($vp['watch_seconds'] ?? 0);
+                    $vPct = (float) ($vp['percent'] ?? 0);
+                  ?>
+                    <tr>
+                      <td class="font-semibold"><?php echo h((string) ($vp['video_title'] ?? 'Video #' . (int) ($vp['video_id'] ?? 0))); ?></td>
+                      <td class="whitespace-nowrap">
+                        <?php echo h(student_activity_format_duration($vPos)); ?>
+                        <?php if ($vDur !== null && $vDur > 0): ?> / <?php echo h(student_activity_format_duration($vDur)); ?><?php endif; ?>
+                      </td>
+                      <td class="whitespace-nowrap"><?php echo h(student_activity_format_duration($vWatch)); ?></td>
+                      <td><?php echo h(number_format($vPct, 0)); ?>%</td>
+                      <td class="whitespace-nowrap text-xs text-gray-500"><?php echo !empty($vp['updated_at']) ? h(date('M j, g:i A', strtotime((string) $vp['updated_at']))) : '-'; ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <h3 class="text-sm font-bold text-gray-700 mb-2">Content timeline</h3>
+    <?php if ($activityEvents === []): ?>
+      <p class="text-sm text-gray-500 m-0">No lesson/video/handout events yet. Events appear as the student uses the LMS.</p>
+    <?php else: ?>
+      <ul class="space-y-2 m-0 p-0 list-none text-sm">
+        <?php foreach ($activityEvents as $ev): ?>
+          <li class="rounded-lg border px-3 py-2 flex flex-wrap justify-between gap-2">
+            <span>
+              <strong><?php echo h(student_activity_event_label((string) ($ev['event_type'] ?? ''))); ?></strong>
+              <?php if (!empty($ev['page_title'])): ?>
+                <span class="text-gray-600"> - <?php echo h((string) $ev['page_title']); ?></span>
+              <?php endif; ?>
+            </span>
+            <span class="text-xs text-gray-500 whitespace-nowrap"><?php echo !empty($ev['created_at']) ? h(date('M j, g:i A', strtotime((string) $ev['created_at']))) : ''; ?></span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+
+    <?php if ($activityDevices !== []): ?>
+      <h3 class="text-sm font-bold text-gray-700 mt-4 mb-2">Remembered devices</h3>
+      <ul class="space-y-1 m-0 p-0 list-none text-sm">
+        <?php foreach ($activityDevices as $dev): ?>
+          <li class="rounded-lg border px-3 py-2">
+            <span class="font-semibold"><?php echo h(mb_substr((string) ($dev['last_used_user_agent'] ?? 'Remembered device'), 0, 80)); ?></span>
+            <span class="text-xs text-gray-500 block">
+              <?php if (!empty($dev['last_used_ip'])): ?>IP <?php echo h((string) $dev['last_used_ip']); ?> · <?php endif; ?>
+              Expires <?php echo !empty($dev['expires_at']) ? h(date('M j, Y', strtotime((string) $dev['expires_at']))) : '-'; ?>
+            </span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+  </section>
 </div>
 </main>
 <div id="mediaPreviewModal" class="media-modal" aria-hidden="true">

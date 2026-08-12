@@ -9,7 +9,7 @@
  * Optional:
  *   $appShellCurrentScript  defaults to ereview_page_basename()
  *   $appShellSidebarHeader  'brand' (admin/student) | 'profile' (legacy)
- *   $appShellProfileInitial, $appShellProfileName, $appShellProfileHref — when header is profile
+ *   $appShellProfileInitial, $appShellProfileName, $appShellProfileHref - when header is profile
  */
 if (!function_exists('ereview_page_basename')) {
     require_once __DIR__ . '/../url_helpers.php';
@@ -294,6 +294,84 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   })();
 
   document.addEventListener('DOMContentLoaded', syncToggleAria);
+
+  /* Preserve sidebar nav scroll position across page navigations (student + admin). */
+  (function preserveSidebarNavScroll() {
+    var nav = aside.querySelector('nav.app-shell-nav');
+    if (!nav) return;
+    var scrollKey = STORAGE_KEY + '_navScrollTop';
+    var restorePending = false;
+
+    function readSaved() {
+      try {
+        var raw = sessionStorage.getItem(scrollKey);
+        if (raw === null || raw === '') return null;
+        var y = parseInt(raw, 10);
+        return isFinite(y) && y >= 0 ? y : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveScroll() {
+      try {
+        sessionStorage.setItem(scrollKey, String(nav.scrollTop || 0));
+      } catch (e) {}
+    }
+
+    function applyScroll(y) {
+      if (y === null) return;
+      var max = Math.max(0, nav.scrollHeight - nav.clientHeight);
+      nav.scrollTop = Math.min(y, max);
+    }
+
+    function restoreScroll() {
+      applyScroll(readSaved());
+    }
+
+    function scheduleRestore() {
+      if (restorePending) return;
+      restorePending = true;
+      restoreScroll();
+      requestAnimationFrame(function () {
+        restoreScroll();
+        requestAnimationFrame(function () {
+          restoreScroll();
+          restorePending = false;
+        });
+      });
+    }
+
+    scheduleRestore();
+
+    var scrollRaf = null;
+    nav.addEventListener(
+      'scroll',
+      function () {
+        if (scrollRaf) return;
+        scrollRaf = requestAnimationFrame(function () {
+          scrollRaf = null;
+          saveScroll();
+        });
+      },
+      { passive: true }
+    );
+
+    aside.addEventListener(
+      'click',
+      function (ev) {
+        var t = ev.target;
+        if (!t || !t.closest) return;
+        var link = t.closest('a.app-shell-nav-link');
+        if (!link) return;
+        saveScroll();
+      },
+      true
+    );
+
+    window.addEventListener('pagehide', saveScroll);
+    window.addEventListener('beforeunload', saveScroll);
+  })();
 })();
 
 (function () {

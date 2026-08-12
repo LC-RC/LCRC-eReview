@@ -444,7 +444,7 @@ function commerce_fulfill_payment(mysqli $conn, int $paymentId, array $opts = []
         ];
     }
 
-    // COMMIT succeeded — activate login (best-effort; never rolls back grants/ledger).
+    // COMMIT succeeded - activate login (best-effort; never rolls back grants/ledger).
     $activation = ['ok' => false, 'error' => 'activation_not_attempted', 'activated' => false];
     try {
         $activation = commerce_activate_user_after_commerce_success($conn, $userId, [
@@ -512,7 +512,7 @@ function commerce_payment_is_manual_reviewable(array $payment): bool
     if ($v === 'needs_review') {
         return true;
     }
-    // Failed / stuck OCR — admin override only when modern commerce proof exists.
+    // Failed / stuck OCR - admin override only when modern commerce proof exists.
     if (in_array($v, ['failed', 'processing', 'not_started'], true) && !empty($payment['proof_path'])) {
         return true;
     }
@@ -520,7 +520,7 @@ function commerce_payment_is_manual_reviewable(array $payment): bool
 }
 
 /**
- * Close an open payment after admin_manual grant — no purchase grants / no fulfill.
+ * Close an open payment after admin_manual grant - no purchase grants / no fulfill.
  * 1) Reviewable pending_verification with proof → manually_approved + paid
  * 2) awaiting_proof with proof → same
  * 3) awaiting_proof without proof → only when $allowAwaitingWithoutProof (emergency override)
@@ -581,7 +581,7 @@ function commerce_close_reviewable_payment_after_admin_grant(
 
     $hasProof = trim((string) ($payment['proof_path'] ?? '')) !== '';
 
-    // Default path: remind student to upload — do not silently approve no-proof payments.
+    // Default path: remind student to upload - do not silently approve no-proof payments.
     if ($mode === 'awaiting_proof' && !$hasProof && !$allowAwaitingWithoutProof) {
         return [
             'ok' => true,
@@ -598,11 +598,11 @@ function commerce_close_reviewable_payment_after_admin_grant(
         if ($mode === 'awaiting_proof' && !$hasProof) {
             $note = 'Manually approved via administrative Grant Access (emergency without proof)'
                 . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
-                . '. No payment proof was uploaded — access granted by admin without a second purchase grant.';
+                . '. No payment proof was uploaded - access granted by admin without a second purchase grant.';
         } else {
             $note = 'Closed via administrative Grant Access'
                 . ($grantId > 0 ? (' (grant #' . $grantId . ')') : '')
-                . '. Access already granted — payment marked approved without creating a second purchase grant.';
+                . '. Access already granted - payment marked approved without creating a second purchase grant.';
         }
     }
     if (strlen($note) > 2000) {
@@ -786,7 +786,7 @@ function commerce_manual_reject_payment(
     }
     mysqli_stmt_close($upd);
 
-    // Rejection state committed via single UPDATE — notification is best-effort.
+    // Rejection state committed via single UPDATE - notification is best-effort.
     $notify = ['ok' => false, 'error' => 'notify_not_attempted', 'sent' => false];
     try {
         $notify = commerce_notify_payment_rejected($conn, $paymentId);

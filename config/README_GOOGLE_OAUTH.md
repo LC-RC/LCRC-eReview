@@ -20,7 +20,7 @@ To enable **Google Sign-In** on the login page:
 
    Add every host you actually use. Google requires an **exact** string match (scheme, host, path).
 
-8. Optional — under **Authorized JavaScript origins**, you can also add:
+8. Optional - under **Authorized JavaScript origins**, you can also add:
    - `http://localhost`
    - `https://lcrc-ereview.com`
 9. Click **Save** / **Create**. Copy the **Client ID** and **Client Secret**.
@@ -49,6 +49,6 @@ After saving in Google Cloud, wait a minute, then try **Google Sign-In** again.
 
 1. Open the login page and click **Google Sign-In**.
 2. Sign in with Google and approve the app.
-3. You must have an existing LCRC eReview account with the **same email**. If the email is not registered, you’ll see “No account found for this Google email.”
+3. You must have an existing LCRC eReview account with the **same email**. If the email is not registered, you'll see "No account found for this Google email."
 
-To see the exact redirect URI your server is sending, open `google_auth` while logged out — if config is missing, the login error also prints the URI. Or check the Google “error details” on the 400 page.
+To see the exact redirect URI your server is sending, open `google_auth` while logged out - if config is missing, the login error also prints the URI. Or check the Google "error details" on the 400 page.

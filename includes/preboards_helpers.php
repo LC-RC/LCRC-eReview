@@ -412,7 +412,7 @@ function preboards_decide_request(mysqli $conn, int $reqId, string $decision, in
  * In-app + email when a preboards access/retake request is approved or denied.
  * Failure never undoes the decision.
  *
- * @param array<string,mixed> $req Row with user_id, request_type, preboards_subject_id, set_label, subject_name, …
+ * @param array<string,mixed> $req Row with user_id, request_type, preboards_subject_id, set_label, subject_name, ...
  * @return array{ok:bool,sent?:bool,in_app?:bool,error?:string}
  */
 function preboards_notify_student_request_decision(
@@ -485,7 +485,7 @@ function preboards_notify_student_request_decision(
                 ENT_QUOTES,
                 'UTF-8'
             );
-            $mailSubject = 'LCRC eReview — ' . $title;
+            $mailSubject = 'LCRC eReview - ' . $title;
             if ($approved) {
                 $bodyHtml = "<p>Dear {$name},</p>"
                     . '<p>Your Preboards <strong>' . htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') . '</strong> request for '
@@ -563,7 +563,7 @@ function preboards_get_question_choices(array $q): array
 function preboards_format_score(?float $score): string
 {
     if ($score === null) {
-        return '—';
+        return '-';
     }
     return number_format($score, 1) . '%';
 }
@@ -572,21 +572,21 @@ function preboards_format_datetime(?string $sql): string
 {
     $sql = trim((string) $sql);
     if ($sql === '') {
-        return '—';
+        return '-';
     }
     $ts = strtotime($sql);
-    return $ts ? date('M j, Y g:i A', $ts) : '—';
+    return $ts ? date('M j, Y g:i A', $ts) : '-';
 }
 
 function preboards_format_datetime_short(?string $sql): array
 {
     $sql = trim((string) $sql);
     if ($sql === '') {
-        return ['date' => '—', 'time' => ''];
+        return ['date' => '-', 'time' => ''];
     }
     $ts = strtotime($sql);
     if (!$ts) {
-        return ['date' => '—', 'time' => ''];
+        return ['date' => '-', 'time' => ''];
     }
     return ['date' => date('M j, Y', $ts), 'time' => date('g:i A', $ts)];
 }
@@ -595,15 +595,15 @@ function preboards_format_duration(?string $startedAt, ?string $endedAt = null):
 {
     $startedAt = trim((string) $startedAt);
     if ($startedAt === '') {
-        return '—';
+        return '-';
     }
     $startTs = strtotime($startedAt);
     if (!$startTs) {
-        return '—';
+        return '-';
     }
     $endTs = $endedAt !== null && trim($endedAt) !== '' ? strtotime($endedAt) : time();
     if (!$endTs || $endTs < $startTs) {
-        return '—';
+        return '-';
     }
     $secs = $endTs - $startTs;
     $h = (int) floor($secs / 3600);

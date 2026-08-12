@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 8.4 — Commerce student notifications acceptance tests (A–AA), reversible.
+ * Phase 8.4 - Commerce student notifications acceptance tests (A-AA), reversible.
  * Does not exercise Phase 8.5. Uses COMMERCE_NOTIFY_TEST_MODE (no real SMTP).
  */
 declare(strict_types=1);
@@ -17,7 +17,7 @@ require_once __DIR__ . '/../includes/commerce_catalog.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -421,7 +421,7 @@ try {
             break;
         }
     }
-    // Also check H/J rejection/approval bodies specifically (re-fetch from earlier logs already cleared — rebuild samples)
+    // Also check H/J rejection/approval bodies specifically (re-fetch from earlier logs already cleared - rebuild samples)
     p84_reset_log();
     $GLOBALS['commerce_test_notify_result'] = ['ok' => true];
     commerce_notify_payment_rejected($conn, $payH['payment_id']);

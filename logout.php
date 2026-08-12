@@ -7,7 +7,13 @@ require_once __DIR__ . '/includes/college_exam_helpers.php';
 
 if (isset($_SESSION['user_id'])) {
     $uidOut = (int)$_SESSION['user_id'];
+    $roleOut = (string) ($_SESSION['role'] ?? '');
     setUserPresenceStatus($uidOut, false);
+    // LMS reviewee sessions only — college uses its own exam lock cleanup below.
+    if ($roleOut === 'student') {
+        require_once __DIR__ . '/includes/student_activity.php';
+        student_activity_end_session($conn, $uidOut);
+    }
     college_exam_clear_exam_lock_cookies_for_user($conn, $uidOut);
     college_exam_release_exam_session_locks($conn, $uidOut);
 }

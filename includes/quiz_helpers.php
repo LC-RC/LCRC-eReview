@@ -75,7 +75,7 @@ function quiz_rich_clean_html_fragment(string $value): ?string {
   try {
     $dom = new DOMDocument();
     $previousUseInternalErrors = libxml_use_internal_errors(true);
-    // LibXML defaults to Latin-1 unless UTF-8 is declared — breaks ₱, em-dash, etc.
+    // LibXML defaults to Latin-1 unless UTF-8 is declared - breaks ₱, em-dash, etc.
     $wrappedHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' . $value . '</body></html>';
     $loaded = @$dom->loadHTML(
       '<?xml encoding="UTF-8">' . $wrappedHtml,

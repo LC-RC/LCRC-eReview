@@ -8,7 +8,7 @@ declare(strict_types=1);
 if (!function_exists('ereview_schema_cache_ttl')) {
     function ereview_schema_cache_ttl(): int
     {
-        return 3600; // 1 hour — schema changes only via migrations
+        return 3600; // 1 hour - schema changes only via migrations
     }
 }
 
@@ -52,15 +52,52 @@ if (!function_exists('ereview_schema_session_set')) {
     }
 }
 
+if (!function_exists('ereview_schema_session_forget')) {
+    function ereview_schema_session_forget(string $key): void
+    {
+        $req = &ereview_schema_req_cache();
+        unset($req[$key]);
+        if (session_status() === PHP_SESSION_ACTIVE
+            && isset($_SESSION['_ereview_schema'])
+            && is_array($_SESSION['_ereview_schema'])) {
+            unset($_SESSION['_ereview_schema'][$key]);
+        }
+    }
+}
+
+if (!function_exists('ereview_schema_column_exists_fresh')) {
+    /** Bypass request/session cache (use before/after migrations / ALTER). */
+    function ereview_schema_column_exists_fresh(mysqli $conn, string $table, string $column): bool
+    {
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
+        $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column) ?? '';
+        if ($table === '' || $column === '') {
+            return false;
+        }
+        $key = 'c:' . $table . '.' . $column;
+        ereview_schema_session_forget($key);
+        return ereview_schema_column_exists($conn, $table, $column);
+    }
+}
+
+if (!function_exists('ereview_schema_req_cache')) {
+    /** @return array<string,bool> */
+    function &ereview_schema_req_cache(): array
+    {
+        static $req = [];
+        return $req;
+    }
+}
+
 if (!function_exists('ereview_schema_table_exists')) {
     function ereview_schema_table_exists(mysqli $conn, string $table): bool
     {
-        static $req = [];
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
         if ($table === '') {
             return false;
         }
         $key = 't:' . $table;
+        $req = &ereview_schema_req_cache();
         if (array_key_exists($key, $req)) {
             return (bool) $req[$key];
         }
@@ -82,13 +119,13 @@ if (!function_exists('ereview_schema_table_exists')) {
 if (!function_exists('ereview_schema_column_exists')) {
     function ereview_schema_column_exists(mysqli $conn, string $table, string $column): bool
     {
-        static $req = [];
         $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table) ?? '';
         $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column) ?? '';
         if ($table === '' || $column === '') {
             return false;
         }
         $key = 'c:' . $table . '.' . $column;
+        $req = &ereview_schema_req_cache();
         if (array_key_exists($key, $req)) {
             return (bool) $req[$key];
         }

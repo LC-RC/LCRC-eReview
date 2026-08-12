@@ -35,7 +35,7 @@ $regTopicGroups = $regTopicGroups ?? [];
           @click="enrollmentPath = 'free_access'; packageId = null; selectedLessons = {}"
           :aria-pressed="enrollmentPath === 'free_access'">
     <span class="block font-bold text-slate-800">Free Access</span>
-    <span class="block text-xs text-slate-500 mt-1">Request access — no payment required</span>
+    <span class="block text-xs text-slate-500 mt-1">Request access - no payment required</span>
   </button>
 </div>
 <span id="reg-error-enrollment_path" class="reg-inline-error" role="alert" aria-live="polite"></span>
@@ -76,7 +76,7 @@ $regTopicGroups = $regTopicGroups ?? [];
   </template>
   <span id="reg-error-package_id" class="reg-inline-error" role="alert" aria-live="polite"></span>
   <p class="text-xs text-slate-500 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-    Payment comes after email verification. You’ll upload GCash proof only on the payment page—not here.
+    Payment comes after email verification. You'll upload GCash proof only on the payment page-not here.
   </p>
 </div>
 
@@ -92,7 +92,7 @@ $regTopicGroups = $regTopicGroups ?? [];
         <input type="search"
                id="reg-topic-search"
                class="reg-topic-search"
-               placeholder="Search topic or subject (e.g. Cash, FAR, Taxation)…"
+               placeholder="Search topic or subject (e.g. Cash, FAR, Taxation)..."
                autocomplete="off"
                x-model="topicSearch"
                @input="onTopicSearchInput()">
@@ -134,7 +134,7 @@ $regTopicGroups = $regTopicGroups ?? [];
     </div>
 
     <p class="text-sm text-slate-500 px-1" x-show="filteredTopicGroups.length === 0" x-cloak>
-      No topics match “<span class="font-semibold text-slate-700" x-text="topicSearch"></span>”.
+      No topics match "<span class="font-semibold text-slate-700" x-text="topicSearch"></span>".
       Try another keyword or clear the search.
     </p>
 
@@ -204,7 +204,7 @@ $regTopicGroups = $regTopicGroups ?? [];
   <p class="text-xs text-slate-500">Browse by subject, then search if you know the topic name. Final amount is always recalculated on the server from current catalog prices.</p>
   <span id="reg-error-lesson_ids" class="reg-inline-error" role="alert" aria-live="polite"></span>
   <p class="text-xs text-slate-500 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-    Payment comes after email verification. You’ll upload GCash proof only on the payment page—not here.
+    Payment comes after email verification. You'll upload GCash proof only on the payment page-not here.
   </p>
 </div>
 

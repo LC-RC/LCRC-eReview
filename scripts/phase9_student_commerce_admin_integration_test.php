@@ -16,7 +16,7 @@ require_once __DIR__ . '/../includes/commerce_student_admin.php';
 
 function out(string $label, bool $ok, string $detail = ''): void
 {
-    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " — $detail" : '') . PHP_EOL;
+    echo '[' . ($ok ? 'PASS' : 'FAIL') . "] $label" . ($detail !== '' ? " - $detail" : '') . PHP_EOL;
 }
 
 $results = [];
@@ -125,7 +125,7 @@ try {
     $pkgId = (int) mysqli_insert_id($conn);
     $createdPackageIds[] = $pkgId;
 
-    // ---- A: pending paid — activate must not grant paid SCA ----
+    // ---- A: pending paid - activate must not grant paid SCA ----
     $uA = p9_user($conn, "p9.a.{$ts}@example.com", 'package', $pkgId);
     $createdUserIds[] = $uA;
     $coA = commerce_create_or_resume_checkout($conn, $uA, 'package', $pkgId, null);
@@ -200,7 +200,7 @@ try {
         . ' act=' . (!empty($fC['activation']['activated']) ? '1' : '0')
     );
 
-    // ---- D: approved account + unresolved payment — no commerce grant created by activate ----
+    // ---- D: approved account + unresolved payment - no commerce grant created by activate ----
     $uD = p9_user($conn, "p9.d.{$ts}@example.com", 'package', $pkgId);
     $createdUserIds[] = $uD;
     $coD = commerce_create_or_resume_checkout($conn, $uD, 'package', $pkgId, null);
@@ -313,7 +313,7 @@ try {
         'badges ok'
     );
 
-    // ---- K: dashboard mapper — awaiting_proof / needs_review / verified+fulfilled / rejected / FAR ----
+    // ---- K: dashboard mapper - awaiting_proof / needs_review / verified+fulfilled / rejected / FAR ----
     $mapAwait = commerce_admin_dashboard_status([
         'user_id' => 1,
         'enrollment_path' => 'package',
@@ -402,7 +402,7 @@ try {
         'await/pending_ver/review/verified/rejected/far'
     );
 
-    // ---- L: dashboard rows — fulfilled students are Active (no activation_required) ----
+    // ---- L: dashboard rows - fulfilled students are Active (no activation_required) ----
     $rowsDash = commerce_admin_students_dashboard_rows($conn, [$uA, $uC, $uD, $uE, $uF]);
     $uFPayUi = (string) ($rowsDash[$uF]['payment_ui'] ?? '');
     $uFActionOk = (

@@ -398,7 +398,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
     .review-pill-correct { color:#047857; background:#ecfdf5; border-color:#86efac; }
     .review-pill-picked { color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
     .review-pill-skip { color:#92400e; background:#fffbeb; border-color:#fde68a; }
-    /* Final submission modal — premium */
+    /* Final submission modal - premium */
     .submit-confirm-overlay { background: rgba(15, 23, 42, 0.62); backdrop-filter: blur(8px); }
     .submit-confirm-shell {
       width: 100%; max-width: 28rem;
@@ -605,7 +605,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           </div>
           <div class="intro-meta">
             <div class="intro-meta-k">Published on</div>
-            <div class="intro-meta-v"><?php echo !empty($exam['created_at']) ? h(date('M j, Y g:i A', strtotime((string)$exam['created_at']))) : '—'; ?></div>
+            <div class="intro-meta-v"><?php echo !empty($exam['created_at']) ? h(date('M j, Y g:i A', strtotime((string)$exam['created_at']))) : '-'; ?></div>
           </div>
           <?php if (!empty($exam['deadline'])): ?>
           <div class="intro-meta">
@@ -705,7 +705,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         <div class="time-up-modal-panel w-full max-w-md p-6 text-center">
           <div class="time-up-pulse mx-auto mb-4"><i class="bi bi-hourglass-bottom text-2xl text-red-600"></i></div>
           <h3 id="timeUpModalTitle" class="m-0 text-xl font-extrabold text-red-900">Time is up</h3>
-          <p class="mt-2 mb-0 text-sm text-slate-700 font-semibold">Your attempt is being submitted automatically. Please wait…</p>
+          <p class="mt-2 mb-0 text-sm text-slate-700 font-semibold">Your attempt is being submitted automatically. Please wait...</p>
           <p class="mt-3 mb-0 text-xs text-slate-500">Do not close this page until you are redirected to the results.</p>
         </div>
       </div>
@@ -741,7 +741,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               <span id="submitUnansweredNums" class="submit-unanswered-nums hidden"></span>
             </div>
           </div>
-          <p id="doubleConfirmHint" class="submit-double-hint hidden">Tap “Submit exam” again to confirm — this cannot be undone.</p>
+          <p id="doubleConfirmHint" class="submit-double-hint hidden">Tap "Submit exam" again to confirm - this cannot be undone.</p>
           <div class="submit-confirm-foot">
             <button type="button" id="reviewUnansweredBtn" class="focus-ring submit-btn-review"><i class="bi bi-search"></i> Review unanswered</button>
             <button type="button" id="closeSubmitModalBtn" class="focus-ring submit-btn-cancel">Cancel</button>

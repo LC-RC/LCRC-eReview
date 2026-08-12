@@ -1,12 +1,13 @@
 ﻿<?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/quiz_helpers.php';
+require_once __DIR__ . '/includes/content_sort_order.php';
 requireAdminPage();
 
 $csrf = generateCSRFToken();
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 
-// Quizzes nav opens without a subject — same Content Hub-style table (no Subjects ACL redirect).
+// Quizzes nav opens without a subject - same Content Hub-style table (no Subjects ACL redirect).
 if ($subjectId <= 0) {
     $subjects = [];
     $subQ = @mysqli_query(
@@ -156,14 +157,32 @@ if (!in_array('mcq_pick_count', $quizCols, true)) {
     @mysqli_query($conn, "ALTER TABLE `quizzes` ADD COLUMN `mcq_pick_count` int(11) NOT NULL DEFAULT 0 AFTER `shuffle_mcq_choices`");
 }
 
+content_sort_order_ensure_schema($conn);
+$reorderMode = isset($_GET['reorder']) && (string) $_GET['reorder'] === '1';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_quizzes?subject_id='.$subjectId);
+        header('Location: admin_quizzes?subject_id='.$subjectId . ($reorderMode ? '&reorder=1' : ''));
         exit;
     }
     $action = $_POST['action'] ?? 'save';
+    if ($action === 'reorder') {
+        $ids = $_POST['ordered_ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $result = content_sort_order_save($conn, 'quizzes', 'quiz_id', $subjectId, $ids);
+        if (!empty($result['ok'])) {
+            $_SESSION['message'] = 'Quiz order saved.';
+            header('Location: admin_quizzes?subject_id=' . $subjectId);
+        } else {
+            $_SESSION['error'] = (string) ($result['error'] ?? 'Could not save quiz order.');
+            header('Location: admin_quizzes?subject_id=' . $subjectId . '&reorder=1');
+        }
+        exit;
+    }
     if ($action === 'delete') {
         $quizId = sanitizeInt($_POST['quiz_id'] ?? 0);
         if ($quizId > 0) {
@@ -220,8 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         $_SESSION['message'] = 'Quiz updated.';
     } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds, shuffle_mcq_questions, shuffle_mcq_choices, mcq_pick_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'issiiiii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount);
+        $nextOrd = content_sort_order_next($conn, 'quizzes', $subjectId);
+        $stmt = mysqli_prepare($conn, "INSERT INTO quizzes (subject_id, title, quiz_type, time_limit_minutes, time_limit_seconds, shuffle_mcq_questions, shuffle_mcq_choices, mcq_pick_count, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, 'issiiiiii', $subjectId, $title, $quizType, $timeLimitMinutes, $timeLimitSeconds, $shuffleMcqQuestions, $shuffleMcqChoices, $mcqPickCount, $nextOrd);
         mysqli_stmt_execute($stmt);
         $newQuizId = (int) mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
@@ -255,6 +275,9 @@ $perPage = 15;
 $offset = ($page - 1) * $perPage;
 
 $searchQ = trim($_GET['q'] ?? '');
+if ($reorderMode) {
+    $searchQ = '';
+}
 $countParts = ['subject_id=?'];
 $countTypes = 'i';
 $countVals = [$subjectId];
@@ -278,6 +301,7 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $perPage;
 }
 
+$orderBy = content_sort_order_sql('q', 'quiz_id');
 $listParts = ['q.subject_id=?'];
 $listTypes = 'i';
 $listVals = [$subjectId];
@@ -286,14 +310,25 @@ if ($searchQ !== '') {
     $listTypes .= 's';
     $listVals[] = '%' . $searchQ . '%';
 }
-$listSql = "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE " . implode(' AND ', $listParts) . " ORDER BY q.quiz_id DESC LIMIT ? OFFSET ?";
-$listTypes .= 'ii';
-$listVals[] = $perPage;
-$listVals[] = $offset;
+$listSql = "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE " . implode(' AND ', $listParts) . " ORDER BY " . $orderBy;
+if (!$reorderMode) {
+    $listSql .= ' LIMIT ? OFFSET ?';
+    $listTypes .= 'ii';
+    $listVals[] = $perPage;
+    $listVals[] = $offset;
+}
 $stmt = mysqli_prepare($conn, $listSql);
 mysqli_stmt_bind_param($stmt, $listTypes, ...$listVals);
 mysqli_stmt_execute($stmt);
-$quizzes = mysqli_stmt_get_result($stmt);
+$quizzesRes = mysqli_stmt_get_result($stmt);
+$quizRows = [];
+if ($quizzesRes) {
+    while ($row = mysqli_fetch_assoc($quizzesRes)) {
+        $quizRows[] = $row;
+    }
+}
+mysqli_stmt_close($stmt);
+$reorderRows = $reorderMode ? $quizRows : [];
 
 $quizTypeLabels = ['topical' => 'Topical'];
 $quizTypeTitles = ['topical' => 'Focused set grouped by topic'];
@@ -307,6 +342,9 @@ if ($canSubjects) {
 }
 $adminBreadcrumbs[] = ['Quizzes', 'admin_quizzes'];
 $adminBreadcrumbs[] = [(string) $subject['subject_name']];
+if ($reorderMode) {
+    $adminBreadcrumbs[] = ['Reorder'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -319,7 +357,9 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
   <?php
     $adminHeroIcon = 'question-circle';
     $adminHeroTitle = 'Quizzes - ' . (string) $subject['subject_name'];
-    $adminHeroSubtitle = 'Create quizzes, then open Questions to build the question bank.';
+    $adminHeroSubtitle = $reorderMode
+      ? 'Drag quizzes into the order students should see, then save.'
+      : 'Create quizzes, then open Questions to build the question bank.';
     $adminHeroMeta =
       '<span class="quiz-admin-count-pill" title="Quizzes in this subject">'
       . (int) $totalQuizzes . ' quiz' . ((int) $totalQuizzes === 1 ? '' : 'zes')
@@ -336,9 +376,16 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
     if ($canLessons) {
         $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-file-text"></i> Lessons</a>';
     } else {
-        $adminHeroActions .= '<span class="admin-btn admin-btn--secondary is-disabled" title="Locked — no access to Lessons" aria-disabled="true"><i class="bi bi-lock-fill"></i> Lessons</span>';
+        $adminHeroActions .= '<span class="admin-btn admin-btn--secondary is-disabled" title="Locked - no access to Lessons" aria-disabled="true"><i class="bi bi-lock-fill"></i> Lessons</span>';
     }
-    $adminHeroActions .= '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
+    if ($reorderMode) {
+        $adminHeroActions .= '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-x-lg"></i> Cancel</a>';
+    } else {
+        if ($totalQuizzes > 1) {
+            $adminHeroActions .= '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>';
+        }
+        $adminHeroActions .= '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
+    }
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -356,6 +403,66 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
   <?php endif; ?>
 
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
+    <?php if ($reorderMode): ?>
+      <form method="POST" action="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" id="content-reorder-form">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="action" value="reorder">
+        <div class="content-reorder-toolbar">
+          <p class="content-reorder-hint"><i class="bi bi-grip-vertical"></i> Drag using the handle. Students see this exact order.</p>
+          <div class="content-reorder-actions">
+            <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
+            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto pl-3 pr-8">
+          <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
+            <thead>
+              <tr>
+                <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
+                <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
+                <th class="px-5 py-3 font-semibold admin-col-primary">Quiz</th>
+                <th class="px-5 py-3 font-semibold text-center">Type</th>
+                <th class="px-5 py-3 font-semibold text-center">Questions</th>
+              </tr>
+            </thead>
+            <tbody id="content-reorder-list">
+              <?php if ($reorderRows === []): ?>
+                <tr>
+                  <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
+                    <div class="font-semibold text-gray-200">No quizzes to reorder</div>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($reorderRows as $idx => $qz): ?>
+                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$qz['quiz_id']; ?>">
+                    <td class="px-3 py-3 content-reorder-col-handle">
+                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$qz['quiz_id']; ?>">
+                    </td>
+                    <td class="px-3 py-3 content-reorder-col-ord">
+                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
+                    </td>
+                    <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
+                    <td class="px-5 py-3.5 text-center"><span class="inline-block px-2.5 py-1 rounded-md text-xs font-semibold quiz-type-pill quiz-type-pill--post">Topical</span></td>
+                    <td class="px-5 py-3.5 text-center tabular-nums"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+        <?php if ($reorderRows !== []): ?>
+          <div class="content-reorder-toolbar" style="border-top:1px solid rgba(255,255,255,0.08);border-bottom:0;">
+            <p class="content-reorder-hint"><?php echo count($reorderRows); ?> quiz<?php echo count($reorderRows) === 1 ? '' : 'zes'; ?></p>
+            <div class="content-reorder-actions">
+              <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
+              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+            </div>
+          </div>
+        <?php endif; ?>
+      </form>
+      <script src="assets/js/admin-content-reorder.js?v=1"></script>
+    <?php else: ?>
     <form method="get" action="admin_quizzes" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
       <div class="flex-1 min-w-[200px]">
@@ -366,6 +473,9 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
         <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
         <?php if ($searchQ !== ''): ?>
           <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
+        <?php endif; ?>
+        <?php if ($totalQuizzes > 1): ?>
+          <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>
         <?php endif; ?>
       </div>
       <div class="w-full text-sm opacity-70">
@@ -382,6 +492,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
       <table class="quiz-admin-data-table admin-data-table w-full text-left">
         <thead>
           <tr>
+            <th class="px-3 py-3 font-semibold text-center w-[4.5rem]">#</th>
             <th class="px-5 py-3 font-semibold admin-col-primary">Quiz</th>
             <th class="px-5 py-3 font-semibold text-center">Type</th>
             <th class="px-5 py-3 font-semibold text-center">Questions</th>
@@ -389,7 +500,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
           </tr>
         </thead>
         <tbody>
-          <?php $hasAny = false; while ($qz = mysqli_fetch_assoc($quizzes)): $hasAny = true;
+          <?php $hasAny = false; $rowIndex = $offset; foreach ($quizRows as $qz): $hasAny = true; $rowIndex++;
             $qt = 'topical';
             $typeClass = 'quiz-type-pill quiz-type-pill--post';
             $typeLabel = $quizTypeLabels[$qt] ?? 'Topical';
@@ -397,8 +508,15 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
             $qCnt = (int)($qz['questions_cnt'] ?? 0);
             $questionsCellClass = $qCnt === 0 ? 'quiz-qcount quiz-qcount--empty' : 'quiz-qcount quiz-qcount--ok';
             $questionsCellTitle = $qCnt === 0 ? 'No questions yet - add them via Questions' : $qCnt . ' question(s)';
+            $displayOrd = (int)($qz['sort_order'] ?? 0);
+            if ($displayOrd <= 0) {
+                $displayOrd = $rowIndex;
+            }
           ?>
             <tr class="quiz-admin-row">
+              <td class="px-3 py-3.5 text-center">
+                <span class="content-reorder-ord"><?php echo $displayOrd; ?></span>
+              </td>
               <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
               <td class="px-5 py-3.5 text-center"><span class="inline-block px-2.5 py-1 rounded-md text-xs font-semibold <?php echo $typeClass; ?>" title="<?php echo h($typeTitle); ?>"><?php echo h($typeLabel); ?></span></td>
               <td class="px-5 py-3.5 text-center" title="<?php echo h($questionsCellTitle); ?>">
@@ -417,10 +535,10 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
                 </div>
               </td>
             </tr>
-          <?php endwhile; ?>
+          <?php endforeach; ?>
           <?php if (!$hasAny): ?>
             <tr>
-              <td colspan="4" class="px-5 py-14 text-center quiz-admin-empty">
+              <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
                 <div class="font-semibold text-gray-200">No quizzes yet</div>
                 <p class="text-sm mt-1 text-gray-500">Create your first quiz, then add questions.</p>
@@ -431,7 +549,6 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
         </tbody>
       </table>
     </div>
-    <?php mysqli_stmt_close($stmt); ?>
     <?php if ($totalPages > 1): ?>
       <nav class="quiz-admin-pagination px-5 py-4 flex justify-center" aria-label="Quiz pagination">
         <ul class="flex flex-wrap items-center gap-1">
@@ -457,6 +574,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
           <?php endif; ?>
         </ul>
       </nav>
+    <?php endif; ?>
     <?php endif; ?>
   </div>
 

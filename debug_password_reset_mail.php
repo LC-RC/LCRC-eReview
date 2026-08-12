@@ -1,6 +1,6 @@
 <?php
 /**
- * DEBUG: Password reset email – run this in the browser to see exactly where sending fails.
+ * DEBUG: Password reset email - run this in the browser to see exactly where sending fails.
  * Open: http://localhost/Ereview/debug_password_reset_mail?email=monzalesvinceivan@gmail.com
  * DELETE this file after fixing the issue (security).
  */
@@ -35,7 +35,7 @@ if (!file_exists($configFile)) {
         $port = (int) ($config['smtp_port'] ?? 587);
         $user = $config['smtp_username'] ?? '';
         $pass = $config['smtp_password'] ?? '';
-        debugLog('  smtp_host: ' . ($host === '' ? '(EMPTY – set to smtp.gmail.com)' : $host) . ($host === '' ? ' ← LIKELY CAUSE' : ''));
+        debugLog('  smtp_host: ' . ($host === '' ? '(EMPTY - set to smtp.gmail.com)' : $host) . ($host === '' ? ' ← LIKELY CAUSE' : ''));
         if ($host === '') debugLog('  → Emails will NOT send when smtp_host is empty.', true);
         debugLog('  smtp_port: ' . $port);
         debugLog('  smtp_username: ' . ($user ?: '(empty)'));
@@ -73,7 +73,7 @@ if ($resetUrl && file_exists($configFile)) {
             debugLog('SKIP SMTP: smtp_host or smtp_password is empty. Fix config/mail_config', true);
         } else {
             require_once __DIR__ . '/smtp_sender.php';
-            $subject = 'Reset your password – LCRC eReview (debug test)';
+            $subject = 'Reset your password - LCRC eReview (debug test)';
             $body = "Test. Reset link: " . $resetUrl . "\r\n";
             debugLog('Attempting SMTP send to ' . $host . ':' . $port . ' ...');
             $smtpLog = [];
@@ -98,7 +98,7 @@ header('Content-Type: text/html; charset=utf-8');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password reset mail – debug</title>
+  <title>Password reset mail - debug</title>
   <style>
     body { font-family: Consolas, monospace; font-size: 14px; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
     h1 { font-size: 18px; color: #4ec9b0; }
@@ -114,7 +114,7 @@ header('Content-Type: text/html; charset=utf-8');
   </style>
 </head>
 <body>
-  <h1>Password reset email – debug log</h1>
+  <h1>Password reset email - debug log</h1>
   <p>Use this page to see why the reset email is not arriving. <strong>Delete this file after fixing.</strong></p>
   <form method="get" action="">
     <label>Test email: </label>

@@ -1,5 +1,5 @@
 /**
- * Admin design tokens — Light + Dark
+ * Admin design tokens - Light + Dark
  * Scope: html[data-admin-theme="light|dark"]
  * Default before JS: dark.
  */
@@ -83,7 +83,7 @@ html[data-admin-theme="dark"] {
 }
 
 /**
- * Dedicated Light Mode system — not an inversion of dark.
+ * Dedicated Light Mode system - not an inversion of dark.
  * Soft cool-gray canvas + white glass + navy text + LCRC blue/gold.
  */
 html[data-admin-theme="light"] {

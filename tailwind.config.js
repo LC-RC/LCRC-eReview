@@ -17,7 +17,7 @@ module.exports = {
           DEFAULT: "#4154f1",
           dark: "#2d3fc7",
         },
-        /* Student dashboard – LCRC eReview prototype (#143D59, #1665A0) */
+        /* Student dashboard - LCRC eReview prototype (#143D59, #1665A0) */
         student: {
           sidebar: "#143D59",
           accent: "#1665A0",

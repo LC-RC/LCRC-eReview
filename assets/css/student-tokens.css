@@ -1,5 +1,5 @@
 /**
- * Student design tokens — Light + Dark
+ * Student design tokens - Light + Dark
  * Scope: html[data-student-theme="light|dark"]
  * Default before JS: light (preserve current student UX).
  */
@@ -39,7 +39,7 @@ html[data-student-theme="light"] {
   --student-danger: #b91c1c;
   --student-danger-soft: rgba(220, 38, 38, 0.1);
 
-  /* Brand blue glass (original #1665a0) — not white chrome */
+  /* Brand blue glass (original #1665a0) - not white chrome */
   --student-sidebar-bg: linear-gradient(165deg, rgba(27, 111, 184, 0.88) 0%, rgba(22, 101, 160, 0.82) 42%, rgba(20, 61, 89, 0.9) 100%);
   --student-sidebar-border: rgba(255, 255, 255, 0.22);
   --student-sidebar-text: rgba(248, 250, 252, 0.88);

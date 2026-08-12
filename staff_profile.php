@@ -34,8 +34,8 @@ $lastLogin = ($cols['last_login_at'] && !empty($row['last_login_at']))
     : null;
 $lastIp = ($cols['last_login_ip'] && !empty($row['last_login_ip'])) ? (string)$row['last_login_ip'] : null;
 
-$createdAt = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : '—';
-$updatedAt = !empty($row['updated_at']) ? date('M j, Y g:i A', strtotime((string)$row['updated_at'])) : '—';
+$createdAt = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : '-';
+$updatedAt = !empty($row['updated_at']) ? date('M j, Y g:i A', strtotime((string)$row['updated_at'])) : '-';
 
 $signInEmail = trim((string)($row['email'] ?? ''));
 $phoneDisp = !empty($cols['phone']) ? trim((string)($row['phone'] ?? '')) : '';

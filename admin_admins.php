@@ -350,7 +350,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <style>
-    /* Beat admin-saas .admin-content { max-width: 1400px } — use full main column */
+    /* Beat admin-saas .admin-content { max-width: 1400px } - use full main column */
     html body.admin-app.admin-admins-page #main.admin-main-shell > .admin-content,
     html body.admin-app.admin-admins-page #main > .admin-content,
     html body.admin-app.admin-admins-page #main .admin-content {
@@ -742,7 +742,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
         <div class="acl-card__head">
           <div>
             <h2>Staff Admins</h2>
-            <p class="acl-card__sub">Accounts with admin role — edit access areas and credentials</p>
+            <p class="acl-card__sub">Accounts with admin role - edit access areas and credentials</p>
           </div>
           <span class="acl-count"><?php echo count($admins); ?></span>
         </div>
@@ -796,7 +796,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                           <span class="acl-pill"><?php echo count($keys); ?> area<?php echo count($keys) === 1 ? '' : 's'; ?></span>
                           <?php if ($areaLabels !== []): ?>
                             <span class="acl-access-detail" title="<?php echo h(implode(', ', $areaLabels)); ?>">
-                              <?php echo h(implode(', ', array_slice($areaLabels, 0, 3))); ?><?php echo count($areaLabels) > 3 ? '…' : ''; ?>
+                              <?php echo h(implode(', ', array_slice($areaLabels, 0, 3))); ?><?php echo count($areaLabels) > 3 ? '...' : ''; ?>
                             </span>
                           <?php endif; ?>
                         <?php endif; ?>
@@ -857,7 +857,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                       <i class="bi bi-eye-slash" aria-hidden="true"></i>
                     </button>
                   </div>
-                  <p class="acl-hint">Share this once — it cannot be retrieved later (stored hashed).</p>
+                  <p class="acl-hint">Share this once - it cannot be retrieved later (stored hashed).</p>
                 </div>
                 <label class="acl-full-toggle" for="createFullAccess">
                   <input type="checkbox" name="full_access" value="1" id="createFullAccess">
@@ -973,7 +973,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
         <div class="acl-card__head">
           <div>
             <h2>Users activity log</h2>
-            <p class="acl-card__sub">Logins, admin account changes, quiz uploads, materials, and other staff actions — click Open to inspect</p>
+            <p class="acl-card__sub">Logins, admin account changes, quiz uploads, materials, and other staff actions - click Open to inspect</p>
           </div>
           <span class="acl-count"><?php echo (int) $logTotal; ?></span>
         </div>
@@ -982,7 +982,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
             <input type="hidden" name="view" value="log">
             <div class="acl-field acl-field--grow">
               <label for="q">Search</label>
-              <input type="search" id="q" name="q" value="<?php echo h($logQ); ?>" placeholder="Email, quiz title, file…">
+              <input type="search" id="q" name="q" value="<?php echo h($logQ); ?>" placeholder="Email, quiz title, file...">
             </div>
             <div class="acl-field" style="min-width:14rem;">
               <label for="action">Action</label>
@@ -1045,18 +1045,18 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                         <?php if (!empty($presented['actor_href']) && !empty($lr['actor_email'])): ?>
                           <a class="acl-link" href="<?php echo h(ereview_url($presented['actor_href'])); ?>"><?php echo h((string) $lr['actor_email']); ?></a>
                         <?php else: ?>
-                          <?php echo h((string) ($lr['actor_email'] ?? '—')); ?>
+                          <?php echo h((string) ($lr['actor_email'] ?? '-')); ?>
                         <?php endif; ?>
                         <div class="acl-meta"><?php echo h((string) ($lr['actor_role'] ?? '')); ?></div>
                       </td>
                       <td>
-                        <?php if (!empty($presented['target_href']) && $presented['target_label'] !== '—'): ?>
+                        <?php if (!empty($presented['target_href']) && $presented['target_label'] !== '-'): ?>
                           <a class="acl-link" href="<?php echo h(ereview_url($presented['target_href'])); ?>"><?php echo h($presented['target_label']); ?></a>
                         <?php else: ?>
                           <?php echo h($presented['target_label']); ?>
                         <?php endif; ?>
                       </td>
-                      <td><?php echo h((string) ($lr['ip_address'] ?? '—')); ?></td>
+                      <td><?php echo h((string) ($lr['ip_address'] ?? '-')); ?></td>
                       <td class="acl-meta"><?php echo h((string) ($lr['meta_json'] ?? '')); ?></td>
                     </tr>
                   <?php endforeach; ?>

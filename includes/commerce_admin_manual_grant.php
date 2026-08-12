@@ -5,7 +5,7 @@
  * By default, closes any open reviewable payment (needs_review / OCR failed + proof)
  * as manually_approved + fulfilled so Payment Verification is not double work.
  *
- * Supports Full LMS or by-topic (subject/lesson/… ) permissions — same choices as Student Access.
+ * Supports Full LMS or by-topic (subject/lesson/... ) permissions - same choices as Student Access.
  */
 declare(strict_types=1);
 
@@ -143,7 +143,7 @@ function commerce_admin_grant_manual_access(
     }
     $activateLogin = array_key_exists('activate_login', $opts) ? (bool) $opts['activate_login'] : true;
     $closeOpenPayment = array_key_exists('close_open_payment', $opts) ? (bool) $opts['close_open_payment'] : true;
-    // Emergency only — default false so Awaiting Payment / no proof stays open for Remind → upload.
+    // Emergency only - default false so Awaiting Payment / no proof stays open for Remind → upload.
     $closeAwaitingWithoutProof = !empty($opts['close_awaiting_without_proof']);
     // Default on for interactive Grant Access; scripts/restore should pass notify_student=false.
     $notifyStudent = array_key_exists('notify_student', $opts) ? (bool) $opts['notify_student'] : true;
@@ -357,7 +357,7 @@ function commerce_admin_grant_manual_access(
                 require_once __DIR__ . '/commerce_notifications.php';
             }
             $payRow = is_array($paymentClose['payment'] ?? null) ? $paymentClose['payment'] : [];
-            // Only claim “proof not required” when the no-proof override actually closed the payment.
+            // Only claim "proof not required" when the no-proof override actually closed the payment.
             $noProof = $closeAwaitingWithoutProof
                 && empty($paymentClose['skipped'])
                 && ((string) ($paymentClose['mode'] ?? '') === 'awaiting_proof')
