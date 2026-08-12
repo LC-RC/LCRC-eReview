@@ -1,10 +1,13 @@
 <?php
 /**
- * Local/VPS database credentials (NOT committed).
- * Copy to db.local.php and fill in real values:
- *   cp db.local.php.example db.local.php
+ * Local/VPS override example (NOT committed as db.local.php).
+ *
+ * VPS: usually leave db.local.php ABSENT so it uses LMS defaults in db.php.
+ * Local XAMPP only: copy this file to db.local.php if your local MySQL password differs.
+ *
+ *   copy db.local.php.example db.local.php
  */
 $host = 'localhost';
 $user = 'root';
-$pass = 'YOUR_MYSQL_PASSWORD_HERE';
+$pass = 'YOUR_LOCAL_MYSQL_PASSWORD_HERE';
 $db = 'ereview';

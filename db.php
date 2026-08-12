@@ -3,8 +3,10 @@
  * Database Configuration
  * Includes session configuration for secure session management
  *
- * Credentials: set via db.local.php (gitignored) on each machine/VPS.
- * Never commit real passwords in this file.
+ * Default credentials = LMS / VPS (production).
+ * Optional override: db.local.php (gitignored) for local XAMPP only.
+ * Do not put a different password in this file just for local testing —
+ * use db.local.php locally so VPS pulls keep working.
  */
 
 // Include session configuration first
@@ -12,21 +14,21 @@ require_once __DIR__ . '/session_config.php';
 
 $host = 'localhost';
 $user = 'root';
-$pass = '';
+// LMS / VPS MySQL password (production). Local machines: override in db.local.php.
+$pass = '2429249_lcrc';
 $db = 'ereview';
 
-// Machine/VPS-specific override (preferred). Copy from db.local.php.example.
+// Local-only override (gitignored). VPS should NOT create this unless needed.
 if (is_file(__DIR__ . '/db.local.php')) {
     /** @noinspection PhpIncludeInspection */
     require __DIR__ . '/db.local.php';
 }
 
-$conn = @mysqli_connect($host, $user, $pass, $db);
+$conn = mysqli_connect($host, $user, $pass, $db);
 
 if (!$conn) {
     http_response_code(500);
-    // Avoid leaking host/user details publicly; check PHP/Apache error log on the server.
-    die('Database connection failed. Check db.local.php credentials on this server.');
+    die('Connection failed: ' . mysqli_connect_error());
 }
 
 // Set charset to UTF-8
