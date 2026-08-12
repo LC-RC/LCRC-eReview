@@ -1,0 +1,10 @@
+<?php
+/**
+ * Local/VPS database credentials (NOT committed).
+ * Copy to db.local.php and fill in real values:
+ *   cp db.local.php.example db.local.php
+ */
+$host = 'localhost';
+$user = 'root';
+$pass = 'YOUR_MYSQL_PASSWORD_HERE';
+$db = 'ereview';
