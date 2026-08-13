@@ -1,13 +1,16 @@
 <?php
 /**
- * Local/VPS override example (NOT committed as db.local.php).
+ * Database credentials for THIS machine only.
+ * Copy to: db.local.php
+ * Never commit db.local.php (it is gitignored).
  *
- * VPS: usually leave db.local.php ABSENT so it uses LMS defaults in db.php.
- * Local XAMPP only: copy this file to db.local.php if your local MySQL password differs.
+ * VPS / LMS production example:
+ *   $pass = '2429249_lcrc';
  *
- *   copy db.local.php.example db.local.php
+ * Local XAMPP example (if different):
+ *   $pass = 'your_local_password';
  */
 $host = 'localhost';
 $user = 'root';
-$pass = 'YOUR_LOCAL_MYSQL_PASSWORD_HERE';
+$pass = 'CHANGE_ME';
 $db = 'ereview';

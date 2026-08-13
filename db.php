@@ -1,28 +1,33 @@
 <?php
 /**
- * Database Configuration
- * Includes session configuration for secure session management
+ * Database bootstrap (safe to commit / pull).
  *
- * Default credentials = LMS / VPS (production).
- * Optional override: db.local.php (gitignored) for local XAMPP only.
- * Do not put a different password in this file just for local testing —
- * use db.local.php locally so VPS pulls keep working.
+ * Credentials live ONLY in db.local.php (gitignored).
+ * That file is never pushed, so local/VPS passwords cannot overwrite each other.
+ *
+ * Setup (once per machine):
+ *   copy db.local.php.example db.local.php
+ *   then edit the password for that machine.
  */
 
-// Include session configuration first
 require_once __DIR__ . '/session_config.php';
 
-$host = 'localhost';
-$user = 'root';
-// LMS / VPS MySQL password (production). Local machines: override in db.local.php.
-$pass = '2429249_lcrc';
-$db = 'ereview';
-
-// Local-only override (gitignored). VPS should NOT create this unless needed.
-if (is_file(__DIR__ . '/db.local.php')) {
-    /** @noinspection PhpIncludeInspection */
-    require __DIR__ . '/db.local.php';
+$dbLocal = __DIR__ . '/db.local.php';
+if (!is_file($dbLocal)) {
+    http_response_code(500);
+    die(
+        'Missing db.local.php. Copy db.local.php.example to db.local.php ' .
+        'and set the MySQL credentials for this server. Do not commit db.local.php.'
+    );
 }
+
+/** @noinspection PhpIncludeInspection */
+require $dbLocal;
+
+$host = isset($host) ? (string) $host : 'localhost';
+$user = isset($user) ? (string) $user : 'root';
+$pass = isset($pass) ? (string) $pass : '';
+$db = isset($db) ? (string) $db : 'ereview';
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 
@@ -31,9 +36,6 @@ if (!$conn) {
     die('Connection failed: ' . mysqli_connect_error());
 }
 
-// Set charset to UTF-8
 mysqli_set_charset($conn, 'utf8mb4');
-
-// Match session_config.php (Asia/Manila) so DATETIME/TIMESTAMP comparisons in SQL stay consistent with PHP.
 @mysqli_query($conn, "SET time_zone = '+08:00'");
 ?>
