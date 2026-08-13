@@ -589,7 +589,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
   <!-- Reorder Quizzes Modal -->
   <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-stretch justify-center p-3 sm:p-5" @keydown.escape.window="reorderModalOpen = false">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
-    <div class="relative quiz-modal-panel content-reorder-modal rounded-xl shadow-modal w-full max-w-6xl h-[min(94vh,920px)] flex flex-col overflow-hidden" @click.stop>
+    <div class="relative quiz-modal-panel content-reorder-modal rounded-xl shadow-modal w-full max-w-6xl" @click.stop>
       <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head shrink-0">
         <div>
           <h2 class="text-xl font-bold text-gray-100 m-0">Reorder Quizzes</h2>
@@ -610,7 +610,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
             </div>
             <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-123"></i> Type # to jump · <i class="bi bi-grip-vertical"></i> drag optional</p>
           </div>
-          <div class="overflow-auto flex-1 px-3 py-2 content-reorder-scroll">
+          <div class="content-reorder-scroll px-3 py-2">
             <p data-reorder-filter-empty hidden class="text-center text-sm text-gray-400 py-6">No quizzes match this filter.</p>
             <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
               <thead>

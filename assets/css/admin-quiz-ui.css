@@ -2921,10 +2921,27 @@ body.admin-app .admin-preweek-context-nav--light .text-gray-300 {
 .content-reorder-modal {
   width: min(96vw, 72rem);
   max-width: 72rem;
+  height: min(94vh, 920px);
+  max-height: calc(100vh - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.content-reorder-modal form#content-reorder-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 .content-reorder-scroll {
+  flex: 1 1 auto;
   min-height: 0;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .content-reorder-table thead th {
   position: sticky;
