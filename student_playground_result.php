@@ -7,6 +7,7 @@ requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+student_playground_enforce_enabled($conn);
 
 $userId = (int) getCurrentUserId();
 $sessionId = (int) ($_GET['session_id'] ?? 0);

@@ -10,7 +10,8 @@
   var WANT_MUSIC_KEY = 'ereview_pg_want_music';
   var DEFAULT_MUSIC_URL = 'assets/audio/thinking-time.mp3';
   var MUSIC_VOL = 0.32;
-  var DUCK_VOL = 0.045;
+  var DUCK_VOL = 0.04;
+  var SFX_ANSWER_BOOST = 2.8;
 
   function resolveAssetUrl(url) {
     if (!url || /^https?:\/\//i.test(url) || url.charAt(0) === '/') return url;
@@ -35,6 +36,7 @@
     var ducked = false;
     var targetVol = MUSIC_VOL;
     var warned = { m10: false, m5: false, m2: false, m1: false };
+    var lastWarnRemaining = null;
     var gestureArmed = false;
     var playRetryBound = false;
 
@@ -236,12 +238,20 @@
       if (wasPlaying || musicShouldPlay()) syncMusic();
     }
 
-    // Intentionally no duck/fade on answer clicks — thinking music stays steady.
-    function duckForFeedback() {}
-    function unduckAfterFeedback() {}
+    function duckForFeedback() {
+      if (muted || !musicEl || !musicShouldPlay()) return;
+      ducked = true;
+      fadeMusicTo(DUCK_VOL, 90);
+    }
+
+    function unduckAfterFeedback() {
+      if (!ducked) return;
+      ducked = false;
+      if (musicShouldPlay()) fadeMusicTo(MUSIC_VOL, 220);
+    }
 
     function canSfx(name, gap) {
-      if (muted || !sfxOn || !unlocked) return false;
+      if (muted || !sfxOn) return false;
       var now = Date.now();
       gap = gap == null ? 90 : gap;
       if (lastPlayed[name] && now - lastPlayed[name] < gap) return false;
@@ -249,80 +259,155 @@
       return true;
     }
 
-    function tone(freq, dur, type, vol, when) {
+    function tone(freq, dur, type, vol, when, boost) {
       var c = ensureCtx();
       if (!c) return;
       var t0 = (when != null ? when : 0) + c.currentTime;
+      var peak = Math.min(0.55, (vol || 0.04) * (boost || 1));
       var osc = c.createOscillator();
       var gain = c.createGain();
       osc.type = type || 'sine';
       osc.frequency.setValueAtTime(freq, t0);
       gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol || 0.04), t0 + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(0.04, dur));
       osc.connect(gain);
       gain.connect(c.destination);
       osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
+      osc.stop(t0 + dur + 0.03);
+    }
+
+    /** Soft noise hit for wrong answers (more “gamey” than a pure tone). */
+    function noiseBurst(dur, vol, when, boost) {
+      var c = ensureCtx();
+      if (!c) return;
+      var t0 = (when != null ? when : 0) + c.currentTime;
+      var peak = Math.min(0.5, (vol || 0.08) * (boost || 1));
+      var len = Math.max(1, Math.floor(c.sampleRate * dur));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      }
+      var src = c.createBufferSource();
+      var gain = c.createGain();
+      var filter = c.createBiquadFilter();
+      src.buffer = buf;
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, t0);
+      gain.gain.setValueAtTime(Math.max(0.0002, peak), t0);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(c.destination);
+      src.start(t0);
+      src.stop(t0 + dur + 0.02);
+    }
+
+    function playCue(name, boost) {
+      boost = boost || 1;
+      switch (name) {
+        case 'start':
+          tone(392, 0.1, 'triangle', 0.05, 0, boost);
+          tone(523, 0.14, 'triangle', 0.05, 0.08, boost);
+          tone(659, 0.18, 'triangle', 0.045, 0.18, boost);
+          break;
+        case 'click':
+          tone(760, 0.045, 'square', 0.04, 0, boost);
+          break;
+        case 'correct':
+          // Clear success chime — loud enough over ducked music.
+          tone(523, 0.12, 'sine', 0.12, 0, boost);
+          tone(659, 0.14, 'sine', 0.13, 0.08, boost);
+          tone(784, 0.16, 'triangle', 0.14, 0.18, boost);
+          tone(1046, 0.28, 'sine', 0.13, 0.3, boost);
+          tone(1318, 0.16, 'triangle', 0.08, 0.42, boost);
+          break;
+        case 'wrong':
+          noiseBurst(0.16, 0.16, 0, boost);
+          tone(185, 0.18, 'sawtooth', 0.12, 0, boost);
+          tone(140, 0.22, 'triangle', 0.11, 0.12, boost);
+          tone(98, 0.26, 'sine', 0.1, 0.22, boost);
+          break;
+        case 'streak':
+          tone(659, 0.09, 'triangle', 0.1, 0, boost);
+          tone(784, 0.11, 'triangle', 0.11, 0.08, boost);
+          tone(988, 0.14, 'sine', 0.12, 0.16, boost);
+          tone(1174, 0.2, 'sine', 0.1, 0.28, boost);
+          break;
+        case 'warn10':
+          tone(520, 0.08, 'sine', 0.035, 0, boost);
+          break;
+        case 'warn5':
+          tone(480, 0.1, 'triangle', 0.04, 0, boost);
+          tone(600, 0.1, 'triangle', 0.035, 0.1, boost);
+          break;
+        case 'warn2':
+          tone(440, 0.12, 'triangle', 0.04, 0, boost);
+          tone(330, 0.14, 'triangle', 0.038, 0.1, boost);
+          break;
+        case 'warn1':
+          tone(400, 0.14, 'square', 0.04, 0, boost);
+          tone(300, 0.16, 'square', 0.038, 0.12, boost);
+          break;
+        case 'expire':
+          tone(200, 0.22, 'triangle', 0.07, 0, boost);
+          tone(140, 0.28, 'triangle', 0.06, 0.14, boost);
+          break;
+        case 'victory':
+          tone(523, 0.12, 'triangle', 0.07, 0, boost);
+          tone(659, 0.12, 'triangle', 0.07, 0.1, boost);
+          tone(784, 0.14, 'triangle', 0.07, 0.2, boost);
+          tone(1046, 0.28, 'triangle', 0.065, 0.34, boost);
+          break;
+        default:
+          break;
+      }
     }
 
     function play(name) {
-      if (!canSfx(name, name.indexOf('warn') === 0 ? 2000 : 90)) return;
+      var gap = 90;
+      if (name.indexOf('warn') === 0) gap = 2000;
+      if (name === 'correct' || name === 'wrong' || name === 'streak') gap = 250;
+      if (!canSfx(name, gap)) return;
       try {
+        unlocked = true;
         var c = ensureCtx();
-        if (c && c.state === 'suspended') c.resume().catch(function () {});
-        switch (name) {
-          case 'start':
-            tone(392, 0.1, 'triangle', 0.04);
-            tone(523, 0.14, 'triangle', 0.04, 0.08);
-            tone(659, 0.16, 'triangle', 0.035, 0.18);
-            break;
-          case 'click':
-            tone(700, 0.035, 'square', 0.018);
-            break;
-          case 'correct':
-            tone(523, 0.09, 'sine', 0.04);
-            tone(659, 0.11, 'sine', 0.04, 0.07);
-            tone(784, 0.16, 'sine', 0.035, 0.16);
-            break;
-          case 'wrong':
-            tone(220, 0.12, 'triangle', 0.03);
-            tone(175, 0.14, 'triangle', 0.025, 0.07);
-            break;
-          case 'warn10':
-            tone(520, 0.08, 'sine', 0.028);
-            break;
-          case 'warn5':
-            tone(480, 0.1, 'triangle', 0.032);
-            tone(600, 0.1, 'triangle', 0.028, 0.1);
-            break;
-          case 'warn2':
-            tone(440, 0.12, 'triangle', 0.03);
-            tone(330, 0.14, 'triangle', 0.028, 0.1);
-            break;
-          case 'warn1':
-            tone(400, 0.14, 'square', 0.028);
-            tone(300, 0.16, 'square', 0.026, 0.12);
-            break;
-          case 'expire':
-            tone(200, 0.22, 'triangle', 0.04);
-            tone(140, 0.28, 'triangle', 0.035, 0.14);
-            break;
-          case 'victory':
-            tone(523, 0.12, 'triangle', 0.04);
-            tone(659, 0.12, 'triangle', 0.04, 0.1);
-            tone(784, 0.14, 'triangle', 0.04, 0.2);
-            tone(1046, 0.26, 'triangle', 0.035, 0.34);
-            break;
-          default:
-            break;
+        if (c && c.state === 'suspended') {
+          c.resume().then(function () { playCue(name, 1); }).catch(function () { playCue(name, 1); });
+          return;
         }
+        playCue(name, 1);
       } catch (err) {}
     }
 
-    /** Play correct/wrong SFX without fading the thinking music. */
-    function playAnswerFeedback(isCorrect) {
-      play(isCorrect ? 'correct' : 'wrong');
+    /** Correct/wrong game SFX only (no spoken words). Ducks music so the cue is audible. */
+    function playAnswerFeedback(isCorrect, opts) {
+      opts = opts || {};
+      if (muted || !sfxOn) return;
+      unlocked = true;
+      duckForFeedback();
+      var cue = isCorrect ? 'correct' : 'wrong';
+      lastPlayed[cue] = Date.now();
+
+      function fire() {
+        try {
+          playCue(cue, SFX_ANSWER_BOOST);
+          if (opts.streak) {
+            setTimeout(function () {
+              if (!muted && sfxOn) playCue('streak', SFX_ANSWER_BOOST);
+            }, 280);
+          }
+        } catch (eFire) {}
+        setTimeout(unduckAfterFeedback, isCorrect ? 700 : 850);
+      }
+
+      var c = ensureCtx();
+      if (c && c.state === 'suspended') {
+        c.resume().then(fire).catch(fire);
+      } else {
+        fire();
+      }
     }
 
     function setMusic(on) {
@@ -413,27 +498,45 @@
       syncUi();
     }
 
+    function speak(text) {
+      if (muted || !text || !window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(String(text));
+        u.lang = 'en-PH';
+        u.rate = 1.05;
+        u.volume = 1;
+        window.speechSynthesis.speak(u);
+      } catch (eSpeak) {}
+    }
+
     function timerWarnings(remainingSec) {
-      if (remainingSec <= 60 && !warned.m1) {
+      remainingSec = Math.max(0, remainingSec | 0);
+      var prev = lastWarnRemaining;
+      lastWarnRemaining = remainingSec;
+      // First paint / page entry: seed only — never announce remaining time on load.
+      var crossed = function (threshold) {
+        return prev != null && prev > threshold && remainingSec <= threshold;
+      };
+
+      // Voice only when time is getting short (crossed during play), not at quiz start.
+      if (crossed(60) && !warned.m1) {
         warned.m1 = true;
         play('warn1');
-        return 'urgent';
-      }
-      if (remainingSec <= 120 && !warned.m2) {
+        speak('One minute remaining. Hurry up!');
+      } else if (crossed(120) && !warned.m2) {
         warned.m2 = true;
         play('warn2');
-        return 'warn2';
-      }
-      if (remainingSec <= 300 && !warned.m5) {
+        speak('Two minutes remaining.');
+      } else if (crossed(300) && !warned.m5) {
+        // Soft cue only — no voice at 5 minutes (still not "almost out").
         warned.m5 = true;
         play('warn5');
-        return 'warn5';
-      }
-      if (remainingSec <= 600 && !warned.m10) {
+      } else if (crossed(600) && !warned.m10) {
         warned.m10 = true;
         play('warn10');
-        return 'normal';
       }
+
       if (remainingSec <= 60) return 'urgent';
       if (remainingSec <= 120) return 'warn2';
       if (remainingSec <= 300) return 'warn5';
@@ -449,6 +552,7 @@
     return {
       unlock: unlock,
       play: play,
+      speak: speak,
       playAnswerFeedback: playAnswerFeedback,
       duckForFeedback: duckForFeedback,
       unduckAfterFeedback: unduckAfterFeedback,
@@ -462,6 +566,7 @@
       timerWarnings: timerWarnings,
       resetWarnings: function () {
         warned = { m10: false, m5: false, m2: false, m1: false };
+        lastWarnRemaining = null;
       },
     };
   })();
@@ -774,6 +879,95 @@
     if (startBtn) startBtn.addEventListener('click', function () { startGame(); });
     setMode((modeInput && modeInput.value) || 'quick_play');
 
+    // Voice command: say "start" / "start game" (Chrome/Edge; needs mic permission).
+    (function bindVoiceStart() {
+      var voiceBtn = document.getElementById('pg-voice-start');
+      var voiceHint = document.getElementById('pg-voice-hint');
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!voiceBtn || !SR) return;
+
+      voiceBtn.hidden = false;
+      var recognition = new SR();
+      var listening = false;
+      var starting = false;
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-PH';
+      recognition.maxAlternatives = 3;
+
+      function setListening(on) {
+        listening = !!on;
+        voiceBtn.setAttribute('aria-pressed', listening ? 'true' : 'false');
+        voiceBtn.innerHTML = listening
+          ? '<i class="bi bi-mic-fill" aria-hidden="true"></i> Listening…'
+          : '<i class="bi bi-mic" aria-hidden="true"></i> Voice Start';
+        if (voiceHint) voiceHint.hidden = !listening;
+      }
+
+      function isStartPhrase(raw) {
+        var t = String(raw || '')
+          .toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (!t) return false;
+        return (
+          t === 'start' ||
+          t === 'start game' ||
+          t === 'start the game' ||
+          t === 'begin' ||
+          t === 'begin game' ||
+          t === 'simula' ||
+          t.indexOf('start game') !== -1 ||
+          /(^|\s)start(\s|$)/.test(t)
+        );
+      }
+
+      recognition.onresult = function (ev) {
+        if (starting) return;
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          if (!ev.results[i].isFinal) continue;
+          var alt = ev.results[i][0];
+          var transcript = alt ? alt.transcript : '';
+          if (!isStartPhrase(transcript)) continue;
+          starting = true;
+          setListening(false);
+          try { recognition.stop(); } catch (eStop) {}
+          startGame();
+          return;
+        }
+      };
+      recognition.onerror = function () {
+        setListening(false);
+      };
+      recognition.onend = function () {
+        if (!listening) return;
+        // Keep listening until user turns it off or a start command fires.
+        try { recognition.start(); } catch (eRestart) { setListening(false); }
+      };
+
+      voiceBtn.addEventListener('click', function () {
+        PgSound.unlock();
+        if (listening) {
+          listening = false;
+          setListening(false);
+          try { recognition.stop(); } catch (eOff) {}
+          return;
+        }
+        starting = false;
+        setListening(true);
+        try {
+          recognition.start();
+        } catch (eOn) {
+          setListening(false);
+          if (errEl) {
+            errEl.textContent = 'Could not access the microphone. Check browser permission, then try again.';
+            errEl.classList.remove('hidden');
+          }
+        }
+      });
+    })();
+
     // Lobby soundtrack — browsers block autoplay until a real click/key/tap.
     var lobbyMusicUrl = (window.PG && window.PG.musicUrl) || DEFAULT_MUSIC_URL;
     PgSound.setMusicUrl(lobbyMusicUrl);
@@ -820,6 +1014,7 @@
     var elSubject = document.getElementById('pg-subject');
     var elQuestion = document.getElementById('pg-question');
     var elChoices = document.getElementById('pg-choices');
+    var elCard = document.getElementById('pg-card');
     var elNav = document.getElementById('pg-nav');
     var elReveal = document.getElementById('pg-reveal');
     var elRevealTitle = document.getElementById('pg-reveal-title');
@@ -844,6 +1039,16 @@
     PgSound.resetWarnings();
     try { sessionStorage.setItem('ereview_pg_game_active', '1'); } catch (e) {}
 
+    var quizStartAnnounced = false;
+    function announceQuizStart() {
+      if (quizStartAnnounced) return;
+      quizStartAnnounced = true;
+      PgSound.unlock();
+      PgSound.play('start');
+      PgSound.speak('Quiz start. Be ready!');
+      try { sessionStorage.removeItem('ereview_pg_pending_start_sound'); } catch (eClear) {}
+    }
+
     // Resume thinking music after explicit Start Game (gesture chain / first interaction).
     try {
       if (sessionStorage.getItem(WANT_MUSIC_KEY) === '1') {
@@ -852,15 +1057,22 @@
       }
     } catch (eWant) {}
 
+    // Fresh start from lobby → announce immediately (same user gesture chain as Start Game).
+    try {
+      if (sessionStorage.getItem('ereview_pg_pending_start_sound') === '1') {
+        announceQuizStart();
+      }
+    } catch (eAnnounce) {}
+
     document.addEventListener(
       'pointerdown',
       function once() {
         PgSound.unlock();
         PgSound.syncMusic();
         try {
+          // Retry start voice if the browser blocked it until a gesture.
           if (sessionStorage.getItem('ereview_pg_pending_start_sound') === '1') {
-            sessionStorage.removeItem('ereview_pg_pending_start_sound');
-            PgSound.play('start');
+            announceQuizStart();
           }
         } catch (e3) {}
         document.removeEventListener('pointerdown', once, true);
@@ -952,6 +1164,7 @@
           examTimerId = null;
         }
         PgSound.play('expire');
+        PgSound.speak('Time is up. Submitting your game.');
         finishGame();
       }
     }
@@ -1075,6 +1288,7 @@
       if (phase !== 'select' || !currentQ || submitting) return;
       phase = 'locked';
       submitting = true;
+      PgSound.unlock();
       PgSound.play('click');
       if (elChoices) {
         elChoices.querySelectorAll('.pg-choice').forEach(function (btn) {
@@ -1153,10 +1367,17 @@
       if (d.navigator) renderNav(d.navigator, d.ordinal);
 
       var mode = d.is_correct ? 'correct' : 'wrong';
-      PgSound.playAnswerFeedback(!!d.is_correct);
+      var streakN = d.current_streak | 0;
+      PgSound.playAnswerFeedback(!!d.is_correct, {
+        streak: d.streak_milestone ? streakN : 0,
+      });
       if (elReveal) {
         elReveal.hidden = false;
         elReveal.className = 'pg-reveal pg-reveal-flash is-' + mode;
+        // Keep feedback in the middle of the screen (choices can push it below the fold).
+        try {
+          elReveal.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        } catch (eRevealScroll) {}
       }
       if (elRevealIcon) elRevealIcon.textContent = mode === 'correct' ? '✓' : '✕';
       if (elRevealTitle) elRevealTitle.textContent = mode === 'correct' ? 'CORRECT!' : 'NOT QUITE';
@@ -1172,18 +1393,27 @@
           '">' +
           (pts > 0 ? '+' + pts + ' POINTS' : pts + ' POINTS') +
           '</span>';
-        if (d.is_correct && d.current_streak > 0) {
-          chips += '<span class="pg-chip streak">🔥 ' + d.current_streak + ' STREAK</span>';
+        if (d.is_correct && streakN > 0) {
+          chips += '<span class="pg-chip streak">🔥 ' + streakN + ' STREAK</span>';
         } else if (!d.is_correct) {
           chips += '<span class="pg-chip zero">Streak Reset</span>';
         }
         elRevealMetrics.innerHTML = chips;
       }
       if (mode === 'correct') burstConfetti();
+      // Quick stage shake on wrong — feels more “active” without blocking play.
+      if (mode === 'wrong' && elCard) {
+        elCard.classList.remove('pg-stage--shake');
+        void elCard.offsetWidth;
+        elCard.classList.add('pg-stage--shake');
+        setTimeout(function () {
+          elCard.classList.remove('pg-stage--shake');
+        }, 420);
+      }
       if (elMilestone) {
         if (d.streak_milestone) {
           elMilestone.hidden = false;
-          elMilestone.textContent = '🔥 ' + d.current_streak + ' ANSWER STREAK!';
+          elMilestone.textContent = '🔥 ' + streakN + ' ANSWER STREAK!';
         } else elMilestone.hidden = true;
       }
 

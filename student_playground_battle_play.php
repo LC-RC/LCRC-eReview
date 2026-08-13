@@ -6,6 +6,7 @@ requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+student_playground_enforce_enabled($conn);
 student_playground_battle_ensure_schema($conn);
 
 $userId = (int) getCurrentUserId();
@@ -117,6 +118,6 @@ $pageTitle = 'CPA Battle — Live';
       view: 'play'
     };
   </script>
-  <script src="assets/js/student-playground-battle.js"></script>
+  <script src="assets/js/student-playground-battle.js?v=engage-sfx-3"></script>
 </body>
 </html>

@@ -6,10 +6,40 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/schema_introspection.php';
 require_once __DIR__ . '/student_content_access.php';
+require_once __DIR__ . '/ereview_app_settings.php';
 
 /** Configurable scoring (correctness first; speed is a small bonus). */
 const STUDENT_PLAYGROUND_BASE_POINTS = 100;
 const STUDENT_PLAYGROUND_SPEED_BONUS_MAX = 50;
+
+/** Admin module toggle — default enabled when setting missing. */
+function student_playground_is_enabled(mysqli $conn): bool
+{
+    return ereview_app_setting_get($conn, 'playground_enabled', '1') !== '0';
+}
+
+/** Redirect students away when Playground is disabled by admin. */
+function student_playground_enforce_enabled(mysqli $conn): void
+{
+    if (student_playground_is_enabled($conn)) {
+        return;
+    }
+    $_SESSION['error'] = 'CPA Playground is currently disabled by the administrator.';
+    header('Location: student_dashboard');
+    exit;
+}
+
+/** JSON API guard when Playground is disabled. */
+function student_playground_enforce_enabled_api(mysqli $conn): void
+{
+    if (student_playground_is_enabled($conn)) {
+        return;
+    }
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'error' => 'CPA Playground is currently disabled by the administrator.']);
+    exit;
+}
 
 function student_playground_ensure_schema(mysqli $conn): void
 {
@@ -360,6 +390,68 @@ function student_playground_accessible_quiz_ids(mysqli $conn, int $userId, int $
 }
 
 /**
+ * Playground/Battle keep short MCQs only — skip long word problems, HTML tables,
+ * and worksheet-style computation stems (multiple money lines / label:value tables).
+ */
+function student_playground_question_is_eligible(string $html): bool
+{
+    $raw = trim($html);
+    if ($raw === '') {
+        return false;
+    }
+    $lower = strtolower($raw);
+    if (
+        strpos($lower, '<table') !== false
+        || strpos($lower, '&lt;table') !== false
+        || (strpos($lower, '<tr') !== false && strpos($lower, '<td') !== false)
+    ) {
+        return false;
+    }
+
+    $withBreaks = str_ireplace(
+        ['<br>', '<br/>', '<br />', '</p>', '</div>', '</li>', '</tr>'],
+        "\n",
+        $raw
+    );
+    $text = html_entity_decode(strip_tags($withBreaks), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = preg_replace("/[ \t]+/u", ' ', $text) ?? $text;
+    $text = preg_replace("/\n{3,}/u", "\n\n", $text) ?? $text;
+    $text = trim($text);
+    $len = function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
+
+    // Long narrative / multi-step problems (Playground is for quick practice).
+    if ($len > 700) {
+        return false;
+    }
+
+    // Many peso amounts ⇒ computation worksheet.
+    if (preg_match_all('/\bP\s?[\d,]+(?:\.\d+)?\b/u', $text, $money) && count($money[0]) >= 4) {
+        return false;
+    }
+    if (preg_match_all('/[₱]\s?[\d,]+(?:\.\d+)?/u', $text, $peso) && count($peso[0]) >= 4) {
+        return false;
+    }
+
+    // "Original cost: P 2,400,000" style data tables in plain text.
+    if (preg_match_all('/^[^\n:]{2,90}:\s*[P₱]?\s*[\d,]+/um', $text, $labeled) && count($labeled[0]) >= 3) {
+        return false;
+    }
+
+    $lines = preg_split('/\n+/u', $text) ?: [];
+    $numericLines = 0;
+    foreach ($lines as $line) {
+        if (preg_match('/\d{3,}/', $line)) {
+            $numericLines++;
+        }
+    }
+    if ($numericLines >= 5 && $len > 350) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Candidate questions from accessible quizzes (IDs + meta only).
  *
  * @return list<array{question_id:int,quiz_id:int,subject_id:int}>
@@ -372,12 +464,13 @@ function student_playground_question_pool(mysqli $conn, int $userId, int $subjec
     }
     $placeholders = implode(',', array_fill(0, count($quizIds), '?'));
     $types = str_repeat('i', count($quizIds));
-    $sql = "SELECT qq.question_id, qq.quiz_id, q.subject_id
+    $sql = "SELECT qq.question_id, qq.quiz_id, q.subject_id, qq.question_text
             FROM quiz_questions qq
             INNER JOIN quizzes q ON q.quiz_id = qq.quiz_id
             WHERE qq.quiz_id IN ({$placeholders})
               AND qq.correct_answer IS NOT NULL
-              AND TRIM(qq.correct_answer) <> ''";
+              AND TRIM(qq.correct_answer) <> ''
+              AND CHAR_LENGTH(qq.question_text) <= 4000";
     $stmt = mysqli_prepare($conn, $sql);
     if (!$stmt) {
         return [];
@@ -387,6 +480,9 @@ function student_playground_question_pool(mysqli $conn, int $userId, int $subjec
     $res = mysqli_stmt_get_result($stmt);
     $pool = [];
     while ($res && ($row = mysqli_fetch_assoc($res))) {
+        if (!student_playground_question_is_eligible((string) ($row['question_text'] ?? ''))) {
+            continue;
+        }
         $pool[] = [
             'question_id' => (int) $row['question_id'],
             'quiz_id' => (int) $row['quiz_id'],

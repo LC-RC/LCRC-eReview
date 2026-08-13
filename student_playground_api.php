@@ -14,6 +14,7 @@ if (!isLoggedIn() || getCurrentUserRole() !== 'student') {
     exit;
 }
 
+student_playground_enforce_enabled_api($conn);
 student_playground_ensure_schema($conn);
 sca_ensure_schema($conn);
 $userId = (int) getCurrentUserId();

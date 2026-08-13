@@ -3,9 +3,16 @@
  * Student shell entry - unified sidebar + topbar + main open (see includes/components/app_shell_sidebar).
  */
 require_once __DIR__ . '/includes/url_helpers.php';
+require_once __DIR__ . '/includes/ereview_app_settings.php';
+require_once __DIR__ . '/includes/student_playground.php';
 $currentPage = ereview_page_basename();
 require_once __DIR__ . '/includes/format_display_name.php';
 require_once __DIR__ . '/includes/profile_avatar.php';
+
+$playgroundEnabled = true;
+if (!empty($conn) && $conn instanceof mysqli) {
+    $playgroundEnabled = student_playground_is_enabled($conn);
+}
 $fullName = trim($_SESSION['full_name'] ?? 'User');
 $studentShortName = ereview_format_topbar_display_name($fullName);
 $profilePicture = '';
@@ -52,6 +59,27 @@ $appShellProfileImage = ($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath
 $appShellTopbarAvatarImage = $appShellProfileImage;
 $appShellTopbarAvatarInitial = $avatarInitial;
 
+$modulesItems = [
+    ['label' => 'Preboards', 'href' => 'student_preboards', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards', 'student_preboards_view']],
+    ['label' => 'Preweek', 'href' => 'student_preweek', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek', 'student_preweek_topics', 'student_preweek_viewer']],
+];
+if ($playgroundEnabled) {
+    $modulesItems[] = [
+        'label' => 'CPA Playground',
+        'href' => 'student_playground',
+        'icon' => 'bi-controller',
+        'active' => [
+            'student_playground',
+            'student_playground_play',
+            'student_playground_result',
+            'student_playground_battle',
+            'student_playground_battle_lobby',
+            'student_playground_battle_play',
+            'student_playground_battle_result',
+        ],
+    ];
+}
+
 $appShellNavConfig = [
     [
         'label' => 'My learning',
@@ -62,24 +90,7 @@ $appShellNavConfig = [
     ],
     [
         'label' => 'Modules',
-        'items' => [
-            ['label' => 'Preboards', 'href' => 'student_preboards', 'icon' => 'bi-clipboard-check', 'active' => ['student_preboards', 'student_preboards_view']],
-            ['label' => 'Preweek', 'href' => 'student_preweek', 'icon' => 'bi-lightning-charge', 'active' => ['student_preweek', 'student_preweek_topics', 'student_preweek_viewer']],
-            [
-                'label' => 'CPA Playground',
-                'href' => 'student_playground',
-                'icon' => 'bi-controller',
-                'active' => [
-                    'student_playground',
-                    'student_playground_play',
-                    'student_playground_result',
-                    'student_playground_battle',
-                    'student_playground_battle_lobby',
-                    'student_playground_battle_play',
-                    'student_playground_battle_result',
-                ],
-            ],
-        ],
+        'items' => $modulesItems,
     ],
     [
         'label' => 'My CPA Review',

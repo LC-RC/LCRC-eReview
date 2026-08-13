@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin: Remind student to upload payment proof (email with durable checkout link).
  * Does NOT grant access or close the payment.

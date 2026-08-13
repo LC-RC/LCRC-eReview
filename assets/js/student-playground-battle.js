@@ -121,13 +121,15 @@
             tone(659, 0.14, 'triangle', 0.04, 0.08);
             break;
           case 'correct':
-            tone(523, 0.09, 'sine', 0.04);
-            tone(659, 0.11, 'sine', 0.04, 0.07);
-            tone(784, 0.16, 'sine', 0.035, 0.16);
+            tone(523, 0.12, 'sine', 0.22);
+            tone(659, 0.14, 'sine', 0.24, 0.08);
+            tone(784, 0.16, 'triangle', 0.26, 0.18);
+            tone(1046, 0.28, 'sine', 0.22, 0.3);
             break;
           case 'wrong':
-            tone(220, 0.12, 'triangle', 0.03);
-            tone(175, 0.14, 'triangle', 0.025, 0.07);
+            tone(185, 0.18, 'sawtooth', 0.22);
+            tone(140, 0.22, 'triangle', 0.2, 0.12);
+            tone(98, 0.26, 'sine', 0.18, 0.22);
             break;
           case 'tick':
             tone(880, 0.04, 'square', 0.02);
@@ -739,6 +741,7 @@
                 : '');
           }
           if (lastStatus !== 'reveal') {
+            BattleSound.unlock();
             BattleSound.play(ok ? 'correct' : 'wrong');
           }
         }

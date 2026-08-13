@@ -6,6 +6,7 @@ requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+student_playground_enforce_enabled($conn);
 
 $userId = (int) getCurrentUserId();
 student_playground_ensure_schema($conn);
@@ -167,7 +168,13 @@ if ($pgMusicUrl === '/assets/audio/thinking-time.mp3' || strpos($pgMusicUrl, '//
 
           <div class="pg-setup-cta">
             <p id="pg-setup-error" class="pg-setup-error hidden"></p>
-            <button type="button" id="pg-start" class="pg-start-btn"><i class="bi bi-play-fill" aria-hidden="true"></i> Start Game</button>
+            <div class="pg-setup-cta-row">
+              <button type="button" id="pg-start" class="pg-start-btn"><i class="bi bi-play-fill" aria-hidden="true"></i> Start Game</button>
+              <button type="button" id="pg-voice-start" class="pg-voice-btn" aria-pressed="false" title="Say “start” or “start game” to begin" hidden>
+                <i class="bi bi-mic" aria-hidden="true"></i> Voice Start
+              </button>
+            </div>
+            <p class="pg-voice-hint" id="pg-voice-hint" hidden>Listening… say <strong>start</strong> or <strong>start game</strong></p>
           </div>
         </div>
       </section>
@@ -230,6 +237,6 @@ if ($pgMusicUrl === '/assets/audio/thinking-time.mp3' || strpos($pgMusicUrl, '//
       musicUrl: <?php echo json_encode($pgMusicUrl); ?>
     };
   </script>
-  <script src="assets/js/student-playground.js?v=lobby-music-2"></script>
+  <script src="assets/js/student-playground.js?v=engage-sfx-3"></script>
 </body>
 </html>

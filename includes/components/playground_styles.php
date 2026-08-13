@@ -57,8 +57,20 @@
     padding-right: 0 !important;
     max-width: none !important;
   }
+  /* Desktop normally disables the student backdrop; game mode needs a dismissable overlay. */
   body.pg-game-mode.app-shell--student #sidebar-backdrop.app-shell-backdrop {
-    /* keep backdrop working when overlay sidebar opens */
+    background: rgba(2, 6, 23, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+    z-index: 55;
+  }
+  body.pg-game-mode.app-shell--student.sidebar-expanded #sidebar-backdrop.app-shell-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  body.pg-game-mode.app-shell--student #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-close-btn {
+    display: inline-flex;
   }
 
   /* Lobby: wide game lobby canvas (sidebar stays for navigation) */
@@ -280,6 +292,17 @@
       flex: 1 1 100%;
       margin-left: 0;
     }
+  }
+  .pg-setup-cta .pg-setup-cta-row {
+    justify-content: stretch;
+  }
+  .pg-setup-cta .pg-start-btn {
+    flex: 1 1 12.5rem;
+  }
+  .pg-setup-cta .pg-voice-btn {
+    flex: 0 0 auto;
+    border-radius: .85rem;
+    padding: .95rem 1rem;
   }
   .pg-start-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
@@ -691,10 +714,34 @@
     border-color: var(--pg-mint) !important;
     background: rgba(52,211,153,.22);
     box-shadow: 0 0 0 3px rgba(52,211,153,.35), 0 0 30px rgba(52,211,153,.28);
+    animation: pg-choice-correct-pop .4s ease;
+  }
+  @keyframes pg-choice-correct-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.03); }
+    100% { transform: scale(1); }
   }
   .pg-choice.is-wrong {
     border-color: var(--pg-rose) !important;
     background: rgba(251,113,133,.2);
+    animation: pg-choice-wrong-pulse .45s ease;
+  }
+  @keyframes pg-choice-wrong-pulse {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+  }
+  .pg-stage.pg-stage--shake {
+    animation: pg-stage-shake .4s ease;
+  }
+  @keyframes pg-stage-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(3px); }
   }
   .pg-choice.is-locked-out { opacity: .45; }
   .pg-choice-letter {
@@ -730,7 +777,7 @@
   .pg-lock-btn.is-busy { opacity: .7; cursor: wait; }
   .pg-lock-hint { margin: .6rem 0 0; font-size: .85rem; font-weight: 650; color: #e2e8f0; }
 
-  /* Reveal (brief flash before auto-advance) */
+  /* Reveal toast — fixed in viewport so it is never clipped under long choice lists */
   .pg-reveal {
     margin-top: 1.15rem; text-align: center;
     padding: 1.15rem 1rem 1rem;
@@ -738,15 +785,29 @@
     animation: pg-reveal-in .28s ease;
     border: 1px solid transparent;
   }
+  .pg-reveal:not([hidden]) {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 120;
+    width: min(32rem, calc(100vw - 1.5rem));
+    max-height: min(70vh, 28rem);
+    overflow: auto;
+    margin: 0;
+    padding: 1.35rem 1.15rem 1.25rem;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+  }
   .pg-reveal-flash { animation: pg-reveal-in .28s ease, pg-reveal-pulse .9s ease; }
   @keyframes pg-reveal-in {
-    from { opacity: 0; transform: translateY(8px) scale(.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translate(-50%, -46%) scale(.96); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   }
   @keyframes pg-reveal-pulse {
-    0% { box-shadow: 0 0 0 rgba(255,255,255,0); }
-    40% { box-shadow: 0 0 28px rgba(139,108,255,.25); }
-    100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+    0% { box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 rgba(255,255,255,0); }
+    40% { box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 32px rgba(139,108,255,.35); }
+    100% { box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 rgba(255,255,255,0); }
   }
   .pg-reveal.is-correct {
     background: radial-gradient(circle at 50% 0%, rgba(52,211,153,.28), rgba(15,22,42,.95) 55%);
@@ -859,6 +920,52 @@
   .pg-exit { text-align: center; margin: 1.25rem 0 0; font-size: .875rem; }
   .pg-exit a { font-weight: 700; color: #e2e8f0; text-decoration: none; }
   .pg-exit a:hover { color: #fff; text-decoration: underline; }
+
+  /* Always-visible Exit (HUD + action row) — avoid burying it under scroll/chrome */
+  body.pg-game-mode.app-shell--student .pg-play-page {
+    padding-bottom: calc(2.75rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .pg-exit-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: .4rem .85rem; border-radius: .65rem;
+    border: 1px solid rgba(251,113,133,.55);
+    background: rgba(251,113,133,.14);
+    color: #fecdd3; font-weight: 800; font-size: .78rem;
+    text-decoration: none; letter-spacing: .02em; white-space: nowrap;
+  }
+  .pg-exit-btn:hover,
+  .pg-exit-btn:focus-visible {
+    background: rgba(251,113,133,.28);
+    color: #fff; border-color: rgba(251,113,133,.85);
+    outline: none;
+  }
+  .pg-exit-btn--action {
+    min-width: 11.5rem; padding: .75rem 1.25rem;
+    font-size: .95rem; border-radius: .85rem;
+  }
+  body.pg-game-mode .ereview-scroll-top { display: none !important; }
+
+  .pg-setup-cta-row {
+    display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; justify-content: center;
+  }
+  .pg-voice-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    padding: .85rem 1.15rem; border-radius: 999px;
+    border: 1px solid rgba(77,179,239,.55);
+    background: rgba(77,179,239,.12);
+    color: #e0f2fe; font-weight: 800; font-size: .92rem; cursor: pointer;
+  }
+  .pg-voice-btn:hover { background: rgba(77,179,239,.22); color: #fff; }
+  .pg-voice-btn[aria-pressed="true"] {
+    background: rgba(52,211,153,.2);
+    border-color: rgba(52,211,153,.65);
+    color: #d1fae5;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.18);
+  }
+  .pg-voice-hint {
+    margin: .65rem 0 0; text-align: center; font-size: .82rem; color: #cbd5e1;
+  }
+  .pg-voice-hint strong { color: #fde68a; }
 
   /* —— RESULTS DASHBOARD (true full-width) —— */
   .pg-result-page { max-width: none !important; width: 100%; }

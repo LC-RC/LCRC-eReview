@@ -7,6 +7,7 @@ requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+student_playground_enforce_enabled($conn);
 
 $userId = (int) getCurrentUserId();
 $sessionId = (int) ($_GET['session_id'] ?? 0);
@@ -97,6 +98,7 @@ $endsAtIso = !empty($session['ends_at']) ? date('c', strtotime((string) $session
             <button type="button" class="pg-sound-btn" id="pg-sfx-toggle" title="Sound effects on/off" aria-pressed="true">🔔 SFX</button>
             <button type="button" class="pg-sound-btn" id="pg-mute-toggle" title="Master mute" aria-pressed="false">🔊</button>
           </div>
+          <a href="student_playground" class="pg-exit-btn" title="Leave this game and return to the lobby">Exit</a>
         </div>
       </header>
 
@@ -136,12 +138,9 @@ $endsAtIso = !empty($session['ends_at']) ? date('c', strtotime((string) $session
 
         <div class="pg-play-actions">
           <button type="button" class="pg-skip-btn" id="pg-skip">Skip Question →</button>
+          <a href="student_playground" class="pg-exit-btn pg-exit-btn--action">Exit playground</a>
         </div>
       </section>
-
-      <p class="pg-exit">
-        <a href="student_playground">Exit playground</a>
-      </p>
     </div>
   </div>
 
@@ -170,6 +169,6 @@ $endsAtIso = !empty($session['ends_at']) ? date('c', strtotime((string) $session
       musicUrl: <?php echo json_encode('assets/audio/thinking-time.mp3'); ?>
     };
   </script>
-  <script src="assets/js/student-playground.js"></script>
+  <script src="assets/js/student-playground.js?v=engage-sfx-3"></script>
 </body>
 </html>

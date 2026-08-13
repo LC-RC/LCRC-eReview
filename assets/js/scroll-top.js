@@ -21,6 +21,8 @@
       }, 0);
       return;
     }
+    // Full-screen playground / battle play: keep the bottom clear for Exit / Skip.
+    if (document.body.classList.contains('pg-game-mode')) return;
     if (document.getElementById('ereviewScrollTopBtn')) return;
 
     var btn = document.createElement('button');

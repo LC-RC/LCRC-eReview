@@ -230,15 +230,24 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     syncBrandHeader();
   }
 
+  function isGameMode() {
+    return body.classList.contains('pg-game-mode');
+  }
+
   function openSidebar() {
     body.classList.add('sidebar-expanded');
-    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+    // Play/result pages are overlay-only; do not overwrite the normal-page preference.
+    if (!isGameMode()) {
+      try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
+    }
     syncToggleAria();
   }
 
   function closeSidebar() {
     body.classList.remove('sidebar-expanded');
-    try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
+    if (!isGameMode()) {
+      try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
+    }
     syncToggleAria();
   }
 
@@ -280,10 +289,16 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     var navLink = target.closest('.app-shell-nav-link');
     if (!navLink) return;
     var isMobile = window.matchMedia ? window.matchMedia('(max-width: 1024px)').matches : false;
-    if (isMobile) closeSidebar();
+    if (isMobile || isGameMode()) closeSidebar();
   });
 
   (function init() {
+    // Game mode: always start closed so the overlay does not stick open with no dismiss UI.
+    if (isGameMode()) {
+      body.classList.remove('sidebar-expanded');
+      syncToggleAria();
+      return;
+    }
     var isDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)').matches : true;
     var saved = null;
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}

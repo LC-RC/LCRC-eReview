@@ -7,6 +7,7 @@ requireRole('student');
 
 sca_ensure_schema($conn);
 sca_enforce_student_session($conn);
+student_playground_enforce_enabled($conn);
 student_playground_battle_ensure_schema($conn);
 student_cpa_review_ensure_schema($conn);
 

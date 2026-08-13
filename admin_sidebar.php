@@ -88,6 +88,7 @@ $appShellNavConfig = [
         'label' => 'Content',
         'items' => [
             ['label' => 'Subjects', 'href' => 'admin_subjects', 'icon' => 'bi-book', 'title' => 'Subjects', 'active' => ['admin_subjects'], 'acl_key' => 'subjects'],
+            ['label' => 'Modules', 'href' => 'admin_modules', 'icon' => 'bi-toggles', 'title' => 'Enable or disable student modules (e.g. CPA Playground)', 'active' => ['admin_modules'], 'acl_key' => 'subjects'],
             ['label' => 'Lessons', 'href' => 'admin_lessons', 'icon' => 'bi-journal-text', 'title' => 'Lessons / topics', 'active' => ['admin_lessons'], 'acl_key' => 'lessons'],
             ['label' => 'Videos', 'href' => 'admin_videos', 'icon' => 'bi-camera-video', 'title' => 'Lesson videos', 'active' => ['admin_videos'], 'acl_key' => 'videos'],
             ['label' => 'Handouts', 'href' => 'admin_handouts', 'icon' => 'bi-file-earmark-text', 'title' => 'Lesson handouts', 'active' => ['admin_handouts'], 'acl_key' => 'handouts'],
