@@ -587,13 +587,13 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
   </div>
 
   <!-- Reorder Quizzes Modal -->
-  <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="reorderModalOpen = false">
+  <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-stretch justify-center p-3 sm:p-5" @keydown.escape.window="reorderModalOpen = false">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
-    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
+    <div class="relative quiz-modal-panel content-reorder-modal rounded-xl shadow-modal w-full max-w-6xl h-[min(94vh,920px)] flex flex-col overflow-hidden" @click.stop>
       <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head shrink-0">
         <div>
           <h2 class="text-xl font-bold text-gray-100 m-0">Reorder Quizzes</h2>
-          <p class="text-sm text-gray-400 mt-1 mb-0">Drag to set the order students see. The main table stays unchanged until you save.</p>
+          <p class="text-sm text-gray-400 mt-1 mb-0">Type a position number or drag. Students see this order after you save.</p>
         </div>
         <button type="button" @click="reorderModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
@@ -604,13 +604,13 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="action" value="reorder">
           <div class="px-5 py-3 border-b border-white/10 shrink-0 flex flex-wrap gap-3 items-end">
-            <div class="flex-1 min-w-[200px]">
+            <div class="flex-1 min-w-[220px]">
               <label for="quiz-reorder-filter" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Find in list</label>
-              <input type="search" id="quiz-reorder-filter" data-reorder-filter placeholder="Filter by title (does not change saved order)…" class="input-custom w-full" autocomplete="off">
+              <input type="search" id="quiz-reorder-filter" data-reorder-filter placeholder="Filter by title…" class="input-custom w-full" autocomplete="off">
             </div>
-            <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-grip-vertical"></i> Drag handles to reorder</p>
+            <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-123"></i> Type # to jump · <i class="bi bi-grip-vertical"></i> drag optional</p>
           </div>
-          <div class="overflow-auto flex-1 px-3 py-2">
+          <div class="overflow-auto flex-1 px-3 py-2 content-reorder-scroll">
             <p data-reorder-filter-empty hidden class="text-center text-sm text-gray-400 py-6">No quizzes match this filter.</p>
             <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
               <thead>
@@ -629,7 +629,19 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
                       <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$qz['quiz_id']; ?>">
                     </td>
                     <td class="px-3 py-3 content-reorder-col-ord">
-                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
+                      <label class="sr-only" for="quiz-pos-<?php echo (int)$qz['quiz_id']; ?>">Position</label>
+                      <input
+                        id="quiz-pos-<?php echo (int)$qz['quiz_id']; ?>"
+                        type="number"
+                        class="content-reorder-pos"
+                        data-order-pos
+                        min="1"
+                        max="<?php echo count($reorderRows); ?>"
+                        step="1"
+                        value="<?php echo (int)$idx + 1; ?>"
+                        inputmode="numeric"
+                        title="Type position (1–<?php echo count($reorderRows); ?>)"
+                      >
                     </td>
                     <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
                     <td class="px-5 py-3.5 text-center tabular-nums"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></td>
@@ -639,7 +651,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
             </table>
           </div>
           <div class="p-4 border-t border-white/10 flex justify-between items-center gap-2 shrink-0">
-            <p class="text-sm opacity-70 m-0"><?php echo count($reorderRows); ?> quiz<?php echo count($reorderRows) === 1 ? '' : 'zes'; ?></p>
+            <p class="text-sm opacity-70 m-0"><?php echo count($reorderRows); ?> quiz<?php echo count($reorderRows) === 1 ? '' : 'zes'; ?> · scroll the list · Enter after typing a #</p>
             <div class="flex gap-2">
               <button type="button" @click="reorderModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
               <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
@@ -750,7 +762,7 @@ $adminBreadcrumbs[] = [(string) $subject['subject_name']];
     </div>
   </div>
 
-  <script src="assets/js/admin-content-reorder.js?v=2"></script>
+  <script src="assets/js/admin-content-reorder.js?v=3"></script>
   <script>
     function quizzesApp() {
       return {

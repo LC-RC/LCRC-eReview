@@ -2918,6 +2918,49 @@ body.admin-app .admin-preweek-context-nav--light .text-gray-300 {
 
 
 /* Content Hub lesson/quiz manual reorder */
+.content-reorder-modal {
+  width: min(96vw, 72rem);
+  max-width: 72rem;
+}
+.content-reorder-scroll {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+.content-reorder-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(6px);
+}
+html[data-admin-theme="light"] body.admin-app #main .content-reorder-table thead th {
+  background: rgba(248, 250, 252, 0.98);
+}
+.content-reorder-pos {
+  width: 3.5rem;
+  text-align: center;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(139, 108, 255, 0.45);
+  background: rgba(139, 108, 255, 0.16);
+  color: #ede9fe;
+}
+.content-reorder-pos:focus {
+  outline: 2px solid rgba(139, 108, 255, 0.65);
+  outline-offset: 1px;
+}
+html[data-admin-theme="light"] body.admin-app #main .content-reorder-pos {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #a5b4fc;
+}
+.content-reorder-table tr.is-pos-flash {
+  background: rgba(59, 130, 246, 0.16);
+  transition: background 0.7s ease;
+}
 .content-reorder-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -2940,7 +2983,7 @@ body.admin-app .admin-preweek-context-nav--light .text-gray-300 {
 }
 .content-reorder-table th.content-reorder-col-ord,
 .content-reorder-table td.content-reorder-col-ord {
-  width: 4.5rem;
+  width: 5.25rem;
   text-align: center;
   white-space: nowrap;
 }

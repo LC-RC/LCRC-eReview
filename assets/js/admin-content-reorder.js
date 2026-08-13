@@ -1,20 +1,62 @@
 /**
- * Content Hub drag-and-drop reorder (lessons / quizzes).
+ * Content Hub drag-and-drop + position-input reorder (lessons / quizzes).
  * Expects a form#content-reorder-form with tbody#content-reorder-list
  * and hidden inputs name="ordered_ids[]".
  */
 (function () {
   'use strict';
 
+  function allRows(tbody) {
+    return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-id]'));
+  }
+
   function refreshOrderNumbers(tbody) {
-    var rows = tbody.querySelectorAll('tr[data-id]');
+    var rows = allRows(tbody);
     rows.forEach(function (row, idx) {
-      var input = row.querySelector('input[name="ordered_ids[]"]');
-      if (input) input.value = row.getAttribute('data-id') || '';
-      // Absolute student order from full DOM order (filtered rows stay in place).
-      var num = row.querySelector('[data-order-num]');
-      if (num) num.textContent = String(idx + 1);
+      var hidden = row.querySelector('input[name="ordered_ids[]"]');
+      if (hidden) hidden.value = row.getAttribute('data-id') || '';
+      var pos = row.querySelector('[data-order-pos]');
+      if (pos) {
+        pos.value = String(idx + 1);
+        pos.setAttribute('max', String(rows.length));
+      }
+      var badge = row.querySelector('[data-order-num]');
+      if (badge) badge.textContent = String(idx + 1);
     });
+  }
+
+  function moveRowToPosition(tbody, row, targetPos) {
+    var rows = allRows(tbody);
+    var n = rows.length;
+    if (!row || n < 1) return;
+    var from = rows.indexOf(row);
+    if (from < 0) return;
+    var to = parseInt(targetPos, 10);
+    if (isNaN(to)) {
+      refreshOrderNumbers(tbody);
+      return;
+    }
+    if (to < 1) to = 1;
+    if (to > n) to = n;
+    if (to - 1 === from) {
+      refreshOrderNumbers(tbody);
+      return;
+    }
+    row.parentNode.removeChild(row);
+    rows = allRows(tbody);
+    if (to > rows.length) {
+      tbody.appendChild(row);
+    } else {
+      tbody.insertBefore(row, rows[to - 1] || null);
+    }
+    refreshOrderNumbers(tbody);
+    try {
+      row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      row.classList.add('is-pos-flash');
+      setTimeout(function () {
+        row.classList.remove('is-pos-flash');
+      }, 700);
+    } catch (err) {}
   }
 
   function bindList(tbody) {
@@ -27,6 +69,10 @@
     var dragRow = null;
 
     tbody.addEventListener('dragstart', function (e) {
+      if (e.target && e.target.closest && e.target.closest('input, button, a, textarea, select, label')) {
+        e.preventDefault();
+        return;
+      }
       var row = e.target.closest('tr[data-id]');
       if (!row || !tbody.contains(row)) return;
       if (row.hasAttribute('hidden') || row.classList.contains('is-filter-hidden')) {
@@ -71,6 +117,26 @@
     tbody.addEventListener('drop', function (e) {
       e.preventDefault();
       refreshOrderNumbers(tbody);
+    });
+
+    tbody.addEventListener('keydown', function (e) {
+      var input = e.target.closest('[data-order-pos]');
+      if (!input || e.key !== 'Enter') return;
+      e.preventDefault();
+      input.blur();
+    });
+
+    tbody.addEventListener('change', function (e) {
+      var input = e.target.closest('[data-order-pos]');
+      if (!input) return;
+      var row = input.closest('tr[data-id]');
+      if (!row) return;
+      moveRowToPosition(tbody, row, input.value);
+    });
+
+    tbody.addEventListener('focusin', function (e) {
+      var input = e.target.closest('[data-order-pos]');
+      if (input) input.select();
     });
   }
 
@@ -125,7 +191,6 @@
     if (!form._contentReorderSubmitBound) {
       form._contentReorderSubmitBound = true;
       form.addEventListener('submit', function () {
-        // Always persist full subject order (hidden filter rows must still submit).
         clearModalFilter(form);
       });
     }
