@@ -158,13 +158,16 @@ if (!in_array('mcq_pick_count', $quizCols, true)) {
 }
 
 content_sort_order_ensure_schema($conn);
-$reorderMode = isset($_GET['reorder']) && (string) $_GET['reorder'] === '1';
+$listView = strtolower(trim((string) ($_GET['view'] ?? 'student')));
+if (!in_array($listView, ['student', 'newest', 'oldest', 'title', 'title_za'], true)) {
+    $listView = 'student';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_quizzes?subject_id='.$subjectId . ($reorderMode ? '&reorder=1' : ''));
+        header('Location: admin_quizzes?subject_id='.$subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -176,11 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = content_sort_order_save($conn, 'quizzes', 'quiz_id', $subjectId, $ids);
         if (!empty($result['ok'])) {
             $_SESSION['message'] = 'Quiz order saved.';
-            header('Location: admin_quizzes?subject_id=' . $subjectId);
         } else {
             $_SESSION['error'] = (string) ($result['error'] ?? 'Could not save quiz order.');
-            header('Location: admin_quizzes?subject_id=' . $subjectId . '&reorder=1');
         }
+        header('Location: admin_quizzes?subject_id=' . $subjectId);
         exit;
     }
     if ($action === 'delete') {
@@ -251,7 +253,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'quiz_title' => $title,
             'subject_name' => (string) ($subject['subject_name'] ?? ''),
         ]);
-        $_SESSION['message'] = 'Quiz created.';
+        $_SESSION['message'] = 'Quiz created. It was added at the end of the student order — use Newest filter or Reorder to place it.';
+        header('Location: admin_quizzes?subject_id='.$subjectId.'&view=newest');
+        exit;
     }
     header('Location: admin_quizzes?subject_id='.$subjectId);
     exit;
@@ -275,8 +279,9 @@ $perPage = 15;
 $offset = ($page - 1) * $perPage;
 
 $searchQ = trim($_GET['q'] ?? '');
-if ($reorderMode) {
-    $searchQ = '';
+$questionsFilter = strtolower(trim((string) ($_GET['questions'] ?? 'all')));
+if (!in_array($questionsFilter, ['all', 'has', 'empty'], true)) {
+    $questionsFilter = 'all';
 }
 $countParts = ['subject_id=?'];
 $countTypes = 'i';
@@ -285,6 +290,11 @@ if ($searchQ !== '') {
     $countParts[] = 'title LIKE ?';
     $countTypes .= 's';
     $countVals[] = '%' . $searchQ . '%';
+}
+if ($questionsFilter === 'has') {
+    $countParts[] = 'EXISTS (SELECT 1 FROM quiz_questions qq WHERE qq.quiz_id = quizzes.quiz_id)';
+} elseif ($questionsFilter === 'empty') {
+    $countParts[] = 'NOT EXISTS (SELECT 1 FROM quiz_questions qq WHERE qq.quiz_id = quizzes.quiz_id)';
 }
 $countSql = 'SELECT COUNT(*) AS total FROM quizzes WHERE ' . implode(' AND ', $countParts);
 $stmt = mysqli_prepare($conn, $countSql);
@@ -301,7 +311,17 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $perPage;
 }
 
-$orderBy = content_sort_order_sql('q', 'quiz_id');
+if ($listView === 'newest') {
+    $orderBy = 'q.quiz_id DESC';
+} elseif ($listView === 'oldest') {
+    $orderBy = 'q.quiz_id ASC';
+} elseif ($listView === 'title') {
+    $orderBy = 'q.title ASC, q.quiz_id ASC';
+} elseif ($listView === 'title_za') {
+    $orderBy = 'q.title DESC, q.quiz_id DESC';
+} else {
+    $orderBy = content_sort_order_sql('q', 'quiz_id');
+}
 $listParts = ['q.subject_id=?'];
 $listTypes = 'i';
 $listVals = [$subjectId];
@@ -310,13 +330,15 @@ if ($searchQ !== '') {
     $listTypes .= 's';
     $listVals[] = '%' . $searchQ . '%';
 }
-$listSql = "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE " . implode(' AND ', $listParts) . " ORDER BY " . $orderBy;
-if (!$reorderMode) {
-    $listSql .= ' LIMIT ? OFFSET ?';
-    $listTypes .= 'ii';
-    $listVals[] = $perPage;
-    $listVals[] = $offset;
+if ($questionsFilter === 'has') {
+    $listParts[] = 'EXISTS (SELECT 1 FROM quiz_questions qq WHERE qq.quiz_id = q.quiz_id)';
+} elseif ($questionsFilter === 'empty') {
+    $listParts[] = 'NOT EXISTS (SELECT 1 FROM quiz_questions qq WHERE qq.quiz_id = q.quiz_id)';
 }
+$listSql = "SELECT q.*, (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt FROM quizzes q WHERE " . implode(' AND ', $listParts) . " ORDER BY " . $orderBy . " LIMIT ? OFFSET ?";
+$listTypes .= 'ii';
+$listVals[] = $perPage;
+$listVals[] = $offset;
 $stmt = mysqli_prepare($conn, $listSql);
 mysqli_stmt_bind_param($stmt, $listTypes, ...$listVals);
 mysqli_stmt_execute($stmt);
@@ -328,10 +350,36 @@ if ($quizzesRes) {
     }
 }
 mysqli_stmt_close($stmt);
-$reorderRows = $reorderMode ? $quizRows : [];
+
+$reorderRows = [];
+$reorderSql = "SELECT q.quiz_id, q.title, q.sort_order,
+    (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id=q.quiz_id) AS questions_cnt
+  FROM quizzes q
+  WHERE q.subject_id = ?
+  ORDER BY " . content_sort_order_sql('q', 'quiz_id');
+$reorderStmt = mysqli_prepare($conn, $reorderSql);
+if ($reorderStmt) {
+    mysqli_stmt_bind_param($reorderStmt, 'i', $subjectId);
+    mysqli_stmt_execute($reorderStmt);
+    $reorderRes = mysqli_stmt_get_result($reorderStmt);
+    if ($reorderRes) {
+        while ($row = mysqli_fetch_assoc($reorderRes)) {
+            $reorderRows[] = $row;
+        }
+    }
+    mysqli_stmt_close($reorderStmt);
+}
+$totalQuizzesAll = count($reorderRows);
 
 $quizTypeLabels = ['topical' => 'Topical'];
 $quizTypeTitles = ['topical' => 'Focused set grouped by topic'];
+$listViewLabels = [
+    'student' => 'Student order',
+    'newest' => 'Newest → oldest',
+    'oldest' => 'Oldest → newest',
+    'title' => 'Title A–Z',
+    'title_za' => 'Title Z–A',
+];
 
 $pageTitle = 'Quizzes - ' . $subject['subject_name'];
 $canSubjects = function_exists('admin_can') && admin_can('subjects');
@@ -342,9 +390,6 @@ if ($canSubjects) {
 }
 $adminBreadcrumbs[] = ['Quizzes', 'admin_quizzes'];
 $adminBreadcrumbs[] = [(string) $subject['subject_name']];
-if ($reorderMode) {
-    $adminBreadcrumbs[] = ['Reorder'];
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -357,12 +402,10 @@ if ($reorderMode) {
   <?php
     $adminHeroIcon = 'question-circle';
     $adminHeroTitle = 'Quizzes - ' . (string) $subject['subject_name'];
-    $adminHeroSubtitle = $reorderMode
-      ? 'Drag quizzes into the order students should see, then save.'
-      : 'Create quizzes, then open Questions to build the question bank.';
+    $adminHeroSubtitle = 'Create quizzes, then open Questions to build the question bank.';
     $adminHeroMeta =
       '<span class="quiz-admin-count-pill" title="Quizzes in this subject">'
-      . (int) $totalQuizzes . ' quiz' . ((int) $totalQuizzes === 1 ? '' : 'zes')
+      . (int) $totalQuizzesAll . ' quiz' . ((int) $totalQuizzesAll === 1 ? '' : 'zes')
       . '</span>'
       . '<span class="quiz-admin-count-pill quiz-admin-count-pill--questions" title="All uploaded questions across every quiz in this subject">'
       . (int) $totalSubjectQuestions . ' question' . ((int) $totalSubjectQuestions === 1 ? '' : 's') . ' total'
@@ -378,14 +421,10 @@ if ($reorderMode) {
     } else {
         $adminHeroActions .= '<span class="admin-btn admin-btn--secondary is-disabled" title="Locked - no access to Lessons" aria-disabled="true"><i class="bi bi-lock-fill"></i> Lessons</span>';
     }
-    if ($reorderMode) {
-        $adminHeroActions .= '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-x-lg"></i> Cancel</a>';
-    } else {
-        if ($totalQuizzes > 1) {
-            $adminHeroActions .= '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>';
-        }
-        $adminHeroActions .= '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
+    if ($totalQuizzesAll > 1) {
+        $adminHeroActions .= '<button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>';
     }
+    $adminHeroActions .= '<button type="button" @click="openNewQuiz()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -403,79 +442,35 @@ if ($reorderMode) {
   <?php endif; ?>
 
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <?php if ($reorderMode): ?>
-      <form method="POST" action="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" id="content-reorder-form">
-        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-        <input type="hidden" name="action" value="reorder">
-        <div class="content-reorder-toolbar">
-          <p class="content-reorder-hint"><i class="bi bi-grip-vertical"></i> Drag using the handle. Students see this exact order.</p>
-          <div class="content-reorder-actions">
-            <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
-            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
-          </div>
-        </div>
-        <div class="overflow-x-auto pl-3 pr-8">
-          <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
-            <thead>
-              <tr>
-                <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
-                <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
-                <th class="px-5 py-3 font-semibold admin-col-primary">Quiz</th>
-                <th class="px-5 py-3 font-semibold text-center">Type</th>
-                <th class="px-5 py-3 font-semibold text-center">Questions</th>
-              </tr>
-            </thead>
-            <tbody id="content-reorder-list">
-              <?php if ($reorderRows === []): ?>
-                <tr>
-                  <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
-                    <div class="font-semibold text-gray-200">No quizzes to reorder</div>
-                  </td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($reorderRows as $idx => $qz): ?>
-                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$qz['quiz_id']; ?>">
-                    <td class="px-3 py-3 content-reorder-col-handle">
-                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
-                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$qz['quiz_id']; ?>">
-                    </td>
-                    <td class="px-3 py-3 content-reorder-col-ord">
-                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
-                    </td>
-                    <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
-                    <td class="px-5 py-3.5 text-center"><span class="inline-block px-2.5 py-1 rounded-md text-xs font-semibold quiz-type-pill quiz-type-pill--post">Topical</span></td>
-                    <td class="px-5 py-3.5 text-center tabular-nums"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-        <?php if ($reorderRows !== []): ?>
-          <div class="content-reorder-toolbar" style="border-top:1px solid rgba(255,255,255,0.08);border-bottom:0;">
-            <p class="content-reorder-hint"><?php echo count($reorderRows); ?> quiz<?php echo count($reorderRows) === 1 ? '' : 'zes'; ?></p>
-            <div class="content-reorder-actions">
-              <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
-              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
-            </div>
-          </div>
-        <?php endif; ?>
-      </form>
-      <script src="assets/js/admin-content-reorder.js?v=1"></script>
-    <?php else: ?>
     <form method="get" action="admin_quizzes" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-      <div class="flex-1 min-w-[200px]">
+      <div class="flex-1 min-w-[180px]">
         <label for="quiz-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
         <input type="search" id="quiz-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search by quiz title..." class="input-custom w-full" autocomplete="off">
       </div>
+      <div class="min-w-[150px]">
+        <label for="quiz-view" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Sort list</label>
+        <select id="quiz-view" name="view" class="input-custom w-full">
+          <?php foreach ($listViewLabels as $vk => $vl): ?>
+            <option value="<?php echo h($vk); ?>" <?php echo $listView === $vk ? 'selected' : ''; ?>><?php echo h($vl); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="min-w-[150px]">
+        <label for="quiz-questions-filter" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Questions</label>
+        <select id="quiz-questions-filter" name="questions" class="input-custom w-full">
+          <option value="all" <?php echo $questionsFilter === 'all' ? 'selected' : ''; ?>>All quizzes</option>
+          <option value="has" <?php echo $questionsFilter === 'has' ? 'selected' : ''; ?>>Has questions</option>
+          <option value="empty" <?php echo $questionsFilter === 'empty' ? 'selected' : ''; ?>>No questions yet</option>
+        </select>
+      </div>
       <div class="flex flex-wrap gap-2">
-        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
-        <?php if ($searchQ !== ''): ?>
+        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-funnel"></i> Apply</button>
+        <?php if ($searchQ !== '' || $listView !== 'student' || $questionsFilter !== 'all'): ?>
           <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
         <?php endif; ?>
-        <?php if ($totalQuizzes > 1): ?>
-          <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>
+        <?php if ($totalQuizzesAll > 1): ?>
+          <button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>
         <?php endif; ?>
       </div>
       <div class="w-full text-sm opacity-70">
@@ -486,6 +481,12 @@ if ($reorderMode) {
         Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
         <span class="mx-1">&middot;</span>
         <strong><?php echo (int)$totalSubjectQuestions; ?></strong> questions total
+        <span class="mx-1">&middot;</span>
+        List: <strong><?php echo h($listViewLabels[$listView] ?? 'Student order'); ?></strong>
+        <?php if ($listView !== 'student'): ?>
+          <span class="mx-1">&middot;</span>
+          <span class="text-amber-200/90">Browsing only — student order is unchanged until you use Reorder.</span>
+        <?php endif; ?>
       </div>
     </form>
     <div class="overflow-x-auto pl-3 pr-8">
@@ -540,9 +541,11 @@ if ($reorderMode) {
             <tr>
               <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
-                <div class="font-semibold text-gray-200">No quizzes yet</div>
-                <p class="text-sm mt-1 text-gray-500">Create your first quiz, then add questions.</p>
+                <div class="font-semibold text-gray-200"><?php echo ($searchQ !== '' || $questionsFilter !== 'all') ? 'No quizzes match your filters' : 'No quizzes yet'; ?></div>
+                <p class="text-sm mt-1 text-gray-500"><?php echo ($searchQ !== '' || $questionsFilter !== 'all') ? 'Try different filters or clear them.' : 'Create your first quiz, then add questions.'; ?></p>
+                <?php if ($searchQ === '' && $questionsFilter === 'all'): ?>
                 <button type="button" @click="openNewQuiz()" class="mt-4 admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Quiz</button>
+                <?php endif; ?>
               </td>
             </tr>
           <?php endif; ?>
@@ -556,6 +559,12 @@ if ($reorderMode) {
             $filterQs = [];
             if ($searchQ !== '') {
                 $filterQs['q'] = $searchQ;
+            }
+            if ($listView !== 'student') {
+                $filterQs['view'] = $listView;
+            }
+            if ($questionsFilter !== 'all') {
+                $filterQs['questions'] = $questionsFilter;
             }
             $filterSuffix = $filterQs ? '&' . http_build_query($filterQs) : '';
             $baseUrl = 'admin_quizzes?subject_id=' . (int)$subjectId . $filterSuffix;
@@ -575,11 +584,74 @@ if ($reorderMode) {
         </ul>
       </nav>
     <?php endif; ?>
-    <?php endif; ?>
+  </div>
+
+  <!-- Reorder Quizzes Modal -->
+  <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="reorderModalOpen = false">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
+    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
+      <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-gray-100 m-0">Reorder Quizzes</h2>
+          <p class="text-sm text-gray-400 mt-1 mb-0">Drag to set the order students see. The main table stays unchanged until you save.</p>
+        </div>
+        <button type="button" @click="reorderModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <?php if ($reorderRows === []): ?>
+        <div class="p-8 text-center text-gray-400">No quizzes to reorder yet.</div>
+      <?php else: ?>
+        <form method="POST" action="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" id="content-reorder-form" class="flex flex-col min-h-0 flex-1">
+          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <input type="hidden" name="action" value="reorder">
+          <div class="px-5 py-3 border-b border-white/10 shrink-0 flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[200px]">
+              <label for="quiz-reorder-filter" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Find in list</label>
+              <input type="search" id="quiz-reorder-filter" data-reorder-filter placeholder="Filter by title (does not change saved order)…" class="input-custom w-full" autocomplete="off">
+            </div>
+            <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-grip-vertical"></i> Drag handles to reorder</p>
+          </div>
+          <div class="overflow-auto flex-1 px-3 py-2">
+            <p data-reorder-filter-empty hidden class="text-center text-sm text-gray-400 py-6">No quizzes match this filter.</p>
+            <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
+              <thead>
+                <tr>
+                  <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
+                  <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
+                  <th class="px-5 py-3 font-semibold admin-col-primary">Quiz</th>
+                  <th class="px-5 py-3 font-semibold text-center">Questions</th>
+                </tr>
+              </thead>
+              <tbody id="content-reorder-list">
+                <?php foreach ($reorderRows as $idx => $qz): ?>
+                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$qz['quiz_id']; ?>" data-search="<?php echo h(strtolower((string) ($qz['title'] ?? ''))); ?>">
+                    <td class="px-3 py-3 content-reorder-col-handle">
+                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$qz['quiz_id']; ?>">
+                    </td>
+                    <td class="px-3 py-3 content-reorder-col-ord">
+                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
+                    </td>
+                    <td class="px-5 py-3.5 admin-col-primary font-semibold"><?php echo h($qz['title']); ?></td>
+                    <td class="px-5 py-3.5 text-center tabular-nums"><?php echo (int)($qz['questions_cnt'] ?? 0); ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <div class="p-4 border-t border-white/10 flex justify-between items-center gap-2 shrink-0">
+            <p class="text-sm opacity-70 m-0"><?php echo count($reorderRows); ?> quiz<?php echo count($reorderRows) === 1 ? '' : 'zes'; ?></p>
+            <div class="flex gap-2">
+              <button type="button" @click="reorderModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+            </div>
+          </div>
+        </form>
+      <?php endif; ?>
+    </div>
   </div>
 
   <!-- Create/Edit Quiz Modal -->
-  <div x-show="quizModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="quizModalOpen = false">
+  <div x-show="quizModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="if (!reorderModalOpen) quizModalOpen = false">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="quizModalOpen = false"></div>
     <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" @click.stop>
       <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head">
@@ -647,8 +719,8 @@ if ($reorderMode) {
           <p class="text-sm text-gray-500">You'll add the questions after creating the quiz.</p>
         </div>
         <div class="mt-6 flex justify-end gap-2">
-          <button type="button" @click="quizModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-200 hover:bg-white/10 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-violet-600 text-white hover:bg-violet-500 transition inline-flex items-center gap-2 shadow-lg shadow-violet-900/30"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
+          <button type="button" @click="quizModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
         </div>
       </form>
     </div>
@@ -678,11 +750,13 @@ if ($reorderMode) {
     </div>
   </div>
 
+  <script src="assets/js/admin-content-reorder.js?v=2"></script>
   <script>
     function quizzesApp() {
       return {
         quizModalOpen: false,
         deleteModalOpen: false,
+        reorderModalOpen: false,
         isEdit: false,
         quiz_id: 0,
         title: '',
@@ -750,6 +824,16 @@ if ($reorderMode) {
           this.delete_quiz_id = id;
           this.delete_quiz_title = title || '';
           this.deleteModalOpen = true;
+        },
+        openReorder() {
+          this.reorderModalOpen = true;
+          this.$nextTick(function () {
+            var form = document.getElementById('content-reorder-form');
+            if (window.AdminContentReorder && form) {
+              window.AdminContentReorder.clearFilter(form);
+              window.AdminContentReorder.init(form);
+            }
+          });
         },
         initEditFromServer() {
           if (this.editFromServer) this.openEditQuiz(

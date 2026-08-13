@@ -17,13 +17,16 @@ $subject = mysqli_fetch_assoc($subRes);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: admin_subjects'); exit; }
 
-$reorderMode = isset($_GET['reorder']) && (string) $_GET['reorder'] === '1';
+$listView = strtolower(trim((string) ($_GET['view'] ?? 'student')));
+if (!in_array($listView, ['student', 'newest', 'oldest', 'title', 'title_za'], true)) {
+    $listView = 'student';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $_SESSION['error'] = 'Invalid request. Please try again.';
-        header('Location: admin_lessons?subject_id='.$subjectId . ($reorderMode ? '&reorder=1' : ''));
+        header('Location: admin_lessons?subject_id='.$subjectId);
         exit;
     }
     $action = $_POST['action'] ?? 'save';
@@ -35,11 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = content_sort_order_save($conn, 'lessons', 'lesson_id', $subjectId, $ids);
         if (!empty($result['ok'])) {
             $_SESSION['message'] = 'Lesson order saved.';
-            header('Location: admin_lessons?subject_id=' . $subjectId);
         } else {
             $_SESSION['error'] = (string) ($result['error'] ?? 'Could not save lesson order.');
-            header('Location: admin_lessons?subject_id=' . $subjectId . '&reorder=1');
         }
+        header('Location: admin_lessons?subject_id=' . $subjectId);
         exit;
     }
     if ($action === 'delete') {
@@ -74,7 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($stmt, 'issi', $subjectId, $title, $desc, $nextOrd);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
-        $_SESSION['message'] = 'Lesson created.';
+        $_SESSION['message'] = 'Lesson created. It was added at the end of the student order — use Newest filter or Reorder to place it.';
+        header('Location: admin_lessons?subject_id='.$subjectId.'&view=newest');
+        exit;
     }
     header('Location: admin_lessons?subject_id='.$subjectId);
     exit;
@@ -98,8 +102,9 @@ $perPage = 15;
 $offset = ($page - 1) * $perPage;
 
 $searchQ = trim($_GET['q'] ?? '');
-if ($reorderMode) {
-    $searchQ = '';
+$materialsFilter = strtolower(trim((string) ($_GET['materials'] ?? 'all')));
+if (!in_array($materialsFilter, ['all', 'complete', 'missing'], true)) {
+    $materialsFilter = 'all';
 }
 
 $countParts = ['subject_id=?'];
@@ -111,6 +116,13 @@ if ($searchQ !== '') {
     $like = '%' . $searchQ . '%';
     $countVals[] = $like;
     $countVals[] = $like;
+}
+if ($materialsFilter === 'complete') {
+    $countParts[] = 'EXISTS (SELECT 1 FROM lesson_videos v WHERE v.lesson_id = lessons.lesson_id)'
+        . ' AND EXISTS (SELECT 1 FROM lesson_handouts h WHERE h.lesson_id = lessons.lesson_id)';
+} elseif ($materialsFilter === 'missing') {
+    $countParts[] = '(NOT EXISTS (SELECT 1 FROM lesson_videos v WHERE v.lesson_id = lessons.lesson_id)'
+        . ' OR NOT EXISTS (SELECT 1 FROM lesson_handouts h WHERE h.lesson_id = lessons.lesson_id))';
 }
 $countSql = 'SELECT COUNT(*) AS total FROM lessons WHERE ' . implode(' AND ', $countParts);
 $stmt = mysqli_prepare($conn, $countSql);
@@ -126,7 +138,17 @@ if ($page > $totalPages) {
     $offset = ($page - 1) * $perPage;
 }
 
-$orderBy = content_sort_order_sql('l', 'lesson_id');
+if ($listView === 'newest') {
+    $orderBy = 'l.lesson_id DESC';
+} elseif ($listView === 'oldest') {
+    $orderBy = 'l.lesson_id ASC';
+} elseif ($listView === 'title') {
+    $orderBy = 'l.title ASC, l.lesson_id ASC';
+} elseif ($listView === 'title_za') {
+    $orderBy = 'l.title DESC, l.lesson_id DESC';
+} else {
+    $orderBy = content_sort_order_sql('l', 'lesson_id');
+}
 $listParts = ['l.subject_id=?'];
 $listTypes = 'i';
 $listVals = [$subjectId];
@@ -137,19 +159,24 @@ if ($searchQ !== '') {
     $listVals[] = $like;
     $listVals[] = $like;
 }
+if ($materialsFilter === 'complete') {
+    $listParts[] = 'EXISTS (SELECT 1 FROM lesson_videos v WHERE v.lesson_id = l.lesson_id)'
+        . ' AND EXISTS (SELECT 1 FROM lesson_handouts h WHERE h.lesson_id = l.lesson_id)';
+} elseif ($materialsFilter === 'missing') {
+    $listParts[] = '(NOT EXISTS (SELECT 1 FROM lesson_videos v WHERE v.lesson_id = l.lesson_id)'
+        . ' OR NOT EXISTS (SELECT 1 FROM lesson_handouts h WHERE h.lesson_id = l.lesson_id))';
+}
 $listSql = '
     SELECT l.*,
       (SELECT COUNT(*) FROM lesson_videos v WHERE v.lesson_id=l.lesson_id) AS videos_cnt,
       (SELECT COUNT(*) FROM lesson_handouts h WHERE h.lesson_id=l.lesson_id) AS handouts_cnt
     FROM lessons l
     WHERE ' . implode(' AND ', $listParts) . '
-    ORDER BY ' . $orderBy;
-if (!$reorderMode) {
-    $listSql .= ' LIMIT ? OFFSET ?';
-    $listTypes .= 'ii';
-    $listVals[] = $perPage;
-    $listVals[] = $offset;
-}
+    ORDER BY ' . $orderBy . '
+    LIMIT ? OFFSET ?';
+$listTypes .= 'ii';
+$listVals[] = $perPage;
+$listVals[] = $offset;
 $stmt = mysqli_prepare($conn, $listSql);
 mysqli_stmt_bind_param($stmt, $listTypes, ...$listVals);
 mysqli_stmt_execute($stmt);
@@ -161,13 +188,39 @@ if ($lessonsRes) {
     }
 }
 mysqli_stmt_close($stmt);
-$reorderRows = $reorderMode ? $lessonRows : [];
+
+// Full subject list in student order for the reorder modal (never paginated/filtered).
+$reorderRows = [];
+$reorderSql = '
+    SELECT l.lesson_id, l.title, l.description, l.sort_order,
+      (SELECT COUNT(*) FROM lesson_videos v WHERE v.lesson_id=l.lesson_id) AS videos_cnt,
+      (SELECT COUNT(*) FROM lesson_handouts h WHERE h.lesson_id=l.lesson_id) AS handouts_cnt
+    FROM lessons l
+    WHERE l.subject_id = ?
+    ORDER BY ' . content_sort_order_sql('l', 'lesson_id');
+$reorderStmt = mysqli_prepare($conn, $reorderSql);
+if ($reorderStmt) {
+    mysqli_stmt_bind_param($reorderStmt, 'i', $subjectId);
+    mysqli_stmt_execute($reorderStmt);
+    $reorderRes = mysqli_stmt_get_result($reorderStmt);
+    if ($reorderRes) {
+        while ($row = mysqli_fetch_assoc($reorderRes)) {
+            $reorderRows[] = $row;
+        }
+    }
+    mysqli_stmt_close($reorderStmt);
+}
+$totalLessonsAll = count($reorderRows);
 
 $pageTitle = 'Lessons - ' . $subject['subject_name'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($subject['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], ['Lessons'] ];
-if ($reorderMode) {
-    $adminBreadcrumbs[] = ['Reorder'];
-}
+$listViewLabels = [
+    'student' => 'Student order',
+    'newest' => 'Newest → oldest',
+    'oldest' => 'Oldest → newest',
+    'title' => 'Title A–Z',
+    'title_za' => 'Title Z–A',
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -180,21 +233,15 @@ if ($reorderMode) {
   <?php
     $adminHeroIcon = 'file-text';
     $adminHeroTitle = 'Lessons - ' . (string) $subject['subject_name'];
-    $adminHeroSubtitle = $reorderMode
-      ? 'Drag lessons into the order students should see, then save.'
-      : 'Create lessons, then open Materials to add videos and handouts.';
-    $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessons . ' lesson' . ((int) $totalLessons === 1 ? '' : 's') . '</span>';
+    $adminHeroSubtitle = 'Create lessons, then open Materials to add videos and handouts.';
+    $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessonsAll . ' lesson' . ((int) $totalLessonsAll === 1 ? '' : 's') . '</span>';
     $adminHeroActions =
       '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
       . '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>';
-    if ($reorderMode) {
-        $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-x-lg"></i> Cancel</a>';
-    } else {
-        if ($totalLessons > 1) {
-            $adminHeroActions .= '<a href="admin_lessons?subject_id=' . (int) $subjectId . '&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>';
-        }
-        $adminHeroActions .= '<button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>';
+    if ($totalLessonsAll > 1) {
+        $adminHeroActions .= '<button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>';
     }
+    $adminHeroActions .= '<button type="button" @click="openNewLesson()" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg"></i> New Lesson</button>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -212,84 +259,35 @@ if ($reorderMode) {
   <?php endif; ?>
 
   <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <?php if ($reorderMode): ?>
-      <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" id="content-reorder-form">
-        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-        <input type="hidden" name="action" value="reorder">
-        <div class="content-reorder-toolbar">
-          <p class="content-reorder-hint"><i class="bi bi-grip-vertical"></i> Drag using the handle. Students see this exact order.</p>
-          <div class="content-reorder-actions">
-            <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
-            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
-          </div>
-        </div>
-        <div class="overflow-x-auto pl-3 pr-8">
-          <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
-            <thead>
-              <tr>
-                <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
-                <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
-                <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
-                <th class="px-5 py-3 font-semibold text-center">Videos</th>
-                <th class="px-5 py-3 font-semibold text-center">Handouts</th>
-              </tr>
-            </thead>
-            <tbody id="content-reorder-list">
-              <?php if ($reorderRows === []): ?>
-                <tr>
-                  <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
-                    <div class="font-semibold text-gray-200">No lessons to reorder</div>
-                  </td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($reorderRows as $idx => $l): ?>
-                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$l['lesson_id']; ?>">
-                    <td class="px-3 py-3 content-reorder-col-handle">
-                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
-                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$l['lesson_id']; ?>">
-                    </td>
-                    <td class="px-3 py-3 content-reorder-col-ord">
-                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
-                    </td>
-                    <td class="px-5 py-3 admin-col-primary">
-                      <div class="font-semibold"><?php echo h($l['title']); ?></div>
-                      <?php if (!empty($l['description'])): ?>
-                        <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
-                      <?php endif; ?>
-                    </td>
-                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['videos_cnt'] ?? 0); ?></td>
-                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['handouts_cnt'] ?? 0); ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-        <?php if ($reorderRows !== []): ?>
-          <div class="content-reorder-toolbar" style="border-top:1px solid rgba(255,255,255,0.08);border-bottom:0;">
-            <p class="content-reorder-hint"><?php echo count($reorderRows); ?> lesson<?php echo count($reorderRows) === 1 ? '' : 's'; ?></p>
-            <div class="content-reorder-actions">
-              <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a>
-              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
-            </div>
-          </div>
-        <?php endif; ?>
-      </form>
-      <script src="assets/js/admin-content-reorder.js?v=1"></script>
-    <?php else: ?>
     <form method="get" action="admin_lessons" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-      <div class="flex-1 min-w-[200px]">
+      <div class="flex-1 min-w-[180px]">
         <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
         <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description..." class="input-custom w-full" autocomplete="off">
       </div>
+      <div class="min-w-[150px]">
+        <label for="lessons-view" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Sort list</label>
+        <select id="lessons-view" name="view" class="input-custom w-full">
+          <?php foreach ($listViewLabels as $vk => $vl): ?>
+            <option value="<?php echo h($vk); ?>" <?php echo $listView === $vk ? 'selected' : ''; ?>><?php echo h($vl); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="min-w-[150px]">
+        <label for="lessons-materials" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Materials</label>
+        <select id="lessons-materials" name="materials" class="input-custom w-full">
+          <option value="all" <?php echo $materialsFilter === 'all' ? 'selected' : ''; ?>>All lessons</option>
+          <option value="complete" <?php echo $materialsFilter === 'complete' ? 'selected' : ''; ?>>Has video + handout</option>
+          <option value="missing" <?php echo $materialsFilter === 'missing' ? 'selected' : ''; ?>>Missing materials</option>
+        </select>
+      </div>
       <div class="flex flex-wrap gap-2">
-        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-search"></i> Apply</button>
-        <?php if ($searchQ !== ''): ?>
+        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-funnel"></i> Apply</button>
+        <?php if ($searchQ !== '' || $listView !== 'student' || $materialsFilter !== 'all'): ?>
           <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
         <?php endif; ?>
-        <?php if ($totalLessons > 1): ?>
-          <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>&reorder=1" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</a>
+        <?php if ($totalLessonsAll > 1): ?>
+          <button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>
         <?php endif; ?>
       </div>
       <div class="w-full text-sm opacity-70">
@@ -298,6 +296,12 @@ if ($reorderMode) {
           <span class="mx-1">·</span>
         <?php endif; ?>
         Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
+        <span class="mx-1">·</span>
+        List: <strong><?php echo h($listViewLabels[$listView] ?? 'Student order'); ?></strong>
+        <?php if ($listView !== 'student'): ?>
+          <span class="mx-1">·</span>
+          <span class="text-amber-200/90">Browsing only — student order is unchanged until you use Reorder.</span>
+        <?php endif; ?>
       </div>
     </form>
     <div class="overflow-x-auto pl-3 pr-8">
@@ -373,7 +377,16 @@ if ($reorderMode) {
       <nav class="quiz-admin-pagination px-5 py-4 flex justify-center" aria-label="Lesson pagination">
         <ul class="flex flex-wrap items-center gap-1">
           <?php
-            $filterQs = $searchQ !== '' ? ['q' => $searchQ] : [];
+            $filterQs = [];
+            if ($searchQ !== '') {
+                $filterQs['q'] = $searchQ;
+            }
+            if ($listView !== 'student') {
+                $filterQs['view'] = $listView;
+            }
+            if ($materialsFilter !== 'all') {
+                $filterQs['materials'] = $materialsFilter;
+            }
             $filterSuffix = $filterQs ? '&' . http_build_query($filterQs) : '';
             $baseUrl = 'admin_lessons?subject_id=' . (int)$subjectId . $filterSuffix;
             $mk = function ($p) use ($baseUrl) { return $baseUrl . ($p > 1 ? '&page=' . $p : ''); };
@@ -392,11 +405,81 @@ if ($reorderMode) {
         </ul>
       </nav>
     <?php endif; ?>
-    <?php endif; ?>
+  </div>
+
+  <!-- Reorder Lessons Modal -->
+  <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="reorderModalOpen = false">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
+    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden" @click.stop>
+      <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head shrink-0">
+        <div>
+          <h2 class="text-xl font-bold text-gray-100 m-0">Reorder Lessons</h2>
+          <p class="text-sm text-gray-400 mt-1 mb-0">Drag to set the order students see. The main table stays unchanged until you save.</p>
+        </div>
+        <button type="button" @click="reorderModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <?php if ($reorderRows === []): ?>
+        <div class="p-8 text-center text-gray-400">No lessons to reorder yet.</div>
+      <?php else: ?>
+        <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" id="content-reorder-form" class="flex flex-col min-h-0 flex-1">
+          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <input type="hidden" name="action" value="reorder">
+          <div class="px-5 py-3 border-b border-white/10 shrink-0 flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[200px]">
+              <label for="lessons-reorder-filter" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Find in list</label>
+              <input type="search" id="lessons-reorder-filter" data-reorder-filter placeholder="Filter by title (does not change saved order)…" class="input-custom w-full" autocomplete="off">
+            </div>
+            <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-grip-vertical"></i> Drag handles to reorder</p>
+          </div>
+          <div class="overflow-auto flex-1 px-3 py-2">
+            <p data-reorder-filter-empty hidden class="text-center text-sm text-gray-400 py-6">No lessons match this filter.</p>
+            <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
+              <thead>
+                <tr>
+                  <th class="px-3 py-3 font-semibold content-reorder-col-handle" aria-label="Drag"></th>
+                  <th class="px-3 py-3 font-semibold content-reorder-col-ord">#</th>
+                  <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
+                  <th class="px-5 py-3 font-semibold text-center">Videos</th>
+                  <th class="px-5 py-3 font-semibold text-center">Handouts</th>
+                </tr>
+              </thead>
+              <tbody id="content-reorder-list">
+                <?php foreach ($reorderRows as $idx => $l): ?>
+                  <tr class="quiz-admin-row" draggable="true" data-id="<?php echo (int)$l['lesson_id']; ?>" data-search="<?php echo h(strtolower(($l['title'] ?? '') . ' ' . ($l['description'] ?? ''))); ?>">
+                    <td class="px-3 py-3 content-reorder-col-handle">
+                      <span class="content-reorder-handle" title="Drag to reorder" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                      <input type="hidden" name="ordered_ids[]" value="<?php echo (int)$l['lesson_id']; ?>">
+                    </td>
+                    <td class="px-3 py-3 content-reorder-col-ord">
+                      <span class="content-reorder-ord" data-order-num><?php echo (int)$idx + 1; ?></span>
+                    </td>
+                    <td class="px-5 py-3 admin-col-primary">
+                      <div class="font-semibold"><?php echo h($l['title']); ?></div>
+                      <?php if (!empty($l['description'])): ?>
+                        <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['videos_cnt'] ?? 0); ?></td>
+                    <td class="px-5 py-3 text-center tabular-nums"><?php echo (int)($l['handouts_cnt'] ?? 0); ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <div class="p-4 border-t border-white/10 flex justify-between items-center gap-2 shrink-0">
+            <p class="text-sm opacity-70 m-0"><?php echo count($reorderRows); ?> lesson<?php echo count($reorderRows) === 1 ? '' : 's'; ?></p>
+            <div class="flex gap-2">
+              <button type="button" @click="reorderModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+              <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
+            </div>
+          </div>
+        </form>
+      <?php endif; ?>
+    </div>
   </div>
 
   <!-- Create/Edit Lesson Modal -->
-  <div x-show="lessonModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="lessonModalOpen = false">
+  <div x-show="lessonModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="if (!reorderModalOpen) lessonModalOpen = false">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="lessonModalOpen = false"></div>
     <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" @click.stop>
       <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head">
@@ -418,8 +501,8 @@ if ($reorderMode) {
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
-          <button type="button" @click="lessonModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-200 hover:bg-white/10 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition inline-flex items-center gap-2 shadow-lg shadow-emerald-900/30"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
+          <button type="button" @click="lessonModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
         </div>
       </form>
     </div>
@@ -449,11 +532,13 @@ if ($reorderMode) {
     </div>
   </div>
 
+  <script src="assets/js/admin-content-reorder.js?v=2"></script>
   <script>
     function lessonsApp() {
       return {
         lessonModalOpen: false,
         deleteModalOpen: false,
+        reorderModalOpen: false,
         isEdit: false,
         lesson_id: 0,
         title: '',
@@ -479,6 +564,16 @@ if ($reorderMode) {
           this.delete_lesson_id = id;
           this.delete_lesson_title = title || '';
           this.deleteModalOpen = true;
+        },
+        openReorder() {
+          this.reorderModalOpen = true;
+          this.$nextTick(function () {
+            var form = document.getElementById('content-reorder-form');
+            if (window.AdminContentReorder && form) {
+              window.AdminContentReorder.clearFilter(form);
+              window.AdminContentReorder.init(form);
+            }
+          });
         },
         initEditFromServer() {
           if (this.editFromServer) this.openEditLesson(this.editFromServer.id, this.editFromServer.title, this.editFromServer.description);
