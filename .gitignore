@@ -33,5 +33,5 @@ composer-setup.php
 # Node dependencies (tracked so collaborators don't need npm install)
 # node_modules/
 
-# User uploads (tracked so collaborators get the folder; avoid very large files)
-# uploads/
+# User uploads
+uploads/
