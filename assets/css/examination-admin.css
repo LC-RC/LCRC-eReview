@@ -787,10 +787,10 @@ body.admin-app.examination-admin-page .sections-table .section-count-meta {
   margin-top: 0.15rem;
 }
 
-/* Examinations list — compact actions (Edit + ⋮ only; links live in dropdown) */
+/* Examinations list — Edit + Delete + ⋮ */
 body.admin-app.examination-admin-page .examination-list-actions {
   display: inline-flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;

@@ -139,7 +139,7 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
       <div id="sectionsList">
         <?php foreach ($sectionsVal as $idx => $sec): ?>
           <div class="flex gap-2 mb-2 section-row">
-            <select class="flex-1" name="sections[]" <?php echo $assignmentLocked ? 'disabled' : ''; ?>>
+            <select class="flex-1" name="sections[]" <?php echo $assignmentLocked ? 'disabled data-locked="1"' : ''; ?>>
               <option value="">Select section</option>
               <?php foreach ($suggestedSections as $sg): ?>
                 <?php $sg = trim((string) $sg); if ($sg === '') continue; ?>
@@ -317,23 +317,50 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
   var isModalRender = <?php echo $isModalRender ? 'true' : 'false'; ?>;
 
   function scope(){ var r = form.querySelector('input[name="examinee_scope"]:checked'); return r ? r.value : 'college_student'; }
-  function mode(){ var r = form.querySelector('input[name="assignment_mode"]:checked'); return r ? r.value : 'all'; }
+  function mode(){
+    var sc = scope();
+    var groupId = sc === 'reviewee' ? 'assignmentReviewee' : (sc === 'both' ? 'assignmentBoth' : 'assignmentCollegeStudent');
+    var group = document.getElementById(groupId);
+    var r = group ? group.querySelector('input[name="assignment_mode"]:checked:not([disabled])') : null;
+    if (!r) r = form.querySelector('input[name="assignment_mode"]:checked:not([disabled])');
+    return r ? r.value : 'all';
+  }
 
   function setCheckedMode(value) {
-    var radios = form.querySelectorAll('input[name="assignment_mode"]');
+    var sc = scope();
+    var groupId = sc === 'reviewee' ? 'assignmentReviewee' : (sc === 'both' ? 'assignmentBoth' : 'assignmentCollegeStudent');
+    var group = document.getElementById(groupId);
+    if (!group) return;
+    var radios = group.querySelectorAll('input[name="assignment_mode"]');
     var matched = false;
-    radios.forEach(function(r){ if (r.value === value) { r.checked = true; matched = true; } });
+    radios.forEach(function(r){
+      if (r.value === value) { r.checked = true; matched = true; }
+    });
     if (!matched && radios.length) radios[0].checked = true;
   }
 
   function syncAssignmentGroups() {
     var sc = scope();
-    document.getElementById('assignmentCollegeStudent').classList.toggle('hidden', sc !== 'college_student');
-    document.getElementById('assignmentReviewee').classList.toggle('hidden', sc !== 'reviewee');
-    document.getElementById('assignmentBoth').classList.toggle('hidden', sc !== 'both');
+    var groups = {
+      assignmentCollegeStudent: sc === 'college_student',
+      assignmentReviewee: sc === 'reviewee',
+      assignmentBoth: sc === 'both'
+    };
+    Object.keys(groups).forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      var active = !!groups[id];
+      el.classList.toggle('hidden', !active);
+      el.querySelectorAll('input[name="assignment_mode"]').forEach(function(r){
+        r.disabled = !active;
+        if (!active) r.checked = false;
+      });
+    });
     var current = mode();
     if (sc === 'reviewee' && (current === 'sections' || current === 'sections_and_users')) {
       setCheckedMode('all');
+    } else if (!form.querySelector('#' + (sc === 'reviewee' ? 'assignmentReviewee' : (sc === 'both' ? 'assignmentBoth' : 'assignmentCollegeStudent')) + ' input[name="assignment_mode"]:checked')) {
+      setCheckedMode(current || initialMode || 'all');
     }
   }
 
@@ -348,6 +375,14 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
       || (sc === 'both' && (m === 'users' || m === 'sections_and_users'));
     document.getElementById('sectionsBlock').classList.toggle('hidden', !showSections);
     document.getElementById('usersBlock').classList.toggle('hidden', !showUsers);
+    form.querySelectorAll('#sectionsBlock select[name="sections[]"]').forEach(function(sel){
+      if (sel.dataset.locked === '1') return;
+      sel.disabled = !showSections;
+    });
+    form.querySelectorAll('#usersBlock input[name="user_ids[]"]').forEach(function(cb){
+      if (cb.dataset.locked === '1') return;
+      cb.disabled = !showUsers;
+    });
     var usersLabel = document.getElementById('usersBlockLabel');
     if (usersLabel) {
       usersLabel.textContent = sc === 'reviewee' ? 'Selected reviewees' : (sc === 'both' ? 'Selected individuals (students or reviewees)' : 'Selected students');

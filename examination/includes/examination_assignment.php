@@ -33,6 +33,39 @@ function examination_normalize_assignment_mode(string $mode): string
     return diagnostic_exam_normalize_assignment_mode($mode);
 }
 
+/**
+ * Normalize section strings for equality checks (trim, collapse spaces, case-fold).
+ */
+function examination_normalize_section_compare_key(string $section): string
+{
+    $s = trim(preg_replace('/\s+/u', ' ', $section) ?? $section);
+    if ($s === '') {
+        return '';
+    }
+
+    return function_exists('mb_strtolower') ? mb_strtolower($s, 'UTF-8') : strtolower($s);
+}
+
+/**
+ * Whether the student's section matches any targeted section value.
+ *
+ * @param list<string|mixed> $assignedSections
+ */
+function examination_section_is_in_list(string $userSection, array $assignedSections): bool
+{
+    $key = examination_normalize_section_compare_key($userSection);
+    if ($key === '') {
+        return false;
+    }
+    foreach ($assignedSections as $sec) {
+        if (examination_normalize_section_compare_key((string)$sec) === $key) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function examination_examinee_scope_label(string $scope): string
 {
     return diagnostic_exam_examinee_scope_label($scope);

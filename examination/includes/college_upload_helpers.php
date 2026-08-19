@@ -430,7 +430,7 @@ function college_upload_section_summary(mysqli $conn, int $taskId, string $assig
     }
     $secs = college_upload_load_task_sections($conn, $taskId);
     if ($secs === []) {
-        return 'All sections';
+        return 'No sections selected';
     }
     if (count($secs) <= 2) {
         return implode(', ', $secs);
@@ -444,6 +444,8 @@ function college_upload_section_summary(mysqli $conn, int $taskId, string $assig
  */
 function college_upload_user_matches_task(mysqli $conn, int $userId, array $task, ?array $userRow = null): bool
 {
+    require_once __DIR__ . '/examination_assignment.php';
+
     $userId = (int) $userId;
     if ($userId <= 0) {
         return false;
@@ -480,20 +482,18 @@ function college_upload_user_matches_task(mysqli $conn, int $userId, array $task
     if ($scope === 'college_student' && $reviewType === 'reviewee') {
         return false;
     }
-    $mode = strtolower(trim((string) ($task['assignment_mode'] ?? 'all')));
+    $mode = examination_normalize_assignment_mode((string) ($task['assignment_mode'] ?? 'all'));
+    // Upload tasks only support all | sections.
     if ($mode !== 'sections') {
         return true;
     }
-    $userSection = trim((string) ($userRow['section'] ?? ''));
-    if ($userSection === '') {
+    $taskSections = college_upload_load_task_sections($conn, (int) ($task['task_id'] ?? 0));
+    // Empty section map must not open the task to everyone.
+    if ($taskSections === []) {
         return false;
     }
-    $taskSections = college_upload_load_task_sections($conn, (int) ($task['task_id'] ?? 0));
-    if ($taskSections === []) {
-        return true;
-    }
 
-    return in_array($userSection, $taskSections, true);
+    return examination_section_is_in_list(trim((string) ($userRow['section'] ?? '')), $taskSections);
 }
 
 /**

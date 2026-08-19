@@ -56,55 +56,46 @@ usort($upcoming, static function ($a, $b) {
 $upcoming = array_slice($upcoming, 0, 5);
 
 $pendingUploads = 0;
-$r2 = @mysqli_query($conn, "
-  SELECT COUNT(*) AS c FROM college_upload_tasks t
-  LEFT JOIN college_submissions s ON s.task_id=t.task_id AND s.user_id=" . (int)$uid . "
-  WHERE t.is_open=1 AND t.deadline >= '$now' AND s.submission_id IS NULL
-");
-if ($r2) {
-    $pendingUploads = (int)(mysqli_fetch_assoc($r2)['c'] ?? 0);
-    mysqli_free_result($r2);
-}
-
 $uploadDue = [];
-$tq = @mysqli_query($conn, "
-  SELECT t.task_id, t.title, t.deadline FROM college_upload_tasks t
-  LEFT JOIN college_submissions s ON s.task_id=t.task_id AND s.user_id=" . (int)$uid . "
-  WHERE t.is_open=1 AND t.deadline >= '$now' AND s.submission_id IS NULL
-  ORDER BY t.deadline ASC LIMIT 5
-");
-if ($tq) {
-    while ($row = mysqli_fetch_assoc($tq)) {
-        $uploadDue[] = $row;
-    }
-    mysqli_free_result($tq);
-}
-
 $dueSoonUploads = 0;
-$r5 = @mysqli_query($conn, "
-  SELECT COUNT(*) AS c
-  FROM college_upload_tasks t
-  LEFT JOIN college_submissions s ON s.task_id=t.task_id AND s.user_id=" . (int)$uid . "
-  WHERE t.is_open=1
-    AND t.deadline IS NOT NULL
-    AND t.deadline >= '{$now}'
-    AND t.deadline <= DATE_ADD('{$now}', INTERVAL 3 DAY)
-    AND s.submission_id IS NULL
-");
-if ($r5) {
-    $dueSoonUploads = (int)(mysqli_fetch_assoc($r5)['c'] ?? 0);
-    mysqli_free_result($r5);
-}
-
 $openUploadTasksTotal = 0;
-$r6 = @mysqli_query($conn, "
-  SELECT COUNT(*) AS c
-  FROM college_upload_tasks t
-  WHERE t.is_open=1 AND t.deadline >= '{$now}'
-");
-if ($r6) {
-    $openUploadTasksTotal = (int)(mysqli_fetch_assoc($r6)['c'] ?? 0);
-    mysqli_free_result($r6);
+require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
+$eligibleUploadTasks = college_upload_list_for_student($conn, $uidDash);
+foreach ($eligibleUploadTasks as $taskRow) {
+    $deadline = (string)($taskRow['deadline'] ?? '');
+    if ($deadline === '' || $deadline < $now) {
+        continue;
+    }
+    $openUploadTasksTotal++;
+    $taskId = (int)($taskRow['task_id'] ?? 0);
+    $hasSubmission = false;
+    if ($taskId > 0) {
+        $sq = @mysqli_query(
+            $conn,
+            'SELECT submission_id FROM college_submissions WHERE task_id=' . $taskId . ' AND user_id=' . $uidDash . ' LIMIT 1'
+        );
+        if ($sq && mysqli_fetch_assoc($sq)) {
+            $hasSubmission = true;
+        }
+        if ($sq) {
+            mysqli_free_result($sq);
+        }
+    }
+    if ($hasSubmission) {
+        continue;
+    }
+    $pendingUploads++;
+    $dTs = strtotime($deadline);
+    if ($dTs !== false && $dTs <= $soonTs) {
+        $dueSoonUploads++;
+    }
+    if (count($uploadDue) < 5) {
+        $uploadDue[] = [
+            'task_id' => $taskId,
+            'title' => (string)($taskRow['title'] ?? ''),
+            'deadline' => $deadline,
+        ];
+    }
 }
 
 $examEngagementPct = ($completedExams + $activeExams) > 0 ? (int)round(($completedExams / ($completedExams + $activeExams)) * 100) : 0;

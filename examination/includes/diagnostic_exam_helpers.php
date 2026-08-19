@@ -263,18 +263,13 @@ function diagnostic_exam_load_batch_users(mysqli $conn, int $batchId): array
 
 function diagnostic_exam_user_in_batch_sections(mysqli $conn, int $batchId, string $section): bool
 {
-    if ($section === '') {
+    require_once __DIR__ . '/examination_assignment.php';
+    if (examination_normalize_section_compare_key($section) === '') {
         return false;
     }
-    $st = mysqli_prepare($conn, 'SELECT 1 FROM diagnostic_batch_sections WHERE batch_id=? AND section_value=? LIMIT 1');
-    if (!$st) {
-        return false;
-    }
-    mysqli_stmt_bind_param($st, 'is', $batchId, $section);
-    mysqli_stmt_execute($st);
-    $ok = (bool)mysqli_fetch_assoc(mysqli_stmt_get_result($st));
-    mysqli_stmt_close($st);
-    return $ok;
+    $assigned = diagnostic_exam_load_batch_sections($conn, $batchId);
+
+    return examination_section_is_in_list($section, $assigned);
 }
 
 function diagnostic_exam_user_in_batch_assignees(mysqli $conn, int $batchId, int $userId): bool
@@ -292,19 +287,11 @@ function diagnostic_exam_user_in_batch_assignees(mysqli $conn, int $batchId, int
 
 function diagnostic_exam_user_passes_assignment(mysqli $conn, int $userId, array $batch, string $section): bool
 {
+    require_once __DIR__ . '/examination_eligibility.php';
     $batchId = (int)($batch['batch_id'] ?? 0);
-    $mode = diagnostic_exam_normalize_assignment_mode((string)($batch['assignment_mode'] ?? 'sections'));
-    if ($mode === 'all') {
-        return true;
-    }
-    $inSection = diagnostic_exam_user_in_batch_sections($conn, $batchId, $section);
-    $inUsers = diagnostic_exam_user_in_batch_assignees($conn, $batchId, $userId);
-    return match ($mode) {
-        'sections' => $inSection,
-        'users' => $inUsers,
-        'sections_and_users' => $inSection || $inUsers,
-        default => false,
-    };
+    $mode = (string)($batch['assignment_mode'] ?? 'sections');
+
+    return examination_user_passes_assignment($conn, $userId, $mode, $batchId, 'diagnostic', $section);
 }
 
 function diagnostic_exam_user_is_assigned(mysqli $conn, int $userId, array $batch): bool

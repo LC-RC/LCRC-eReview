@@ -238,6 +238,12 @@ function college_sections_update(mysqli $conn, int $sectionId, string $name, str
                 mysqli_stmt_execute($u3);
                 mysqli_stmt_close($u3);
             }
+            $u4 = mysqli_prepare($conn, 'UPDATE college_upload_task_sections SET section_value=? WHERE section_value=?');
+            if ($u4) {
+                mysqli_stmt_bind_param($u4, 'ss', $name, $oldName);
+                mysqli_stmt_execute($u4);
+                mysqli_stmt_close($u4);
+            }
         }
         mysqli_commit($conn);
     } catch (Throwable $e) {

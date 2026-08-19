@@ -42,22 +42,12 @@ function examination_record_schedule_is_open(array $record, string $nowSql): boo
 
 function examination_user_in_assigned_sections(mysqli $conn, string $examType, int $sourceId, string $section): bool
 {
-    if ($section === '' || $sourceId <= 0) {
+    if (examination_normalize_section_compare_key($section) === '' || $sourceId <= 0) {
         return false;
     }
-    if ($examType === 'diagnostic') {
-        return diagnostic_exam_user_in_batch_sections($conn, $sourceId, $section);
-    }
-    $st = mysqli_prepare($conn, 'SELECT 1 FROM college_exam_sections WHERE exam_id=? AND section_value=? LIMIT 1');
-    if (!$st) {
-        return false;
-    }
-    mysqli_stmt_bind_param($st, 'is', $sourceId, $section);
-    mysqli_stmt_execute($st);
-    $ok = (bool)mysqli_fetch_assoc(mysqli_stmt_get_result($st));
-    mysqli_stmt_close($st);
+    $assigned = examination_load_assigned_sections($conn, $examType, $sourceId);
 
-    return $ok;
+    return examination_section_is_in_list($section, $assigned);
 }
 
 function examination_user_in_explicit_assignees(mysqli $conn, string $examType, int $sourceId, int $userId): bool
@@ -93,15 +83,30 @@ function examination_user_passes_assignment(
         return true;
     }
     $examType = examination_exam_type_normalize($examType);
-    $inSection = examination_user_in_assigned_sections($conn, $examType, $sourceId, $userSection);
-    $inUsers = examination_user_in_explicit_assignees($conn, $examType, $sourceId, $userId);
+    if ($sourceId <= 0) {
+        return false;
+    }
 
-    return match ($mode) {
-        'sections' => $inSection,
-        'users' => $inUsers,
-        'sections_and_users' => $inSection || $inUsers,
-        default => false,
-    };
+    // Section-targeted items with an empty map must not fall open to everyone.
+    if ($mode === 'sections' || $mode === 'sections_and_users') {
+        $assignedSections = examination_load_assigned_sections($conn, $examType, $sourceId);
+        if ($mode === 'sections' && $assignedSections === []) {
+            return false;
+        }
+        $inSection = examination_section_is_in_list($userSection, $assignedSections);
+        if ($mode === 'sections') {
+            return $inSection;
+        }
+        $inUsers = examination_user_in_explicit_assignees($conn, $examType, $sourceId, $userId);
+
+        return $inSection || $inUsers;
+    }
+
+    if ($mode === 'users') {
+        return examination_user_in_explicit_assignees($conn, $examType, $sourceId, $userId);
+    }
+
+    return false;
 }
 
 /**
@@ -260,17 +265,15 @@ function examination_pure_assigned_user_ids(mysqli $conn, string $examType, int 
         if ($mode === 'sections' || $mode === 'sections_and_users') {
             $sections = examination_load_assigned_sections($conn, $examType, $sourceId);
             if ($sections !== []) {
-                $in = [];
-                foreach ($sections as $sec) {
-                    $in[] = "'" . mysqli_real_escape_string($conn, $sec) . "'";
-                }
-                $sq = 'SELECT u.user_id FROM users u WHERE ' . $examineeWhere . " AND {$scopeSql} AND TRIM(COALESCE(u.section,'')) IN (" . implode(',', $in) . ')';
-                $res = @mysqli_query($conn, $sq);
-                if ($res) {
-                    while ($row = mysqli_fetch_assoc($res)) {
-                        $ids[(int)($row['user_id'] ?? 0)] = true;
+                // Case-insensitive section match via PHP filter (section names are few).
+                $qAll = @mysqli_query($conn, "SELECT u.user_id, TRIM(COALESCE(u.section,'')) AS section FROM users u WHERE {$examineeWhere} AND {$scopeSql}");
+                if ($qAll) {
+                    while ($row = mysqli_fetch_assoc($qAll)) {
+                        if (examination_section_is_in_list((string)($row['section'] ?? ''), $sections)) {
+                            $ids[(int)($row['user_id'] ?? 0)] = true;
+                        }
                     }
-                    mysqli_free_result($res);
+                    mysqli_free_result($qAll);
                 }
             }
         }

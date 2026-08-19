@@ -357,3 +357,79 @@ function examination_domain_build_config_post_from_record(mysqli $conn, string $
 
     return $post;
 }
+
+/**
+ * Permanently delete one examination owned by the professor.
+ *
+ * @return array{ok:bool,error?:string,title?:string}
+ */
+function examination_domain_delete(mysqli $conn, string $examType, int $sourceId, int $professorId): array
+{
+    $examType = examination_normalize_exam_type($examType);
+    if ($examType === '' || $sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $result = examination_domain_call($examType, 'delete', [$conn, $sourceId, $professorId]);
+    if (!is_array($result)) {
+        return ['ok' => false, 'error' => 'Delete is not available for this examination type.'];
+    }
+
+    return $result;
+}
+
+/**
+ * Delete many examinations. Keys are "exam_type:source_id" (e.g. regular:12).
+ *
+ * @param list<string> $keys
+ * @return array{ok:bool,deleted:int,skipped:int,errors:list<string>}
+ */
+function examination_domain_delete_many(mysqli $conn, array $keys, int $professorId): array
+{
+    $deleted = 0;
+    $skipped = 0;
+    $errors = [];
+    $seen = [];
+
+    foreach ($keys as $rawKey) {
+        $key = trim((string)$rawKey);
+        if ($key === '' || isset($seen[$key])) {
+            continue;
+        }
+        $seen[$key] = true;
+
+        $parts = explode(':', $key, 2);
+        if (count($parts) !== 2) {
+            $skipped++;
+            $errors[] = 'Invalid selection: ' . $key;
+            continue;
+        }
+        $examType = examination_normalize_exam_type($parts[0]);
+        $sourceId = (int)$parts[1];
+        if ($examType === '' || $sourceId <= 0) {
+            $skipped++;
+            $errors[] = 'Invalid selection: ' . $key;
+            continue;
+        }
+
+        $result = examination_domain_delete($conn, $examType, $sourceId, $professorId);
+        if (!empty($result['ok'])) {
+            $deleted++;
+            continue;
+        }
+
+        $skipped++;
+        $label = trim((string)($result['title'] ?? ''));
+        if ($label === '') {
+            $label = $examType . ' #' . $sourceId;
+        }
+        $errors[] = $label . ': ' . (string)($result['error'] ?? 'Could not delete.');
+    }
+
+    return [
+        'ok' => $deleted > 0 && $skipped === 0,
+        'deleted' => $deleted,
+        'skipped' => $skipped,
+        'errors' => $errors,
+    ];
+}

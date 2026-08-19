@@ -285,3 +285,62 @@ function examination_type_diagnostic_save_config(mysqli $conn, int $professorId,
         return ['ok' => false, 'error' => 'Could not save diagnostic examination configuration.'];
     }
 }
+
+/**
+ * Permanently delete a diagnostic examination and related rows (owner-scoped).
+ *
+ * @return array{ok:bool,error?:string,title?:string}
+ */
+function examination_type_diagnostic_delete(mysqli $conn, int $sourceId, int $professorId): array
+{
+    if ($sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $raw = examination_type_diagnostic_load_raw($conn, $sourceId, $professorId);
+    if ($raw === null) {
+        return ['ok' => false, 'error' => 'Examination not found.'];
+    }
+    $record = examination_type_diagnostic_normalize($conn, $raw, date('Y-m-d H:i:s'));
+    if (!empty($record['is_running'])) {
+        return ['ok' => false, 'error' => 'Cannot delete while this examination is running.'];
+    }
+
+    $title = (string)($record['title'] ?? '');
+    $batchId = $sourceId;
+
+    mysqli_begin_transaction($conn);
+    try {
+        @mysqli_query(
+            $conn,
+            'DELETE a FROM diagnostic_answers a
+             INNER JOIN diagnostic_attempts t ON t.attempt_id = a.attempt_id
+             WHERE t.batch_id=' . (int)$batchId
+        );
+        @mysqli_query($conn, 'DELETE FROM diagnostic_attempts WHERE batch_id=' . (int)$batchId);
+        @mysqli_query($conn, 'DELETE FROM diagnostic_questions WHERE batch_id=' . (int)$batchId);
+        @mysqli_query($conn, 'DELETE FROM diagnostic_batch_subjects WHERE batch_id=' . (int)$batchId);
+        @mysqli_query($conn, 'DELETE FROM diagnostic_batch_sections WHERE batch_id=' . (int)$batchId);
+        @mysqli_query($conn, 'DELETE FROM diagnostic_batch_users WHERE batch_id=' . (int)$batchId);
+
+        $st = mysqli_prepare($conn, 'DELETE FROM diagnostic_batches WHERE batch_id=? AND created_by=? LIMIT 1');
+        if (!$st) {
+            throw new RuntimeException('prepare failed');
+        }
+        mysqli_stmt_bind_param($st, 'ii', $batchId, $professorId);
+        mysqli_stmt_execute($st);
+        $affected = mysqli_stmt_affected_rows($st);
+        mysqli_stmt_close($st);
+        if ($affected < 1) {
+            throw new RuntimeException('batch missing');
+        }
+
+        mysqli_commit($conn);
+
+        return ['ok' => true, 'title' => $title];
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+
+        return ['ok' => false, 'error' => 'Could not delete this examination.'];
+    }
+}

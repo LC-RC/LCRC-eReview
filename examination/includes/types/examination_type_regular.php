@@ -297,3 +297,62 @@ function examination_type_regular_save_config(mysqli $conn, int $professorId, ar
         return ['ok' => false, 'error' => 'Could not save regular examination configuration.'];
     }
 }
+
+/**
+ * Permanently delete a regular examination and related rows (owner-scoped).
+ *
+ * @return array{ok:bool,error?:string,title?:string}
+ */
+function examination_type_regular_delete(mysqli $conn, int $sourceId, int $professorId): array
+{
+    if ($sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $raw = examination_type_regular_load_raw($conn, $sourceId, $professorId);
+    if ($raw === null) {
+        return ['ok' => false, 'error' => 'Examination not found.'];
+    }
+    $record = examination_type_regular_normalize($conn, $raw, date('Y-m-d H:i:s'));
+    if (!empty($record['is_running'])) {
+        return ['ok' => false, 'error' => 'Cannot delete while this examination is running.'];
+    }
+
+    $title = (string)($record['title'] ?? '');
+    $examId = $sourceId;
+
+    mysqli_begin_transaction($conn);
+    try {
+        @mysqli_query(
+            $conn,
+            'DELETE a FROM college_exam_answers a
+             INNER JOIN college_exam_attempts t ON t.attempt_id = a.attempt_id
+             WHERE t.exam_id=' . (int)$examId
+        );
+        @mysqli_query($conn, 'DELETE FROM college_exam_attempt_events WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_attempts WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_questions WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_users WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_sections WHERE exam_id=' . (int)$examId);
+
+        $st = mysqli_prepare($conn, 'DELETE FROM college_exams WHERE exam_id=? AND created_by=? LIMIT 1');
+        if (!$st) {
+            throw new RuntimeException('prepare failed');
+        }
+        mysqli_stmt_bind_param($st, 'ii', $examId, $professorId);
+        mysqli_stmt_execute($st);
+        $affected = mysqli_stmt_affected_rows($st);
+        mysqli_stmt_close($st);
+        if ($affected < 1) {
+            throw new RuntimeException('exam missing');
+        }
+
+        mysqli_commit($conn);
+
+        return ['ok' => true, 'title' => $title];
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+
+        return ['ok' => false, 'error' => 'Could not delete this examination.'];
+    }
+}

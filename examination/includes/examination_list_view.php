@@ -265,7 +265,13 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
   </div>
 
-
+  <div id="examBulkBar" class="students-bulk-bar" aria-live="polite">
+    <span class="students-bulk-bar__count"><span id="examBulkCount">0</span> selected</span>
+    <div class="students-bulk-bar__actions">
+      <button type="button" id="examBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
+      <button type="button" id="examBulkDeleteBtn" class="admin-modal__btn admin-modal__btn--danger"><i class="bi bi-trash"></i> Delete selected</button>
+    </div>
+  </div>
 
   <div class="rounded-xl page-table students-table-shell">
 
@@ -277,11 +283,15 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
     <div class="students-table-scroll">
 
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[1180px]">
+      <table class="w-full text-left admin-students-table students-table--compact min-w-[1220px]">
 
         <thead>
 
           <tr>
+
+            <th class="student-select-col" scope="col">
+              <input type="checkbox" id="examSelectAll" class="admin-bulk-check" title="Select all deletable examinations" aria-label="Select all deletable examinations">
+            </th>
 
             <th scope="col">Examination</th>
 
@@ -305,7 +315,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
           <tr>
 
-            <td colspan="8" class="students-empty-cell">
+            <td colspan="9" class="students-empty-cell">
 
               <div class="font-semibold">No examinations found</div>
 
@@ -334,10 +344,26 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
               };
 
               $typeBadge = ($ex['exam_type'] ?? '') === 'diagnostic' ? 'admin-badge--info' : 'admin-badge--success';
+              $examTypeKey = (string)($ex['exam_type'] ?? 'regular');
+              $sourceId = (int)($ex['source_id'] ?? 0);
+              $examKey = $examTypeKey . ':' . $sourceId;
+              $canDelete = empty($ex['is_running']);
 
             ?>
 
-            <tr>
+            <tr data-exam-key="<?php echo h($examKey); ?>">
+
+              <td class="student-select-col">
+                <input type="checkbox"
+                       class="js-exam-select admin-bulk-check"
+                       value="<?php echo h($examKey); ?>"
+                       aria-label="Select <?php echo h((string)($ex['title'] ?? '')); ?>"
+                       data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>"
+                       data-exam-type="<?php echo h($examTypeKey); ?>"
+                       data-source-id="<?php echo $sourceId; ?>"
+                       <?php echo $canDelete ? '' : 'disabled'; ?>
+                       <?php if ($canDelete): ?>data-deletable="1"<?php endif; ?>>
+              </td>
 
               <td>
 
@@ -374,6 +400,21 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
               <td class="student-action-cell">
                 <div class="examination-list-actions student-action-cluster">
                   <button type="button" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view js-open-examination-edit" data-edit-url="<?php echo h(examination_list_edit_url($ex)); ?>"><i class="bi bi-pencil"></i> Edit</button>
+                  <?php if ($canDelete): ?>
+                    <button type="button"
+                            class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-exam"
+                            data-exam-key="<?php echo h($examKey); ?>"
+                            data-exam-type="<?php echo h($examTypeKey); ?>"
+                            data-source-id="<?php echo $sourceId; ?>"
+                            data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>"
+                            title="Delete this examination">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                  <?php else: ?>
+                    <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" disabled title="Cannot delete while this examination is running">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                  <?php endif; ?>
                   <div class="admin-student-action-menu-wrap examination-more-wrap" data-admin-student-action-menu>
                     <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h($ex['title']); ?>">
                       <i class="bi bi-three-dots" aria-hidden="true"></i>
@@ -401,6 +442,34 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
   </div>
 
+</div>
+
+<form method="post" action="professor_examinations" id="deleteExamForm" class="hidden" aria-hidden="true">
+  <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken ?? generateCSRFToken()); ?>">
+  <input type="hidden" name="action" id="deleteExamAction" value="delete">
+  <input type="hidden" name="exam_type" id="deleteExamType" value="">
+  <input type="hidden" name="source_id" id="deleteExamSourceId" value="">
+  <input type="hidden" name="return_status" value="<?php echo h($statusFilter); ?>">
+  <input type="hidden" name="return_exam_type" value="<?php echo h($typeFilter); ?>">
+  <input type="hidden" name="return_examinee_type" value="<?php echo h($examineeFilter); ?>">
+  <input type="hidden" name="return_q" value="<?php echo h($searchQ); ?>">
+  <div id="deleteExamKeysMount"></div>
+</form>
+
+<div class="admin-modal-overlay" id="deleteExamModal" aria-hidden="true">
+  <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="deleteExamTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-trash"></i></span>
+      <div>
+        <h3 id="deleteExamTitle" class="admin-modal__title">Delete examination?</h3>
+        <p class="admin-modal__desc" id="deleteExamDesc">This permanently deletes <strong id="deleteExamNameDisplay"></strong>, including questions and attempts. This cannot be undone.</p>
+      </div>
+    </div>
+    <div class="admin-modal__actions">
+      <button type="button" class="admin-btn admin-btn--secondary" id="deleteExamCancel">Cancel</button>
+      <button type="button" class="admin-btn admin-btn--danger" id="deleteExamConfirm">Delete</button>
+    </div>
+  </section>
 </div>
 
 <div id="examinationEditModalOverlay" class="admin-modal-overlay" aria-hidden="true">
@@ -549,6 +618,145 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
     closeAllMenus();
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAllMenus(); });
+
+  // Bulk select + delete
+  var selectAll = document.getElementById('examSelectAll');
+  var bulkBar = document.getElementById('examBulkBar');
+  var bulkCount = document.getElementById('examBulkCount');
+  var bulkClearBtn = document.getElementById('examBulkClearBtn');
+  var bulkDeleteBtn = document.getElementById('examBulkDeleteBtn');
+  var deleteModal = document.getElementById('deleteExamModal');
+  var deleteForm = document.getElementById('deleteExamForm');
+  var deleteAction = document.getElementById('deleteExamAction');
+  var deleteType = document.getElementById('deleteExamType');
+  var deleteSourceId = document.getElementById('deleteExamSourceId');
+  var deleteKeysMount = document.getElementById('deleteExamKeysMount');
+  var deleteTitle = document.getElementById('deleteExamTitle');
+  var deleteDesc = document.getElementById('deleteExamDesc');
+  var deleteNameDisplay = document.getElementById('deleteExamNameDisplay');
+  var deleteCancel = document.getElementById('deleteExamCancel');
+  var deleteConfirm = document.getElementById('deleteExamConfirm');
+  var pendingBulkKeys = [];
+
+  function deletableChecks() {
+    return Array.prototype.slice.call(document.querySelectorAll('.js-exam-select[data-deletable="1"]'));
+  }
+
+  function selectedChecks() {
+    return deletableChecks().filter(function (cb) { return cb.checked; });
+  }
+
+  function syncBulkBar() {
+    var selected = selectedChecks();
+    var n = selected.length;
+    if (bulkCount) bulkCount.textContent = String(n);
+    if (bulkBar) {
+      if (n > 0) bulkBar.classList.add('is-visible');
+      else bulkBar.classList.remove('is-visible');
+    }
+    if (selectAll) {
+      var all = deletableChecks();
+      selectAll.checked = all.length > 0 && selected.length === all.length;
+      selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+    }
+  }
+
+  function openDeleteModal(mode, payload) {
+    if (!deleteModal) return;
+    pendingBulkKeys = [];
+    if (mode === 'bulk') {
+      pendingBulkKeys = payload.keys || [];
+      if (deleteTitle) deleteTitle.textContent = 'Delete selected examinations?';
+      if (deleteDesc) {
+        deleteDesc.innerHTML = 'This permanently deletes <strong id="deleteExamNameDisplay">' +
+          pendingBulkKeys.length + ' examination(s)</strong>, including questions and attempts. This cannot be undone.';
+      }
+    } else {
+      if (deleteTitle) deleteTitle.textContent = 'Delete examination?';
+      if (deleteDesc) {
+        deleteDesc.innerHTML = 'This permanently deletes <strong id="deleteExamNameDisplay"></strong>, including questions and attempts. This cannot be undone.';
+        var nested = document.getElementById('deleteExamNameDisplay');
+        if (nested) nested.textContent = payload.title || 'this examination';
+      }
+      if (deleteType) deleteType.value = payload.examType || '';
+      if (deleteSourceId) deleteSourceId.value = String(payload.sourceId || '');
+    }
+    deleteModal.dataset.mode = mode;
+    deleteModal.classList.add('is-open');
+    deleteModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDeleteModal() {
+    if (!deleteModal) return;
+    deleteModal.classList.remove('is-open');
+    deleteModal.setAttribute('aria-hidden', 'true');
+    pendingBulkKeys = [];
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      deletableChecks().forEach(function (cb) { cb.checked = selectAll.checked; });
+      syncBulkBar();
+    });
+  }
+  document.querySelectorAll('.js-exam-select').forEach(function (cb) {
+    cb.addEventListener('change', syncBulkBar);
+  });
+  if (bulkClearBtn) {
+    bulkClearBtn.addEventListener('click', function () {
+      deletableChecks().forEach(function (cb) { cb.checked = false; });
+      syncBulkBar();
+    });
+  }
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener('click', function () {
+      var keys = selectedChecks().map(function (cb) { return cb.value; });
+      if (!keys.length) return;
+      openDeleteModal('bulk', { keys: keys });
+    });
+  }
+  document.querySelectorAll('.js-open-delete-exam').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openDeleteModal('single', {
+        examType: btn.getAttribute('data-exam-type') || '',
+        sourceId: parseInt(btn.getAttribute('data-source-id') || '0', 10) || 0,
+        title: btn.getAttribute('data-exam-title') || 'this examination'
+      });
+    });
+  });
+  if (deleteCancel) deleteCancel.addEventListener('click', closeDeleteModal);
+  if (deleteModal) {
+    deleteModal.addEventListener('click', function (e) {
+      if (e.target === deleteModal) closeDeleteModal();
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && deleteModal && deleteModal.classList.contains('is-open')) {
+      closeDeleteModal();
+    }
+  });
+  if (deleteConfirm && deleteForm) {
+    deleteConfirm.addEventListener('click', function () {
+      var mode = deleteModal ? deleteModal.dataset.mode : 'single';
+      if (deleteKeysMount) deleteKeysMount.innerHTML = '';
+      if (mode === 'bulk') {
+        if (deleteAction) deleteAction.value = 'bulk_delete';
+        if (deleteType) deleteType.value = '';
+        if (deleteSourceId) deleteSourceId.value = '';
+        pendingBulkKeys.forEach(function (key) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'exam_keys[]';
+          input.value = key;
+          if (deleteKeysMount) deleteKeysMount.appendChild(input);
+        });
+      } else {
+        if (deleteAction) deleteAction.value = 'delete';
+      }
+      deleteForm.submit();
+    });
+  }
+  syncBulkBar();
 })();
 </script>
 </body>

@@ -59,18 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!college_upload_resubmission_policy_valid($resubPolicy)) {
             $resubPolicy = 'disabled';
         }
-        $sectionInputs = $_POST['sections'] ?? [];
-        $sectionsClean = [];
-        if (is_array($sectionInputs)) {
-            foreach ($sectionInputs as $sv) {
-                $canonical = college_sections_resolve_active_name($conn, trim((string) $sv));
-                if ($canonical !== null && !in_array($canonical, $sectionsClean, true)) {
-                    $sectionsClean[] = $canonical;
-                }
-            }
+        // Keep legacy/canonical section names (same behavior as examination_parse_sections_from_post).
+        require_once dirname(__DIR__) . '/includes/examination_assignment.php';
+        $sectionsClean = examination_parse_sections_from_post($_POST);
+        if ($assignmentMode !== 'sections') {
+            $sectionsClean = [];
         }
         if ($assignmentMode === 'sections' && $sectionsClean === []) {
-            $assignmentMode = 'all';
+            $_SESSION['error'] = 'Select at least one section, or switch audience to All sections.';
+            header('Location: professor_upload_tasks' . ($tid > 0 ? '?edit=' . $tid : ''));
+            exit;
         }
 
         if ($title === '' || $deadline === '') {
