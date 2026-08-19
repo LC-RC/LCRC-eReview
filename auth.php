@@ -122,27 +122,33 @@ function verifySession() {
     }
     
     $userId = getCurrentUserId();
-    $stmt = mysqli_prepare($conn, "SELECT user_id, role, status, access_end FROM users WHERE user_id = ? LIMIT 1");
-    mysqli_stmt_bind_param($stmt, 'i', $userId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
+    require_once __DIR__ . '/includes/platform_access.php';
+    $user = ereview_user_load_platform_row($conn, (int) $userId);
     
     if (!$user || $user['role'] !== $_SESSION['role']) {
         return false;
     }
     
-    // Students: must keep an active access grant. Other non-staff: approved status.
     if (!isStaffRole($user['role'])) {
-        require_once __DIR__ . '/includes/commerce_access_gate.php';
-        $gate = commerce_student_can_login($conn, $user);
+        $gate = ereview_user_can_authenticate($conn, $user);
         if (empty($gate['ok'])) {
             return false;
         }
     }
     
     return true;
+}
+
+/**
+ * Post-login URL for learners (portal-aware). Staff use dashboardUrlForRole().
+ */
+function ereview_resolve_post_login_url(mysqli $conn, array $user): string {
+    require_once __DIR__ . '/includes/platform_access.php';
+    $role = (string) ($user['role'] ?? '');
+    if (isStaffRole($role)) {
+        return dashboardUrlForRole($role);
+    }
+    return ereview_user_post_login_url($conn, (int) ($user['user_id'] ?? 0), $user);
 }
 
 /**

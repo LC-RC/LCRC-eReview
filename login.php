@@ -5,7 +5,11 @@ require_once 'auth.php';
 require_once 'login_rate_limit.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
+    require_once __DIR__ . '/includes/platform_access.php';
+    require_once __DIR__ . '/includes/college_schema.php';
+    $uid = (int) getCurrentUserId();
+    $userRow = ereview_user_load_platform_row($conn, $uid);
+    header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
 
@@ -24,7 +28,7 @@ if (!empty($_GET['magic'])) {
         if ($user) {
             require_once __DIR__ . '/includes/college_schema.php';
             require_once __DIR__ . '/includes/college_exam_helpers.php';
-            $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+            $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id']);
             if ($examBlock !== null) {
                 $_SESSION['error'] = $examBlock;
                 $_SESSION['error_type'] = 'exam_session_active';
@@ -32,8 +36,8 @@ if (!empty($_GET['magic'])) {
                 exit;
             }
             if (!isStaffRole($user['role'])) {
-                require_once __DIR__ . '/includes/commerce_access_gate.php';
-                $gate = commerce_student_can_login($conn, $user);
+                require_once __DIR__ . '/includes/platform_access.php';
+                $gate = ereview_user_can_authenticate($conn, $user);
                 if (empty($gate['ok'])) {
                     $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
                     $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
@@ -62,7 +66,7 @@ if (!empty($_GET['magic'])) {
             setUserPresenceStatus($uid, true);
             deleteMagicLinkToken($magicResult['token_id']);
             if (verifySession()) {
-                header('Location: ' . dashboardUrlForRole($user['role']));
+                header('Location: ' . ereview_resolve_post_login_url($conn, $user));
                 exit;
             }
         }

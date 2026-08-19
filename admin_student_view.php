@@ -8,6 +8,8 @@ require_once __DIR__ . '/includes/commerce_payment.php';
 require_once __DIR__ . '/includes/student_activity.php';
 require_once __DIR__ . '/remember_me.php';
 require_once __DIR__ . '/includes/schema_introspection.php';
+require_once __DIR__ . '/includes/college_schema.php';
+require_once __DIR__ . '/includes/platform_access.php';
 
 $userId = sanitizeInt($_GET['id'] ?? 0);
 if ($userId <= 0) {
@@ -39,6 +41,15 @@ foreach (['is_online', 'last_seen_at', 'last_logout_at', 'last_login_at', 'last_
 }
 if ($hasProfilePicture) $selectCols .= ", profile_picture";
 if ($hasUseDefaultAvatar) $selectCols .= ", use_default_avatar";
+if (ereview_schema_column_exists($conn, 'users', 'section')) {
+    $selectCols .= ', section';
+}
+if (ereview_schema_column_exists($conn, 'users', 'student_number')) {
+    $selectCols .= ', student_number';
+}
+if (ereview_schema_column_exists($conn, 'users', 'college_examination_access')) {
+    $selectCols .= ', college_examination_access, college_examination_enabled_at, college_examination_enabled_by';
+}
 
 $stmt = mysqli_prepare($conn, "SELECT $selectCols FROM users WHERE user_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'i', $userId);
@@ -493,6 +504,63 @@ if (!empty($user['last_seen_at'])) {
             <div class="font-semibold text-gray-800"><?php echo h($user['created_at']); ?></div>
           </div>
         </div>
+      </div>
+
+      <?php
+      $collExAccess = function_exists('ereview_user_college_examination_access_value')
+          ? ereview_user_college_examination_access_value($user)
+          : 'none';
+      $collExActive = ereview_user_has_college_examination_access($conn, $userId, $user);
+      ?>
+      <div class="rounded-xl shadow-card border p-5 page-table mt-5" id="college-examination">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-clipboard-check"></i> College Examination</h2>
+        <div class="space-y-2 mb-4 text-sm">
+          <div><span class="text-gray-500">Access:</span> <span class="font-semibold text-gray-800"><?php echo h($collExActive ? 'Active' : ($collExAccess === 'suspended' ? 'Suspended' : 'Disabled')); ?></span></div>
+          <?php if (!empty($user['college_examination_enabled_at'])): ?>
+          <div><span class="text-gray-500">Enabled at:</span> <span class="font-semibold text-gray-800"><?php echo h((string)$user['college_examination_enabled_at']); ?></span></div>
+          <?php endif; ?>
+          <?php if ($collExActive): ?>
+          <div><span class="text-gray-500">Student number:</span> <span class="font-semibold text-gray-800"><?php echo trim((string)($user['student_number'] ?? '')) !== '' ? h((string)$user['student_number']) : '—'; ?></span></div>
+          <div><span class="text-gray-500">Section:</span> <span class="font-semibold text-gray-800"><?php echo trim((string)($user['section'] ?? '')) !== '' ? h((string)$user['section']) : '—'; ?></span></div>
+          <div><span class="text-gray-500">Review type:</span> <span class="font-semibold text-gray-800"><?php echo h((string)($user['review_type'] ?? 'reviewee')); ?></span></div>
+          <?php endif; ?>
+        </div>
+        <?php if (!$collExActive): ?>
+        <form method="post" action="<?php echo h(ereview_url('admin_student_access_api.php')); ?>" class="space-y-3">
+          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <input type="hidden" name="action" value="enable_college_examination">
+          <input type="hidden" name="user_id" value="<?php echo (int)$userId; ?>">
+          <input type="hidden" name="redirect" value="1">
+          <div>
+            <label class="block text-sm text-gray-600 mb-1" for="coll_ex_sn">Student Number</label>
+            <input type="text" id="coll_ex_sn" name="student_number" maxlength="32" class="w-full border rounded-lg px-3 py-2" placeholder="Optional">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1" for="coll_ex_section">Section</label>
+            <?php
+              require_once __DIR__ . '/examination/includes/college_sections.php';
+              $collExSections = college_sections_active_names($conn);
+            ?>
+            <select id="coll_ex_section" name="section" class="w-full border rounded-lg px-3 py-2" <?php echo $collExSections === [] ? 'disabled' : ''; ?>>
+              <option value="__none__">No section</option>
+              <?php foreach ($collExSections as $secOpt): ?>
+                <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1" for="coll_ex_rt">Review Type</label>
+            <select id="coll_ex_rt" name="review_type" class="w-full border rounded-lg px-3 py-2">
+              <option value="undergrad">Undergrad (College Student)</option>
+              <option value="reviewee">Reviewee</option>
+            </select>
+          </div>
+          <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-check2-circle"></i> Enable College Examination</button>
+          <p class="text-xs text-gray-500 mb-0">Updates this existing account only. Does not change eReview grants or create a duplicate user.</p>
+        </form>
+        <?php else: ?>
+        <p class="text-sm text-gray-600 mb-0">College Examination is already enabled for this account. The student keeps <code>role=student</code> and uses the portal selector when both modules are active.</p>
+        <?php endif; ?>
       </div>
 
       <?php require __DIR__ . '/includes/admin_student_commerce_panel.php'; ?>

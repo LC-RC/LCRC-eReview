@@ -6,11 +6,23 @@ requireAdminPage();
 require_once __DIR__ . '/includes/student_content_access.php';
 require_once __DIR__ . '/includes/commerce_access_gate.php';
 require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
+require_once __DIR__ . '/includes/college_schema.php';
+require_once __DIR__ . '/includes/platform_access.php';
+require_once __DIR__ . '/includes/url_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 $action = (string) ($_GET['action'] ?? $_POST['action'] ?? '');
-$mutating = in_array($action, ['save_permissions', 'save_bulk_permissions', 'create_student', 'update_student'], true);
+$mutating = in_array($action, [
+    'save_permissions',
+    'save_bulk_permissions',
+    'create_student',
+    'update_student',
+    'enable_college_examination',
+    'bulk_enable_college_examination',
+    'bulk_assign_section',
+    'bulk_suspend_college_examination',
+], true);
 if ($mutating) {
     if (!verifyCSRFToken((string) ($_POST['csrf_token'] ?? ''))) {
         http_response_code(403);
@@ -355,6 +367,479 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     sca_api_json(['ok' => true]);
+}
+
+if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userId = (int) ($_POST['user_id'] ?? 0);
+    if ($userId <= 0) {
+        sca_api_json(['ok' => false, 'error' => 'Invalid user.'], 400);
+    }
+    $adminId = (int) (getCurrentUserId() ?? 0);
+    $chk = mysqli_prepare($conn, "SELECT user_id, role, college_examination_access FROM users WHERE user_id=? AND role='student' LIMIT 1");
+    if (!$chk) {
+        sca_api_json(['ok' => false, 'error' => 'Could not load student.'], 500);
+    }
+    mysqli_stmt_bind_param($chk, 'i', $userId);
+    mysqli_stmt_execute($chk);
+    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($chk));
+    mysqli_stmt_close($chk);
+    if (!$row) {
+        sca_api_json(['ok' => false, 'error' => 'Student not found or not an eReview student account.'], 404);
+    }
+    $currentAccess = ereview_user_college_examination_access_value($row);
+    if ($currentAccess === 'active') {
+        if (!empty($_POST['redirect'])) {
+            $_SESSION['message'] = 'College Examination is already enabled for this student.';
+            $returnTo = trim((string) ($_POST['return_to'] ?? ''));
+            if ($returnTo !== '' && str_starts_with($returnTo, 'admin_students') && !preg_match('#https?:|//|\.\.#i', $returnTo)) {
+                header('Location: ' . ereview_url($returnTo));
+                exit;
+            }
+            header('Location: ' . ereview_url('admin_student_view') . '?id=' . $userId . '#college-examination');
+            exit;
+        }
+        sca_api_json(['ok' => true, 'already_active' => true, 'user_id' => $userId]);
+    }
+    $studentNumber = trim((string) ($_POST['student_number'] ?? ''));
+    require_once __DIR__ . '/examination/includes/college_sections.php';
+    $parsedSection = college_sections_parse_optional_post($conn, (string) ($_POST['section'] ?? '__none__'));
+    if (empty($parsedSection['ok'])) {
+        sca_api_json(['ok' => false, 'error' => (string) ($parsedSection['error'] ?? 'Invalid section.')], 422);
+    }
+    $reviewType = strtolower(trim((string) ($_POST['review_type'] ?? 'undergrad')));
+    if (!in_array($reviewType, ['undergrad', 'reviewee'], true)) {
+        $reviewType = 'undergrad';
+    }
+    if ($studentNumber !== '' && (strlen($studentNumber) > 32 || !preg_match('/^[A-Za-z0-9_-]+$/', $studentNumber))) {
+        sca_api_json(['ok' => false, 'error' => 'Student number must be at most 32 characters and use only letters, digits, hyphen, or underscore.'], 422);
+    }
+    if ($studentNumber !== '') {
+        $dupSn = mysqli_prepare($conn, 'SELECT user_id FROM users WHERE student_number=? AND user_id<>? LIMIT 1');
+        mysqli_stmt_bind_param($dupSn, 'si', $studentNumber, $userId);
+        mysqli_stmt_execute($dupSn);
+        if (mysqli_fetch_assoc(mysqli_stmt_get_result($dupSn))) {
+            mysqli_stmt_close($dupSn);
+            sca_api_json(['ok' => false, 'error' => 'That student number is already assigned.'], 409);
+        }
+        mysqli_stmt_close($dupSn);
+    }
+    $sectionVal = $parsedSection['section'] ?? null;
+    $snVal = $studentNumber !== '' ? $studentNumber : null;
+    $upd = mysqli_prepare(
+        $conn,
+        "UPDATE users SET college_examination_access='active', college_examination_enabled_at=NOW(), college_examination_enabled_by=?,
+         review_type=?, section=?, student_number=COALESCE(?, student_number)
+         WHERE user_id=? AND role='student' LIMIT 1"
+    );
+    if (!$upd) {
+        sca_api_json(['ok' => false, 'error' => 'Could not enable College Examination.'], 500);
+    }
+    mysqli_stmt_bind_param($upd, 'isssi', $adminId, $reviewType, $sectionVal, $snVal, $userId);
+    if (!mysqli_stmt_execute($upd)) {
+        mysqli_stmt_close($upd);
+        sca_api_json(['ok' => false, 'error' => 'Update failed.'], 500);
+    }
+    mysqli_stmt_close($upd);
+    if (!empty($_POST['redirect'])) {
+        $_SESSION['message'] = 'College Examination access enabled for this student.';
+        $returnTo = trim((string) ($_POST['return_to'] ?? ''));
+        if ($returnTo !== '' && str_starts_with($returnTo, 'admin_students') && !preg_match('#https?:|//|\.\.#i', $returnTo)) {
+            header('Location: ' . ereview_url($returnTo));
+            exit;
+        }
+        header('Location: ' . ereview_url('admin_student_view') . '?id=' . $userId . '#college-examination');
+        exit;
+    }
+    sca_api_json(['ok' => true, 'user_id' => $userId]);
+}
+
+/**
+ * Bulk enable College Examination on existing eReview students (UPDATE only, one transaction).
+ * Does not INSERT users, touch access_grants, or modify student_content_permissions.
+ */
+if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!ereview_platform_access_columns_ready($conn)) {
+        sca_api_json(['ok' => false, 'error' => 'College Examination access columns are not available.'], 500);
+    }
+
+    $rawIds = $_POST['user_ids'] ?? [];
+    if (is_string($rawIds)) {
+        $decoded = json_decode($rawIds, true);
+        if (is_array($decoded)) {
+            $rawIds = $decoded;
+        } else {
+            $parts = preg_split('/\s*,\s*/', $rawIds);
+            $rawIds = is_array($parts) ? $parts : [];
+        }
+    }
+    if (!is_array($rawIds)) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+
+    $userIds = [];
+    foreach ($rawIds as $id) {
+        $uid = (int) $id;
+        if ($uid > 0) {
+            $userIds[$uid] = $uid;
+        }
+    }
+    $userIds = array_values($userIds);
+    if ($userIds === []) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+    if (count($userIds) > 500) {
+        sca_api_json(['ok' => false, 'error' => 'You can enable at most 500 students at once.'], 422);
+    }
+
+    $sectionMode = strtolower(trim((string) ($_POST['section_mode'] ?? 'same')));
+    if ($sectionMode !== 'same') {
+        // Individual assignment reserved for a later iteration.
+        sca_api_json(['ok' => false, 'error' => 'Only "same section for all selected students" is supported right now.'], 422);
+    }
+
+    $section = trim((string) ($_POST['section'] ?? ''));
+    require_once __DIR__ . '/examination/includes/college_sections.php';
+    $parsedSection = college_sections_parse_optional_post($conn, $section);
+    if (empty($parsedSection['ok'])) {
+        sca_api_json(['ok' => false, 'error' => (string) ($parsedSection['error'] ?? 'Invalid section.')], 422);
+    }
+    $sectionVal = $parsedSection['section'] ?? null;
+
+    $reviewType = strtolower(trim((string) ($_POST['review_type'] ?? 'undergrad')));
+    if (!in_array($reviewType, ['undergrad', 'reviewee'], true)) {
+        sca_api_json(['ok' => false, 'error' => 'Review type must be undergrad or reviewee.'], 422);
+    }
+
+    $adminId = (int) (getCurrentUserId() ?? 0);
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+    $types = str_repeat('i', count($userIds));
+
+    mysqli_begin_transaction($conn);
+    try {
+        $chkSql = "SELECT user_id, role, status, college_examination_access
+                   FROM users
+                   WHERE user_id IN ({$placeholders})
+                   FOR UPDATE";
+        $chk = mysqli_prepare($conn, $chkSql);
+        if (!$chk) {
+            throw new RuntimeException('Could not validate selected students.');
+        }
+        mysqli_stmt_bind_param($chk, $types, ...$userIds);
+        mysqli_stmt_execute($chk);
+        $res = mysqli_stmt_get_result($chk);
+        $found = [];
+        while ($row = mysqli_fetch_assoc($res)) {
+            $found[(int) $row['user_id']] = $row;
+        }
+        mysqli_stmt_close($chk);
+
+        if (count($found) !== count($userIds)) {
+            throw new InvalidArgumentException('One or more selected students were not found.');
+        }
+
+        foreach ($found as $uid => $row) {
+            $role = (string) ($row['role'] ?? '');
+            if ($role !== 'student') {
+                throw new InvalidArgumentException('User #' . $uid . ' is not an eReview student account.');
+            }
+            if (function_exists('isStaffRole') && isStaffRole($role)) {
+                throw new InvalidArgumentException('Staff accounts cannot be enabled for College Examination via this action.');
+            }
+            $status = strtolower((string) ($row['status'] ?? ''));
+            if ($status === 'rejected') {
+                throw new InvalidArgumentException('Rejected student #' . $uid . ' cannot be enabled.');
+            }
+        }
+
+        if ($sectionVal === null) {
+            $upd = mysqli_prepare(
+                $conn,
+                "UPDATE users
+                 SET college_examination_access='active',
+                     college_examination_enabled_at=COALESCE(college_examination_enabled_at, NOW()),
+                     college_examination_enabled_by=COALESCE(college_examination_enabled_by, ?),
+                     review_type=?
+                 WHERE user_id IN ({$placeholders})
+                   AND role='student'
+                   AND status<>'rejected'"
+            );
+            if (!$upd) {
+                throw new RuntimeException('Could not prepare College Examination bulk update.');
+            }
+            $bindTypes = 'is' . $types;
+            $bindValues = array_merge([$adminId, $reviewType], $userIds);
+        } else {
+            $upd = mysqli_prepare(
+                $conn,
+                "UPDATE users
+                 SET college_examination_access='active',
+                     college_examination_enabled_at=COALESCE(college_examination_enabled_at, NOW()),
+                     college_examination_enabled_by=COALESCE(college_examination_enabled_by, ?),
+                     review_type=?,
+                     section=?
+                 WHERE user_id IN ({$placeholders})
+                   AND role='student'
+                   AND status<>'rejected'"
+            );
+            if (!$upd) {
+                throw new RuntimeException('Could not prepare College Examination bulk update.');
+            }
+            $bindTypes = 'iss' . $types;
+            $bindValues = array_merge([$adminId, $reviewType, $sectionVal], $userIds);
+        }
+        mysqli_stmt_bind_param($upd, $bindTypes, ...$bindValues);
+        if (!mysqli_stmt_execute($upd)) {
+            mysqli_stmt_close($upd);
+            throw new RuntimeException('Bulk update failed.');
+        }
+        $affected = mysqli_stmt_affected_rows($upd);
+        mysqli_stmt_close($upd);
+
+        // Confirm every selected row is now active with the chosen section/review_type.
+        $verify = mysqli_prepare(
+            $conn,
+            "SELECT user_id, college_examination_access, section, review_type, role
+             FROM users WHERE user_id IN ({$placeholders})"
+        );
+        if (!$verify) {
+            throw new RuntimeException('Could not verify bulk enable.');
+        }
+        mysqli_stmt_bind_param($verify, $types, ...$userIds);
+        mysqli_stmt_execute($verify);
+        $vres = mysqli_stmt_get_result($verify);
+        $verified = 0;
+        while ($vrow = mysqli_fetch_assoc($vres)) {
+            if ((string) ($vrow['role'] ?? '') !== 'student') {
+                throw new RuntimeException('Unexpected role change detected; rolling back.');
+            }
+            if (ereview_user_college_examination_access_value($vrow) !== 'active') {
+                throw new RuntimeException('Not all selected students were enabled; rolling back.');
+            }
+            $actualSection = trim((string) ($vrow['section'] ?? ''));
+            $expectedSection = $sectionVal === null ? '' : $sectionVal;
+            if ($actualSection !== $expectedSection) {
+                throw new RuntimeException('Section was not applied to all selected students; rolling back.');
+            }
+            if (strtolower(trim((string) ($vrow['review_type'] ?? ''))) !== $reviewType) {
+                throw new RuntimeException('Review type was not applied to all selected students; rolling back.');
+            }
+            $verified++;
+        }
+        mysqli_stmt_close($verify);
+        if ($verified !== count($userIds)) {
+            throw new RuntimeException('Verification count mismatch; rolling back.');
+        }
+
+        mysqli_commit($conn);
+    } catch (InvalidArgumentException $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $count = count($userIds);
+    $reviewLabel = $reviewType === 'reviewee' ? 'Reviewee' : 'Undergrad';
+    $sectionDetail = $sectionVal === null ? 'No section assigned' : ('Section: ' . $sectionVal);
+    sca_api_json([
+        'ok' => true,
+        'enabled_count' => $count,
+        'affected_rows' => $affected ?? $count,
+        'user_ids' => $userIds,
+        'section' => $sectionVal,
+        'review_type' => $reviewType,
+        'message' => 'College Examination enabled for ' . $count . ' student' . ($count === 1 ? '' : 's') . '.',
+        'detail' => $sectionDetail . ' · Review Type: ' . $reviewLabel,
+    ]);
+}
+
+/**
+ * Bulk assign or change section on eReview students (does not change college_examination_access).
+ */
+if ($action === 'bulk_assign_section' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/examination/includes/college_sections.php';
+
+    $rawIds = $_POST['user_ids'] ?? [];
+    if (is_string($rawIds)) {
+        $decoded = json_decode($rawIds, true);
+        $rawIds = is_array($decoded) ? $decoded : preg_split('/\s*,\s*/', $rawIds);
+    }
+    if (!is_array($rawIds)) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+    $userIds = [];
+    foreach ($rawIds as $id) {
+        $uid = (int) $id;
+        if ($uid > 0) {
+            $userIds[$uid] = $uid;
+        }
+    }
+    $userIds = array_values($userIds);
+    if ($userIds === []) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+    if (count($userIds) > 500) {
+        sca_api_json(['ok' => false, 'error' => 'You can update at most 500 students at once.'], 422);
+    }
+
+    $parsed = college_sections_parse_optional_post($conn, (string) ($_POST['section'] ?? ''));
+    if (empty($parsed['ok'])) {
+        sca_api_json(['ok' => false, 'error' => (string) ($parsed['error'] ?? 'Invalid section.')], 422);
+    }
+    $sectionVal = $parsed['section'] ?? null;
+
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+    $types = str_repeat('i', count($userIds));
+
+    mysqli_begin_transaction($conn);
+    try {
+        $chk = mysqli_prepare($conn, "SELECT user_id, role FROM users WHERE user_id IN ({$placeholders}) FOR UPDATE");
+        if (!$chk) {
+            throw new RuntimeException('Could not validate selected students.');
+        }
+        mysqli_stmt_bind_param($chk, $types, ...$userIds);
+        mysqli_stmt_execute($chk);
+        $found = [];
+        $res = mysqli_stmt_get_result($chk);
+        while ($row = mysqli_fetch_assoc($res)) {
+            $found[(int) $row['user_id']] = $row;
+        }
+        mysqli_stmt_close($chk);
+        if (count($found) !== count($userIds)) {
+            throw new InvalidArgumentException('One or more selected students were not found.');
+        }
+        foreach ($found as $uid => $row) {
+            if ((string) ($row['role'] ?? '') !== 'student') {
+                throw new InvalidArgumentException('User #' . $uid . ' is not an eReview student account.');
+            }
+        }
+
+        if ($sectionVal === null) {
+            $upd = mysqli_prepare($conn, "UPDATE users SET section=NULL WHERE user_id IN ({$placeholders}) AND role='student'");
+            if (!$upd) {
+                throw new RuntimeException('Could not prepare section clear.');
+            }
+            mysqli_stmt_bind_param($upd, $types, ...$userIds);
+        } else {
+            $upd = mysqli_prepare($conn, "UPDATE users SET section=? WHERE user_id IN ({$placeholders}) AND role='student'");
+            if (!$upd) {
+                throw new RuntimeException('Could not prepare section assignment.');
+            }
+            $bindTypes = 's' . $types;
+            mysqli_stmt_bind_param($upd, $bindTypes, $sectionVal, ...$userIds);
+        }
+        if (!mysqli_stmt_execute($upd)) {
+            mysqli_stmt_close($upd);
+            throw new RuntimeException('Section assignment failed.');
+        }
+        mysqli_stmt_close($upd);
+        mysqli_commit($conn);
+    } catch (InvalidArgumentException $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $count = count($userIds);
+    sca_api_json([
+        'ok' => true,
+        'updated_count' => $count,
+        'section' => $sectionVal,
+        'message' => $sectionVal === null
+            ? ('Section cleared for ' . $count . ' student' . ($count === 1 ? '' : 's') . '.')
+            : ('Section "' . $sectionVal . '" assigned to ' . $count . ' student' . ($count === 1 ? '' : 's') . '.'),
+    ]);
+}
+
+/**
+ * Suspend College Examination login access (eReview grants unchanged).
+ */
+if ($action === 'bulk_suspend_college_examination' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!ereview_platform_access_columns_ready($conn)) {
+        sca_api_json(['ok' => false, 'error' => 'College Examination access columns are not available.'], 500);
+    }
+
+    $rawIds = $_POST['user_ids'] ?? [];
+    if (is_string($rawIds)) {
+        $decoded = json_decode($rawIds, true);
+        $rawIds = is_array($decoded) ? $decoded : preg_split('/\s*,\s*/', $rawIds);
+    }
+    if (!is_array($rawIds)) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+    $userIds = [];
+    foreach ($rawIds as $id) {
+        $uid = (int) $id;
+        if ($uid > 0) {
+            $userIds[$uid] = $uid;
+        }
+    }
+    $userIds = array_values($userIds);
+    if ($userIds === []) {
+        sca_api_json(['ok' => false, 'error' => 'Select at least one student.'], 400);
+    }
+
+    $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+    $types = str_repeat('i', count($userIds));
+
+    mysqli_begin_transaction($conn);
+    try {
+        $chk = mysqli_prepare($conn, "SELECT user_id, role, college_examination_access FROM users WHERE user_id IN ({$placeholders}) FOR UPDATE");
+        if (!$chk) {
+            throw new RuntimeException('Could not validate selected students.');
+        }
+        mysqli_stmt_bind_param($chk, $types, ...$userIds);
+        mysqli_stmt_execute($chk);
+        $found = [];
+        $res = mysqli_stmt_get_result($chk);
+        while ($row = mysqli_fetch_assoc($res)) {
+            $found[(int) $row['user_id']] = $row;
+        }
+        mysqli_stmt_close($chk);
+        if (count($found) !== count($userIds)) {
+            throw new InvalidArgumentException('One or more selected students were not found.');
+        }
+        foreach ($found as $uid => $row) {
+            if ((string) ($row['role'] ?? '') !== 'student') {
+                throw new InvalidArgumentException('User #' . $uid . ' is not an eReview student account.');
+            }
+            if (ereview_user_college_examination_access_value($row) !== 'active') {
+                throw new InvalidArgumentException('User #' . $uid . ' does not have active College Examination access.');
+            }
+        }
+
+        $upd = mysqli_prepare(
+            $conn,
+            "UPDATE users SET college_examination_access='suspended'
+             WHERE user_id IN ({$placeholders}) AND role='student'"
+        );
+        if (!$upd) {
+            throw new RuntimeException('Could not prepare suspend update.');
+        }
+        mysqli_stmt_bind_param($upd, $types, ...$userIds);
+        if (!mysqli_stmt_execute($upd)) {
+            mysqli_stmt_close($upd);
+            throw new RuntimeException('Suspend update failed.');
+        }
+        mysqli_stmt_close($upd);
+        mysqli_commit($conn);
+    } catch (InvalidArgumentException $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        sca_api_json(['ok' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $count = count($userIds);
+    sca_api_json([
+        'ok' => true,
+        'suspended_count' => $count,
+        'message' => 'College Examination suspended for ' . $count . ' student' . ($count === 1 ? '' : 's') . '. eReview access is unchanged.',
+    ]);
 }
 
 sca_api_json(['ok' => false, 'error' => 'Unknown action.'], 400);

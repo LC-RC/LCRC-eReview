@@ -214,7 +214,12 @@ function loginFromRememberMe() {
     }
 
     $userId = (int) $row['user_id'];
-    $stmt = @mysqli_prepare($conn, "SELECT user_id, full_name, email, role, status, access_end FROM users WHERE user_id = ? LIMIT 1");
+    require_once __DIR__ . '/includes/platform_access.php';
+    $loginCols = 'user_id, full_name, email, role, status, access_end';
+    if (ereview_platform_access_columns_ready($conn)) {
+        $loginCols .= ', college_examination_access, review_type, section, student_number';
+    }
+    $stmt = @mysqli_prepare($conn, "SELECT {$loginCols} FROM users WHERE user_id = ? LIMIT 1");
     if (!$stmt) return false;
     mysqli_stmt_bind_param($stmt, 'i', $userId);
     mysqli_stmt_execute($stmt);
@@ -234,8 +239,8 @@ function loginFromRememberMe() {
     }
 
     if (!function_exists('isStaffRole') || !isStaffRole((string) $user['role'])) {
-        require_once __DIR__ . '/includes/commerce_access_gate.php';
-        $gate = commerce_student_can_login($conn, $user);
+        require_once __DIR__ . '/includes/platform_access.php';
+        $gate = ereview_user_can_authenticate($conn, $user);
         if (empty($gate['ok'])) {
             $del = @mysqli_prepare($conn, 'DELETE FROM remember_tokens WHERE id = ?');
             if ($del) {
@@ -269,7 +274,7 @@ function loginFromRememberMe() {
         @require_once __DIR__ . '/includes/college_exam_helpers.php';
     }
     if (function_exists('college_exam_login_blocked_by_active_exam_session')) {
-        $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+        $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id']);
         if ($examBlock !== null) {
             clearRememberMeCookie();
             return false;

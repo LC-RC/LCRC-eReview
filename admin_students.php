@@ -5,9 +5,17 @@ require_once __DIR__ . '/includes/profile_avatar.php';
 require_once __DIR__ . '/includes/commerce_student_admin.php';
 require_once __DIR__ . '/includes/commerce_access_gate.php';
 require_once __DIR__ . '/includes/url_helpers.php';
+require_once __DIR__ . '/includes/college_schema.php';
+require_once __DIR__ . '/includes/platform_access.php';
 
 $csrf = generateCSRFToken();
 $nowSql = date('Y-m-d H:i:s');
+
+// Suggested College Examination sections (centralized master).
+require_once __DIR__ . '/examination/includes/college_sections.php';
+college_sections_ensure_schema($conn);
+college_sections_seed_from_existing($conn);
+$collegeExamSectionSuggestions = college_sections_active_names($conn);
 
 $view = $_GET['view'] ?? 'students';
 if (!in_array($view, ['students', 'deleted'], true)) { $view = 'students'; }
@@ -17,6 +25,11 @@ if (!in_array($tab, ['enrolled','pending','expired','rejected','all'], true)) { 
 
 $q = trim($_GET['q'] ?? '');
 $dq = trim($_GET['dq'] ?? '');
+$collExFilter = (string) ($_GET['coll_ex'] ?? 'all');
+$secFilter = trim((string) ($_GET['sec'] ?? ''));
+if (!in_array($collExFilter, ['all', 'enabled', 'not_enabled', 'suspended'], true)) {
+    $collExFilter = 'all';
+}
 $page = sanitizeInt($_GET['page'] ?? 1, 1);
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
@@ -118,18 +131,78 @@ if ($hasIsOnline) $selectCols .= ", u.is_online";
 if ($hasLastSeenAt) $selectCols .= ", u.last_seen_at";
 if ($hasLastLogoutAt) $selectCols .= ", u.last_logout_at";
 if ($hasLastLoginAt) $selectCols .= ", u.last_login_at";
+if (ereview_platform_access_columns_ready($conn)) {
+  $selectCols .= ", u.college_examination_access, u.section";
+}
+
+$collExWhereSql = '';
+$collExWhereTypes = '';
+$collExWhereParams = [];
+if (ereview_platform_access_columns_ready($conn)) {
+    if ($collExFilter === 'enabled') {
+        $collExWhereSql = " AND u.college_examination_access='active'";
+    } elseif ($collExFilter === 'not_enabled') {
+        $collExWhereSql = " AND (u.college_examination_access IS NULL OR u.college_examination_access='none')";
+    } elseif ($collExFilter === 'suspended') {
+        $collExWhereSql = " AND u.college_examination_access='suspended'";
+    }
+    if ($secFilter === '__none__') {
+        $collExWhereSql .= " AND (u.section IS NULL OR TRIM(u.section)='')";
+    } elseif ($secFilter !== '') {
+        $collExWhereSql .= ' AND TRIM(u.section)=?';
+        $collExWhereTypes .= 's';
+        $collExWhereParams[] = $secFilter;
+    }
+}
+
+$filteredCountSql = "SELECT COUNT(*) AS c FROM users u {$activeGrantJoin} WHERE {$tabWhere} AND {$searchSql}{$collExWhereSql}";
+$filteredCountStmt = mysqli_prepare($conn, $filteredCountSql);
+if ($filteredCountStmt) {
+    if ($tab === 'expired') {
+        if ($collExWhereTypes !== '') {
+            mysqli_stmt_bind_param($filteredCountStmt, 'sss' . $collExWhereTypes, $nowSql, $like, $like, ...$collExWhereParams);
+        } else {
+            mysqli_stmt_bind_param($filteredCountStmt, 'sss', $nowSql, $like, $like);
+        }
+    } else {
+        if ($collExWhereTypes !== '') {
+            mysqli_stmt_bind_param($filteredCountStmt, 'ss' . $collExWhereTypes, $like, $like, ...$collExWhereParams);
+        } else {
+            mysqli_stmt_bind_param($filteredCountStmt, 'ss', $like, $like);
+        }
+    }
+    mysqli_stmt_execute($filteredCountStmt);
+    $filteredCountRow = mysqli_fetch_assoc(mysqli_stmt_get_result($filteredCountStmt));
+    mysqli_stmt_close($filteredCountStmt);
+    if ($collExFilter !== 'all' || $secFilter !== '' || $q !== '') {
+        $total = (int) ($filteredCountRow['c'] ?? $total);
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $perPage;
+        }
+    }
+}
 
 $listSql = "SELECT {$selectCols}
   FROM users u
   {$activeGrantJoin}
-  WHERE {$tabWhere} AND {$searchSql}
+  WHERE {$tabWhere} AND {$searchSql}{$collExWhereSql}
   ORDER BY {$orderBySql}
   LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare($conn, $listSql);
 if ($tab === 'expired') {
-  mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
+  if ($collExWhereTypes !== '') {
+    mysqli_stmt_bind_param($stmt, 'sss' . $collExWhereTypes . 'ii', $nowSql, $like, $like, ...array_merge($collExWhereParams, [$perPage, $offset]));
+  } else {
+    mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
+  }
 } else {
-  mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
+  if ($collExWhereTypes !== '') {
+    mysqli_stmt_bind_param($stmt, 'ss' . $collExWhereTypes . 'ii', $like, $like, ...array_merge($collExWhereParams, [$perPage, $offset]));
+  } else {
+    mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
+  }
 }
 mysqli_stmt_execute($stmt);
 $studentsRes = mysqli_stmt_get_result($stmt);
@@ -186,9 +259,15 @@ if ($hasDeletedLogTable && $view === 'deleted') {
 
 $pageTitle = 'Students';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students'] ];
-$mk = function(string $t, int $p = 1) use ($q) : string {
+$mk = function(string $t, int $p = 1) use ($q, $collExFilter, $secFilter) : string {
   $params = ['view' => 'students', 'tab' => $t, 'q' => $q, 'page' => $p];
-  return 'admin_students?' . http_build_query($params);
+  if ($collExFilter !== 'all') {
+    $params['coll_ex'] = $collExFilter;
+  }
+  if ($secFilter !== '') {
+    $params['sec'] = $secFilter;
+  }
+  return 'admin_students?' . http_build_query(array_filter($params, static fn ($v) => $v !== '' && $v !== null));
 };
 $studentsViewUrl = 'admin_students?' . http_build_query(['view' => 'students', 'tab' => $tab, 'q' => $q, 'page' => $page]);
 $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => 'deleted', 'dq' => $dq], static function ($v) {
@@ -969,6 +1048,69 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       border-color: rgba(96, 165, 250, 0.8);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
     }
+
+    /* Light theme: modal is white (admin-saas) — force readable dark text */
+    html[data-admin-theme="light"] .admin-modal {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18) !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__title {
+      color: #0f172a !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__desc,
+    html[data-admin-theme="light"] .admin-modal__desc strong {
+      color: #334155 !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__field label,
+    html[data-admin-theme="light"] .admin-modal__field legend {
+      color: #1e293b !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__field input,
+    html[data-admin-theme="light"] .admin-modal__field select {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__field input:disabled {
+      background: #f1f5f9 !important;
+      color: #334155 !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__field input::placeholder {
+      color: #64748b !important;
+    }
+    html[data-admin-theme="light"] .admin-modal__btn--ghost {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #334155 !important;
+    }
+    html[data-admin-theme="light"] .admin-modal .text-muted,
+    html[data-admin-theme="light"] .admin-modal .college-exam-modal-hint {
+      color: #475569 !important;
+      opacity: 1 !important;
+    }
+    html[data-admin-theme="light"] .admin-modal .college-exam-modal-option {
+      color: #0f172a !important;
+    }
+    html[data-admin-theme="light"] .admin-modal .college-exam-modal-option-disabled {
+      color: #64748b !important;
+      opacity: 1 !important;
+    }
+    html[data-admin-theme="light"] .approve-access-box {
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    .college-exam-modal-hint {
+      color: rgba(226, 232, 240, 0.8);
+    }
+    .college-exam-modal-option {
+      color: #e2e8f0;
+    }
+    .college-exam-modal-option-disabled {
+      color: rgba(148, 163, 184, 0.95);
+    }
     .admin-modal__btn {
       display: inline-flex;
       align-items: center;
@@ -1277,10 +1419,25 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search students..." aria-label="Search students">
+            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search name or email..." aria-label="Search students">
           </div>
+          <?php if (ereview_platform_access_columns_ready($conn)): ?>
+          <select name="coll_ex" aria-label="College Examination filter" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+            <option value="all" <?php echo $collExFilter === 'all' ? 'selected' : ''; ?>>All College Exam</option>
+            <option value="enabled" <?php echo $collExFilter === 'enabled' ? 'selected' : ''; ?>>Exam enabled</option>
+            <option value="not_enabled" <?php echo $collExFilter === 'not_enabled' ? 'selected' : ''; ?>>Exam not enabled</option>
+            <option value="suspended" <?php echo $collExFilter === 'suspended' ? 'selected' : ''; ?>>Exam suspended</option>
+          </select>
+          <select name="sec" aria-label="Section filter" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+            <option value="">All sections</option>
+            <option value="__none__" <?php echo $secFilter === '__none__' ? 'selected' : ''; ?>>No section</option>
+            <?php foreach ($collegeExamSectionSuggestions as $secOpt): ?>
+              <option value="<?php echo h($secOpt); ?>" <?php echo $secFilter === $secOpt ? 'selected' : ''; ?>><?php echo h($secOpt); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <?php endif; ?>
           <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
-          <?php if ($q !== ''): ?>
+          <?php if ($q !== '' || $collExFilter !== 'all' || $secFilter !== ''): ?>
             <a href="<?php echo h($mk($tab, 1)); ?>" class="students-clear-link">Clear</a>
           <?php endif; ?>
         </form>
@@ -1288,10 +1445,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
       <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
         <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
-        <span class="students-bulk-bar__hint">Bulk <strong>Grant Access</strong> = same duration + Full LMS or by-topic selection for all. Also closes open payment reviews (Needs Review / OCR Failed).</span>
+        <span class="students-bulk-bar__hint">Bulk actions apply to selected students on this page only. <strong>Enable College Examination</strong> updates existing accounts (no duplicates).</span>
         <div class="students-bulk-bar__actions">
           <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
-          <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Grant Access</button>
+          <button type="button" id="studentsBulkCollegeExamBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
+          <button type="button" id="studentsBulkSectionBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-collection"></i> Assign / Change Section</button>
+          <button type="button" id="studentsBulkSuspendBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
+          <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-key"></i> Grant Access</button>
           <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-check2-circle"></i> Continue</button>
         </div>
       </div>
@@ -1312,27 +1472,29 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             <colgroup>
               <col class="col-check">
               <col class="col-student">
-              <col class="col-enrollment">
-              <col class="col-payment">
-              <col class="col-proof">
+              <col class="col-email">
               <col class="col-commerce-access">
+              <col class="col-coll-exam">
+              <col class="col-section">
               <col class="col-account-status">
+              <col class="col-created">
               <col class="col-actions">
             </colgroup>
             <thead>
               <tr>
                 <th class="student-select-col" scope="col">
                   <input type="checkbox" id="studentSelectAll" class="admin-bulk-check"
-                         title="Select all actionable students on this page (Grant Access, Repair Activation, or legacy approve)"
-                         aria-label="Select all actionable students on this page">
+                         title="Select all eligible students on this page"
+                         aria-label="Select all eligible students on this page">
                 </th>
                 <th class="col-student" scope="col">Student</th>
-                <th class="col-enrollment" scope="col">Enrollment</th>
-                <th class="col-payment" scope="col">Payment</th>
-                <th class="col-proof" scope="col">Proof</th>
-                <th class="col-commerce-access" scope="col">Access</th>
+                <th class="col-email col-hide-tablet" scope="col">Email</th>
+                <th class="col-commerce-access" scope="col">eReview Access</th>
+                <th class="col-coll-exam" scope="col">College Examination</th>
+                <th class="col-section col-hide-tablet" scope="col">Section</th>
                 <th class="col-account-status" scope="col">Account</th>
-                <th class="col-actions student-actions-head" scope="col">Action</th>
+                <th class="col-created col-hide-tablet" scope="col">Created</th>
+                <th class="col-actions student-actions-head" scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1345,7 +1507,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                   elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
                 ?>
                 <tr>
-                  <td colspan="8" class="students-empty-cell">
+                  <td colspan="9" class="students-empty-cell">
                     <div class="font-semibold">No students found</div>
                     <p class="text-sm mt-1 mb-0"><?php echo h($emptyHint); ?></p>
                   </td>
@@ -1363,12 +1525,22 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     $proofUi = (string) ($dash['proof_ui'] ?? ($hasCommerceProof ? 'View Proof' : (!empty($dash['is_free_access']) ? 'N/A' : 'Not Uploaded')));
                     $primaryActionHref = (string) ($dash['action_href'] ?? ('admin_student_view?id=' . (int) $row['user_id']));
                     $primaryActionLabel = (string) ($dash['action_label'] ?? 'View');
+                    $collExAccessVal = function_exists('ereview_user_college_examination_access_value')
+                        ? ereview_user_college_examination_access_value($row)
+                        : 'none';
+                    $collExActive = ereview_user_has_college_examination_access($conn, (int) $row['user_id'], $row);
+                    $sectionTxt = trim((string) ($row['section'] ?? ''));
+                    $createdFmt = !empty($row['created_at']) ? date('M j, Y', strtotime((string) $row['created_at'])) : '—';
                     $payTone = (string) ($dash['payment_tone'] ?? 'neutral');
                     $accessTone = (string) ($dash['access_tone'] ?? 'none');
                     $showRepairActivation = !empty($dash['show_repair_activation']) || !empty($dash['activation_required']);
                     $canBulkGrant = ($accessTone !== 'granted' && (string) $row['status'] !== 'rejected');
                     $canBulkLegacyApprove = (!$isCommerceRow && (string) $row['status'] !== 'approved');
-                    $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove;
+                    $canCollegeExamEnable = ((string) $row['status'] !== 'rejected' && !$collExActive && (string) ($row['role'] ?? '') === 'student');
+                    $canCollegeExamSection = ((string) ($row['role'] ?? '') === 'student');
+                    $canCollegeExamSuspend = ($collExActive && (string) ($row['role'] ?? '') === 'student');
+                    $canCollegeExamSelect = ((string) $row['status'] !== 'rejected');
+                    $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove || $canCollegeExamSelect;
                     $payStatusRow = (string) ($dash['payment_status'] ?? '');
                     $needsProofRemind = $isCommerceRow
                         && $accessTone !== 'granted'
@@ -1510,9 +1682,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                                aria-label="Select <?php echo h($row['full_name']); ?>"
                                data-student-name="<?php echo h($row['full_name']); ?>"
                                <?php if ($canBulkGrant): ?>data-grantable="1"<?php endif; ?>
+                               <?php if ($canCollegeExamEnable): ?>data-college-examable="1"<?php endif; ?>
+                               <?php if ($canCollegeExamSection): ?>data-college-sectionable="1"<?php endif; ?>
+                               <?php if ($canCollegeExamSuspend): ?>data-college-suspendable="1"<?php endif; ?>
+                               <?php if ($collExActive): ?>data-college-exam-active="1"<?php endif; ?>
                                <?php if ($showRepairActivation || $canBulkLegacyApprove): ?>data-activatable="1"<?php endif; ?>>
                       <?php else: ?>
-                        <span class="admin-bulk-check-na" title="Already has Access Granted - use Grant ledger or Edit content permissions if needed">-</span>
+                        <span class="admin-bulk-check-na" title="Not eligible for bulk actions on this page">-</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-student">
@@ -1529,44 +1705,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         </span>
                         <div class="student-cell__text">
                           <div class="student-name" title="<?php echo h($row['full_name']); ?>"><?php echo h($row['full_name']); ?></div>
-                          <div class="student-meta" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></div>
+                          <div class="student-meta">User #<?php echo (int) $row['user_id']; ?></div>
                         </div>
                       </div>
                     </td>
-                    <td class="col-enrollment">
-                      <div class="font-semibold text-sm text-slate-800" title="<?php echo h($enrollTitle); ?>"><?php echo h($enrollCombined); ?></div>
-                      <?php if ($enrollPathRow === 'by_topic' && $enrollTopicsFull !== ''): ?>
-                        <div class="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2" title="<?php echo h($enrollTopicsFull); ?>">
-                          <?php echo h($enrollTopicsFull); ?>
-                        </div>
-                      <?php endif; ?>
-                    </td>
-                    <td class="col-payment">
-                      <span class="commerce-pill commerce-pill--<?php echo h($payTone); ?>">
-                        <?php if ($payTone === 'verified'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-                        <?php elseif ($payTone === 'review'): ?><i class="bi bi-hourglass-split" aria-hidden="true"></i>
-                        <?php elseif ($payTone === 'rejected'): ?><i class="bi bi-x-circle-fill" aria-hidden="true"></i>
-                        <?php elseif ($payTone === 'awaiting'): ?><i class="bi bi-clock" aria-hidden="true"></i>
-                        <?php endif; ?>
-                        <?php echo h((string) ($dash['payment_ui'] ?? '-')); ?>
-                      </span>
-                      <?php if ($fulfilledUi !== ''): ?>
-                        <div class="text-[10px] text-emerald-400/90 mt-0.5 font-semibold"><?php echo h($fulfilledUi); ?></div>
-                      <?php endif; ?>
-                    </td>
-                    <td class="col-proof">
-                      <?php if (!empty($dash['is_free_access']) || $proofUi === 'N/A'): ?>
-                        <span class="text-slate-400 text-sm">N/A</span>
-                      <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
-                        <a class="commerce-proof-link" data-admin-proof
-                           data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
-                           href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"
-                           title="View commerce payment proof">
-                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
-                        </a>
-                      <?php else: ?>
-                        <span class="text-slate-400 text-sm">Not Uploaded</span>
-                      <?php endif; ?>
+                    <td class="col-email col-hide-tablet">
+                      <a href="mailto:<?php echo h($row['email']); ?>" class="commerce-proof-link" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></a>
                     </td>
                     <td class="col-commerce-access">
                       <span class="commerce-pill commerce-pill--access-<?php echo h($accessTone); ?>">
@@ -1577,6 +1721,24 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <?php echo h((string) ($dash['access_ui'] ?? 'None')); ?>
                       </span>
                     </td>
+                    <td class="col-coll-exam">
+                      <?php if ($collExActive): ?>
+                        <span class="commerce-pill commerce-pill--verified"><i class="bi bi-check2-circle" aria-hidden="true"></i> Active</span>
+                      <?php elseif ($collExAccessVal === 'suspended'): ?>
+                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspended</span>
+                      <?php else: ?>
+                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
+                      <?php endif; ?>
+                    </td>
+                    <td class="col-section col-hide-tablet">
+                      <?php if (!$collExActive && $collExAccessVal !== 'suspended'): ?>
+                        <span class="student-meta">—</span>
+                      <?php elseif ($sectionTxt !== ''): ?>
+                        <span class="admin-badge admin-badge--info"><?php echo h($sectionTxt); ?></span>
+                      <?php else: ?>
+                        <span class="student-meta">Not set</span>
+                      <?php endif; ?>
+                    </td>
                     <td class="col-account-status">
                       <span class="commerce-pill <?php echo $accountUi === 'Active' ? 'commerce-pill--verified' : ($accountUi === 'Rejected' ? 'commerce-pill--rejected' : 'commerce-pill--awaiting'); ?>">
                         <?php if ($accountUi === 'Active'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
@@ -1585,19 +1747,20 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <?php echo h($accountUi); ?>
                       </span>
                     </td>
+                    <td class="col-created col-hide-tablet"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
                     <td class="student-action-cell col-actions">
                       <div class="student-action-cluster">
                         <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
                           <button type="button"
-                                  class="admin-btn admin-btn--primary admin-btn--sm js-grant-access-btn"
+                                  class="admin-btn admin-btn--ghost admin-btn--sm js-grant-access-btn hidden md:inline-flex"
                                   data-user-id="<?php echo (int) $row['user_id']; ?>"
                                   data-student-name="<?php echo h($row['full_name']); ?>"
                                   data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>"
-                                  title="Grant LMS access. For unpaid / no proof, prefer Remind to upload (⋯ menu) unless emergency override.">
+                                  title="Grant LMS access">
                             Grant Access
                           </button>
                         <?php endif; ?>
-                        <a class="admin-btn admin-btn--<?php echo ($primaryActionLabel === 'Review') ? 'primary' : 'secondary'; ?> admin-btn--sm"
+                        <a class="admin-btn admin-btn--secondary admin-btn--sm"
                            href="<?php echo h($primaryActionHref); ?>">
                           <?php echo h($primaryActionLabel); ?>
                         </a>
@@ -1607,6 +1770,16 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                           </button>
                           <div class="admin-student-action-menu" data-action-menu-list role="menu">
                             <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>"><i class="bi bi-person-badge" aria-hidden="true"></i> Student detail</a>
+                            <?php if ($collExActive): ?>
+                              <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>#college-examination"><i class="bi bi-clipboard-check" aria-hidden="true"></i> College Examination (enabled)</a>
+                            <?php else: ?>
+                              <button type="button" class="admin-student-action-item js-enable-college-exam-btn" role="menuitem"
+                                      data-user-id="<?php echo (int) $row['user_id']; ?>"
+                                      data-student-name="<?php echo h($row['full_name']); ?>"
+                                      data-review-type="<?php echo h((string) ($row['review_type'] ?? 'undergrad')); ?>">
+                                <i class="bi bi-clipboard-check" aria-hidden="true"></i> Enable College Examination
+                              </button>
+                            <?php endif; ?>
                             <?php if (!empty($dash['payment_id'])): ?>
                               <a role="menuitem" class="admin-student-action-item" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $dash['payment_id']); ?>"><i class="bi bi-credit-card" aria-hidden="true"></i> View payment</a>
                             <?php endif; ?>
@@ -1786,6 +1959,120 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     <div class="admin-modal__actions">
       <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
       <button type="button" id="grantAccessSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Confirm grant</button>
+    </div>
+  </section>
+</div>
+
+<div id="enableCollegeExamModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="enableCollegeExamTitle">
+    <form id="enableCollegeExamForm" action="#" method="post">
+      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+      <input type="hidden" name="action" value="bulk_enable_college_examination">
+      <input type="hidden" name="section_mode" id="enableCollegeExamSectionMode" value="same">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-clipboard-check"></i></span>
+        <div>
+          <h3 id="enableCollegeExamTitle" class="admin-modal__title">Enable College Examination</h3>
+          <p class="admin-modal__desc">Updates the <strong>same existing eReview accounts</strong>. Does not create duplicate users, change passwords, or modify eReview grants.</p>
+          <p class="admin-modal__desc">Selected students: <strong id="enableCollegeExamSelectedCount">0</strong></p>
+        </div>
+      </div>
+      <div class="admin-modal__field">
+        <label>College Examination Access</label>
+        <input type="text" value="Active" disabled>
+      </div>
+      <div class="admin-modal__field">
+        <label for="enableCollegeExamReviewType">Review Type</label>
+        <select id="enableCollegeExamReviewType" name="review_type" required>
+          <option value="undergrad">Undergrad</option>
+          <option value="reviewee">Reviewee</option>
+        </select>
+      </div>
+      <fieldset class="admin-modal__field" style="border:0;padding:0;margin:0 0 0.75rem;">
+        <legend class="text-sm font-semibold mb-2" style="padding:0;">Section Assignment</legend>
+        <label class="college-exam-modal-option flex items-start gap-2 text-sm mb-2" style="cursor:pointer;">
+          <input type="radio" name="section_assignment_ui" value="same" checked style="margin-top:0.2rem;">
+          <span>
+            <strong>Same section for all selected students</strong>
+            <span class="college-exam-modal-hint block text-xs mt-0.5">Applies one section to every selected account.</span>
+          </span>
+        </label>
+        <div class="admin-modal__field" style="margin-left:1.5rem;">
+          <label for="enableCollegeExamSection">Section</label>
+          <?php if ($collegeExamSectionSuggestions === []): ?>
+            <p class="college-exam-modal-hint text-xs m-0 mb-2">No active sections yet. Ask a professor admin to create sections under <strong>Sections</strong> first.</p>
+            <select id="enableCollegeExamSection" name="section" required disabled>
+              <option value="">No sections available</option>
+            </select>
+          <?php else: ?>
+            <select id="enableCollegeExamSection" name="section">
+              <option value="__none__">No section</option>
+              <?php foreach ($collegeExamSectionSuggestions as $secOpt): ?>
+                <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+              <?php endforeach; ?>
+            </select>
+          <?php endif; ?>
+        </div>
+        <label class="college-exam-modal-option-disabled flex items-start gap-2 text-sm" style="cursor:not-allowed;" title="Coming soon">
+          <input type="radio" name="section_assignment_ui" value="individual" disabled style="margin-top:0.2rem;">
+          <span>
+            <strong>Assign sections individually</strong>
+            <span class="college-exam-modal-hint block text-xs mt-0.5">Available in a later update.</span>
+          </span>
+        </label>
+      </fieldset>
+      <p class="college-exam-modal-hint text-xs m-0 mb-2">Exam assignment stays separate: enabling login does not automatically assign every exam.</p>
+      <div id="enableCollegeExamError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" id="enableCollegeExamCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+        <button type="submit" id="enableCollegeExamSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Enable for <span id="enableCollegeExamSubmitCount">0</span> Students</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<div id="assignSectionModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="assignSectionTitle">
+    <form id="assignSectionForm">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-collection"></i></span>
+        <div>
+          <h3 id="assignSectionTitle" class="admin-modal__title">Assign / Change Section</h3>
+          <p class="admin-modal__desc">Selected students: <strong id="assignSectionSelectedCount">0</strong></p>
+          <p class="admin-modal__desc">Updates profile section only. Does not change eReview grants or exam assignments.</p>
+        </div>
+      </div>
+      <div class="admin-modal__field">
+        <label for="assignSectionSelect">Section</label>
+        <select id="assignSectionSelect" name="section">
+          <option value="__none__">No section</option>
+          <?php foreach ($collegeExamSectionSuggestions as $secOpt): ?>
+            <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div id="assignSectionError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" id="assignSectionCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+        <button type="submit" id="assignSectionSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2"></i> Apply Section</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<div id="suspendCollegeExamModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="suspendCollegeExamTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
+      <div>
+        <h3 id="suspendCollegeExamTitle" class="admin-modal__title">Suspend College Examination?</h3>
+        <p class="admin-modal__desc">This blocks College Examination portal login for <strong id="suspendCollegeExamCount">0</strong> selected student(s). eReview LMS access is unchanged.</p>
+      </div>
+    </div>
+    <div id="suspendCollegeExamError" class="admin-modal__error"></div>
+    <div class="admin-modal__actions">
+      <button type="button" id="suspendCollegeExamCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+      <button type="button" id="suspendCollegeExamConfirmBtn" class="admin-modal__btn admin-modal__btn--danger">Suspend access</button>
     </div>
   </section>
 </div>
@@ -1973,6 +2260,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 <script>
   /* Early action wiring - must run even if later page scripts throw. */
   (function () {
+    var csrf = <?php echo json_encode($csrf); ?>;
+    var pendingCollegeExamIds = [];
+    var pendingSectionIds = [];
+    var pendingSuspendIds = [];
+    var collegeApiUrl = <?php echo json_encode(ereview_url('admin_student_access_api.php')); ?>;
+
     function openGrantFromBtn(btn) {
       if (!btn || typeof window.adminStudentsOpenGrant !== 'function') {
         var overlay = document.getElementById('grantAccessModalOverlay');
@@ -1994,6 +2287,204 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       );
     }
 
+    function openEnableCollegeExam(userIds, label) {
+      var overlay = document.getElementById('enableCollegeExamModalOverlay');
+      var countEl = document.getElementById('enableCollegeExamSelectedCount');
+      var submitCountEl = document.getElementById('enableCollegeExamSubmitCount');
+      var rtEl = document.getElementById('enableCollegeExamReviewType');
+      var secEl = document.getElementById('enableCollegeExamSection');
+      var errEl = document.getElementById('enableCollegeExamError');
+      var modeEl = document.getElementById('enableCollegeExamSectionMode');
+      if (!overlay) return;
+      pendingCollegeExamIds = (userIds || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
+      if (pendingCollegeExamIds.length === 0) return;
+      if (countEl) countEl.textContent = String(pendingCollegeExamIds.length);
+      if (submitCountEl) submitCountEl.textContent = String(pendingCollegeExamIds.length);
+      if (secEl) secEl.value = '';
+      if (errEl) errEl.textContent = '';
+      if (modeEl) modeEl.value = 'same';
+      if (rtEl) rtEl.value = 'undergrad';
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      if (secEl) setTimeout(function () { secEl.focus(); }, 40);
+    }
+    window.adminStudentsOpenCollegeExam = openEnableCollegeExam;
+
+    function closeEnableCollegeExam() {
+      var overlay = document.getElementById('enableCollegeExamModalOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      pendingCollegeExamIds = [];
+    }
+
+    var collegeCancelBtn = document.getElementById('enableCollegeExamCancelBtn');
+    var collegeOverlay = document.getElementById('enableCollegeExamModalOverlay');
+    var collegeForm = document.getElementById('enableCollegeExamForm');
+    if (collegeCancelBtn) collegeCancelBtn.addEventListener('click', closeEnableCollegeExam);
+    if (collegeOverlay) {
+      collegeOverlay.addEventListener('click', function (e) {
+        if (e.target === collegeOverlay) closeEnableCollegeExam();
+      });
+    }
+    if (collegeForm) {
+      collegeForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var submitBtn = document.getElementById('enableCollegeExamSubmitBtn');
+        var errEl = document.getElementById('enableCollegeExamError');
+        var secEl = document.getElementById('enableCollegeExamSection');
+        var rtEl = document.getElementById('enableCollegeExamReviewType');
+        if (pendingCollegeExamIds.length === 0) {
+          if (errEl) errEl.textContent = 'Select at least one student.';
+          return;
+        }
+        var section = secEl ? String(secEl.value || '__none__').trim() : '__none__';
+        var reviewType = rtEl ? String(rtEl.value || 'undergrad') : 'undergrad';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enabling...';
+        }
+        if (errEl) errEl.textContent = '';
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('action', 'bulk_enable_college_examination');
+        fd.append('section_mode', 'same');
+        fd.append('section', section);
+        fd.append('review_type', reviewType);
+        fd.append('user_ids', JSON.stringify(pendingCollegeExamIds));
+        fetch(collegeApiUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function (r) { return r.json().then(function (data) { return { okHttp: r.ok, data: data }; }); })
+          .then(function (res) {
+            var data = res.data || {};
+            if (!res.okHttp || !data.ok) {
+              if (errEl) errEl.textContent = (data && data.error) ? data.error : 'Bulk enable failed. Please try again.';
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                var n = pendingCollegeExamIds.length;
+                submitBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Enable for <span id="enableCollegeExamSubmitCount">' + n + '</span> Students';
+              }
+              return;
+            }
+            closeEnableCollegeExam();
+            if (window.adminStudentsNotice) {
+              window.adminStudentsNotice.show(
+                'success',
+                data.message || ('College Examination enabled for ' + (data.enabled_count || 0) + ' students.'),
+                data.detail || ('Section: ' + section + ' · Review Type: ' + (reviewType === 'reviewee' ? 'Reviewee' : 'Undergrad'))
+              );
+            }
+            setTimeout(function () { window.location.reload(); }, 700);
+          })
+          .catch(function () {
+            if (errEl) errEl.textContent = 'Network error. Please try again.';
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              var n2 = pendingCollegeExamIds.length;
+              submitBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Enable for <span id="enableCollegeExamSubmitCount">' + n2 + '</span> Students';
+            }
+          });
+      });
+    }
+
+    function openAssignSection(ids) {
+      pendingSectionIds = ids.slice();
+      var overlay = document.getElementById('assignSectionModalOverlay');
+      var countEl = document.getElementById('assignSectionSelectedCount');
+      var errEl = document.getElementById('assignSectionError');
+      if (countEl) countEl.textContent = String(pendingSectionIds.length);
+      if (errEl) errEl.textContent = '';
+      if (!overlay) return;
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeAssignSection() {
+      var overlay = document.getElementById('assignSectionModalOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      pendingSectionIds = [];
+    }
+    var assignSectionForm = document.getElementById('assignSectionForm');
+    if (assignSectionForm) {
+      assignSectionForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (pendingSectionIds.length === 0) return;
+        var errEl = document.getElementById('assignSectionError');
+        var submitBtn = document.getElementById('assignSectionSubmitBtn');
+        var secEl = document.getElementById('assignSectionSelect');
+        if (submitBtn) { submitBtn.disabled = true; }
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('action', 'bulk_assign_section');
+        fd.append('section', secEl ? secEl.value : '__none__');
+        fd.append('user_ids', JSON.stringify(pendingSectionIds));
+        fetch(collegeApiUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function (r) { return r.json().then(function (data) { return { okHttp: r.ok, data: data }; }); })
+          .then(function (res) {
+            if (!res.okHttp || !res.data.ok) {
+              if (errEl) errEl.textContent = (res.data && res.data.error) ? res.data.error : 'Section assignment failed.';
+              return;
+            }
+            closeAssignSection();
+            if (window.adminStudentsNotice) window.adminStudentsNotice.show('success', res.data.message || 'Section updated.');
+            setTimeout(function () { window.location.reload(); }, 700);
+          })
+          .catch(function () { if (errEl) errEl.textContent = 'Network error.'; })
+          .finally(function () { if (submitBtn) submitBtn.disabled = false; });
+      });
+    }
+    var assignSectionCancel = document.getElementById('assignSectionCancelBtn');
+    if (assignSectionCancel) assignSectionCancel.addEventListener('click', closeAssignSection);
+
+    function openSuspendCollegeExam(ids) {
+      pendingSuspendIds = ids.slice();
+      var overlay = document.getElementById('suspendCollegeExamModalOverlay');
+      var countEl = document.getElementById('suspendCollegeExamCount');
+      var errEl = document.getElementById('suspendCollegeExamError');
+      if (countEl) countEl.textContent = String(pendingSuspendIds.length);
+      if (errEl) errEl.textContent = '';
+      if (!overlay) return;
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeSuspendCollegeExam() {
+      var overlay = document.getElementById('suspendCollegeExamModalOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      pendingSuspendIds = [];
+    }
+    var suspendConfirm = document.getElementById('suspendCollegeExamConfirmBtn');
+    if (suspendConfirm) {
+      suspendConfirm.addEventListener('click', function () {
+        if (pendingSuspendIds.length === 0) return;
+        var errEl = document.getElementById('suspendCollegeExamError');
+        suspendConfirm.disabled = true;
+        var fd = new FormData();
+        fd.append('csrf_token', csrf);
+        fd.append('action', 'bulk_suspend_college_examination');
+        fd.append('user_ids', JSON.stringify(pendingSuspendIds));
+        fetch(collegeApiUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function (r) { return r.json().then(function (data) { return { okHttp: r.ok, data: data }; }); })
+          .then(function (res) {
+            if (!res.okHttp || !res.data.ok) {
+              if (errEl) errEl.textContent = (res.data && res.data.error) ? res.data.error : 'Suspend failed.';
+              return;
+            }
+            closeSuspendCollegeExam();
+            if (window.adminStudentsNotice) window.adminStudentsNotice.show('success', res.data.message || 'College Examination suspended.');
+            setTimeout(function () { window.location.reload(); }, 700);
+          })
+          .catch(function () { if (errEl) errEl.textContent = 'Network error.'; })
+          .finally(function () { suspendConfirm.disabled = false; });
+      });
+    }
+    var suspendCancel = document.getElementById('suspendCollegeExamCancelBtn');
+    if (suspendCancel) suspendCancel.addEventListener('click', closeSuspendCollegeExam);
+
+    window.adminStudentsOpenAssignSection = function (ids) { openAssignSection(ids || []); };
+    window.adminStudentsOpenSuspendCollegeExam = function (ids) { openSuspendCollegeExam(ids || []); };
+
     function closeAllActionMenus() {
       document.querySelectorAll('.admin-student-action-menu.open').forEach(function (m) {
         m.classList.remove('open');
@@ -2006,6 +2497,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     }
 
     document.addEventListener('click', function (e) {
+      var collegeBtn = e.target && e.target.closest ? e.target.closest('.js-enable-college-exam-btn') : null;
+      if (collegeBtn && !collegeBtn.disabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllActionMenus();
+        openEnableCollegeExam(
+          [collegeBtn.getAttribute('data-user-id')],
+          collegeBtn.getAttribute('data-student-name') || ''
+        );
+        return;
+      }
       var grantBtn = e.target && e.target.closest ? e.target.closest('.js-grant-access-btn') : null;
       if (grantBtn && !grantBtn.disabled) {
         e.preventDefault();
@@ -2238,8 +2740,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         selectAll.checked = all.length > 0 && selected.length === all.length;
         selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
         selectAll.title = all.length === 0
-          ? 'No actionable students on this page (Grant Access / Repair Activation / legacy approve)'
-          : ('Select all ' + all.length + ' actionable student(s) on this page');
+          ? 'No eligible students on this page'
+          : ('Select all ' + all.length + ' eligible student(s) on this page');
       }
       var grantBtn = document.getElementById('studentsBulkGrantBtn');
       if (grantBtn) {
@@ -2248,6 +2750,30 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         grantBtn.title = grantableN === 0
           ? 'Select students without Access Granted'
           : ('Grant Access to ' + grantableN + ' selected student(s)');
+      }
+      var collegeBulkBtn = document.getElementById('studentsBulkCollegeExamBtn');
+      if (collegeBulkBtn) {
+        var examableN = selected.filter(function (cb) { return cb.getAttribute('data-college-examable') === '1'; }).length;
+        collegeBulkBtn.disabled = examableN === 0;
+        collegeBulkBtn.title = examableN === 0
+          ? 'Select one or more students to enable College Examination'
+          : ('Enable College Examination for ' + examableN + ' selected student(s)');
+      }
+      var sectionBulkBtn = document.getElementById('studentsBulkSectionBtn');
+      if (sectionBulkBtn) {
+        var sectionN = selected.filter(function (cb) { return cb.getAttribute('data-college-sectionable') === '1'; }).length;
+        sectionBulkBtn.disabled = sectionN === 0;
+        sectionBulkBtn.title = sectionN === 0
+          ? 'Select students to assign a section'
+          : ('Assign section to ' + sectionN + ' selected student(s)');
+      }
+      var suspendBulkBtn = document.getElementById('studentsBulkSuspendBtn');
+      if (suspendBulkBtn) {
+        var suspendN = selected.filter(function (cb) { return cb.getAttribute('data-college-suspendable') === '1'; }).length;
+        suspendBulkBtn.disabled = suspendN === 0;
+        suspendBulkBtn.title = suspendN === 0
+          ? 'Select students with active College Examination access'
+          : ('Suspend College Examination for ' + suspendN + ' selected student(s)');
       }
     }
 
@@ -2270,6 +2796,25 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     }
     syncBulkBar();
+
+    var bulkSectionBtn = document.getElementById('studentsBulkSectionBtn');
+    if (bulkSectionBtn) {
+      bulkSectionBtn.addEventListener('click', function () {
+        var ids = selectedCheckboxes().filter(function (cb) { return cb.getAttribute('data-college-sectionable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length && typeof window.adminStudentsOpenAssignSection === 'function') {
+          window.adminStudentsOpenAssignSection(ids);
+        }
+      });
+    }
+    var bulkSuspendBtn = document.getElementById('studentsBulkSuspendBtn');
+    if (bulkSuspendBtn) {
+      bulkSuspendBtn.addEventListener('click', function () {
+        var ids = selectedCheckboxes().filter(function (cb) { return cb.getAttribute('data-college-suspendable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length && typeof window.adminStudentsOpenSuspendCollegeExam === 'function') {
+          window.adminStudentsOpenSuspendCollegeExam(ids);
+        }
+      });
+    }
 
     if (!confirmOverlay || !confirmSubmit) return;
 
@@ -2537,6 +3082,23 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
           : (ids.length + ' students - same duration & content selection for all');
         openGrant(ids, label, anyNeedsProof);
+      });
+    }
+
+    var bulkCollegeExamBtn = document.getElementById('studentsBulkCollegeExamBtn');
+    if (bulkCollegeExamBtn) {
+      bulkCollegeExamBtn.addEventListener('click', function () {
+        var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-college-examable="1"]'));
+        var ids = boxes.map(function (cb) { return cb.value; });
+        if (ids.length === 0) {
+          if (window.adminStudentsNotice) {
+            window.adminStudentsNotice.show('info', 'No students selected', 'Select one or more students to enable College Examination.');
+          }
+          return;
+        }
+        if (typeof window.adminStudentsOpenCollegeExam === 'function') {
+          window.adminStudentsOpenCollegeExam(ids, ids.length + ' students');
+        }
       });
     }
     if (cancelBtn) cancelBtn.addEventListener('click', closeGrant);

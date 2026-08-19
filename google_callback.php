@@ -9,7 +9,10 @@ require_once __DIR__ . '/includes/college_schema.php';
 require_once __DIR__ . '/includes/college_exam_helpers.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
+    require_once __DIR__ . '/includes/platform_access.php';
+    $uid = (int) getCurrentUserId();
+    $userRow = ereview_user_load_platform_row($conn, $uid);
+    header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
 
@@ -94,7 +97,12 @@ if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$stmt = mysqli_prepare($conn, "SELECT user_id, full_name, role, status, access_end FROM users WHERE email = ? LIMIT 1");
+require_once __DIR__ . '/includes/platform_access.php';
+$loginCols = 'user_id, full_name, role, status, access_end';
+if (ereview_platform_access_columns_ready($conn)) {
+    $loginCols .= ', college_examination_access, review_type, section, student_number';
+}
+$stmt = mysqli_prepare($conn, "SELECT {$loginCols} FROM users WHERE email = ? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 's', $email);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
@@ -127,8 +135,8 @@ if ($hasEmailVerifiedCol) {
 }
 
 if (!isStaffRole($user['role'])) {
-    require_once __DIR__ . '/includes/commerce_access_gate.php';
-    $gate = commerce_student_can_login($conn, $user);
+    require_once __DIR__ . '/includes/platform_access.php';
+    $gate = ereview_user_can_authenticate($conn, $user);
     if (empty($gate['ok'])) {
         $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is pending approval.');
         $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
@@ -137,7 +145,7 @@ if (!isStaffRole($user['role'])) {
     }
 }
 
-$examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+$examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id']);
 if ($examBlock !== null) {
     $_SESSION['error'] = $examBlock;
     $_SESSION['error_type'] = 'exam_session_active';
@@ -179,7 +187,7 @@ users_activity_log(
     null
 );
 
-$target = dashboardUrlForRole($user['role']);
+$target = ereview_resolve_post_login_url($conn, $user);
 $fullName = trim($user['full_name'] ?? '');
 $firstName = $fullName !== '' ? explode(' ', $fullName)[0] : 'User';
 header('Location: auth_success?target=' . rawurlencode($target) . '&name=' . rawurlencode($firstName));

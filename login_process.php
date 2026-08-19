@@ -79,7 +79,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Use prepared statement to prevent SQL injection
-    $stmt = mysqli_prepare($conn, "SELECT user_id, full_name, email, password, role, status, access_end FROM users WHERE email = ? LIMIT 1");
+    require_once __DIR__ . '/includes/platform_access.php';
+    $loginCols = 'user_id, full_name, email, password, role, status, access_end';
+    if (ereview_platform_access_columns_ready($conn)) {
+        $loginCols .= ', college_examination_access, review_type, section, student_number';
+    }
+    $stmt = mysqli_prepare($conn, "SELECT {$loginCols} FROM users WHERE email = ? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 's', $email);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -121,10 +126,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         }
-        // Students: require active access grant (single source of truth). Staff/other roles: status gate.
+        // Platform access: eReview and/or College Examination (staff bypass).
         if (!isStaffRole($user['role'])) {
-            require_once __DIR__ . '/includes/commerce_access_gate.php';
-            $gate = commerce_student_can_login($conn, $user);
+            require_once __DIR__ . '/includes/platform_access.php';
+            $gate = ereview_user_can_authenticate($conn, $user);
             if (empty($gate['ok'])) {
                 $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
                 $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
@@ -133,7 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
 
-        $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id'], (string)$user['role']);
+        $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id']);
         if ($examBlock !== null) {
             $_SESSION['error'] = $examBlock;
             $_SESSION['error_type'] = 'exam_session_active';
@@ -189,7 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             (string) ($user['role'] ?? ''),
             null
         );
-        $target = dashboardUrlForRole($user['role']);
+        $target = ereview_resolve_post_login_url($conn, $user);
         if (($user['role'] ?? '') === 'admin' && !admin_can('dashboard')) {
             $firstKey = null;
             $keys = admin_acl_session_keys();

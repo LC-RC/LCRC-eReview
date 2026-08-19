@@ -3,7 +3,12 @@ require_once 'session_config.php';
 require_once 'auth.php';
 
 if (isLoggedIn() && verifySession()) {
-    header('Location: ' . dashboardUrlForRole(getCurrentUserRole()));
+    require_once __DIR__ . '/includes/platform_access.php';
+    require_once __DIR__ . '/includes/college_schema.php';
+    global $conn;
+    $uid = (int) getCurrentUserId();
+    $userRow = ereview_user_load_platform_row($conn, $uid);
+    header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
 
