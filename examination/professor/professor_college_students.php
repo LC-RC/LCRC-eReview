@@ -43,11 +43,19 @@ function pcs_build_list_where(
     string $statusFilter,
     string $search,
     string $sectionFilter,
-    bool $isStudentTab
+    bool $isStudentTab,
+    bool $platformColsReady
 ): array {
-    $where = ["(role='college_student' OR role='student')", 'review_type=?'];
+    // Roster = native college accounts OR eReview students already granted exam access
+    // (active/suspended). "Not enabled" LMS students stay on admin_students only.
+    $where = ['review_type=?'];
     $types = 's';
     $params = [$reviewType];
+    if ($platformColsReady) {
+        $where[] = "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))";
+    } else {
+        $where[] = "role='college_student'";
+    }
 
     if ($statusFilter !== 'all') {
         $where[] = 'status=?';
@@ -83,16 +91,27 @@ function pcs_sort_sql(string $sort): string
     };
 }
 
-[$whereParts, $whereTypes, $whereParams] = pcs_build_list_where($reviewTypeSql, $statusFilter, $search, $sectionFilter, $isStudentTab);
+$platformColsReady = ereview_platform_access_columns_ready($conn);
+[$whereParts, $whereTypes, $whereParams] = pcs_build_list_where(
+    $reviewTypeSql,
+    $statusFilter,
+    $search,
+    $sectionFilter,
+    $isStudentTab,
+    $platformColsReady
+);
 $whereSql = implode(' AND ', $whereParts);
 
 $statsStudents = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0];
 $statsReviewees = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0];
+$statsRosterSql = $platformColsReady
+    ? "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))"
+    : "role='college_student'";
 $statsQ = mysqli_query(
     $conn,
     "SELECT review_type, status, COUNT(*) AS c
      FROM users
-     WHERE (role='college_student' OR role='student')
+     WHERE {$statsRosterSql}
      GROUP BY review_type, status"
 );
 if ($statsQ) {
@@ -198,7 +217,7 @@ unset($_SESSION['message']);
 $adminLoadStudentsCss = true;
 $adminHeroIcon = 'people';
 $adminHeroTitle = 'Students';
-$adminHeroSubtitle = 'Manage college students and reviewees. Select multiple accounts for bulk College Examination access and section assignment.';
+$adminHeroSubtitle = 'Examination roster only: native college accounts and eReview students with exam access. Enable new access from LMS Admin → Students.';
 $adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="professor_create_college_student"><i class="bi bi-person-plus"></i> Add Student</a>'
     . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
 
@@ -292,6 +311,7 @@ $apiUrl = ereview_url('professor_college_students_api');
           <button type="button" id="pcsBulkEnableBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
           <button type="button" id="pcsBulkSectionBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-collection"></i> Assign Section</button>
           <button type="button" id="pcsBulkDisableBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
+          <button type="button" id="pcsBulkRemoveBtn" class="admin-modal__btn admin-modal__btn--danger"><i class="bi bi-trash"></i> Remove / Delete</button>
         <?php endif; ?>
       </div>
     </div>
@@ -375,11 +395,17 @@ $apiUrl = ereview_url('professor_college_students_api');
                   $emailTxt = trim((string) ($u['email'] ?? ''));
                   $role = (string) ($u['role'] ?? '');
                   $statusLower = strtolower((string) ($u['status'] ?? ''));
+                  $collExAccessVal = function_exists('ereview_user_college_examination_access_value')
+                      ? ereview_user_college_examination_access_value($u)
+                      : 'none';
                   $hasCollEx = ereview_user_has_college_examination_access($conn, $uid, $u);
-                  $canEnable = ($role === 'student' && !$hasCollEx && $statusLower !== 'rejected');
+                  $canEnable = ($role === 'student' && !$hasCollEx && $collExAccessVal !== 'suspended' && $statusLower !== 'rejected');
                   $canAssignSection = ($isStudentTab && $hasCollEx);
                   $canDisable = ($role === 'student' && $hasCollEx);
-                  $canDelete = ($role === 'college_student');
+                  // LMS-linked: remove exam access only. Native college: hard-delete account.
+                  $canRemoveFromExam = ($role === 'student' && in_array($collExAccessVal, ['active', 'suspended'], true));
+                  $canDeleteNative = ($role === 'college_student');
+                  $canRowDelete = ($canRemoveFromExam || $canDeleteNative);
                   $statusBadge = match ($statusLower) {
                       'approved' => 'admin-badge--success',
                       'pending' => 'admin-badge--warning',
@@ -398,7 +424,9 @@ $apiUrl = ereview_url('professor_college_students_api');
                            data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
                            <?php if ($canEnable): ?>data-enableable="1"<?php endif; ?>
                            <?php if ($canAssignSection): ?>data-sectionable="1"<?php endif; ?>
-                           <?php if ($canDisable): ?>data-disableable="1"<?php endif; ?>>
+                           <?php if ($canDisable): ?>data-disableable="1"<?php endif; ?>
+                           <?php if ($canRemoveFromExam): ?>data-removable="1"<?php endif; ?>
+                           <?php if ($canDeleteNative): ?>data-deletable="1"<?php endif; ?>>
                   </td>
                   <?php endif; ?>
                   <td class="college-student-account-cell">
@@ -424,12 +452,14 @@ $apiUrl = ereview_url('professor_college_students_api');
                     <td>
                       <?php if ($hasCollEx): ?>
                         <span class="commerce-pill commerce-pill--verified"><i class="bi bi-check2-circle" aria-hidden="true"></i> Active</span>
+                      <?php elseif ($collExAccessVal === 'suspended'): ?>
+                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspended</span>
                       <?php else: ?>
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
                       <?php endif; ?>
                     </td>
                     <td>
-                      <?php if (!$hasCollEx): ?>
+                      <?php if (!$hasCollEx && $collExAccessVal !== 'suspended'): ?>
                         <span class="student-meta">Not enabled</span>
                       <?php elseif ($sectionTxt !== ''): ?>
                         <span class="admin-badge admin-badge--info"><?php echo h($sectionTxt); ?></span>
@@ -450,6 +480,27 @@ $apiUrl = ereview_url('professor_college_students_api');
                   <td class="student-action-cell">
                     <div class="student-action-cluster">
                       <a class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye"></i> View</a>
+                      <?php if ($canRemoveFromExam): ?>
+                        <button type="button"
+                                class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-student"
+                                data-user-id="<?php echo $uid; ?>"
+                                data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
+                                data-remove-mode="unlink"
+                                data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"
+                                title="Remove College Examination access. eReview LMS account stays.">
+                          <i class="bi bi-trash" aria-hidden="true"></i> Remove
+                        </button>
+                      <?php elseif ($canDeleteNative): ?>
+                        <button type="button"
+                                class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-student"
+                                data-user-id="<?php echo $uid; ?>"
+                                data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
+                                data-remove-mode="delete"
+                                data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"
+                                title="Permanently delete this native college examination account.">
+                          <i class="bi bi-trash" aria-hidden="true"></i> Delete
+                        </button>
+                      <?php endif; ?>
                       <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
                         <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h((string) ($u['full_name'] ?? '')); ?>">
                           <i class="bi bi-three-dots" aria-hidden="true"></i>
@@ -463,10 +514,18 @@ $apiUrl = ereview_url('professor_college_students_api');
                           <?php if ($canDisable): ?>
                             <button type="button" class="admin-student-action-item js-pcs-disable-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspend College Examination</button>
                           <?php endif; ?>
-                          <?php if ($canDelete): ?>
+                          <?php if ($canRemoveFromExam): ?>
                             <button type="button" class="admin-student-action-item admin-student-action-item--danger js-open-delete-student" role="menuitem"
                                     data-user-id="<?php echo $uid; ?>"
                                     data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
+                                    data-remove-mode="unlink"
+                                    data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"><i class="bi bi-trash" aria-hidden="true"></i> Remove from Examination</button>
+                          <?php endif; ?>
+                          <?php if ($canDeleteNative): ?>
+                            <button type="button" class="admin-student-action-item admin-student-action-item--danger js-open-delete-student" role="menuitem"
+                                    data-user-id="<?php echo $uid; ?>"
+                                    data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
+                                    data-remove-mode="delete"
                                     data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"><i class="bi bi-trash" aria-hidden="true"></i> Delete student</button>
                           <?php endif; ?>
                         </div>
@@ -593,18 +652,36 @@ $apiUrl = ereview_url('professor_college_students_api');
       <div class="admin-modal__hero">
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-shield-exclamation"></i></span>
         <div>
-          <h3 id="deleteStudentTitle" class="admin-modal__title">Delete student account?</h3>
-          <p class="admin-modal__desc">This permanently deletes the native college student account for <strong id="deleteStudentNameDisplay"></strong>. Linked examination attempts and uploads may be removed. This does not affect separate eReview accounts. This cannot be undone.</p>
+          <h3 id="deleteStudentTitle" class="admin-modal__title">Remove from Examination?</h3>
+          <p class="admin-modal__desc" id="deleteStudentDesc">This removes College Examination access for <strong id="deleteStudentNameDisplay"></strong>. Their eReview LMS account stays intact.</p>
         </div>
       </div>
       <form method="post" action="professor_college_student_delete" id="deleteStudentForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="user_id" id="deleteStudentUserId" value="">
+        <input type="hidden" name="remove_mode" id="deleteStudentRemoveMode" value="unlink">
         <div class="admin-modal__actions">
           <button type="button" class="admin-btn admin-btn--secondary" id="deleteStudentCancel">Cancel</button>
-          <button type="submit" class="admin-btn admin-btn--danger" id="deleteStudentConfirm">Delete student</button>
+          <button type="submit" class="admin-btn admin-btn--danger" id="deleteStudentConfirm">Remove</button>
         </div>
       </form>
+    </section>
+  </div>
+
+  <div class="admin-modal-overlay" id="pcsBulkRemoveModalOverlay" aria-hidden="true">
+    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsBulkRemoveTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-trash"></i></span>
+        <div>
+          <h3 id="pcsBulkRemoveTitle" class="admin-modal__title">Remove / delete selected?</h3>
+          <p class="admin-modal__desc" id="pcsBulkRemoveDesc">eReview LMS-linked students lose College Examination access only. Native college accounts are permanently deleted.</p>
+        </div>
+      </div>
+      <div id="pcsBulkRemoveError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-btn admin-btn--secondary" id="pcsBulkRemoveCancel">Cancel</button>
+        <button type="button" class="admin-btn admin-btn--danger" id="pcsBulkRemoveConfirm">Confirm</button>
+      </div>
     </section>
   </div>
 
@@ -672,6 +749,16 @@ $apiUrl = ereview_url('professor_college_students_api');
         var disN = selected.filter(function (cb) { return cb.getAttribute('data-disableable') === '1'; }).length;
         disableBtn.disabled = disN === 0;
         disableBtn.title = disN === 0 ? 'Select eReview students with College Examination access' : ('Suspend College Examination for ' + disN + ' selected student(s)');
+      }
+      var removeBtn = document.getElementById('pcsBulkRemoveBtn');
+      if (removeBtn) {
+        var remN = selected.filter(function (cb) {
+          return cb.getAttribute('data-removable') === '1' || cb.getAttribute('data-deletable') === '1';
+        }).length;
+        removeBtn.disabled = remN === 0;
+        removeBtn.title = remN === 0
+          ? 'Select students to remove from Examination or delete native accounts'
+          : ('Remove/delete ' + remN + ' selected student(s)');
       }
     }
 
@@ -920,10 +1007,25 @@ $apiUrl = ereview_url('professor_college_students_api');
     var deleteModal = document.getElementById('deleteStudentModal');
     var uidInput = document.getElementById('deleteStudentUserId');
     var nameEl = document.getElementById('deleteStudentNameDisplay');
+    var modeInput = document.getElementById('deleteStudentRemoveMode');
+    var titleEl = document.getElementById('deleteStudentTitle');
+    var descEl = document.getElementById('deleteStudentDesc');
+    var confirmBtn = document.getElementById('deleteStudentConfirm');
     if (deleteModal) {
-      function openDelete(uid, name) {
+      function openDelete(uid, name, mode) {
+        mode = mode === 'delete' ? 'delete' : 'unlink';
         if (uidInput) uidInput.value = String(uid);
+        if (modeInput) modeInput.value = mode;
         if (nameEl) nameEl.textContent = name || 'this account';
+        if (titleEl) titleEl.textContent = mode === 'delete' ? 'Delete student account?' : 'Remove from Examination?';
+        if (descEl) {
+          descEl.innerHTML = mode === 'delete'
+            ? ('This permanently deletes the native college examination account for <strong id="deleteStudentNameDisplay"></strong>. Linked examination attempts and uploads may be removed. This cannot be undone.')
+            : ('This removes College Examination access for <strong id="deleteStudentNameDisplay"></strong>. Their eReview LMS account stays intact.');
+          var nested = document.getElementById('deleteStudentNameDisplay');
+          if (nested) nested.textContent = name || 'this account';
+        }
+        if (confirmBtn) confirmBtn.textContent = mode === 'delete' ? 'Delete student' : 'Remove';
         deleteModal.classList.add('is-open');
         deleteModal.setAttribute('aria-hidden', 'false');
         closeAllMenus();
@@ -934,7 +1036,11 @@ $apiUrl = ereview_url('professor_college_students_api');
       }
       document.querySelectorAll('.js-open-delete-student').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          openDelete(btn.getAttribute('data-user-id'), btn.getAttribute('data-student-name'));
+          openDelete(
+            btn.getAttribute('data-user-id'),
+            btn.getAttribute('data-student-name'),
+            btn.getAttribute('data-remove-mode') || 'unlink'
+          );
         });
       });
       var deleteCancel = document.getElementById('deleteStudentCancel');
@@ -942,9 +1048,53 @@ $apiUrl = ereview_url('professor_college_students_api');
       deleteModal.addEventListener('click', function (e) { if (e.target === deleteModal) closeDelete(); });
     }
 
+    var bulkRemoveBtn = document.getElementById('pcsBulkRemoveBtn');
+    if (bulkRemoveBtn) {
+      bulkRemoveBtn.addEventListener('click', function () {
+        pendingIds = selectedBoxes()
+          .filter(function (cb) {
+            return cb.getAttribute('data-removable') === '1' || cb.getAttribute('data-deletable') === '1';
+          })
+          .map(function (cb) { return cb.value; });
+        if (!pendingIds.length) return;
+        var unlinkN = selectedBoxes().filter(function (cb) {
+          return cb.getAttribute('data-removable') === '1' && pendingIds.indexOf(cb.value) !== -1;
+        }).length;
+        var deleteN = selectedBoxes().filter(function (cb) {
+          return cb.getAttribute('data-deletable') === '1' && pendingIds.indexOf(cb.value) !== -1;
+        }).length;
+        var desc = document.getElementById('pcsBulkRemoveDesc');
+        if (desc) {
+          desc.textContent = 'Selected: ' + pendingIds.length
+            + (unlinkN ? (' · ' + unlinkN + ' LMS-linked (exam access removed, account kept)') : '')
+            + (deleteN ? (' · ' + deleteN + ' native college account(s) permanently deleted') : '')
+            + '.';
+        }
+        var errEl = document.getElementById('pcsBulkRemoveError');
+        if (errEl) errEl.textContent = '';
+        openOverlay('pcsBulkRemoveModalOverlay');
+      });
+    }
+    var bulkRemoveCancel = document.getElementById('pcsBulkRemoveCancel');
+    if (bulkRemoveCancel) bulkRemoveCancel.addEventListener('click', function () { closeOverlay('pcsBulkRemoveModalOverlay'); });
+    var bulkRemoveConfirm = document.getElementById('pcsBulkRemoveConfirm');
+    if (bulkRemoveConfirm) {
+      bulkRemoveConfirm.addEventListener('click', function () {
+        var errEl = document.getElementById('pcsBulkRemoveError');
+        bulkRemoveConfirm.disabled = true;
+        apiPost('bulk_remove_from_examination', { user_ids: pendingIds }, function (data) {
+          closeOverlay('pcsBulkRemoveModalOverlay');
+          showFlash('success', data.message || 'Selected students updated.');
+          setTimeout(function () { window.location.reload(); }, 600);
+        }, errEl).finally(function () {
+          bulkRemoveConfirm.disabled = false;
+        });
+      });
+    }
+
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'deleteStudentModal'].forEach(function (id) {
+      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'pcsBulkRemoveModalOverlay', 'deleteStudentModal'].forEach(function (id) {
         closeOverlay(id);
       });
       if (deleteModal) {

@@ -14,6 +14,7 @@ $mutating = in_array($action, [
     'bulk_enable_college_examination',
     'bulk_assign_section',
     'bulk_disable_college_examination',
+    'bulk_remove_from_examination',
 ], true);
 
 if ($mutating) {
@@ -351,6 +352,86 @@ if ($action === 'bulk_disable_college_examination' && $_SERVER['REQUEST_METHOD']
         'ok' => true,
         'disabled_count' => $count,
         'message' => 'College Examination suspended for ' . $count . ' student' . ($count === 1 ? '' : 's') . '. eReview access is unchanged.',
+    ]);
+}
+
+if ($action === 'bulk_remove_from_examination' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!ereview_platform_access_columns_ready($conn)) {
+        pcs_api_json(['ok' => false, 'error' => 'College Examination access columns are not available.'], 500);
+    }
+
+    $userIds = pcs_api_parse_user_ids($_POST['user_ids'] ?? []);
+    $unlinked = 0;
+    $deleted = 0;
+
+    mysqli_begin_transaction($conn);
+    try {
+        $found = pcs_api_lock_users($conn, $userIds);
+
+        foreach ($userIds as $uid) {
+            if (!isset($found[$uid])) {
+                throw new InvalidArgumentException('User #' . $uid . ' was not found.');
+            }
+            $row = $found[$uid];
+            $role = (string) ($row['role'] ?? '');
+            if ($role === 'student') {
+                if (!pcs_api_user_has_college_exam($row) && ereview_user_college_examination_access_value($row) !== 'suspended') {
+                    throw new InvalidArgumentException('User #' . $uid . ' is not on the Examination roster.');
+                }
+                $upd = mysqli_prepare(
+                    $conn,
+                    "UPDATE users
+                     SET college_examination_access='none'
+                     WHERE user_id=? AND role='student' LIMIT 1"
+                );
+                if (!$upd) {
+                    throw new RuntimeException('Could not prepare unlink update.');
+                }
+                mysqli_stmt_bind_param($upd, 'i', $uid);
+                if (!mysqli_stmt_execute($upd)) {
+                    mysqli_stmt_close($upd);
+                    throw new RuntimeException('Unlink update failed for user #' . $uid . '.');
+                }
+                mysqli_stmt_close($upd);
+                $unlinked++;
+            } elseif ($role === 'college_student') {
+                $del = mysqli_prepare($conn, "DELETE FROM users WHERE user_id=? AND role='college_student' LIMIT 1");
+                if (!$del) {
+                    throw new RuntimeException('Could not prepare delete.');
+                }
+                mysqli_stmt_bind_param($del, 'i', $uid);
+                if (!mysqli_stmt_execute($del) || mysqli_stmt_affected_rows($del) < 1) {
+                    mysqli_stmt_close($del);
+                    throw new RuntimeException('Could not delete native college account #' . $uid . '.');
+                }
+                mysqli_stmt_close($del);
+                $deleted++;
+            } else {
+                throw new InvalidArgumentException('User #' . $uid . ' cannot be removed from this list.');
+            }
+        }
+
+        mysqli_commit($conn);
+    } catch (InvalidArgumentException $e) {
+        mysqli_rollback($conn);
+        pcs_api_json(['ok' => false, 'error' => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        pcs_api_json(['ok' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $parts = [];
+    if ($unlinked > 0) {
+        $parts[] = 'removed exam access for ' . $unlinked . ' LMS student' . ($unlinked === 1 ? '' : 's');
+    }
+    if ($deleted > 0) {
+        $parts[] = 'deleted ' . $deleted . ' native college account' . ($deleted === 1 ? '' : 's');
+    }
+    pcs_api_json([
+        'ok' => true,
+        'unlinked_count' => $unlinked,
+        'deleted_count' => $deleted,
+        'message' => $parts !== [] ? (ucfirst(implode('; ', $parts)) . '.') : 'No changes made.',
     ]);
 }
 
