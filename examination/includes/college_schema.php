@@ -163,7 +163,7 @@ $stmts = [
       `submitted_at` datetime NOT NULL DEFAULT current_timestamp(),
       `status` varchar(32) NOT NULL DEFAULT 'submitted',
       PRIMARY KEY (`submission_id`),
-      UNIQUE KEY `uq_college_submission_task_user` (`task_id`,`user_id`),
+      KEY `idx_college_submission_task_user` (`task_id`,`user_id`),
       KEY `idx_college_sub_user` (`user_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 ];
@@ -355,12 +355,30 @@ foreach ($collegeSubmissionExtraCols as $col => $alterSql) {
     }
 }
 
-$uqSub = @mysqli_query($conn, "SHOW INDEX FROM `college_submissions` WHERE Key_name='uq_college_submission_task_user'");
-if ($uqSub && mysqli_num_rows($uqSub) > 0) {
-    @mysqli_query($conn, 'ALTER TABLE `college_submissions` DROP INDEX `uq_college_submission_task_user`');
+// Multiple submissions / resubmissions per task+user: replace UNIQUE (task_id,user_id)
+// with a non-unique covering index. Add the replacement index first so
+// fk_college_sub_task still has an index on task_id before the unique key is dropped.
+$idxSubTaskUser = @mysqli_query($conn, "SHOW INDEX FROM `college_submissions` WHERE Key_name='idx_college_submission_task_user'");
+$hasIdxSubTaskUser = ($idxSubTaskUser && mysqli_num_rows($idxSubTaskUser) > 0);
+if ($idxSubTaskUser) {
+    mysqli_free_result($idxSubTaskUser);
 }
+if (!$hasIdxSubTaskUser) {
+    @mysqli_query($conn, 'ALTER TABLE `college_submissions` ADD INDEX `idx_college_submission_task_user` (`task_id`,`user_id`)');
+    $idxSubTaskUser = @mysqli_query($conn, "SHOW INDEX FROM `college_submissions` WHERE Key_name='idx_college_submission_task_user'");
+    $hasIdxSubTaskUser = ($idxSubTaskUser && mysqli_num_rows($idxSubTaskUser) > 0);
+    if ($idxSubTaskUser) {
+        mysqli_free_result($idxSubTaskUser);
+    }
+}
+
+$uqSub = @mysqli_query($conn, "SHOW INDEX FROM `college_submissions` WHERE Key_name='uq_college_submission_task_user'");
+$hasUqSub = ($uqSub && mysqli_num_rows($uqSub) > 0);
 if ($uqSub) {
     mysqli_free_result($uqSub);
+}
+if ($hasUqSub && $hasIdxSubTaskUser) {
+    @mysqli_query($conn, 'ALTER TABLE `college_submissions` DROP INDEX `uq_college_submission_task_user`');
 }
 
 @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `college_upload_resubmission_requests` (

@@ -112,48 +112,14 @@ body.admin-app.examination-admin-page .examination-empty-box {
 
 body.admin-app.examination-admin-page .examination-more-wrap {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 
-body.admin-app.examination-admin-page .examination-more-menu {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.25rem);
-  min-width: 11rem;
-  background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: var(--admin-radius-sm);
-  box-shadow: var(--admin-shadow-lg);
-  z-index: 30;
-  padding: 0.35rem 0;
-}
-
-body.admin-app.examination-admin-page .examination-more-wrap:focus-within .examination-more-menu,
-body.admin-app.examination-admin-page .examination-more-wrap:hover .examination-more-menu {
-  display: block;
-}
-
-body.admin-app.examination-admin-page .examination-more-menu a {
-  display: block;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.82rem;
-  color: var(--admin-text-secondary);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-body.admin-app.examination-admin-page .examination-more-menu a:hover {
-  background: var(--admin-surface-hover);
-  color: var(--admin-text);
-}
-
-body.admin-app.examination-admin-page .examination-more-menu .is-muted {
-  display: block;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.75rem;
-  color: var(--admin-text-muted);
-  pointer-events: none;
+/* Match Students page: keep menu collapsed until JS portals + opens it. */
+body.admin-app.examination-admin-page .examination-list-actions .admin-student-action-menu:not(.open),
+body.admin-app.examination-admin-page .examination-more-wrap .admin-student-action-menu:not(.open) {
+  display: none !important;
 }
 
 body.admin-app.examination-admin-page .examination-schedule-line {
@@ -821,7 +787,7 @@ body.admin-app.examination-admin-page .sections-table .section-count-meta {
   margin-top: 0.15rem;
 }
 
-/* Examinations list — compact actions */
+/* Examinations list — compact actions (Edit + ⋮ only; links live in dropdown) */
 body.admin-app.examination-admin-page .examination-list-actions {
   display: inline-flex;
   flex-wrap: nowrap;
@@ -829,14 +795,12 @@ body.admin-app.examination-admin-page .examination-list-actions {
   justify-content: flex-end;
   gap: 0.35rem;
 }
-body.admin-app.examination-admin-page .examination-more-wrap {
-  position: relative;
-  display: inline-flex;
-}
 body.admin-app.examination-admin-page .examination-more-wrap .admin-student-action-menu-trigger {
   width: 2rem;
   height: 2rem;
   min-width: 2rem;
+  padding: 0;
+  justify-content: center;
 }
 
 /* Compact View button in student tables */

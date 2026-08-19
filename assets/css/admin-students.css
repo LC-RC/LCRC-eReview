@@ -602,11 +602,46 @@ body.admin-app.admin-students-page .admin-student-action-menu-trigger {
   margin: 0 !important;
 }
 
-/* Menus are portaled to <body>; closed menus must never steal clicks. */
-body > .admin-student-action-menu:not(.open) {
+/* Closed action menus stay hidden in-cell and after portal to <body>. */
+.admin-student-action-menu:not(.open) {
   display: none !important;
   pointer-events: none !important;
   visibility: hidden !important;
+}
+.admin-student-action-menu.open {
+  display: block !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  position: fixed;
+  z-index: 1300;
+  min-width: 12.5rem;
+  max-width: min(16.5rem, calc(100vw - 1.5rem));
+  padding: 0.35rem;
+  border-radius: 0.62rem;
+  border: 1px solid var(--admin-border, rgba(148, 163, 184, 0.38));
+  background: var(--admin-surface-elevated, #0f172a);
+  box-shadow: var(--admin-shadow-lg, 0 18px 48px rgba(0, 0, 0, 0.55));
+}
+.admin-student-action-menu .admin-student-action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.48rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--admin-text, #e2e8f0);
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.25;
+}
+.admin-student-action-menu .admin-student-action-item:hover {
+  background: var(--admin-surface-hover, rgba(59, 130, 246, 0.22));
+  color: var(--admin-text, #f8fafc);
 }
 
 .students-empty-cell {
