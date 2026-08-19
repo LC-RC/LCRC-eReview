@@ -1,0 +1,1348 @@
+/**
+ * Shared Examination Admin UI — extends LMS Admin (Students page reference).
+ */
+
+body.admin-app.examination-admin-page .examination-page-shell,
+body.admin-app.admin-students-page .students-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+body.admin-app.examination-admin-page .examination-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.75rem;
+  background: var(--admin-glass);
+  color: var(--admin-text);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+body.admin-app.examination-admin-page .examination-section-title i {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--admin-border);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--admin-primary);
+  font-size: 0.83rem;
+}
+
+body.admin-app.examination-admin-page .examination-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  body.admin-app.examination-admin-page .examination-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+body.admin-app.examination-admin-page .examination-kpi-card {
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  padding: 1rem;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+body.admin-app.examination-admin-page .examination-kpi-card__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-muted);
+}
+
+body.admin-app.examination-admin-page .examination-kpi-card__value {
+  margin-top: 0.25rem;
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--admin-text);
+}
+
+body.admin-app.examination-admin-page .examination-kpi-card__meta {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--admin-text-secondary);
+}
+
+body.admin-app.examination-admin-page .examination-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 0.88rem;
+}
+
+body.admin-app.examination-admin-page .examination-summary-row:last-child {
+  border-bottom: 0;
+}
+
+body.admin-app.examination-admin-page .examination-summary-label {
+  color: var(--admin-text-muted);
+  font-weight: 650;
+}
+
+body.admin-app.examination-admin-page .examination-summary-value {
+  color: var(--admin-text);
+  font-weight: 700;
+  text-align: right;
+}
+
+body.admin-app.examination-admin-page .examination-empty-box {
+  border: 2px dashed var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+}
+
+body.admin-app.examination-admin-page .examination-more-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+body.admin-app.examination-admin-page .examination-more-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  min-width: 11rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  box-shadow: var(--admin-shadow-lg);
+  z-index: 30;
+  padding: 0.35rem 0;
+}
+
+body.admin-app.examination-admin-page .examination-more-wrap:focus-within .examination-more-menu,
+body.admin-app.examination-admin-page .examination-more-wrap:hover .examination-more-menu {
+  display: block;
+}
+
+body.admin-app.examination-admin-page .examination-more-menu a {
+  display: block;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+body.admin-app.examination-admin-page .examination-more-menu a:hover {
+  background: var(--admin-surface-hover);
+  color: var(--admin-text);
+}
+
+body.admin-app.examination-admin-page .examination-more-menu .is-muted {
+  display: block;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+}
+
+body.admin-app.examination-admin-page .examination-schedule-line {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+  line-height: 1.45;
+}
+
+body.admin-app.examination-admin-page .examination-title-cell {
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+body.admin-app.examination-admin-page .examination-desc-cell {
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+  margin-top: 0.15rem;
+}
+
+body.admin-app.examination-admin-page .examination-monitor-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  body.admin-app.examination-admin-page .examination-monitor-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  body.admin-app.examination-admin-page .examination-monitor-kpi-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+body.admin-app .admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+body.admin-app .admin-modal-overlay.is-open {
+  display: flex;
+}
+
+body.admin-app .admin-modal.admin-modal--danger {
+  width: min(100%, 28rem);
+  border-top: 4px solid var(--admin-danger);
+  padding: 1rem 1.1rem 1.15rem;
+  border-radius: var(--admin-radius-lg);
+}
+
+body.admin-app .admin-modal__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0.75rem;
+}
+
+body.admin-app .admin-modal__hero-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger-text);
+  flex-shrink: 0;
+}
+
+body.admin-app .admin-modal__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--admin-text);
+}
+
+body.admin-app .admin-modal__desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.45;
+}
+
+body.admin-app .admin-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+body.admin-app.examination-admin-page .examination-chart-wrap {
+  position: relative;
+  height: 195px;
+  width: 100%;
+}
+
+body.admin-app.examination-admin-page .examination-chart-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: var(--admin-glass);
+}
+
+body.admin-app.examination-admin-page .examination-chart-range-btn {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.26rem 0.56rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+}
+
+body.admin-app.examination-admin-page .examination-chart-range-btn.is-active {
+  background: var(--admin-primary);
+  color: #fff;
+}
+
+body.admin-app.examination-admin-page .examination-section-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  padding: 0.4rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.75rem;
+  background: var(--admin-glass);
+}
+
+body.admin-app.examination-admin-page .examination-section-jump a {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+body.admin-app.examination-admin-page .examination-section-jump a:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  color: var(--admin-text);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+body.admin-app.examination-admin-page .examination-profile-avatar {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 999px;
+  border: 2px solid var(--admin-border);
+  object-fit: cover;
+  background: var(--admin-bg-elevated);
+}
+
+body.admin-app.examination-admin-page .examination-profile-avatar-fallback {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 999px;
+  border: 2px solid var(--admin-border);
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--admin-primary);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+body.admin-app.examination-admin-page .examination-avatar-box.show-fallback .examination-profile-avatar {
+  display: none;
+}
+
+body.admin-app.examination-admin-page .examination-avatar-box.show-fallback .examination-profile-avatar-fallback {
+  display: flex;
+}
+
+body.admin-app.examination-admin-page .examination-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+body.admin-app.examination-admin-page .examination-info-tile {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: 0.85rem 1rem;
+  background: var(--admin-surface);
+}
+
+body.admin-app.examination-admin-page .examination-info-tile-k {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-muted);
+}
+
+body.admin-app.examination-admin-page .examination-info-tile-v {
+  margin-top: 0.25rem;
+  font-weight: 650;
+  color: var(--admin-text);
+  word-break: break-word;
+}
+
+body.admin-app.examination-admin-page .review-sched-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+@media (max-width: 720px) {
+  body.admin-app.examination-admin-page .review-sched-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+body.admin-app.examination-admin-page .sec-alert-card {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: var(--admin-warning-soft);
+}
+
+body.admin-app.examination-admin-page .sec-alert-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--admin-border);
+  padding: 0.45rem 0;
+  font-size: 0.82rem;
+  color: var(--admin-text);
+}
+
+body.admin-app.examination-admin-page .sec-alert-row:last-child {
+  border-bottom: 0;
+}
+
+body.admin-app.examination-admin-page .sec-alert-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--admin-warning);
+  margin-top: 0.35rem;
+  flex-shrink: 0;
+}
+
+body.admin-app.examination-admin-page .pem-progress-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+body.admin-app.examination-admin-page .pem-progress-head .examination-section-title {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.admin-app.examination-admin-page .pem-export-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+body.admin-app.examination-admin-page .examination-form-hint {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+}
+
+body.admin-app.examination-admin-page .examination-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg-elevated);
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--admin-text-secondary);
+}
+
+body.admin-app.examination-admin-page .examination-avatar-zone {
+  border: 1px dashed var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: 0.9rem;
+  background: var(--admin-bg-elevated);
+}
+
+body.admin-app.examination-admin-page .examination-avatar-preview {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 999px;
+  border: 2px solid var(--admin-border);
+  object-fit: cover;
+  background: var(--admin-surface);
+}
+
+body.admin-app.examination-admin-page .examination-dash-list-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  background: var(--admin-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+body.admin-app.examination-admin-page .examination-dash-list-tile:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: var(--admin-surface-hover);
+}
+
+body.admin-app.examination-admin-page .examination-dash-list-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--admin-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+body.admin-app.examination-admin-page .examination-table-card-head {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--admin-text-muted);
+}
+
+body.admin-app.examination-admin-page .examination-upload-feed {
+  border-top: 1px solid var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-upload-feed-item {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-upload-feed-item:last-child {
+  border-bottom: 0;
+}
+
+body.admin-app.examination-admin-page .examination-upload-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-upload-thumb {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border);
+  object-fit: cover;
+  background: var(--admin-bg-elevated);
+}
+
+body.admin-app.examination-admin-page .examination-upload-thumb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-bg-elevated);
+  color: var(--admin-primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+body.admin-app.examination-admin-page .examination-upload-thumb-btn:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+body.admin-app.examination-admin-page .ufl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem;
+}
+
+body.admin-app.examination-admin-page .ufl-overlay.is-open {
+  display: flex;
+}
+
+body.admin-app.examination-admin-page .ufl-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(5px);
+}
+
+body.admin-app.examination-admin-page .ufl-dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(96vw, 1180px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 28px 90px -24px rgba(0, 0, 0, 0.58);
+  overflow: hidden;
+}
+
+body.admin-app.examination-admin-page .ufl-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.6rem 0.85rem;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+body.admin-app.examination-admin-page .ufl-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+body.admin-app.examination-admin-page .ufl-chrome-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+body.admin-app.examination-admin-page .ufl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.48rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+body.admin-app.examination-admin-page .ufl-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+body.admin-app.examination-admin-page .ufl-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020617;
+  padding: 0.45rem;
+}
+
+body.admin-app.examination-admin-page .ufl-img {
+  max-width: 100%;
+  max-height: calc(92vh - 4.5rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.35rem;
+}
+
+body.admin-app.examination-admin-page .ufl-iframe {
+  width: 100%;
+  height: min(82vh, 880px);
+  min-height: 360px;
+  border: none;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+body.admin-app.examination-admin-page .ufl-fallback {
+  text-align: center;
+  padding: 1.75rem 1.25rem;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  max-width: 28rem;
+}
+
+body.admin-app.examination-admin-page .ufl-fallback a {
+  color: #6ee7b7;
+  font-weight: 800;
+}
+
+/*
+ * Compact tables: restore Students-page cell breathing room.
+ * LMS Students uses .students-table--aligned (0.55rem 0.75rem).
+ * Exam Admin tables only use .students-table--compact and do not load
+ * admin-quiz-ui table padding, so th/td fall back to near-zero UA padding.
+ * Padding only — no fixed layout / column-width rules from --aligned.
+ */
+body.admin-app.examination-admin-page table.admin-students-table.students-table--compact tbody td {
+  padding: 0.55rem 0.75rem;
+  vertical-align: middle;
+}
+
+body.admin-app.examination-admin-page .college-student-account-head,
+body.admin-app.examination-admin-page .college-student-account-cell {
+  min-width: 10.5rem;
+  max-width: 16rem;
+}
+
+body.admin-app.examination-admin-page .students-table--compact .student-select-col {
+  vertical-align: middle;
+}
+
+/* Bulk selection bar (shared with professor college students) */
+body.admin-app.examination-admin-page .students-bulk-bar {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 45;
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  background: linear-gradient(145deg, rgba(6, 78, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+body.admin-app.examination-admin-page .students-bulk-bar.is-visible {
+  display: flex;
+}
+body.admin-app.examination-admin-page .students-bulk-bar__count {
+  font-weight: 800;
+  color: #a7f3d0;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+body.admin-app.examination-admin-page .students-bulk-bar__hint {
+  color: rgba(226, 232, 240, 0.75);
+  font-size: 0.78rem;
+  flex: 1;
+  min-width: 10rem;
+}
+body.admin-app.examination-admin-page .students-bulk-bar .admin-modal__btn {
+  margin: 0;
+}
+body.admin-app.examination-admin-page .students-bulk-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .students-bulk-bar {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: linear-gradient(145deg, #ecfdf5 0%, #f8fafc 100%);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .students-bulk-bar__count {
+  color: #166534;
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .students-bulk-bar__hint {
+  color: #475569;
+}
+body.admin-app.examination-admin-page .admin-student-action-item--danger {
+  color: #ef4444;
+}
+body.admin-app.examination-admin-page .admin-student-action-item--danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Section delete blocked — reference summary */
+body.admin-app.examination-admin-page .examination-ref-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+@media (max-width: 520px) {
+  body.admin-app.examination-admin-page .examination-ref-grid {
+    grid-template-columns: 1fr;
+  }
+}
+body.admin-app.examination-admin-page .examination-ref-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--admin-bg-elevated);
+  text-align: center;
+}
+body.admin-app.examination-admin-page .examination-ref-card__value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--admin-text);
+  line-height: 1.1;
+}
+body.admin-app.examination-admin-page .examination-ref-card__label {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-muted);
+}
+
+/* Sections table — compact 4-column layout */
+body.admin-app.examination-admin-page .sections-table .student-actions-head,
+body.admin-app.examination-admin-page .sections-table .student-action-cell {
+  width: 6.5rem;
+  min-width: 6.5rem;
+  max-width: 6.5rem;
+}
+body.admin-app.examination-admin-page .sections-table .section-count-meta {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--admin-text-muted);
+  margin-top: 0.15rem;
+}
+
+/* Examinations list — compact actions */
+body.admin-app.examination-admin-page .examination-list-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+body.admin-app.examination-admin-page .examination-more-wrap {
+  position: relative;
+  display: inline-flex;
+}
+body.admin-app.examination-admin-page .examination-more-wrap .admin-student-action-menu-trigger {
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+}
+
+/* Compact View button in student tables */
+body.admin-app.examination-admin-page .student-action-cell .admin-btn--view {
+  padding: 0.38rem 0.62rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+/* Upload task modal — scrollable form sections */
+body.admin-app.examination-admin-page .admin-modal.admin-modal--form {
+  width: min(100%, 36rem);
+  max-height: min(92vh, 44rem);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+body.admin-app.examination-admin-page .admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+body.admin-app.examination-admin-page .admin-modal-form__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 1.05rem 0.5rem;
+}
+body.admin-app.examination-admin-page .admin-modal.admin-modal--form .admin-modal__hero {
+  padding: 1.05rem 1.05rem 0;
+  margin-bottom: 0.65rem;
+}
+body.admin-app.examination-admin-page .admin-modal.admin-modal--form .admin-modal__actions {
+  padding: 0.75rem 1.05rem 1.05rem;
+  margin-top: 0;
+  border-top: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+}
+body.admin-app.examination-admin-page .examination-form-section {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
+  background: var(--admin-bg-elevated);
+}
+body.admin-app.examination-admin-page .examination-form-section__title {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-text-secondary);
+}
+
+body.admin-app.examination-admin-page .examination-form-hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--admin-text);
+  line-height: 1.4;
+}
+
+body.admin-app.examination-admin-page .examination-form-hint--secondary {
+  font-weight: 500;
+  color: var(--admin-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+body.admin-app.examination-admin-page .examination-config-summary {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-surface);
+}
+
+body.admin-app.examination-admin-page .examination-config-summary__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--admin-text);
+  line-height: 1.2;
+}
+
+body.admin-app.examination-admin-page .examination-config-summary__actions {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-config-summary .examination-summary-row:first-of-type {
+  padding-top: 0.15rem;
+}
+
+/* Full examination editor modal (list page) */
+body.admin-app.examination-admin-page .admin-modal.admin-modal--examination-edit {
+  width: min(1100px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.admin-app.examination-admin-page .examination-edit-modal-mount {
+  width: 100%;
+  max-width: min(1100px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+body.admin-app.examination-admin-page .examination-edit-modal-mount .admin-modal--examination-edit {
+  width: 100%;
+  max-height: calc(100vh - 40px);
+}
+
+body.admin-app.examination-admin-page .examination-edit-modal__hero {
+  flex-shrink: 0;
+  padding: 1.05rem 1.05rem 0;
+  margin-bottom: 0.65rem;
+}
+
+body.admin-app.examination-admin-page .admin-modal--examination-edit .admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+body.admin-app.examination-admin-page .admin-modal--examination-edit .admin-modal-form__body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 1.05rem 0.75rem;
+}
+
+body.admin-app.examination-admin-page .admin-modal--examination-edit .admin-modal__actions {
+  flex-shrink: 0;
+  padding: 0.75rem 1.05rem 1.05rem;
+  margin-top: 0;
+  border-top: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+}
+
+body.admin-app.examination-admin-page .examination-edit-modal__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--admin-border);
+}
+
+body.admin-app.examination-admin-page .examination-edit-modal-loading {
+  width: min(1100px, calc(100vw - 40px));
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+}
+
+body.admin-app.examination-admin-page #examinationEditModalOverlay {
+  z-index: 1700;
+}
+/* Target audience — sections mode + picker */
+body.admin-app.examination-admin-page .examination-audience-sections {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  padding: 0.65rem 0.75rem 0.75rem;
+  background: var(--admin-surface);
+}
+body.admin-app.examination-admin-page .examination-audience-sections__mode {
+  margin-top: 0;
+}
+body.admin-app.examination-admin-page .examination-section-picker {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--admin-border);
+}
+body.admin-app.examination-admin-page .examination-section-picker__label {
+  margin: 0 0 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--admin-text-secondary);
+}
+body.admin-app.examination-admin-page .examination-section-picker__empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--admin-warning-text, #b45309);
+}
+body.admin-app.examination-admin-page .examination-section-picker__scroll {
+  max-height: 11.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 0.45rem 0.5rem 0.45rem 0.45rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-bg-elevated);
+}
+body.admin-app.examination-admin-page .examination-section-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding-right: 0.15rem;
+}
+body.admin-app.examination-admin-page .examination-section-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.55rem;
+  padding: 0.48rem 0.62rem;
+  margin: 0;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-surface);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+body.admin-app.examination-admin-page .examination-section-option:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(59, 130, 246, 0.07);
+}
+body.admin-app.examination-admin-page .examination-section-option:has(.examination-section-option__input:checked) {
+  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(52, 211, 153, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.22);
+}
+body.admin-app.examination-admin-page .examination-section-option:has(.examination-section-option__input:focus-visible) {
+  outline: 2px solid rgba(96, 165, 250, 0.65);
+  outline-offset: 1px;
+}
+body.admin-app.examination-admin-page .examination-section-option__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+body.admin-app.examination-admin-page .examination-section-option__box {
+  flex-shrink: 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid rgba(148, 163, 184, 0.55);
+  border-radius: 0.28rem;
+  background: var(--admin-bg-elevated);
+  display: grid;
+  place-items: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+body.admin-app.examination-admin-page .examination-section-option:has(.examination-section-option__input:checked) .examination-section-option__box {
+  border-color: #34d399;
+  background: #34d399;
+}
+body.admin-app.examination-admin-page .examination-section-option:has(.examination-section-option__input:checked) .examination-section-option__box::after {
+  content: "";
+  width: 0.28rem;
+  height: 0.52rem;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-0.5px, -0.5px);
+}
+body.admin-app.examination-admin-page .examination-section-option__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--admin-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .examination-section-option {
+  background: #fff;
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .examination-section-option:hover {
+  background: #f8fafc;
+}
+html[data-admin-theme="light"] body.admin-app.examination-admin-page .examination-section-option:has(.examination-section-option__input:checked) {
+  background: #ecfdf5;
+}
+body.admin-app.examination-admin-page .upload-tasks-table .student-actions-head,
+body.admin-app.examination-admin-page .upload-tasks-table .student-action-cell {
+  width: 6.75rem;
+  min-width: 6.75rem;
+  max-width: 6.75rem;
+}
+@media (max-width: 640px) {
+  body.admin-app.examination-admin-page .examination-section-picker__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Examination Question Builder ---- */
+.eqb-panel, .eqb-builder {
+  border-radius: 0.9rem;
+  border: 1px solid var(--admin-border, #dbe7f5);
+  background: var(--admin-surface, #fff);
+  padding: 1.15rem 1.25rem;
+  box-shadow: var(--admin-shadow-sm);
+}
+.eqb-panel__head, .eqb-builder__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.eqb-panel__title, .eqb-builder__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--admin-text, #143d59);
+}
+.eqb-panel__sub, .eqb-builder__eyebrow {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--admin-text-muted, #64748b);
+}
+.eqb-builder__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  font-size: 0.68rem;
+}
+.eqb-toolbar { margin-bottom: 0.75rem; }
+.eqb-search {
+  width: 100%;
+  max-width: 22rem;
+  border: 1px solid var(--admin-border, #dbe7f5);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+.eqb-type, .eqb-ans {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #e8f2fa;
+  color: #0a4f7e;
+  border: 1px solid #cde2f4;
+}
+.eqb-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+.eqb-form { display: flex; flex-direction: column; gap: 1rem; }
+.eqb-field { display: block; }
+.eqb-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted, #64748b);
+  margin-bottom: 0.35rem;
+}
+.eqb-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--admin-text-muted, #64748b);
+  line-height: 1.45;
+}
+.eqb-error {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+.eqb-select {
+  width: 100%;
+  max-width: 28rem;
+  border: 1px solid var(--admin-border, #dbe7f5);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  background: #fff;
+}
+.eqb-select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+.eqb-section-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--admin-text, #143d59);
+}
+.eqb-choices {
+  border: 1px solid var(--admin-border, #dbe7f5);
+  border-radius: 0.85rem;
+  padding: 0.9rem;
+  background: #f8fbff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.eqb-choice-row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.eqb-choice-row[hidden] {
+  display: none !important;
+}
+.eqb-choice-letter {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  background: #1665a0;
+  color: #fff;
+}
+.eqb-choice-input {
+  width: 100%;
+  border: 1px solid var(--admin-border, #dbe7f5);
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  background: #fff;
+  min-height: 2.5rem;
+}
+.eqb-correct-wrap {
+  margin-top: 0.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--admin-border, #dbe7f5);
+}
+.eqb-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+.eqb-tf-note {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+.eqb-preview-modal { width: min(100%, 40rem); max-height: 85vh; overflow: auto; }
+.eqb-preview-stem {
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+.eqb-preview-stem table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+.eqb-preview-stem td, .eqb-preview-stem th {
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.5rem;
+}
+.eqb-preview-choices { display: flex; flex-direction: column; gap: 0.45rem; }
+.eqb-preview-choice {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  border: 1px solid #dbe7f5;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+}
+.eqb-preview-choice > span {
+  flex-shrink: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  background: #e8f2fa;
+  color: #143d59;
+}
+@media (max-width: 720px) {
+  .eqb-choice-row {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+  .eqb-choice-row .eqb-choice-remove {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .eqb-table-wrap { overflow-x: auto; }
+  .eqb-row-actions { flex-direction: column; align-items: stretch; }
+}

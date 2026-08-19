@@ -64,12 +64,13 @@ function quiz_rich_clean_html_fragment(string $value): ?string {
   }
 
   $allowedTags = [
-    'p','br','strong','b','em','i','u','sub','sup',
+    'p','br','strong','b','em','i','u','s','strike','sub','sup','hr',
     'ul','ol','li','table','thead','tbody','tfoot','tr','th','td'
   ];
   $allowedAttrs = [
-    'th' => ['colspan','rowspan','scope'],
-    'td' => ['colspan','rowspan'],
+    'th' => ['colspan','rowspan','scope','style'],
+    'td' => ['colspan','rowspan','style'],
+    'p' => ['style'],
   ];
 
   try {
@@ -111,6 +112,18 @@ function quiz_rich_clean_html_fragment(string $value): ?string {
           }
           foreach ($toRemove as $attrName) {
             $node->removeAttribute($attrName);
+          }
+          if ($node->hasAttribute('style')) {
+            $style = strtolower((string)$node->getAttribute('style'));
+            $safeParts = [];
+            if (preg_match('/text-align\s*:\s*(left|right|center|justify)\s*;?/i', $style, $m)) {
+              $safeParts[] = 'text-align:' . strtolower($m[1]);
+            }
+            if ($safeParts !== []) {
+              $node->setAttribute('style', implode(';', $safeParts));
+            } else {
+              $node->removeAttribute('style');
+            }
           }
         }
       }
