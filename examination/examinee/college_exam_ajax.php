@@ -18,8 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $userId = (int)getCurrentUserId();
 $conn = $GLOBALS['conn'];
-college_exam_finalize_expired_in_progress($conn, 0, $userId, 0);
-$action = $_POST['action'] ?? '';
+$action = (string)($_POST['action'] ?? '');
+// Do NOT auto-finalize on write/heartbeat/submit paths — that raced timeout submit and
+// dropped in-flight answers. List/take/monitor pages still finalize expired attempts.
+if ($action === 'load_state' || $action === '') {
+    college_exam_finalize_expired_in_progress($conn, 0, $userId, 0);
+}
 
 function college_exam_ajax_verify_attempt_access(mysqli $conn, array $attempt, int $userId): bool
 {
@@ -43,7 +47,10 @@ function college_exam_ajax_verify_attempt_access(mysqli $conn, array $attempt, i
 /**
  * @return array<string,mixed>|null
  */
-function college_exam_ajax_load_active_attempt(mysqli $conn, int $attemptId, int $userId): ?array
+/**
+ * @param bool $requireNotExpired When false, allow in_progress after timer end (save flush / timeout submit).
+ */
+function college_exam_ajax_load_active_attempt(mysqli $conn, int $attemptId, int $userId, bool $requireNotExpired = true): ?array
 {
     $stmt = mysqli_prepare($conn, "SELECT a.attempt_id, a.exam_id, a.status, a.expires_at FROM college_exam_attempts a WHERE a.attempt_id=? AND a.user_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
@@ -56,11 +63,13 @@ function college_exam_ajax_load_active_attempt(mysqli $conn, int $attemptId, int
     if (!college_exam_ajax_verify_attempt_access($conn, $attempt, $userId)) {
         return null;
     }
-    $expRaw = $attempt['expires_at'] ?? '';
-    if ($expRaw !== '') {
-        $expTs = strtotime((string)$expRaw);
-        if ($expTs !== false && $expTs < time()) {
-            return null;
+    if ($requireNotExpired) {
+        $expRaw = $attempt['expires_at'] ?? '';
+        if ($expRaw !== '') {
+            $expTs = strtotime((string)$expRaw);
+            if ($expTs !== false && $expTs < time()) {
+                return null;
+            }
         }
     }
     return $attempt;
@@ -199,52 +208,18 @@ if ($action === 'save_answer') {
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $selected = strtoupper(trim((string)($_POST['selected_answer'] ?? '')));
-    if (!preg_match('/^[A-D]$/', $selected)) {
-        echo json_encode(['ok' => false, 'error' => 'Invalid answer']);
-        exit;
-    }
-
-    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId);
+    // Allow save after timer end so the client can flush selections before timeout submit.
+    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId, false);
     if (!$attempt) {
         echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
         exit;
     }
 
-    $stmt = mysqli_prepare($conn, "SELECT question_id FROM college_exam_questions WHERE question_id=? AND exam_id=? LIMIT 1");
-    mysqli_stmt_bind_param($stmt, 'ii', $questionId, $attempt['exam_id']);
-    mysqli_stmt_execute($stmt);
-    $qRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-    mysqli_stmt_close($stmt);
-    if (!$qRow) {
-        echo json_encode(['ok' => false, 'error' => 'Invalid question']);
+    $saved = college_exam_upsert_attempt_answer($conn, $attemptId, $userId, $questionId, $selected);
+    if (empty($saved['ok'])) {
+        echo json_encode(['ok' => false, 'error' => $saved['error'] ?? 'Could not save']);
         exit;
     }
-    $correctLetter = college_exam_shuffled_correct_answer_for_question($conn, $attemptId, $userId, $questionId);
-    if ($correctLetter === null || !preg_match('/^[A-D]$/', $correctLetter)) {
-        echo json_encode(['ok' => false, 'error' => 'Invalid question']);
-        exit;
-    }
-    $isCorrect = ($selected === $correctLetter) ? 1 : 0;
-
-    $stmt = mysqli_prepare($conn, "SELECT answer_id FROM college_exam_answers WHERE attempt_id=? AND question_id=? LIMIT 1");
-    mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $questionId);
-    mysqli_stmt_execute($stmt);
-    $existing = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-    mysqli_stmt_close($stmt);
-
-    if ($existing) {
-        $stmt = mysqli_prepare($conn, "UPDATE college_exam_answers SET selected_answer=?, is_correct=? WHERE answer_id=?");
-        mysqli_stmt_bind_param($stmt, 'sii', $selected, $isCorrect, $existing['answer_id']);
-    } else {
-        $stmt = mysqli_prepare($conn, "INSERT INTO college_exam_answers (attempt_id, question_id, selected_answer, is_correct) VALUES (?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, 'iisi', $attemptId, $questionId, $selected, $isCorrect);
-    }
-    if (!mysqli_stmt_execute($stmt)) {
-        mysqli_stmt_close($stmt);
-        echo json_encode(['ok' => false, 'error' => 'Could not save']);
-        exit;
-    }
-    mysqli_stmt_close($stmt);
 
     $answeredCount = 0;
     $cr = mysqli_query($conn, "SELECT COUNT(*) AS c FROM college_exam_answers WHERE attempt_id=" . (int)$attemptId . " AND selected_answer IS NOT NULL AND selected_answer <> ''");
@@ -349,14 +324,31 @@ if ($action === 'get_time') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
         exit;
     }
+    $nowSql = date('Y-m-d H:i:s');
+    $touch = mysqli_prepare($conn, 'UPDATE college_exam_attempts SET last_seen_at=? WHERE attempt_id=? AND user_id=? AND status=\'in_progress\'');
+    if ($touch) {
+        mysqli_stmt_bind_param($touch, 'sii', $nowSql, $attemptId, $userId);
+        mysqli_stmt_execute($touch);
+        mysqli_stmt_close($touch);
+    }
+    $answeredCount = 0;
+    $cr = mysqli_query(
+        $conn,
+        'SELECT COUNT(*) AS c FROM college_exam_answers WHERE attempt_id=' . (int)$attemptId
+        . " AND selected_answer IS NOT NULL AND TRIM(selected_answer) <> ''"
+    );
+    if ($cr) {
+        $answeredCount = (int)(mysqli_fetch_assoc($cr)['c'] ?? 0);
+        mysqli_free_result($cr);
+    }
     $expRaw2 = $row['expires_at'] ?? '';
     if ($expRaw2 === '') {
-        echo json_encode(['ok' => true, 'remaining_seconds' => null]);
+        echo json_encode(['ok' => true, 'remaining_seconds' => null, 'answered_count' => $answeredCount]);
         exit;
     }
     $expTs2 = strtotime((string)$expRaw2);
     $remaining = ($expTs2 !== false) ? max(0, $expTs2 - time()) : 0;
-    echo json_encode(['ok' => true, 'remaining_seconds' => $remaining]);
+    echo json_encode(['ok' => true, 'remaining_seconds' => $remaining, 'answered_count' => $answeredCount]);
     exit;
 }
 
@@ -370,9 +362,8 @@ if ($action === 'submit') {
     $reason = strtolower(trim((string)($_POST['reason'] ?? 'manual')));
     $allowIncomplete = in_array($reason, ['timeout', 'timeout-sync', 'expired'], true);
 
-    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId);
-    if (!$attempt && !$allowIncomplete) {
-        // For timeout, attempt may already be past expires_at — still try finalize with ownership check below.
+    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId, false);
+    if (!$attempt) {
         $stmt = mysqli_prepare($conn, "SELECT attempt_id, exam_id, status, expires_at FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
         mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
         mysqli_stmt_execute($stmt);
@@ -386,15 +377,14 @@ if ($action === 'submit') {
             echo json_encode(['ok' => false, 'error' => 'Access denied']);
             exit;
         }
-    } elseif (!$attempt) {
-        $stmt = mysqli_prepare($conn, "SELECT attempt_id, exam_id, status FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
-        mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
-        mysqli_stmt_execute($stmt);
-        $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-        mysqli_stmt_close($stmt);
-        if (!$attempt || (string)($attempt['status'] ?? '') !== 'in_progress' || !college_exam_ajax_verify_attempt_access($conn, $attempt, $userId)) {
-            echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
-            exit;
+    }
+
+    // Flush client-side selections with the submit request (covers failed autosaves).
+    $answersRaw = $_POST['answers'] ?? '';
+    if (is_string($answersRaw) && $answersRaw !== '') {
+        $decoded = json_decode($answersRaw, true);
+        if (is_array($decoded)) {
+            college_exam_upsert_attempt_answers_payload($conn, $attemptId, $userId, $decoded);
         }
     }
 

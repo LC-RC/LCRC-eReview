@@ -327,9 +327,112 @@ function examination_assigned_roster_user_ids(mysqli $conn, string $examType, in
     return array_values(array_filter($out, static fn($id) => $id > 0));
 }
 
-function examination_count_assigned_examinees(mysqli $conn, string $examType, int $sourceId): int
+function examination_count_assigned_examinees(mysqli $conn, string $examType, int $sourceId, ?array $record = null, ?array $sections = null, ?array $userIds = null): int
 {
-    return count(examination_pure_assigned_user_ids($conn, $examType, $sourceId));
+    static $cache = [];
+    $examType = examination_exam_type_normalize($examType);
+    if ($sourceId <= 0) {
+        return 0;
+    }
+    $cacheKey = $examType . ':' . $sourceId;
+    if ($record === null && $sections === null && $userIds === null && isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
+    }
+
+    if ($record === null) {
+        if ($examType === 'diagnostic') {
+            $record = function_exists('diagnostic_exam_load_batch') ? diagnostic_exam_load_batch($conn, $sourceId) : null;
+        } else {
+            $st = mysqli_prepare($conn, 'SELECT exam_id, examinee_scope, assignment_mode FROM college_exams WHERE exam_id=? LIMIT 1');
+            if ($st) {
+                mysqli_stmt_bind_param($st, 'i', $sourceId);
+                mysqli_stmt_execute($st);
+                $record = mysqli_fetch_assoc(mysqli_stmt_get_result($st)) ?: null;
+                mysqli_stmt_close($st);
+            }
+        }
+    }
+    if (!$record) {
+        return 0;
+    }
+
+    $scope = examination_normalize_examinee_scope((string)($record['examinee_scope'] ?? 'college_student'));
+    $mode = examination_normalize_assignment_mode((string)($record['assignment_mode'] ?? 'all'));
+    $scopeSql = diagnostic_exam_examinee_scope_sql($scope, 'u');
+    $examineeWhere = function_exists('ereview_sql_college_examinee_where')
+        ? ereview_sql_college_examinee_where('u')
+        : "u.role='college_student' AND u.status='approved'";
+
+    $count = 0;
+    if ($mode === 'all') {
+        $q = @mysqli_query($conn, "SELECT COUNT(*) AS c FROM users u WHERE {$examineeWhere} AND {$scopeSql}");
+        if ($q && ($r = mysqli_fetch_assoc($q))) {
+            $count = (int)($r['c'] ?? 0);
+            mysqli_free_result($q);
+        } elseif ($q) {
+            mysqli_free_result($q);
+        }
+    } elseif ($mode === 'users') {
+        $userIds = $userIds ?? examination_load_assigned_user_ids($conn, $examType, $sourceId);
+        $userIds = array_values(array_filter(array_map('intval', $userIds), static fn($id) => $id > 0));
+        if ($userIds !== []) {
+            $in = implode(',', $userIds);
+            $q = @mysqli_query(
+                $conn,
+                "SELECT COUNT(*) AS c FROM users u WHERE u.user_id IN ({$in}) AND {$examineeWhere} AND {$scopeSql}"
+            );
+            if ($q && ($r = mysqli_fetch_assoc($q))) {
+                $count = (int)($r['c'] ?? 0);
+                mysqli_free_result($q);
+            } elseif ($q) {
+                mysqli_free_result($q);
+            }
+        }
+    } else {
+        // sections | sections_and_users
+        $sections = $sections ?? examination_load_assigned_sections($conn, $examType, $sourceId);
+        $userIds = $userIds ?? (
+            ($mode === 'sections_and_users')
+                ? examination_load_assigned_user_ids($conn, $examType, $sourceId)
+                : []
+        );
+        $userIds = array_values(array_filter(array_map('intval', $userIds), static fn($id) => $id > 0));
+
+        $sectionOrs = [];
+        foreach ($sections as $sec) {
+            $key = examination_normalize_section_compare_key((string)$sec);
+            if ($key === '') {
+                continue;
+            }
+            $sectionOrs[] = "LOWER(TRIM(COALESCE(u.section,''))) = '"
+                . mysqli_real_escape_string($conn, $key) . "'";
+        }
+
+        $parts = [];
+        if ($sectionOrs !== []) {
+            $parts[] = '(' . implode(' OR ', $sectionOrs) . ')';
+        }
+        if ($mode === 'sections_and_users' && $userIds !== []) {
+            $parts[] = 'u.user_id IN (' . implode(',', $userIds) . ')';
+        }
+        if ($parts !== []) {
+            $q = @mysqli_query(
+                $conn,
+                "SELECT COUNT(DISTINCT u.user_id) AS c FROM users u WHERE {$examineeWhere} AND {$scopeSql} AND ("
+                . implode(' OR ', $parts) . ')'
+            );
+            if ($q && ($r = mysqli_fetch_assoc($q))) {
+                $count = (int)($r['c'] ?? 0);
+                mysqli_free_result($q);
+            } elseif ($q) {
+                mysqli_free_result($q);
+            }
+        }
+    }
+
+    $cache[$cacheKey] = $count;
+
+    return $count;
 }
 
 function examination_validate_assignment_for_publish(string $assignmentMode, array $sections, array $userIds): ?string

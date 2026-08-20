@@ -118,18 +118,15 @@ if (!in_array($examineeFilter, ['', 'college_student', 'reviewee', 'both'], true
 $searchQ = trim((string)($_GET['q'] ?? ''));
 
 $filters = [
-    'status' => $statusFilter,
+    'status' => 'all',
     'exam_type' => $typeFilter,
     'examinee_type' => $examineeFilter,
     'q' => $searchQ,
 ];
 
-$examinations = examination_domain_list($conn, $uid, $filters);
-$counts = examination_domain_list_counts($conn, $uid, [
-    'exam_type' => $typeFilter,
-    'examinee_type' => $examineeFilter,
-    'q' => $searchQ,
-]);
+$allExaminations = examination_domain_list($conn, $uid, $filters);
+$counts = examination_domain_counts_from_list($allExaminations);
+$examinations = examination_domain_filter_list_by_status($allExaminations, $statusFilter);
 
 $flashMessage = $_SESSION['examination_flash'] ?? null;
 unset($_SESSION['examination_flash']);

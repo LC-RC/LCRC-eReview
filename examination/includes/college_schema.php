@@ -6,6 +6,11 @@
 if (!isset($conn) || !($conn instanceof mysqli)) {
     return;
 }
+// Online perf: run SHOW COLUMNS / CREATE IF NOT EXISTS at most once per request.
+if (!empty($GLOBALS['__ereview_college_schema_ensured'])) {
+    return;
+}
+$GLOBALS['__ereview_college_schema_ensured'] = true;
 
 @mysqli_query($conn, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','student','college_student','professor_admin') NOT NULL DEFAULT 'student'");
 

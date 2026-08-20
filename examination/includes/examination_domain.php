@@ -124,6 +124,62 @@ function examination_domain_call(string $examType, string $hook, array $args = [
     return $fn(...$args);
 }
 
+/**
+ * Prefetch list metrics (question / submitted counts) to avoid per-row COUNT queries.
+ *
+ * @param list<array<string,mixed>> $rows
+ */
+function examination_domain_warmup_list_metrics(mysqli $conn, string $examType, array $rows): void
+{
+    $examType = examination_normalize_exam_type($examType);
+    if ($rows === []) {
+        return;
+    }
+    if ($examType === 'regular') {
+        $ids = [];
+        foreach ($rows as $raw) {
+            $id = (int)($raw['exam_id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $ids = array_values(array_unique($ids));
+        if ($ids === []) {
+            return;
+        }
+        $in = implode(',', $ids);
+        $q = @mysqli_query($conn, "SELECT exam_id, COUNT(*) AS c FROM college_exam_questions WHERE exam_id IN ({$in}) GROUP BY exam_id");
+        if ($q) {
+            while ($r = mysqli_fetch_assoc($q)) {
+                $GLOBALS['__ereview_exam_qcount']['regular:' . (int)$r['exam_id']] = (int)($r['c'] ?? 0);
+            }
+            mysqli_free_result($q);
+        }
+        foreach ($ids as $id) {
+            $key = 'regular:' . $id;
+            if (!isset($GLOBALS['__ereview_exam_qcount'][$key])) {
+                $GLOBALS['__ereview_exam_qcount'][$key] = 0;
+            }
+        }
+        $q2 = @mysqli_query(
+            $conn,
+            "SELECT exam_id, COUNT(*) AS c FROM college_exam_attempts WHERE exam_id IN ({$in}) AND status='submitted' GROUP BY exam_id"
+        );
+        if ($q2) {
+            while ($r = mysqli_fetch_assoc($q2)) {
+                $GLOBALS['__ereview_exam_submitted']['regular:' . (int)$r['exam_id']] = (int)($r['c'] ?? 0);
+            }
+            mysqli_free_result($q2);
+        }
+        foreach ($ids as $id) {
+            $key = 'regular:' . $id;
+            if (!isset($GLOBALS['__ereview_exam_submitted'][$key])) {
+                $GLOBALS['__ereview_exam_submitted'][$key] = 0;
+            }
+        }
+    }
+}
+
 function examination_domain_list(mysqli $conn, int $professorId, array $filters = []): array
 {
     $now = date('Y-m-d H:i:s');
@@ -140,6 +196,7 @@ function examination_domain_list(mysqli $conn, int $professorId, array $filters 
         if (!is_array($rows)) {
             continue;
         }
+        examination_domain_warmup_list_metrics($conn, $type, $rows);
         foreach ($rows as $raw) {
             $record = examination_domain_call($type, 'normalize', [$conn, $raw, $now]);
             if (!is_array($record)) {
@@ -201,20 +258,59 @@ function examination_domain_load(mysqli $conn, string $examType, int $sourceId, 
 function examination_domain_list_counts(mysqli $conn, int $professorId, array $filters = []): array
 {
     $all = examination_domain_list($conn, $professorId, array_merge($filters, ['status' => 'all']));
-    $counts = ['all' => count($all), 'draft' => 0, 'published' => 0, 'finished' => 0];
-    foreach ($all as $row) {
-        if (!$row['is_published']) {
+
+    return examination_domain_counts_from_list($all);
+}
+
+/**
+ * Tab counts from an already-normalized list (avoids a second full list pass).
+ *
+ * @param list<array<string,mixed>> $rows
+ * @return array{all:int,draft:int,published:int,finished:int}
+ */
+function examination_domain_counts_from_list(array $rows): array
+{
+    $counts = ['all' => count($rows), 'draft' => 0, 'published' => 0, 'finished' => 0];
+    foreach ($rows as $row) {
+        if (empty($row['is_published'])) {
             $counts['draft']++;
         }
-        if ($row['is_published'] && !$row['is_finished']) {
+        if (!empty($row['is_published']) && empty($row['is_finished'])) {
             $counts['published']++;
         }
-        if ($row['is_finished']) {
+        if (!empty($row['is_finished'])) {
             $counts['finished']++;
         }
     }
 
     return $counts;
+}
+
+/**
+ * Filter a normalized list by status tab.
+ *
+ * @param list<array<string,mixed>> $rows
+ * @return list<array<string,mixed>>
+ */
+function examination_domain_filter_list_by_status(array $rows, string $statusFilter): array
+{
+    $statusFilter = strtolower(trim($statusFilter));
+    if ($statusFilter === '' || $statusFilter === 'all') {
+        return array_values($rows);
+    }
+
+    $out = [];
+    foreach ($rows as $row) {
+        if ($statusFilter === 'draft' && empty($row['is_published'])) {
+            $out[] = $row;
+        } elseif ($statusFilter === 'published' && !empty($row['is_published']) && empty($row['is_finished'])) {
+            $out[] = $row;
+        } elseif ($statusFilter === 'finished' && !empty($row['is_finished'])) {
+            $out[] = $row;
+        }
+    }
+
+    return $out;
 }
 
 function examination_domain_resolve_type_from_request(array $request): string

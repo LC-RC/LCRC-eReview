@@ -5,6 +5,10 @@
 if (!isset($conn) || !($conn instanceof mysqli)) {
     return;
 }
+if (!empty($GLOBALS['__ereview_diagnostic_schema_ensured'])) {
+    return;
+}
+$GLOBALS['__ereview_diagnostic_schema_ensured'] = true;
 
 $stmts = [
     "CREATE TABLE IF NOT EXISTS `diagnostic_subjects` (

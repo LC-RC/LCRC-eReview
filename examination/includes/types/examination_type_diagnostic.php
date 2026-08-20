@@ -39,7 +39,7 @@ function examination_type_diagnostic_load_raw(mysqli $conn, int $sourceId, int $
 function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, string $nowSql): array
 {
     $batchId = (int)($rawRow['batch_id'] ?? 0);
-    $stats = diagnostic_exam_batch_stats_for_student($conn, $batchId);
+    $stats = examination_type_diagnostic_list_stats($conn, $batchId);
     $sections = diagnostic_exam_load_batch_sections($conn, $batchId);
     $users = diagnostic_exam_load_batch_users($conn, $batchId);
 
@@ -63,9 +63,8 @@ function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, stri
         mysqli_free_result($mq);
     }
 
-    $allDone = examination_count_assigned_examinees($conn, 'diagnostic', $batchId) > 0
-        && $submitted + $inProgress >= examination_count_assigned_examinees($conn, 'diagnostic', $batchId)
-        && $inProgress === 0;
+    $examineeCount = examination_count_assigned_examinees($conn, 'diagnostic', $batchId, $rawRow, $sections, $users);
+    $allDone = $examineeCount > 0 && ($submitted + $inProgress) >= $examineeCount && $inProgress === 0;
     $isPublished = !empty($rawRow['is_published']);
     $isFinished = (!empty($rawRow['deadline']) && (string)$rawRow['deadline'] < $nowSql) || $allDone;
     $isOpenBySchedule = $isPublished
@@ -88,7 +87,7 @@ function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, stri
         'section_count' => count($sections),
         'user_count' => count($users),
         'question_count' => (int)($stats['question_count'] ?? 0),
-        'examinee_count' => examination_count_assigned_examinees($conn, 'diagnostic', $batchId),
+        'examinee_count' => $examineeCount,
         'assigned_sections' => $sections,
         'window_state' => examination_domain_window_state($rawRow, $nowSql, $isFinished),
         'is_finished' => $isFinished,
@@ -101,6 +100,43 @@ function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, stri
             'shuffle_choices' => !empty($rawRow['shuffle_choices']),
         ],
     ]);
+}
+
+/**
+ * Lightweight subject/question counts for list pages (no full question row load).
+ *
+ * @return array{subject_count:int,question_count:int}
+ */
+function examination_type_diagnostic_list_stats(mysqli $conn, int $batchId): array
+{
+    $subjectCount = 0;
+    $questionCount = 0;
+    if ($batchId <= 0) {
+        return ['subject_count' => 0, 'question_count' => 0];
+    }
+    $q = @mysqli_query(
+        $conn,
+        'SELECT bs.subject_id, bs.questions_required, COUNT(q.question_id) AS avail
+         FROM diagnostic_batch_subjects bs
+         LEFT JOIN diagnostic_questions q
+           ON q.batch_id = bs.batch_id AND q.subject_id = bs.subject_id
+         WHERE bs.batch_id=' . (int)$batchId . '
+         GROUP BY bs.subject_id, bs.questions_required'
+    );
+    if ($q) {
+        while ($row = mysqli_fetch_assoc($q)) {
+            $subjectCount++;
+            $req = max(0, (int)($row['questions_required'] ?? 0));
+            $avail = (int)($row['avail'] ?? 0);
+            $questionCount += ($req > 0) ? min($req, $avail) : $avail;
+        }
+        mysqli_free_result($q);
+    }
+
+    return [
+        'subject_count' => $subjectCount,
+        'question_count' => $questionCount,
+    ];
 }
 
 function examination_type_diagnostic_config_extras(mysqli $conn, int $professorId, int $sourceId): array

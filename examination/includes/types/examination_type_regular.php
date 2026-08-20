@@ -45,11 +45,21 @@ function examination_type_regular_load_raw(mysqli $conn, int $sourceId, int $pro
 
 function examination_type_regular_question_count(mysqli $conn, int $examId): int
 {
-    $q = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$examId);
+    $examId = (int)$examId;
+    if ($examId <= 0) {
+        return 0;
+    }
+    $cacheKey = 'regular:' . $examId;
+    if (isset($GLOBALS['__ereview_exam_qcount'][$cacheKey])) {
+        return (int)$GLOBALS['__ereview_exam_qcount'][$cacheKey];
+    }
+    $q = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . $examId);
     if ($q && ($r = mysqli_fetch_assoc($q))) {
         mysqli_free_result($q);
+        $n = (int)($r['c'] ?? 0);
+        $GLOBALS['__ereview_exam_qcount'][$cacheKey] = $n;
 
-        return (int)($r['c'] ?? 0);
+        return $n;
     }
     if ($q) {
         mysqli_free_result($q);
@@ -68,19 +78,27 @@ function examination_type_regular_normalize(mysqli $conn, array $rawRow, string 
     $assignmentMode = examination_normalize_assignment_mode((string)($rawRow['assignment_mode'] ?? 'all'));
 
     $submittedCount = 0;
-    $sq = @mysqli_query(
-        $conn,
-        "SELECT COUNT(*) AS c FROM college_exam_attempts WHERE exam_id={$examId} AND status='submitted'"
-    );
-    if ($sq && ($sr = mysqli_fetch_assoc($sq))) {
-        $submittedCount = (int)($sr['c'] ?? 0);
-        mysqli_free_result($sq);
-    } elseif ($sq) {
-        mysqli_free_result($sq);
+    $submittedKey = 'regular:' . $examId;
+    if (isset($GLOBALS['__ereview_exam_submitted'][$submittedKey])) {
+        $submittedCount = (int)$GLOBALS['__ereview_exam_submitted'][$submittedKey];
+    } else {
+        $sq = @mysqli_query(
+            $conn,
+            "SELECT COUNT(*) AS c FROM college_exam_attempts WHERE exam_id={$examId} AND status='submitted'"
+        );
+        if ($sq && ($sr = mysqli_fetch_assoc($sq))) {
+            $submittedCount = (int)($sr['c'] ?? 0);
+            mysqli_free_result($sq);
+        } elseif ($sq) {
+            mysqli_free_result($sq);
+        }
+        $GLOBALS['__ereview_exam_submitted'][$submittedKey] = $submittedCount;
     }
 
-    $allFinishedOpen = college_exam_finished_all_submitted_no_deadline($conn, $rawRow, $submittedCount);
-    $isFinished = (!empty($rawRow['deadline']) && (string)$rawRow['deadline'] < $nowSql) || $allFinishedOpen;
+    $examineeCount = examination_count_assigned_examinees($conn, 'regular', $examId, $rawRow, $sections, $users);
+    $dead = trim((string)($rawRow['deadline'] ?? ''));
+    $allFinishedOpen = ($dead === '' && $examineeCount > 0 && $submittedCount >= $examineeCount);
+    $isFinished = ($dead !== '' && (string)$rawRow['deadline'] < $nowSql) || $allFinishedOpen;
     $isOpenBySchedule = $isPublished
         && (empty($rawRow['available_from']) || (string)$rawRow['available_from'] <= $nowSql)
         && (empty($rawRow['deadline']) || (string)$rawRow['deadline'] >= $nowSql);
@@ -102,7 +120,7 @@ function examination_type_regular_normalize(mysqli $conn, array $rawRow, string 
         'user_count' => count($users),
         'assigned_sections' => $sections,
         'question_count' => examination_type_regular_question_count($conn, $examId),
-        'examinee_count' => examination_count_assigned_examinees($conn, 'regular', $examId),
+        'examinee_count' => $examineeCount,
         'window_state' => examination_domain_window_state($rawRow, $nowSql, $isFinished),
         'is_finished' => $isFinished,
         'is_running' => $isRunning,

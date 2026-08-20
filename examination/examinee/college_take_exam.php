@@ -663,7 +663,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         <div class="time-up-modal-panel w-full max-w-md p-6 text-center">
           <div class="time-up-pulse mx-auto mb-4"><i class="bi bi-hourglass-bottom text-2xl text-red-600"></i></div>
           <h3 id="timeUpModalTitle" class="m-0 text-xl font-extrabold text-red-900">Time is up</h3>
-          <p class="mt-2 mb-0 text-sm text-slate-700 font-semibold">Your attempt is being submitted automatically. Please wait...</p>
+          <p class="mt-2 mb-0 text-sm text-slate-700 font-semibold">Saving your answers and submitting automatically. Please wait…</p>
           <p class="mt-3 mb-0 text-xs text-slate-500">Do not close this page until you are redirected to the results.</p>
         </div>
       </div>
@@ -820,7 +820,43 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           body.set('action', action);
           Object.keys(payload || {}).forEach(function (k) { body.set(k, String(payload[k])); });
           return fetch(ajaxUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body, credentials: 'same-origin' })
-            .then(function (r) { return r.json(); });
+            .then(function (r) {
+              return r.text().then(function (text) {
+                var data = null;
+                try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+                if (!r.ok) {
+                  throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+                }
+                if (data === null) {
+                  throw new Error('Invalid server response');
+                }
+                return data;
+              });
+            });
+        }
+
+        function getLocalAnswersMap() {
+          var map = {};
+          panels.forEach(function (panel) {
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10);
+            if (!qid) return;
+            var checked = panel.querySelector('input[type=radio]:checked');
+            if (checked && /^[A-D]$/i.test(String(checked.value || ''))) {
+              map[qid] = String(checked.value).toUpperCase();
+            }
+          });
+          return map;
+        }
+        function localAnswersPayload() {
+          var map = getLocalAnswersMap();
+          return Object.keys(map).map(function (qid) {
+            return { question_id: parseInt(qid, 10), selected_answer: map[qid] };
+          });
+        }
+        function isQuestionAnsweredLocal(qid) {
+          if (state.answered.has(qid)) return true;
+          var map = getLocalAnswersMap();
+          return !!map[qid];
         }
 
         function sendVisibility(visibility) {
@@ -1004,7 +1040,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (countdown <= 30 && countdown > 0 && !warned30) { warned30 = true; showWarnToast('30 seconds remaining', 'danger'); }
         }
         function updateCounts() {
-          var n = state.answered.size;
+          var uniq = {};
+          var map = getLocalAnswersMap();
+          Object.keys(map).forEach(function (qid) { uniq[qid] = true; });
+          state.answered.forEach(function (qid) { uniq[qid] = true; });
+          var n = Object.keys(uniq).length;
           if (answeredCountEl) answeredCountEl.textContent = String(n);
           if (flaggedCountEl) flaggedCountEl.textContent = String(state.flags.size);
           if (progressBar && totalQuestions > 0) progressBar.style.width = Math.round((n / totalQuestions) * 100) + '%';
@@ -1016,12 +1056,13 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           var list = [];
           panels.forEach(function (p, idx) {
             var qid = parseInt(p.getAttribute('data-question-id'), 10);
-            if (!state.answered.has(qid)) list.push(idx + 1);
+            if (!isQuestionAnsweredLocal(qid)) list.push(idx + 1);
           });
           return list;
         }
         function updateSubmitButton() {
-          var complete = state.answered.size >= totalQuestions && totalQuestions > 0;
+          var answeredN = totalQuestions - unansweredCount();
+          var complete = unansweredCount() === 0 && totalQuestions > 0;
           if (submitExamBtn) {
             // Keep clickable while incomplete so we can show which questions remain.
             submitExamBtn.disabled = false;
@@ -1030,14 +1071,14 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (submitExamBtnText) {
               submitExamBtnText.textContent = complete
                 ? 'Submit exam'
-                : ('Answer all questions to submit (' + state.answered.size + '/' + totalQuestions + ')');
+                : ('Answer all questions to submit (' + answeredN + '/' + totalQuestions + ')');
             }
           }
           if (mSubmitBtn) {
             mSubmitBtn.disabled = false;
             mSubmitBtn.classList.toggle('is-locked', !complete);
             mSubmitBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
-            mSubmitBtn.textContent = complete ? 'Submit' : (state.answered.size + '/' + totalQuestions);
+            mSubmitBtn.textContent = complete ? 'Submit' : (answeredN + '/' + totalQuestions);
           }
           if (submitIncompleteHint && complete) {
             submitIncompleteHint.classList.add('hidden');
@@ -1051,7 +1092,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         function updatePrimaryActionUI() {
           updateSubmitButton();
         }
-        function unansweredCount() { return Math.max(0, totalQuestions - state.answered.size); }
+        function unansweredCount() { return unansweredList().length; }
         function syncChoiceStyles() {
           panels.forEach(function (panel) {
             panel.querySelectorAll('[data-choice-row]').forEach(function (row) {
@@ -1059,7 +1100,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               row.classList.toggle('selected', !!(input && input.checked));
             });
             var qid = parseInt(panel.getAttribute('data-question-id'), 10);
-            panel.classList.toggle('is-answered', state.answered.has(qid));
+            panel.classList.toggle('is-answered', isQuestionAnsweredLocal(qid));
           });
         }
         function renderNav(target) {
@@ -1067,7 +1108,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           target.innerHTML = '';
           panels.forEach(function (panel, idx) {
             var qid = parseInt(panel.getAttribute('data-question-id'), 10);
-            var answered = state.answered.has(qid), flagged = state.flags.has(qid);
+            var answered = isQuestionAnsweredLocal(qid), flagged = state.flags.has(qid);
             if (state.filter === 'flagged' && !flagged) return;
             if (state.filter === 'unanswered' && answered) return;
             var a = document.createElement('a');
@@ -1120,11 +1161,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         function findNextUnansweredAfter(fromIndex) {
           for (var i = fromIndex + 1; i < panels.length; i++) {
             var qid = parseInt(panels[i].getAttribute('data-question-id'), 10);
-            if (!state.answered.has(qid)) return i;
+            if (!isQuestionAnsweredLocal(qid)) return i;
           }
           for (var j = 0; j <= fromIndex; j++) {
             var qid2 = parseInt(panels[j].getAttribute('data-question-id'), 10);
-            if (!state.answered.has(qid2)) return j;
+            if (!isQuestionAnsweredLocal(qid2)) return j;
           }
           return -1;
         }
@@ -1165,7 +1206,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               var nextIdx = findNextUnansweredAfter(fromIndex);
               if (nextIdx >= 0 && nextIdx !== fromIndex) {
                 setTimeout(function () { scrollToQuestion(nextIdx, false); }, 180);
-              } else if (state.answered.size >= totalQuestions) {
+              } else if (unansweredCount() === 0) {
                 var submitCard = document.querySelector('.exam-submit-card');
                 if (submitCard) submitCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
@@ -1184,6 +1225,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           });
         }
 
+        function flushAllLocalAnswers() {
+          // Prefer one submit payload over N round-trips (faster + survives flaky saves).
+          return Promise.resolve({ ok: true, answers: localAnswersPayload() });
+        }
+
         function openTimeUpModal() {
           var sm = document.getElementById('submitConfirmModal');
           if (sm) { sm.classList.add('hidden'); sm.classList.remove('flex'); }
@@ -1196,10 +1242,72 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (!m) return;
           m.classList.add('hidden'); m.classList.remove('flex');
         }
+
+        function postSubmitPayload(reason, answersJson, useKeepalive) {
+          var body = new URLSearchParams();
+          body.set('action', 'submit');
+          body.set('csrf_token', csrf);
+          body.set('attempt_id', String(attemptId));
+          body.set('reason', reason || 'manual');
+          body.set('answers', answersJson || '[]');
+          var opts = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body,
+            credentials: 'same-origin'
+          };
+          if (useKeepalive) opts.keepalive = true;
+          return fetch(ajaxUrl, opts).then(function (r) {
+            return r.text().then(function (text) {
+              var data = null;
+              try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+              if (!r.ok) throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+              if (data === null) throw new Error('Invalid server response');
+              return data;
+            });
+          });
+        }
+
+        /** Time expired: save all on-screen answers then auto-submit (incomplete OK). */
+        function autoSubmitOnTimeUp(reason, attempt) {
+          reason = reason || 'timeout';
+          attempt = attempt || 1;
+          if (state.submitting && attempt === 1) return;
+          state.submitting = true;
+          countdown = 0;
+          // Do NOT disable radios while time remains — students may change answers until 0:00.
+          // At time-up we only show the modal + submit; latest selections are included in the payload.
+          openTimeUpModal();
+          window.onbeforeunload = null;
+          var answersJson = JSON.stringify(localAnswersPayload());
+          postSubmitPayload(reason, answersJson, true).then(function (data) {
+            if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
+            window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason);
+          }).catch(function () {
+            // Keep retrying — re-read latest selections each attempt (students may still adjust if modal is up).
+            if (attempt < 8) {
+              setTimeout(function () {
+                state.submitting = false;
+                autoSubmitOnTimeUp(reason, attempt + 1);
+              }, Math.min(8000, 900 * attempt));
+            } else {
+              state.submitting = false;
+              showWarnToast('Time is up but submit failed. Retrying… check your connection.', 'danger');
+              setTimeout(function () {
+                autoSubmitOnTimeUp(reason, 1);
+              }, 5000);
+            }
+          });
+        }
+
         function submitNow(reason) {
           if (state.submitting) return;
           var isTimeout = (reason === 'timeout' || reason === 'timeout-sync');
-          if (!isTimeout && unansweredCount() > 0) {
+          if (isTimeout) {
+            autoSubmitOnTimeUp(reason);
+            return;
+          }
+          if (unansweredCount() > 0) {
             var miss = unansweredList();
             var msg = 'Please answer all questions before submitting the exam.';
             if (miss.length) {
@@ -1219,18 +1327,25 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             return;
           }
           state.submitting = true;
-          if (isTimeout) openTimeUpModal();
           var overlay = document.getElementById('quizSubmitOverlay');
-          if (overlay && !isTimeout) overlay.classList.add('show');
-          request('submit', { csrf_token: csrf, attempt_id: attemptId, reason: reason || 'manual' }).then(function (data) {
+          if (overlay) overlay.classList.add('show');
+          flushAllLocalAnswers().then(function () {
+            var answersJson = JSON.stringify(localAnswersPayload());
+            return postSubmitPayload(reason || 'manual', answersJson, false);
+          }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
             window.onbeforeunload = null;
             window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
           }).catch(function (err) {
             state.submitting = false;
-            closeTimeUpModal();
             if (overlay) overlay.classList.remove('show');
-            alert('Could not submit exam. ' + err.message);
+            var msg = (err && err.message) ? err.message : 'Submit failed';
+            if (submitIncompleteHint) {
+              submitIncompleteHint.textContent = msg;
+              submitIncompleteHint.classList.remove('hidden');
+            }
+            showWarnToast(msg, 'danger');
+            alert('Could not submit exam. ' + msg);
           });
         }
 
@@ -1240,6 +1355,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (!qid) return;
             var panel = inp.closest('[data-question-panel]');
             var fromIndex = panel ? parseInt(panel.getAttribute('data-index'), 10) : -1;
+            // Reflect selection immediately (even if autosave is slow/offline).
             syncChoiceStyles();
             updateCounts();
             renderNavigator();
@@ -1304,7 +1420,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           }
           state.submitConfirmStep = 0;
           document.getElementById('doubleConfirmHint').classList.add('hidden');
-          document.getElementById('sumAnswered').textContent = String(state.answered.size);
+          var answeredN = totalQuestions - unansweredCount();
+          document.getElementById('sumAnswered').textContent = String(answeredN);
           var u = unansweredCount();
           document.getElementById('sumUnanswered').textContent = String(u);
           document.getElementById('sumFlagged').textContent = String(state.flags.size);
@@ -1319,12 +1436,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               nums.textContent = '';
             } else {
               ban.classList.add('submit-unanswered-warn');
-              var list = [];
-              panels.forEach(function (p, idx) {
-                var qid = parseInt(p.getAttribute('data-question-id'), 10);
-                if (!state.answered.has(qid)) list.push(idx + 1);
-              });
-              nums.textContent = 'Unanswered question #' + list.join(', #');
+              nums.textContent = 'Unanswered question #' + unansweredList().join(', #');
               nums.classList.remove('hidden');
             }
           }
@@ -1339,7 +1451,9 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             b.classList.toggle('is-active', b.getAttribute('data-filter') === 'unanswered');
           });
           renderNavigator();
-          var idx = panels.findIndex(function (p) { return !state.answered.has(parseInt(p.getAttribute('data-question-id'), 10)); });
+          var idx = panels.findIndex(function (p) {
+            return !isQuestionAnsweredLocal(parseInt(p.getAttribute('data-question-id'), 10));
+          });
           if (idx >= 0) setCurrentIndex(idx);
         });
         document.getElementById('confirmSubmitBtn').addEventListener('click', function () {
@@ -1450,12 +1564,37 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (countdown <= 0) {
             if (timerValue) timerValue.textContent = '0:00';
             updateTimerVisual();
-            submitNow('timeout');
+            autoSubmitOnTimeUp('timeout');
             return;
           }
           updateTimerVisual();
           countdown--;
           setTimeout(timerTick, 1000);
+        }
+
+        var timeSyncTimer = null;
+        var timeSyncMs = 15000;
+        function runTimeSyncTick() {
+          if (state.submitting) return;
+          request('get_time', { attempt_id: attemptId }).then(function (data) {
+            if (data && data.ok && data.remaining_seconds !== null && data.remaining_seconds !== undefined) {
+              countdown = Math.max(0, parseInt(data.remaining_seconds, 10) || 0);
+              if (countdown <= 0) {
+                autoSubmitOnTimeUp('timeout-sync');
+                return;
+              }
+              updateTimerVisual();
+              // Poll faster in the last minute so server clock wins over drift.
+              if (countdown <= 60 && timeSyncMs > 5000) {
+                scheduleTimeSync(5000);
+              }
+            }
+          }).catch(function () {});
+        }
+        function scheduleTimeSync(ms) {
+          if (typeof ms === 'number' && ms > 0) timeSyncMs = ms;
+          if (timeSyncTimer) clearInterval(timeSyncTimer);
+          timeSyncTimer = setInterval(runTimeSyncTick, timeSyncMs);
         }
 
         request('load_state', { csrf_token: csrf, attempt_id: attemptId }).then(function (data) {
@@ -1476,17 +1615,13 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (state.currentIndex > 0 && panels[state.currentIndex]) {
               scrollToQuestion(state.currentIndex, true);
             }
-            timerTick();
-            setInterval(function () {
-              request('get_time', { attempt_id: attemptId }).then(function (data) {
-                if (data && data.ok && data.remaining_seconds !== null && data.remaining_seconds !== undefined) {
-                  countdown = Math.max(0, parseInt(data.remaining_seconds, 10) || 0);
-                  if (countdown <= 0) submitNow('timeout-sync');
-                  else updateTimerVisual();
-                }
-              }).catch(function () {});
-            }, 30000);
-            setInterval(function () { queueStateSync(); }, 15000);
+            if (countdown !== null && countdown <= 0) {
+              autoSubmitOnTimeUp('timeout');
+            } else {
+              timerTick();
+              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 15000);
+            }
+            setInterval(function () { if (!state.submitting) queueStateSync(); }, 15000);
           });
       })();
       </script>
