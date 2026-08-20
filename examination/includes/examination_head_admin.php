@@ -22,6 +22,7 @@ require dirname(__DIR__, 2) . '/includes/head_admin.php';
 $_SERVER['SCRIPT_NAME'] = $savedScriptName;
 
 $examinationAdminCssFile = dirname(__DIR__, 2) . '/assets/css/examination-admin.css';
+$professorExamUiCssFile = dirname(__DIR__, 2) . '/assets/css/professor-examination-ui.css';
 if (is_file($examinationAdminCssFile)) {
     // Same dirname() base head_admin / head_app use — never fall back to bare /index.php
     // (that produced /assets/... and 404'd under /Ereview/).
@@ -30,4 +31,7 @@ if (is_file($examinationAdminCssFile)) {
         $cssBase = '';
     }
     echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/examination-admin.css?v=' . filemtime($examinationAdminCssFile) . '">' . "\n";
+    if (is_file($professorExamUiCssFile)) {
+        echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/professor-examination-ui.css?v=' . filemtime($professorExamUiCssFile) . '">' . "\n";
+    }
 }

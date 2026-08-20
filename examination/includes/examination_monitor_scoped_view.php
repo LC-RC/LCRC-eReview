@@ -168,6 +168,25 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     <?php endif; ?>
     <?php endif; ?>
 
+    <?php
+      $pemSectionOptions = [];
+      foreach ($students as $sxSec) {
+          $secName = trim((string)($sxSec['section'] ?? ''));
+          if ($secName !== '') {
+              $pemSectionOptions[$secName] = true;
+          }
+      }
+      $pemSectionOptions = array_keys($pemSectionOptions);
+      natcasesort($pemSectionOptions);
+      $pemSectionOptions = array_values($pemSectionOptions);
+      $pemHasUnassignedSection = false;
+      foreach ($students as $sxSec2) {
+          if (trim((string)($sxSec2['section'] ?? '')) === '') {
+              $pemHasUnassignedSection = true;
+              break;
+          }
+      }
+    ?>
     <div class="pem-progress-head">
       <h2 class="examination-section-title"><i class="bi bi-people"></i> Examinee Progress</h2>
       <?php if ($isFinished): ?>
@@ -181,8 +200,58 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         </div>
       <?php endif; ?>
     </div>
-    <div class="rounded-xl overflow-hidden page-table students-table-scroll mb-4">
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[1280px]">
+
+    <?php if ($students !== []): ?>
+    <div class="students-toolbar page-filter pem-roster-filters mb-3" id="pemRosterFilters">
+      <div class="students-toolbar__search flex-1">
+        <div class="students-search">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input type="search" id="pemFilterQ" placeholder="Search name or email..." autocomplete="off" aria-label="Search examinees">
+        </div>
+        <select id="pemFilterSection" class="admin-btn admin-btn--secondary admin-btn--sm" aria-label="Filter by section">
+          <option value="">All sections</option>
+          <?php foreach ($pemSectionOptions as $secOpt): ?>
+            <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+          <?php endforeach; ?>
+          <?php if ($pemHasUnassignedSection): ?>
+            <option value="__none__">No section</option>
+          <?php endif; ?>
+        </select>
+        <select id="pemFilterStatus" class="admin-btn admin-btn--secondary admin-btn--sm" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="not_started">Not started</option>
+          <option value="submitted">Submitted</option>
+          <option value="idle">Idle</option>
+          <option value="disconnected">Disconnected</option>
+          <option value="expired">Expired</option>
+          <?php if ($isFinished): ?>
+            <option value="absent">Absent</option>
+          <?php endif; ?>
+        </select>
+        <button type="button" id="pemFilterClear" class="admin-btn admin-btn--ghost admin-btn--sm" hidden>Clear filters</button>
+      </div>
+      <span class="students-toolbar__meta" id="pemFilterMeta"><?php echo count($students); ?> examinee<?php echo count($students) === 1 ? '' : 's'; ?></span>
+    </div>
+    <?php endif; ?>
+
+    <div class="rounded-xl overflow-hidden page-table students-table-shell mb-4">
+      <div class="students-table-scroll">
+      <table class="w-full text-left admin-students-table students-table--compact pex-monitor-detail-table pex-list-table" id="pemRosterTable">
+        <colgroup>
+          <col style="width:18%">
+          <col style="width:9%">
+          <col style="width:9%">
+          <col style="width:9%">
+          <col style="width:8%">
+          <col style="width:6%">
+          <col style="width:7%">
+          <col style="width:7%">
+          <col style="width:6%">
+          <col style="width:8%">
+          <col style="width:8%">
+          <col style="width:8.5rem">
+        </colgroup>
         <thead>
           <tr>
             <th>Examinee</th>
@@ -234,21 +303,29 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                         'submitted_at' => $st['submitted_at'] ?? null,
                     ]);
                 }
+                $filterStatusKey = 'not_started';
                 $statusBadge = '<span class="admin-badge admin-badge--neutral">Not started</span>';
                 if ($isFinished && !$isSubmitted && $attemptNorm !== 'in_progress') {
                     $statusBadge = '<span class="admin-badge admin-badge--warning">Absent</span>';
+                    $filterStatusKey = 'absent';
                 } elseif ($presence === 'submitted') {
                     $statusBadge = '<span class="admin-badge admin-badge--success">Submitted</span>';
+                    $filterStatusKey = 'submitted';
                 } elseif ($presence === 'expired') {
                     $statusBadge = '<span class="admin-badge admin-badge--danger">Expired</span>';
+                    $filterStatusKey = 'expired';
                 } elseif ($presence === 'active') {
                     $statusBadge = '<span class="admin-badge admin-badge--success">Active</span>';
+                    $filterStatusKey = 'active';
                 } elseif ($presence === 'idle') {
                     $statusBadge = '<span class="admin-badge admin-badge--warning">Idle</span>';
+                    $filterStatusKey = 'idle';
                 } elseif ($presence === 'disconnected') {
                     $statusBadge = '<span class="admin-badge admin-badge--danger">Disconnected</span>';
+                    $filterStatusKey = 'disconnected';
                 } elseif ($attemptNorm === 'in_progress') {
                     $statusBadge = '<span class="admin-badge admin-badge--info">Active</span>';
+                    $filterStatusKey = 'active';
                 }
                 $progressPct = ($examQuestionCount > 0 && $answeredLive !== null)
                     ? (int)round(($answeredLive / $examQuestionCount) * 100)
@@ -258,16 +335,24 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                 if ($attemptNorm === 'in_progress' || $isSubmitted) {
                     if ($answeredLive > 0) {
                         $pct = round(100 * $correctLive / $answeredLive, 0);
-                        $scoreLine = $correctLive . ' / ' . $answeredLive . ' · ' . $pct . '%';
+                        $scoreLine = $correctLive . ' / ' . $answeredLive . ' | ' . $pct . '%';
                     } elseif ($isSubmitted && isset($st['correct_count'])) {
                         $scoreLine = (int)$st['correct_count'] . ' / ' . (int)($st['total_count'] ?? $examQuestionCount);
                     } else {
                         $scoreLine = '0 / 0';
                     }
                 }
+                $nameForFilter = strtolower(trim((string)($st['full_name'] ?? '')));
+                $emailForFilter = strtolower(trim((string)($st['email'] ?? '')));
               ?>
-              <tr class="js-monitor-row" data-user-id="<?php echo (int)$st['user_id']; ?>" data-attempt-id="<?php echo $attemptIdRow; ?>">
-                <td class="college-student-account-cell">
+              <tr class="js-monitor-row"
+                  data-user-id="<?php echo (int)$st['user_id']; ?>"
+                  data-attempt-id="<?php echo $attemptIdRow; ?>"
+                  data-section="<?php echo h($sectionTxt !== '' ? $sectionTxt : '__none__'); ?>"
+                  data-status="<?php echo h($filterStatusKey); ?>"
+                  data-name="<?php echo h($nameForFilter); ?>"
+                  data-email="<?php echo h($emailForFilter); ?>">
+                <td class="college-student-account-cell" data-label="Examinee">
                   <div class="student-cell college-student-account">
                     <span class="student-avatar-cell" aria-hidden="true">
                       <span class="student-avatar-media">
@@ -282,9 +367,9 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     </div>
                   </div>
                 </td>
-                <td><?php echo $sectionTxt !== '' ? '<span class="text-sm">' . h($sectionTxt) . '</span>' : '<span class="opacity-60">-</span>'; ?></td>
-                <td class="js-status-cell"><?php echo $statusBadge; ?></td>
-                <td class="js-progress-cell">
+                <td data-label="Section"><?php echo $sectionTxt !== '' ? '<span class="text-sm">' . h($sectionTxt) . '</span>' : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="js-status-cell" data-label="Status"><?php echo $statusBadge; ?></td>
+                <td class="js-progress-cell" data-label="Progress">
                   <?php if ($attemptNorm === 'in_progress' || $isSubmitted): ?>
                     <div class="text-sm font-bold js-progress-label"><?php echo (int)($answeredLive ?? 0); ?> / <?php echo (int)$examQuestionCount; ?></div>
                     <div class="pem-mini-progress" aria-hidden="true"><span class="js-progress-fill" style="width:<?php echo $progressPct; ?>%"></span></div>
@@ -292,10 +377,10 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     <span class="opacity-60">-</span>
                   <?php endif; ?>
                 </td>
-                <td class="js-score-cell text-sm font-semibold"><?php echo h($scoreLine); ?></td>
-                <td class="js-current-cell"><?php echo ($attemptNorm === 'in_progress' && $curQ) ? ('Q' . (int)$curQ) : '<span class="opacity-60">-</span>'; ?></td>
-                <td class="js-time-cell"><?php echo ($remainFmt !== null && $remainFmt !== '') ? h($remainFmt) : '<span class="opacity-60">-</span>'; ?></td>
-                <td class="js-tab-vis-cell">
+                <td class="js-score-cell text-sm font-semibold" data-label="Score"><?php echo h($scoreLine); ?></td>
+                <td class="js-current-cell" data-label="Current"><?php echo ($attemptNorm === 'in_progress' && $curQ) ? ('Q' . (int)$curQ) : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="js-time-cell" data-label="Time left"><?php echo ($remainFmt !== null && $remainFmt !== '') ? h($remainFmt) : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="js-tab-vis-cell" data-label="Tab">
                   <?php if ($attemptNorm === 'in_progress'): ?>
                     <?php echo $tabHidden
                         ? '<span class="admin-badge admin-badge--warning">Hidden</span>'
@@ -304,24 +389,24 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     <span class="opacity-60">-</span>
                   <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Switches">
                   <?php if ($tabLeaveN > 0 && $attemptIdRow > 0): ?>
                     <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm js-open-tab-events" data-attempt-id="<?php echo $attemptIdRow; ?>" data-name="<?php echo h((string)$st['full_name']); ?>">
-                      <span class="js-tab-count">⚠ <?php echo $tabLeaveN; ?></span>
+                      <span class="js-tab-count"><?php echo $tabLeaveN; ?></span>
                     </button>
                   <?php else: ?>
                     <span class="text-sm js-tab-count opacity-60"><?php echo $tabLeaveN; ?></span>
                   <?php endif; ?>
                 </td>
-                <td class="js-seen-cell">
+                <td class="js-seen-cell" data-label="Last seen">
                   <?php $fmtSeen = examination_monitor_format_dt($st['last_seen_at'] ?? null); ?>
                   <?php echo $fmtSeen !== '' ? '<span class="text-sm">' . h($fmtSeen) . '</span>' : '<span class="opacity-60">-</span>'; ?>
                 </td>
-                <td>
+                <td data-label="Started">
                   <?php $fmtStarted = examination_monitor_format_dt($st['started_at'] ?? null); ?>
                   <?php echo $fmtStarted !== '' ? '<span class="text-sm">' . h($fmtStarted) . '</span>' : '<span class="opacity-60">-</span>'; ?>
                 </td>
-                <td>
+                <td class="student-action-cell" data-label="<?php echo $isCollege ? 'Review' : 'Details'; ?>">
                   <?php if ($canReviewSheet): ?>
                     <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="admin-btn admin-btn--ghost admin-btn--sm">
                       <i class="bi bi-layout-text-window-reverse"></i> Review
@@ -334,9 +419,13 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                 </td>
               </tr>
             <?php endforeach; ?>
+            <tr id="pemFilterEmpty" class="pem-filter-empty" hidden>
+              <td colspan="12" class="students-empty-cell">No examinees match these filters.</td>
+            </tr>
           <?php endif; ?>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div id="pemTabEventsModal" class="admin-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pemTabEventsTitle" aria-hidden="true">
@@ -371,6 +460,9 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
   <style>
     .pem-mini-progress { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: .35rem; max-width: 7rem; }
     .pem-mini-progress > span { display: block; height: 100%; background: linear-gradient(90deg, #1665A0, #3393FF); }
+    .pem-roster-filters { margin-top: 0.15rem; }
+    .pem-filter-empty[hidden],
+    .js-monitor-row.is-filtered-out { display: none !important; }
   </style>
   <script>
   (function () {
@@ -380,11 +472,60 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     var kpiTab = document.getElementById('kpiTabLeavesTotal');
     var prevByUser = {};
     var studentCache = {};
+    var filterQ = document.getElementById('pemFilterQ');
+    var filterSection = document.getElementById('pemFilterSection');
+    var filterStatus = document.getElementById('pemFilterStatus');
+    var filterClear = document.getElementById('pemFilterClear');
+    var filterMeta = document.getElementById('pemFilterMeta');
+    var filterEmpty = document.getElementById('pemFilterEmpty');
+    var totalRoster = document.querySelectorAll('.js-monitor-row').length;
+
     document.querySelectorAll('.js-monitor-row').forEach(function (tr) {
       var uid = tr.getAttribute('data-user-id');
       var cell = tr.querySelector('.js-tab-count');
       if (uid && cell) prevByUser[uid] = parseInt(String(cell.textContent).replace(/\D+/g, ''), 10) || 0;
     });
+
+    function applyRosterFilters() {
+      var q = (filterQ && filterQ.value ? filterQ.value : '').trim().toLowerCase();
+      var sec = filterSection ? filterSection.value : '';
+      var st = filterStatus ? filterStatus.value : '';
+      var visible = 0;
+      document.querySelectorAll('.js-monitor-row').forEach(function (tr) {
+        var ok = true;
+        if (sec && (tr.getAttribute('data-section') || '') !== sec) ok = false;
+        if (ok && st && (tr.getAttribute('data-status') || '') !== st) ok = false;
+        if (ok && q) {
+          var name = tr.getAttribute('data-name') || '';
+          var email = tr.getAttribute('data-email') || '';
+          if (name.indexOf(q) === -1 && email.indexOf(q) === -1) ok = false;
+        }
+        tr.classList.toggle('is-filtered-out', !ok);
+        if (ok) visible += 1;
+      });
+      if (filterEmpty) filterEmpty.hidden = visible !== 0 || totalRoster === 0;
+      if (filterMeta) {
+        if (!q && !sec && !st) {
+          filterMeta.textContent = totalRoster + ' examinee' + (totalRoster === 1 ? '' : 's');
+        } else {
+          filterMeta.textContent = 'Showing ' + visible + ' of ' + totalRoster;
+        }
+      }
+      if (filterClear) filterClear.hidden = !(q || sec || st);
+    }
+
+    function clearRosterFilters() {
+      if (filterQ) filterQ.value = '';
+      if (filterSection) filterSection.value = '';
+      if (filterStatus) filterStatus.value = '';
+      applyRosterFilters();
+    }
+
+    if (filterQ) filterQ.addEventListener('input', applyRosterFilters);
+    if (filterSection) filterSection.addEventListener('change', applyRosterFilters);
+    if (filterStatus) filterStatus.addEventListener('change', applyRosterFilters);
+    if (filterClear) filterClear.addEventListener('click', clearRosterFilters);
+
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     }
@@ -546,6 +687,11 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
             studentCache[uid] = s;
             var tr = document.querySelector('.js-monitor-row[data-user-id="' + uid + '"]');
             if (!tr) return;
+            if (s.presence_status) tr.setAttribute('data-status', String(s.presence_status));
+            if (s.section != null) {
+              var secVal = String(s.section || '').trim();
+              tr.setAttribute('data-section', secVal !== '' ? secVal : '__none__');
+            }
             var n = parseInt(s.tab_switch_count, 10) || 0;
             var prev = prevByUser[uid] || 0;
             var statusCell = tr.querySelector('.js-status-cell');
@@ -581,6 +727,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
             }
             prevByUser[uid] = n;
           });
+          applyRosterFilters();
           var alerts = list.filter(function (x) { return (parseInt(x.tab_switch_count, 10) || 0) > 0; });
           if (feedEl) {
             if (alerts.length === 0) {
@@ -599,6 +746,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
           if (pollEl) pollEl.textContent = 'Update failed - retrying...';
         });
     }
+    applyRosterFilters();
     tick();
     setInterval(tick, 11000);
   })();

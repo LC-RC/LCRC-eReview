@@ -308,100 +308,158 @@ $pageTitle = 'Professor Dashboard';
 $adminHeroIcon = 'speedometer2';
 $adminHeroTitle = 'Professor Dashboard';
 $adminHeroSubtitle = 'Overview of students, examinations, submissions, and what needs attention next.';
-$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="professor_college_students"><i class="bi bi-person-plus"></i> Add student</a>'
-    . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-journal-text"></i> Examinations</a>'
-    . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_upload_tasks"><i class="bi bi-cloud-arrow-up"></i> Upload tasks</a>';
-$adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$collegeStudents . '</strong> Â· Pending: <strong>' . (int)$studentStatus['pending'] . '</strong> Â· Open exams: <strong>' . (int)$examOpenCount . '</strong> Â· Tasks due soon: <strong>' . (int)$taskDueSoonCount . '</strong> Â· Activity (<span data-activity-window-label>30d</span>): <strong id="activityWindowHero">' . (int)$activityWindow30 . '</strong></span>';
+$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm prof-dash-cta-primary" href="professor_college_students"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add student</a>'
+    . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-journal-text" aria-hidden="true"></i> Examinations</a>'
+    . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_upload_tasks"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload tasks</a>';
+$adminHeroMeta = ''
+    . '<div class="prof-dash-hero-stats" role="list" aria-label="Dashboard snapshot">'
+    .   '<div class="prof-dash-hero-stat" role="listitem">'
+    .     '<span class="prof-dash-hero-stat__icon" aria-hidden="true"><i class="bi bi-people"></i></span>'
+    .     '<div class="prof-dash-hero-stat__body"><span class="prof-dash-hero-stat__label">Students</span><span class="prof-dash-hero-stat__value">' . (int)$collegeStudents . '</span></div>'
+    .   '</div>'
+    .   '<div class="prof-dash-hero-stat" role="listitem">'
+    .     '<span class="prof-dash-hero-stat__icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>'
+    .     '<div class="prof-dash-hero-stat__body"><span class="prof-dash-hero-stat__label">Pending</span><span class="prof-dash-hero-stat__value">' . (int)$studentStatus['pending'] . '</span></div>'
+    .   '</div>'
+    .   '<div class="prof-dash-hero-stat" role="listitem">'
+    .     '<span class="prof-dash-hero-stat__icon" aria-hidden="true"><i class="bi bi-journal-check"></i></span>'
+    .     '<div class="prof-dash-hero-stat__body"><span class="prof-dash-hero-stat__label">Open Exams</span><span class="prof-dash-hero-stat__value">' . (int)$examOpenCount . '</span></div>'
+    .   '</div>'
+    .   '<div class="prof-dash-hero-stat" role="listitem">'
+    .     '<span class="prof-dash-hero-stat__icon" aria-hidden="true"><i class="bi bi-alarm"></i></span>'
+    .     '<div class="prof-dash-hero-stat__body"><span class="prof-dash-hero-stat__label">Tasks Due Soon</span><span class="prof-dash-hero-stat__value">' . (int)$taskDueSoonCount . '</span></div>'
+    .   '</div>'
+    .   '<div class="prof-dash-hero-stat" role="listitem">'
+    .     '<span class="prof-dash-hero-stat__icon" aria-hidden="true"><i class="bi bi-activity"></i></span>'
+    .     '<div class="prof-dash-hero-stat__body"><span class="prof-dash-hero-stat__label">Activity (<span data-activity-window-label>30d</span>)</span><span class="prof-dash-hero-stat__value" id="activityWindowHero">' . (int)$activityWindow30 . '</span></div>'
+    .   '</div>'
+    . '</div>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-dashboard-page">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-    <nav class="examination-section-jump" aria-label="Dashboard sections">
-      <a href="#overview">Overview</a>
+  <div class="prof-dash-shell">
+    <nav class="prof-dash-tabs examination-section-jump" aria-label="Dashboard sections">
+      <a href="#overview" class="is-active">Overview</a>
       <a href="#performance">Performance</a>
       <a href="#insights">Insights</a>
       <a href="#activity">Activity</a>
       <a href="#upcoming">Upcoming</a>
     </nav>
-    <section class="examination-kpi-grid mb-4" id="performance">
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">College students</div><div class="examination-kpi-card__value"><?php echo (int)$collegeStudents; ?></div><div class="examination-kpi-card__meta">Approved: <?php echo (int)$studentStatus['approved']; ?> · Pending: <?php echo (int)$studentStatus['pending']; ?></div><a href="professor_college_students" class="admin-btn admin-btn--ghost admin-btn--sm mt-3"><i class="bi bi-arrow-right"></i> View students</a></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Examinations</div><div class="examination-kpi-card__value"><?php echo (int)$examCount; ?></div><div class="examination-kpi-card__meta">Published: <?php echo (int)$examPublishedCount; ?> · Open: <?php echo (int)$examOpenCount; ?></div><a href="professor_examinations" class="admin-btn admin-btn--ghost admin-btn--sm mt-3"><i class="bi bi-arrow-right"></i> Manage examinations</a></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Upload tasks</div><div class="examination-kpi-card__value"><?php echo (int)$taskCount; ?></div><div class="examination-kpi-card__meta">Open: <?php echo (int)$taskOpenCount; ?> · Due soon: <?php echo (int)$taskDueSoonCount; ?></div><a href="professor_upload_tasks" class="admin-btn admin-btn--ghost admin-btn--sm mt-3"><i class="bi bi-arrow-right"></i> View tasks</a></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Recent activity</div><div class="examination-kpi-card__value" id="activityWindowCard"><?php echo (int)$activityWindow30; ?></div><div class="examination-kpi-card__meta">Submissions in selected window</div><a href="professor_examination_monitor" class="admin-btn admin-btn--ghost admin-btn--sm mt-3"><i class="bi bi-arrow-right"></i> Open monitor</a></div>
+
+    <span id="performance" class="prof-dash-anchor" tabindex="-1"></span>
+    <section class="prof-dash-kpi-grid" id="overview" aria-label="Key metrics">
+      <article class="prof-dash-kpi prof-dash-kpi--students">
+        <div class="prof-dash-kpi__icon" aria-hidden="true"><i class="bi bi-people"></i></div>
+        <p class="prof-dash-kpi__label">College Students</p>
+        <p class="prof-dash-kpi__value"><?php echo (int)$collegeStudents; ?></p>
+        <dl class="prof-dash-kpi__meta">
+          <div><dt>Approved</dt><dd><?php echo (int)$studentStatus['approved']; ?></dd></div>
+          <div><dt>Pending</dt><dd><?php echo (int)$studentStatus['pending']; ?></dd></div>
+        </dl>
+        <a href="professor_college_students" class="prof-dash-kpi__link">View students <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </article>
+      <article class="prof-dash-kpi prof-dash-kpi--exams">
+        <div class="prof-dash-kpi__icon" aria-hidden="true"><i class="bi bi-journal-text"></i></div>
+        <p class="prof-dash-kpi__label">Examinations</p>
+        <p class="prof-dash-kpi__value"><?php echo (int)$examCount; ?></p>
+        <dl class="prof-dash-kpi__meta">
+          <div><dt>Published</dt><dd><?php echo (int)$examPublishedCount; ?></dd></div>
+          <div><dt>Open</dt><dd><?php echo (int)$examOpenCount; ?></dd></div>
+        </dl>
+        <a href="professor_examinations" class="prof-dash-kpi__link">Manage examinations <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </article>
+      <article class="prof-dash-kpi prof-dash-kpi--tasks">
+        <div class="prof-dash-kpi__icon" aria-hidden="true"><i class="bi bi-cloud-arrow-up"></i></div>
+        <p class="prof-dash-kpi__label">Upload Tasks</p>
+        <p class="prof-dash-kpi__value"><?php echo (int)$taskCount; ?></p>
+        <dl class="prof-dash-kpi__meta">
+          <div><dt>Open</dt><dd><?php echo (int)$taskOpenCount; ?></dd></div>
+          <div><dt>Due soon</dt><dd><?php echo (int)$taskDueSoonCount; ?></dd></div>
+        </dl>
+        <a href="professor_upload_tasks" class="prof-dash-kpi__link">View tasks <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </article>
+      <article class="prof-dash-kpi prof-dash-kpi--activity">
+        <div class="prof-dash-kpi__icon" aria-hidden="true"><i class="bi bi-graph-up"></i></div>
+        <p class="prof-dash-kpi__label">Recent Activity</p>
+        <p class="prof-dash-kpi__value" id="activityWindowCard"><?php echo (int)$activityWindow30; ?></p>
+        <p class="prof-dash-kpi__hint">Submissions in selected window</p>
+        <a href="professor_examination_monitor" class="prof-dash-kpi__link">Open monitor <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </article>
     </section>
 
-    <h2 id="insights" class="examination-section-title "><i class="bi bi-graph-up-arrow"></i> Insights</h2>
-    <section class="insights-grid mb-6">
-      <div class="rounded-xl overflow-hidden page-table chart-card dash-anim delay-3 bg-white p-5">
-        <div class="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <h3 class="text-lg font-bold  m-0">Submissions trend</h3>
-            <p class="text-sm text-gray-500 m-0 mt-1">Exam attempts + file uploads over the last 6 months.</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="examination-chart-toolbar" role="group" aria-label="Activity range">
-              <button class="examination-chart-range-btn" type="button" data-range="7">7d</button>
-              <button class="examination-chart-range-btn is-active" type="button" data-range="30">30d</button>
-              <button class="examination-chart-range-btn" type="button" data-range="90">90d</button>
-            </div>
-            <span id="chartTotalBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full  border border-green-200 ">
-              Total: <?php echo (int)$activityWindow30; ?>
-            </span>
-          </div>
+    <section class="prof-dash-insights" id="insights" aria-labelledby="profDashInsightsTitle">
+      <div class="prof-dash-insights__head">
+        <div>
+          <p class="prof-dash-eyebrow">Insights</p>
+          <h2 id="profDashInsightsTitle" class="prof-dash-insights__title">Submissions Trend</h2>
+          <p class="prof-dash-insights__sub">Exam attempts + file uploads over the last 6 months.</p>
         </div>
-        <div class="examination-chart-wrap">
-          <canvas id="profActivityChart" aria-label="Professor activity trend"></canvas>
-          <div id="profChartEmpty" class="examination-chart-empty">No activity yet in this time range.<br>Activity will appear once students submit exams or files.</div>
+        <div class="prof-dash-insights__controls">
+          <div class="examination-chart-toolbar prof-dash-chart-toolbar" role="group" aria-label="Activity range">
+            <button class="examination-chart-range-btn" type="button" data-range="7">7d</button>
+            <button class="examination-chart-range-btn is-active" type="button" data-range="30">30d</button>
+            <button class="examination-chart-range-btn" type="button" data-range="90">90d</button>
+          </div>
+          <span id="chartTotalBadge" class="prof-dash-chart-total">Total: <?php echo (int)$activityWindow30; ?></span>
+        </div>
+      </div>
+      <div class="examination-chart-wrap prof-dash-chart-wrap">
+        <canvas id="profActivityChart" aria-label="Professor activity trend"></canvas>
+        <div id="profChartEmpty" class="examination-chart-empty prof-dash-chart-empty">
+          <span class="prof-dash-chart-empty__icon" aria-hidden="true"><i class="bi bi-bar-chart-line"></i></span>
+          <strong>No activity yet</strong>
+          <p>There is no submission activity in this time range.<br>Activity will appear once students submit exams or files.</p>
         </div>
       </div>
     </section>
 
-    <h2 id="activity" class="examination-section-title "><i class="bi bi-clipboard-data"></i> Activity And Submissions</h2>
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+    <h2 id="activity" class="prof-dash-section-title"><i class="bi bi-clipboard-data" aria-hidden="true"></i> Activity And Submissions</h2>
+    <section class="prof-dash-activity-grid">
       <!-- Recent exam attempts -->
-      <div class="lg:col-span-2 rounded-xl overflow-hidden page-table dash-anim delay-3 bg-white overflow-hidden">
-        <div class="table-card-head px-6 py-5 border-b border-[var(--admin-border)] flex items-center justify-between gap-3">
+      <div class="prof-dash-panel lg:col-span-2">
+        <div class="prof-dash-panel__head">
           <div>
-            <h2 class="text-lg font-bold  m-0">Recent exam results</h2>
-            <p class="text-sm text-gray-500 m-0 mt-1">Latest scores from your exams</p>
+            <h3 class="prof-dash-panel__title">Recent exam results</h3>
+            <p class="prof-dash-panel__sub">Latest scores from your exams</p>
           </div>
-          <a href="professor_monitor" class=" font-semibold hover:underline inline-flex items-center gap-1">
-            View monitor <i class="bi bi-arrow-right"></i>
+          <a href="professor_monitor" class="prof-dash-panel__action">
+            View monitor <i class="bi bi-arrow-right" aria-hidden="true"></i>
           </a>
         </div>
 
         <div class="table-shell overflow-x-auto">
-          <table class="w-full text-sm text-left">
-            <thead class="  font-semibold">
+          <table class="prof-dash-table w-full text-sm text-left">
+            <thead>
               <tr>
-                <th class="px-6 py-3.5">Student</th>
-                <th class="px-6 py-3.5">Exam</th>
-                <th class="px-6 py-3.5">Score</th>
-                <th class="px-6 py-3.5">Submitted</th>
+                <th scope="col">Student</th>
+                <th scope="col">Exam</th>
+                <th scope="col">Score</th>
+                <th scope="col">Submitted</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--admin-border)]">
+            <tbody>
               <?php if (empty($attemptRows)): ?>
                 <tr>
-                  <td colspan="4" class="px-6 py-12 text-center empty-state">
-                    <i class="bi bi-file-earmark-text"></i>
+                  <td colspan="4" class="prof-dash-empty-cell">
+                    <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
                     <div class="font-medium">No exam submissions available yet.</div>
                   </td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($attemptRows as $r): ?>
-                  <tr class="result-row hover:/80 transition-colors">
-                    <td class="px-6 py-3.5 font-semibold text-gray-800"><?php echo h($r['full_name']); ?></td>
-                    <td class="px-6 py-3.5 text-gray-700"><?php echo h($r['exam_title'] ?? ''); ?></td>
-                    <td class="px-6 py-3.5 font-bold "><?php echo ($r['score'] !== null && $r['score'] !== '') ? h((string)$r['score']) . '%' : '-'; ?></td>
-                    <td class="px-6 py-3.5 text-gray-600"><?php echo !empty($r['submitted_at']) ? h(date('M j, g:i A', strtotime($r['submitted_at']))) : '-'; ?><i class="bi bi-arrow-right table-row-caret"></i></td>
+                  <tr>
+                    <td class="prof-dash-table__strong"><?php echo h($r['full_name']); ?></td>
+                    <td><?php echo h($r['exam_title'] ?? ''); ?></td>
+                    <td class="prof-dash-table__score"><?php echo ($r['score'] !== null && $r['score'] !== '') ? h((string)$r['score']) . '%' : '-'; ?></td>
+                    <td class="prof-dash-table__muted"><?php echo !empty($r['submitted_at']) ? h(date('M j, g:i A', strtotime($r['submitted_at']))) : '-'; ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -411,58 +469,58 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
       </div>
 
       <!-- Recent file submissions -->
-      <div class="rounded-xl overflow-hidden page-table dash-anim delay-4 bg-white overflow-hidden">
-        <div class="table-card-head px-6 py-5 border-b border-[var(--admin-border)] flex items-center justify-between gap-3">
+      <div class="prof-dash-panel">
+        <div class="prof-dash-panel__head">
           <div>
-            <h2 class="text-lg font-bold  m-0">Latest file uploads</h2>
-            <p class="text-sm text-gray-500 m-0 mt-1">Quick upload overview and latest submission activity.</p>
+            <h3 class="prof-dash-panel__title">Latest file uploads</h3>
+            <p class="prof-dash-panel__sub">Quick upload overview and latest submission activity.</p>
           </div>
-          <a href="professor_upload_tasks" class=" font-semibold hover:underline inline-flex items-center gap-1">
-            Manage uploads <i class="bi bi-arrow-right"></i>
+          <a href="professor_upload_tasks" class="prof-dash-panel__action">
+            Manage uploads <i class="bi bi-arrow-right" aria-hidden="true"></i>
           </a>
         </div>
 
-        <div class="examination-upload-overview">
-          <div class="rounded-xl border p-3">
-            <p class="text-xs text-gray-500 m-0">Total recent uploads</p>
-            <p class="text-xl font-extrabold  m-0 mt-1"><?php echo (int)count($subRows); ?></p>
+        <div class="prof-dash-upload-overview">
+          <div class="prof-dash-mini-stat">
+            <p class="prof-dash-mini-stat__label">Total recent uploads</p>
+            <p class="prof-dash-mini-stat__value"><?php echo (int)count($subRows); ?></p>
           </div>
-          <div class="rounded-xl border p-3">
-            <p class="text-xs text-gray-500 m-0">Upload tasks</p>
-            <p class="text-xl font-extrabold  m-0 mt-1"><?php echo (int)$taskCount; ?></p>
+          <div class="prof-dash-mini-stat">
+            <p class="prof-dash-mini-stat__label">Upload tasks</p>
+            <p class="prof-dash-mini-stat__value"><?php echo (int)$taskCount; ?></p>
           </div>
-          <div class="rounded-xl border p-3">
-            <p class="text-xs text-gray-500 m-0">Open tasks</p>
-            <p class="text-xl font-extrabold  m-0 mt-1"><?php echo (int)$taskOpenCount; ?></p>
+          <div class="prof-dash-mini-stat">
+            <p class="prof-dash-mini-stat__label">Open tasks</p>
+            <p class="prof-dash-mini-stat__value"><?php echo (int)$taskOpenCount; ?></p>
           </div>
-          <div class="rounded-xl border p-3">
-            <p class="text-xs text-gray-500 m-0">Due soon</p>
-            <p class="text-xl font-extrabold <?php echo $taskDueSoonCount > 0 ? 'text-amber-700' : ''; ?> m-0 mt-1"><?php echo (int)$taskDueSoonCount; ?></p>
+          <div class="prof-dash-mini-stat">
+            <p class="prof-dash-mini-stat__label">Due soon</p>
+            <p class="prof-dash-mini-stat__value<?php echo $taskDueSoonCount > 0 ? ' is-warn' : ''; ?>"><?php echo (int)$taskDueSoonCount; ?></p>
           </div>
         </div>
 
         <div class="examination-upload-feed">
           <?php if (empty($subRows)): ?>
-            <div class="py-8 text-center empty-state">
-              <i class="bi bi-folder2-open"></i>
+            <div class="prof-dash-empty-inline">
+              <i class="bi bi-folder2-open" aria-hidden="true"></i>
               <div class="font-medium">No file submissions available yet.</div>
             </div>
           <?php else: ?>
             <?php $uploadShown = 0; ?>
             <?php foreach ($subRows as $s): ?>
               <?php if ($uploadShown >= 3) break; ?>
-              <div class="examination-examination-upload-feed-item">
+              <div class="examination-upload-feed-item">
                 <div class="flex items-start justify-between gap-2">
                   <div class="min-w-0">
-                    <p class="font-semibold text-gray-800 m-0 truncate"><?php echo h($s['full_name']); ?></p>
-                    <p class="text-xs text-gray-500 m-0 mt-0.5 truncate"><?php echo h($s['task_title'] ?? ''); ?></p>
+                    <p class="font-semibold m-0 truncate"><?php echo h($s['full_name']); ?></p>
+                    <p class="text-xs opacity-70 m-0 mt-0.5 truncate"><?php echo h($s['task_title'] ?? ''); ?></p>
                     <?php if (!empty($s['file_name']) && !empty($s['file_path'])): ?>
                       <a href="<?php echo h($s['file_path']); ?>" class="file-chip w-fit" target="_blank" rel="noopener">
-                        <i class="bi bi-paperclip"></i><?php echo h($s['file_name']); ?>
+                        <i class="bi bi-paperclip" aria-hidden="true"></i><?php echo h($s['file_name']); ?>
                       </a>
                     <?php endif; ?>
                   </div>
-                  <span class="text-[11px] text-gray-500 shrink-0">
+                  <span class="text-[11px] opacity-60 shrink-0">
                     <?php echo !empty($s['submitted_at']) ? h(date('M j, g:i A', strtotime($s['submitted_at']))) : '-'; ?>
                   </span>
                 </div>
@@ -471,29 +529,31 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
             <?php endforeach; ?>
           <?php endif; ?>
         </div>
-        <div class="table-footer-action">
-          <a href="professor_monitor"><i class="bi bi-eye"></i> View all file activity</a>
+        <div class="prof-dash-panel__footer">
+          <a href="professor_monitor"><i class="bi bi-eye" aria-hidden="true"></i> View all file activity</a>
         </div>
       </div>
     </section>
 
-    <h2 id="upcoming" class="examination-section-title "><i class="bi bi-calendar-event"></i> Upcoming Work</h2>
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <h2 id="upcoming" class="prof-dash-section-title"><i class="bi bi-calendar-event" aria-hidden="true"></i> Upcoming Work</h2>
+    <section class="prof-dash-upcoming-grid">
       <!-- Upcoming exams -->
-      <div class="rounded-xl overflow-hidden page-table dash-anim delay-4 bg-white overflow-hidden">
-        <div class="table-card-head px-6 py-5 border-b border-[var(--admin-border)]">
-          <h2 class="text-lg font-bold  m-0">Upcoming examinations</h2>
-          <p class="text-sm text-gray-500 m-0 mt-1">Deadlines for regular and diagnostic examinations</p>
+      <div class="prof-dash-panel">
+        <div class="prof-dash-panel__head">
+          <div>
+            <h3 class="prof-dash-panel__title">Upcoming examinations</h3>
+            <p class="prof-dash-panel__sub">Deadlines for regular and diagnostic examinations</p>
+          </div>
         </div>
-        <div class="p-5">
+        <div class="prof-dash-panel__body">
           <?php if (empty($nextExams)): ?>
-            <div class="text-center py-12 empty-state">
-              <i class="bi bi-calendar-week"></i>
+            <div class="prof-dash-empty-inline">
+              <i class="bi bi-calendar-week" aria-hidden="true"></i>
               <div class="font-medium">No upcoming examinations scheduled.</div>
-              <a href="professor_examination_edit" class="admin-btn admin-btn--primary admin-btn--sm mt-3"><i class="bi bi-plus-circle"></i> Create an examination</a>
+              <a href="professor_examination_edit" class="admin-btn admin-btn--primary admin-btn--sm mt-3"><i class="bi bi-plus-circle" aria-hidden="true"></i> Create an examination</a>
             </div>
           <?php else: ?>
-            <div class="space-y-3">
+            <div class="prof-dash-tile-list">
               <?php foreach ($nextExams as $e): ?>
                 <?php
                   $examDeadlineTs = !empty($e['deadline']) ? strtotime((string)$e['deadline']) : null;
@@ -501,24 +561,23 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
                   $upcomingHref = ($e['exam_type'] ?? '') === 'diagnostic'
                     ? 'professor_examination_edit?exam_type=diagnostic&batch_id=' . (int)($e['source_id'] ?? 0)
                     : 'professor_examination_edit?exam_type=regular&exam_id=' . (int)($e['source_id'] ?? 0);
+                  $examMetaParts = [];
+                  $examMetaParts[] = (string)($e['exam_type_label'] ?? 'Examination');
+                  $examMetaParts[] = !empty($e['deadline']) ? date('M j, Y g:i A', strtotime((string)$e['deadline'])) : 'No deadline';
                 ?>
-                <a href="<?php echo h($upcomingHref); ?>" class="examination-dash-list-tile group flex items-center justify-between gap-3 p-4">
-                  <div class="min-w-0 flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-green-100 border border-green-200  flex items-center justify-center shrink-0 mt-0.5">
-                      <i class="bi bi-journal-richtext"></i>
-                    </div>
+                <a href="<?php echo h($upcomingHref); ?>" class="prof-dash-tile group">
+                  <div class="prof-dash-tile__main">
+                    <div class="prof-dash-tile__icon prof-dash-tile__icon--exam" aria-hidden="true"><i class="bi bi-journal-richtext"></i></div>
                     <div class="min-w-0">
-                      <p class="font-semibold  truncate"><?php echo h($e['title'] ?? ''); ?></p>
-                      <p class="text-xs text-gray-500 mt-1 mb-0">
-                      <?php echo h($e['exam_type_label'] ?? 'Examination'); ?> Â· <?php echo !empty($e['deadline']) ? h(date('M j, Y g:i A', strtotime((string)$e['deadline']))) : 'No deadline'; ?>
-                      </p>
+                      <p class="prof-dash-tile__title"><?php echo h($e['title'] ?? ''); ?></p>
+                      <p class="prof-dash-tile__meta"><?php echo h(implode(' | ', $examMetaParts)); ?></p>
                     </div>
                   </div>
-                  <div class="shrink-0 inline-flex items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold border <?php echo $isExamDueSoon ? 'bg-amber-50 text-amber-700 border-amber-200' : '  border-green-200'; ?>">
+                  <div class="prof-dash-tile__side">
+                    <span class="prof-dash-badge<?php echo $isExamDueSoon ? ' is-warn' : ''; ?>">
                       <?php echo $isExamDueSoon ? 'Due Soon' : 'Upcoming'; ?>
                     </span>
-                    <i class="bi bi-arrow-right  opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    <i class="bi bi-arrow-right prof-dash-tile__chev" aria-hidden="true"></i>
                   </div>
                 </a>
               <?php endforeach; ?>
@@ -528,42 +587,40 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
       </div>
 
       <!-- Upcoming tasks -->
-      <div class="rounded-xl overflow-hidden page-table dash-anim delay-5 bg-white overflow-hidden">
-        <div class="table-card-head px-6 py-5 border-b border-[var(--admin-border)]">
-          <h2 class="text-lg font-bold  m-0">Upcoming upload tasks</h2>
-          <p class="text-sm text-gray-500 m-0 mt-1">Deadlines for student submissions</p>
+      <div class="prof-dash-panel">
+        <div class="prof-dash-panel__head">
+          <div>
+            <h3 class="prof-dash-panel__title">Upcoming upload tasks</h3>
+            <p class="prof-dash-panel__sub">Deadlines for student submissions</p>
+          </div>
         </div>
-        <div class="p-5">
+        <div class="prof-dash-panel__body">
           <?php if (empty($nextTasks)): ?>
-            <div class="text-center py-12 empty-state">
-              <i class="bi bi-calendar2-check"></i>
+            <div class="prof-dash-empty-inline">
+              <i class="bi bi-calendar2-check" aria-hidden="true"></i>
               <div class="font-medium">No upcoming upload tasks.</div>
-              <a href="professor_upload_tasks" class="admin-btn admin-btn--primary admin-btn--sm mt-3"><i class="bi bi-plus-circle"></i> Create an upload task</a>
+              <a href="professor_upload_tasks" class="admin-btn admin-btn--primary admin-btn--sm mt-3"><i class="bi bi-plus-circle" aria-hidden="true"></i> Create an upload task</a>
             </div>
           <?php else: ?>
-            <div class="space-y-3">
+            <div class="prof-dash-tile-list">
               <?php foreach ($nextTasks as $t): ?>
                 <?php
                   $taskDeadlineTs = !empty($t['deadline']) ? strtotime((string)$t['deadline']) : null;
                   $isTaskDueSoon = $taskDeadlineTs !== false && $taskDeadlineTs !== null && $taskDeadlineTs >= $nowTs && $taskDeadlineTs <= ($nowTs + (2 * 86400));
                 ?>
-                <a href="professor_upload_tasks?edit=<?php echo (int)($t['task_id'] ?? 0); ?>" class="examination-dash-list-tile group flex items-center justify-between gap-3 p-4">
-                  <div class="min-w-0 flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-green-100 border border-green-200  flex items-center justify-center shrink-0 mt-0.5">
-                      <i class="bi bi-folder2"></i>
-                    </div>
+                <a href="professor_upload_tasks?edit=<?php echo (int)($t['task_id'] ?? 0); ?>" class="prof-dash-tile group">
+                  <div class="prof-dash-tile__main">
+                    <div class="prof-dash-tile__icon prof-dash-tile__icon--task" aria-hidden="true"><i class="bi bi-folder2"></i></div>
                     <div class="min-w-0">
-                      <p class="font-semibold  truncate"><?php echo h($t['title'] ?? ''); ?></p>
-                      <p class="text-xs text-gray-500 mt-1 mb-0">
-                      <?php echo !empty($t['deadline']) ? h(date('M j, Y g:i A', strtotime($t['deadline']))) : 'No deadline'; ?>
-                      </p>
+                      <p class="prof-dash-tile__title"><?php echo h($t['title'] ?? ''); ?></p>
+                      <p class="prof-dash-tile__meta"><?php echo !empty($t['deadline']) ? h(date('M j, Y g:i A', strtotime($t['deadline']))) : 'No deadline'; ?></p>
                     </div>
                   </div>
-                  <div class="shrink-0 inline-flex items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold border <?php echo $isTaskDueSoon ? 'bg-amber-50 text-amber-700 border-amber-200' : '  border-green-200'; ?>">
+                  <div class="prof-dash-tile__side">
+                    <span class="prof-dash-badge<?php echo $isTaskDueSoon ? ' is-warn' : ''; ?>">
                       <?php echo $isTaskDueSoon ? 'Due Soon' : 'Upcoming'; ?>
                     </span>
-                    <i class="bi bi-arrow-right  opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    <i class="bi bi-arrow-right prof-dash-tile__chev" aria-hidden="true"></i>
                   </div>
                 </a>
               <?php endforeach; ?>
@@ -572,10 +629,28 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
         </div>
       </div>
     </section>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
   (function () {
+    var tabs = document.querySelectorAll('.prof-dash-tabs a[href^="#"]');
+    function setActiveTab(hash) {
+      tabs.forEach(function (a) {
+        var on = a.getAttribute('href') === hash;
+        a.classList.toggle('is-active', on);
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+    }
+    tabs.forEach(function (a) {
+      a.addEventListener('click', function () {
+        setActiveTab(a.getAttribute('href') || '#overview');
+      });
+    });
+    if (location.hash) setActiveTab(location.hash);
+    else setActiveTab('#overview');
+
     if (typeof Chart === 'undefined') return;
 
     var trendCanvas = document.getElementById('profActivityChart');
@@ -588,6 +663,11 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
     var chartEmpty = document.getElementById('profChartEmpty');
     var windowLabels = document.querySelectorAll('[data-activity-window-label]');
     var rangeButtons = document.querySelectorAll('.examination-chart-range-btn');
+    var isLight = document.documentElement.getAttribute('data-admin-theme') === 'light';
+    var tickColor = isLight ? '#64748b' : '#94a3b8';
+    var gridColor = isLight ? 'rgba(148, 163, 184, 0.22)' : 'rgba(148, 163, 184, 0.14)';
+    var lineColor = isLight ? '#2563eb' : '#60a5fa';
+    var fillColor = isLight ? 'rgba(37, 99, 235, 0.10)' : 'rgba(96, 165, 250, 0.14)';
 
     function formatLabel(dateStr) {
       var d = new Date(dateStr + 'T00:00:00');
@@ -626,28 +706,44 @@ $adminHeroMeta = '<span class="text-sm opacity-80">Students: <strong>' . (int)$c
         datasets: [{
           label: 'Total submissions',
           data: initial.values,
-          borderColor: '#15803d',
-          backgroundColor: 'rgba(21, 128, 61, 0.12)',
+          borderColor: lineColor,
+          backgroundColor: fillColor,
           fill: true,
-          tension: 0.34,
-          pointRadius: 3.2,
-          pointHoverRadius: 5.2,
-          pointBackgroundColor: '#15803d'
+          tension: 0.35,
+          borderWidth: 2.25,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
+          pointBackgroundColor: lineColor,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1.5
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: isLight ? '#0f172a' : '#1e293b',
+            titleColor: '#f8fafc',
+            bodyColor: '#e2e8f0',
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: false
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
-            ticks: { color: '#6b7280', precision: 0 },
-            grid: { color: 'rgba(21, 128, 61, 0.12)' }
+            ticks: { color: tickColor, precision: 0, font: { size: 11 } },
+            grid: { color: gridColor, drawBorder: false },
+            border: { display: false }
           },
           x: {
-            ticks: { color: '#6b7280', maxRotation: 0 },
-            grid: { display: false }
+            ticks: { color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } },
+            grid: { display: false },
+            border: { display: false }
           }
         }
       }

@@ -295,7 +295,18 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
             <p class="text-sm text-slate-500 mt-1 mb-0">Try another search or <a class="students-clear-link" href="<?php echo h($putMonQs(['q' => '', 'type' => 'all'])); ?>">clear filters</a>.</p>
           </div>
         <?php else: ?>
-          <table class="admin-students-table students-table--compact w-full text-left">
+          <table class="admin-students-table students-table--compact w-full text-left upload-monitor-table pex-list-table">
+            <colgroup>
+              <col style="width:4.5rem">
+              <col style="width:16%">
+              <col style="width:16%">
+              <col style="width:16%">
+              <col style="width:7%">
+              <col style="width:10%">
+              <col style="width:9%">
+              <col style="width:14%">
+              <col style="width:8rem">
+            </colgroup>
             <thead>
               <tr>
                 <th class="w-20">Preview</th>
@@ -306,7 +317,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                 <th class="hidden sm:table-cell">Submitted</th>
                 <th class="hidden md:table-cell">Status</th>
                 <th class="hidden lg:table-cell">Resubmission</th>
-                <th class="text-right">Actions</th>
+                <th class="text-right student-actions-head">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -322,7 +333,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                 $fnEsc = h((string)$s['file_name']);
                 ?>
               <tr>
-                <td>
+                <td data-label="Preview">
                   <?php if ($kind === 'image'): ?>
                     <button type="button" class="examination-upload-thumb-btn" data-ufl-open
                       data-ufl-kind="image"
@@ -346,12 +357,12 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                       data-ufl-name="<?php echo $fnEsc; ?>"><i class="bi bi-file-earmark"></i></button>
                   <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Student">
                   <div class="font-bold text-slate-900"><?php echo h((string)$s['full_name']); ?></div>
                   <div class="lg:hidden text-xs text-slate-500 mt-1 break-all"><?php echo h((string)$s['email']); ?></div>
                 </td>
-                <td class="hidden lg:table-cell text-slate-600 text-sm break-all"><?php echo h((string)$s['email']); ?></td>
-                <td class="text-slate-800 text-sm font-medium break-all max-w-[200px]">
+                <td class="hidden lg:table-cell text-slate-600 text-sm break-all" data-label="Email"><?php echo h((string)$s['email']); ?></td>
+                <td class="text-slate-800 text-sm font-medium break-all max-w-[200px]" data-label="File">
                   <div><?php echo h((string)$s['file_name']); ?></div>
                   <?php
                     $studentId = (int) ($s['user_id'] ?? 0);
@@ -367,20 +378,20 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                       ?>
                       <li class="border-t border-slate-100 pt-1">
                         <span class="font-semibold">#<?php echo (int) ($histRow['submission_number'] ?? 0); ?></span>
-                        · <?php echo h(put_monitor_fmt_dt($histRow['submitted_at'] ?? null)); ?>
-                        · <a href="<?php echo h($hView); ?>" target="_blank" rel="noopener" class="text-[#1665a0]">View</a>
+                        | <?php echo h(put_monitor_fmt_dt($histRow['submitted_at'] ?? null)); ?>
+                        | <a href="<?php echo h($hView); ?>" target="_blank" rel="noopener" class="text-[#1665a0]">View</a>
                       </li>
                       <?php endforeach; ?>
                     </ul>
                   </details>
                   <?php endif; ?>
                 </td>
-                <td class="hidden md:table-cell text-slate-600 text-sm whitespace-nowrap"><?php echo h($szLabel); ?></td>
-                <td class="hidden sm:table-cell text-slate-600 text-sm whitespace-nowrap">
+                <td class="hidden md:table-cell text-slate-600 text-sm whitespace-nowrap" data-label="Size"><?php echo h($szLabel); ?></td>
+                <td class="hidden sm:table-cell text-slate-600 text-sm whitespace-nowrap" data-label="Submitted">
                   <div>#<?php echo (int) ($s['submission_number'] ?? 1); ?></div>
                   <div><?php echo h(put_monitor_fmt_dt($s['submitted_at'] ?? null)); ?></div>
                 </td>
-                <td class="hidden md:table-cell text-sm whitespace-nowrap">
+                <td class="hidden md:table-cell text-sm whitespace-nowrap" data-label="Status">
                   <?php
                     $review = strtolower((string) ($s['review_status'] ?? 'submitted'));
                     $reviewBadge = $review === 'reviewed'
@@ -389,7 +400,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                   ?>
                   <span class="<?php echo h($reviewBadge); ?>"><?php echo h(ucfirst($review)); ?></span>
                 </td>
-                <td class="hidden lg:table-cell text-sm">
+                <td class="hidden lg:table-cell text-sm" data-label="Resubmission">
                   <?php
                     $resubLabel = (string) ($s['resub_label'] ?? 'No request');
                     $resubStatus = (string) ($s['resub_status'] ?? '');
@@ -416,7 +427,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     <span class="text-xs text-emerald-700 font-semibold">Student may resubmit</span>
                   <?php endif; ?>
                 </td>
-                <td class="text-right">
+                <td class="student-action-cell text-right" data-label="Actions">
                   <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-ufl-open
                     data-ufl-kind="<?php echo h($kind); ?>"
                     data-ufl-url="<?php echo h($viewUrl); ?>"

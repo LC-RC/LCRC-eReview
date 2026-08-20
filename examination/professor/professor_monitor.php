@@ -58,7 +58,15 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     <h2 class="examination-section-title"><i class="bi bi-clipboard-check"></i> Exam attempts</h2>
     <div class="rounded-xl overflow-hidden page-table students-table-shell mb-6">
       <div class="students-table-scroll">
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[640px]">
+      <table class="w-full text-left admin-students-table students-table--compact pex-legacy-monitor-table pex-list-table">
+        <colgroup>
+          <col style="width:18%">
+          <col style="width:22%">
+          <col style="width:22%">
+          <col style="width:10%">
+          <col style="width:12%">
+          <col style="width:16%">
+        </colgroup>
         <thead>
           <tr>
             <th>Student</th>
@@ -75,12 +83,12 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
           <?php else: ?>
             <?php foreach ($attempts as $a): ?>
             <tr>
-              <td class="font-medium"><?php echo h($a['full_name']); ?></td>
-              <td><?php echo h($a['email']); ?></td>
-              <td><?php echo h($a['exam_title']); ?></td>
-              <td class="font-bold"><?php echo $a['score'] !== null ? h((string)$a['score']) . '%' : '-'; ?></td>
-              <td><span class="admin-badge admin-badge--neutral"><?php echo h($a['status']); ?></span></td>
-              <td><?php echo $a['submitted_at'] ? h(date('M j, g:i A', strtotime($a['submitted_at']))) : '-'; ?></td>
+              <td class="font-medium pcs-primary-cell" data-label="Student"><?php echo h($a['full_name']); ?></td>
+              <td class="pcs-meta-cell" data-label="Email"><?php echo h($a['email']); ?></td>
+              <td class="pcs-meta-cell" data-label="Exam"><?php echo h($a['exam_title']); ?></td>
+              <td class="font-bold pcs-meta-cell" data-label="Score"><?php echo $a['score'] !== null ? h((string)$a['score']) . '%' : '-'; ?></td>
+              <td class="pcs-badge-cell" data-label="Status"><span class="admin-badge admin-badge--neutral"><?php echo h($a['status']); ?></span></td>
+              <td class="pcs-meta-cell" data-label="Submitted"><?php echo $a['submitted_at'] ? h(date('M j, g:i A', strtotime($a['submitted_at']))) : '-'; ?></td>
             </tr>
             <?php endforeach; ?>
           <?php endif; ?>
@@ -92,7 +100,14 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     <h2 class="examination-section-title"><i class="bi bi-folder2-open"></i> File submissions</h2>
     <div class="rounded-xl overflow-hidden page-table students-table-shell">
       <div class="students-table-scroll">
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[640px]">
+      <table class="w-full text-left admin-students-table students-table--compact pex-legacy-monitor-table pex-list-table">
+        <colgroup>
+          <col style="width:18%">
+          <col style="width:22%">
+          <col style="width:22%">
+          <col style="width:22%">
+          <col style="width:16%">
+        </colgroup>
         <thead>
           <tr>
             <th>Student</th>
@@ -108,15 +123,15 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
           <?php else: ?>
             <?php foreach ($subs as $s): ?>
             <tr>
-              <td class="font-medium"><?php echo h($s['full_name']); ?></td>
-              <td><?php echo h($s['email']); ?></td>
-              <td><?php echo h($s['task_title']); ?></td>
-              <td>
+              <td class="font-medium pcs-primary-cell" data-label="Student"><?php echo h($s['full_name']); ?></td>
+              <td class="pcs-meta-cell" data-label="Email"><?php echo h($s['email']); ?></td>
+              <td class="pcs-meta-cell" data-label="Task"><?php echo h($s['task_title']); ?></td>
+              <td class="pcs-meta-cell" data-label="File">
                 <?php if (!empty($s['file_name']) && !empty($s['submission_id'])): ?>
                   <a href="<?php echo h($s['file_path'] ?? ''); ?>" class="font-semibold hover:underline" target="_blank" rel="noopener"><?php echo h($s['file_name']); ?></a>
                 <?php else: ?>-<?php endif; ?>
               </td>
-              <td><?php echo h(date('M j, g:i A', strtotime($s['submitted_at']))); ?></td>
+              <td class="pcs-meta-cell" data-label="Submitted"><?php echo h(date('M j, g:i A', strtotime($s['submitted_at']))); ?></td>
             </tr>
             <?php endforeach; ?>
           <?php endif; ?>

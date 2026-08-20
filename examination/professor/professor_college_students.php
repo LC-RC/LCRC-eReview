@@ -365,7 +365,23 @@ $apiUrl = ereview_url('professor_college_students_api');
         </div>
       <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left admin-students-table students-table--compact min-w-[880px]">
+          <table class="w-full text-left admin-students-table students-table--compact pcs-students-table pex-list-table">
+            <colgroup>
+              <?php if ($isStudentTab): ?>
+                <col class="pcs-col-check" style="width:3rem">
+                <col class="pcs-col-account" style="width:34%">
+                <col class="pcs-col-exam" style="width:12%">
+                <col class="pcs-col-section" style="width:12%">
+                <col class="pcs-col-status" style="width:10%">
+                <col class="pcs-col-created" style="width:11%">
+                <col class="pcs-col-actions" style="width:9.5rem">
+              <?php else: ?>
+                <col class="pcs-col-account" style="width:48%">
+                <col class="pcs-col-status" style="width:14%">
+                <col class="pcs-col-created" style="width:16%">
+                <col class="pcs-col-actions" style="width:9.5rem">
+              <?php endif; ?>
+            </colgroup>
             <thead>
               <tr>
                 <?php if ($isStudentTab): ?>
@@ -375,12 +391,11 @@ $apiUrl = ereview_url('professor_college_students_api');
                 <?php endif; ?>
                 <th scope="col" class="college-student-account-head">Account</th>
                 <?php if ($isStudentTab): ?>
-                  <th scope="col">College Exam</th>
-                  <th scope="col">Section</th>
+                  <th scope="col" class="pcs-col-exam">College Exam</th>
+                  <th scope="col" class="pcs-col-section">Section</th>
                 <?php endif; ?>
-                <th scope="col" class="col-hide-tablet">Email</th>
-                <th scope="col">Status</th>
-                <th scope="col" class="col-hide-tablet">Created</th>
+                <th scope="col" class="pcs-col-status">Status</th>
+                <th scope="col" class="pcs-col-created">Created</th>
                 <th scope="col" class="student-actions-head">Actions</th>
               </tr>
             </thead>
@@ -416,7 +431,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                 ?>
                 <tr data-user-id="<?php echo $uid; ?>">
                   <?php if ($isStudentTab): ?>
-                  <td class="student-select-col">
+                  <td class="student-select-col" data-label="Select">
                     <input type="checkbox"
                            class="js-pcs-select admin-bulk-check"
                            value="<?php echo $uid; ?>"
@@ -429,7 +444,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                            <?php if ($canDeleteNative): ?>data-deletable="1"<?php endif; ?>>
                   </td>
                   <?php endif; ?>
-                  <td class="college-student-account-cell">
+                  <td class="college-student-account-cell" data-label="Account">
                     <div class="student-cell college-student-account">
                       <span class="student-avatar-cell" aria-hidden="true">
                         <span class="student-avatar-media">
@@ -444,12 +459,15 @@ $apiUrl = ereview_url('professor_college_students_api');
                       </span>
                       <div class="student-cell__text">
                         <span class="student-name" title="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><?php echo h((string) ($u['full_name'] ?? '')); ?></span>
+                        <?php if ($emailTxt !== ''): ?>
+                          <a href="mailto:<?php echo h($emailTxt); ?>" class="pcs-account-email" title="<?php echo h($emailTxt); ?>"><?php echo h($emailTxt); ?></a>
+                        <?php endif; ?>
                         <span class="student-meta college-student-account__id">User #<?php echo $uid; ?></span>
                       </div>
                     </div>
                   </td>
                   <?php if ($isStudentTab): ?>
-                    <td>
+                    <td class="pcs-col-exam" data-label="College Exam">
                       <?php if ($hasCollEx): ?>
                         <span class="commerce-pill commerce-pill--verified"><i class="bi bi-check2-circle" aria-hidden="true"></i> Active</span>
                       <?php elseif ($collExAccessVal === 'suspended'): ?>
@@ -458,7 +476,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
                       <?php endif; ?>
                     </td>
-                    <td>
+                    <td class="pcs-col-section" data-label="Section">
                       <?php if (!$hasCollEx && $collExAccessVal !== 'suspended'): ?>
                         <span class="student-meta">Not enabled</span>
                       <?php elseif ($sectionTxt !== ''): ?>
@@ -468,42 +486,14 @@ $apiUrl = ereview_url('professor_college_students_api');
                       <?php endif; ?>
                     </td>
                   <?php endif; ?>
-                  <td class="col-hide-tablet student-email-cell">
-                    <?php if ($emailTxt !== ''): ?>
-                      <a href="mailto:<?php echo h($emailTxt); ?>" class="commerce-proof-link" title="<?php echo h($emailTxt); ?>"><?php echo h($emailTxt); ?></a>
-                    <?php else: ?>
-                      <span class="student-meta">—</span>
-                    <?php endif; ?>
-                  </td>
-                  <td><span class="admin-badge <?php echo h($statusBadge); ?>"><?php echo h(ucfirst($statusLower)); ?></span></td>
-                  <td class="col-hide-tablet"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
-                  <td class="student-action-cell">
+                  <td class="pcs-col-status" data-label="Status"><span class="admin-badge <?php echo h($statusBadge); ?>"><?php echo h(ucfirst($statusLower)); ?></span></td>
+                  <td class="pcs-col-created" data-label="Created"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
+                  <td class="student-action-cell" data-label="Actions">
                     <div class="student-action-cluster">
-                      <a class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye"></i> View</a>
-                      <?php if ($canRemoveFromExam): ?>
-                        <button type="button"
-                                class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-student"
-                                data-user-id="<?php echo $uid; ?>"
-                                data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
-                                data-remove-mode="unlink"
-                                data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"
-                                title="Remove College Examination access. eReview LMS account stays.">
-                          <i class="bi bi-trash" aria-hidden="true"></i> Remove
-                        </button>
-                      <?php elseif ($canDeleteNative): ?>
-                        <button type="button"
-                                class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-student"
-                                data-user-id="<?php echo $uid; ?>"
-                                data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
-                                data-remove-mode="delete"
-                                data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"
-                                title="Permanently delete this native college examination account.">
-                          <i class="bi bi-trash" aria-hidden="true"></i> Delete
-                        </button>
-                      <?php endif; ?>
+                      <a class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
                       <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
                         <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h((string) ($u['full_name'] ?? '')); ?>">
-                          <i class="bi bi-three-dots" aria-hidden="true"></i>
+                          <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                         </button>
                         <div class="admin-student-action-menu" data-action-menu-list role="menu">
                           <a role="menuitem" class="admin-student-action-item" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View student</a>

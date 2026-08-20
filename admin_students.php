@@ -1510,6 +1510,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               <col class="col-check">
               <col class="col-student">
               <col class="col-email">
+              <col class="col-proof">
               <col class="col-commerce-access">
               <col class="col-coll-exam">
               <col class="col-account-status">
@@ -1525,6 +1526,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                 </th>
                 <th class="col-student" scope="col">Student</th>
                 <th class="col-email col-hide-tablet" scope="col">Email</th>
+                <th class="col-proof" scope="col">Proof</th>
                 <th class="col-commerce-access" scope="col">eReview Access</th>
                 <th class="col-coll-exam" scope="col">College Examination</th>
                 <th class="col-account-status" scope="col">Account</th>
@@ -1542,7 +1544,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                   elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
                 ?>
                 <tr>
-                  <td colspan="8" class="students-empty-cell">
+                  <td colspan="9" class="students-empty-cell">
                     <div class="font-semibold">No students found</div>
                     <p class="text-sm mt-1 mb-0"><?php echo h($emptyHint); ?></p>
                   </td>
@@ -1747,6 +1749,29 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     </td>
                     <td class="col-email col-hide-tablet">
                       <a href="mailto:<?php echo h($row['email']); ?>" class="commerce-proof-link" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></a>
+                    </td>
+                    <td class="col-proof">
+                      <?php if (!empty($dash['is_free_access']) || $proofUi === 'N/A'): ?>
+                        <span class="student-meta">N/A</span>
+                      <?php elseif ($hasCommerceProof && !empty($dash['payment_id'])): ?>
+                        <a class="commerce-proof-link"
+                           data-admin-proof
+                           data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
+                           href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"
+                           title="View payment proof">
+                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
+                        </a>
+                      <?php elseif (!$isCommerceRow && $hasProof): ?>
+                        <a class="commerce-proof-link"
+                           href="admin_payment_proof?user_id=<?php echo (int) $row['user_id']; ?>"
+                           target="_blank"
+                           rel="noopener"
+                           title="View legacy payment proof">
+                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
+                        </a>
+                      <?php else: ?>
+                        <span class="student-meta">Not Uploaded</span>
+                      <?php endif; ?>
                     </td>
                     <td class="col-commerce-access">
                       <span class="commerce-pill commerce-pill--access-<?php echo h($accessTone); ?>">

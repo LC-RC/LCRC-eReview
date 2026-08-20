@@ -283,8 +283,18 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
     <div class="students-table-scroll">
 
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[1220px]">
-
+      <table class="w-full text-left admin-students-table students-table--compact examinations-list-table pex-list-table">
+        <colgroup>
+          <col style="width:3rem">
+          <col style="width:26%">
+          <col style="width:11%">
+          <col style="width:12%">
+          <col style="width:18%">
+          <col style="width:9%">
+          <col style="width:7%">
+          <col style="width:7%">
+          <col style="width:9.5rem">
+        </colgroup>
         <thead>
 
           <tr>
@@ -295,14 +305,14 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
             <th scope="col">Examination</th>
 
-            <th scope="col">Exam type</th>
+            <th scope="col" class="col-exam-type">Exam type</th>
 
-            <th scope="col">Examinees</th>
+            <th scope="col" class="col-examinees">Examinees</th>
 
-            <th scope="col">Schedule</th>
+            <th scope="col" class="col-schedule">Schedule</th>
             <th scope="col">Status</th>
-            <th scope="col" class="text-right">Questions</th>
-            <th scope="col" class="text-right">Eligible</th>
+            <th scope="col" class="text-right col-counts">Questions</th>
+            <th scope="col" class="text-right col-counts">Eligible</th>
             <th scope="col" class="student-actions-head">Actions</th>
 
           </tr>
@@ -353,7 +363,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
             <tr data-exam-key="<?php echo h($examKey); ?>">
 
-              <td class="student-select-col">
+              <td class="student-select-col" data-label="Select">
                 <input type="checkbox"
                        class="js-exam-select admin-bulk-check"
                        value="<?php echo h($examKey); ?>"
@@ -365,9 +375,9 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
                        <?php if ($canDelete): ?>data-deletable="1"<?php endif; ?>>
               </td>
 
-              <td>
+              <td class="pcs-exam-title-cell pcs-primary-cell" data-label="Examination">
 
-                <div class="examination-title-cell"><?php echo h($ex['title']); ?></div>
+                <div class="examination-title-cell" title="<?php echo h($ex['title']); ?>"><?php echo h($ex['title']); ?></div>
 
                 <?php if (trim((string)($ex['description'] ?? '')) !== ''): ?>
 
@@ -377,11 +387,11 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
               </td>
 
-              <td><span class="admin-badge <?php echo h($typeBadge); ?>"><?php echo h($ex['exam_type_label']); ?></span></td>
+              <td class="col-exam-type pcs-badge-cell" data-label="Exam type"><span class="admin-badge <?php echo h($typeBadge); ?>"><?php echo h($ex['exam_type_label']); ?></span></td>
 
-              <td><?php echo h($ex['examinee_scope_label']); ?></td>
+              <td class="col-examinees pcs-meta-cell" data-label="Examinees"><?php echo h($ex['examinee_scope_label']); ?></td>
 
-              <td>
+              <td class="col-schedule pcs-meta-cell" data-label="Schedule">
 
                 <span class="examination-schedule-line">From: <?php echo h(examination_list_format_datetime($ex['available_from'] ?? null)); ?></span>
 
@@ -391,38 +401,43 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
               </td>
 
-              <td><span class="admin-badge <?php echo h($statusBadge); ?>"><?php echo h($ex['status_label']); ?></span></td>
+              <td class="pcs-badge-cell" data-label="Status"><span class="admin-badge <?php echo h($statusBadge); ?>"><?php echo h($ex['status_label']); ?></span></td>
 
-              <td class="text-right font-semibold"><?php echo (int)$ex['question_count']; ?></td>
+              <td class="text-right font-semibold col-counts" data-label="Questions"><?php echo (int)$ex['question_count']; ?></td>
 
-              <td class="text-right font-semibold"><?php echo (int)$ex['examinee_count']; ?></td>
+              <td class="text-right font-semibold col-counts" data-label="Eligible"><?php echo (int)$ex['examinee_count']; ?></td>
 
-              <td class="student-action-cell">
+              <td class="student-action-cell" data-label="Actions">
                 <div class="examination-list-actions student-action-cluster">
                   <button type="button" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view js-open-examination-edit" data-edit-url="<?php echo h(examination_list_edit_url($ex)); ?>"><i class="bi bi-pencil"></i> Edit</button>
-                  <?php if ($canDelete): ?>
-                    <button type="button"
-                            class="admin-btn admin-btn--danger admin-btn--sm js-open-delete-exam"
-                            data-exam-key="<?php echo h($examKey); ?>"
-                            data-exam-type="<?php echo h($examTypeKey); ?>"
-                            data-source-id="<?php echo $sourceId; ?>"
-                            data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>"
-                            title="Delete this examination">
-                      <i class="bi bi-trash"></i> Delete
-                    </button>
-                  <?php else: ?>
-                    <button type="button" class="admin-btn admin-btn--danger admin-btn--sm" disabled title="Cannot delete while this examination is running">
-                      <i class="bi bi-trash"></i> Delete
-                    </button>
-                  <?php endif; ?>
                   <div class="admin-student-action-menu-wrap examination-more-wrap" data-admin-student-action-menu>
                     <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h($ex['title']); ?>">
-                      <i class="bi bi-three-dots" aria-hidden="true"></i>
+                      <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                     </button>
                     <div class="admin-student-action-menu" data-action-menu-list role="menu">
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_questions_url($ex)); ?>"><i class="bi bi-question-circle" aria-hidden="true"></i> Questions</a>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_monitor_url($ex)); ?>"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_domain_edit_url((string)($ex['exam_type'] ?? 'regular'), (int)($ex['source_id'] ?? 0), 'review')); ?>"><i class="bi bi-check2-square" aria-hidden="true"></i> Review / Publish</a>
+                      <div class="examination-action-menu-sep" role="separator"></div>
+                      <?php if ($canDelete): ?>
+                        <button type="button"
+                                role="menuitem"
+                                class="admin-student-action-item admin-student-action-item--danger js-open-delete-exam"
+                                data-exam-key="<?php echo h($examKey); ?>"
+                                data-exam-type="<?php echo h($examTypeKey); ?>"
+                                data-source-id="<?php echo $sourceId; ?>"
+                                data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>">
+                          <i class="bi bi-trash" aria-hidden="true"></i> Delete
+                        </button>
+                      <?php else: ?>
+                        <button type="button"
+                                role="menuitem"
+                                class="admin-student-action-item admin-student-action-item--danger is-disabled"
+                                disabled
+                                title="Cannot delete while this examination is running">
+                          <i class="bi bi-trash" aria-hidden="true"></i> Delete (running)
+                        </button>
+                      <?php endif; ?>
                     </div>
                   </div>
                 </div>
@@ -717,6 +732,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
   }
   document.querySelectorAll('.js-open-delete-exam').forEach(function (btn) {
     btn.addEventListener('click', function () {
+      closeAllMenus();
       openDeleteModal('single', {
         examType: btn.getAttribute('data-exam-type') || '',
         sourceId: parseInt(btn.getAttribute('data-source-id') || '0', 10) || 0,

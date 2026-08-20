@@ -133,8 +133,17 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
     <div class="students-table-scroll">
 
-      <table class="w-full text-left admin-students-table students-table--compact min-w-[960px]">
-
+      <table class="w-full text-left admin-students-table students-table--compact pex-monitor-table pex-list-table">
+        <colgroup>
+          <col style="width:12%">
+          <col style="width:28%">
+          <col style="width:12%">
+          <col style="width:9%">
+          <col style="width:9%">
+          <col style="width:10%">
+          <col style="width:9%">
+          <col style="width:9.5rem">
+        </colgroup>
         <thead>
 
           <tr>
@@ -179,21 +188,21 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
           <tr>
 
-            <td><span class="admin-badge admin-badge--info"><?php echo h(examination_monitor_exam_type_label((string)$a['exam_type'])); ?></span></td>
+            <td class="pcs-badge-cell" data-label="Type"><span class="admin-badge admin-badge--info"><?php echo h(examination_monitor_exam_type_label((string)$a['exam_type'])); ?></span></td>
 
-            <td><span class="examination-title-cell"><?php echo h((string)$a['title']); ?></span></td>
+            <td class="pcs-primary-cell" data-label="Assessment"><span class="examination-title-cell" title="<?php echo h((string)$a['title']); ?>"><?php echo h((string)$a['title']); ?></span></td>
 
-            <td><span class="student-meta capitalize"><?php echo h((string)($a['window_state'] ?? '')); ?></span></td>
+            <td class="pcs-meta-cell" data-label="Window"><span class="student-meta capitalize"><?php echo h((string)($a['window_state'] ?? '')); ?></span></td>
 
-            <td class="text-right"><?php echo (int)($a['roster_count'] ?? 0); ?></td>
+            <td class="text-right" data-label="Roster"><?php echo (int)($a['roster_count'] ?? 0); ?></td>
 
-            <td class="text-right"><?php echo (int)($a['taking_count'] ?? 0); ?></td>
+            <td class="text-right" data-label="Taking"><?php echo (int)($a['taking_count'] ?? 0); ?></td>
 
-            <td class="text-right"><?php echo (int)($a['submitted_count'] ?? 0); ?></td>
+            <td class="text-right" data-label="Submitted"><?php echo (int)($a['submitted_count'] ?? 0); ?></td>
 
-            <td class="text-right"><?php echo ($a['avg_score'] ?? null) !== null ? h(number_format((float)$a['avg_score'], 1)) . '%' : '—'; ?></td>
+            <td class="text-right" data-label="Avg"><?php echo ($a['avg_score'] ?? null) !== null ? h(number_format((float)$a['avg_score'], 1)) . '%' : '—'; ?></td>
 
-            <td><a href="<?php echo h((string)$a['scope']); ?>" class="admin-btn admin-btn--ghost admin-btn--sm"><i class="bi bi-graph-up"></i> Monitor</a></td>
+            <td class="student-action-cell" data-label="Actions"><a href="<?php echo h((string)$a['scope']); ?>" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a></td>
 
           </tr>
 

@@ -162,7 +162,13 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
         </div>
       <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left admin-students-table students-table--compact sections-table min-w-[640px]">
+          <table class="w-full text-left admin-students-table students-table--compact sections-table pex-list-table">
+            <colgroup>
+              <col style="width:36%">
+              <col style="width:14%">
+              <col style="width:28%">
+              <col style="width:9.5rem">
+            </colgroup>
             <thead>
               <tr>
                 <th scope="col">Section</th>
@@ -182,29 +188,29 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                   $diagCount = (int) ($row['diag_count'] ?? 0);
                 ?>
                 <tr>
-                  <td class="font-semibold"><?php echo h((string) $row['section_name']); ?></td>
-                  <td>
+                  <td class="pcs-primary-cell font-semibold" data-label="Section"><?php echo h((string) $row['section_name']); ?></td>
+                  <td class="pcs-badge-cell" data-label="Status">
                     <span class="commerce-pill <?php echo $isActive ? 'commerce-pill--verified' : 'commerce-pill--awaiting'; ?>">
                       <?php echo $isActive ? 'Active' : 'Inactive'; ?>
                     </span>
                   </td>
-                  <td>
+                  <td class="pcs-meta-cell" data-label="Students">
                     <span class="font-semibold"><?php echo $studentCount; ?></span>
                     <?php if ($examCount > 0 || $diagCount > 0): ?>
-                      <span class="section-count-meta"><?php echo $examCount; ?> exam<?php echo $examCount === 1 ? '' : 's'; ?> · <?php echo $diagCount; ?> diagnostic<?php echo $diagCount === 1 ? '' : 's'; ?></span>
+                      <span class="section-count-meta"><?php echo $examCount; ?> exam<?php echo $examCount === 1 ? '' : 's'; ?> | <?php echo $diagCount; ?> diagnostic<?php echo $diagCount === 1 ? '' : 's'; ?></span>
                     <?php endif; ?>
                   </td>
-                  <td class="student-action-cell">
+                  <td class="student-action-cell" data-label="Actions">
                     <div class="student-action-cluster">
                       <button type="button" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view js-edit-section" title="Edit section"
                               data-id="<?php echo $sid; ?>"
                               data-name="<?php echo h((string) $row['section_name']); ?>"
                               data-status="<?php echo h((string) $row['status']); ?>">
-                        <i class="bi bi-pencil"></i> Edit
+                        <i class="bi bi-pencil" aria-hidden="true"></i> Edit
                       </button>
                       <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
                         <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h((string) $row['section_name']); ?>">
-                          <i class="bi bi-three-dots" aria-hidden="true"></i>
+                          <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                         </button>
                         <div class="admin-student-action-menu" data-action-menu-list role="menu">
                           <button type="button" class="admin-student-action-item js-edit-section" role="menuitem"

@@ -234,13 +234,16 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
       </div>
 
       <form method="get" class="students-toolbar page-filter px-4 py-3 border-b border-[var(--admin-border)]">
-        <div class="students-toolbar__search flex-1 min-w-[200px]">
-          <input type="search" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search tasks..." autocomplete="off" class="w-full" aria-label="Search upload tasks">
+        <div class="students-toolbar__search flex-1">
+          <div class="students-search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search tasks..." autocomplete="off" aria-label="Search upload tasks">
+          </div>
+          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-search" aria-hidden="true"></i> Search</button>
+          <?php if ($searchQ !== ''): ?>
+            <a href="professor_upload_tasks" class="admin-btn admin-btn--ghost admin-btn--sm">Clear</a>
+          <?php endif; ?>
         </div>
-        <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-search"></i> Search</button>
-        <?php if ($searchQ !== ''): ?>
-          <a href="professor_upload_tasks" class="admin-btn admin-btn--ghost admin-btn--sm">Clear</a>
-        <?php endif; ?>
       </form>
 
       <div class="students-table-scroll">
@@ -258,15 +261,24 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
             <?php endif; ?>
           </div>
         <?php else: ?>
-          <table class="w-full text-left admin-students-table students-table--compact min-w-[880px] upload-tasks-table">
+          <table class="w-full text-left admin-students-table students-table--compact upload-tasks-table pex-list-table">
+            <colgroup>
+              <col class="put-col-task" style="width:28%">
+              <col class="put-col-audience" style="width:18%">
+              <col class="put-col-opens" style="width:13%">
+              <col class="put-col-closes" style="width:13%">
+              <col class="put-col-subs" style="width:10%">
+              <col class="put-col-status" style="width:10%">
+              <col class="put-col-actions" style="width:9.5rem">
+            </colgroup>
             <thead>
               <tr>
                 <th scope="col">Task</th>
-                <th scope="col" class="hidden md:table-cell">Audience / Section</th>
-                <th scope="col" class="hidden sm:table-cell">Opens</th>
-                <th scope="col" class="hidden sm:table-cell">Closes</th>
-                <th scope="col" class="text-right">Submissions</th>
-                <th scope="col">Status</th>
+                <th scope="col" class="put-col-audience">Audience / Section</th>
+                <th scope="col" class="put-col-opens">Opens</th>
+                <th scope="col" class="put-col-closes">Closes</th>
+                <th scope="col" class="text-right put-col-subs">Submissions</th>
+                <th scope="col" class="put-col-status">Status</th>
                 <th scope="col" class="student-actions-head">Actions</th>
               </tr>
             </thead>
@@ -282,25 +294,32 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                     default => 'admin-badge--neutral',
                 };
                 $tidRow = (int) ($t['task_id'] ?? 0);
+                $opensLabel = !empty($t['open_at']) ? date('M j, g:i A', strtotime($t['open_at'])) : 'Immediate';
+                $closesLabel = date('M j, g:i A', strtotime($t['deadline']));
+                $sectionSummary = (string) ($t['section_summary'] ?? 'All sections');
                 ?>
               <tr>
-                <td>
-                  <div class="font-bold"><?php echo h($t['title']); ?></div>
+                <td class="pcs-primary-cell" data-label="Task">
+                  <div class="font-bold examination-title-cell" title="<?php echo h($t['title']); ?>"><?php echo h($t['title']); ?></div>
+                  <div class="put-task-mobile-meta">
+                    <span><?php echo h($sectionSummary); ?></span>
+                    <span><?php echo h($opensLabel); ?> → <?php echo h($closesLabel); ?></span>
+                  </div>
                 </td>
-                <td class="hidden md:table-cell text-sm">
+                <td class="text-sm pcs-meta-cell put-col-audience" data-label="Audience / Section">
                   <div>College Students</div>
-                  <div class="text-xs opacity-70 mt-0.5"><?php echo h((string) ($t['section_summary'] ?? 'All sections')); ?></div>
+                  <div class="text-xs opacity-70 mt-0.5"><?php echo h($sectionSummary); ?></div>
                 </td>
-                <td class="hidden sm:table-cell text-sm whitespace-nowrap"><?php echo !empty($t['open_at']) ? h(date('M j, g:i A', strtotime($t['open_at']))) : 'Immediate'; ?></td>
-                <td class="hidden sm:table-cell text-sm whitespace-nowrap"><?php echo h(date('M j, g:i A', strtotime($t['deadline']))); ?></td>
-                <td class="text-right text-sm whitespace-nowrap tabular-nums"><?php echo $subc; ?> / <?php echo $eligible; ?></td>
-                <td><span class="admin-badge <?php echo h($stateBadge); ?>"><?php echo h(college_upload_task_status_label($state)); ?></span></td>
-                <td class="student-action-cell">
+                <td class="text-sm whitespace-nowrap pcs-meta-cell put-col-opens" data-label="Opens"><?php echo h($opensLabel); ?></td>
+                <td class="text-sm whitespace-nowrap pcs-meta-cell put-col-closes" data-label="Closes"><?php echo h($closesLabel); ?></td>
+                <td class="text-right text-sm whitespace-nowrap tabular-nums pcs-meta-cell put-col-subs" data-label="Submissions"><?php echo $subc; ?> / <?php echo $eligible; ?></td>
+                <td class="pcs-badge-cell put-col-status" data-label="Status"><span class="admin-badge <?php echo h($stateBadge); ?>"><?php echo h(college_upload_task_status_label($state)); ?></span></td>
+                <td class="student-action-cell" data-label="Actions">
                   <div class="student-action-cluster">
-                    <a href="professor_upload_task_monitor?task_id=<?php echo $tidRow; ?>" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view"><i class="bi bi-eye"></i> View</a>
+                    <a href="professor_upload_task_monitor?task_id=<?php echo $tidRow; ?>" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
                     <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
                       <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h($t['title']); ?>">
-                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                        <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                       </button>
                       <div class="admin-student-action-menu" data-action-menu-list role="menu">
                         <button type="button" class="admin-student-action-item js-edit-upload-task" role="menuitem"
