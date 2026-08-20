@@ -418,6 +418,14 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_questions_url($ex)); ?>"><i class="bi bi-question-circle" aria-hidden="true"></i> Questions</a>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_monitor_url($ex)); ?>"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_domain_edit_url((string)($ex['exam_type'] ?? 'regular'), (int)($ex['source_id'] ?? 0), 'review')); ?>"><i class="bi bi-check2-square" aria-hidden="true"></i> Review / Publish</a>
+                      <button type="button"
+                              role="menuitem"
+                              class="admin-student-action-item js-duplicate-exam"
+                              data-exam-type="<?php echo h($examTypeKey); ?>"
+                              data-source-id="<?php echo $sourceId; ?>"
+                              data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>">
+                        <i class="bi bi-files" aria-hidden="true"></i> Duplicate
+                      </button>
                       <div class="examination-action-menu-sep" role="separator"></div>
                       <?php if ($canDelete): ?>
                         <button type="button"
@@ -469,6 +477,17 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
   <input type="hidden" name="return_examinee_type" value="<?php echo h($examineeFilter); ?>">
   <input type="hidden" name="return_q" value="<?php echo h($searchQ); ?>">
   <div id="deleteExamKeysMount"></div>
+</form>
+
+<form method="post" action="professor_examinations" id="duplicateExamForm" class="hidden" aria-hidden="true">
+  <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken ?? generateCSRFToken()); ?>">
+  <input type="hidden" name="action" value="duplicate">
+  <input type="hidden" name="exam_type" id="duplicateExamType" value="">
+  <input type="hidden" name="source_id" id="duplicateExamSourceId" value="">
+  <input type="hidden" name="return_status" value="<?php echo h($statusFilter); ?>">
+  <input type="hidden" name="return_exam_type" value="<?php echo h($typeFilter); ?>">
+  <input type="hidden" name="return_examinee_type" value="<?php echo h($examineeFilter); ?>">
+  <input type="hidden" name="return_q" value="<?php echo h($searchQ); ?>">
 </form>
 
 <div class="admin-modal-overlay" id="deleteExamModal" aria-hidden="true">
@@ -772,6 +791,28 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
       deleteForm.submit();
     });
   }
+
+  var duplicateForm = document.getElementById('duplicateExamForm');
+  var duplicateType = document.getElementById('duplicateExamType');
+  var duplicateSourceId = document.getElementById('duplicateExamSourceId');
+  document.querySelectorAll('.js-duplicate-exam').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      closeAllMenus();
+      if (!duplicateForm) return;
+      var examType = btn.getAttribute('data-exam-type') || '';
+      var sourceId = parseInt(btn.getAttribute('data-source-id') || '0', 10) || 0;
+      var title = btn.getAttribute('data-exam-title') || 'this examination';
+      if (!examType || sourceId <= 0) return;
+      if (!window.confirm('Duplicate "' + title + '" including all questions?\n\nA new draft copy will be created.')) {
+        return;
+      }
+      if (duplicateType) duplicateType.value = examType;
+      if (duplicateSourceId) duplicateSourceId.value = String(sourceId);
+      btn.disabled = true;
+      duplicateForm.submit();
+    });
+  });
+
   syncBulkBar();
 })();
 </script>

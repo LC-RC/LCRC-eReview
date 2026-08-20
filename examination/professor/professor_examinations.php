@@ -43,6 +43,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'duplicate') {
+        $examType = examination_normalize_exam_type((string)($_POST['exam_type'] ?? ''));
+        $sourceId = (int)($_POST['source_id'] ?? 0);
+        $result = examination_domain_duplicate($conn, $examType, $sourceId, $uid);
+        if (!empty($result['ok'])) {
+            $newId = (int)($result['source_id'] ?? 0);
+            $newType = examination_normalize_exam_type((string)($result['exam_type'] ?? $examType));
+            $title = trim((string)($result['title'] ?? ''));
+            $qCount = (int)($result['question_count'] ?? 0);
+            $_SESSION['examination_flash'] = $title !== ''
+                ? ('Duplicated "' . $title . '"' . ($qCount > 0 ? (' with ' . $qCount . ' question' . ($qCount === 1 ? '' : 's')) : '') . '.')
+                : 'Examination duplicated.';
+            $editUrl = examination_domain_edit_url($newType, $newId, 'config') . '&modal=1';
+            $join = $redirectQs !== '' ? '&' : '?';
+            header('Location: ' . $redirect . $join . 'open_edit=' . rawurlencode($editUrl));
+            exit;
+        }
+        $_SESSION['examination_flash_error'] = (string)($result['error'] ?? 'Could not duplicate examination.');
+        header('Location: ' . $redirect);
+        exit;
+    }
+
     if ($action === 'bulk_delete') {
         $keys = $_POST['exam_keys'] ?? [];
         if (!is_array($keys)) {

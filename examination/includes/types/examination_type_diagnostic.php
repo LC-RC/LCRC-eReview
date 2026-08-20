@@ -344,3 +344,134 @@ function examination_type_diagnostic_delete(mysqli $conn, int $sourceId, int $pr
         return ['ok' => false, 'error' => 'Could not delete this examination.'];
     }
 }
+
+/**
+ * Clone a diagnostic examination (config + subjects + assignment + questions) as a new draft.
+ * Attempts/answers are not copied.
+ *
+ * @return array{ok:bool,error?:string,title?:string,source_id?:int,exam_type?:string,question_count?:int}
+ */
+function examination_type_diagnostic_duplicate(mysqli $conn, int $sourceId, int $professorId): array
+{
+    if ($sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $raw = examination_type_diagnostic_load_raw($conn, $sourceId, $professorId);
+    if ($raw === null) {
+        return ['ok' => false, 'error' => 'Examination not found.'];
+    }
+
+    $baseTitle = trim((string)($raw['title'] ?? ''));
+    if ($baseTitle === '') {
+        $baseTitle = 'Untitled draft';
+    }
+    if (preg_match('/^(.*) \(Copy(?: (\d+))?\)$/u', $baseTitle, $m)) {
+        $n = isset($m[2]) && $m[2] !== '' ? ((int)$m[2] + 1) : 2;
+        $title = $m[1] . ' (Copy ' . $n . ')';
+    } else {
+        $title = $baseTitle . ' (Copy)';
+    }
+
+    $description = (string)($raw['description'] ?? '');
+    $timeLimit = max(60, (int)($raw['time_limit_seconds'] ?? 3600));
+    $availSql = examination_domain_nullable_datetime($raw['available_from'] ?? null);
+    $deadSql = examination_domain_nullable_datetime($raw['deadline'] ?? null);
+    $isPublished = 0;
+    $shuffleQ = !empty($raw['shuffle_questions']) ? 1 : 0;
+    $shuffleC = !empty($raw['shuffle_choices']) ? 1 : 0;
+    $examineeScope = examination_normalize_examinee_scope((string)($raw['examinee_scope'] ?? 'college_student'));
+    $assignmentMode = examination_normalize_assignment_mode((string)($raw['assignment_mode'] ?? 'all'));
+
+    mysqli_begin_transaction($conn);
+    try {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO diagnostic_batches (title, description, time_limit_seconds, available_from, deadline, is_published, shuffle_questions, shuffle_choices, examinee_scope, assignment_mode, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
+        );
+        if (!$ins) {
+            throw new RuntimeException('prepare insert failed');
+        }
+        mysqli_stmt_bind_param(
+            $ins,
+            'ssissiiissi',
+            $title,
+            $description,
+            $timeLimit,
+            $availSql,
+            $deadSql,
+            $isPublished,
+            $shuffleQ,
+            $shuffleC,
+            $examineeScope,
+            $assignmentMode,
+            $professorId
+        );
+        mysqli_stmt_execute($ins);
+        $newId = (int)mysqli_insert_id($conn);
+        mysqli_stmt_close($ins);
+        if ($newId <= 0) {
+            throw new RuntimeException('insert id missing');
+        }
+
+        $okSub = @mysqli_query(
+            $conn,
+            'INSERT INTO diagnostic_batch_subjects (batch_id, subject_id, sort_order, questions_required)
+             SELECT ' . (int)$newId . ', subject_id, sort_order, questions_required
+             FROM diagnostic_batch_subjects WHERE batch_id=' . (int)$sourceId
+        );
+        if ($okSub === false) {
+            throw new RuntimeException('copy subjects failed');
+        }
+
+        $okSec = @mysqli_query(
+            $conn,
+            'INSERT INTO diagnostic_batch_sections (batch_id, section_value)
+             SELECT ' . (int)$newId . ', section_value FROM diagnostic_batch_sections WHERE batch_id=' . (int)$sourceId
+        );
+        if ($okSec === false) {
+            throw new RuntimeException('copy sections failed');
+        }
+
+        $okUsers = @mysqli_query(
+            $conn,
+            'INSERT INTO diagnostic_batch_users (batch_id, user_id)
+             SELECT ' . (int)$newId . ', user_id FROM diagnostic_batch_users WHERE batch_id=' . (int)$sourceId
+        );
+        if ($okUsers === false) {
+            throw new RuntimeException('copy users failed');
+        }
+
+        $okQ = @mysqli_query(
+            $conn,
+            'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order)
+             SELECT ' . (int)$newId . ', subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order
+             FROM diagnostic_questions WHERE batch_id=' . (int)$sourceId
+             . ' ORDER BY sort_order ASC, question_id ASC'
+        );
+        if ($okQ === false) {
+            throw new RuntimeException('copy questions failed');
+        }
+
+        $qCount = 0;
+        $qc = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM diagnostic_questions WHERE batch_id=' . (int)$newId);
+        if ($qc && ($qr = mysqli_fetch_assoc($qc))) {
+            $qCount = (int)($qr['c'] ?? 0);
+            mysqli_free_result($qc);
+        }
+
+        mysqli_commit($conn);
+
+        return [
+            'ok' => true,
+            'source_id' => $newId,
+            'exam_type' => 'diagnostic',
+            'title' => $title,
+            'question_count' => $qCount,
+        ];
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+
+        return ['ok' => false, 'error' => 'Could not duplicate this examination.'];
+    }
+}

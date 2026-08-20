@@ -379,6 +379,27 @@ function examination_domain_delete(mysqli $conn, string $examType, int $sourceId
 }
 
 /**
+ * Duplicate one examination (config + questions + assignment) owned by the professor.
+ * Creates a new draft copy. Attempts are not copied.
+ *
+ * @return array{ok:bool,error?:string,title?:string,source_id?:int,exam_type?:string,question_count?:int}
+ */
+function examination_domain_duplicate(mysqli $conn, string $examType, int $sourceId, int $professorId): array
+{
+    $examType = examination_normalize_exam_type($examType);
+    if ($examType === '' || $sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $result = examination_domain_call($examType, 'duplicate', [$conn, $sourceId, $professorId]);
+    if (!is_array($result)) {
+        return ['ok' => false, 'error' => 'Duplicate is not available for this examination type.'];
+    }
+
+    return $result;
+}
+
+/**
  * Delete many examinations. Keys are "exam_type:source_id" (e.g. regular:12).
  *
  * @param list<string> $keys

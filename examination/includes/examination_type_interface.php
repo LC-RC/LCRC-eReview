@@ -11,6 +11,7 @@ declare(strict_types=1);
  *   examination_type_{type}_config_extras(mysqli, int $professorId, int $sourceId): array
  *   examination_type_{type}_save_config(mysqli, int $professorId, array $post, int $sourceId): array
  *   examination_type_{type}_delete(mysqli, int $sourceId, int $professorId): array
+ *   examination_type_{type}_duplicate(mysqli, int $sourceId, int $professorId): array
  *
  * Normalized Examination record (domain shape):
  *   source_id, source_table, exam_type, title, description,
@@ -33,6 +34,7 @@ function examination_type_registry(): array
             'config_extras' => 'examination_type_regular_config_extras',
             'save_config' => 'examination_type_regular_save_config',
             'delete' => 'examination_type_regular_delete',
+            'duplicate' => 'examination_type_regular_duplicate',
         ],
         'diagnostic' => [
             'source_table' => 'diagnostic_batches',
@@ -43,6 +45,7 @@ function examination_type_registry(): array
             'config_extras' => 'examination_type_diagnostic_config_extras',
             'save_config' => 'examination_type_diagnostic_save_config',
             'delete' => 'examination_type_diagnostic_delete',
+            'duplicate' => 'examination_type_diagnostic_duplicate',
         ],
     ];
 }

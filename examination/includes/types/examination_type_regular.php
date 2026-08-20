@@ -356,3 +356,134 @@ function examination_type_regular_delete(mysqli $conn, int $sourceId, int $profe
         return ['ok' => false, 'error' => 'Could not delete this examination.'];
     }
 }
+
+/**
+ * Clone a regular examination (config + assignment + questions) as a new draft.
+ * Attempts/answers are not copied.
+ *
+ * @return array{ok:bool,error?:string,title?:string,source_id?:int,exam_type?:string,question_count?:int}
+ */
+function examination_type_regular_duplicate(mysqli $conn, int $sourceId, int $professorId): array
+{
+    if ($sourceId <= 0 || $professorId <= 0) {
+        return ['ok' => false, 'error' => 'Invalid examination.'];
+    }
+
+    $raw = examination_type_regular_load_raw($conn, $sourceId, $professorId);
+    if ($raw === null) {
+        return ['ok' => false, 'error' => 'Examination not found.'];
+    }
+
+    $baseTitle = trim((string)($raw['title'] ?? ''));
+    if ($baseTitle === '') {
+        $baseTitle = 'Untitled draft';
+    }
+    if (preg_match('/^(.*) \(Copy(?: (\d+))?\)$/u', $baseTitle, $m)) {
+        $n = isset($m[2]) && $m[2] !== '' ? ((int)$m[2] + 1) : 2;
+        $title = $m[1] . ' (Copy ' . $n . ')';
+    } else {
+        $title = $baseTitle . ' (Copy)';
+    }
+
+    $description = (string)($raw['description'] ?? '');
+    $timeLimit = max(60, (int)($raw['time_limit_seconds'] ?? 3600));
+    $availSql = examination_domain_nullable_datetime($raw['available_from'] ?? null);
+    $deadSql = examination_domain_nullable_datetime($raw['deadline'] ?? null);
+    $isPublished = 0;
+    $examineeScope = examination_normalize_examinee_scope((string)($raw['examinee_scope'] ?? 'college_student'));
+    $assignmentMode = examination_normalize_assignment_mode((string)($raw['assignment_mode'] ?? 'all'));
+    $shuffleQuestions = !empty($raw['shuffle_questions']) ? 1 : 0;
+    $shuffleChoices = !empty($raw['shuffle_choices']) ? 1 : 0;
+    $shuffleMcq = !empty($raw['shuffle_mcq_questions']) ? 1 : ($shuffleQuestions ? 1 : 0);
+    $shuffleTf = !empty($raw['shuffle_tf_questions']) ? 1 : ($shuffleQuestions ? 1 : 0);
+    $descriptionMarkdown = !empty($raw['description_markdown']) ? 1 : 0;
+    $reviewFrom = examination_domain_nullable_datetime($raw['review_sheet_available_from'] ?? null);
+    $reviewUntil = examination_domain_nullable_datetime($raw['review_sheet_available_until'] ?? null);
+
+    mysqli_begin_transaction($conn);
+    try {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exams (title, description, time_limit_seconds, available_from, deadline, is_published, examinee_scope, assignment_mode, created_by, shuffle_questions, shuffle_choices, shuffle_mcq_questions, shuffle_tf_questions, description_markdown, review_sheet_available_from, review_sheet_available_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        );
+        if (!$ins) {
+            throw new RuntimeException('prepare insert failed');
+        }
+        mysqli_stmt_bind_param(
+            $ins,
+            'ssississiiiiiiss',
+            $title,
+            $description,
+            $timeLimit,
+            $availSql,
+            $deadSql,
+            $isPublished,
+            $examineeScope,
+            $assignmentMode,
+            $professorId,
+            $shuffleQuestions,
+            $shuffleChoices,
+            $shuffleMcq,
+            $shuffleTf,
+            $descriptionMarkdown,
+            $reviewFrom,
+            $reviewUntil
+        );
+        mysqli_stmt_execute($ins);
+        $newId = (int)mysqli_insert_id($conn);
+        mysqli_stmt_close($ins);
+        if ($newId <= 0) {
+            throw new RuntimeException('insert id missing');
+        }
+
+        $okSec = @mysqli_query(
+            $conn,
+            'INSERT INTO college_exam_sections (exam_id, section_value)
+             SELECT ' . (int)$newId . ', section_value FROM college_exam_sections WHERE exam_id=' . (int)$sourceId
+        );
+        if ($okSec === false) {
+            throw new RuntimeException('copy sections failed');
+        }
+
+        $okUsers = @mysqli_query(
+            $conn,
+            'INSERT INTO college_exam_users (exam_id, user_id)
+             SELECT ' . (int)$newId . ', user_id FROM college_exam_users WHERE exam_id=' . (int)$sourceId
+        );
+        if ($okUsers === false) {
+            throw new RuntimeException('copy users failed');
+        }
+
+        $okQ = @mysqli_query(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order)
+             SELECT ' . (int)$newId . ', question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order
+             FROM college_exam_questions WHERE exam_id=' . (int)$sourceId
+             . ' ORDER BY sort_order ASC, question_id ASC'
+        );
+        if ($okQ === false) {
+            throw new RuntimeException('copy questions failed');
+        }
+
+        $qCount = 0;
+        $qc = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$newId);
+        if ($qc && ($qr = mysqli_fetch_assoc($qc))) {
+            $qCount = (int)($qr['c'] ?? 0);
+            mysqli_free_result($qc);
+        }
+
+        mysqli_commit($conn);
+
+        return [
+            'ok' => true,
+            'source_id' => $newId,
+            'exam_type' => 'regular',
+            'title' => $title,
+            'question_count' => $qCount,
+        ];
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+
+        return ['ok' => false, 'error' => 'Could not duplicate this examination.'];
+    }
+}
