@@ -133,7 +133,8 @@ body.admin-app.examination-admin-page .page-table.students-table-shell {
   border-radius: var(--pex-radius);
   background: var(--admin-surface);
   box-shadow: var(--admin-shadow-sm);
-  overflow: hidden;
+  /* overflow:hidden / Tailwind overflow-hidden prevent sticky thead — clip corners on the scroll pane instead */
+  overflow: visible !important;
 }
 body.admin-app.examination-admin-page .students-table-meta,
 body.admin-app.examination-admin-page .examination-table-card-head {
@@ -145,14 +146,17 @@ body.admin-app.examination-admin-page .examination-table-card-head {
   padding: 0.9rem 1.15rem;
   border-bottom: 1px solid var(--admin-border);
   background: rgba(148, 163, 184, 0.05);
+  border-radius: var(--pex-radius) var(--pex-radius) 0 0;
 }
 body.admin-app.admin-students-page.examination-admin-page .students-table-scroll,
 body.admin-app.examination-admin-page .students-table-scroll {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
+  max-height: calc(100vh - 12.5rem);
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
+  overscroll-behavior: contain;
+  border-radius: 0 0 var(--pex-radius) var(--pex-radius);
 }
 
 /* ========== UNIFIED TABLE DESIGN SYSTEM ==========
@@ -183,7 +187,7 @@ body.admin-app.admin-students-page.examination-admin-page table.admin-students-t
 body.admin-app.examination-admin-page table.admin-students-table thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 5;
   font-size: 0.7rem;
   font-weight: 750;
   letter-spacing: 0.05em;
@@ -191,6 +195,7 @@ body.admin-app.examination-admin-page table.admin-students-table thead th {
   color: var(--admin-text-muted);
   background: var(--admin-surface);
   border-bottom: 1px solid var(--admin-border);
+  box-shadow: 0 1px 0 var(--admin-border);
   white-space: nowrap;
   text-align: left;
   padding-top: 0.95rem !important;

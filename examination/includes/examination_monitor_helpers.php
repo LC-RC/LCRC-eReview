@@ -27,6 +27,22 @@ function examination_monitor_format_dt(mixed $raw): string
     return date('M j, Y g:i A', $ts);
 }
 
+/**
+ * Compact two-line date/time for dense monitor tables (presentation only).
+ */
+function examination_monitor_format_dt_html(mixed $raw): string
+{
+    $fmt = examination_monitor_format_dt($raw);
+    if ($fmt === '') {
+        return '';
+    }
+    if (preg_match('/^(.+,\s*\d{4})\s+(.+)$/', $fmt, $m)) {
+        return '<span class="pem-dt"><span class="pem-dt__d">' . h($m[1]) . '</span><span class="pem-dt__t">' . h($m[2]) . '</span></span>';
+    }
+
+    return '<span class="pem-dt">' . h($fmt) . '</span>';
+}
+
 function examination_monitor_normalize_exam_type(string $type): string
 {
     $t = strtolower(trim($type));

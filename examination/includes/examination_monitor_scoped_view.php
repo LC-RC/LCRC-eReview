@@ -202,7 +202,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
 
     <?php if ($students !== []): ?>
-    <div class="students-toolbar page-filter pem-roster-filters mb-3" id="pemRosterFilters">
+    <div class="students-toolbar page-filter pem-roster-filters" id="pemRosterFilters">
       <div class="students-toolbar__search flex-1">
         <div class="students-search">
           <i class="bi bi-search" aria-hidden="true"></i>
@@ -235,22 +235,22 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
     <?php endif; ?>
 
-    <div class="rounded-xl overflow-hidden page-table students-table-shell mb-4">
+    <div class="rounded-xl page-table students-table-shell pem-roster-shell mb-4">
       <div class="students-table-scroll">
       <table class="w-full text-left admin-students-table students-table--compact pex-monitor-detail-table pex-list-table" id="pemRosterTable">
         <colgroup>
-          <col style="width:18%">
-          <col style="width:9%">
-          <col style="width:9%">
-          <col style="width:9%">
-          <col style="width:8%">
-          <col style="width:6%">
-          <col style="width:7%">
-          <col style="width:7%">
-          <col style="width:6%">
-          <col style="width:8%">
-          <col style="width:8%">
-          <col style="width:8.5rem">
+          <col class="pem-col-examinee" style="width:20%">
+          <col class="pem-col-section" style="width:7%">
+          <col class="pem-col-status" style="width:9%">
+          <col class="pem-col-progress" style="width:9%">
+          <col class="pem-col-score" style="width:7%">
+          <col class="pem-col-current" style="width:5%">
+          <col class="pem-col-time" style="width:6%">
+          <col class="pem-col-tab" style="width:7%">
+          <col class="pem-col-switches" style="width:5%">
+          <col class="pem-col-seen" style="width:9%">
+          <col class="pem-col-started" style="width:9%">
+          <col class="pem-col-review" style="width:7%">
         </colgroup>
         <thead>
           <tr>
@@ -331,15 +331,17 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     ? (int)round(($answeredLive / $examQuestionCount) * 100)
                     : 0;
                 $correctLive = isset($st['correct_live']) ? (int)$st['correct_live'] : 0;
-                $scoreLine = '-';
+                $scorePrimary = '-';
+                $scorePct = '';
                 if ($attemptNorm === 'in_progress' || $isSubmitted) {
                     if ($answeredLive > 0) {
-                        $pct = round(100 * $correctLive / $answeredLive, 0);
-                        $scoreLine = $correctLive . ' / ' . $answeredLive . ' | ' . $pct . '%';
+                        $pct = (int)round(100 * $correctLive / $answeredLive);
+                        $scorePrimary = $correctLive . ' / ' . $answeredLive;
+                        $scorePct = $pct . '%';
                     } elseif ($isSubmitted && isset($st['correct_count'])) {
-                        $scoreLine = (int)$st['correct_count'] . ' / ' . (int)($st['total_count'] ?? $examQuestionCount);
+                        $scorePrimary = (int)$st['correct_count'] . ' / ' . (int)($st['total_count'] ?? $examQuestionCount);
                     } else {
-                        $scoreLine = '0 / 0';
+                        $scorePrimary = '0 / 0';
                     }
                 }
                 $nameForFilter = strtolower(trim((string)($st['full_name'] ?? '')));
@@ -360,27 +362,41 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                       </span>
                     </span>
                     <div class="student-cell__text">
-                      <button type="button" class="student-meta-name student-name js-open-monitor-detail text-left font-bold text-[#143D59] hover:underline" data-user-id="<?php echo (int)$st['user_id']; ?>">
+                      <button type="button" class="student-meta-name student-name js-open-monitor-detail text-left" data-user-id="<?php echo (int)$st['user_id']; ?>">
                         <?php echo h((string)$st['full_name']); ?>
                       </button>
                       <span class="student-meta-sub"><?php echo h(examination_monitor_examinee_type_label((string)($st['review_type'] ?? ''))); ?></span>
                     </div>
                   </div>
                 </td>
-                <td data-label="Section"><?php echo $sectionTxt !== '' ? '<span class="text-sm">' . h($sectionTxt) . '</span>' : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="pem-section-cell" data-label="Section"><?php echo $sectionTxt !== '' ? '<span class="pem-section-val">' . h($sectionTxt) . '</span>' : '<span class="opacity-60">-</span>'; ?></td>
                 <td class="js-status-cell" data-label="Status"><?php echo $statusBadge; ?></td>
                 <td class="js-progress-cell" data-label="Progress">
                   <?php if ($attemptNorm === 'in_progress' || $isSubmitted): ?>
-                    <div class="text-sm font-bold js-progress-label"><?php echo (int)($answeredLive ?? 0); ?> / <?php echo (int)$examQuestionCount; ?></div>
-                    <div class="pem-mini-progress" aria-hidden="true"><span class="js-progress-fill" style="width:<?php echo $progressPct; ?>%"></span></div>
+                    <div class="pem-progress-stack">
+                      <div class="pem-progress-label js-progress-label"><?php echo (int)($answeredLive ?? 0); ?> / <?php echo (int)$examQuestionCount; ?></div>
+                      <div class="pem-mini-progress" aria-hidden="true"><span class="js-progress-fill" style="width:<?php echo $progressPct; ?>%"></span></div>
+                      <div class="pem-progress-pct js-progress-pct"><?php echo (int)$progressPct; ?>%</div>
+                    </div>
                   <?php else: ?>
                     <span class="opacity-60">-</span>
                   <?php endif; ?>
                 </td>
-                <td class="js-score-cell text-sm font-semibold" data-label="Score"><?php echo h($scoreLine); ?></td>
-                <td class="js-current-cell" data-label="Current"><?php echo ($attemptNorm === 'in_progress' && $curQ) ? ('Q' . (int)$curQ) : '<span class="opacity-60">-</span>'; ?></td>
-                <td class="js-time-cell" data-label="Time left"><?php echo ($remainFmt !== null && $remainFmt !== '') ? h($remainFmt) : '<span class="opacity-60">-</span>'; ?></td>
-                <td class="js-tab-vis-cell" data-label="Tab">
+                <td class="js-score-cell" data-label="Score">
+                  <?php if ($scorePrimary === '-'): ?>
+                    <span class="opacity-60">-</span>
+                  <?php else: ?>
+                    <div class="pem-score">
+                      <span class="pem-score__n js-score-n"><?php echo h($scorePrimary); ?></span>
+                      <?php if ($scorePct !== ''): ?>
+                        <span class="pem-score__p js-score-p"><?php echo h($scorePct); ?></span>
+                      <?php endif; ?>
+                    </div>
+                  <?php endif; ?>
+                </td>
+                <td class="js-current-cell pem-center-cell" data-label="Current"><?php echo ($attemptNorm === 'in_progress' && $curQ) ? ('Q' . (int)$curQ) : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="js-time-cell pem-center-cell pem-time-cell" data-label="Time left"><?php echo ($remainFmt !== null && $remainFmt !== '') ? h($remainFmt) : '<span class="opacity-60">-</span>'; ?></td>
+                <td class="js-tab-vis-cell pem-center-cell" data-label="Tab">
                   <?php if ($attemptNorm === 'in_progress'): ?>
                     <?php echo $tabHidden
                         ? '<span class="admin-badge admin-badge--warning">Hidden</span>'
@@ -389,30 +405,34 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     <span class="opacity-60">-</span>
                   <?php endif; ?>
                 </td>
-                <td data-label="Switches">
+                <td class="pem-center-cell" data-label="Switches">
                   <?php if ($tabLeaveN > 0 && $attemptIdRow > 0): ?>
-                    <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm js-open-tab-events" data-attempt-id="<?php echo $attemptIdRow; ?>" data-name="<?php echo h((string)$st['full_name']); ?>">
+                    <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm js-open-tab-events pem-switch-btn" data-attempt-id="<?php echo $attemptIdRow; ?>" data-name="<?php echo h((string)$st['full_name']); ?>">
                       <span class="js-tab-count"><?php echo $tabLeaveN; ?></span>
                     </button>
                   <?php else: ?>
-                    <span class="text-sm js-tab-count opacity-60"><?php echo $tabLeaveN; ?></span>
+                    <span class="pem-switch-n js-tab-count opacity-60"><?php echo $tabLeaveN; ?></span>
                   <?php endif; ?>
                 </td>
-                <td class="js-seen-cell" data-label="Last seen">
-                  <?php $fmtSeen = examination_monitor_format_dt($st['last_seen_at'] ?? null); ?>
-                  <?php echo $fmtSeen !== '' ? '<span class="text-sm">' . h($fmtSeen) . '</span>' : '<span class="opacity-60">-</span>'; ?>
+                <td class="js-seen-cell pem-dt-cell" data-label="Last seen">
+                  <?php
+                    $seenHtml = examination_monitor_format_dt_html($st['last_seen_at'] ?? null);
+                    echo $seenHtml !== '' ? $seenHtml : '<span class="opacity-60">-</span>';
+                  ?>
                 </td>
-                <td data-label="Started">
-                  <?php $fmtStarted = examination_monitor_format_dt($st['started_at'] ?? null); ?>
-                  <?php echo $fmtStarted !== '' ? '<span class="text-sm">' . h($fmtStarted) . '</span>' : '<span class="opacity-60">-</span>'; ?>
+                <td class="pem-dt-cell" data-label="Started">
+                  <?php
+                    $startedHtml = examination_monitor_format_dt_html($st['started_at'] ?? null);
+                    echo $startedHtml !== '' ? $startedHtml : '<span class="opacity-60">-</span>';
+                  ?>
                 </td>
                 <td class="student-action-cell" data-label="<?php echo $isCollege ? 'Review' : 'Details'; ?>">
                   <?php if ($canReviewSheet): ?>
-                    <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="admin-btn admin-btn--ghost admin-btn--sm">
+                    <a href="professor_exam_review_sheet?exam_id=<?php echo (int)$examIdSafe; ?>&amp;user_id=<?php echo (int)$st['user_id']; ?>" class="admin-btn admin-btn--ghost admin-btn--sm pem-review-btn">
                       <i class="bi bi-layout-text-window-reverse"></i> Review
                     </a>
                   <?php elseif ($attemptNorm === 'in_progress'): ?>
-                    <span class="student-meta"><i class="bi bi-hourglass-split"></i> After submit</span>
+                    <span class="student-meta pem-review-wait"><i class="bi bi-hourglass-split"></i> After submit</span>
                   <?php else: ?>
                     <span class="pem-review-muted">-</span>
                   <?php endif; ?>
@@ -458,9 +478,206 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
 
   <style>
-    .pem-mini-progress { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: .35rem; max-width: 7rem; }
-    .pem-mini-progress > span { display: block; height: 100%; background: linear-gradient(90deg, #1665A0, #3393FF); }
-    .pem-roster-filters { margin-top: 0.15rem; }
+    /* Dense Examinee Progress table — scoped to this monitor page only */
+    .pem-progress-head { margin-bottom: 0.45rem; }
+    .pem-roster-filters {
+      margin: 0 0 0.55rem;
+      padding: 0.45rem 0.65rem !important;
+      gap: 0.45rem 0.65rem !important;
+      min-height: 0;
+    }
+    .pem-roster-filters .students-search { min-height: 2rem; }
+    .pem-roster-filters .students-search input { min-height: 2rem; font-size: 0.8125rem; }
+    .pem-roster-filters .admin-btn--sm { min-height: 2rem; padding: 0.25rem 0.55rem; font-size: 0.75rem; }
+    .pem-roster-filters .students-toolbar__meta { font-size: 0.75rem; opacity: 0.75; white-space: nowrap; }
+    .pem-roster-shell .students-table-scroll { max-height: calc(100vh - 11rem); }
+
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table { table-layout: fixed !important; min-width: 980px; }
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table thead th {
+      padding: 0.45rem 0.55rem !important;
+      font-size: 0.68rem !important;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table thead th:first-child,
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table tbody td:first-child {
+      padding-left: 0.75rem !important;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table thead th:last-child,
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table tbody td:last-child {
+      padding-right: 0.75rem !important;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable.pex-monitor-detail-table tbody td {
+      padding: 0.4rem 0.55rem !important;
+      font-size: 0.8125rem;
+      line-height: 1.25;
+      vertical-align: middle;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .student-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .student-avatar-cell { flex: 0 0 auto; }
+    body.admin-app.examination-admin-page #pemRosterTable .student-avatar-media {
+      width: 2.05rem !important;
+      height: 2.05rem !important;
+      min-width: 2.05rem !important;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(22, 101, 160, 0.12);
+      color: #143D59;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .student-cell__text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .student-name {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: #143D59;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .student-name:hover { text-decoration: underline; }
+    body.admin-app.examination-admin-page #pemRosterTable .student-meta-sub {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.68rem;
+      line-height: 1.15;
+      color: var(--admin-text-muted, #64748b);
+      font-weight: 500;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-section-val {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      min-height: 1.5rem;
+      padding: 0.12rem 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1.2;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-progress-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+      max-width: 7.5rem;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-progress-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-mini-progress {
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 0;
+      max-width: 100%;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-mini-progress > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #1665A0, #3393FF);
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-progress-pct {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--admin-text-muted, #64748b);
+      line-height: 1.1;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-score {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      line-height: 1.15;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-score__n { font-size: 0.78rem; font-weight: 700; }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-score__p {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--admin-text-muted, #64748b);
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-center-cell { text-align: center; }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-time-cell {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .js-current-cell {
+      font-weight: 650;
+      font-size: 0.78rem;
+      color: var(--admin-text-secondary, #475569);
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-switch-btn {
+      min-height: 1.55rem;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-switch-n { font-size: 0.78rem; font-weight: 650; }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-dt {
+      display: flex;
+      flex-direction: column;
+      gap: 0.02rem;
+      line-height: 1.15;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-dt__d {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--admin-text-secondary, #475569);
+      white-space: nowrap;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-dt__t {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--admin-text-muted, #64748b);
+      white-space: nowrap;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-review-btn {
+      min-height: 1.55rem;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.72rem;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+    body.admin-app.examination-admin-page #pemRosterTable .pem-review-wait {
+      font-size: 0.68rem;
+      white-space: nowrap;
+      opacity: 0.75;
+    }
     .pem-filter-empty[hidden],
     .js-monitor-row.is-filtered-out { display: none !important; }
   </style>
@@ -529,17 +746,36 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     }
+    function formatDtHtml(fmt) {
+      if (!fmt) return '<span class="opacity-60">-</span>';
+      var m = String(fmt).match(/^(.+,\s*\d{4})\s+(.+)$/);
+      if (m) {
+        return '<span class="pem-dt"><span class="pem-dt__d">' + esc(m[1]) + '</span><span class="pem-dt__t">' + esc(m[2]) + '</span></span>';
+      }
+      return '<span class="pem-dt">' + esc(fmt) + '</span>';
+    }
     function presenceBadge(p) {
       var map = {
-        active: ['admin-badge--success', '🟢 Active'],
-        idle: ['admin-badge--warning', '🟡 Idle'],
-        disconnected: ['admin-badge--danger', '🔴 Disconnected'],
-        submitted: ['admin-badge--info', '🔵 Submitted'],
-        expired: ['admin-badge--neutral', '⏱ Expired'],
-        not_started: ['admin-badge--neutral', '⚪ Not Started']
+        active: ['admin-badge--success', 'Active'],
+        idle: ['admin-badge--warning', 'Idle'],
+        disconnected: ['admin-badge--danger', 'Disconnected'],
+        submitted: ['admin-badge--success', 'Submitted'],
+        expired: ['admin-badge--danger', 'Expired'],
+        not_started: ['admin-badge--neutral', 'Not started'],
+        absent: ['admin-badge--warning', 'Absent']
       };
       var m = map[p] || map.not_started;
       return '<span class="admin-badge ' + m[0] + '">' + m[1] + '</span>';
+    }
+    function scoreHtml(s) {
+      var ans = parseInt(s.answered_count, 10) || 0;
+      var cor = parseInt(s.correct_count, 10) || 0;
+      if (ans <= 0 && s.attempt_status !== 'submitted' && s.attempt_status !== 'expired') {
+        return '<div class="pem-score"><span class="pem-score__n js-score-n">0 / 0</span></div>';
+      }
+      if (ans <= 0) return '<span class="opacity-60">-</span>';
+      var pct = s.score_pct_answered != null ? Math.round(s.score_pct_answered) : Math.round(100 * cor / ans);
+      return '<div class="pem-score"><span class="pem-score__n js-score-n">' + esc(cor + ' / ' + ans) + '</span><span class="pem-score__p js-score-p">' + esc(pct + '%') + '</span></div>';
     }
     function scoreText(s) {
       var ans = parseInt(s.answered_count, 10) || 0;
@@ -698,28 +934,31 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
             if (statusCell) statusCell.innerHTML = presenceBadge(s.presence_status || 'not_started');
             var progLabel = tr.querySelector('.js-progress-label');
             var progFill = tr.querySelector('.js-progress-fill');
+            var progPct = tr.querySelector('.js-progress-pct');
             if (progLabel && s.answered_count != null) {
               progLabel.textContent = (s.answered_count || 0) + ' / ' + (s.total_questions || 0);
             }
             if (progFill && s.total_questions) {
-              progFill.style.width = Math.round(((s.answered_count || 0) / s.total_questions) * 100) + '%';
+              var pctW = Math.round(((s.answered_count || 0) / s.total_questions) * 100);
+              progFill.style.width = pctW + '%';
+              if (progPct) progPct.textContent = pctW + '%';
             }
             var scoreCell = tr.querySelector('.js-score-cell');
-            if (scoreCell) scoreCell.textContent = scoreText(s);
+            if (scoreCell) scoreCell.innerHTML = scoreHtml(s);
             var curCell = tr.querySelector('.js-current-cell');
-            if (curCell) curCell.textContent = s.current_question ? ('Q' + s.current_question) : '-';
+            if (curCell) curCell.innerHTML = s.current_question ? ('Q' + s.current_question) : '<span class="opacity-60">-</span>';
             var timeCell = tr.querySelector('.js-time-cell');
-            if (timeCell) timeCell.textContent = s.remaining_fmt || '-';
+            if (timeCell) timeCell.innerHTML = s.remaining_fmt ? esc(s.remaining_fmt) : '<span class="opacity-60">-</span>';
             var visCell = tr.querySelector('.js-tab-vis-cell');
             if (visCell && (s.attempt_status === 'in_progress')) {
               visCell.innerHTML = s.tab_hidden
-                ? '<span class="admin-badge admin-badge--warning">Away</span>'
+                ? '<span class="admin-badge admin-badge--warning">Hidden</span>'
                 : '<span class="admin-badge admin-badge--success">Visible</span>';
             }
             var countCell = tr.querySelector('.js-tab-count');
-            if (countCell) countCell.textContent = n > 0 ? ('⚠ ' + n) : String(n);
+            if (countCell) countCell.textContent = String(n);
             var seenCell = tr.querySelector('.js-seen-cell');
-            if (seenCell) seenCell.innerHTML = s.last_seen_fmt ? ('<span class="text-sm">' + esc(s.last_seen_fmt) + '</span>') : '<span class="opacity-60">-</span>';
+            if (seenCell) seenCell.innerHTML = formatDtHtml(s.last_seen_fmt || '');
             if (n > prev) {
               tr.classList.remove('tab-flash');
               void tr.offsetWidth;
