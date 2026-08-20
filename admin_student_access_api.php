@@ -691,10 +691,14 @@ if ($action === 'bulk_assign_section' && $_SERVER['REQUEST_METHOD'] === 'POST') 
 
     $placeholders = implode(',', array_fill(0, count($userIds), '?'));
     $types = str_repeat('i', count($userIds));
+    $hasCollegeAccessCol = ereview_platform_access_columns_ready($conn);
 
     mysqli_begin_transaction($conn);
     try {
-        $chk = mysqli_prepare($conn, "SELECT user_id, role FROM users WHERE user_id IN ({$placeholders}) FOR UPDATE");
+        $chkSql = $hasCollegeAccessCol
+            ? "SELECT user_id, role, college_examination_access FROM users WHERE user_id IN ({$placeholders}) FOR UPDATE"
+            : "SELECT user_id, role FROM users WHERE user_id IN ({$placeholders}) FOR UPDATE";
+        $chk = mysqli_prepare($conn, $chkSql);
         if (!$chk) {
             throw new RuntimeException('Could not validate selected students.');
         }
@@ -712,6 +716,14 @@ if ($action === 'bulk_assign_section' && $_SERVER['REQUEST_METHOD'] === 'POST') 
         foreach ($found as $uid => $row) {
             if ((string) ($row['role'] ?? '') !== 'student') {
                 throw new InvalidArgumentException('User #' . $uid . ' is not an eReview student account.');
+            }
+            if ($hasCollegeAccessCol) {
+                $access = strtolower(trim((string) ($row['college_examination_access'] ?? 'none')));
+                if ($access !== 'active' && $access !== 'suspended') {
+                    throw new InvalidArgumentException(
+                        'Section can only be assigned to students with College Examination access (active or suspended). User #' . $uid . ' is not enabled.'
+                    );
+                }
             }
         }
 

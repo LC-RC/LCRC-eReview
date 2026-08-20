@@ -133,6 +133,8 @@ body.admin-app.admin-students-page .admin-page-header__subtitle {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .students-toolbar__meta {
@@ -145,6 +147,8 @@ body.admin-app.admin-students-page .admin-page-header__subtitle {
   display: flex;
   align-items: center;
   min-width: min(16rem, 70vw);
+  flex: 1 1 12rem;
+  max-width: 100%;
 }
 
 .students-search i {
@@ -161,6 +165,97 @@ body.admin-app.admin-students-page .admin-page-header__subtitle {
   padding: 0.35rem 0.7rem 0.35rem 2rem !important;
   font-size: 0.84rem !important;
   border-radius: 0.65rem !important;
+}
+
+.students-filter-select {
+  min-height: 2.25rem;
+  max-width: 100%;
+}
+
+.students-per-page {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--admin-text-muted);
+  white-space: nowrap;
+}
+.students-per-page select {
+  min-height: 2rem;
+  padding: 0.2rem 0.55rem;
+}
+
+body.admin-app.admin-students-page .students-page-shell {
+  max-width: 100%;
+  overflow-x: clip;
+}
+body.admin-app.admin-students-page .students-table-shell {
+  max-width: 100%;
+}
+body.admin-app.admin-students-page .students-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+body.admin-app.admin-students-page .students-table--commerce {
+  min-width: 980px;
+}
+body.admin-app.admin-students-page .students-bulk-bar {
+  position: sticky;
+  top: 4.25rem;
+  z-index: 40;
+}
+body.admin-app.admin-students-page .students-bulk-bar__actions {
+  max-width: 100%;
+}
+body.admin-app.admin-students-page .students-table-meta {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .students-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .students-toolbar__search {
+    width: 100%;
+  }
+  .students-search {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .students-filter-select {
+    flex: 1 1 calc(50% - 0.4rem);
+  }
+  .students-filter-submit-fallback .students-filter-submit-label {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .students-filter-select {
+    flex: 1 1 100%;
+  }
+  body.admin-app.admin-students-page .students-bulk-bar {
+    top: 3.5rem;
+    padding: 0.65rem 0.75rem;
+  }
+  body.admin-app.admin-students-page .students-bulk-bar__hint {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  body.admin-app.admin-students-page .students-bulk-bar__actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  body.admin-app.admin-students-page .students-bulk-bar__actions .admin-modal__btn {
+    flex: 1 1 auto;
+  }
+  /* Prefer horizontal scroll table over card-stack on very small screens when commerce columns matter */
+  body.admin-app.admin-students-page .students-table--commerce.students-table--aligned {
+    table-layout: auto !important;
+  }
 }
 
 .students-clear-link {
@@ -323,7 +418,7 @@ body.admin-app.admin-students-page .students-table--aligned .student-select-col 
   padding-right: 0.35rem !important;
 }
 
-/* Unified account/profile cell — admin students + examination professor tables */
+/* Unified account/profile cell ï¿½ admin students + examination professor tables */
 body.admin-app.admin-students-page .student-cell,
 body.admin-app.admin-students-page .college-student-account {
   display: flex;
@@ -969,7 +1064,7 @@ html[data-admin-theme="light"] body.admin-app.admin-students-page .admin-student
   color: #0f172a;
 }
 
-/* Table shells: horizontal scroll only — do not clip portaled action menus */
+/* Table shells: horizontal scroll only ï¿½ do not clip portaled action menus */
 body.admin-app.admin-students-page .students-table-shell {
   overflow: visible;
 }
@@ -1005,7 +1100,7 @@ body.admin-app.admin-students-page .student-email-cell .commerce-proof-link {
   max-width: 100%;
 }
 
-/* Modal forms (Enable / Section / CRUD) — parity with admin_students.php */
+/* Modal forms (Enable / Section / CRUD) ï¿½ parity with admin_students.php */
 body.admin-app.admin-students-page .admin-modal {
   width: min(100%, 32rem);
   border-radius: 1rem;

@@ -26,16 +26,26 @@ if (!in_array($tab, ['enrolled','pending','expired','rejected','all'], true)) { 
 $q = trim($_GET['q'] ?? '');
 $dq = trim($_GET['dq'] ?? '');
 $collExFilter = (string) ($_GET['coll_ex'] ?? 'all');
-$secFilter = trim((string) ($_GET['sec'] ?? ''));
 if (!in_array($collExFilter, ['all', 'enabled', 'not_enabled', 'suspended'], true)) {
     $collExFilter = 'all';
 }
 $page = sanitizeInt($_GET['page'] ?? 1, 1);
-$perPage = 10;
+$perPageRaw = strtolower(trim((string) ($_GET['per_page'] ?? '10')));
+$allowedPerPage = [10, 25, 50, 100];
+$perPageIsAll = ($perPageRaw === 'all');
+if ($perPageIsAll) {
+    $perPage = 500; // hard cap for "All"
+    $perPageParam = 'all';
+} else {
+    $perPage = (int) $perPageRaw;
+    if (!in_array($perPage, $allowedPerPage, true)) {
+        $perPage = 10;
+    }
+    $perPageParam = (string) $perPage;
+}
 $offset = ($page - 1) * $perPage;
 
 $like = '%' . $q . '%';
-$searchSql = "(u.full_name LIKE ? OR u.email LIKE ?)";
 // Active grant as JOIN (much cheaper than correlated EXISTS on every COUNT/list).
 $activeGrantJoin = "LEFT JOIN (
     SELECT DISTINCT user_id
@@ -60,6 +70,12 @@ $hasIsOnline = ereview_schema_column_exists($conn, 'users', 'is_online');
 $hasLastSeenAt = ereview_schema_column_exists($conn, 'users', 'last_seen_at');
 $hasLastLogoutAt = ereview_schema_column_exists($conn, 'users', 'last_logout_at');
 $hasLastLoginAt = ereview_schema_column_exists($conn, 'users', 'last_login_at');
+$hasStudentNumber = ereview_schema_column_exists($conn, 'users', 'student_number');
+$searchSql = $hasStudentNumber
+  ? "(u.full_name LIKE ? OR u.email LIKE ? OR u.student_number LIKE ?)"
+  : "(u.full_name LIKE ? OR u.email LIKE ?)";
+$searchTypes = $hasStudentNumber ? 'sss' : 'ss';
+$searchLikes = $hasStudentNumber ? [$like, $like, $like] : [$like, $like];
 
 // Keep sort simple for list latency; presence sort was forcing expensive expressions.
 $orderBySql = "u.created_at DESC";
@@ -95,7 +111,7 @@ if ($counts === null) {
   }
   $stmt = mysqli_prepare($conn, $countSql);
   if ($q !== '') {
-    mysqli_stmt_bind_param($stmt, 'sss', $nowSql, $like, $like);
+    mysqli_stmt_bind_param($stmt, 's' . $searchTypes, $nowSql, ...$searchLikes);
   } else {
     mysqli_stmt_bind_param($stmt, 's', $nowSql);
   }
@@ -132,7 +148,7 @@ if ($hasLastSeenAt) $selectCols .= ", u.last_seen_at";
 if ($hasLastLogoutAt) $selectCols .= ", u.last_logout_at";
 if ($hasLastLoginAt) $selectCols .= ", u.last_login_at";
 if (ereview_platform_access_columns_ready($conn)) {
-  $selectCols .= ", u.college_examination_access, u.section";
+  $selectCols .= ", u.college_examination_access";
 }
 
 $collExWhereSql = '';
@@ -146,13 +162,6 @@ if (ereview_platform_access_columns_ready($conn)) {
     } elseif ($collExFilter === 'suspended') {
         $collExWhereSql = " AND u.college_examination_access='suspended'";
     }
-    if ($secFilter === '__none__') {
-        $collExWhereSql .= " AND (u.section IS NULL OR TRIM(u.section)='')";
-    } elseif ($secFilter !== '') {
-        $collExWhereSql .= ' AND TRIM(u.section)=?';
-        $collExWhereTypes .= 's';
-        $collExWhereParams[] = $secFilter;
-    }
 }
 
 $filteredCountSql = "SELECT COUNT(*) AS c FROM users u {$activeGrantJoin} WHERE {$tabWhere} AND {$searchSql}{$collExWhereSql}";
@@ -160,21 +169,21 @@ $filteredCountStmt = mysqli_prepare($conn, $filteredCountSql);
 if ($filteredCountStmt) {
     if ($tab === 'expired') {
         if ($collExWhereTypes !== '') {
-            mysqli_stmt_bind_param($filteredCountStmt, 'sss' . $collExWhereTypes, $nowSql, $like, $like, ...$collExWhereParams);
+            mysqli_stmt_bind_param($filteredCountStmt, 's' . $searchTypes . $collExWhereTypes, $nowSql, ...array_merge($searchLikes, $collExWhereParams));
         } else {
-            mysqli_stmt_bind_param($filteredCountStmt, 'sss', $nowSql, $like, $like);
+            mysqli_stmt_bind_param($filteredCountStmt, 's' . $searchTypes, $nowSql, ...$searchLikes);
         }
     } else {
         if ($collExWhereTypes !== '') {
-            mysqli_stmt_bind_param($filteredCountStmt, 'ss' . $collExWhereTypes, $like, $like, ...$collExWhereParams);
+            mysqli_stmt_bind_param($filteredCountStmt, $searchTypes . $collExWhereTypes, ...array_merge($searchLikes, $collExWhereParams));
         } else {
-            mysqli_stmt_bind_param($filteredCountStmt, 'ss', $like, $like);
+            mysqli_stmt_bind_param($filteredCountStmt, $searchTypes, ...$searchLikes);
         }
     }
     mysqli_stmt_execute($filteredCountStmt);
     $filteredCountRow = mysqli_fetch_assoc(mysqli_stmt_get_result($filteredCountStmt));
     mysqli_stmt_close($filteredCountStmt);
-    if ($collExFilter !== 'all' || $secFilter !== '' || $q !== '') {
+    if ($collExFilter !== 'all' || $q !== '') {
         $total = (int) ($filteredCountRow['c'] ?? $total);
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
@@ -193,15 +202,15 @@ $listSql = "SELECT {$selectCols}
 $stmt = mysqli_prepare($conn, $listSql);
 if ($tab === 'expired') {
   if ($collExWhereTypes !== '') {
-    mysqli_stmt_bind_param($stmt, 'sss' . $collExWhereTypes . 'ii', $nowSql, $like, $like, ...array_merge($collExWhereParams, [$perPage, $offset]));
+    mysqli_stmt_bind_param($stmt, 's' . $searchTypes . $collExWhereTypes . 'ii', $nowSql, ...array_merge($searchLikes, $collExWhereParams, [$perPage, $offset]));
   } else {
-    mysqli_stmt_bind_param($stmt, 'sssii', $nowSql, $like, $like, $perPage, $offset);
+    mysqli_stmt_bind_param($stmt, 's' . $searchTypes . 'ii', $nowSql, ...array_merge($searchLikes, [$perPage, $offset]));
   }
 } else {
   if ($collExWhereTypes !== '') {
-    mysqli_stmt_bind_param($stmt, 'ss' . $collExWhereTypes . 'ii', $like, $like, ...array_merge($collExWhereParams, [$perPage, $offset]));
+    mysqli_stmt_bind_param($stmt, $searchTypes . $collExWhereTypes . 'ii', ...array_merge($searchLikes, $collExWhereParams, [$perPage, $offset]));
   } else {
-    mysqli_stmt_bind_param($stmt, 'ssii', $like, $like, $perPage, $offset);
+    mysqli_stmt_bind_param($stmt, $searchTypes . 'ii', ...array_merge($searchLikes, [$perPage, $offset]));
   }
 }
 mysqli_stmt_execute($stmt);
@@ -259,17 +268,29 @@ if ($hasDeletedLogTable && $view === 'deleted') {
 
 $pageTitle = 'Students';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Students'] ];
-$mk = function(string $t, int $p = 1) use ($q, $collExFilter, $secFilter) : string {
+$mk = function (string $t, int $p = 1) use ($q, $collExFilter, $perPageParam): string {
   $params = ['view' => 'students', 'tab' => $t, 'q' => $q, 'page' => $p];
   if ($collExFilter !== 'all') {
     $params['coll_ex'] = $collExFilter;
   }
-  if ($secFilter !== '') {
-    $params['sec'] = $secFilter;
+  if ($perPageParam !== '10') {
+    $params['per_page'] = $perPageParam;
   }
   return 'admin_students?' . http_build_query(array_filter($params, static fn ($v) => $v !== '' && $v !== null));
 };
-$studentsViewUrl = 'admin_students?' . http_build_query(['view' => 'students', 'tab' => $tab, 'q' => $q, 'page' => $page]);
+$studentsClearUrl = 'admin_students?' . http_build_query(array_filter([
+  'view' => 'students',
+  'tab' => $tab,
+  'per_page' => $perPageParam !== '10' ? $perPageParam : null,
+], static fn ($v) => $v !== '' && $v !== null));
+$studentsViewUrl = 'admin_students?' . http_build_query(array_filter([
+  'view' => 'students',
+  'tab' => $tab,
+  'q' => $q,
+  'page' => $page,
+  'coll_ex' => $collExFilter !== 'all' ? $collExFilter : null,
+  'per_page' => $perPageParam !== '10' ? $perPageParam : null,
+], static fn ($v) => $v !== '' && $v !== null));
 $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => 'deleted', 'dq' => $dq], static function ($v) {
   return $v !== '' && $v !== null;
 }));
@@ -1414,38 +1435,35 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             </a>
           <?php endforeach; ?>
         </nav>
-        <form method="GET" class="students-toolbar__search">
+        <form method="GET" class="students-toolbar__search" id="adminStudentsFilterForm">
           <input type="hidden" name="view" value="students">
           <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
+          <input type="hidden" name="page" value="1" id="adminStudentsPageField">
+          <?php if ($perPageParam !== '10'): ?>
+            <input type="hidden" name="per_page" value="<?php echo h($perPageParam); ?>">
+          <?php endif; ?>
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="q" value="<?php echo h($q); ?>" placeholder="Search name or email..." aria-label="Search students">
+            <input type="search" name="q" id="adminStudentsSearchInput" value="<?php echo h($q); ?>" placeholder="Search name or email..." aria-label="Search students" autocomplete="off">
           </div>
           <?php if (ereview_platform_access_columns_ready($conn)): ?>
-          <select name="coll_ex" aria-label="College Examination filter" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+          <select name="coll_ex" id="adminStudentsCollExFilter" aria-label="College Examination filter" class="admin-btn admin-btn--secondary admin-btn--sm students-filter-select">
             <option value="all" <?php echo $collExFilter === 'all' ? 'selected' : ''; ?>>All College Exam</option>
             <option value="enabled" <?php echo $collExFilter === 'enabled' ? 'selected' : ''; ?>>Exam enabled</option>
             <option value="not_enabled" <?php echo $collExFilter === 'not_enabled' ? 'selected' : ''; ?>>Exam not enabled</option>
             <option value="suspended" <?php echo $collExFilter === 'suspended' ? 'selected' : ''; ?>>Exam suspended</option>
           </select>
-          <select name="sec" aria-label="Section filter" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
-            <option value="">All sections</option>
-            <option value="__none__" <?php echo $secFilter === '__none__' ? 'selected' : ''; ?>>No section</option>
-            <?php foreach ($collegeExamSectionSuggestions as $secOpt): ?>
-              <option value="<?php echo h($secOpt); ?>" <?php echo $secFilter === $secOpt ? 'selected' : ''; ?>><?php echo h($secOpt); ?></option>
-            <?php endforeach; ?>
-          </select>
           <?php endif; ?>
-          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
-          <?php if ($q !== '' || $collExFilter !== 'all' || $secFilter !== ''): ?>
-            <a href="<?php echo h($mk($tab, 1)); ?>" class="students-clear-link">Clear</a>
+          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm students-filter-submit-fallback" title="Apply filters"><i class="bi bi-funnel"></i><span class="students-filter-submit-label"> Filter</span></button>
+          <?php if ($q !== '' || $collExFilter !== 'all'): ?>
+            <a href="<?php echo h($studentsClearUrl); ?>" class="students-clear-link">Clear</a>
           <?php endif; ?>
         </form>
       </div>
 
       <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
-        <span class="students-bulk-bar__count"><span id="studentsBulkCount">0</span> selected</span>
-        <span class="students-bulk-bar__hint">Bulk actions apply to selected students on this page only. <strong>Enable College Examination</strong> updates existing accounts (no duplicates).</span>
+        <span class="students-bulk-bar__count" id="studentsBulkCountLabel">No students selected</span>
+        <span class="students-bulk-bar__hint">Selection persists across search and pages. <strong>Select all</strong> applies to visible rows only.</span>
         <div class="students-bulk-bar__actions">
           <button type="button" id="studentsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
           <button type="button" id="studentsBulkCollegeExamBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
@@ -1453,6 +1471,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <button type="button" id="studentsBulkSuspendBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
           <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-key"></i> Grant Access</button>
           <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-check2-circle"></i> Continue</button>
+          <button type="button" id="studentsBulkDeleteBtn" class="admin-modal__btn admin-modal__btn--danger"><i class="bi bi-trash"></i> Delete</button>
         </div>
       </div>
 
@@ -1461,10 +1480,28 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <span>
             <?php if ($total > 0): ?>
               <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?>
+              <?php if ($perPageIsAll && $total > $perPage): ?>
+                <span class="student-meta">(showing first <?php echo (int) $perPage; ?>)</span>
+              <?php endif; ?>
             <?php else: ?>
               0 students
             <?php endif; ?>
           </span>
+          <form method="GET" class="students-per-page" id="adminStudentsPerPageForm" aria-label="Rows per page">
+            <input type="hidden" name="view" value="students">
+            <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
+            <input type="hidden" name="q" value="<?php echo h($q); ?>">
+            <input type="hidden" name="page" value="1">
+            <?php if ($collExFilter !== 'all'): ?><input type="hidden" name="coll_ex" value="<?php echo h($collExFilter); ?>"><?php endif; ?>
+            <label for="adminStudentsPerPage">Show</label>
+            <select id="adminStudentsPerPage" name="per_page" class="admin-btn admin-btn--secondary admin-btn--sm">
+              <?php foreach ([10, 25, 50, 100] as $opt): ?>
+                <option value="<?php echo $opt; ?>" <?php echo !$perPageIsAll && $perPage === $opt ? 'selected' : ''; ?>><?php echo $opt; ?></option>
+              <?php endforeach; ?>
+              <option value="all" <?php echo $perPageIsAll ? 'selected' : ''; ?>>All</option>
+            </select>
+            <span>students</span>
+          </form>
           <span class="students-table-meta__hint hidden md:inline">Enrollment, payment, proof, access, and account at a glance · Review opens payment/FAR when needed</span>
         </div>
         <div class="students-table-scroll">
@@ -1475,7 +1512,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               <col class="col-email">
               <col class="col-commerce-access">
               <col class="col-coll-exam">
-              <col class="col-section">
               <col class="col-account-status">
               <col class="col-created">
               <col class="col-actions">
@@ -1484,14 +1520,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               <tr>
                 <th class="student-select-col" scope="col">
                   <input type="checkbox" id="studentSelectAll" class="admin-bulk-check"
-                         title="Select all eligible students on this page"
-                         aria-label="Select all eligible students on this page">
+                         title="Select all visible eligible students on this page"
+                         aria-label="Select all visible eligible students on this page">
                 </th>
                 <th class="col-student" scope="col">Student</th>
                 <th class="col-email col-hide-tablet" scope="col">Email</th>
                 <th class="col-commerce-access" scope="col">eReview Access</th>
                 <th class="col-coll-exam" scope="col">College Examination</th>
-                <th class="col-section col-hide-tablet" scope="col">Section</th>
                 <th class="col-account-status" scope="col">Account</th>
                 <th class="col-created col-hide-tablet" scope="col">Created</th>
                 <th class="col-actions student-actions-head" scope="col">Actions</th>
@@ -1507,7 +1542,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                   elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
                 ?>
                 <tr>
-                  <td colspan="9" class="students-empty-cell">
+                  <td colspan="8" class="students-empty-cell">
                     <div class="font-semibold">No students found</div>
                     <p class="text-sm mt-1 mb-0"><?php echo h($emptyHint); ?></p>
                   </td>
@@ -1529,16 +1564,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         ? ereview_user_college_examination_access_value($row)
                         : 'none';
                     $collExActive = ereview_user_has_college_examination_access($conn, (int) $row['user_id'], $row);
-                    $sectionTxt = trim((string) ($row['section'] ?? ''));
                     $createdFmt = !empty($row['created_at']) ? date('M j, Y', strtotime((string) $row['created_at'])) : '—';
                     $payTone = (string) ($dash['payment_tone'] ?? 'neutral');
                     $accessTone = (string) ($dash['access_tone'] ?? 'none');
                     $showRepairActivation = !empty($dash['show_repair_activation']) || !empty($dash['activation_required']);
                     $canBulkGrant = ($accessTone !== 'granted' && (string) $row['status'] !== 'rejected');
                     $canBulkLegacyApprove = (!$isCommerceRow && (string) $row['status'] !== 'approved');
-                    $canCollegeExamEnable = ((string) $row['status'] !== 'rejected' && !$collExActive && (string) ($row['role'] ?? '') === 'student');
-                    $canCollegeExamSection = ((string) ($row['role'] ?? '') === 'student');
-                    $canCollegeExamSuspend = ($collExActive && (string) ($row['role'] ?? '') === 'student');
+                    // List query is already role=student; do not require a selected role column.
+                    $canCollegeExamEnable = ((string) $row['status'] !== 'rejected' && !$collExActive);
+                    // Section assignment only for College Examination users (active or suspended).
+                    $canCollegeExamSection = ($collExActive || $collExAccessVal === 'suspended');
+                    $canCollegeExamSuspend = $collExActive;
                     $canCollegeExamSelect = ((string) $row['status'] !== 'rejected');
                     $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove || $canCollegeExamSelect;
                     $payStatusRow = (string) ($dash['payment_status'] ?? '');
@@ -1728,15 +1764,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspended</span>
                       <?php else: ?>
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
-                      <?php endif; ?>
-                    </td>
-                    <td class="col-section col-hide-tablet">
-                      <?php if (!$collExActive && $collExAccessVal !== 'suspended'): ?>
-                        <span class="student-meta">—</span>
-                      <?php elseif ($sectionTxt !== ''): ?>
-                        <span class="admin-badge admin-badge--info"><?php echo h($sectionTxt); ?></span>
-                      <?php else: ?>
-                        <span class="student-meta">Not set</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-account-status">
@@ -2038,8 +2065,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-collection"></i></span>
         <div>
           <h3 id="assignSectionTitle" class="admin-modal__title">Assign / Change Section</h3>
-          <p class="admin-modal__desc">Selected students: <strong id="assignSectionSelectedCount">0</strong></p>
-          <p class="admin-modal__desc">Updates profile section only. Does not change eReview grants or exam assignments.</p>
+          <p class="admin-modal__desc">Selected College Examination students: <strong id="assignSectionSelectedCount">0</strong></p>
+          <p class="admin-modal__desc">Updates College Examination section only. Does not change eReview grants or exam assignments.</p>
         </div>
       </div>
       <div class="admin-modal__field">
@@ -2709,7 +2736,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var loadingTitle = document.getElementById('actionLoadingTitle');
     var loadingMessage = document.getElementById('actionLoadingMessage');
     var bulkBar = document.getElementById('studentsBulkBar');
-    var bulkCount = document.getElementById('studentsBulkCount');
+    var bulkCountLabel = document.getElementById('studentsBulkCountLabel') || document.getElementById('studentsBulkCount');
     var bulkClear = document.getElementById('studentsBulkClearBtn');
     var bulkApprove = document.getElementById('studentsBulkApproveBtn');
     var selectAll = document.getElementById('studentSelectAll');
@@ -2722,6 +2749,71 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var approveTitle = document.getElementById('approveConfirmTitle');
     var approveDesc = document.getElementById('approveConfirmDesc');
 
+    var SELECTION_KEY = 'admin_students_selected_v1';
+    var selectedMap = {};
+
+    function loadSelectedMap() {
+      try {
+        var raw = sessionStorage.getItem(SELECTION_KEY);
+        selectedMap = raw ? (JSON.parse(raw) || {}) : {};
+        if (typeof selectedMap !== 'object' || Array.isArray(selectedMap) || selectedMap === null) {
+          selectedMap = {};
+        }
+      } catch (e) {
+        selectedMap = {};
+      }
+    }
+    function saveSelectedMap() {
+      try { sessionStorage.setItem(SELECTION_KEY, JSON.stringify(selectedMap)); } catch (e) {}
+    }
+    function selectionCount() {
+      return Object.keys(selectedMap).length;
+    }
+    function selectedIds() {
+      return Object.keys(selectedMap).map(function (id) { return String(id); });
+    }
+    function selectedIdsWithFlag(flag) {
+      return selectedIds().filter(function (id) {
+        var row = selectedMap[id];
+        return !!(row && row[flag]);
+      });
+    }
+    function upsertSelectionFromCheckbox(cb) {
+      if (!cb) return;
+      var id = String(cb.value || '');
+      if (!id) return;
+      selectedMap[id] = {
+        name: cb.getAttribute('data-student-name') || (selectedMap[id] && selectedMap[id].name) || ('Student #' + id),
+        grantable: cb.getAttribute('data-grantable') === '1',
+        collegeExamable: cb.getAttribute('data-college-examable') === '1',
+        collegeSectionable: cb.getAttribute('data-college-sectionable') === '1',
+        collegeSuspendable: cb.getAttribute('data-college-suspendable') === '1',
+        activatable: cb.getAttribute('data-activatable') === '1'
+      };
+    }
+    function removeSelection(id) {
+      delete selectedMap[String(id)];
+    }
+    function clearSelection() {
+      selectedMap = {};
+      saveSelectedMap();
+      allSelectBoxes().forEach(function (cb) { cb.checked = false; });
+      if (selectAll) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+      }
+      syncBulkBar();
+    }
+    function restoreCheckboxState() {
+      allSelectBoxes().forEach(function (cb) {
+        var id = String(cb.value || '');
+        var on = !!selectedMap[id];
+        cb.checked = on;
+        if (on) upsertSelectionFromCheckbox(cb);
+      });
+      saveSelectedMap();
+    }
+
     function allSelectBoxes() {
       return Array.prototype.slice.call(document.querySelectorAll('.js-student-select'));
     }
@@ -2732,20 +2824,30 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     function syncBulkBar() {
       var selected = selectedCheckboxes();
       var all = allSelectBoxes();
-      var n = selected.length;
-      if (bulkCount) bulkCount.textContent = String(n);
+      var n = selectionCount();
+      if (bulkCountLabel) {
+        if (bulkCountLabel.id === 'studentsBulkCount') {
+          bulkCountLabel.textContent = String(n);
+        } else {
+          bulkCountLabel.textContent = n === 0
+            ? 'No students selected'
+            : (n === 1 ? '1 student selected' : (n + ' students selected'));
+        }
+      }
       if (bulkBar) bulkBar.classList.toggle('is-visible', n > 0);
       if (selectAll) {
         selectAll.disabled = all.length === 0;
-        selectAll.checked = all.length > 0 && selected.length === all.length;
-        selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+        var visibleSelected = selected.length;
+        selectAll.checked = all.length > 0 && visibleSelected === all.length;
+        selectAll.indeterminate = visibleSelected > 0 && visibleSelected < all.length;
         selectAll.title = all.length === 0
           ? 'No eligible students on this page'
-          : ('Select all ' + all.length + ' eligible student(s) on this page');
+          : ('Select all ' + all.length + ' visible eligible student(s) on this page');
+        selectAll.setAttribute('aria-label', selectAll.title);
       }
       var grantBtn = document.getElementById('studentsBulkGrantBtn');
       if (grantBtn) {
-        var grantableN = selected.filter(function (cb) { return cb.getAttribute('data-grantable') === '1'; }).length;
+        var grantableN = selectedIdsWithFlag('grantable').length;
         grantBtn.disabled = grantableN === 0;
         grantBtn.title = grantableN === 0
           ? 'Select students without Access Granted'
@@ -2753,7 +2855,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
       var collegeBulkBtn = document.getElementById('studentsBulkCollegeExamBtn');
       if (collegeBulkBtn) {
-        var examableN = selected.filter(function (cb) { return cb.getAttribute('data-college-examable') === '1'; }).length;
+        var examableN = selectedIdsWithFlag('collegeExamable').length;
         collegeBulkBtn.disabled = examableN === 0;
         collegeBulkBtn.title = examableN === 0
           ? 'Select one or more students to enable College Examination'
@@ -2761,38 +2863,72 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
       var sectionBulkBtn = document.getElementById('studentsBulkSectionBtn');
       if (sectionBulkBtn) {
-        var sectionN = selected.filter(function (cb) { return cb.getAttribute('data-college-sectionable') === '1'; }).length;
+        var sectionN = selectedIdsWithFlag('collegeSectionable').length;
         sectionBulkBtn.disabled = sectionN === 0;
         sectionBulkBtn.title = sectionN === 0
-          ? 'Select students to assign a section'
-          : ('Assign section to ' + sectionN + ' selected student(s)');
+          ? 'Select College Examination students (active or suspended) to assign a section'
+          : ('Assign section to ' + sectionN + ' selected College Examination student(s)');
       }
       var suspendBulkBtn = document.getElementById('studentsBulkSuspendBtn');
       if (suspendBulkBtn) {
-        var suspendN = selected.filter(function (cb) { return cb.getAttribute('data-college-suspendable') === '1'; }).length;
+        var suspendN = selectedIdsWithFlag('collegeSuspendable').length;
         suspendBulkBtn.disabled = suspendN === 0;
         suspendBulkBtn.title = suspendN === 0
           ? 'Select students with active College Examination access'
           : ('Suspend College Examination for ' + suspendN + ' selected student(s)');
       }
+      var deleteBulkBtn = document.getElementById('studentsBulkDeleteBtn');
+      if (deleteBulkBtn) {
+        deleteBulkBtn.disabled = n === 0;
+        deleteBulkBtn.title = n === 0
+          ? 'Select students to delete'
+          : ('Delete ' + n + ' selected student(s)');
+      }
     }
+
+    window.AdminStudentsSelection = {
+      ids: selectedIds,
+      idsWithFlag: selectedIdsWithFlag,
+      count: selectionCount,
+      clear: clearSelection,
+      removeIds: function (ids) {
+        (ids || []).forEach(function (id) { removeSelection(id); });
+        saveSelectedMap();
+        restoreCheckboxState();
+        syncBulkBar();
+      },
+      sync: syncBulkBar
+    };
+
+    loadSelectedMap();
+    restoreCheckboxState();
 
     // Select-all must work even if approve modal markup is missing.
     allSelectBoxes().forEach(function (cb) {
-      cb.addEventListener('change', syncBulkBar);
+      cb.addEventListener('change', function () {
+        var id = String(cb.value || '');
+        if (cb.checked) upsertSelectionFromCheckbox(cb);
+        else removeSelection(id);
+        saveSelectedMap();
+        syncBulkBar();
+      });
     });
     if (selectAll) {
       selectAll.addEventListener('change', function () {
         var on = !!selectAll.checked;
-        allSelectBoxes().forEach(function (cb) { cb.checked = on; });
+        allSelectBoxes().forEach(function (cb) {
+          cb.checked = on;
+          if (on) upsertSelectionFromCheckbox(cb);
+          else removeSelection(cb.value);
+        });
         selectAll.indeterminate = false;
+        saveSelectedMap();
         syncBulkBar();
       });
     }
     if (bulkClear) {
       bulkClear.addEventListener('click', function () {
-        allSelectBoxes().forEach(function (cb) { cb.checked = false; });
-        syncBulkBar();
+        clearSelection();
       });
     }
     syncBulkBar();
@@ -2800,7 +2936,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var bulkSectionBtn = document.getElementById('studentsBulkSectionBtn');
     if (bulkSectionBtn) {
       bulkSectionBtn.addEventListener('click', function () {
-        var ids = selectedCheckboxes().filter(function (cb) { return cb.getAttribute('data-college-sectionable') === '1'; }).map(function (cb) { return cb.value; });
+        var ids = selectedIdsWithFlag('collegeSectionable');
         if (ids.length && typeof window.adminStudentsOpenAssignSection === 'function') {
           window.adminStudentsOpenAssignSection(ids);
         }
@@ -2809,7 +2945,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var bulkSuspendBtn = document.getElementById('studentsBulkSuspendBtn');
     if (bulkSuspendBtn) {
       bulkSuspendBtn.addEventListener('click', function () {
-        var ids = selectedCheckboxes().filter(function (cb) { return cb.getAttribute('data-college-suspendable') === '1'; }).map(function (cb) { return cb.value; });
+        var ids = selectedIdsWithFlag('collegeSuspendable');
         if (ids.length && typeof window.adminStudentsOpenSuspendCollegeExam === 'function') {
           window.adminStudentsOpenSuspendCollegeExam(ids);
         }
@@ -2883,17 +3019,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
     if (bulkApprove) {
       bulkApprove.addEventListener('click', function () {
-        var selected = selectedCheckboxes().filter(function (cb) {
-          return cb.getAttribute('data-activatable') === '1';
-        });
-        if (selected.length === 0) {
+        var ids = selectedIdsWithFlag('activatable');
+        if (ids.length === 0) {
           if (window.adminStudentsNotice) {
             window.adminStudentsNotice.show('info', 'Use Grant Access', 'Continue is for Repair Activation / legacy approve only. Use Grant Access for students without Access Granted.');
           }
           return;
         }
-        var ids = selected.map(function (cb) { return Number(cb.value); });
-        openConfirm(ids, selected.length + ' student' + (selected.length === 1 ? '' : 's'));
+        var label = ids.length === 1
+          ? ((selectedMap[ids[0]] && selectedMap[ids[0]].name) || ('Student #' + ids[0]))
+          : (ids.length + ' students');
+        openConfirm(ids, label);
       });
     }
 
@@ -3066,20 +3202,23 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
     if (bulkGrantBtn) {
       bulkGrantBtn.addEventListener('click', function () {
-        var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-grantable="1"]'));
-        var ids = boxes.map(function (cb) { return cb.value; });
+        var sel = window.AdminStudentsSelection;
+        var ids = sel && typeof sel.idsWithFlag === 'function' ? sel.idsWithFlag('grantable') : [];
         if (ids.length === 0) {
           if (window.adminStudentsNotice) {
             window.adminStudentsNotice.show('info', 'No students selected', 'Select at least one student without Access Granted.');
           }
           return;
         }
-        var anyNeedsProof = boxes.some(function (cb) {
-          var rowBtn = document.querySelector('.js-grant-access-btn[data-user-id="' + cb.value + '"]');
+        var anyNeedsProof = ids.some(function (id) {
+          var rowBtn = document.querySelector('.js-grant-access-btn[data-user-id="' + id + '"]');
           return rowBtn && rowBtn.getAttribute('data-needs-proof') === '1';
         });
         var label = ids.length === 1
-          ? (boxes[0].getAttribute('data-student-name') || ('Student #' + ids[0]))
+          ? (function () {
+              var cb = document.querySelector('.js-student-select[value="' + ids[0] + '"]');
+              return (cb && cb.getAttribute('data-student-name')) || ('Student #' + ids[0]);
+            })()
           : (ids.length + ' students - same duration & content selection for all');
         openGrant(ids, label, anyNeedsProof);
       });
@@ -3088,8 +3227,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var bulkCollegeExamBtn = document.getElementById('studentsBulkCollegeExamBtn');
     if (bulkCollegeExamBtn) {
       bulkCollegeExamBtn.addEventListener('click', function () {
-        var boxes = Array.prototype.slice.call(document.querySelectorAll('.js-student-select:checked[data-college-examable="1"]'));
-        var ids = boxes.map(function (cb) { return cb.value; });
+        var sel = window.AdminStudentsSelection;
+        var ids = sel && typeof sel.idsWithFlag === 'function' ? sel.idsWithFlag('collegeExamable') : [];
         if (ids.length === 0) {
           if (window.adminStudentsNotice) {
             window.adminStudentsNotice.show('info', 'No students selected', 'Select one or more students to enable College Examination.');
@@ -3294,13 +3433,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var loadingTitle = document.getElementById('actionLoadingTitle');
     var loadingMessage = document.getElementById('actionLoadingMessage');
 
+    var pendingDeleteIds = [];
+
     if (!modalOverlay || !form) return;
 
-    function openModal(btn) {
-      var uid = btn.getAttribute('data-user-id') || '';
-      var uname = btn.getAttribute('data-user-name') || 'this student';
-      userIdEl.value = uid;
-      nameEl.textContent = uname;
+    function openModalForIds(ids, label) {
+      pendingDeleteIds = (ids || []).map(function (id) { return Number(id); }).filter(function (id) { return id > 0; });
+      if (pendingDeleteIds.length === 0) return;
+      userIdEl.value = String(pendingDeleteIds[0]);
+      nameEl.textContent = label || (pendingDeleteIds.length === 1
+        ? ('student #' + pendingDeleteIds[0])
+        : (pendingDeleteIds.length + ' selected students'));
       if (reasonEl) reasonEl.value = '';
       if (reasonOtherEl) reasonOtherEl.value = '';
       if (reasonOtherWrap) reasonOtherWrap.style.display = 'none';
@@ -3311,10 +3454,17 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       setTimeout(function () { passEl.focus(); }, 40);
     }
 
+    function openModal(btn) {
+      var uid = btn.getAttribute('data-user-id') || '';
+      var uname = btn.getAttribute('data-user-name') || 'this student';
+      openModalForIds([uid], uname);
+    }
+
     function closeModal() {
       modalOverlay.classList.remove('is-open');
       modalOverlay.setAttribute('aria-hidden', 'true');
       errEl.textContent = '';
+      pendingDeleteIds = [];
     }
 
     function showFeedback(type, title, message) {
@@ -3362,6 +3512,20 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     document.querySelectorAll('.js-delete-student-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { openModal(btn); });
     });
+    var bulkDeleteBtn = document.getElementById('studentsBulkDeleteBtn');
+    if (bulkDeleteBtn) {
+      bulkDeleteBtn.addEventListener('click', function () {
+        var sel = window.AdminStudentsSelection;
+        var ids = sel && typeof sel.ids === 'function' ? sel.ids() : [];
+        if (ids.length === 0) {
+          if (window.adminStudentsNotice) {
+            window.adminStudentsNotice.show('info', 'No students selected', 'Select one or more students to delete.');
+          }
+          return;
+        }
+        openModalForIds(ids, ids.length === 1 ? '1 selected student' : (ids.length + ' selected students'));
+      });
+    }
     if (reasonEl) {
       reasonEl.addEventListener('change', function () {
         if (!reasonOtherWrap) return;
@@ -3397,11 +3561,15 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var uid = parseInt(userIdEl.value || '0', 10);
+      var ids = pendingDeleteIds.slice();
+      if (ids.length === 0) {
+        var single = parseInt(userIdEl.value || '0', 10);
+        if (single > 0) ids = [single];
+      }
       var password = (passEl.value || '').trim();
       var reason = reasonEl ? String(reasonEl.value || '').trim() : '';
       var reasonOther = reasonOtherEl ? String(reasonOtherEl.value || '').trim() : '';
-      if (!uid) {
+      if (!ids.length) {
         errEl.textContent = 'Invalid user selected.';
         return;
       }
@@ -3425,46 +3593,154 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Deleting...';
       closeModal();
-      showLoading('Deleting student account...', 'Securing audit log and processing deletion.');
+      showLoading(
+        ids.length === 1 ? 'Deleting student account...' : ('Deleting ' + ids.length + ' student accounts...'),
+        'Securing audit log and processing deletion.'
+      );
 
-      var body = new URLSearchParams();
-      body.set('csrf_token', csrf);
-      body.set('user_id', String(uid));
-      body.set('admin_password', password);
-      body.set('delete_reason', reason);
-      body.set('delete_reason_other', reasonOther);
+      var deletedIds = [];
+      var failedMsg = '';
 
-      fetch(deleteUrl, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body: body.toString()
-      })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (!data || !data.ok) {
+      function deleteNext(index) {
+        if (index >= ids.length) {
           hideLoading();
-          var msg = (data && data.error) ? data.error : 'Delete failed. Please try again.';
-          if ((data && data.code) === 'INVALID_PASSWORD' || msg.toLowerCase().indexOf('incorrect password') !== -1) {
-            showFeedback('error', 'Incorrect password', 'Incorrect password. Please try again with your admin password.');
-          } else {
-            showFeedback('error', 'Delete failed', msg);
+          deletedIds.forEach(function (uid) { removeRow(uid); });
+          if (window.AdminStudentsSelection && typeof window.AdminStudentsSelection.removeIds === 'function') {
+            window.AdminStudentsSelection.removeIds(deletedIds);
           }
+          if (deletedIds.length === ids.length) {
+            showFeedback(
+              'success',
+              deletedIds.length === 1 ? 'User successfully deleted' : (deletedIds.length + ' users successfully deleted'),
+              deletedIds.length === 1
+                ? 'The selected student account was permanently removed.'
+                : ('Permanently removed ' + deletedIds.length + ' selected student accounts.')
+            );
+          } else if (deletedIds.length > 0) {
+            showFeedback('error', 'Partial delete', 'Deleted ' + deletedIds.length + ' of ' + ids.length + '. ' + (failedMsg || ''));
+          } else {
+            showFeedback('error', 'Delete failed', failedMsg || 'Delete failed. Please try again.');
+          }
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Delete';
           return;
         }
-        hideLoading();
-        removeRow(uid);
-        showFeedback('success', 'User successfully deleted', 'The selected student account was permanently removed.');
-      })
-      .catch(function () {
-        hideLoading();
-        showFeedback('error', 'Request failed', 'Check your connection and try again.');
-      })
-      .finally(function () {
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm Delete';
+
+        var body = new URLSearchParams();
+        body.set('csrf_token', csrf);
+        body.set('user_id', String(ids[index]));
+        body.set('admin_password', password);
+        body.set('delete_reason', reason);
+        body.set('delete_reason_other', reasonOther);
+
+        fetch(deleteUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+          body: body.toString()
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data || !data.ok) {
+            var msg = (data && data.error) ? data.error : 'Delete failed. Please try again.';
+            if ((data && data.code) === 'INVALID_PASSWORD' || msg.toLowerCase().indexOf('incorrect password') !== -1) {
+              hideLoading();
+              showFeedback('error', 'Incorrect password', 'Incorrect password. Please try again with your admin password.');
+              confirmBtn.disabled = false;
+              confirmBtn.textContent = 'Confirm Delete';
+              return;
+            }
+            failedMsg = msg;
+            deleteNext(index + 1);
+            return;
+          }
+          deletedIds.push(ids[index]);
+          deleteNext(index + 1);
+        })
+        .catch(function () {
+          failedMsg = 'Check your connection and try again.';
+          deleteNext(index + 1);
+        });
+      }
+
+      deleteNext(0);
+    });
+  })();
+
+  (function () {
+    // Live search / filters — debounce GET navigation (preserves selection via sessionStorage).
+    var form = document.getElementById('adminStudentsFilterForm');
+    var searchInput = document.getElementById('adminStudentsSearchInput');
+    var pageField = document.getElementById('adminStudentsPageField');
+    var perPageForm = document.getElementById('adminStudentsPerPageForm');
+    var perPageSelect = document.getElementById('adminStudentsPerPage');
+    var debounceMs = 350;
+    var timer = null;
+    var navigating = false;
+
+    function currentQuery() {
+      try { return new URLSearchParams(window.location.search).get('q') || ''; } catch (e) { return ''; }
+    }
+
+    function navigateFromForm(targetForm, forcePageOne) {
+      if (!targetForm || navigating) return;
+      if (forcePageOne) {
+        var pf = targetForm.querySelector('input[name="page"]');
+        if (pf) pf.value = '1';
+      }
+      navigating = true;
+      targetForm.submit();
+    }
+
+    if (searchInput && form) {
+      searchInput.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          var nextQ = String(searchInput.value || '').trim();
+          if (nextQ === String(currentQuery()).trim()) return;
+          if (pageField) pageField.value = '1';
+          navigateFromForm(form, true);
+        }, debounceMs);
+      });
+      // Avoid Enter causing double-submit races with debounce.
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          clearTimeout(timer);
+          if (pageField) pageField.value = '1';
+          navigateFromForm(form, true);
+        }
+      });
+    }
+
+    ['adminStudentsCollExFilter'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el || !form) return;
+      el.addEventListener('change', function () {
+        clearTimeout(timer);
+        if (pageField) pageField.value = '1';
+        navigateFromForm(form, true);
       });
     });
+
+    if (perPageSelect && perPageForm) {
+      perPageSelect.addEventListener('change', function () {
+        navigateFromForm(perPageForm, true);
+      });
+    }
+
+    // Deleted users log live search
+    var deletedForm = document.querySelector('.students-toolbar__search input[name="dq"]');
+    if (deletedForm) {
+      var dForm = deletedForm.closest('form');
+      var dTimer = null;
+      deletedForm.addEventListener('input', function () {
+        clearTimeout(dTimer);
+        dTimer = setTimeout(function () {
+          if (dForm) dForm.submit();
+        }, debounceMs);
+      });
+    }
   })();
 
   (function () {
