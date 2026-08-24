@@ -1208,3 +1208,3120 @@ body.app-shell--student #main.app-shell-main--student {
   margin-right: auto;
   grid-column: 1 / -1;
 }
+
+/* =============================================================================
+   College Examination Portal — premium SaaS design system (scoped)
+   Applies only to body.college-examination-portal (college student module).
+   Does not affect LMS student or admin surfaces.
+   ============================================================================= */
+
+body.college-examination-portal {
+  --cp-gold: #d4a017;
+  --cp-gold-soft: rgba(212, 160, 23, 0.12);
+  --cp-glass: rgba(255, 255, 255, 0.72);
+  --cp-glass-border: rgba(148, 183, 255, 0.22);
+  --cp-sidebar-bg: linear-gradient(180deg, #0c2340 0%, #143d59 42%, #1665a0 100%);
+  --cp-sidebar-active: rgba(255, 255, 255, 0.14);
+  --cp-sidebar-active-border: rgba(212, 160, 23, 0.55);
+  --cp-radius-lg: 18px;
+  background:
+    radial-gradient(1100px 520px at 4% -8%, rgba(22, 101, 160, 0.07), transparent 58%),
+    radial-gradient(900px 480px at 96% 0%, rgba(212, 160, 23, 0.04), transparent 52%),
+    var(--cp-bg) !important;
+  background-attachment: fixed;
+}
+
+/* No blank flash on full-page navigation */
+body.college-examination-portal #main.app-shell-main--student > .ereview-shell-no-fade,
+body.college-examination-portal #main.app-shell-main--student > .cp-page-shell {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+body.college-examination-portal .cp-anim,
+body.college-examination-portal .dash-anim {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.college-examination-portal .cp-anim,
+  body.college-examination-portal .dash-anim {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---- Sidebar: deep navy + glass active pill ---- */
+body.college-examination-portal #app-sidebar.app-shell-sidebar--student {
+  background: var(--cp-sidebar-bg) !important;
+  box-shadow: 0 12px 40px rgba(8, 20, 40, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.college-examination-portal #app-sidebar .app-shell-sidebar-brand-text,
+body.college-examination-portal #app-sidebar .app-shell-sidebar-brand-link {
+  color: #fff !important;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+body.college-examination-portal #app-sidebar .app-shell-sidebar-brand-icon {
+  color: var(--cp-gold) !important;
+}
+
+body.college-examination-portal #app-sidebar .admin-sidebar-section-label {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+body.college-examination-portal #app-sidebar .app-shell-nav-link--student {
+  color: rgba(255, 255, 255, 0.82) !important;
+  border-left: 3px solid transparent;
+  border-radius: 0 0.65rem 0.65rem 0;
+  margin: 0 0.5rem 0 0;
+  padding-top: 0.62rem;
+  padding-bottom: 0.62rem;
+  font-weight: 650;
+  font-size: 0.875rem;
+}
+
+body.college-examination-portal #app-sidebar .app-shell-nav-link--student:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+body.college-examination-portal #app-sidebar .student-nav-item--active,
+body.college-examination-portal #app-sidebar .app-shell-nav-link--student.student-nav-item--active {
+  background: var(--cp-sidebar-active) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-left-color: var(--cp-sidebar-active-border) !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+body.college-examination-portal #app-sidebar .app-shell-nav-link--student i {
+  opacity: 0.92;
+  font-size: 1.05rem;
+}
+
+body.college-examination-portal #app-sidebar .student-nav-item--active i {
+  color: var(--cp-gold);
+}
+
+/* ---- Topbar ---- */
+body.college-examination-portal .student-topbar,
+body.college-examination-portal .admin-topbar {
+  background: var(--cp-glass);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid var(--cp-glass-border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+body.college-examination-portal .student-topbar__title,
+body.college-examination-portal .admin-topbar__title {
+  color: var(--cp-text);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Page header & welcome ---- */
+body.college-examination-portal .cp-page-header {
+  border-bottom-color: var(--cp-border);
+  margin-bottom: 1.25rem;
+}
+
+body.college-examination-portal .cp-page-header__title {
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+  letter-spacing: -0.025em;
+}
+
+body.college-examination-portal .cp-page-header__icon {
+  background: linear-gradient(135deg, var(--cp-primary-soft) 0%, #fff 100%);
+  border: 1px solid var(--cp-primary-border);
+  box-shadow: 0 4px 14px -8px rgba(20, 61, 89, 0.35);
+}
+
+body.college-examination-portal .cp-welcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  margin-bottom: 1.35rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cp-welcome__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.55rem);
+  font-weight: 800;
+  color: var(--cp-text);
+  letter-spacing: -0.02em;
+}
+
+body.college-examination-portal .cp-welcome__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--cp-muted);
+  line-height: 1.5;
+  max-width: 36rem;
+}
+
+body.college-examination-portal .cp-welcome__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ---- Cards & KPIs ---- */
+body.college-examination-portal .kpi-card,
+body.college-examination-portal .overview-card,
+body.college-examination-portal .dash-card,
+body.college-examination-portal .cp-card {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .kpi-card:hover,
+body.college-examination-portal .overview-card:hover {
+  box-shadow: var(--cp-shadow-hover);
+  border-color: rgba(22, 101, 160, 0.22);
+}
+
+body.college-examination-portal .cp-stat-chip {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-sm);
+  padding: 0.45rem 0.65rem;
+}
+
+body.college-examination-portal .cp-stat-chip__v {
+  color: var(--cp-primary);
+  font-weight: 800;
+}
+
+/* ---- Exam list & toolbar ---- */
+body.college-examination-portal .toolbar-sticky {
+  position: sticky;
+  top: 0.35rem;
+  z-index: 25;
+}
+
+body.college-examination-portal .filter-pill.is-active {
+  background: var(--cp-primary-soft);
+  border-color: var(--cp-primary);
+  color: var(--cp-primary-deep);
+  box-shadow: inset 0 0 0 1px rgba(22, 101, 160, 0.08);
+}
+
+body.college-examination-portal .exam-card,
+body.college-examination-portal .compact-list-row {
+  border-radius: var(--cp-radius-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.college-examination-portal .exam-card:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: var(--cp-shadow-hover);
+}
+
+body.college-examination-portal .list-exam-title {
+  font-weight: 800;
+  color: var(--cp-text);
+  letter-spacing: -0.01em;
+}
+
+/* ---- Buttons: solid primary, glass secondary ---- */
+body.college-examination-portal .cp-btn--primary,
+body.college-examination-portal .action-btn.action-start {
+  background: var(--cp-primary) !important;
+  background-image: none !important;
+  border-color: var(--cp-primary-mid) !important;
+}
+
+body.college-examination-portal .cp-btn--primary:hover,
+body.college-examination-portal .action-btn.action-start:hover {
+  background: var(--cp-primary-mid) !important;
+}
+
+body.college-examination-portal .cp-btn:not(.cp-btn--primary) {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+/* ---- Empty states ---- */
+body.college-examination-portal .empty-state {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .empty-state i {
+  font-size: 2rem;
+  color: var(--cp-primary);
+  opacity: 0.65;
+  display: block;
+  margin-bottom: 0.65rem;
+}
+
+/* ---- Static pages (preferences, help) ---- */
+body.college-examination-portal .cp-static-page {
+  max-width: 42rem;
+}
+
+body.college-examination-portal .cp-static-hero {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(130deg, #143d59 0%, #1665a0 55%, #145a8f 100%);
+  box-shadow: var(--cp-shadow);
+  padding: 1.35rem 1.25rem;
+  color: #fff;
+  margin-bottom: 1.15rem;
+}
+
+body.college-examination-portal .cp-static-hero h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+body.college-examination-portal .cp-static-card {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  padding: 1.35rem 1.25rem;
+}
+
+/* ---- Dark mode ---- */
+html[data-student-theme="dark"] body.college-examination-portal {
+  --cp-bg: #070b14;
+  --cp-surface: rgba(14, 22, 38, 0.92);
+  --cp-border: rgba(148, 183, 255, 0.14);
+  --cp-text: #eef3fb;
+  --cp-text-body: #c5d0e0;
+  --cp-muted: #8fa3bf;
+  --cp-primary-soft: rgba(59, 159, 217, 0.14);
+  --cp-glass: rgba(12, 18, 32, 0.82);
+  --cp-glass-border: rgba(148, 183, 255, 0.12);
+  --cp-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px -16px rgba(0, 0, 0, 0.55);
+  background:
+    radial-gradient(900px 480px at 8% -10%, rgba(22, 101, 160, 0.12), transparent 55%),
+    radial-gradient(700px 400px at 92% 0%, rgba(212, 160, 23, 0.05), transparent 50%),
+    var(--cp-bg) !important;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .kpi-card,
+html[data-student-theme="dark"] body.college-examination-portal .overview-card,
+html[data-student-theme="dark"] body.college-examination-portal .dash-card,
+html[data-student-theme="dark"] body.college-examination-portal .cp-static-card {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-welcome {
+  background: var(--cp-glass);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .student-topbar,
+html[data-student-theme="dark"] body.college-examination-portal .admin-topbar {
+  background: var(--cp-glass);
+  border-bottom-color: var(--cp-border);
+  box-shadow: none;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-status--open,
+html[data-student-theme="dark"] body.college-examination-portal .status-open {
+  color: #6ee7b7;
+  background: rgba(6, 95, 70, 0.22);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .text-gray-500,
+html[data-student-theme="dark"] body.college-examination-portal .text-gray-800 {
+  color: var(--cp-text-body) !important;
+}
+
+/* ---- Exam shell: intro, pre-exam, results gate ---- */
+body.college-examination-portal .exam-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 5rem;
+}
+
+/* Full-page examination result shell — no max-width constraint */
+body.college-examination-portal .cer-page-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body.college-examination-portal .cdr-page-shell {
+  width: 100%;
+  max-width: none;
+}
+
+body.college-examination-portal.exam-review-mode #main.app-shell-main--student {
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .exam-hero {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(130deg, #143d59 0%, #1665a0 52%, #145a8f 100%);
+  box-shadow: var(--cp-shadow);
+  padding: 1.35rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+body.college-examination-portal .exam-hero .back-link {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+body.college-examination-portal .exam-hero .back-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+body.college-examination-portal .exam-hero .exam-title {
+  color: #fff;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-weight: 800;
+}
+
+body.college-examination-portal .exam-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+body.college-examination-portal .intro-card {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .intro-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  body.college-examination-portal .intro-meta-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .intro-meta {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-sm);
+  background: var(--cp-bg);
+  padding: 0.6rem 0.7rem;
+}
+
+body.college-examination-portal .intro-meta-k {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .intro-meta-v {
+  font-size: 0.875rem;
+  color: var(--cp-text);
+  font-weight: 800;
+  margin-top: 0.15rem;
+  line-height: 1.35;
+}
+
+body.college-examination-portal .intro-timer-cap-note {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cp-warning);
+  line-height: 1.4;
+}
+
+body.college-examination-portal .review-locked-gate,
+body.college-examination-portal .exam-lock-card {
+  max-width: 28rem;
+  margin: 2rem auto;
+  text-align: center;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .review-locked-icon,
+body.college-examination-portal .exam-lock-icon {
+  font-size: 2rem;
+  color: var(--cp-primary);
+  margin-bottom: 0.75rem;
+}
+
+body.college-examination-portal .exam-lock-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #143d59 0%, #1665a0 100%);
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+body.college-examination-portal .review-locked-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--cp-text);
+  margin: 0;
+}
+
+body.college-examination-portal .review-locked-text {
+  font-size: 0.9rem;
+  color: var(--cp-muted);
+  margin-top: 0.5rem;
+  line-height: 1.55;
+}
+
+/* ---- Submit confirmation modal ---- */
+body.college-examination-portal .submit-confirm-overlay {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body.college-examination-portal .submit-confirm-shell {
+  width: 100%;
+  max-width: 32rem;
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  box-shadow: 0 24px 48px -24px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+
+body.college-examination-portal .submit-confirm-head {
+  padding: 1.25rem 1.35rem 0.85rem;
+  background: var(--cp-bg);
+  border-bottom: 1px solid var(--cp-border);
+  text-align: center;
+}
+
+body.college-examination-portal .submit-confirm-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.75rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cp-primary-soft);
+  color: var(--cp-primary);
+  font-size: 1.35rem;
+  border: 1px solid var(--cp-primary-border);
+}
+
+body.college-examination-portal .submit-confirm-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .submit-confirm-sub {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: var(--cp-muted);
+  line-height: 1.45;
+}
+
+body.college-examination-portal .submit-stat-cell {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-sm);
+  padding: 0.55rem 0.65rem;
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .submit-btn-go {
+  border: 1px solid var(--cp-primary);
+  background: var(--cp-primary);
+  color: #fff;
+}
+
+body.college-examination-portal .submit-btn-review,
+body.college-examination-portal .submit-btn-cancel {
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  color: var(--cp-text-body);
+}
+
+/* ---- Dashboard list tiles & KPI links ---- */
+body.college-examination-portal .kpi-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--cp-primary);
+  text-decoration: none;
+}
+
+body.college-examination-portal .kpi-action:hover {
+  color: var(--cp-primary-deep);
+  text-decoration: underline;
+}
+
+body.college-examination-portal .list-tile {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+body.college-examination-portal .list-tile:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  background: var(--cp-primary-soft);
+}
+
+body.college-examination-portal .overview-card > .px-5.py-4.border-b {
+  background: var(--cp-bg) !important;
+  border-bottom-color: var(--cp-border) !important;
+}
+
+/* ---- Forms (preferences, uploads, search) ---- */
+body.college-examination-portal .search-input,
+body.college-examination-portal .sort-select,
+body.college-examination-portal .cp-static-card input[type="text"],
+body.college-examination-portal .cp-static-card input[type="email"],
+body.college-examination-portal .cp-static-card input[type="file"],
+body.college-examination-portal .cp-static-card select,
+body.college-examination-portal .cp-static-card textarea,
+body.college-examination-portal .cut-field input,
+body.college-examination-portal .cut-field textarea,
+body.college-examination-portal .cut-field select {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-sm);
+  background: var(--cp-surface);
+  color: var(--cp-text);
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.college-examination-portal .search-input:focus,
+body.college-examination-portal .sort-select:focus,
+body.college-examination-portal .cp-static-card input:focus,
+body.college-examination-portal .cp-static-card select:focus,
+body.college-examination-portal .cp-static-card textarea:focus,
+body.college-examination-portal .cut-field input:focus,
+body.college-examination-portal .cut-field textarea:focus {
+  outline: none;
+  border-color: var(--cp-primary);
+  box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.14);
+}
+
+body.college-examination-portal .focus-ring:focus-visible {
+  outline: 3px solid rgba(22, 101, 160, 0.45);
+  outline-offset: 2px;
+}
+
+/* ---- Upload tiles ---- */
+body.college-examination-portal .cu-tile {
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cu-tile::before {
+  background: linear-gradient(180deg, var(--cp-primary) 0%, #3d9ae8 100%);
+}
+
+body.college-examination-portal .cu-tile-icon {
+  background: var(--cp-primary-soft);
+  border-color: var(--cp-primary-border);
+  color: var(--cp-primary);
+}
+
+/* =============================================================================
+   Examination workspace — focused take interface (visual only)
+   ============================================================================= */
+body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+  background: #eef2f7;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-take-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-bar {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--cp-shadow);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-progress-fill {
+  background: var(--cp-primary);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-progress-wrap:hover .exam-progress-fill {
+  box-shadow: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-card {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  box-shadow: var(--cp-shadow);
+  padding: 1.5rem 1.75rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-text {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice {
+  border-radius: var(--cp-radius-sm);
+  border-width: 1.5px;
+  min-height: 3.25rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice:hover {
+  border-color: rgba(22, 101, 160, 0.45);
+  background: var(--cp-primary-soft);
+  box-shadow: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice.selected {
+  border-color: var(--cp-primary);
+  background: var(--cp-primary-soft);
+  box-shadow: inset 0 0 0 1px rgba(22, 101, 160, 0.18);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-letter {
+  background: var(--cp-primary);
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-sidebar-card {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap {
+  box-shadow: 0 4px 18px rgba(20, 61, 89, 0.1);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap.warning .exam-timer-circle-progress {
+  stroke: var(--cp-warning);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap.danger .exam-timer-circle-progress {
+  stroke: var(--cp-danger);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a.current {
+  background: var(--cp-primary-soft);
+  box-shadow: inset 0 0 0 2px var(--cp-primary);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a.current .q-num {
+  background: var(--cp-primary);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a.answered .q-num {
+  background: var(--cp-success);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a.flagged .q-num {
+  background: var(--cp-warning);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-btn-submit {
+  background: var(--cp-primary);
+  border-radius: var(--cp-radius-sm);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-btn-submit:hover:not(:disabled) {
+  background: var(--cp-primary-mid);
+  box-shadow: 0 4px 14px rgba(20, 61, 89, 0.2);
+  transform: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-card,
+body.college-examination-portal.exam-taking-mode .exam-submit-card {
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal.exam-review-mode .cer-results,
+body.college-examination-portal.exam-review-mode .cer-summary-card,
+body.college-examination-portal.exam-review-mode .cer-perf,
+body.college-examination-portal.exam-review-mode .cer-details,
+body.college-examination-portal.exam-review-mode .cer-q-card {
+  border-radius: var(--cp-radius-lg);
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-v--score {
+  color: var(--cp-primary);
+}
+
+/* Dark: exam-taking workspace */
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+  background: #070b14;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-bar,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-question-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-sidebar-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-card {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice {
+  background: rgba(14, 22, 38, 0.6);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice:hover {
+  background: var(--cp-primary-soft);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice.selected {
+  background: rgba(59, 159, 217, 0.14);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .intro-card,
+html[data-student-theme="dark"] body.college-examination-portal .intro-meta {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .submit-confirm-shell {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap.danger .exam-timer-circle-inner {
+    animation: none;
+  }
+}
+
+/* =============================================================================
+   CONTENT COMPOSITION v2 — page content area (second-pass redesign)
+   ============================================================================= */
+
+body.college-examination-portal .cp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-bottom: 3rem;
+}
+
+body.college-examination-portal .cp-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-title-xl {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.2vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-lead {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--cp-text-body);
+  max-width: 42rem;
+}
+
+body.college-examination-portal .cp-section-title {
+  margin: 0;
+  font-size: clamp(1.125rem, 2vw, 1.35rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-section-desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+  max-width: 38rem;
+}
+
+body.college-examination-portal .cp-meta-k {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-meta-v {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cp-text);
+  line-height: 1.4;
+}
+
+body.college-examination-portal .cp-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--cp-primary);
+  text-decoration: none;
+}
+
+body.college-examination-portal .cp-text-link:hover {
+  color: var(--cp-primary-deep);
+  text-decoration: underline;
+}
+
+body.college-examination-portal .cp-content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+body.college-examination-portal .cp-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+body.college-examination-portal .cp-section-header--compact {
+  align-items: flex-start;
+}
+
+/* ---- Welcome hero (dashboard) ---- */
+body.college-examination-portal .cp-welcome-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(22, 101, 160, 0.14);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 251, 255, 0.98) 100%);
+  box-shadow: var(--cp-shadow);
+  padding: 1.5rem 1.35rem;
+}
+
+body.college-examination-portal .cp-welcome-hero__glow {
+  position: absolute;
+  inset: -20% -10% auto auto;
+  width: 55%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(22, 101, 160, 0.12) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+body.college-examination-portal .cp-welcome-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--cp-gold) 0%, rgba(212, 160, 23, 0.2) 100%);
+}
+
+body.college-examination-portal .cp-welcome-hero__layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal .cp-welcome-hero__layout {
+    grid-template-columns: 1fr auto;
+    padding-left: 0.5rem;
+  }
+}
+
+body.college-examination-portal .cp-welcome-hero__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-welcome-hero__sub {
+  margin: 0.45rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+  max-width: 34rem;
+}
+
+body.college-examination-portal .cp-welcome-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+body.college-examination-portal .cp-welcome-hero__visual {
+  position: relative;
+  width: 7.5rem;
+  height: 7.5rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal .cp-welcome-hero__visual {
+    margin: 0;
+  }
+}
+
+body.college-examination-portal .cp-welcome-hero__orb {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(22, 101, 160, 0.12);
+}
+
+body.college-examination-portal .cp-welcome-hero__orb--1 {
+  inset: 0.5rem;
+  background: rgba(232, 242, 250, 0.8);
+}
+
+body.college-examination-portal .cp-welcome-hero__orb--2 {
+  inset: 1.25rem;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+body.college-examination-portal .cp-welcome-hero__glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--cp-primary);
+}
+
+/* ---- Metric strip ---- */
+body.college-examination-portal .cp-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal .cp-metric-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-metric-strip--surface {
+  padding: 0.85rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-metric-strip__item {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid transparent;
+}
+
+body.college-examination-portal .cp-metric-strip--surface .cp-metric-strip__item {
+  border-color: var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-metric-strip__v {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cp-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cp-metric-strip__k {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-metric-strip__item--accent .cp-metric-strip__v {
+  color: var(--cp-warning);
+}
+
+body.college-examination-portal .cp-page-header--editorial {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+body.college-examination-portal .cp-page-header--editorial .cp-page-header__title {
+  font-size: clamp(1.75rem, 3.2vw, 2.35rem);
+  font-weight: 700;
+}
+
+body.college-examination-portal .cp-page-header--editorial .cp-page-header__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.15rem;
+}
+
+/* ---- Premium exam cards ---- */
+body.college-examination-portal .cp-exam-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  body.college-examination-portal .cp-exam-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  body.college-examination-portal .cp-exam-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-featured-exam-wrap .cp-exam-card {
+  max-width: none;
+}
+
+body.college-examination-portal .cp-exam-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+body.college-examination-portal .cp-exam-card:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: var(--cp-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body.college-examination-portal .cp-exam-card--featured {
+  padding: 1.5rem 1.35rem;
+  padding-left: 1.5rem;
+  border-color: rgba(22, 101, 160, 0.28);
+  background:
+    linear-gradient(180deg, rgba(232, 242, 250, 0.45) 0%, var(--cp-surface) 38%);
+  box-shadow: var(--cp-shadow-hover);
+}
+
+body.college-examination-portal .cp-exam-card--featured::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 18px 0 0 18px;
+  background: linear-gradient(180deg, var(--cp-gold) 0%, rgba(212, 160, 23, 0.35) 100%);
+}
+
+body.college-examination-portal .cp-exam-card--featured {
+  position: relative;
+}
+
+body.college-examination-portal .cp-exam-card--open {
+  border-left: 3px solid var(--cp-primary);
+}
+
+body.college-examination-portal .cp-exam-card--upcoming {
+  border-left: 3px solid #93c5fd;
+}
+
+body.college-examination-portal .cp-exam-card--finished {
+  opacity: 0.92;
+}
+
+body.college-examination-portal .cp-exam-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+body.college-examination-portal .cp-exam-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+body.college-examination-portal .cp-exam-card__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-exam-card--featured .cp-exam-card__title {
+  font-size: clamp(1.125rem, 2vw, 1.35rem);
+}
+
+body.college-examination-portal .cp-exam-card__desc {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.college-examination-portal .cp-exam-card__divider {
+  height: 1px;
+  background: var(--cp-border);
+}
+
+body.college-examination-portal .cp-exam-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+body.college-examination-portal .cp-exam-card__stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.8125rem;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-exam-card__stat i {
+  color: var(--cp-primary);
+  margin-top: 0.1rem;
+}
+
+body.college-examination-portal .cp-exam-card__stat--wide {
+  grid-column: 1 / -1;
+}
+
+body.college-examination-portal .cp-exam-card__foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+body.college-examination-portal .cp-exam-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+body.college-examination-portal .cp-exam-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+@media (min-width: 900px) {
+  body.college-examination-portal .cp-exam-row {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+body.college-examination-portal .cp-exam-row__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+body.college-examination-portal .cp-exam-row__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-exam-row__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--cp-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.college-examination-portal .cp-exam-row__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.75rem;
+}
+
+@media (min-width: 900px) {
+  body.college-examination-portal .cp-exam-row__meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ---- Toolbar panel ---- */
+body.college-examination-portal .cp-toolbar-panel {
+  padding: 1rem 1.1rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cp-search-bar__field {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+body.college-examination-portal .cp-search-bar__field i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cp-muted);
+  pointer-events: none;
+}
+
+body.college-examination-portal .cp-search-bar__field .search-input {
+  width: 100%;
+  padding-left: 2.15rem;
+}
+
+body.college-examination-portal .filter-pill__count {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cp-view-toggle {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* ---- Data table ---- */
+body.college-examination-portal .cp-data-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+body.college-examination-portal .cp-data-table thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+  border-bottom: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-data-table tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--cp-border);
+  vertical-align: middle;
+}
+
+body.college-examination-portal .cp-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+body.college-examination-portal .cp-data-table tbody tr:hover {
+  background: rgba(232, 242, 250, 0.35);
+}
+
+body.college-examination-portal .cp-data-table__primary {
+  font-weight: 600;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-data-table__num {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cp-data-table__muted {
+  color: var(--cp-muted);
+  font-size: 0.8125rem;
+}
+
+/* ---- Split panels / timeline ---- */
+body.college-examination-portal .cp-split-panels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  body.college-examination-portal .cp-split-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal .cp-panel-head__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+body.college-examination-portal .cp-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+body.college-examination-portal .cp-timeline-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-timeline-list__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+body.college-examination-portal .cp-timeline-list__title {
+  font-weight: 600;
+  color: var(--cp-text);
+  font-size: 0.875rem;
+}
+
+body.college-examination-portal .cp-timeline-list__when {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cp-warning);
+  white-space: nowrap;
+}
+
+body.college-examination-portal .cp-surface {
+  padding: 1.25rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-surface--soft {
+  background: linear-gradient(180deg, var(--cp-bg) 0%, var(--cp-surface) 100%);
+}
+
+body.college-examination-portal .cp-chart-wrap {
+  height: 180px;
+  margin-top: 0.5rem;
+}
+
+body.college-examination-portal .cp-inline-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+body.college-examination-portal .cp-inline-metrics__item {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-inline-metrics__k {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--cp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.college-examination-portal .cp-inline-metrics__v {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cp-primary);
+}
+
+/* ---- Empty states ---- */
+body.college-examination-portal .cp-empty-surface {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px dashed var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-empty-surface--wide {
+  grid-column: 1 / -1;
+}
+
+body.college-examination-portal .cp-empty-surface__icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cp-primary-soft);
+  color: var(--cp-primary);
+  font-size: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal .cp-empty-surface__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-empty-surface__text {
+  margin: 0.45rem 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+  max-width: 26rem;
+}
+
+body.college-examination-portal .cp-empty-inline {
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-empty-inline p {
+  margin: 0 0 0.35rem;
+}
+
+/* ---- Buttons ---- */
+body.college-examination-portal .cp-btn--ghost {
+  background: transparent;
+  border-color: var(--cp-border);
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-btn--ghost:hover {
+  background: var(--cp-bg);
+  border-color: rgba(22, 101, 160, 0.25);
+}
+
+body.college-examination-portal .cp-btn--lg {
+  min-height: 2.75rem;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.9375rem;
+}
+
+body.college-examination-portal .cp-btn--block {
+  width: 100%;
+  justify-content: center;
+}
+
+body.college-examination-portal .cp-btn--danger-text {
+  background: transparent;
+  border: none;
+  color: var(--cp-danger);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  box-shadow: none;
+}
+
+body.college-examination-portal .cp-btn--danger-text:hover {
+  background: var(--cp-danger-soft);
+  transform: none;
+}
+
+/* ---- Exam prep (pre-exam) ---- */
+body.college-examination-portal .cp-exam-prep {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+body.college-examination-portal .cp-exam-prep__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--cp-primary);
+  text-decoration: none;
+}
+
+body.college-examination-portal .cp-exam-prep__head {
+  padding-bottom: 0.25rem;
+}
+
+body.college-examination-portal .cp-exam-prep__title {
+  margin: 0.65rem 0 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-exam-prep__lead {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--cp-muted);
+  line-height: 1.55;
+}
+
+body.college-examination-portal .cp-exam-prep__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 1rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+@media (min-width: 640px) {
+  body.college-examination-portal .cp-exam-prep__meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-exam-prep__meta-item {
+  padding: 0.35rem 0.15rem;
+}
+
+body.college-examination-portal .cp-exam-prep__note {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cp-warning);
+  line-height: 1.4;
+}
+
+body.college-examination-portal .cp-exam-prep__instructions {
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-exam-prep__instructions-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+body.college-examination-portal .cp-exam-prep__instructions-body {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-exam-prep__notice {
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid rgba(22, 101, 160, 0.18);
+  background: var(--cp-primary-soft);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-exam-prep__notice p {
+  margin: 0;
+}
+
+body.college-examination-portal .cp-exam-prep__start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid rgba(22, 101, 160, 0.22);
+  background: linear-gradient(180deg, rgba(232, 242, 250, 0.55) 0%, var(--cp-surface) 100%);
+}
+
+body.college-examination-portal .cp-exam-prep__start-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-exam-prep__start-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--cp-muted);
+  max-width: 28rem;
+}
+
+/* ---- Results hero ---- */
+body.college-examination-portal .cer-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1.35rem 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--cp-border);
+  background:
+    linear-gradient(135deg, rgba(232, 242, 250, 0.65) 0%, var(--cp-surface) 55%);
+}
+
+body.college-examination-portal .cer-hero__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cer-hero__sub {
+  margin: 0.45rem 0 0;
+}
+
+body.college-examination-portal .cer-hero__score {
+  text-align: center;
+  min-width: 6.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cer-hero__score-v {
+  display: block;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--cp-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cer-hero__score-v::after {
+  content: "%";
+  font-size: 0.45em;
+  font-weight: 650;
+  margin-left: 0.05em;
+}
+
+body.college-examination-portal .cer-hero__score-k {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+/* ---- Question nav legend ---- */
+body.college-examination-portal .cp-qnav-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 1rem 0.85rem;
+  border-top: 1px solid var(--cp-border);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-qnav-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+body.college-examination-portal .cp-qnav-legend__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-qnav-legend__dot--answered {
+  background: var(--cp-success);
+  border-color: var(--cp-success);
+}
+
+body.college-examination-portal .cp-qnav-legend__dot--current {
+  background: var(--cp-primary);
+  border-color: var(--cp-primary);
+}
+
+body.college-examination-portal .exam-sidebar-title {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.35rem, 1fr));
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  max-height: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a {
+  justify-content: center;
+  padding: 0.45rem 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a .q-check {
+  display: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-list a .q-num {
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: var(--cp-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+/* ---- Upload workspace cards ---- */
+body.college-examination-portal .cp-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal .cp-upload-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  body.college-examination-portal .cp-upload-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-upload-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 11rem;
+  padding: 1.15rem 1.15rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+body.college-examination-portal .cp-upload-card:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: var(--cp-shadow-hover);
+  transform: translateY(-2px);
+}
+
+body.college-examination-portal .cp-upload-card--muted {
+  opacity: 0.88;
+}
+
+body.college-examination-portal .cp-upload-card__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cp-primary-soft);
+  color: var(--cp-primary);
+  font-size: 1.15rem;
+}
+
+body.college-examination-portal .cp-upload-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: space-between;
+}
+
+body.college-examination-portal .cp-upload-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-upload-card__excerpt {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--cp-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.college-examination-portal .cp-upload-card__go {
+  margin-top: auto;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--cp-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ---- Profile / help ---- */
+body.college-examination-portal .cp-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+body.college-examination-portal .cp-profile-header__avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #143d59 0%, #1665a0 100%);
+  border: 2px solid rgba(212, 160, 23, 0.45);
+  flex-shrink: 0;
+}
+
+body.college-examination-portal .cp-profile-header__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+body.college-examination-portal .cp-settings-panel {
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-settings-panel__lead {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-settings-panel__head {
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal .cp-settings-panel__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-settings-panel__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+body.college-examination-portal .cp-device-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-device-list__title {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-device-list__meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-help-hero {
+  max-width: 36rem;
+}
+
+body.college-examination-portal .cp-help-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal .cp-help-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+body.college-examination-portal .cp-help-card {
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-help-card--wide {
+  grid-column: 1 / -1;
+}
+
+body.college-examination-portal .cp-help-card__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cp-primary-soft);
+  color: var(--cp-primary);
+  margin-bottom: 0.65rem;
+}
+
+body.college-examination-portal .cp-help-card__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-help-card__text {
+  margin: 0.4rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-page-foot {
+  margin: 0;
+}
+
+body.college-examination-portal .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Dark mode: content v2 */
+html[data-student-theme="dark"] body.college-examination-portal .cp-welcome-hero {
+  background: linear-gradient(135deg, rgba(14, 22, 38, 0.95) 0%, rgba(10, 16, 28, 0.98) 100%);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card,
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-row,
+html[data-student-theme="dark"] body.college-examination-portal .cp-toolbar-panel,
+html[data-student-theme="dark"] body.college-examination-portal .cp-data-table-wrap,
+html[data-student-theme="dark"] body.college-examination-portal .cp-upload-card,
+html[data-student-theme="dark"] body.college-examination-portal .cp-settings-panel,
+html[data-student-theme="dark"] body.college-examination-portal .cp-help-card,
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-prep__meta,
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-prep__start,
+html[data-student-theme="dark"] body.college-examination-portal .cer-hero {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card--featured {
+  background: linear-gradient(180deg, rgba(59, 159, 217, 0.08) 0%, var(--cp-surface) 42%);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-data-table thead th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-data-table tbody tr:hover {
+  background: rgba(59, 159, 217, 0.06);
+}
+
+/* =============================================================================
+   CONTENT COMPOSITION v3 — layout refinement (third-pass)
+   ============================================================================= */
+
+body.college-examination-portal .cp-content {
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+body.college-examination-portal .cp-content--catalog {
+  gap: 1.25rem;
+}
+
+body.college-examination-portal .cp-content--dashboard {
+  gap: 1.75rem;
+}
+
+body.college-examination-portal .cp-content--uploads,
+body.college-examination-portal .cp-content--settings,
+body.college-examination-portal .cp-content--help {
+  gap: 1.5rem;
+}
+
+/* ---- Compact page header ---- */
+body.college-examination-portal .cp-page-header--compact {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+body.college-examination-portal .cp-page-header--compact .cp-page-header__title {
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  font-weight: 700;
+}
+
+body.college-examination-portal .cp-page-header__subtitle--compact {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-page-header--compact .cp-page-header__stats {
+  margin-top: 0.75rem;
+}
+
+/* ---- Inline summary strip (not metric cards) ---- */
+body.college-examination-portal .cp-summary-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0;
+  padding: 0.5rem 0 0;
+}
+
+body.college-examination-portal .cp-summary-inline__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+body.college-examination-portal .cp-summary-inline__k {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-summary-inline__v {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cp-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cp-summary-inline__sep {
+  width: 1px;
+  height: 0.875rem;
+  margin: 0 0.75rem;
+  background: var(--cp-border);
+  flex-shrink: 0;
+}
+
+/* ---- Inline toolbar (catalog) ---- */
+body.college-examination-portal .cp-toolbar-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+body.college-examination-portal .cp-toolbar-inline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+body.college-examination-portal .cp-toolbar-inline__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-toolbar-inline__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+body.college-examination-portal .cp-toolbar-inline__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+body.college-examination-portal .filter-pill--compact {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+body.college-examination-portal .cp-catalog-list {
+  margin-top: 0.25rem;
+}
+
+/* ---- Compact welcome (dashboard) ---- */
+body.college-examination-portal .cp-welcome-compact {
+  margin: 0;
+}
+
+body.college-examination-portal .cp-welcome-surface {
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cp-welcome-compact__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-welcome-compact__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+  max-width: 36rem;
+}
+
+/* ---- Dashboard section panels (grouped cards) ---- */
+body.college-examination-portal .cp-dash-panel {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  overflow: hidden;
+}
+
+body.college-examination-portal .cp-dash-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--cp-border);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.65) 0%, var(--cp-surface) 100%);
+}
+
+body.college-examination-portal .cp-dash-panel__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-dash-panel__desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-dash-panel__body {
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+body.college-examination-portal .cp-dash-panel__body--flush {
+  padding: 0;
+}
+
+body.college-examination-portal .cp-dash-panel__body--flush .cp-data-table-wrap {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.college-examination-portal .cp-dash-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 1.35rem 1rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px dashed rgba(22, 101, 160, 0.22);
+  background: rgba(248, 251, 255, 0.55);
+  text-align: center;
+}
+
+body.college-examination-portal .cp-dash-empty-state__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--cp-primary);
+  background: var(--cp-primary-soft);
+  border: 1px solid rgba(22, 101, 160, 0.14);
+}
+
+body.college-examination-portal .cp-dash-empty-state__text {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+}
+
+/* Legacy dash-block aliases */
+body.college-examination-portal .cp-dash-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+body.college-examination-portal .cp-dash-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+body.college-examination-portal .cp-dash-block__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-dash-block__desc {
+  margin: -0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-dash-empty {
+  margin: 0;
+  padding: 0.85rem 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-dash-empty--inline {
+  padding: 0.35rem 0;
+  font-size: 0.8125rem;
+}
+
+body.college-examination-portal .cp-data-table-wrap--flat {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-top: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cp-data-table-wrap--flat .cp-data-table thead th {
+  background: transparent;
+  padding-top: 0.65rem;
+  padding-bottom: 0.55rem;
+}
+
+body.college-examination-portal .cp-data-table-wrap--flat .cp-data-table tbody td {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+body.college-examination-portal .cp-split-panels--flat {
+  gap: 1.25rem;
+}
+
+body.college-examination-portal .cp-split-panels--flat .cp-split-panels__col {
+  padding-top: 0.25rem;
+}
+
+body.college-examination-portal .cp-split-panels__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--cp-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+body.college-examination-portal .cp-timeline-list--flat .cp-timeline-list__item {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--cp-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+body.college-examination-portal .cp-timeline-list--flat .cp-timeline-list__item:last-child {
+  border-bottom: none;
+}
+
+body.college-examination-portal .cp-chart-wrap--compact {
+  height: 10rem;
+}
+
+/* ---- Exam cards: compact density + status hierarchy ---- */
+body.college-examination-portal .cp-exam-grid {
+  gap: 0.75rem;
+  align-items: start;
+}
+
+body.college-examination-portal .cp-exam-card {
+  gap: 0.5rem;
+  padding: 0.85rem 0.95rem 0.8rem;
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  height: auto;
+}
+
+body.college-examination-portal .cp-exam-card:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: var(--cp-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body.college-examination-portal .cp-exam-card__context {
+  margin: 0 0 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-primary);
+}
+
+body.college-examination-portal .cp-exam-card__title {
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+body.college-examination-portal .cp-exam-card__desc {
+  font-size: 0.8125rem;
+  -webkit-line-clamp: 2;
+}
+
+body.college-examination-portal .cp-exam-card__divider {
+  height: 1px;
+  margin: 0.15rem 0 0.1rem;
+  background: var(--cp-border);
+}
+
+body.college-examination-portal .cp-exam-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-exam-card__meta strong {
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-exam-card__meta-sep {
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-exam-card__schedule {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cp-exam-card__foot {
+  margin-top: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--cp-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+body.college-examination-portal .cp-exam-card__foot-spacer {
+  flex: 1;
+}
+
+body.college-examination-portal .cp-exam-card__score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+body.college-examination-portal .cp-exam-card__score-v {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--cp-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cp-exam-card__action {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Status tone */
+body.college-examination-portal .cp-exam-card--active,
+body.college-examination-portal .cp-exam-card--featured {
+  border-color: rgba(22, 101, 160, 0.32);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-exam-card--active:hover,
+body.college-examination-portal .cp-exam-card--featured:hover {
+  border-color: rgba(22, 101, 160, 0.45);
+}
+
+body.college-examination-portal .cp-exam-card--panel.cp-exam-card--featured::before {
+  display: none;
+}
+
+body.college-examination-portal .cp-exam-card--panel {
+  padding: 1rem 1.05rem;
+  border-color: rgba(22, 101, 160, 0.28);
+  background: linear-gradient(180deg, rgba(232, 242, 250, 0.45) 0%, var(--cp-surface) 55%);
+  box-shadow: var(--cp-shadow-hover);
+}
+
+body.college-examination-portal .cp-dash-panel__body > .cp-exam-card--panel {
+  margin: 0;
+}
+
+body.college-examination-portal .cp-exam-card--panel .cp-exam-card__title {
+  font-size: 1.0625rem;
+}
+
+body.college-examination-portal .cp-exam-card--panel .cp-exam-card__action .cp-btn--primary {
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+}
+
+body.college-examination-portal .cp-exam-card--upcoming {
+  border-color: var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-exam-card--finished {
+  opacity: 0.88;
+  background: var(--cp-bg);
+  border-color: var(--cp-border);
+}
+
+body.college-examination-portal .cp-exam-card--finished:hover {
+  border-color: var(--cp-border);
+}
+
+body.college-examination-portal .cp-exam-card--finished .cp-exam-card__title {
+  color: var(--cp-text-body);
+}
+
+body.college-examination-portal .cp-exam-card--finished .cp-exam-card__action .cp-btn {
+  font-weight: 600;
+}
+
+body.college-examination-portal .cp-exam-card--missed {
+  opacity: 0.85;
+  border-color: rgba(220, 38, 38, 0.18);
+  background: rgba(254, 242, 242, 0.35);
+}
+
+body.college-examination-portal .cp-exam-card--neutral {
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-exam-row--finished,
+body.college-examination-portal .cp-exam-row--missed {
+  opacity: 0.9;
+}
+
+body.college-examination-portal .cp-exam-row {
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--cp-radius-sm);
+  box-shadow: none;
+}
+
+/* ---- Small buttons ---- */
+body.college-examination-portal .cp-btn--sm {
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8125rem;
+  gap: 0.3rem;
+}
+
+/* ---- Results: score-first layout ---- */
+body.college-examination-portal .cer-results--compact {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+body.college-examination-portal .cer-result-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 1.25rem 1rem 1rem;
+  border-bottom: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cer-result-header__title {
+  margin: 0;
+  font-size: clamp(1.125rem, 2.2vw, 1.45rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--cp-text);
+  max-width: 36rem;
+}
+
+body.college-examination-portal .cer-result-header__score {
+  padding: 0.5rem 0;
+}
+
+body.college-examination-portal .cer-result-header__score-v {
+  display: block;
+  font-size: clamp(2.5rem, 6vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--cp-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal .cer-result-header__score-v::after {
+  content: "%";
+  font-size: 0.42em;
+  font-weight: 650;
+  margin-left: 0.04em;
+}
+
+body.college-examination-portal .cer-result-header__score-k {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cer-result-header__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+  width: 100%;
+  max-width: 32rem;
+  padding-top: 0.25rem;
+}
+
+body.college-examination-portal .cer-result-header__stats > div {
+  text-align: center;
+  min-width: 4.5rem;
+}
+
+body.college-examination-portal .cer-result-header__stats .cp-meta-k {
+  display: block;
+}
+
+body.college-examination-portal .cer-result-header__stats .cp-meta-v {
+  display: block;
+  margin-top: 0.15rem;
+  margin-left: 0;
+  font-size: 1rem;
+}
+
+body.college-examination-portal .cer-result-header__result {
+  margin: 0.25rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--cp-muted);
+}
+
+body.college-examination-portal .cer-result-header__sub {
+  color: var(--cp-muted);
+}
+
+/* ---- Settings blocks ---- */
+body.college-examination-portal .cp-settings-block {
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cp-settings-block:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+body.college-examination-portal .cp-settings-block__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+}
+
+body.college-examination-portal .cp-settings-block__text,
+body.college-examination-portal .cp-settings-block__desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+}
+
+/* ---- Help list (not card grid) ---- */
+body.college-examination-portal .cp-help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+body.college-examination-portal .cp-dash-panel__body--flush .cp-help-list {
+  border-top: none;
+}
+
+body.college-examination-portal .cp-help-item {
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cp-help-item:last-child {
+  border-bottom: none;
+}
+
+body.college-examination-portal .cp-help-item__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+body.college-examination-portal .cp-help-item__title i {
+  color: var(--cp-primary);
+  font-size: 1rem;
+}
+
+body.college-examination-portal .cp-help-item__text {
+  margin: 0.4rem 0 0 1.45rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--cp-text-body);
+}
+
+/* ---- Upload workspace ---- */
+body.college-examination-portal .cp-content--uploads .cp-upload-grid {
+  margin-top: 0.25rem;
+}
+
+/* ---- Dark mode: v3 ---- */
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card--missed {
+  background: rgba(127, 29, 29, 0.12);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card--panel {
+  background: linear-gradient(180deg, rgba(59, 159, 217, 0.08) 0%, var(--cp-surface) 42%);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card--upcoming,
+html[data-student-theme="dark"] body.college-examination-portal .cp-exam-card--finished {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-welcome-surface,
+html[data-student-theme="dark"] body.college-examination-portal .cp-dash-panel {
+  background: var(--cp-surface);
+  border-color: var(--cp-border);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-dash-panel__head {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, var(--cp-surface) 100%);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-dash-empty-state {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* =============================================================================
+   CONTENT COMPOSITION v4 — premium polish across all portal pages
+   ============================================================================= */
+
+body.college-examination-portal .cp-page-header.cp-welcome-surface {
+  margin-bottom: 0;
+  padding: 1.05rem 1.2rem 1rem;
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cp-page-header.cp-welcome-surface.cp-page-header--compact {
+  border-bottom: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cp-page-header.cp-welcome-surface .cp-summary-inline {
+  padding-top: 0.65rem;
+  margin-top: 0.65rem;
+  border-top: 1px solid var(--cp-border);
+}
+
+body.college-examination-portal .cp-dash-panel__meta {
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--cp-muted);
+  font-variant-numeric: tabular-nums;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+}
+
+body.college-examination-portal .cp-dash-panel__head .cp-dash-panel__title i {
+  margin-right: 0.35rem;
+  color: var(--cp-primary);
+  font-size: 0.95em;
+}
+
+/* Toolbar inside panel */
+body.college-examination-portal .cp-dash-panel__body .cp-toolbar-inline {
+  gap: 0.75rem;
+}
+
+body.college-examination-portal .cp-toolbar-inline__search .search-input,
+body.college-examination-portal .cp-toolbar-inline__search .sort-select {
+  min-height: 2.25rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+  font-size: 0.8125rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.college-examination-portal .cp-toolbar-inline__search .search-input:focus,
+body.college-examination-portal .cp-toolbar-inline__search .sort-select:focus {
+  outline: none;
+  border-color: rgba(22, 101, 160, 0.45);
+  box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.12);
+}
+
+body.college-examination-portal .cp-catalog-list .cp-exam-grid,
+body.college-examination-portal .cp-catalog-list .cp-exam-list {
+  margin: 0;
+}
+
+body.college-examination-portal .cp-dash-panel__body .cp-empty-surface {
+  border: 1px dashed rgba(22, 101, 160, 0.2);
+  background: rgba(248, 251, 255, 0.45);
+}
+
+body.college-examination-portal .cp-exam-row {
+  box-shadow: var(--cp-shadow);
+  background: var(--cp-surface);
+}
+
+body.college-examination-portal .cp-exam-row:hover {
+  border-color: rgba(22, 101, 160, 0.28);
+  box-shadow: var(--cp-shadow-hover);
+}
+
+/* Exam prep inside panel */
+body.college-examination-portal .cp-dash-panel .cp-exam-prep {
+  max-width: none;
+  margin: 0;
+}
+
+body.college-examination-portal .cp-dash-panel .cp-exam-prep__meta,
+body.college-examination-portal .cp-dash-panel .cp-exam-prep__instructions,
+body.college-examination-portal .cp-dash-panel .cp-exam-prep__start {
+  box-shadow: var(--cp-shadow);
+}
+
+body.college-examination-portal .cp-content--workspace {
+  gap: 1.25rem;
+}
+
+/* Upload task: align legacy cut-panel with dash-panel */
+body.college-examination-portal .cut-panel.cp-dash-panel,
+body.college-examination-portal .cp-dash-panel.cut-panel {
+  overflow: hidden;
+}
+
+body.college-examination-portal .cut-panel-head.cp-dash-panel__head {
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--cp-border);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.65) 0%, var(--cp-surface) 100%);
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+body.college-examination-portal .cut-panel-body.cp-dash-panel__body {
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+body.college-examination-portal .cut-panel {
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  overflow: hidden;
+}
+
+body.college-examination-portal .cut-panel-head {
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--cp-border);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.65) 0%, var(--cp-surface) 100%);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--cp-text);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+body.college-examination-portal .cut-panel-body {
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+/* Full-page examination result — override legacy narrow containers */
+body.college-examination-portal.exam-review-mode .cer-results--compact,
+body.college-examination-portal.exam-review-mode .cer-results--premium {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+body.college-examination-portal.exam-review-mode .cer-page {
+  width: 100%;
+  max-width: none;
+}
+
+body.college-examination-portal .review-locked-gate {
+  padding: 2rem 1.5rem;
+  border-radius: var(--cp-radius-lg);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  box-shadow: var(--cp-shadow);
+  text-align: center;
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+body.college-examination-portal .cp-content--settings .cp-dash-panel + .cp-dash-panel,
+body.college-examination-portal .cp-content--help .cp-dash-panel,
+body.college-examination-portal .cp-content--catalog .cp-dash-panel + .cp-dash-panel,
+body.college-examination-portal .cp-content--uploads .cp-dash-panel {
+  margin-top: 0;
+}
+
+body.college-examination-portal .cp-page-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--cp-muted);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border);
+  background: var(--cp-bg);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cp-dash-panel__body .cp-empty-surface {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal .cut-panel-head,
+html[data-student-theme="dark"] body.college-examination-portal .cut-panel-head.cp-dash-panel__head {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, var(--cp-surface) 100%);
+}

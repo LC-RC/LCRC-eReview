@@ -860,3 +860,316 @@ function diagnostic_exam_suggest_sections(mysqli $conn, string $scope = 'both'):
     }
     return $out;
 }
+
+/**
+ * Format a percentage for display without trailing zeroes.
+ */
+function diagnostic_exam_format_score_percent($value, bool $includeSymbol = true): string
+{
+    if (function_exists('college_exam_format_score_percent')) {
+        return college_exam_format_score_percent($value, $includeSymbol);
+    }
+    if (!is_numeric($value)) {
+        return $includeSymbol ? '0%' : '0';
+    }
+    $f = (float)$value;
+    if (abs($f - round($f)) < 0.00001) {
+        $s = (string)(int)round($f);
+    } else {
+        $s = rtrim(rtrim(sprintf('%.2f', $f), '0'), '.');
+    }
+
+    return $includeSymbol ? $s . '%' : $s;
+}
+
+/**
+ * Visual performance band for diagnostic analytics (display guidance only).
+ *
+ * @return array{label:string, state:string}
+ */
+function diagnostic_exam_performance_band(float $pct): array
+{
+    if ($pct >= 80) {
+        return ['label' => 'Strong', 'state' => 'strong'];
+    }
+    if ($pct >= 60) {
+        return ['label' => 'Developing', 'state' => 'developing'];
+    }
+
+    return ['label' => 'Needs review', 'state' => 'needs_review'];
+}
+
+/**
+ * Resolve an optional topic/category label from a diagnostic question row.
+ */
+function diagnostic_exam_question_topic_label(array $q): ?string
+{
+    foreach (['topic_name', 'topic', 'category_name', 'category', 'question_category', 'area_name', 'area'] as $key) {
+        $v = trim((string)($q[$key] ?? ''));
+        if ($v !== '') {
+            return $v;
+        }
+    }
+
+    return null;
+}
+
+function diagnostic_exam_plain_text_preview(string $html, int $maxLen = 90): string
+{
+    $t = trim(preg_replace('/\s+/u', ' ', strip_tags($html)));
+    if ($t === '') {
+        return '';
+    }
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        if (mb_strlen($t) > $maxLen) {
+            return rtrim(mb_substr($t, 0, $maxLen - 1)) . '…';
+        }
+
+        return $t;
+    }
+    if (strlen($t) > $maxLen) {
+        return rtrim(substr($t, 0, $maxLen - 1)) . '…';
+    }
+
+    return $t;
+}
+
+/**
+ * Build diagnostic result analytics for the student assessment report.
+ *
+ * @param list<array<string,mixed>> $questions
+ * @param array<int,array<string,mixed>> $answersMap
+ * @param list<array<string,mixed>> $breakdown
+ * @return array<string,mixed>
+ */
+function diagnostic_exam_build_result_analytics(array $questions, array $answersMap, array $breakdown): array
+{
+    $correctC = 0;
+    $wrongC = 0;
+    $unansweredC = 0;
+    $bySubject = [];
+    $hasTopics = false;
+
+    foreach ($questions as $q) {
+        $qid = (int)($q['question_id'] ?? 0);
+        $sid = (int)($q['subject_id'] ?? 0);
+        $sel = strtoupper(trim((string)($answersMap[$qid]['selected_answer'] ?? '')));
+        $exp = strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
+        $isCorrect = ($sel !== '' && $sel === $exp);
+        $isAnswered = ($sel !== '');
+
+        if (!$isAnswered) {
+            $unansweredC++;
+        } elseif ($isCorrect) {
+            $correctC++;
+        } else {
+            $wrongC++;
+        }
+
+        if (!isset($bySubject[$sid])) {
+            $bySubject[$sid] = [
+                'subject_id' => $sid,
+                'subject_code' => (string)($q['_subject_code'] ?? ''),
+                'subject_name' => (string)($q['_subject_name'] ?? ''),
+                'correct' => 0,
+                'total' => 0,
+                'topics' => [],
+                'questions' => [],
+            ];
+        }
+        $bySubject[$sid]['total']++;
+        if ($isCorrect) {
+            $bySubject[$sid]['correct']++;
+        }
+
+        $topicLabel = diagnostic_exam_question_topic_label($q);
+        if ($topicLabel !== null) {
+            $hasTopics = true;
+            $tKey = function_exists('mb_strtolower') ? mb_strtolower($topicLabel) : strtolower($topicLabel);
+            if (!isset($bySubject[$sid]['topics'][$tKey])) {
+                $bySubject[$sid]['topics'][$tKey] = [
+                    'label' => $topicLabel,
+                    'correct' => 0,
+                    'total' => 0,
+                ];
+            }
+            $bySubject[$sid]['topics'][$tKey]['total']++;
+            if ($isCorrect) {
+                $bySubject[$sid]['topics'][$tKey]['correct']++;
+            }
+        }
+
+        $bySubject[$sid]['questions'][] = [
+            'question_id' => $qid,
+            'preview' => diagnostic_exam_plain_text_preview((string)($q['question_text'] ?? '')),
+            'is_correct' => $isCorrect,
+            'is_answered' => $isAnswered,
+            'selected' => $sel,
+            'expected' => $exp,
+        ];
+    }
+
+    $breakdownById = [];
+    foreach ($breakdown as $item) {
+        $bsid = (int)($item['subject_id'] ?? 0);
+        $breakdownById[$bsid] = $item;
+        if ($bsid > 0 && !isset($bySubject[$bsid])) {
+            $bySubject[$bsid] = [
+                'subject_id' => $bsid,
+                'subject_code' => (string)($item['subject_code'] ?? ''),
+                'subject_name' => (string)($item['subject_name'] ?? ''),
+                'correct' => (int)($item['correct'] ?? 0),
+                'total' => (int)($item['total'] ?? 0),
+                'topics' => [],
+                'questions' => [],
+            ];
+        }
+    }
+
+    $subjects = [];
+    foreach ($bySubject as $sid => $agg) {
+        $c = (int)$agg['correct'];
+        $t = (int)$agg['total'];
+        if ($t <= 0 && isset($breakdownById[$sid])) {
+            $c = (int)($breakdownById[$sid]['correct'] ?? 0);
+            $t = (int)($breakdownById[$sid]['total'] ?? 0);
+        }
+        $pct = $t > 0 ? (float)diagnostic_exam_compute_score_percentage($c, $t) : 0.0;
+        if ($t > 0 && isset($breakdownById[$sid]) && is_numeric($breakdownById[$sid]['score_pct'] ?? null)) {
+            $pct = (float)$breakdownById[$sid]['score_pct'];
+        }
+        $band = diagnostic_exam_performance_band($pct);
+
+        $topicRows = [];
+        foreach ($agg['topics'] as $top) {
+            $tc = (int)$top['correct'];
+            $tt = (int)$top['total'];
+            $tp = $tt > 0 ? (float)diagnostic_exam_compute_score_percentage($tc, $tt) : 0.0;
+            $topicRows[] = [
+                'label' => (string)$top['label'],
+                'correct' => $tc,
+                'total' => $tt,
+                'score_pct' => $tp,
+                'band' => diagnostic_exam_performance_band($tp),
+            ];
+        }
+        usort($topicRows, static fn(array $a, array $b): int => strcmp($a['label'], $b['label']));
+
+        $strongTopics = [];
+        $weakTopics = [];
+        if (count($topicRows) >= 2) {
+            $byScore = $topicRows;
+            usort($byScore, static fn(array $a, array $b): int => ($b['score_pct'] <=> $a['score_pct']));
+            foreach (array_slice($byScore, 0, 2) as $row) {
+                if ($row['score_pct'] >= 80) {
+                    $strongTopics[] = $row['label'];
+                }
+            }
+            usort($byScore, static fn(array $a, array $b): int => ($a['score_pct'] <=> $b['score_pct']));
+            foreach (array_slice($byScore, 0, 2) as $row) {
+                if ($row['score_pct'] < 80) {
+                    $weakTopics[] = $row['label'];
+                }
+            }
+            $strongTopics = array_values(array_unique($strongTopics));
+            $weakTopics = array_values(array_unique($weakTopics));
+        }
+
+        $subjects[] = [
+            'subject_id' => (int)$sid,
+            'subject_code' => (string)$agg['subject_code'],
+            'subject_name' => (string)$agg['subject_name'],
+            'correct' => $c,
+            'total' => $t,
+            'score_pct' => $pct,
+            'band' => $band,
+            'topics' => $topicRows,
+            'strong_topics' => $strongTopics,
+            'weak_topics' => $weakTopics,
+            'questions' => $agg['questions'],
+        ];
+    }
+
+    usort($subjects, static fn(array $a, array $b): int => strcmp($a['subject_code'], $b['subject_code']));
+
+    $totalQ = count($questions);
+    $overallPct = $totalQ > 0 ? (float)diagnostic_exam_compute_score_percentage($correctC, $totalQ) : 0.0;
+    $overallBand = diagnostic_exam_performance_band($overallPct);
+
+    $strongest = null;
+    $weakest = null;
+    $priorityTopic = null;
+    $subjectsWithData = array_values(array_filter($subjects, static fn(array $s): bool => (int)$s['total'] > 0));
+
+    if ($subjectsWithData !== []) {
+        $sortedSubj = $subjectsWithData;
+        usort($sortedSubj, static fn(array $a, array $b): int => ($b['score_pct'] <=> $a['score_pct']));
+        $strongest = $sortedSubj[0];
+        $weakest = $sortedSubj[count($sortedSubj) - 1];
+    }
+
+    if ($hasTopics) {
+        $allTopics = [];
+        foreach ($subjects as $s) {
+            foreach ($s['topics'] as $topicRow) {
+                if ((int)$topicRow['total'] > 0) {
+                    $allTopics[] = $topicRow;
+                }
+            }
+        }
+        if ($allTopics !== []) {
+            usort($allTopics, static fn(array $a, array $b): int => ($a['score_pct'] <=> $b['score_pct']));
+            $priorityTopic = $allTopics[0];
+        }
+    }
+
+    $heroInsight = '';
+    if (count($subjectsWithData) >= 2 && $strongest && $weakest) {
+        $strongCode = (string)($strongest['subject_code'] !== '' ? $strongest['subject_code'] : $strongest['subject_name']);
+        $weakCodes = [];
+        foreach ($subjectsWithData as $s) {
+            if ((int)$s['subject_id'] === (int)$strongest['subject_id']) {
+                continue;
+            }
+            if ((float)$s['score_pct'] <= (float)$weakest['score_pct'] + 0.001) {
+                $weakCodes[] = (string)($s['subject_code'] !== '' ? $s['subject_code'] : $s['subject_name']);
+            }
+        }
+        if ($weakCodes === [] && (int)$weakest['subject_id'] !== (int)$strongest['subject_id']) {
+            $weakCodes[] = (string)($weakest['subject_code'] !== '' ? $weakest['subject_code'] : $weakest['subject_name']);
+        }
+        if ($weakCodes !== []) {
+            $heroInsight = 'Your results show strong performance in ' . $strongCode
+                . ', while ' . implode(', ', $weakCodes) . ' require additional review.';
+        }
+    } elseif (count($subjectsWithData) === 1) {
+        $code = (string)($subjectsWithData[0]['subject_code'] !== '' ? $subjectsWithData[0]['subject_code'] : $subjectsWithData[0]['subject_name']);
+        $heroInsight = 'This diagnostic covered ' . $code . '. Use the breakdown below to guide your study plan.';
+    }
+
+    if ($overallBand['state'] === 'strong') {
+        $readinessNote = 'You are performing strongly on this diagnostic. Maintain consistency and address any remaining weak spots.';
+    } elseif ($overallBand['state'] === 'developing') {
+        $readinessNote = 'You are showing good progress but should focus on lower-performing subject areas before your next assessment.';
+    } else {
+        $readinessNote = 'Focus on the subjects and areas below that need the most review before your next study session.';
+    }
+
+    return [
+        'correct' => $correctC,
+        'incorrect' => $wrongC,
+        'unanswered' => $unansweredC,
+        'total' => $totalQ,
+        'overall_pct' => $overallPct,
+        'overall_band' => $overallBand,
+        'accuracy_pct' => $overallPct,
+        'subjects' => $subjects,
+        'has_topics' => $hasTopics,
+        'strongest_subject' => $strongest,
+        'weakest_subject' => $weakest,
+        'priority_topic' => $priorityTopic,
+        'hero_insight' => $heroInsight,
+        'readiness_note' => $readinessNote,
+        'show_insights' => $subjectsWithData !== [],
+    ];
+}

@@ -49,50 +49,39 @@ foreach ($tasks as $tr) {
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_app.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
 
-  <div class="cp-page-shell ereview-shell-no-fade pt-2">
+  <div class="cp-page-shell cp-content cp-content--uploads ereview-shell-no-fade pt-2">
     <?php
-      $cpPageEyebrow = 'Assignments';
-      $cpPageTitle = 'Upload tasks';
-      $cpPageSubtitle = 'Open a task for instructions and submission. Allowed types: <strong>' . h($allowedTypesLabel) . '</strong>.';
-      $cpPageIcon = 'bi-cloud-upload';
-      $cpPageStats = $taskCount > 0 ? [
-          ['label' => 'Open', 'value' => (int)$openCount],
-          ['label' => 'Submitted', 'value' => (int)$submittedCount],
-          ['label' => 'Due 72h', 'value' => (int)$dueSoon],
-      ] : [];
+      $cpPageVariant = 'compact';
+      $cpPageTitle = 'Uploads';
+      $cpPageSubtitle = 'Manage your examination-related upload tasks.';
+      if ($taskCount > 0) {
+          $cpPageSubtitle .= ' · ' . (int)$openCount . ' open · ' . (int)$submittedCount . ' submitted';
+      }
       require dirname(__DIR__, 2) . '/includes/components/college_portal_page_header.php';
-    ?>
-
-    <div class="cu-body-pad">
-    <?php
       $cpFlashMessage = $msg;
       $cpFlashError = $err;
       require dirname(__DIR__, 2) . '/includes/components/college_portal_flash.php';
     ?>
 
-    <div class="cp-section-head cp-anim delay-2">
-      <?php
-        $cpSectionIcon = 'bi-folder2-open';
-        $cpSectionTitle = 'Your tasks';
-        $cpSectionClass = 'm-0';
-        require dirname(__DIR__, 2) . '/includes/components/college_portal_section.php';
-      ?>
-      <?php if ($taskCount > 0): ?>
-        <span class="cu-pill"><?php echo (int)$taskCount; ?> active</span>
-      <?php endif; ?>
-    </div>
-
-    <div class="cu-task-board">
+    <section class="cp-dash-panel cp-anim delay-2" aria-label="Upload tasks">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">Upload tasks</h2>
+        <?php if ($taskCount > 0): ?>
+          <span class="cp-dash-panel__meta"><?php echo (int)$taskCount; ?> task<?php echo $taskCount === 1 ? '' : 's'; ?></span>
+        <?php endif; ?>
+      </div>
+      <div class="cp-dash-panel__body">
+    <div class="cp-upload-grid">
       <?php foreach ($tasks as $t):
         $state = (string) ($t['window_state'] ?? 'open');
         $canUpload = ($state === 'open');
         $excerpt = college_upload_instruction_excerpt($t['instructions'] ?? '', 90);
-        $tileClass = 'cu-tile dash-anim delay-2';
+        $tileClass = 'cp-upload-card dash-anim delay-2';
         if (!$canUpload) {
-            $tileClass .= ' cu-tile--muted';
+            $tileClass .= ' cp-upload-card--muted';
         }
         $dueLabel = match ($state) {
             'upcoming' => 'Opens ' . date('M j', strtotime((string) ($t['open_at'] ?? $t['deadline']))),
@@ -101,39 +90,37 @@ foreach ($tasks as $tr) {
         };
         ?>
       <a href="college_upload_task?id=<?php echo (int)$t['task_id']; ?>" class="<?php echo h($tileClass); ?>">
-        <div class="cu-tile-top">
-          <span class="cu-tile-icon" aria-hidden="true"><i class="bi bi-file-earmark-arrow-up"></i></span>
-          <?php if (!empty($t['submission_id'])): ?>
-            <span class="cu-tile-done"><i class="bi bi-check2"></i> File</span>
+        <div class="cp-upload-card__icon" aria-hidden="true"><i class="bi bi-file-earmark-arrow-up"></i></div>
+        <div class="cp-upload-card__body">
+          <div class="cp-upload-card__top">
+            <?php if (!empty($t['submission_id'])): ?>
+              <span class="cu-tile-done"><i class="bi bi-check2"></i> Submitted</span>
+            <?php endif; ?>
+            <span class="cu-tile-due <?php echo $canUpload ? 'cu-tile-due--open' : 'cu-tile-due--closed'; ?>"><?php echo h($dueLabel); ?></span>
+          </div>
+          <h3 class="cp-upload-card__title"><?php echo h($t['title']); ?></h3>
+          <?php if ($excerpt !== ''): ?>
+            <p class="cp-upload-card__excerpt"><?php echo h($excerpt); ?></p>
           <?php endif; ?>
         </div>
-        <h3 class="cu-tile-title"><?php echo h($t['title']); ?></h3>
-        <?php if ($excerpt !== ''): ?>
-          <p class="cu-tile-excerpt"><?php echo h($excerpt); ?></p>
-        <?php else: ?>
-          <div class="cu-tile-grow" aria-hidden="true"></div>
-        <?php endif; ?>
-        <div class="cu-tile-foot">
-          <span class="cu-tile-due <?php echo $canUpload ? 'cu-tile-due--open' : 'cu-tile-due--closed'; ?>">
-            <?php echo h($dueLabel); ?>
-          </span>
-          <span class="cu-tile-go">Open <i class="bi bi-chevron-right"></i></span>
-        </div>
+        <span class="cp-upload-card__go">Open task <i class="bi bi-arrow-right"></i></span>
       </a>
       <?php endforeach; ?>
 
       <?php if (empty($tasks)): ?>
-        <div class="cu-empty dash-anim delay-3">
-          <div class="inline-flex items-center justify-center h-11 w-11 rounded-xl border border-[#cde2f4] bg-[#eef6ff] text-[#1665a0] text-xl mb-3 shadow-sm">
-            <i class="bi bi-inbox"></i>
-          </div>
-          <p class="text-slate-700 font-bold text-base m-0">No upload tasks yet</p>
-          <p class="text-slate-500 text-xs mt-1.5 mb-4 leading-relaxed">When your instructor publishes a task, it will appear here as a tile.</p>
-          <a href="college_student_dashboard" class="cu-hint-btn text-xs py-2 px-4"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
+        <div class="cp-empty-surface cp-empty-surface--wide">
+          <div class="cp-empty-surface__icon"><i class="bi bi-inbox"></i></div>
+          <h3 class="cp-empty-surface__title">No upload tasks yet</h3>
+          <p class="cp-empty-surface__text">When your instructor publishes a task, it will appear here as a workspace card.</p>
+          <a href="college_student_dashboard" class="cp-btn cp-btn--secondary"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
         </div>
       <?php endif; ?>
     </div>
-    </div>
+      </div>
+    </section>
+    <?php if ($taskCount > 0): ?>
+      <p class="cp-page-note">Allowed file types: <strong><?php echo h($allowedTypesLabel); ?></strong></p>
+    <?php endif; ?>
   </div>
 </main>
 </body>

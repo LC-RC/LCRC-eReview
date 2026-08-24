@@ -108,55 +108,67 @@ if ($role === 'college_student') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
-  <style>
-    .ereview-static-hero {
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      background: linear-gradient(130deg, #1665a0 0%, #145a8f 38%, #143d59 100%);
-      box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85);
-    }
-  </style>
+  <?php require_once __DIR__ . '/examination/includes/examination_head_app.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
-  <div class="student-dashboard-page min-h-full pb-10 px-1 max-w-3xl ereview-static-page">
-    <section class="ereview-static-hero mb-6 px-5 py-6 rounded-2xl text-white">
-      <h1 class="text-2xl font-extrabold m-0 flex items-center gap-3"><i class="bi bi-sliders"></i> Preferences</h1>
-      <p class="text-white/90 mt-2 mb-0 text-sm leading-relaxed">College portal settings.</p>
+  <div class="cp-page-shell cp-content cp-content--settings ereview-shell-no-fade pt-2">
+    <?php
+      $studentFullName = trim((string)($_SESSION['full_name'] ?? 'Student'));
+      $studentEmail = trim((string)($_SESSION['email'] ?? ''));
+      $cpPageVariant = 'compact';
+      $cpPageTitle = 'Preferences';
+      $cpPageSubtitle = $studentFullName . ($studentEmail !== '' ? ' · ' . $studentEmail : '');
+      require __DIR__ . '/includes/components/college_portal_page_header.php';
+    ?>
+
+    <section class="cp-dash-panel cp-anim delay-2">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">General</h2>
+      </div>
+      <div class="cp-dash-panel__body">
+      <p class="cp-settings-block__text"><?php echo h($blurb); ?></p>
+      </div>
     </section>
-    <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
-      <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
-      <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <h2 class="text-base font-bold text-slate-800 m-0">Remembered devices</h2>
-        <p class="mt-1 text-xs text-slate-600">Manage browsers that can auto sign-in using Remember Me.</p>
-        <?php if ($rememberMessage): ?><p class="mt-3 text-sm text-emerald-700"><?php echo h($rememberMessage); ?></p><?php endif; ?>
-        <?php if ($rememberError): ?><p class="mt-3 text-sm text-rose-700"><?php echo h($rememberError); ?></p><?php endif; ?>
+
+    <section class="cp-dash-panel cp-anim delay-3">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">Security</h2>
+      </div>
+      <div class="cp-dash-panel__body">
+      <p class="cp-settings-block__desc">Manage browsers that can auto sign-in using Remember Me.</p>
+        <?php if ($rememberMessage): ?><p class="cp-alert cp-alert--success"><?php echo h($rememberMessage); ?></p><?php endif; ?>
+        <?php if ($rememberError): ?><p class="cp-alert cp-alert--error"><?php echo h($rememberError); ?></p><?php endif; ?>
         <?php if (empty($rememberDevices)): ?>
-          <p class="mt-3 text-sm text-slate-600">No active remembered devices.</p>
+          <div class="cp-empty-inline">
+            <p>No active remembered devices.</p>
+          </div>
         <?php else: ?>
-          <div class="mt-3 space-y-2">
+          <ul class="cp-device-list">
             <?php foreach ($rememberDevices as $device): ?>
-              <div class="rounded-lg border border-slate-200 bg-white p-3">
-                <p class="m-0 text-sm font-semibold text-slate-800">Token #<?php echo (int)$device['id']; ?> · Expires <?php echo h((string)($device['expires_at'] ?? '')); ?></p>
-                <p class="m-0 mt-1 text-xs text-slate-600">Last used: <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></p>
-                <?php if (!empty($device['last_used_ip'])): ?><p class="m-0 mt-1 text-xs text-slate-500">IP: <?php echo h((string)$device['last_used_ip']); ?></p><?php endif; ?>
-                <form method="POST" action="account_preferences" class="mt-2">
+              <li class="cp-device-list__item">
+                <div class="cp-device-list__main">
+                  <span class="cp-device-list__title">Device token #<?php echo (int)$device['id']; ?></span>
+                  <span class="cp-device-list__meta">Expires <?php echo h((string)($device['expires_at'] ?? '')); ?> · Last used <?php echo h((string)($device['last_used_at'] ?? ($device['created_at'] ?? 'unknown'))); ?></span>
+                  <?php if (!empty($device['last_used_ip'])): ?><span class="cp-device-list__meta">IP <?php echo h((string)$device['last_used_ip']); ?></span><?php endif; ?>
+                </div>
+                <form method="POST" action="account_preferences">
                   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                   <input type="hidden" name="token_id" value="<?php echo (int)$device['id']; ?>">
-                  <button type="submit" name="remember_revoke_one" class="text-xs font-semibold text-rose-700 hover:underline">Sign out this device</button>
+                  <button type="submit" name="remember_revoke_one" class="cp-btn cp-btn--danger-text">Sign out device</button>
                 </form>
-              </div>
+              </li>
             <?php endforeach; ?>
-          </div>
-          <form method="POST" action="account_preferences" class="mt-3">
+          </ul>
+          <form method="POST" action="account_preferences" class="cp-settings-panel__foot">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <button type="submit" name="remember_revoke_all" class="text-sm font-semibold text-rose-700 hover:underline">Sign out all remembered devices</button>
+            <button type="submit" name="remember_revoke_all" class="cp-btn cp-btn--danger-text">Sign out all remembered devices</button>
           </form>
         <?php endif; ?>
       </div>
-      <p class="mt-6 mb-0"><a href="college_student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
-    </div>
+    </section>
+
+    <p class="cp-page-foot cp-anim delay-4"><a href="college_student_dashboard" class="cp-btn cp-btn--secondary cp-btn--sm"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
   </div>
 </main>
 </body>

@@ -227,6 +227,26 @@ function college_exam_is_pass_half_correct(?int $correctCount, ?int $totalCount,
 }
 
 /**
+ * Format a percentage for display without trailing zeroes (100 not 100.00, 87.5 stays 87.5).
+ *
+ * @param mixed $value Numeric percentage
+ */
+function college_exam_format_score_percent($value, bool $includeSymbol = true): string
+{
+    if (!is_numeric($value)) {
+        return $includeSymbol ? '0%' : '0';
+    }
+    $f = (float)$value;
+    if (abs($f - round($f)) < 0.00001) {
+        $s = (string)(int)round($f);
+    } else {
+        $s = rtrim(rtrim(sprintf('%.2f', $f), '0'), '.');
+    }
+
+    return $includeSymbol ? $s . '%' : $s;
+}
+
+/**
  * Display line: "correct/total | XX.XX%" for student list + monitor (total falls back to question count when missing).
  * Percentage is always the CEO curve when correct/total are known, not the stored score.
  *
@@ -238,14 +258,14 @@ function college_exam_format_score_total_line(?int $correctCount, ?int $totalCou
     if ($tot !== null) {
         $c = ($correctCount !== null) ? max(0, (int)$correctCount) : 0;
         $pctVal = college_exam_compute_score_percentage($c, $tot);
-        $pct = number_format($pctVal, 2);
+        $pct = college_exam_format_score_percent($pctVal);
 
-        return $c . '/' . $tot . ' | ' . $pct . '%';
+        return $c . '/' . $tot . ' | ' . $pct;
     }
 
-    $pct = is_numeric($score) ? number_format((float)$score, 2) : '0.00';
+    $pct = is_numeric($score) ? college_exam_format_score_percent((float)$score) : '0%';
 
-    return $pct . '%';
+    return $pct;
 }
 
 /**

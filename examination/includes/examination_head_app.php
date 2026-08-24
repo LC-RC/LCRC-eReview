@@ -3,6 +3,9 @@
  * Examination module bridge to shared head_app.php with correct asset base URL.
  * Used only by /examination/ page copies — shared head_app.php is not modified.
  */
+$loadStudentTheme = true;
+$examinationStudentBodyClass = 'college-examination-portal';
+
 $savedScriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 if ($savedScriptName !== '') {
     $adjusted = preg_replace('#/examination/(?:professor|examinee)/[^/]+$#', '/index.php', $savedScriptName);

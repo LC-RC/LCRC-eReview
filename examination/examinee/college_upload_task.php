@@ -560,11 +560,12 @@ $resubPolicy = strtolower(trim((string) ($task['resubmission_policy'] ?? 'disabl
     }
   </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
 
-  <div class="cp-page-shell ereview-shell-no-fade pt-2">
+      <div class="cp-page-shell cp-content cp-content--workspace ereview-shell-no-fade pt-2">
     <?php
+      $cpPageVariant = 'compact';
       $cpPageBackHref = 'college_uploads';
       $cpPageBackLabel = 'All upload tasks';
       $cpPageEyebrow = 'Upload task';
@@ -580,20 +581,13 @@ $resubPolicy = strtolower(trim((string) ($task['resubmission_policy'] ?? 'disabl
       require dirname(__DIR__, 2) . '/includes/components/college_portal_flash.php';
     ?>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 cp-upload-workspace cp-anim delay-2">
       <div class="lg:col-span-7 xl:col-span-8 space-y-4 min-w-0">
-        <?php
-          $cpSectionIcon = 'bi-card-text';
-          $cpSectionTitle = 'Instructions';
-          $cpSectionClass = 'cp-anim delay-2 m-0';
-          require dirname(__DIR__, 2) . '/includes/components/college_portal_section.php';
-        ?>
-        <article class="cut-panel dash-anim delay-2">
-          <div class="cut-panel-head">
-            <i class="bi bi-info-circle text-[#1665a0]"></i>
-            Read carefully before you upload
+        <article class="cp-dash-panel cut-panel">
+          <div class="cp-dash-panel__head cut-panel-head">
+            <h3 class="cp-dash-panel__title"><i class="bi bi-info-circle"></i> Read carefully before you upload</h3>
           </div>
-          <div class="cut-panel-body">
+          <div class="cp-dash-panel__body cut-panel-body">
             <?php if (!empty($task['instructions'])): ?>
               <div class="cut-prose"><?php echo nl2br(h($task['instructions'])); ?></div>
             <?php else: ?>
@@ -605,19 +599,11 @@ $resubPolicy = strtolower(trim((string) ($task['resubmission_policy'] ?? 'disabl
 
       <aside class="lg:col-span-5 xl:col-span-4 min-w-0">
         <div class="cut-sticky-panel space-y-4">
-          <?php
-            $cpSectionIcon = 'bi-cloud-upload';
-            $cpSectionTitle = 'Your submission';
-            $cpSectionClass = 'cp-anim delay-2 m-0';
-            require dirname(__DIR__, 2) . '/includes/components/college_portal_section.php';
-          ?>
-
-          <div class="cut-panel dash-anim delay-2">
-            <div class="cut-panel-head">
-              <i class="bi bi-file-earmark-check text-[#1665a0]"></i>
-              File rules
+          <div class="cp-dash-panel cut-panel">
+            <div class="cp-dash-panel__head cut-panel-head">
+              <h3 class="cp-dash-panel__title"><i class="bi bi-file-earmark-check"></i> File rules &amp; submission</h3>
             </div>
-            <div class="cut-panel-body">
+            <div class="cp-dash-panel__body cut-panel-body">
               <div class="cut-side-meta m-0 mb-4 pb-3 border-b border-slate-100">
                 <?php if ($openAtLabel !== ''): ?>
                   <strong>Open:</strong> <?php echo h($openAtLabel); ?><br>

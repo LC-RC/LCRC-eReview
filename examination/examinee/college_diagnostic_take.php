@@ -182,6 +182,30 @@ foreach ($questions as $q) {
 
 $batchTitle = (string)($batch['title'] ?? 'Diagnostic examination');
 $examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
+
+$timeUsedSec = null;
+if ($attempt && !empty($attempt['started_at']) && !empty($attempt['submitted_at'])) {
+    $timeUsedSec = max(0, strtotime((string)$attempt['submitted_at']) - strtotime((string)$attempt['started_at']));
+}
+
+$reviewSubmittedSectionHtml = '';
+if ($reviewMode && $attemptSubmitted) {
+    $studentDisplayName = '';
+    $nst = mysqli_prepare($conn, 'SELECT full_name FROM users WHERE user_id=? LIMIT 1');
+    if ($nst) {
+        mysqli_stmt_bind_param($nst, 'i', $uid);
+        mysqli_stmt_execute($nst);
+        $nrow = mysqli_fetch_assoc(mysqli_stmt_get_result($nst));
+        mysqli_stmt_close($nst);
+        if ($nrow && !empty($nrow['full_name'])) {
+            $studentDisplayName = (string)$nrow['full_name'];
+        }
+    }
+    $analytics = diagnostic_exam_build_result_analytics($questions, $answersMap, $breakdown);
+    ob_start();
+    require dirname(__DIR__) . '/includes/college_diagnostic_review_submitted_section.php';
+    $reviewSubmittedSectionHtml = (string)ob_get_clean();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -263,10 +287,11 @@ $examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
     .diag-subject-chip { display:inline-block; margin-left:.35rem; padding:.1rem .4rem; border-radius:.35rem; background:#e8f2fa; color:#1665A0; font-size:.7rem; font-weight:800; vertical-align:middle; }
   </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
 
-  <div class="exam-shell ereview-shell-no-fade pt-2">
+  <div class="exam-shell<?php echo ($reviewMode && $attemptSubmitted) ? ' cer-page-shell cdr-page-shell' : ''; ?> ereview-shell-no-fade<?php echo ($reviewMode && $attemptSubmitted) ? '' : ' pt-2'; ?>">
+    <?php if (!$reviewMode || !$attemptSubmitted): ?>
     <section class="exam-hero dash-anim delay-1 px-5 py-5 mb-5">
       <a href="college_exams" class="focus-ring back-link inline-flex items-center gap-1 text-sm font-semibold mb-3"><i class="bi bi-arrow-left"></i> Back to exams</a>
       <h1 class="exam-title text-[1.9rem] font-extrabold m-0"><?php echo h($batchTitle); ?></h1>
@@ -274,42 +299,11 @@ $examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
         <div class="exam-subtitle mt-2"><?php echo nl2br(h((string)$batch['description'])); ?></div>
       <?php endif; ?>
     </section>
+    <?php endif; ?>
 
     <?php if ($reviewMode && $attemptSubmitted): ?>
-      <script>document.body.classList.add('exam-review-mode');</script>
-      <?php
-        $dCorrect = (int)($attempt['correct_count'] ?? 0);
-        $dTotal = (int)($attempt['total_count'] ?? 0);
-        $dScore = (float)($attempt['score'] ?? 0);
-      ?>
-      <div class="exam-take-wrap dash-anim delay-2">
-        <div class="intro-card p-6" style="max-width:720px;margin:0 auto">
-          <div class="intro-meta-grid">
-            <div class="intro-meta">
-              <div class="intro-meta-k">Score</div>
-              <div class="intro-meta-v" style="font-size:1.35rem"><?php echo h(number_format($dScore, 1)); ?>%</div>
-              <div style="font-size:.78rem;color:#64748b;margin-top:.25rem"><?php echo $dCorrect; ?> / <?php echo $dTotal; ?> correct</div>
-            </div>
-            <div class="intro-meta">
-              <div class="intro-meta-k">Type</div>
-              <div class="intro-meta-v">Diagnostic exam</div>
-              <div style="font-size:.78rem;color:#64748b;margin-top:.25rem">Raw accuracy (correct ÷ total)</div>
-            </div>
-          </div>
-          <?php if ($breakdown !== []): ?>
-          <h3 class="text-sm font-bold text-[#143D59] mt-4 mb-2">Subject breakdown</h3>
-          <div class="space-y-2">
-          <?php foreach ($breakdown as $item): ?>
-            <div class="intro-meta flex justify-between gap-3 items-center">
-              <span class="font-semibold text-[#143D59]"><?php echo h((string)($item['subject_code'] ?? '')); ?></span>
-              <span class="text-slate-600 text-sm"><?php echo (int)($item['correct'] ?? 0); ?>/<?php echo (int)($item['total'] ?? 0); ?> · <?php echo h(number_format((float)($item['score_pct'] ?? 0), 1)); ?>%</span>
-            </div>
-          <?php endforeach; ?>
-          </div>
-          <?php endif; ?>
-          <p class="mt-4 mb-0"><a href="college_exams" class="start-btn" style="text-decoration:none"><i class="bi bi-arrow-left"></i> Back to exams</a></p>
-        </div>
-      </div>
+      <script>document.body.classList.add('exam-review-mode', 'diag-review-mode');</script>
+      <?php echo $reviewSubmittedSectionHtml; ?>
 
     <?php elseif ($showIntro && !$reviewMode): ?>
       <?php
@@ -323,40 +317,47 @@ $examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
             : 'No closing time';
         $introDuration = diagnostic_exam_human_duration($examTimeLimitSec);
       ?>
-      <div class="mt-3 intro-card dash-anim delay-2 p-6">
-        <div class="intro-meta-grid">
-          <div class="intro-meta">
-            <div class="intro-meta-k">Exam Type</div>
-            <div class="intro-meta-v">Diagnostic exam</div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Opens</div>
-            <div class="intro-meta-v"><?php echo h($introOpens); ?></div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Closes</div>
-            <div class="intro-meta-v"><?php echo h($introCloses); ?></div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Duration</div>
-            <div class="intro-meta-v"><?php echo h($introDuration); ?></div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Questions</div>
-            <div class="intro-meta-v"><?php echo (int)$stats['question_count']; ?></div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Professor</div>
-            <div class="intro-meta-v"><?php echo h($profName); ?></div>
-          </div>
+      <div class="cp-dash-panel cp-anim delay-2">
+        <div class="cp-dash-panel__body">
+      <section class="cp-exam-prep" aria-label="Diagnostic exam instructions">
+        <a href="college_exams" class="cp-exam-prep__back focus-ring"><i class="bi bi-arrow-left"></i> Back to examinations</a>
+        <header class="cp-exam-prep__head">
+          <span class="type-pill type-diagnostic">Diagnostic examination</span>
+          <h1 class="cp-exam-prep__title"><?php echo h($batchTitle); ?></h1>
+          <?php if (empty($batch['description'])): ?>
+            <p class="cp-exam-prep__lead">One diagnostic attempt covering all subjects. Review the schedule before you begin.</p>
+          <?php endif; ?>
+        </header>
+        <div class="cp-exam-prep__meta">
+          <div class="cp-exam-prep__meta-item"><span class="cp-meta-k">Opens</span><span class="cp-meta-v"><?php echo h($introOpens); ?></span></div>
+          <div class="cp-exam-prep__meta-item"><span class="cp-meta-k">Closes</span><span class="cp-meta-v"><?php echo h($introCloses); ?></span></div>
+          <div class="cp-exam-prep__meta-item"><span class="cp-meta-k">Duration</span><span class="cp-meta-v"><?php echo h($introDuration); ?></span></div>
+          <div class="cp-exam-prep__meta-item"><span class="cp-meta-k">Questions</span><span class="cp-meta-v"><?php echo (int)$stats['question_count']; ?></span></div>
+          <div class="cp-exam-prep__meta-item"><span class="cp-meta-k">Professor</span><span class="cp-meta-v"><?php echo h($profName); ?></span></div>
         </div>
-        <p class="text-sm text-slate-600 mb-3">This is one diagnostic attempt covering all subjects. Answers autosave; submit when finished or when time runs out.</p>
-        <form method="post" action="">
-          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-          <button type="submit" name="start_diagnostic" value="1" class="focus-ring start-btn">
-            <i class="bi bi-play-fill"></i> Start diagnostic
-          </button>
-        </form>
+        <?php if (!empty($batch['description'])): ?>
+        <div class="cp-exam-prep__instructions">
+          <h2 class="cp-exam-prep__instructions-title"><i class="bi bi-info-circle"></i> Instructions</h2>
+          <div class="cp-exam-prep__instructions-body"><?php echo nl2br(h((string)$batch['description'])); ?></div>
+        </div>
+        <?php endif; ?>
+        <div class="cp-exam-prep__notice">
+          <p>This is one diagnostic attempt covering all subjects. Answers autosave; submit when finished or when time runs out.</p>
+        </div>
+        <div class="cp-exam-prep__start">
+          <div class="cp-exam-prep__start-copy">
+            <h2 class="cp-exam-prep__start-title">Ready to begin?</h2>
+            <p class="cp-exam-prep__start-text">Ensure you have enough uninterrupted time before starting the diagnostic.</p>
+          </div>
+          <form method="post" action="" class="cp-exam-prep__start-form">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <button type="submit" name="start_diagnostic" value="1" class="focus-ring start-btn cp-btn cp-btn--primary cp-btn--lg">
+              <i class="bi bi-play-fill"></i> Start diagnostic
+            </button>
+          </form>
+        </div>
+      </section>
+        </div>
       </div>
 
     <?php elseif ($attempt && $attemptStatus === 'in_progress'): ?>
@@ -483,6 +484,11 @@ $examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
                   <i class="bi bi-chevron-up"></i>
                 </button>
                 <div id="questionNavigator" class="exam-q-list" aria-label="Question navigator"></div>
+                <div class="cp-qnav-legend" aria-hidden="true">
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--answered"></span> Answered</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--current"></span> Current</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--unanswered"></span> Unanswered</span>
+                </div>
               </div>
             </div>
           </aside>

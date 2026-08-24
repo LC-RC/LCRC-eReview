@@ -197,7 +197,7 @@ if (!empty($examSessionBlock)) {
     .exam-lock-icon { width: 3.5rem; height: 3.5rem; border-radius: 999px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a5f 0%, #1665a0 100%); color: #fff; font-size: 1.5rem; }
   </style>
 </head>
-<body class="font-sans antialiased text-slate-800">
+<body class="font-sans antialiased text-slate-800<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <div class="exam-lock-card text-center">
     <div class="exam-lock-icon"><i class="bi bi-shield-lock"></i></div>
     <h1 class="text-xl font-bold text-slate-900 m-0">This exam is open elsewhere</h1>
@@ -391,10 +391,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
     .review-locked-text { font-size: .9rem; color: #64748b; margin-top: .5rem; }
   </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
 
-  <div class="exam-shell ereview-shell-no-fade pt-2">
+  <div class="exam-shell<?php echo $reviewMode ? ' cer-page-shell' : ' cp-content'; ?> ereview-shell-no-fade<?php echo $reviewMode ? '' : ' pt-2'; ?>">
+    <?php if (!$showIntro && !$reviewMode && !($attempt && $attemptStatusNorm === 'in_progress')): ?>
     <section class="exam-hero dash-anim delay-1 px-5 py-5 mb-5">
       <a href="college_exams" class="focus-ring back-link inline-flex items-center gap-1 text-sm font-semibold mb-3"><i class="bi bi-arrow-left"></i> Back to exams</a>
       <h1 class="exam-title text-[1.9rem] font-extrabold m-0"><?php echo h($exam['title']); ?></h1>
@@ -402,6 +403,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         <div class="exam-subtitle mt-2 prose prose-sm max-w-none"><?php echo ereview_render_exam_description($exam['description'], !empty($exam['description_markdown'])); ?></div>
       <?php endif; ?>
     </section>
+    <?php endif; ?>
 
     <?php
     if ($reviewMode && isset($_GET['debug_review'])) {
@@ -455,44 +457,68 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             ? 'No fixed timer'
             : college_exam_human_duration($introEffectiveTimerSec !== null ? $introEffectiveTimerSec : $examTimeLimitSec);
       ?>
-      <div class="mt-3 intro-card dash-anim delay-2 p-6">
-        <div class="intro-meta-grid">
-          <div class="intro-meta">
-            <div class="intro-meta-k">Exam Type</div>
-            <div class="intro-meta-v">Regular Exam</div>
+      <div class="cp-dash-panel cp-anim delay-2">
+        <div class="cp-dash-panel__body">
+      <section class="cp-exam-prep" aria-label="Exam instructions">
+        <a href="college_exams" class="cp-exam-prep__back focus-ring"><i class="bi bi-arrow-left"></i> Back to examinations</a>
+        <header class="cp-exam-prep__head">
+          <span class="type-pill type-regular">Regular examination</span>
+          <h1 class="cp-exam-prep__title"><?php echo h($exam['title']); ?></h1>
+          <?php if (empty($exam['description'])): ?>
+            <p class="cp-exam-prep__lead">Review the schedule and details below before you begin.</p>
+          <?php endif; ?>
+        </header>
+        <div class="cp-exam-prep__meta">
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Opens</span>
+            <span class="cp-meta-v"><?php echo h($introOpens); ?></span>
           </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Opens</div>
-            <div class="intro-meta-v"><?php echo h($introOpens); ?></div>
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Closes</span>
+            <span class="cp-meta-v"><?php echo h($introCloses); ?></span>
           </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Closes</div>
-            <div class="intro-meta-v" title="<?php echo h((string)($exam['deadline'] ?? '')); ?>"><?php echo h($introCloses); ?></div>
-          </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Duration</div>
-            <div class="intro-meta-v">
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Duration</span>
+            <span class="cp-meta-v">
               <?php echo h($introDuration); ?>
               <?php if ($examTimeLimitSec > 0 && $introEffectiveTimerSec !== null && $introEffectiveTimerSec < $examTimeLimitSec): ?>
-                <div class="intro-timer-cap-note">Your working time is capped by the exam closing time when you start (may be less than the full duration above).</div>
+                <span class="cp-exam-prep__note">Working time may be capped by the closing time when you start.</span>
               <?php endif; ?>
-            </div>
+            </span>
           </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Questions</div>
-            <div class="intro-meta-v"><?php echo (int)count($questions); ?></div>
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Questions</span>
+            <span class="cp-meta-v"><?php echo (int)count($questions); ?></span>
           </div>
-          <div class="intro-meta">
-            <div class="intro-meta-k">Professor</div>
-            <div class="intro-meta-v"><?php echo h($profName); ?></div>
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Professor</span>
+            <span class="cp-meta-v"><?php echo h($profName); ?></span>
+          </div>
+          <div class="cp-exam-prep__meta-item">
+            <span class="cp-meta-k">Type</span>
+            <span class="cp-meta-v">Regular exam</span>
           </div>
         </div>
-        <form method="post" action="">
-          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-          <button type="submit" name="start_exam" value="1" class="focus-ring start-btn">
-            <i class="bi bi-play-fill"></i> Start exam
-          </button>
-        </form>
+        <?php if (!empty($exam['description'])): ?>
+        <div class="cp-exam-prep__instructions">
+          <h2 class="cp-exam-prep__instructions-title"><i class="bi bi-info-circle"></i> Instructions</h2>
+          <div class="cp-exam-prep__instructions-body prose prose-sm max-w-none"><?php echo ereview_render_exam_description($exam['description'], !empty($exam['description_markdown'])); ?></div>
+        </div>
+        <?php endif; ?>
+        <div class="cp-exam-prep__start">
+          <div class="cp-exam-prep__start-copy">
+            <h2 class="cp-exam-prep__start-title">Ready to begin?</h2>
+            <p class="cp-exam-prep__start-text">Once you start, the timer and examination rules apply. Make sure you have a stable connection.</p>
+          </div>
+          <form method="post" action="" class="cp-exam-prep__start-form">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <button type="submit" name="start_exam" value="1" class="focus-ring start-btn cp-btn cp-btn--primary cp-btn--lg">
+              <i class="bi bi-play-fill"></i> Start examination
+            </button>
+          </form>
+        </div>
+      </section>
+        </div>
       </div>
     <?php elseif ($attempt && $attemptStatusNorm === 'in_progress'): ?>
       <?php
@@ -521,22 +547,42 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
       <div class="exam-page-container exam-take-wrap dash-anim delay-2">
         <div id="examConnBanner" class="exam-conn-banner" role="status"><i class="bi bi-wifi-off mr-1"></i> <span id="examConnBannerText">Connection interrupted. Your answers are being preserved. Reconnecting...</span></div>
 
-        <div class="exam-bar">
-          <div class="exam-header">
-            <div class="exam-header-left">
-              <div class="exam-title"><?php echo h($exam['title']); ?></div>
-              <div class="exam-subject">Regular exam · <?php echo h($profName); ?></div>
+        <div class="exam-bar exam-workspace-bar">
+          <div class="exam-workspace-bar__inner">
+            <div class="exam-workspace-bar__left">
+              <div class="exam-workspace-brand">
+                <span class="exam-workspace-brand__mark" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></span>
+                <span class="exam-workspace-brand__text">LCRC eReview</span>
+              </div>
+              <div class="exam-workspace-bar__meta">
+                <div class="exam-title"><?php echo h($exam['title']); ?></div>
+                <div class="exam-subject">Regular exam · <?php echo h($profName); ?></div>
+              </div>
             </div>
-            <div class="exam-q-badge exam-progress-badge" aria-live="polite"><strong id="answeredCountNum">0</strong> / <strong><?php echo $qTotal; ?></strong> answered</div>
-          </div>
-          <div class="exam-progress-wrap">
-            <div class="exam-progress-bar" aria-hidden="true"><div id="progressBar" class="exam-progress-fill" style="width:0%"></div></div>
-            <div class="exam-progress-label">Focusing question <span id="examCurrentLabel">1</span> of <?php echo $qTotal; ?> · Flagged <span id="flaggedCount">0</span></div>
+            <div class="exam-workspace-bar__center">
+              <p class="exam-workspace-progress-k">Question <span id="examCurrentLabel">1</span> of <?php echo $qTotal; ?></p>
+              <div class="exam-progress-bar" aria-hidden="true"><div id="progressBar" class="exam-progress-fill" style="width:0%"></div></div>
+              <p class="exam-workspace-progress-sub" aria-live="polite"><strong id="answeredCountNum">0</strong> of <?php echo $qTotal; ?> completed · <span id="flaggedCount">0</span> flagged</p>
+            </div>
+            <div class="exam-workspace-bar__timer">
+              <p class="exam-timer-card__label">Time remaining</p>
+              <div id="examTimerCircle" class="exam-timer-circle-wrap exam-timer-circle-wrap--header" data-initial="<?php echo $timerInitial !== null ? (int)$timerInitial : 0; ?>">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="exam-timer-circle-track" cx="60" cy="60" r="54"></circle>
+                  <circle id="examTimerCircleProgress" class="exam-timer-circle-progress" cx="60" cy="60" r="54"
+                    stroke-dasharray="<?php echo h((string)$timerCircumference); ?>"
+                    stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="exam-timer-circle-inner">
+                  <div id="examTimerCircleValue" class="exam-timer-circle-value">--:--</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="exam-layout mt-4">
-          <div class="exam-main">
+        <div class="exam-layout exam-workspace-layout">
+          <div class="exam-main exam-workspace-main">
             <form id="examForm" data-attempt-id="<?php echo (int)$attempt['attempt_id']; ?>" data-csrf="<?php echo h($csrf); ?>" data-exam-id="<?php echo (int)$examId; ?>" data-total="<?php echo $qTotal; ?>" data-remaining="<?php echo $timerInitial !== null ? (int)$timerInitial : ''; ?>">
               <?php foreach ($questions as $index => $q): ?>
                 <?php
@@ -546,11 +592,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
                   $prev = strtoupper((string)($answersMap[$qid]['selected_answer'] ?? ''));
                 ?>
                 <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" data-question-type="<?php echo $isTfQ ? 'tf' : 'mcq'; ?>" id="q<?php echo ($index + 1); ?>">
-                  <div class="flex items-start justify-between gap-3 mb-2">
-                    <div class="exam-question-label m-0">Question <?php echo ($index + 1); ?> of <?php echo $qTotal; ?> <span class="exam-answered-pill" aria-hidden="true">✓</span></div>
-                    <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Flag question <?php echo ($index + 1); ?>"><i class="bi bi-flag"></i> Flag</button>
+                  <div class="exam-question-head">
+                    <div class="exam-question-label">Question <?php echo ($index + 1); ?> <span class="exam-answered-pill" aria-hidden="true">✓</span></div>
+                    <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Mark question <?php echo ($index + 1); ?> for review"><i class="bi bi-flag"></i> Mark for review</button>
                   </div>
-                  <div class="exam-question-text exam-no-copy quiz-rich-text"><?php echo renderQuizRichText($q['question_text']); ?></div>
+                  <div class="exam-question-text exam-no-copy quiz-rich-text"><span class="exam-question-num"><?php echo ($index + 1); ?>.</span> <?php echo renderQuizRichText($q['question_text']); ?></div>
                   <div class="exam-choices">
                     <?php foreach ($displayChoices as $choice): ?>
                       <?php
@@ -560,12 +606,13 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
                         $aria = $showLetter ? ('Choice ' . $L) : $label;
                       ?>
                       <label class="exam-choice focus-ring exam-no-copy <?php echo $prev === $L ? 'selected' : ''; ?>" data-choice-row tabindex="0">
+                        <span class="exam-choice-radio" aria-hidden="true"></span>
                         <input type="radio" class="sr-only" name="q_<?php echo $qid; ?>" value="<?php echo h($L); ?>" data-question-id="<?php echo $qid; ?>" <?php echo $prev === $L ? 'checked' : ''; ?> aria-label="<?php echo h($aria); ?>">
                         <?php if ($showLetter): ?>
                           <span class="exam-choice-letter"><?php echo h($L); ?></span>
                         <?php endif; ?>
                         <div class="exam-choice-text"><?php echo $showLetter ? nl2br(h($label)) : h($label); ?></div>
-                        <span class="exam-choice-check" aria-hidden="true"><i class="bi bi-check"></i></span>
+                        <span class="exam-choice-check" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
                       </label>
                     <?php endforeach; ?>
                   </div>
@@ -573,44 +620,45 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               <?php endforeach; ?>
             </form>
 
-            <div class="exam-nav-card exam-submit-card">
-              <div class="exam-submit-progress" id="submitProgressLabel"><span id="submitAnsweredNum">0</span> of <?php echo $qTotal; ?> answered</div>
-              <button type="button" id="submitExamBtn" class="exam-btn-submit focus-ring is-locked" aria-disabled="true">
-                <i class="bi bi-send-fill"></i> <span id="submitExamBtnText">Answer all questions to submit</span>
-              </button>
-              <p id="submitIncompleteHint" class="exam-submit-hint hidden" role="status"></p>
-            </div>
-          </div>
-
-          <aside class="exam-sidebar">
-            <div class="exam-sidebar-card mb-3 exam-timer-card">
-              <div class="exam-sidebar-title">Time Remaining</div>
-              <div id="examTimerCircle" class="exam-timer-circle-wrap" data-initial="<?php echo $timerInitial !== null ? (int)$timerInitial : 0; ?>">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="exam-timer-circle-track" cx="60" cy="60" r="54"></circle>
-                  <circle id="examTimerCircleProgress" class="exam-timer-circle-progress" cx="60" cy="60" r="54"
-                    stroke-dasharray="<?php echo h((string)$timerCircumference); ?>"
-                    stroke-dashoffset="0"></circle>
-                </svg>
-                <div class="exam-timer-circle-inner">
-                  <div id="examTimerCircleValue" class="exam-timer-circle-value">--:--</div>
-                  <div class="exam-timer-circle-label">remaining</div>
-                </div>
+            <div class="exam-action-bar" id="examActionBar">
+              <div class="exam-action-bar__left">
+                <button type="button" id="examPrevBtn" class="exam-action-btn exam-action-btn--ghost" disabled><i class="bi bi-arrow-left"></i> Previous</button>
+              </div>
+              <div class="exam-action-bar__center">
+                <button type="button" id="examMarkReviewBtn" class="exam-action-btn exam-action-btn--mark focus-ring"><i class="bi bi-flag"></i> Mark for review</button>
+              </div>
+              <div class="exam-action-bar__right">
+                <button type="button" id="examNextBtn" class="exam-action-btn exam-action-btn--primary">Next <i class="bi bi-arrow-right"></i></button>
+                <button type="button" id="submitExamBtn" class="exam-action-btn exam-action-btn--submit exam-btn-submit focus-ring is-locked" aria-disabled="true" hidden>
+                  <i class="bi bi-send-fill"></i> <span id="submitExamBtnText">Submit exam</span>
+                </button>
               </div>
             </div>
-            <div class="exam-sidebar-card">
+            <p id="submitIncompleteHint" class="exam-submit-hint hidden" role="status"></p>
+            <div class="exam-submit-progress sr-only" id="submitProgressLabel"><span id="submitAnsweredNum">0</span> of <?php echo $qTotal; ?> answered</div>
+          </div>
+
+          <aside class="exam-sidebar exam-workspace-sidebar">
+            <div class="exam-sidebar-card exam-navigator-card">
+              <div class="exam-sidebar-title">Question navigator</div>
               <div class="exam-filter-row">
                 <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
               </div>
               <div class="exam-sidebar-section" id="examQListSection">
-                <button type="button" class="exam-sidebar-section-head" id="examQListTrigger" aria-expanded="true">
-                  <span>Questions</span>
-                  <i class="bi bi-chevron-up"></i>
-                </button>
-                <div id="questionNavigator" class="exam-q-list" aria-label="Question navigator"></div>
+                <div id="questionNavigator" class="exam-q-list exam-q-grid" aria-label="Question navigator"></div>
+                <div class="cp-qnav-legend" aria-hidden="true">
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--answered"></span> Answered</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--current"></span> Current</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--unanswered"></span> Unanswered</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--flagged"></span> Flagged</span>
+                </div>
               </div>
+            </div>
+            <div class="exam-sidebar-card exam-timer-card exam-timer-card--mobile">
+              <div class="exam-sidebar-title">Time remaining</div>
+              <div class="exam-timer-mobile-value" id="examTimerMobileMirror" aria-hidden="true">--:--</div>
             </div>
           </aside>
         </div>
@@ -681,8 +729,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         <div class="submit-confirm-shell">
           <div class="submit-confirm-head">
             <div class="submit-confirm-icon" aria-hidden="true"><i class="bi bi-clipboard2-check"></i></div>
-            <h3 id="submitConfirmTitle" class="submit-confirm-title">Final submission check</h3>
-            <p class="submit-confirm-sub">Confirm your progress before you send your answers. Unanswered items are highlighted so nothing slips through.</p>
+            <h3 id="submitConfirmTitle" class="submit-confirm-title">Submit examination?</h3>
+            <p class="submit-confirm-sub">Are you sure you want to submit your examination? Unanswered items are highlighted below.</p>
           </div>
           <div class="submit-confirm-body">
             <div class="submit-stat-grid">
@@ -1080,6 +1128,29 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (countdown <= 300 && countdown > 60 && !warned5) { warned5 = true; showWarnToast('5 minutes remaining', 'warning'); }
           if (countdown <= 60 && countdown > 30 && !warned1) { warned1 = true; showWarnToast('1 minute remaining', 'danger'); }
           if (countdown <= 30 && countdown > 0 && !warned30) { warned30 = true; showWarnToast('30 seconds remaining', 'danger'); }
+          var timerMirror = document.getElementById('examTimerMobileMirror');
+          if (timerMirror && timerValue) timerMirror.textContent = timerValue.textContent;
+        }
+        function updateActionBarUI() {
+          var prevBtn = document.getElementById('examPrevBtn');
+          var nextBtn = document.getElementById('examNextBtn');
+          var markReviewBtn = document.getElementById('examMarkReviewBtn');
+          var onLast = state.currentIndex >= totalQuestions - 1;
+          var complete = unansweredCount() === 0 && totalQuestions > 0;
+          if (prevBtn) prevBtn.disabled = state.currentIndex <= 0;
+          if (nextBtn) {
+            nextBtn.hidden = onLast && complete;
+            if (onLast && !complete) {
+              nextBtn.innerHTML = '<i class="bi bi-list-check"></i> Review answers';
+            } else if (!onLast) {
+              nextBtn.innerHTML = 'Next <i class="bi bi-arrow-right"></i>';
+            }
+          }
+          if (markReviewBtn) {
+            var panel = panels[state.currentIndex];
+            var qid = panel ? parseInt(panel.getAttribute('data-question-id'), 10) : 0;
+            markReviewBtn.classList.toggle('is-on', qid > 0 && state.flags.has(qid));
+          }
         }
         function updateCounts() {
           var uniq = {};
@@ -1093,6 +1164,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (currentLabel) currentLabel.textContent = String(state.currentIndex + 1);
           if (submitAnsweredNum) submitAnsweredNum.textContent = String(n);
           updateSubmitButton();
+          updateActionBarUI();
         }
         function unansweredList() {
           var list = [];
@@ -1108,6 +1180,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (submitExamBtn) {
             // Keep clickable while incomplete so we can show which questions remain.
             submitExamBtn.disabled = false;
+            var onLast = state.currentIndex >= totalQuestions - 1;
+            submitExamBtn.hidden = !complete;
             submitExamBtn.classList.toggle('is-locked', !complete);
             submitExamBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
             if (submitExamBtnText) {
@@ -1160,8 +1234,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (answered) a.classList.add('answered');
             if (flagged) a.classList.add('flagged');
             a.setAttribute('data-question-id', String(qid));
-            a.innerHTML = '<span class="q-num">' + (idx + 1) + '</span><span>Question ' + (idx + 1) + '</span>' +
-              (answered ? '<i class="bi bi-check-circle-fill q-check"></i>' : (flagged ? '<i class="bi bi-flag-fill q-check" style="color:#d97706"></i>' : ''));
+            a.setAttribute('title', 'Question ' + (idx + 1));
+            a.innerHTML = '<span class="q-num">' + (idx + 1) + '</span>';
             a.addEventListener('click', function (e) {
               e.preventDefault();
               scrollToQuestion(idx, true);
@@ -1579,6 +1653,37 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         document.getElementById('closeMobileDrawerBtn').addEventListener('click', closeMobileDrawer);
         document.getElementById('mobileIndexDrawer').addEventListener('click', function (e) { if (e.target === e.currentTarget) closeMobileDrawer(); });
 
+        var examPrevBtn = document.getElementById('examPrevBtn');
+        var examNextBtn = document.getElementById('examNextBtn');
+        var examMarkReviewBtn = document.getElementById('examMarkReviewBtn');
+        if (examPrevBtn) {
+          examPrevBtn.addEventListener('click', function () {
+            if (state.currentIndex > 0) setCurrentIndex(state.currentIndex - 1);
+          });
+        }
+        if (examNextBtn) {
+          examNextBtn.addEventListener('click', function () {
+            var onLast = state.currentIndex >= totalQuestions - 1;
+            if (onLast) {
+              var idx = panels.findIndex(function (p) {
+                return !isQuestionAnsweredLocal(parseInt(p.getAttribute('data-question-id'), 10));
+              });
+              if (idx >= 0) setCurrentIndex(idx);
+              else tryOpenSubmit();
+              return;
+            }
+            if (state.currentIndex < totalQuestions - 1) setCurrentIndex(state.currentIndex + 1);
+          });
+        }
+        if (examMarkReviewBtn) {
+          examMarkReviewBtn.addEventListener('click', function () {
+            var panel = panels[state.currentIndex]; if (!panel) return;
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10); if (!qid) return;
+            if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
+            updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
+          });
+        }
+
         document.addEventListener('keydown', function (e) {
           if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
           if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openShortcuts(); return; }
@@ -1586,8 +1691,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             e.preventDefault();
             if (state.currentIndex < totalQuestions - 1) setCurrentIndex(state.currentIndex + 1);
             else {
-              var submitCardJump = document.querySelector('.exam-submit-card');
-              if (submitCardJump) submitCardJump.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              var actionBar = document.getElementById('examActionBar');
+              if (actionBar) actionBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
           }
           if (e.key === 'p' || e.key === 'P') {

@@ -805,3 +805,1806 @@ body.exam-protected [contenteditable] {
 .exam-security-card h3 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #fecaca; }
 .exam-security-card p { margin: .65rem 0 1.1rem; font-size: .9rem; color: rgba(226,232,240,.9); line-height: 1.5; }
 .exam-security-card .exam-btn-submit { width: 100%; justify-content: center; }
+
+/* =============================================================================
+   PREMIUM EXAM WORKSPACE (college_take_exam in-progress)
+   ============================================================================= */
+
+body.college-examination-portal.exam-taking-mode .exam-page-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1rem 1.5rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar {
+  border-radius: 0 0 var(--exam-radius) var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  border-top: none;
+  box-shadow: var(--exam-shadow-lg);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 1rem 1.25rem;
+  align-items: center;
+  padding: 0.85rem 1.25rem 1rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-brand__mark {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #143d59 0%, #1665a0 100%);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-brand__text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--exam-text);
+  white-space: nowrap;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__meta {
+  min-width: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__meta .exam-title {
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__meta .exam-subject {
+  font-size: 0.75rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__center {
+  min-width: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-progress-k {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-progress-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-bar__timer {
+  text-align: center;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-card__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap--header {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto;
+  box-shadow: 0 0 0 1px rgba(22, 101, 160, 0.15), 0 8px 20px rgba(22, 101, 160, 0.12);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-circle-wrap--header .exam-timer-circle-value {
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17.5rem;
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-main {
+  min-width: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-label {
+  margin: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-num {
+  font-weight: 700;
+  color: var(--exam-primary);
+  margin-right: 0.25rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-flag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--exam-border);
+  background: var(--exam-bg);
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--exam-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-flag-btn.is-on,
+body.college-examination-portal.exam-taking-mode .exam-action-btn--mark.is-on {
+  border-color: rgba(217, 119, 6, 0.45);
+  background: #fffbeb;
+  color: #b45309;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice {
+  border-width: 1.5px;
+  min-height: 3.75rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice-radio {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 999px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice:hover {
+  border-color: rgba(22, 101, 160, 0.45);
+  background: var(--exam-primary-light);
+  box-shadow: 0 4px 14px rgba(22, 101, 160, 0.08);
+  transform: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice.selected {
+  border-color: var(--exam-primary);
+  background: #e8f2fa;
+  box-shadow: 0 0 0 3px rgba(22, 101, 160, 0.12);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-radio {
+  border-color: var(--exam-primary);
+  background: var(--exam-primary);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-letter {
+  background: var(--exam-primary);
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-bar {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 90;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--exam-shadow-lg);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-bar__left { justify-self: start; }
+body.college-examination-portal.exam-taking-mode .exam-action-bar__center { justify-self: center; }
+body.college-examination-portal.exam-taking-mode .exam-action-bar__right {
+  justify-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--exam-text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn:hover:not(:disabled) {
+  border-color: rgba(22, 101, 160, 0.35);
+  background: var(--exam-primary-light);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn--primary {
+  background: var(--exam-primary);
+  border-color: var(--exam-primary);
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn--primary:hover:not(:disabled) {
+  background: #145a8f;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn--submit {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-action-btn--submit.is-locked {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-sidebar {
+  position: sticky;
+  top: 5.5rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-navigator-card .exam-sidebar-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+  padding: 0.85rem 1rem 0.5rem;
+  border-bottom: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem 0.75rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a {
+  justify-content: center;
+  padding: 0;
+  min-height: 2.15rem;
+  border-radius: 8px;
+  border: 1px solid var(--exam-border);
+  background: var(--exam-bg);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a .q-num {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--exam-text);
+  font-size: 0.75rem;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a.answered .q-num {
+  background: #059669;
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a.current .q-num {
+  background: var(--exam-primary);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(22, 101, 160, 0.25);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a.flagged .q-num {
+  box-shadow: inset 0 0 0 2px #d97706;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-timer-card--mobile {
+  display: none;
+}
+
+body.college-examination-portal.exam-taking-mode .cp-qnav-legend__dot--flagged {
+  background: #fff;
+  border-color: #d97706;
+  box-shadow: inset 0 0 0 2px #d97706;
+}
+
+@media (max-width: 1024px) {
+  body.college-examination-portal.exam-taking-mode .exam-workspace-bar__inner {
+    grid-template-columns: 1fr;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-workspace-layout {
+    grid-template-columns: 1fr;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-workspace-sidebar {
+    position: static;
+    order: 2;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-timer-card--mobile {
+    display: block;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-workspace-bar__timer {
+    display: none;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-timer-mobile-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #047857;
+    padding: 0.5rem 1rem 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  body.college-examination-portal.exam-taking-mode .exam-workspace-brand__text { display: none; }
+  body.college-examination-portal.exam-taking-mode .exam-action-bar {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-action-bar__center {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-action-bar__center .exam-action-btn {
+    width: 100%;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-action-bar__right {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: stretch;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-action-bar__right .exam-action-btn {
+    flex: 1;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-q-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* =============================================================================
+   FULL-PAGE EXAMINATION RESULT (assessment report)
+   ============================================================================= */
+
+body.college-examination-portal.exam-review-mode .cer-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.25rem clamp(1rem, 2.5vw, 2rem) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+
+/* ---- Hero: three-part official result header ---- */
+body.college-examination-portal.exam-review-mode .cer-full-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow-lg);
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__title {
+  margin: 0.4rem 0 0.25rem;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__type {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--exam-primary);
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__meta {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--exam-muted);
+  line-height: 1.5;
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__col--score {
+  display: flex;
+  justify-content: center;
+}
+
+body.college-examination-portal.exam-review-mode .cer-full-hero__col--status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---- Score donut ---- */
+body.college-examination-portal.exam-review-mode .cer-donut {
+  position: relative;
+  flex-shrink: 0;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut--hero {
+  width: clamp(9rem, 14vw, 12.5rem);
+  height: clamp(9rem, 14vw, 12.5rem);
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut--sm {
+  width: 7rem;
+  height: 7rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__track {
+  fill: none;
+  stroke: var(--exam-border);
+  stroke-width: 10;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__fill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__fill--pass { stroke: #059669; }
+body.college-examination-portal.exam-review-mode .cer-donut__fill--fail { stroke: #dc2626; }
+
+body.college-examination-portal.exam-review-mode .cer-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__value {
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--exam-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__value--sm {
+  font-size: 1.25rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__label {
+  margin-top: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__label i {
+  margin-right: 0.15rem;
+  color: #d4a017;
+}
+
+/* ---- Pass / fail status card ---- */
+body.college-examination-portal.exam-review-mode .cer-pass-card {
+  width: 100%;
+  max-width: 18rem;
+  padding: 1.35rem 1.5rem;
+  border-radius: var(--exam-radius);
+  text-align: center;
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card--pass {
+  background: linear-gradient(145deg, #059669 0%, #10b981 55%, #34d399 100%);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(5, 150, 105, 0.28);
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card--fail {
+  background: linear-gradient(145deg, #b91c1c 0%, #dc2626 55%, #ef4444 100%);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(220, 38, 38, 0.22);
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto 0.65rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card__label {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card__headline {
+  margin: 0.45rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+body.college-examination-portal.exam-review-mode .cer-pass-card__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+
+/* ---- Performance summary strip ---- */
+body.college-examination-portal.exam-review-mode .cer-summary-strip {
+  padding: 1.15rem clamp(1rem, 2.5vw, 1.75rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow);
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-strip__title {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-strip__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric {
+  flex: 1 1 0;
+  min-width: 7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.65rem 0.85rem;
+  text-align: center;
+  border-right: 1px solid var(--exam-border);
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric:last-child {
+  border-right: none;
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric__icon {
+  font-size: 1.1rem;
+  color: var(--exam-muted);
+  line-height: 1;
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric--ok .cer-summary-metric__icon { color: #059669; }
+body.college-examination-portal.exam-review-mode .cer-summary-metric--bad .cer-summary-metric__icon { color: #dc2626; }
+body.college-examination-portal.exam-review-mode .cer-summary-metric--accent .cer-summary-metric__icon { color: var(--exam-primary); }
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric__k {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric__v {
+  font-size: clamp(1.125rem, 2vw, 1.45rem);
+  font-weight: 800;
+  color: var(--exam-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+body.college-examination-portal.exam-review-mode .cer-summary-metric--ok .cer-summary-metric__v { color: #047857; }
+body.college-examination-portal.exam-review-mode .cer-summary-metric--bad .cer-summary-metric__v { color: #b91c1c; }
+body.college-examination-portal.exam-review-mode .cer-summary-metric--accent .cer-summary-metric__v { color: var(--exam-primary); }
+
+/* ---- Two-column split ---- */
+body.college-examination-portal.exam-review-mode .cer-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+body.college-examination-portal.exam-review-mode .cer-split__panel {
+  padding: 1.25rem clamp(1rem, 2vw, 1.5rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow);
+}
+
+body.college-examination-portal.exam-review-mode .cer-split__title {
+  margin: 0 0 1.15rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-analysis__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-analysis__gauge {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-analysis__bars {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-bar-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-bar-row__head strong {
+  color: var(--exam-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.exam-review-mode .cer-bar {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--exam-border);
+  overflow: hidden;
+}
+
+body.college-examination-portal.exam-review-mode .cer-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.5s ease;
+}
+
+body.college-examination-portal.exam-review-mode .cer-bar__fill--ok { background: linear-gradient(90deg, #059669, #34d399); }
+body.college-examination-portal.exam-review-mode .cer-bar__fill--bad { background: linear-gradient(90deg, #dc2626, #f87171); }
+body.college-examination-portal.exam-review-mode .cer-bar__fill--muted { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+
+body.college-examination-portal.exam-review-mode .cer-analysis__scores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-score-chip {
+  padding: 0.85rem 1rem;
+  border-radius: var(--exam-radius-sm);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-bg);
+}
+
+body.college-examination-portal.exam-review-mode .cer-score-chip--accent {
+  border-color: rgba(22, 101, 160, 0.25);
+  background: var(--exam-primary-light);
+}
+
+body.college-examination-portal.exam-review-mode .cer-score-chip__k {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-score-chip__v {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--exam-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.exam-review-mode .cer-score-chip--accent .cer-score-chip__v {
+  color: var(--exam-primary);
+}
+
+/* ---- Examination information ---- */
+body.college-examination-portal.exam-review-mode .cer-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  margin: 0;
+}
+
+body.college-examination-portal.exam-review-mode .cer-info-item dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-info-item dt i {
+  color: var(--exam-primary);
+  font-size: 0.85rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-info-item dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--exam-text);
+  line-height: 1.45;
+}
+
+/* ---- Full-width answer review ---- */
+body.college-examination-portal.exam-review-mode .cer-review-full {
+  width: 100%;
+}
+
+body.college-examination-portal.exam-review-mode .cer-review-full__title {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-review-full__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-card {
+  margin-bottom: 0;
+  padding: 1.25rem clamp(1rem, 2.5vw, 1.75rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow);
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-card--correct { border-color: rgba(5, 150, 105, 0.32); }
+body.college-examination-portal.exam-review-mode .cer-q-card--incorrect { border-color: rgba(220, 38, 38, 0.25); }
+body.college-examination-portal.exam-review-mode .cer-q-card--unanswered { border-color: rgba(217, 119, 6, 0.3); }
+
+body.college-examination-portal.exam-review-mode .cer-q-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-card__num {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-badge--ok { background: #ecfdf5; color: #047857; }
+body.college-examination-portal.exam-review-mode .cer-q-badge--bad { background: #fef2f2; color: #b91c1c; }
+body.college-examination-portal.exam-review-mode .cer-q-badge--miss { background: #fffbeb; color: #b45309; }
+
+body.college-examination-portal.exam-review-mode .cer-q-card__stem {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--exam-text);
+  font-weight: 500;
+  margin-bottom: 1.15rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-compare__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--exam-radius-sm);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-bg);
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill--ok {
+  border-color: rgba(5, 150, 105, 0.35);
+  background: #f0fdf4;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill--bad {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: #fef2f2;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill--empty {
+  color: var(--exam-muted);
+  font-style: italic;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill__letter {
+  flex-shrink: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  background: var(--exam-primary);
+  color: #fff;
+}
+
+body.college-examination-portal.exam-review-mode .cer-answer-pill--ok .cer-answer-pill__letter { background: #059669; }
+body.college-examination-portal.exam-review-mode .cer-answer-pill--bad .cer-answer-pill__letter { background: #dc2626; }
+
+body.college-examination-portal.exam-review-mode .cer-q-explain {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--exam-radius-sm);
+  background: var(--exam-bg);
+  border: 1px solid var(--exam-border);
+  font-size: 0.875rem;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-explain strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-review-mode .cer-q-explain p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+body.college-examination-portal.exam-review-mode .cer-locked {
+  padding: 2rem 1.5rem;
+  border-radius: var(--exam-radius);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: #fffbeb;
+  text-align: center;
+}
+
+body.college-examination-portal.exam-review-mode .cer-locked__icon {
+  font-size: 2rem;
+  color: #b45309;
+  margin-bottom: 0.65rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-locked__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #92400e;
+}
+
+body.college-examination-portal.exam-review-mode .cer-locked__text {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #78350f;
+  line-height: 1.55;
+}
+
+/* ---- Bottom action bar ---- */
+body.college-examination-portal.exam-review-mode .cer-page-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 1.15rem clamp(1rem, 2.5vw, 2rem);
+  border-top: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--exam-primary);
+  text-decoration: none;
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__back:hover {
+  text-decoration: underline;
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.15rem;
+  border-radius: var(--exam-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__btn--ghost {
+  border: 1.5px solid var(--exam-primary);
+  background: var(--exam-surface);
+  color: var(--exam-primary);
+}
+
+body.college-examination-portal.exam-review-mode .cer-page-foot__btn--ghost:hover {
+  background: var(--exam-primary-light);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+  body.college-examination-portal.exam-review-mode .cer-full-hero {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "info info"
+      "score status";
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-full-hero__col--info { grid-area: info; }
+  body.college-examination-portal.exam-review-mode .cer-full-hero__col--score { grid-area: score; }
+  body.college-examination-portal.exam-review-mode .cer-full-hero__col--status {
+    grid-area: status;
+    justify-content: flex-start;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  body.college-examination-portal.exam-review-mode .cer-full-hero {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+    text-align: center;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-full-hero__col--score,
+  body.college-examination-portal.exam-review-mode .cer-full-hero__col--status {
+    justify-content: center;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-pass-card {
+    max-width: none;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-summary-metric {
+    flex: 1 1 calc(50% - 1px);
+    min-width: calc(50% - 1px);
+    border-right: none;
+    border-bottom: 1px solid var(--exam-border);
+    padding: 0.85rem 0.5rem;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-summary-metric:nth-child(odd) {
+    border-right: 1px solid var(--exam-border);
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-summary-metric:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-analysis__gauge {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-donut--sm {
+    margin: 0 auto;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-answer-compare {
+    grid-template-columns: 1fr;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-analysis__scores {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  body.college-examination-portal.exam-review-mode .cer-summary-metric {
+    flex: 1 1 100%;
+    min-width: 100%;
+    border-right: none !important;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-summary-metric:not(:last-child) {
+    border-bottom: 1px solid var(--exam-border);
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-page-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-page-foot__actions {
+    justify-content: stretch;
+  }
+
+  body.college-examination-portal.exam-review-mode .cer-page-foot__btn {
+    flex: 1;
+  }
+}
+
+/* Dark theme: full-page result */
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-pass-card--pass {
+  box-shadow: 0 12px 28px rgba(5, 150, 105, 0.18);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-q-badge--ok {
+  background: rgba(5, 150, 105, 0.15);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-q-badge--bad {
+  background: rgba(220, 38, 38, 0.15);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-q-badge--miss {
+  background: rgba(217, 119, 6, 0.15);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-answer-pill--ok {
+  background: rgba(5, 150, 105, 0.1);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-answer-pill--bad {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-locked {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-locked__title {
+  color: #fbbf24;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-review-mode .cer-locked__text {
+  color: var(--exam-muted);
+}
+
+/* =============================================================================
+   FULL-PAGE DIAGNOSTIC ASSESSMENT REPORT
+   ============================================================================= */
+
+body.college-examination-portal.diag-review-mode .cdr-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.25rem clamp(1rem, 2.5vw, 2rem) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  box-sizing: border-box;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-section-title {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.25rem);
+  padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow-lg);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__title {
+  margin: 0.4rem 0 0.25rem;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__type {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--exam-primary);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__meta,
+body.college-examination-portal.diag-review-mode .cdr-hero__insight {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__insight {
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--exam-border);
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__score-k {
+  margin: 0 0 0.65rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-hero__col--score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card {
+  padding: 1.25rem 1.35rem;
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-bg);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card--strong {
+  border-color: rgba(5, 150, 105, 0.35);
+  background: linear-gradient(180deg, #f0fdf4 0%, var(--exam-surface) 100%);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card--developing {
+  border-color: rgba(22, 101, 160, 0.3);
+  background: linear-gradient(180deg, #e8f2fa 0%, var(--exam-surface) 100%);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card--needs_review {
+  border-color: rgba(217, 119, 6, 0.35);
+  background: linear-gradient(180deg, #fffbeb 0%, var(--exam-surface) 100%);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card__k {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card__v {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 800;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-level-card__sub {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-readiness__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem 2rem;
+  padding: 1.15rem clamp(1rem, 2.5vw, 1.75rem);
+  border-top: 1px solid var(--exam-border);
+  border-bottom: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-readiness__score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.85rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-readiness__pct {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: var(--exam-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-readiness__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-readiness__note {
+  flex: 1;
+  min-width: min(100%, 18rem);
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-band {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-band--strong {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-band--developing {
+  background: #e8f2fa;
+  color: #1665a0;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-band--needs_review {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--exam-border);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__row {
+  display: grid;
+  grid-template-columns: minmax(4rem, 5.5rem) 3.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__pct {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--exam-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__bar {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--exam-border);
+  overflow: hidden;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-compare__fill--strong { background: linear-gradient(90deg, #059669, #34d399); }
+body.college-examination-portal.diag-review-mode .cdr-compare__fill--developing { background: linear-gradient(90deg, #1665a0, #3b9fd9); }
+body.college-examination-portal.diag-review-mode .cdr-compare__fill--needs_review { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+body.college-examination-portal.diag-review-mode .cdr-subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--exam-border);
+  border-radius: var(--exam-radius);
+  background: var(--exam-surface);
+  overflow: hidden;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc {
+  border-bottom: 1px solid var(--exam-border);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc:last-child {
+  border-bottom: none;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 1rem clamp(1rem, 2vw, 1.35rem);
+  cursor: pointer;
+  list-style: none;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__head::-webkit-details-marker {
+  display: none;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__code {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__name {
+  font-size: 0.8125rem;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__stats {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__pct {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--exam-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__toggle {
+  color: var(--exam-muted);
+  transition: transform 0.2s ease;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc[open] .cdr-subject-acc__toggle {
+  transform: rotate(180deg);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__body {
+  padding: 0 clamp(1rem, 2vw, 1.35rem) 1.15rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__bar {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--exam-border);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__fill--strong { background: linear-gradient(90deg, #059669, #34d399); }
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__fill--developing { background: linear-gradient(90deg, #1665a0, #3b9fd9); }
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__fill--needs_review { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__ratio {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-subject-acc__highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-highlight {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--exam-radius-sm);
+  border: 1px solid var(--exam-border);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-highlight--ok {
+  border-color: rgba(5, 150, 105, 0.25);
+  background: #f0fdf4;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-highlight--warn {
+  border-color: rgba(217, 119, 6, 0.25);
+  background: #fffbeb;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-highlight__k {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-highlight__v {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-block__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row + .cdr-topic-row {
+  margin-top: 0.75rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.8125rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__label {
+  color: var(--exam-text);
+  font-weight: 600;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__pct {
+  font-weight: 800;
+  color: var(--exam-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__bar {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--exam-border);
+  overflow: hidden;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-topic-row__fill--strong { background: #059669; }
+body.college-examination-portal.diag-review-mode .cdr-topic-row__fill--developing { background: #1665a0; }
+body.college-examination-portal.diag-review-mode .cdr-topic-row__fill--needs_review { background: #d97706; }
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--exam-radius-sm);
+  border: 1px solid var(--exam-border);
+  font-size: 0.8125rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini--ok { border-color: rgba(5, 150, 105, 0.25); }
+body.college-examination-portal.diag-review-mode .cdr-q-mini--bad { border-color: rgba(220, 38, 38, 0.2); }
+body.college-examination-portal.diag-review-mode .cdr-q-mini--miss { border-color: rgba(217, 119, 6, 0.25); }
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini__num {
+  font-weight: 800;
+  color: var(--exam-muted);
+  font-size: 0.6875rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini__text {
+  color: var(--exam-text);
+  line-height: 1.4;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini__status {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-q-mini--ok .cdr-q-mini__status { color: #047857; }
+body.college-examination-portal.diag-review-mode .cdr-q-mini--bad .cdr-q-mini__status { color: #b91c1c; }
+body.college-examination-portal.diag-review-mode .cdr-q-mini--miss .cdr-q-mini__status { color: #b45309; }
+
+body.college-examination-portal.diag-review-mode .cdr-insights__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card {
+  padding: 1.15rem 1.2rem;
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card--strong {
+  border-color: rgba(5, 150, 105, 0.28);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card--weak {
+  border-color: rgba(217, 119, 6, 0.28);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card--focus {
+  border-color: rgba(22, 101, 160, 0.28);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card__icon {
+  font-size: 1.1rem;
+  color: var(--exam-primary);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card--strong .cdr-insight-card__icon { color: #059669; }
+body.college-examination-portal.diag-review-mode .cdr-insight-card--weak .cdr-insight-card__icon { color: #d97706; }
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card__k {
+  margin: 0.45rem 0 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card__v {
+  margin: 0.25rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-insight-card__pct {
+  margin: 0.15rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--exam-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.diag-review-mode .cdr-info {
+  padding: 1.25rem clamp(1rem, 2vw, 1.5rem);
+  border-radius: var(--exam-radius);
+  border: 1px solid var(--exam-border);
+  background: var(--exam-surface);
+  box-shadow: var(--exam-shadow);
+}
+
+body.college-examination-portal.diag-review-mode .cdr-review {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 1024px) {
+  body.college-examination-portal.diag-review-mode .cdr-hero {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "info info"
+      "score level";
+  }
+
+  body.college-examination-portal.diag-review-mode .cdr-hero__col--info { grid-area: info; }
+  body.college-examination-portal.diag-review-mode .cdr-hero__col--score { grid-area: score; }
+  body.college-examination-portal.diag-review-mode .cdr-hero__col--level { grid-area: level; }
+
+  body.college-examination-portal.diag-review-mode .cdr-insights__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  body.college-examination-portal.diag-review-mode .cdr-hero {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+  }
+
+  body.college-examination-portal.diag-review-mode .cdr-subject-acc__highlights {
+    grid-template-columns: 1fr;
+  }
+
+  body.college-examination-portal.diag-review-mode .cdr-compare__row {
+    grid-template-columns: minmax(3.5rem, 4.5rem) 3rem minmax(0, 1fr);
+  }
+
+  body.college-examination-portal.diag-review-mode .cdr-q-mini {
+    grid-template-columns: auto 1fr;
+  }
+
+  body.college-examination-portal.diag-review-mode .cdr-q-mini__status {
+    grid-column: 2;
+  }
+}

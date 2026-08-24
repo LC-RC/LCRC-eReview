@@ -126,14 +126,13 @@ usort($list, static function ($a, $b) use ($sort) {
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_app.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
-  <div class="cp-page-shell ereview-shell-no-fade pt-2">
+  <div class="cp-page-shell cp-content cp-content--catalog ereview-shell-no-fade pt-2">
     <?php
-      $cpPageEyebrow = 'Assessments';
+      $cpPageVariant = 'compact';
       $cpPageTitle = 'Examinations';
-      $cpPageSubtitle = 'Your assigned regular and diagnostic examinations — schedule, status, and actions.';
-      $cpPageIcon = 'bi-journal-text';
+      $cpPageSubtitle = 'Manage your available college examinations.';
       $cpPageStats = [
           ['label' => 'Total', 'value' => (int)$countMap['all']],
           ['label' => 'Open now', 'value' => (int)$countMap['open']],
@@ -142,183 +141,86 @@ usort($list, static function ($a, $b) use ($sort) {
       ];
       require dirname(__DIR__, 2) . '/includes/components/college_portal_page_header.php';
     ?>
-    <div class="dash-card toolbar-sticky dash-anim delay-2 p-4 mb-4">
-      <div class="toolbar-wrap">
-        <div class="toolbar-top">
-          <form method="get" class="search-sort-form">
-            <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search exams by title or instructions..." class="search-input">
-            <select name="sort" class="sort-select">
-              <option value="deadline_asc" <?php echo $sort === 'deadline_asc' ? 'selected' : ''; ?>>Closes (soonest)</option>
-              <option value="deadline_desc" <?php echo $sort === 'deadline_desc' ? 'selected' : ''; ?>>Closes (latest)</option>
-              <option value="title_asc" <?php echo $sort === 'title_asc' ? 'selected' : ''; ?>>Title A-Z</option>
-              <option value="title_desc" <?php echo $sort === 'title_desc' ? 'selected' : ''; ?>>Title Z-A</option>
-              <option value="recent" <?php echo $sort === 'recent' ? 'selected' : ''; ?>>Recently created</option>
-            </select>
-            <input type="hidden" name="display" value="<?php echo h($display); ?>">
-            <button class="action-btn" type="submit"><i class="bi bi-search"></i> Apply</button>
-          </form>
-          <div class="flex flex-wrap gap-2">
-            <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=card'); ?>" class="view-chip <?php echo $display === 'card' ? 'is-active' : ''; ?>"><i class="bi bi-grid-3x3-gap"></i> Card view</a>
-            <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=list'); ?>" class="view-chip <?php echo $display === 'list' ? 'is-active' : ''; ?>"><i class="bi bi-table"></i> List view</a>
-          </div>
+
+    <section class="cp-dash-panel cp-anim delay-2" aria-label="Examination filters">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">Browse examinations</h2>
+      </div>
+      <div class="cp-dash-panel__body">
+    <div class="cp-toolbar-inline">
+      <form method="get" class="cp-toolbar-inline__search search-sort-form">
+        <div class="cp-search-bar__field">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search examinations..." class="search-input" aria-label="Search examinations">
         </div>
-        <div class="toolbar-footer">
-          <div class="filters-row">
-            <?php
-              $views = [
-                  'all' => ['All', $countMap['all'], 'bi-grid'],
-                  'open' => ['Open now', $countMap['open'], 'bi-play-circle'],
-                  'upcoming' => ['Upcoming', $countMap['upcoming'], 'bi-clock-history'],
-                  'finished' => ['Finished', $countMap['finished'], 'bi-check-circle'],
-                  'missed' => ['Missed', $countMap['missed'], 'bi-exclamation-circle'],
-              ];
-              foreach ($views as $k => $v):
-                $url = '?view=' . urlencode($k) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=' . urlencode($display);
-            ?>
-              <a href="<?php echo h($url); ?>" class="filter-pill <?php echo $k === 'finished' ? 'filter-finished ' : ''; ?><?php echo $view === $k ? 'is-active' : ''; ?>"><i class="bi <?php echo h($v[2]); ?>"></i> <?php echo h($v[0]); ?> (<?php echo (int)$v[1]; ?>)</a>
-            <?php endforeach; ?>
-          </div>
-          <div class="counter-row" aria-label="Exam counters">
-            <span class="counter-chip"><i class="bi bi-grid"></i> Total: <?php echo (int)$countMap['all']; ?></span>
-            <span class="counter-chip"><i class="bi bi-unlock"></i> Open: <?php echo (int)$countMap['open']; ?></span>
-            <span class="counter-chip"><i class="bi bi-check2-circle"></i> Finished: <?php echo (int)$countMap['finished']; ?></span>
-          </div>
+        <select name="sort" class="sort-select" aria-label="Sort examinations">
+          <option value="deadline_asc" <?php echo $sort === 'deadline_asc' ? 'selected' : ''; ?>>Closes (soonest)</option>
+          <option value="deadline_desc" <?php echo $sort === 'deadline_desc' ? 'selected' : ''; ?>>Closes (latest)</option>
+          <option value="title_asc" <?php echo $sort === 'title_asc' ? 'selected' : ''; ?>>Title A–Z</option>
+          <option value="title_desc" <?php echo $sort === 'title_desc' ? 'selected' : ''; ?>>Title Z–A</option>
+          <option value="recent" <?php echo $sort === 'recent' ? 'selected' : ''; ?>>Recently created</option>
+        </select>
+        <input type="hidden" name="display" value="<?php echo h($display); ?>">
+        <button class="cp-btn cp-btn--secondary cp-btn--sm" type="submit">Apply</button>
+        <div class="cp-view-toggle">
+          <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=card'); ?>" class="view-chip <?php echo $display === 'card' ? 'is-active' : ''; ?>" title="Card view"><i class="bi bi-grid-3x3-gap"></i></a>
+          <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=list'); ?>" class="view-chip <?php echo $display === 'list' ? 'is-active' : ''; ?>" title="List view"><i class="bi bi-list-ul"></i></a>
         </div>
+      </form>
+      <div class="filters-row cp-toolbar-inline__filters">
+        <?php
+          $views = [
+              'all' => ['All', $countMap['all'], 'bi-grid'],
+              'open' => ['Open now', $countMap['open'], 'bi-play-circle'],
+              'upcoming' => ['Upcoming', $countMap['upcoming'], 'bi-clock-history'],
+              'finished' => ['Finished', $countMap['finished'], 'bi-check-circle'],
+              'missed' => ['Missed', $countMap['missed'], 'bi-exclamation-circle'],
+          ];
+          foreach ($views as $k => $v):
+            $url = '?view=' . urlencode($k) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=' . urlencode($display);
+        ?>
+          <a href="<?php echo h($url); ?>" class="filter-pill filter-pill--compact <?php echo $k === 'finished' ? 'filter-finished ' : ''; ?><?php echo $view === $k ? 'is-active' : ''; ?>"><?php echo h($v[0]); ?> <span class="filter-pill__count"><?php echo (int)$v[1]; ?></span></a>
+        <?php endforeach; ?>
       </div>
     </div>
+      </div>
+    </section>
 
-    <div class="dash-card dash-anim delay-3" data-ereview-exam-count="<?php echo (int)count($list); ?>">
+    <section class="cp-dash-panel cp-anim delay-3" aria-label="Examination list">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">Examination list</h2>
+        <span class="cp-dash-panel__meta"><?php echo (int)count($list); ?> shown</span>
+      </div>
+      <div class="cp-dash-panel__body">
+    <div class="cp-catalog-list" data-ereview-exam-count="<?php echo (int)count($list); ?>">
       <?php if (count($list) === 0): ?>
-        <div class="empty-state"><i class="bi bi-journal-x"></i><p class="m-0 font-medium">No exams match this filter.</p><p class="m-0 mt-1 text-sm">Try another search or view.</p></div>
-      <?php elseif ($display === 'list'): ?>
-        <div class="compact-list-head">
-          <span>Exam</span><span>Type</span><span>Schedule</span><span>Duration</span><span>Questions</span><span>Status</span><span>Score</span><span>Action</span>
+        <div class="cp-empty-surface">
+          <div class="cp-empty-surface__icon"><i class="bi bi-journal-x"></i></div>
+          <h3 class="cp-empty-surface__title">No examinations match this filter</h3>
+          <p class="cp-empty-surface__text">Try another search term or switch to a different status filter.</p>
         </div>
-        <?php foreach ($list as $e):
-          $examType = (string)($e['exam_type'] ?? 'regular');
-          $typeLabel = examination_exam_type_label($examType);
-          $typeClass = $examType === 'diagnostic' ? 'type-diagnostic' : 'type-regular';
-          $statusKey = (string)($e['_status_key'] ?? 'locked');
-          $statusLabel = (string)($e['_status_label'] ?? 'Locked');
-          $statusClass = college_exams_status_pill_class($statusKey);
-          $statusIcon = college_exams_status_icon($statusKey);
-          $duration = college_exam_human_duration((int)($e['time_limit_seconds'] ?? 0));
-          $opens = college_exams_format_datetime(isset($e['available_from']) ? (string)$e['available_from'] : null, 'Immediate');
-          $closes = college_exams_format_datetime(isset($e['deadline']) ? (string)$e['deadline'] : null);
-          $desc = trim((string)($e['description'] ?? ''));
-          $descText = $desc !== '' ? $desc : 'No instructions provided.';
-          $st = (string)($e['attempt_status'] ?? '');
-          $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
-          if ($st === 'submitted' || ($st === 'expired' && !empty($e['submitted_at']))) {
-              $scoreLine = college_exam_format_score_total_line(
-                  isset($e['correct_count']) ? (int)$e['correct_count'] : null,
-                  isset($e['total_count']) ? (int)$e['total_count'] : null,
-                  $e['score'] ?? null,
-                  (int)($e['_q_count'] ?? 0)
-              );
-              $scoreHtml = '<span class="score-cell-text">' . h($scoreLine) . '</span>';
-          }
-          $actionMode = (string)($e['_action_mode'] ?? 'closed');
-          $actionUrl = (string)($e['_action_url'] ?? '');
-          $actionLabel = (string)($e['_action_label'] ?? 'Closed');
-        ?>
-          <div class="compact-list-row">
-            <div class="list-cell list-cell--exam">
-              <p class="list-exam-title"><?php echo h((string)($e['title'] ?? 'Untitled')); ?></p>
-              <p class="list-exam-desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
-            </div>
-            <div class="list-cell list-cell--type"><span class="type-pill <?php echo h($typeClass); ?>"><?php echo h($typeLabel); ?></span></div>
-            <div class="list-cell list-cell--schedule">
-              <div class="schedule-stack">
-                <span><span class="label">Opens</span> <?php echo h($opens); ?></span>
-                <span><span class="label">Closes</span> <?php echo h($closes); ?></span>
-              </div>
-            </div>
-            <div class="list-cell list-cell--duration meta-v is-highlight"><?php echo h($duration); ?></div>
-            <div class="list-cell list-cell--questions meta-v is-highlight"><?php echo (int)($e['_q_count'] ?? 0); ?></div>
-            <div class="list-cell list-cell--status"><span class="status-pill <?php echo h($statusClass); ?>"><i class="bi <?php echo h($statusIcon); ?>"></i> <?php echo h($statusLabel); ?></span></div>
-            <div class="list-cell list-cell--score"><?php echo $scoreHtml; ?></div>
-            <div class="list-cell list-cell--action">
-              <?php if (in_array($actionMode, ['start', 'continue'], true) && $actionUrl !== ''): ?>
-                <a class="action-btn action-start" href="<?php echo h($actionUrl); ?>"><i class="bi <?php echo $actionMode === 'continue' ? 'bi-arrow-right-circle' : 'bi-play-fill'; ?>"></i> <?php echo h($actionLabel); ?></a>
-              <?php elseif ($actionMode === 'review' && $actionUrl !== ''): ?>
-                <a class="action-btn action-review" href="<?php echo h($actionUrl); ?>"><i class="bi bi-eye"></i> <?php echo h($actionLabel); ?></a>
-              <?php elseif ($actionMode === 'none'): ?>
-                <span class="action-muted"><?php echo h($actionLabel); ?></span>
-              <?php else: ?>
-                <span class="action-closed-pill"><i class="bi bi-slash-circle"></i> <?php echo h($actionLabel); ?></span>
-              <?php endif; ?>
-            </div>
-          </div>
-        <?php endforeach; ?>
-      <?php else: ?>
-        <div class="exam-cards">
+      <?php elseif ($display === 'list'): ?>
+        <div class="cp-exam-list">
           <?php foreach ($list as $e):
-            $examType = (string)($e['exam_type'] ?? 'regular');
-            $typeLabel = examination_exam_type_label($examType);
-            $typeClass = $examType === 'diagnostic' ? 'type-diagnostic' : 'type-regular';
-            $cardClass = $examType === 'diagnostic' ? 'exam-card is-diagnostic' : 'exam-card';
-            $statusKey = (string)($e['_status_key'] ?? 'locked');
-            $statusLabel = (string)($e['_status_label'] ?? 'Locked');
-            $statusClass = college_exams_status_pill_class($statusKey);
-            $statusIcon = college_exams_status_icon($statusKey);
-            $duration = college_exam_human_duration((int)($e['time_limit_seconds'] ?? 0));
-            $opens = college_exams_format_datetime(isset($e['available_from']) ? (string)$e['available_from'] : null, 'Immediate');
-            $closes = college_exams_format_datetime(isset($e['deadline']) ? (string)$e['deadline'] : null);
-            $desc = trim((string)($e['description'] ?? ''));
-            $descText = $desc !== '' ? $desc : 'No instructions provided.';
-            $st = (string)($e['attempt_status'] ?? '');
-            $scoreHtml = '<span class="text-slate-400 text-xs font-semibold">-</span>';
-            if ($st === 'submitted' || ($st === 'expired' && !empty($e['submitted_at']))) {
-                $scoreLine = college_exam_format_score_total_line(
-                    isset($e['correct_count']) ? (int)$e['correct_count'] : null,
-                    isset($e['total_count']) ? (int)$e['total_count'] : null,
-                    $e['score'] ?? null,
-                    (int)($e['_q_count'] ?? 0)
-                );
-                $scoreHtml = '<span class="score-cell-text">' . h($scoreLine) . '</span>';
-            }
-            $actionMode = (string)($e['_action_mode'] ?? 'closed');
-            $actionUrl = (string)($e['_action_url'] ?? '');
-            $actionLabel = (string)($e['_action_label'] ?? 'Closed');
-          ?>
-            <article class="<?php echo h($cardClass); ?>">
-              <div class="card-head">
-                <div>
-                  <h3 class="card-title"><?php echo h((string)($e['title'] ?? 'Untitled')); ?></h3>
-                  <p class="card-desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
-                </div>
-                <span class="type-pill <?php echo h($typeClass); ?>"><?php echo h($typeLabel); ?></span>
-              </div>
-              <div class="schedule-grid">
-                <div><div class="meta-k">Opens</div><div class="meta-v"><?php echo h($opens); ?></div></div>
-                <div><div class="meta-k">Closes</div><div class="meta-v"><?php echo h($closes); ?></div></div>
-                <div><div class="meta-k">Duration</div><div class="meta-v is-highlight"><?php echo h($duration); ?></div></div>
-              </div>
-              <div class="schedule-grid">
-                <div><div class="meta-k">Status</div><div class="meta-v"><span class="status-pill <?php echo h($statusClass); ?>"><i class="bi <?php echo h($statusIcon); ?>"></i> <?php echo h($statusLabel); ?></span></div></div>
-                <div><div class="meta-k">Score</div><div class="meta-v"><?php echo $scoreHtml; ?></div></div>
-                <div><div class="meta-k">Questions</div><div class="meta-v is-highlight"><?php echo (int)($e['_q_count'] ?? 0); ?></div></div>
-              </div>
-              <div class="card-footer">
-                <span class="text-[.72rem] text-slate-500 font-semibold"><i class="bi bi-shield-check"></i> Assigned via professor examination</span>
-                <div class="card-actions">
-                  <?php if (in_array($actionMode, ['start', 'continue'], true) && $actionUrl !== ''): ?>
-                    <a class="action-btn action-start" href="<?php echo h($actionUrl); ?>"><i class="bi <?php echo $actionMode === 'continue' ? 'bi-arrow-right-circle' : 'bi-play-fill'; ?>"></i> <?php echo h($actionLabel); ?></a>
-                  <?php elseif ($actionMode === 'review' && $actionUrl !== ''): ?>
-                    <a class="action-btn action-review" href="<?php echo h($actionUrl); ?>"><i class="bi bi-eye"></i> <?php echo h($actionLabel); ?></a>
-                  <?php elseif ($actionMode === 'none'): ?>
-                    <span class="action-muted"><?php echo h($actionLabel); ?></span>
-                  <?php else: ?>
-                    <span class="action-closed-pill"><i class="bi bi-slash-circle"></i> <?php echo h($actionLabel); ?></span>
-                  <?php endif; ?>
-                </div>
-              </div>
-            </article>
-          <?php endforeach; ?>
+            $cpExam = $e;
+            $cpExamLayout = 'row';
+            $cpExamFeatured = false;
+            require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
+          endforeach; ?>
+        </div>
+      <?php else: ?>
+        <div class="cp-exam-grid">
+          <?php foreach ($list as $e):
+            $cpExam = $e;
+            $cpExamLayout = 'card';
+            $cpExamFeatured = false;
+            require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
+          endforeach; ?>
         </div>
       <?php endif; ?>
     </div>
+      </div>
+    </section>
   </div>
 </main>
 </body>

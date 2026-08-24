@@ -61,31 +61,40 @@ if ($role === 'college_student') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <?php require_once __DIR__ . '/includes/head_app.php'; ?>
-  <style>
-    .ereview-static-hero {
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      background: linear-gradient(130deg, #1665a0 0%, #145a8f 38%, #143d59 100%);
-      box-shadow: 0 14px 34px -20px rgba(20, 61, 89, 0.85);
-    }
-  </style>
+  <?php require_once __DIR__ . '/examination/includes/examination_head_app.php'; ?>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
-  <div class="student-dashboard-page min-h-full pb-10 px-1 max-w-3xl ereview-static-page">
-    <section class="ereview-static-hero mb-6 px-5 py-6 rounded-2xl text-white">
-      <h1 class="text-2xl font-extrabold m-0 flex items-center gap-3"><i class="bi bi-life-preserver"></i> Help Center</h1>
-      <p class="text-white/90 mt-2 mb-0 text-sm leading-relaxed">College portal tips for exams and uploads.</p>
-    </section>
-    <div class="ereview-static-card px-6 py-6 rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.25)]">
-      <p class="text-slate-600 m-0 text-sm leading-relaxed"><?php echo h($blurb); ?></p>
-      <ul class="mt-4 space-y-2 text-sm text-slate-700 list-disc pl-5">
-        <li>Submit exams from <strong>Exams</strong> before the deadline shown on each card.</li>
-        <li>Upload files from <strong>Uploads</strong> when your professor assigns a task.</li>
-      </ul>
-      <p class="mt-6 mb-0"><a href="college_student_dashboard" class="inline-flex items-center gap-2 text-sm font-bold text-[#1665A0] hover:underline"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+  <div class="cp-page-shell cp-content cp-content--help ereview-shell-no-fade pt-2">
+    <?php
+      $cpPageVariant = 'compact';
+      $cpPageTitle = 'Help Center';
+      $cpPageSubtitle = 'How can we help?';
+      require __DIR__ . '/includes/components/college_portal_page_header.php';
+    ?>
+    <div class="cp-dash-panel cp-anim delay-2">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title">Help topics</h2>
+      </div>
+      <div class="cp-dash-panel__body cp-dash-panel__body--flush">
+    <div class="cp-help-list">
+      <article class="cp-help-item">
+        <h2 class="cp-help-item__title"><i class="bi bi-journal-text"></i> Examinations</h2>
+        <p class="cp-help-item__text">Submit exams from <strong>Exams</strong> before the deadline shown on each examination card.</p>
+      </article>
+      <article class="cp-help-item">
+        <h2 class="cp-help-item__title"><i class="bi bi-cloud-upload"></i> Uploads</h2>
+        <p class="cp-help-item__text">Upload files from <strong>Uploads</strong> when your professor assigns a task.</p>
+      </article>
+      <article class="cp-help-item">
+        <h2 class="cp-help-item__title"><i class="bi bi-info-circle"></i> General guidance</h2>
+        <p class="cp-help-item__text"><?php echo h($blurb); ?></p>
+      </article>
     </div>
+      </div>
+    </div>
+
+    <p class="cp-page-foot cp-anim delay-3"><a href="college_student_dashboard" class="cp-btn cp-btn--secondary cp-btn--sm"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
   </div>
 </main>
 </body>
