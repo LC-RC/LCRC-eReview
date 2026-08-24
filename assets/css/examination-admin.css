@@ -2,6 +2,18 @@
  * Shared Examination Admin UI — extends LMS Admin (Students page reference).
  */
 
+/*
+ * Opt out of global admin page-load motion (admin.css adminFadeUp).
+ * Full-page navigation on examination professor pages must not hide
+ * .admin-content children at opacity:0 while the sidebar is already visible.
+ * Scoped to examination-admin-page only — LMS Admin pages keep adminFadeUp.
+ */
+body.admin-app.examination-admin-page #main .admin-content > * {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
 body.admin-app.examination-admin-page .examination-page-shell,
 body.admin-app.admin-students-page .students-page-shell {
   display: flex;
