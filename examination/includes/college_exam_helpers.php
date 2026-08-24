@@ -16,6 +16,43 @@ function ereview_render_exam_description(?string $raw, bool $isMarkdown): string
 }
 
 /**
+ * Whether a stored question_type is True/False.
+ */
+function college_exam_question_type_is_tf(?string $type): bool
+{
+    $t = strtolower(trim((string)$type));
+
+    return $t === 'tf' || $t === 'true_false' || $t === 'truefalse';
+}
+
+/**
+ * Display choices for student/review UI.
+ * Radio/value letters remain A–D for answer persistence.
+ * TF shows labels True/False without requiring C/D.
+ *
+ * @return list<array{letter:string,label:string,show_letter:bool}>
+ */
+function college_exam_question_display_choices(array $q): array
+{
+    if (college_exam_question_type_is_tf((string)($q['question_type'] ?? ''))) {
+        return [
+            ['letter' => 'A', 'label' => 'True', 'show_letter' => false],
+            ['letter' => 'B', 'label' => 'False', 'show_letter' => false],
+        ];
+    }
+    $out = [];
+    foreach (['A' => 'choice_a', 'B' => 'choice_b', 'C' => 'choice_c', 'D' => 'choice_d'] as $L => $key) {
+        $txt = $q[$key] ?? null;
+        if ($txt === null || $txt === '') {
+            continue;
+        }
+        $out[] = ['letter' => $L, 'label' => (string)$txt, 'show_letter' => true];
+    }
+
+    return $out;
+}
+
+/**
  * Shared helpers for college exam attempts (used by take page + AJAX).
  *
  * @param int $timeLimitSec
@@ -247,7 +284,16 @@ function college_exam_upsert_attempt_answer(mysqli $conn, int $attemptId, int $u
     }
     $examId = (int)($attempt['exam_id'] ?? 0);
 
-    $qStmt = mysqli_prepare($conn, 'SELECT question_id FROM college_exam_questions WHERE question_id=? AND exam_id=? LIMIT 1');
+    $er = mysqli_query($conn, 'SELECT * FROM college_exams WHERE exam_id=' . $examId . ' LIMIT 1');
+    $exam = $er ? mysqli_fetch_assoc($er) : null;
+    if ($er) {
+        mysqli_free_result($er);
+    }
+    if (!$exam) {
+        return ['ok' => false, 'error' => 'Invalid question'];
+    }
+
+    $qStmt = mysqli_prepare($conn, 'SELECT * FROM college_exam_questions WHERE question_id=? AND exam_id=? LIMIT 1');
     if (!$qStmt) {
         return ['ok' => false, 'error' => 'Invalid question'];
     }
@@ -259,43 +305,13 @@ function college_exam_upsert_attempt_answer(mysqli $conn, int $attemptId, int $u
         return ['ok' => false, 'error' => 'Invalid question'];
     }
 
-    $correctLetter = college_exam_shuffled_correct_answer_for_question($conn, $attemptId, $userId, $questionId);
+    $correctLetter = college_exam_display_correct_letter_for_question($exam, $qRow, $attemptId);
     if ($correctLetter === null || !preg_match('/^[A-D]$/', $correctLetter)) {
         return ['ok' => false, 'error' => 'Invalid question'];
     }
     $isCorrect = ($selected === $correctLetter) ? 1 : 0;
 
-    $find = mysqli_prepare($conn, 'SELECT answer_id FROM college_exam_answers WHERE attempt_id=? AND question_id=? LIMIT 1');
-    if (!$find) {
-        return ['ok' => false, 'error' => 'Could not save'];
-    }
-    mysqli_stmt_bind_param($find, 'ii', $attemptId, $questionId);
-    mysqli_stmt_execute($find);
-    $existing = mysqli_fetch_assoc(mysqli_stmt_get_result($find));
-    mysqli_stmt_close($find);
-
-    if ($existing) {
-        $upd = mysqli_prepare($conn, 'UPDATE college_exam_answers SET selected_answer=?, is_correct=? WHERE answer_id=?');
-        if (!$upd) {
-            return ['ok' => false, 'error' => 'Could not save'];
-        }
-        $aid = (int)$existing['answer_id'];
-        mysqli_stmt_bind_param($upd, 'sii', $selected, $isCorrect, $aid);
-        $ok = mysqli_stmt_execute($upd);
-        mysqli_stmt_close($upd);
-    } else {
-        $ins = mysqli_prepare(
-            $conn,
-            'INSERT INTO college_exam_answers (attempt_id, question_id, selected_answer, is_correct) VALUES (?, ?, ?, ?)'
-        );
-        if (!$ins) {
-            return ['ok' => false, 'error' => 'Could not save'];
-        }
-        mysqli_stmt_bind_param($ins, 'iisi', $attemptId, $questionId, $selected, $isCorrect);
-        $ok = mysqli_stmt_execute($ins);
-        mysqli_stmt_close($ins);
-    }
-    if (!$ok) {
+    if (!college_exam_write_answer_row($conn, $attemptId, $questionId, $selected, $isCorrect)) {
         return ['ok' => false, 'error' => 'Could not save'];
     }
 
@@ -303,45 +319,278 @@ function college_exam_upsert_attempt_answer(mysqli $conn, int $attemptId, int $u
 }
 
 /**
- * Upsert many answers from client payload (submit flush / recovery).
+ * Correct A–D letter as shown to the student for one question (choice shuffle only; no full exam scan).
+ */
+function college_exam_display_correct_letter_for_question(array $exam, array $q, int $attemptId): ?string
+{
+    $shuffleC = !empty($exam['shuffle_choices']);
+    $qt = strtolower(trim((string)($q['question_type'] ?? 'mcq')));
+    $isTf = ($qt === 'tf' || $qt === 'true_false' || $qt === 'truefalse');
+    if ($shuffleC && !$isTf) {
+        $examId = (int)($exam['exam_id'] ?? 0);
+        $qid = (int)($q['question_id'] ?? 0);
+        $base = $attemptId * 100000 + $examId;
+        $q = college_exam_shuffle_question_choices($q, $base + $qid * 7919);
+    }
+    $letter = strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
+
+    return preg_match('/^[A-D]$/', $letter) ? $letter : null;
+}
+
+/**
+ * Fast upsert via unique (attempt_id, question_id).
+ */
+function college_exam_write_answer_row(mysqli $conn, int $attemptId, int $questionId, string $selected, int $isCorrect): bool
+{
+    $sql = 'INSERT INTO college_exam_answers (attempt_id, question_id, selected_answer, is_correct, answered_at)
+            VALUES (?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE
+              selected_answer = VALUES(selected_answer),
+              is_correct = VALUES(is_correct),
+              answered_at = NOW()';
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+        return false;
+    }
+    mysqli_stmt_bind_param($stmt, 'iisi', $attemptId, $questionId, $selected, $isCorrect);
+    $ok = mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    return (bool)$ok;
+}
+
+/**
+ * Upsert many answers from client payload (submit/timeout flush).
+ * Bulk INSERT … ON DUPLICATE KEY UPDATE in chunks; loads exam/questions once.
  *
  * @param array<int, mixed> $rawAnswers
- * @return array{saved:int, errors:int}
+ * @return array{ok:bool, saved:int, errors:int, payload_count:int, skipped:int, error?:string, db_error?:string}
  */
 function college_exam_upsert_attempt_answers_payload(mysqli $conn, int $attemptId, int $userId, array $rawAnswers): array
 {
+    $payloadCount = count($rawAnswers);
     $saved = 0;
     $errors = 0;
+    $skipped = 0;
+    if ($attemptId <= 0 || $userId <= 0) {
+        return [
+            'ok' => false,
+            'saved' => 0,
+            'errors' => $payloadCount,
+            'payload_count' => $payloadCount,
+            'skipped' => 0,
+            'error' => 'Invalid attempt',
+        ];
+    }
+    if ($rawAnswers === []) {
+        return ['ok' => true, 'saved' => 0, 'errors' => 0, 'payload_count' => 0, 'skipped' => 0];
+    }
+
+    $stmt = mysqli_prepare(
+        $conn,
+        'SELECT attempt_id, exam_id, status FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
+    );
+    if (!$stmt) {
+        return [
+            'ok' => false,
+            'saved' => 0,
+            'errors' => $payloadCount,
+            'payload_count' => $payloadCount,
+            'skipped' => 0,
+            'error' => 'Lookup failed',
+            'db_error' => (string)mysqli_error($conn),
+        ];
+    }
+    mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
+    mysqli_stmt_execute($stmt);
+    $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+    if (!$attempt || strtolower(trim((string)($attempt['status'] ?? ''))) !== 'in_progress') {
+        return [
+            'ok' => false,
+            'saved' => 0,
+            'errors' => $payloadCount,
+            'payload_count' => $payloadCount,
+            'skipped' => 0,
+            'error' => 'Attempt not active',
+        ];
+    }
+    $examId = (int)($attempt['exam_id'] ?? 0);
+
+    $er = mysqli_query($conn, 'SELECT * FROM college_exams WHERE exam_id=' . $examId . ' LIMIT 1');
+    $exam = $er ? mysqli_fetch_assoc($er) : null;
+    if ($er) {
+        mysqli_free_result($er);
+    }
+    if (!$exam) {
+        return [
+            'ok' => false,
+            'saved' => 0,
+            'errors' => $payloadCount,
+            'payload_count' => $payloadCount,
+            'skipped' => 0,
+            'error' => 'Exam missing',
+        ];
+    }
+
+    $qres = mysqli_query($conn, 'SELECT * FROM college_exam_questions WHERE exam_id=' . $examId);
+    $byId = [];
+    if ($qres) {
+        while ($q = mysqli_fetch_assoc($qres)) {
+            $qid = (int)($q['question_id'] ?? 0);
+            if ($qid > 0) {
+                $byId[$qid] = $q;
+            }
+        }
+        mysqli_free_result($qres);
+    }
+
+    $correctMap = [];
+    foreach ($byId as $qid => $q) {
+        $letter = college_exam_display_correct_letter_for_question($exam, $q, $attemptId);
+        if ($letter !== null) {
+            $correctMap[$qid] = $letter;
+        }
+    }
+
+    // Deduplicate by question_id (last write wins — matches single-row upsert semantics).
+    $rows = [];
     foreach ($rawAnswers as $row) {
         if (!is_array($row)) {
-            $errors++;
+            $skipped++;
             continue;
         }
         $qid = (int)($row['question_id'] ?? $row['qid'] ?? 0);
         $sel = strtoupper(trim((string)($row['selected_answer'] ?? $row['answer'] ?? '')));
-        if ($qid <= 0 || !preg_match('/^[A-D]$/', $sel)) {
-            $errors++;
+        if ($qid <= 0 || !preg_match('/^[A-D]$/', $sel) || !isset($correctMap[$qid])) {
+            $skipped++;
             continue;
         }
-        $out = college_exam_upsert_attempt_answer($conn, $attemptId, $userId, $qid, $sel);
-        if (!empty($out['ok'])) {
-            $saved++;
-        } else {
-            $errors++;
-        }
+        $rows[$qid] = [
+            'qid' => $qid,
+            'sel' => $sel,
+            'is_correct' => ($sel === $correctMap[$qid]) ? 1 : 0,
+        ];
     }
 
-    return ['saved' => $saved, 'errors' => $errors];
+    $valid = array_values($rows);
+    $validCount = count($valid);
+    if ($validCount === 0) {
+        return [
+            'ok' => true,
+            'saved' => 0,
+            'errors' => 0,
+            'payload_count' => $payloadCount,
+            'skipped' => $skipped,
+        ];
+    }
+
+    $chunkSize = 40;
+    for ($offset = 0; $offset < $validCount; $offset += $chunkSize) {
+        $chunk = array_slice($valid, $offset, $chunkSize);
+        $n = count($chunk);
+        $placeholders = implode(',', array_fill(0, $n, '(?, ?, ?, ?, NOW())'));
+        $sql = 'INSERT INTO college_exam_answers (attempt_id, question_id, selected_answer, is_correct, answered_at)
+                VALUES ' . $placeholders . '
+                ON DUPLICATE KEY UPDATE
+                  selected_answer = VALUES(selected_answer),
+                  is_correct = VALUES(is_correct),
+                  answered_at = NOW()';
+        $ins = mysqli_prepare($conn, $sql);
+        if (!$ins) {
+            return [
+                'ok' => false,
+                'saved' => $saved,
+                'errors' => $validCount - $saved,
+                'payload_count' => $payloadCount,
+                'skipped' => $skipped,
+                'error' => 'Prepare failed',
+                'db_error' => (string)mysqli_error($conn),
+            ];
+        }
+        $types = '';
+        $bind = [];
+        foreach ($chunk as $item) {
+            $types .= 'iisi';
+            $bind[] = $attemptId;
+            $bind[] = $item['qid'];
+            $bind[] = $item['sel'];
+            $bind[] = $item['is_correct'];
+        }
+        if (!mysqli_stmt_bind_param($ins, $types, ...$bind)) {
+            $dbErr = (string)mysqli_stmt_error($ins);
+            mysqli_stmt_close($ins);
+
+            return [
+                'ok' => false,
+                'saved' => $saved,
+                'errors' => $validCount - $saved,
+                'payload_count' => $payloadCount,
+                'skipped' => $skipped,
+                'error' => 'Bind failed',
+                'db_error' => $dbErr !== '' ? $dbErr : (string)mysqli_error($conn),
+            ];
+        }
+        if (!mysqli_stmt_execute($ins)) {
+            $dbErr = (string)mysqli_stmt_error($ins);
+            mysqli_stmt_close($ins);
+
+            return [
+                'ok' => false,
+                'saved' => $saved,
+                'errors' => $validCount - $saved,
+                'payload_count' => $payloadCount,
+                'skipped' => $skipped,
+                'error' => 'Execute failed',
+                'db_error' => $dbErr !== '' ? $dbErr : (string)mysqli_error($conn),
+            ];
+        }
+        mysqli_stmt_close($ins);
+        $saved += $n;
+    }
+
+    $ok = ($saved === $validCount);
+    if (!$ok) {
+        $errors = $validCount - $saved;
+    }
+
+    return [
+        'ok' => $ok,
+        'saved' => $saved,
+        'errors' => $errors,
+        'payload_count' => $payloadCount,
+        'skipped' => $skipped,
+    ];
 }
 
 function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId): array
 {
-    $stmt = mysqli_prepare($conn, "SELECT attempt_id, exam_id, user_id, status FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
+    $stmt = mysqli_prepare(
+        $conn,
+        'SELECT attempt_id, exam_id, user_id, status, score, correct_count, total_count
+         FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
+    );
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'Lookup failed'];
+    }
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     $att = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
     mysqli_stmt_close($stmt);
-    if (!$att || $att['status'] !== 'in_progress') {
+    if (!$att) {
+        return ['ok' => false, 'error' => 'Invalid attempt'];
+    }
+    $status = college_exam_attempt_status_normalized($att);
+    if ($status === 'submitted') {
+        return [
+            'ok' => true,
+            'already_submitted' => true,
+            'score' => (float)($att['score'] ?? 0),
+            'correct' => (int)($att['correct_count'] ?? 0),
+            'total' => (int)($att['total_count'] ?? 0),
+        ];
+    }
+    if ($status !== 'in_progress') {
         return ['ok' => false, 'error' => 'Invalid attempt'];
     }
 
@@ -394,10 +643,40 @@ function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId
     $score = $total > 0 ? college_exam_compute_score_percentage($correct, $total) : 0.0;
     $submitted = date('Y-m-d H:i:s');
 
-    $upd = mysqli_prepare($conn, "UPDATE college_exam_attempts SET status='submitted', score=?, correct_count=?, total_count=?, submitted_at=?, exam_session_lock=NULL WHERE attempt_id=? AND user_id=?");
+    $upd = mysqli_prepare(
+        $conn,
+        "UPDATE college_exam_attempts SET status='submitted', score=?, correct_count=?, total_count=?, submitted_at=?, exam_session_lock=NULL
+         WHERE attempt_id=? AND user_id=? AND status='in_progress'"
+    );
     mysqli_stmt_bind_param($upd, 'diisii', $score, $correct, $total, $submitted, $attemptId, $userId);
     mysqli_stmt_execute($upd);
+    $affected = mysqli_stmt_affected_rows($upd);
     mysqli_stmt_close($upd);
+
+    if ($affected < 1) {
+        // Lost the race to another finalize — treat as idempotent success if submitted.
+        $re = mysqli_prepare(
+            $conn,
+            'SELECT status, score, correct_count, total_count FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
+        );
+        if ($re) {
+            mysqli_stmt_bind_param($re, 'ii', $attemptId, $userId);
+            mysqli_stmt_execute($re);
+            $again = mysqli_fetch_assoc(mysqli_stmt_get_result($re));
+            mysqli_stmt_close($re);
+            if ($again && college_exam_attempt_status_normalized($again) === 'submitted') {
+                return [
+                    'ok' => true,
+                    'already_submitted' => true,
+                    'score' => (float)($again['score'] ?? 0),
+                    'correct' => (int)($again['correct_count'] ?? 0),
+                    'total' => (int)($again['total_count'] ?? 0),
+                ];
+            }
+        }
+
+        return ['ok' => false, 'error' => 'Invalid attempt'];
+    }
 
     if (is_file(__DIR__ . '/college_exam_attempt_events.php')) {
         require_once __DIR__ . '/college_exam_attempt_events.php';
@@ -412,8 +691,19 @@ function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId
 }
 
 /**
+ * Seconds after official expires_at/deadline before server may auto-finalize.
+ * Does NOT extend answering time — only protects in-flight timeout flush.
+ */
+function college_exam_finalize_expired_grace_seconds(): int
+{
+    return 60;
+}
+
+/**
  * Auto-submit in_progress attempts when the attempt timer or the exam deadline has passed
  * (student closed the browser / lost power). At least one scope filter must be set.
+ *
+ * Uses a grace window after expiry so client timeout flush can persist answers first.
  *
  * @param int $examId >0: only this exam
  * @param int $userId >0: only this user
@@ -425,7 +715,9 @@ function college_exam_finalize_expired_in_progress(mysqli $conn, int $examId = 0
     if ($examId <= 0 && $userId <= 0 && $professorCreatedBy <= 0) {
         return 0;
     }
-    $nowSql = date('Y-m-d H:i:s');
+    $grace = max(0, college_exam_finalize_expired_grace_seconds());
+    $cutoffTs = time() - $grace;
+    $cutoffSql = date('Y-m-d H:i:s', $cutoffTs);
     $sql = "
       SELECT a.attempt_id, a.user_id
       FROM college_exam_attempts a
@@ -454,7 +746,7 @@ function college_exam_finalize_expired_in_progress(mysqli $conn, int $examId = 0
     if (!$stmt) {
         return 0;
     }
-    mysqli_stmt_bind_param($stmt, 'ss', $nowSql, $nowSql);
+    mysqli_stmt_bind_param($stmt, 'ss', $cutoffSql, $cutoffSql);
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     $rows = [];
@@ -710,7 +1002,7 @@ function college_exam_prepare_questions_for_attempt(array $questions, array $exa
  */
 function college_exam_shuffled_correct_answer_for_question(mysqli $conn, int $attemptId, int $userId, int $questionId): ?string
 {
-    $stmt = mysqli_prepare($conn, "SELECT exam_id FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
+    $stmt = mysqli_prepare($conn, 'SELECT exam_id FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1');
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     $att = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -719,26 +1011,27 @@ function college_exam_shuffled_correct_answer_for_question(mysqli $conn, int $at
         return null;
     }
     $examId = (int)$att['exam_id'];
-    $er = mysqli_query($conn, "SELECT * FROM college_exams WHERE exam_id=" . $examId . " LIMIT 1");
+    $er = mysqli_query($conn, 'SELECT * FROM college_exams WHERE exam_id=' . $examId . ' LIMIT 1');
     $exam = $er ? mysqli_fetch_assoc($er) : null;
+    if ($er) {
+        mysqli_free_result($er);
+    }
     if (!$exam) {
         return null;
     }
-    $qres = mysqli_query($conn, "SELECT * FROM college_exam_questions WHERE exam_id=" . $examId . " ORDER BY sort_order ASC, question_id ASC");
-    $questions = [];
-    if ($qres) {
-        while ($q = mysqli_fetch_assoc($qres)) {
-            $questions[] = $q;
-        }
-        mysqli_free_result($qres);
+    $qStmt = mysqli_prepare($conn, 'SELECT * FROM college_exam_questions WHERE question_id=? AND exam_id=? LIMIT 1');
+    if (!$qStmt) {
+        return null;
     }
-    $questions = college_exam_prepare_questions_for_attempt($questions, $exam, $attemptId);
-    foreach ($questions as $q) {
-        if ((int)$q['question_id'] === $questionId) {
-            return strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
-        }
+    mysqli_stmt_bind_param($qStmt, 'ii', $questionId, $examId);
+    mysqli_stmt_execute($qStmt);
+    $q = mysqli_fetch_assoc(mysqli_stmt_get_result($qStmt));
+    mysqli_stmt_close($qStmt);
+    if (!$q) {
+        return null;
     }
-    return null;
+
+    return college_exam_display_correct_letter_for_question($exam, $q, $attemptId);
 }
 
 /**

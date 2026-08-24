@@ -16,8 +16,15 @@ require __DIR__ . '/examination_edit_config_prepare.php';
 $pageTitle = $isNew ? 'New Examination' : 'Edit Examination';
 $adminLoadStudentsCss = true;
 $adminHeroIcon = 'journal-text';
-$adminHeroTitle = $modalTitle;
-$adminHeroSubtitle = $modalSubtitle;
+if ($examType === 'diagnostic') {
+    $adminHeroTitle = $isNew ? 'New Diagnostic Exam' : 'Diagnostic Exam';
+    $adminHeroSubtitle = $isNew
+        ? 'Configure subjects, audience, and schedule for a multi-subject CPA diagnostic.'
+        : (string)($titleVal !== '' ? $titleVal : 'CPA Diagnostic Assessment');
+} else {
+    $adminHeroTitle = $modalTitle;
+    $adminHeroSubtitle = $modalSubtitle;
+}
 $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-arrow-left"></i> Back to Examinations</a>';
 
 ?>
@@ -26,9 +33,13 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
-<?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
+<?php if ($examType === 'diagnostic'): ?>
+  <!-- workspace bar provides Back + actions -->
+<?php else: ?>
+  <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
+<?php endif; ?>
 
 <?php if ($flashMessage): ?>
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">

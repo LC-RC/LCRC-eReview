@@ -4,8 +4,46 @@ require_once dirname(__DIR__, 2) . '/includes/platform_access.php';
 ereview_require_college_examination_portal();
 require_once dirname(__DIR__) . '/includes/diagnostic_schema.php';
 require_once dirname(__DIR__) . '/includes/diagnostic_exam_helpers.php';
+require_once dirname(__DIR__) . '/includes/college_exam_helpers.php';
 require_once dirname(__DIR__) . '/includes/examination_eligibility.php';
 require_once dirname(__DIR__, 2) . '/includes/quiz_helpers.php';
+
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
+/**
+ * Display choices for diagnostic take UI (A–D + optional E+).
+ * Defined here so diagnostic_exam_helpers.php need not change.
+ *
+ * @return list<array{letter:string,label:string,show_letter:bool,rich:bool}>
+ */
+function diagnostic_take_question_display_choices(array $q): array
+{
+    if (college_exam_question_type_is_tf((string)($q['question_type'] ?? ''))) {
+        return [
+            ['letter' => 'A', 'label' => 'True', 'show_letter' => false, 'rich' => false],
+            ['letter' => 'B', 'label' => 'False', 'show_letter' => false, 'rich' => false],
+        ];
+    }
+    $out = [];
+    foreach (['A' => 'choice_a', 'B' => 'choice_b', 'C' => 'choice_c', 'D' => 'choice_d'] as $L => $key) {
+        $txt = $q[$key] ?? null;
+        if ($txt === null || trim(strip_tags((string)$txt)) === '') {
+            continue;
+        }
+        $out[] = ['letter' => $L, 'label' => (string)$txt, 'show_letter' => true, 'rich' => true];
+    }
+    $extra = diagnostic_exam_extra_choices_decode(isset($q['extra_choices_json']) ? (string)$q['extra_choices_json'] : null);
+    foreach ($extra as $L => $text) {
+        if (trim(strip_tags((string)$text)) === '') {
+            continue;
+        }
+        $out[] = ['letter' => (string)$L, 'label' => (string)$text, 'show_letter' => true, 'rich' => true];
+    }
+
+    return $out;
+}
 
 $pageTitle = 'Diagnostic exam';
 $uid = (int)getCurrentUserId();
@@ -134,47 +172,16 @@ if ($attemptSubmitted && !empty($attempt['subject_breakdown_json'])) {
     }
 }
 
-$subjectNav = [];
-$subjectCounts = [];
-foreach ($questions as $idx => $q) {
-    $sid = (int)($q['subject_id'] ?? 0);
-    if (!isset($subjectCounts[$sid])) {
-        $subjectCounts[$sid] = 0;
-        $subjectNav[$sid] = [
-            'subject_id' => $sid,
-            'subject_code' => (string)($q['_subject_code'] ?? ''),
-            'subject_name' => (string)($q['_subject_name'] ?? ''),
-            'start_index' => $idx,
-            'count' => 0,
-        ];
-    }
-    $subjectCounts[$sid]++;
-    $subjectNav[$sid]['count'] = $subjectCounts[$sid];
-}
-$subjectNavList = array_values($subjectNav);
-
-$questionsForJs = [];
-foreach ($questions as $q) {
-    $questionsForJs[] = [
-        'question_id' => (int)($q['question_id'] ?? 0),
-        'subject_id' => (int)($q['subject_id'] ?? 0),
-        'subject_code' => (string)($q['_subject_code'] ?? ''),
-        'question_text' => renderQuizRichText((string)($q['question_text'] ?? '')),
-        'choice_a' => renderQuizRichText((string)($q['choice_a'] ?? '')),
-        'choice_b' => renderQuizRichText((string)($q['choice_b'] ?? '')),
-        'choice_c' => renderQuizRichText((string)($q['choice_c'] ?? '')),
-        'choice_d' => renderQuizRichText((string)($q['choice_d'] ?? '')),
-        'correct_answer' => $reviewMode && $attemptSubmitted ? (string)($q['correct_answer'] ?? '') : null,
-    ];
-}
-
-$initialAnswers = [];
+$initialAnsweredIds = [];
 foreach ($questions as $q) {
     $qid = (int)($q['question_id'] ?? 0);
-    if (!empty($answersMap[$qid]['selected_answer'])) {
-        $initialAnswers[$qid] = strtoupper((string)$answersMap[$qid]['selected_answer']);
+    if ($qid > 0 && !empty($answersMap[$qid]['selected_answer'])) {
+        $initialAnsweredIds[] = $qid;
     }
 }
+
+$batchTitle = (string)($batch['title'] ?? 'Diagnostic examination');
+$examTimeLimitSec = max(0, (int)($batch['time_limit_seconds'] ?? 0));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -191,251 +198,1411 @@ foreach ($questions as $q) {
         echo '<link rel="stylesheet" href="' . h($__examTakeHrefBase) . '/assets/css/exam-take-shared.css?v=' . filemtime($__examTakeCss) . '">' . "\n";
     }
   ?>
+  <style>
+    .exam-shell { width: 100%; max-width: none; margin: 0; padding: 0 0 5rem; }
+    .dash-anim { animation: dashFadeUp .55s ease-out both; }
+    .delay-1 { animation-delay: .05s; } .delay-2 { animation-delay: .12s; } .delay-3 { animation-delay: .18s; }
+    @keyframes dashFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .exam-hero {
+      border-radius: .78rem;
+      border: 1px solid rgba(255,255,255,.28);
+      background: linear-gradient(130deg,#1665A0 0%,#145a8f 38%,#143D59 100%);
+      box-shadow: 0 14px 34px -20px rgba(20,61,89,.85), inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .exam-hero .back-link { color: rgba(255,255,255,.92); }
+    .exam-hero .back-link:hover { color: #fff; text-decoration: underline; }
+    .exam-hero .exam-title { color: #fff; letter-spacing: .01em; }
+    .exam-subtitle { color: rgba(255,255,255,.9); font-size: .9rem; line-height: 1.45; }
+    .intro-card {
+      border: 1px solid rgba(22,101,160,.2);
+      border-radius: .86rem;
+      background: linear-gradient(180deg,#f8fbff 0%,#fff 55%);
+      box-shadow: 0 12px 26px -22px rgba(20,61,89,.5), 0 1px 0 rgba(255,255,255,.85) inset;
+    }
+    .intro-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem .8rem;margin-bottom:.9rem}
+    .intro-meta{border:1px solid #dbe7f5;border-radius:.65rem;background:#fff;padding:.52rem .62rem}
+    .intro-meta-k{font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+    .intro-meta-v{font-size:.84rem;color:#143D59;font-weight:800;margin-top:.1rem}
+    .time-up-modal-panel{border-radius:1rem;border:1px solid #fecaca;background:linear-gradient(180deg,#fffbeb 0%,#fff 55%);box-shadow:0 24px 48px -24px rgba(127,29,29,.45)}
+    .time-up-pulse{width:3rem;height:3rem;border-radius:999px;background:#fef2f2;border:2px solid #fecaca;display:flex;align-items:center;justify-content:center;animation:timeUpPulse 1.4s ease-in-out infinite}
+    @keyframes timeUpPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(220,38,38,.25)}50%{transform:scale(1.04);box-shadow:0 0 0 12px rgba(220,38,38,0)}}
+    .start-btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .62rem 1rem; border-radius: .68rem;
+      border: 1px solid #1665A0; color: #fff; font-weight: 800;
+      background: linear-gradient(135deg,#1665A0 0%,#0d4f80 100%);
+      box-shadow: 0 12px 20px -18px rgba(13,79,128,.9);
+    }
+    .start-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg,#145a8f 0%,#0b436c 100%); }
+    .focus-ring:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+    .exam-take-wrap { max-width: 1200px; margin: 0 auto; padding: 0 1rem 2rem; }
+    body.exam-taking-mode .exam-hero { display: none; }
+    body.exam-review-mode .exam-hero { display: none; }
+    .submit-confirm-overlay { background: rgba(15,23,42,.55); backdrop-filter: blur(4px); }
+    .submit-confirm-shell { width: 100%; max-width: 32rem; border-radius: 1rem; background: #fff; border: 1px solid #dbe7f5; box-shadow: 0 24px 48px -24px rgba(15,23,42,.45); overflow: hidden; }
+    .submit-confirm-head { padding: 1.25rem 1.35rem .85rem; background: linear-gradient(180deg,#f8fbff,#fff); border-bottom: 1px solid #e8eef6; text-align: center; }
+    .submit-confirm-icon { width: 3rem; height: 3rem; margin: 0 auto .75rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #e8f2fa; color: #1665A0; font-size: 1.35rem; }
+    .submit-confirm-title { margin: 0; font-size: 1.15rem; font-weight: 800; color: #143D59; }
+    .submit-confirm-sub { margin: .45rem 0 0; font-size: .82rem; color: #64748b; line-height: 1.45; }
+    .submit-confirm-body { padding: 1rem 1.25rem; }
+    .submit-stat-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .55rem; }
+    .submit-stat-cell { border: 1px solid #e2e8f0; border-radius: .65rem; padding: .55rem .65rem; background: #f8fafc; }
+    .submit-stat-k { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+    .submit-stat-v { font-size: 1rem; font-weight: 800; color: #143D59; margin-top: .15rem; }
+    .submit-unanswered-banner { margin-top: .85rem; padding: .65rem .75rem; border-radius: .65rem; font-size: .82rem; }
+    .submit-unanswered-ok { background: #ecfdf5; border: 1px solid #86efac; color: #047857; }
+    .submit-unanswered-warn { background: #fffbeb; border: 1px solid #fcd34d; color: #b45309; }
+    .submit-unanswered-nums { display: block; margin-top: .35rem; font-size: .75rem; }
+    .submit-double-hint { margin: 0 1.25rem .75rem; font-size: .78rem; color: #b45309; font-weight: 700; text-align: center; }
+    .submit-confirm-foot { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; padding: .85rem 1.15rem 1.15rem; border-top: 1px solid #e8eef6; }
+    .submit-btn-review, .submit-btn-cancel, .submit-btn-go { padding: .55rem .9rem; border-radius: .55rem; font-size: .82rem; font-weight: 700; }
+    .submit-btn-review { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+    .submit-btn-cancel { border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; }
+    .submit-btn-go { border: 1px solid #1665A0; background: #1665A0; color: #fff; }
+    .help-kbd { display: inline-block; min-width: 1.5rem; padding: .1rem .35rem; border-radius: .3rem; border: 1px solid #cbd5e1; background: #f8fafc; font-family: ui-monospace, monospace; font-size: .75rem; text-align: center; }
+    .diag-subject-chip { display:inline-block; margin-left:.35rem; padding:.1rem .4rem; border-radius:.35rem; background:#e8f2fa; color:#1665A0; font-size:.7rem; font-weight:800; vertical-align:middle; }
+  </style>
 </head>
 <body class="font-sans antialiased">
-<?php include __DIR__ . '/college_student_sidebar.php'; ?>
-<main class="dashboard-shell cp-exam-shell pt-2">
-  <?php
-    $cpPageBackHref = 'college_exams';
-    $cpPageBackLabel = 'Back to exams';
-    $cpPageEyebrow = 'Diagnostic assessment';
-    $cpPageTitle = (string)($batch['title'] ?? 'Diagnostic examination');
-    $cpPageSubtitle = (int)$stats['subject_count'] . ' subjects · ' . (int)$stats['question_count'] . ' questions · ' . diagnostic_exam_human_duration((int)($batch['time_limit_seconds'] ?? 0));
-    $cpPageIcon = 'bi-clipboard2-pulse';
-    $cpPageActionHtml = '<span class="cp-type cp-type--diagnostic">Diagnostic</span>';
-    require dirname(__DIR__, 2) . '/includes/components/college_portal_page_header.php';
-  ?>
+  <?php include __DIR__ . '/college_student_sidebar.php'; ?>
 
-  <?php if ($showIntro && !$reviewMode): ?>
-  <?php
-    $diagOpensTs = !empty($batch['available_from']) ? strtotime((string)$batch['available_from']) : false;
-    $diagOpens = $diagOpensTs !== false
-        ? date('M j, Y', $diagOpensTs) . ' · ' . date('g:i A', $diagOpensTs)
-        : 'Immediate';
-    $diagClosesTs = !empty($batch['deadline']) ? strtotime((string)$batch['deadline']) : false;
-    $diagCloses = $diagClosesTs !== false
-        ? date('M j, Y', $diagClosesTs) . ' · ' . date('g:i A', $diagClosesTs)
-        : 'No closing time';
-    $diagDuration = diagnostic_exam_human_duration((int)($batch['time_limit_seconds'] ?? 0));
-  ?>
-  <div class="diag-card p-5 max-w-3xl">
-    <h2 class="text-lg font-bold text-[#143D59] mt-0 mb-2">Before you begin</h2>
-    <?php if (!empty($batch['description'])): ?><p class="text-sm text-gray-600 m-0 mb-3"><?php echo nl2br(h((string)$batch['description'])); ?></p><?php endif; ?>
-    <div class="grid grid-cols-2 gap-3 my-3">
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Exam type</div><div class="font-bold text-[#143D59]">Diagnostic exam</div></div>
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Opens</div><div class="font-bold text-[#143D59]"><?php echo h($diagOpens); ?></div></div>
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Closes</div><div class="font-bold text-[#143D59]"><?php echo h($diagCloses); ?></div></div>
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Duration</div><div class="font-bold text-[#143D59]"><?php echo h($diagDuration); ?></div></div>
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Questions</div><div class="font-bold text-[#143D59]"><?php echo (int)$stats['question_count']; ?></div></div>
-      <div class="intro-meta"><div class="text-xs text-gray-500 font-bold uppercase">Professor</div><div class="font-bold text-[#143D59]"><?php echo h($profName); ?></div></div>
-    </div>
-    <p class="text-sm text-gray-600">This is one diagnostic attempt covering all subjects. You can save answers and continue until you submit or time runs out.</p>
-    <form method="post" class="mt-4">
-      <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-      <button type="submit" name="start_diagnostic" value="1" class="cp-btn cp-btn--primary start-btn"><i class="bi bi-play-fill"></i> Start diagnostic</button>
-    </form>
-  </div>
+  <div class="exam-shell ereview-shell-no-fade pt-2">
+    <section class="exam-hero dash-anim delay-1 px-5 py-5 mb-5">
+      <a href="college_exams" class="focus-ring back-link inline-flex items-center gap-1 text-sm font-semibold mb-3"><i class="bi bi-arrow-left"></i> Back to exams</a>
+      <h1 class="exam-title text-[1.9rem] font-extrabold m-0"><?php echo h($batchTitle); ?></h1>
+      <?php if (!empty($batch['description'])): ?>
+        <div class="exam-subtitle mt-2"><?php echo nl2br(h((string)$batch['description'])); ?></div>
+      <?php endif; ?>
+    </section>
 
-  <?php elseif ($reviewMode && $attemptSubmitted): ?>
-  <?php
-    $dCorrect = (int)($attempt['correct_count'] ?? 0);
-    $dTotal = (int)($attempt['total_count'] ?? 0);
-    $dScore = (float)($attempt['score'] ?? 0);
-  ?>
-  <div class="cer-results" style="max-width:720px">
-    <div class="cer-summary-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-      <div class="cer-summary-card">
-        <div class="cer-summary-k">Score</div>
-        <div class="cer-summary-v cer-summary-v--score"><?php echo h(number_format($dScore, 1)); ?>%</div>
-        <div class="cer-summary-sub"><?php echo $dCorrect; ?> / <?php echo $dTotal; ?> correct</div>
-        <div class="cer-summary-note">Diagnostic score uses raw accuracy (correct ÷ total).</div>
-      </div>
-      <div class="cer-summary-card">
-        <div class="cer-summary-k">Type</div>
-        <div class="cer-summary-v" style="font-size:1.05rem"><span class="cp-type cp-type--diagnostic">Diagnostic</span></div>
-        <div class="cer-summary-sub">Subject-level breakdown below</div>
-      </div>
-    </div>
-    <?php if ($breakdown !== []): ?>
-    <div class="cer-details">
-      <h3 class="cer-details__title">Subject breakdown</h3>
-      <div class="space-y-2">
-      <?php foreach ($breakdown as $item): ?>
-        <div class="breakdown-row flex justify-between gap-3 text-sm">
-          <span class="font-semibold text-[#143D59]"><?php echo h((string)($item['subject_code'] ?? '')); ?></span>
-          <span class="text-slate-600"><?php echo (int)($item['correct'] ?? 0); ?>/<?php echo (int)($item['total'] ?? 0); ?> · <?php echo h(number_format((float)($item['score_pct'] ?? 0), 1)); ?>%</span>
+    <?php if ($reviewMode && $attemptSubmitted): ?>
+      <script>document.body.classList.add('exam-review-mode');</script>
+      <?php
+        $dCorrect = (int)($attempt['correct_count'] ?? 0);
+        $dTotal = (int)($attempt['total_count'] ?? 0);
+        $dScore = (float)($attempt['score'] ?? 0);
+      ?>
+      <div class="exam-take-wrap dash-anim delay-2">
+        <div class="intro-card p-6" style="max-width:720px;margin:0 auto">
+          <div class="intro-meta-grid">
+            <div class="intro-meta">
+              <div class="intro-meta-k">Score</div>
+              <div class="intro-meta-v" style="font-size:1.35rem"><?php echo h(number_format($dScore, 1)); ?>%</div>
+              <div style="font-size:.78rem;color:#64748b;margin-top:.25rem"><?php echo $dCorrect; ?> / <?php echo $dTotal; ?> correct</div>
+            </div>
+            <div class="intro-meta">
+              <div class="intro-meta-k">Type</div>
+              <div class="intro-meta-v">Diagnostic exam</div>
+              <div style="font-size:.78rem;color:#64748b;margin-top:.25rem">Raw accuracy (correct ÷ total)</div>
+            </div>
+          </div>
+          <?php if ($breakdown !== []): ?>
+          <h3 class="text-sm font-bold text-[#143D59] mt-4 mb-2">Subject breakdown</h3>
+          <div class="space-y-2">
+          <?php foreach ($breakdown as $item): ?>
+            <div class="intro-meta flex justify-between gap-3 items-center">
+              <span class="font-semibold text-[#143D59]"><?php echo h((string)($item['subject_code'] ?? '')); ?></span>
+              <span class="text-slate-600 text-sm"><?php echo (int)($item['correct'] ?? 0); ?>/<?php echo (int)($item['total'] ?? 0); ?> · <?php echo h(number_format((float)($item['score_pct'] ?? 0), 1)); ?>%</span>
+            </div>
+          <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+          <p class="mt-4 mb-0"><a href="college_exams" class="start-btn" style="text-decoration:none"><i class="bi bi-arrow-left"></i> Back to exams</a></p>
         </div>
-      <?php endforeach; ?>
       </div>
-    </div>
+
+    <?php elseif ($showIntro && !$reviewMode): ?>
+      <?php
+        $introOpensTs = !empty($batch['available_from']) ? strtotime((string)$batch['available_from']) : false;
+        $introOpens = $introOpensTs !== false
+            ? date('M j, Y', $introOpensTs) . ' · ' . date('g:i A', $introOpensTs)
+            : 'Immediate';
+        $introClosesTs = !empty($batch['deadline']) ? strtotime((string)$batch['deadline']) : false;
+        $introCloses = $introClosesTs !== false
+            ? date('M j, Y', $introClosesTs) . ' · ' . date('g:i A', $introClosesTs)
+            : 'No closing time';
+        $introDuration = diagnostic_exam_human_duration($examTimeLimitSec);
+      ?>
+      <div class="mt-3 intro-card dash-anim delay-2 p-6">
+        <div class="intro-meta-grid">
+          <div class="intro-meta">
+            <div class="intro-meta-k">Exam Type</div>
+            <div class="intro-meta-v">Diagnostic exam</div>
+          </div>
+          <div class="intro-meta">
+            <div class="intro-meta-k">Opens</div>
+            <div class="intro-meta-v"><?php echo h($introOpens); ?></div>
+          </div>
+          <div class="intro-meta">
+            <div class="intro-meta-k">Closes</div>
+            <div class="intro-meta-v"><?php echo h($introCloses); ?></div>
+          </div>
+          <div class="intro-meta">
+            <div class="intro-meta-k">Duration</div>
+            <div class="intro-meta-v"><?php echo h($introDuration); ?></div>
+          </div>
+          <div class="intro-meta">
+            <div class="intro-meta-k">Questions</div>
+            <div class="intro-meta-v"><?php echo (int)$stats['question_count']; ?></div>
+          </div>
+          <div class="intro-meta">
+            <div class="intro-meta-k">Professor</div>
+            <div class="intro-meta-v"><?php echo h($profName); ?></div>
+          </div>
+        </div>
+        <p class="text-sm text-slate-600 mb-3">This is one diagnostic attempt covering all subjects. Answers autosave; submit when finished or when time runs out.</p>
+        <form method="post" action="">
+          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <button type="submit" name="start_diagnostic" value="1" class="focus-ring start-btn">
+            <i class="bi bi-play-fill"></i> Start diagnostic
+          </button>
+        </form>
+      </div>
+
+    <?php elseif ($attempt && $attemptStatus === 'in_progress'): ?>
+
+      <?php
+        $qTotal = (int)count($questions);
+        $timerInitial = $remainingSeconds !== null ? (int)$remainingSeconds : null;
+        $timerCircumference = 2 * M_PI * 54;
+        $wmStudentName = 'Student';
+        $wmSt = mysqli_prepare($conn, 'SELECT full_name FROM users WHERE user_id=? LIMIT 1');
+        if ($wmSt) {
+            mysqli_stmt_bind_param($wmSt, 'i', $uid);
+            mysqli_stmt_execute($wmSt);
+            $wmRow = mysqli_fetch_assoc(mysqli_stmt_get_result($wmSt));
+            mysqli_stmt_close($wmSt);
+            if ($wmRow && trim((string)($wmRow['full_name'] ?? '')) !== '') {
+                $wmStudentName = trim((string)$wmRow['full_name']);
+            }
+        }
+        $wmLine = $wmStudentName . ' · ' . (string)($batchTitle ?? 'Exam') . ' · Attempt #' . (int)$attempt['attempt_id'];
+      ?>
+      <script>document.body.classList.add('exam-taking-mode','exam-protected');</script>
+      <div class="exam-watermark" aria-hidden="true"><div class="exam-watermark__inner"><?php
+        for ($wi = 0; $wi < 18; $wi++) {
+            echo '<div class="exam-watermark__cell">' . h($wmLine) . '</div>';
+        }
+      ?></div></div>
+      <div class="exam-page-container exam-take-wrap dash-anim delay-2">
+        <div id="examConnBanner" class="exam-conn-banner" role="status"><i class="bi bi-wifi-off mr-1"></i> <span id="examConnBannerText">Connection interrupted. Your answers are being preserved. Reconnecting...</span></div>
+
+        <div class="exam-bar">
+          <div class="exam-header">
+            <div class="exam-header-left">
+              <div class="exam-title"><?php echo h($batchTitle); ?></div>
+              <div class="exam-subject">Diagnostic exam · <?php echo h($profName); ?></div>
+            </div>
+            <div class="exam-q-badge exam-progress-badge" aria-live="polite"><strong id="answeredCountNum">0</strong> / <strong><?php echo $qTotal; ?></strong> answered</div>
+          </div>
+          <div class="exam-progress-wrap">
+            <div class="exam-progress-bar" aria-hidden="true"><div id="progressBar" class="exam-progress-fill" style="width:0%"></div></div>
+            <div class="exam-progress-label">Focusing question <span id="examCurrentLabel">1</span> of <?php echo $qTotal; ?> · Flagged <span id="flaggedCount">0</span></div>
+          </div>
+        </div>
+
+        <div class="exam-layout mt-4">
+          <div class="exam-main">
+            <form id="examForm" data-attempt-id="<?php echo (int)$attempt['attempt_id']; ?>" data-csrf="<?php echo h($csrf); ?>" data-batch-id="<?php echo (int)$batchId; ?>" data-total="<?php echo $qTotal; ?>" data-remaining="<?php echo $timerInitial !== null ? (int)$timerInitial : ''; ?>">
+              <?php foreach ($questions as $index => $q): ?>
+                <?php
+                  $qid = (int)$q['question_id'];
+                  $displayChoices = diagnostic_take_question_display_choices($q);
+                  $isTfQ = college_exam_question_type_is_tf((string)($q['question_type'] ?? ''));
+                  $prev = strtoupper((string)($answersMap[$qid]['selected_answer'] ?? ''));
+                  $subjCode = trim((string)($q['_subject_code'] ?? ''));
+                ?>
+                <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" data-question-type="<?php echo $isTfQ ? 'tf' : 'mcq'; ?>" id="q<?php echo ($index + 1); ?>">
+                  <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="exam-question-label m-0">Question <?php echo ($index + 1); ?> of <?php echo $qTotal; ?><?php if ($subjCode !== ''): ?> <span class="diag-subject-chip"><?php echo h($subjCode); ?></span><?php endif; ?> <span class="exam-answered-pill" aria-hidden="true">✓</span></div>
+                    <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Flag question <?php echo ($index + 1); ?>"><i class="bi bi-flag"></i> Flag</button>
+                  </div>
+                  <div class="exam-question-text exam-no-copy quiz-rich-text"><?php echo renderQuizRichText($q['question_text']); ?></div>
+                  <div class="exam-choices">
+                    <?php foreach ($displayChoices as $choice): ?>
+                      <?php
+                        $L = $choice['letter'];
+                        $label = $choice['label'];
+                        $showLetter = !empty($choice['show_letter']);
+                        $aria = $showLetter ? ('Choice ' . $L) : $label;
+                      ?>
+                      <label class="exam-choice focus-ring exam-no-copy <?php echo $prev === $L ? 'selected' : ''; ?>" data-choice-row tabindex="0">
+                        <input type="radio" class="sr-only" name="q_<?php echo $qid; ?>" value="<?php echo h($L); ?>" data-question-id="<?php echo $qid; ?>" <?php echo $prev === $L ? 'checked' : ''; ?> aria-label="<?php echo h($aria); ?>">
+                        <?php if ($showLetter): ?>
+                          <span class="exam-choice-letter"><?php echo h($L); ?></span>
+                        <?php endif; ?>
+                        <div class="exam-choice-text"><?php
+                          if (!empty($choice['rich'])) {
+                              echo renderQuizRichText($label);
+                          } else {
+                              echo h($label);
+                          }
+                        ?></div>
+                        <span class="exam-choice-check" aria-hidden="true"><i class="bi bi-check"></i></span>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </section>
+              <?php endforeach; ?>
+            </form>
+
+            <div class="exam-nav-card exam-submit-card">
+              <div class="exam-submit-progress" id="submitProgressLabel"><span id="submitAnsweredNum">0</span> of <?php echo $qTotal; ?> answered</div>
+              <button type="button" id="submitExamBtn" class="exam-btn-submit focus-ring is-locked" aria-disabled="true">
+                <i class="bi bi-send-fill"></i> <span id="submitExamBtnText">Answer all questions to submit</span>
+              </button>
+              <p id="submitIncompleteHint" class="exam-submit-hint hidden" role="status"></p>
+            </div>
+          </div>
+
+          <aside class="exam-sidebar">
+            <div class="exam-sidebar-card mb-3 exam-timer-card">
+              <div class="exam-sidebar-title">Time Remaining</div>
+              <div id="examTimerCircle" class="exam-timer-circle-wrap" data-initial="<?php echo $timerInitial !== null ? (int)$timerInitial : 0; ?>">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="exam-timer-circle-track" cx="60" cy="60" r="54"></circle>
+                  <circle id="examTimerCircleProgress" class="exam-timer-circle-progress" cx="60" cy="60" r="54"
+                    stroke-dasharray="<?php echo h((string)$timerCircumference); ?>"
+                    stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="exam-timer-circle-inner">
+                  <div id="examTimerCircleValue" class="exam-timer-circle-value">--:--</div>
+                  <div class="exam-timer-circle-label">remaining</div>
+                </div>
+              </div>
+            </div>
+            <div class="exam-sidebar-card">
+              <div class="exam-filter-row">
+                <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
+                <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
+                <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
+              </div>
+              <div class="exam-sidebar-section" id="examQListSection">
+                <button type="button" class="exam-sidebar-section-head" id="examQListTrigger" aria-expanded="true">
+                  <span>Questions</span>
+                  <i class="bi bi-chevron-up"></i>
+                </button>
+                <div id="questionNavigator" class="exam-q-list" aria-label="Question navigator"></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="exam-mobile-nav" id="mobileNav">
+          <button type="button" id="mIndexBtn" class="focus-ring">Index</button>
+          <button type="button" id="mFlagBtn" class="focus-ring">Flag</button>
+          <button type="button" id="mSubmitBtn" class="exam-mobile-next focus-ring is-locked" aria-disabled="true">Submit</button>
+        </div>
+
+        <div id="mobileIndexDrawer" class="fixed inset-0 z-[1200] hidden bg-slate-900/45 p-4">
+          <div class="w-full max-w-lg mx-auto mt-10 rounded-xl bg-white border border-slate-200 shadow-xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-[#143D59] m-0">Question index</h3>
+              <button type="button" id="closeMobileDrawerBtn" class="focus-ring px-2 py-1 rounded border border-slate-200 text-slate-700"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div id="mobileQuestionNavigator" class="exam-q-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="examSavedToast" class="exam-saved-toast" role="status">Answer saved</div>
+      <div id="examTimeWarningToast" class="exam-time-warning-toast" role="status"></div>
+
+      <div class="exam-privacy-shield" id="examPrivacyShield" aria-hidden="true">
+        <div class="exam-privacy-shield__card">
+          <i class="bi bi-eye-slash" aria-hidden="true"></i>
+          <h2>Exam content hidden</h2>
+          <p>Content is blocked while this window is inactive or a screen-capture shortcut is detected. Return here to continue. Screenshots are not allowed during the exam.</p>
+        </div>
+      </div>
+
+      <div id="examSecurityOverlay" class="exam-security-overlay" role="alertdialog" aria-modal="true" aria-labelledby="examSecurityTitle">
+        <div class="exam-security-card">
+          <h3 id="examSecurityTitle">Security notice</h3>
+          <p id="examSecurityMessage">Screenshots and leaving the exam window are not allowed.</p>
+          <button type="button" id="examSecurityContinueBtn" class="exam-btn-submit focus-ring">
+            <i class="bi bi-shield-check"></i> Return to exam
+          </button>
+        </div>
+      </div>
+
+      <div id="examReturnOverlay" class="exam-return-overlay" role="alertdialog" aria-modal="true" aria-labelledby="examReturnTitle">
+        <div class="exam-return-card">
+          <h3 id="examReturnTitle">Exam tab was inactive</h3>
+          <p>This activity has been recorded for your professor. Continue only when you are ready to resume the exam.</p>
+          <button type="button" id="examReturnContinueBtn" class="exam-btn-submit focus-ring">I understand — continue</button>
+        </div>
+      </div>
+      <div id="quizSubmitOverlay" class="quiz-submit-overlay" aria-hidden="true">
+        <div class="quiz-submit-card">
+          <div class="quiz-submit-spinner"></div>
+          <div class="quiz-submit-title">Submitting diagnostic</div>
+          <div class="quiz-submit-text">Please wait while we finalize your answers...</div>
+        </div>
+      </div>
+
+      <div id="timeUpModal" class="fixed inset-0 z-[1350] hidden items-center justify-center bg-slate-900/55 p-4 backdrop-blur-[2px]" aria-live="assertive" role="alertdialog" aria-modal="true" aria-labelledby="timeUpModalTitle">
+        <div class="time-up-modal-panel w-full max-w-md p-6 text-center">
+          <div class="time-up-pulse mx-auto mb-4"><i class="bi bi-hourglass-bottom text-2xl text-red-600"></i></div>
+          <h3 id="timeUpModalTitle" class="m-0 text-xl font-extrabold text-red-900">Time is up</h3>
+          <p class="mt-2 mb-0 text-sm text-slate-700 font-semibold">Saving your answers and submitting automatically. Please wait…</p>
+          <p class="mt-3 mb-0 text-xs text-slate-500">Do not close this page until you are redirected to the results.</p>
+        </div>
+      </div>
+
+      <div id="submitConfirmModal" class="submit-confirm-overlay fixed inset-0 z-[1300] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="submitConfirmTitle">
+        <div class="submit-confirm-shell">
+          <div class="submit-confirm-head">
+            <div class="submit-confirm-icon" aria-hidden="true"><i class="bi bi-clipboard2-check"></i></div>
+            <h3 id="submitConfirmTitle" class="submit-confirm-title">Final submission check</h3>
+            <p class="submit-confirm-sub">Confirm your progress before you send your answers. Unanswered items are highlighted so nothing slips through.</p>
+          </div>
+          <div class="submit-confirm-body">
+            <div class="submit-stat-grid">
+              <div class="submit-stat-cell">
+                <div class="submit-stat-k">Total questions</div>
+                <div class="submit-stat-v"><?php echo $qTotal; ?></div>
+              </div>
+              <div class="submit-stat-cell">
+                <div class="submit-stat-k">Answered</div>
+                <div class="submit-stat-v" id="sumAnswered">0</div>
+              </div>
+              <div class="submit-stat-cell">
+                <div class="submit-stat-k">Flagged</div>
+                <div class="submit-stat-v" id="sumFlagged">0</div>
+              </div>
+              <div class="submit-stat-cell">
+                <div class="submit-stat-k">Time left</div>
+                <div class="submit-stat-v"><span id="sumTimeRemaining">--:--</span></div>
+              </div>
+            </div>
+            <div id="submitUnansweredBanner" class="submit-unanswered-banner submit-unanswered-ok" role="status">
+              <span id="submitUnansweredLabel"><strong>Unanswered: <span id="sumUnanswered">0</span></strong></span>
+              <span id="submitUnansweredNums" class="submit-unanswered-nums hidden"></span>
+            </div>
+          </div>
+          <p id="doubleConfirmHint" class="submit-double-hint hidden">Tap "Submit diagnostic" again to confirm — this cannot be undone.</p>
+          <div class="submit-confirm-foot">
+            <button type="button" id="reviewUnansweredBtn" class="focus-ring submit-btn-review"><i class="bi bi-search"></i> Review unanswered</button>
+            <button type="button" id="closeSubmitModalBtn" class="focus-ring submit-btn-cancel">Cancel</button>
+            <button type="button" id="confirmSubmitBtn" class="focus-ring submit-btn-go"><i class="bi bi-send-fill"></i> Submit diagnostic</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="shortcutsModal" class="fixed inset-0 z-[1300] hidden items-center justify-center bg-slate-900/45 p-4">
+        <div class="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl p-5">
+          <h3 class="m-0 text-lg font-bold text-[#143D59]">Keyboard shortcuts</h3>
+          <ul class="mt-3 text-sm text-slate-700 space-y-2">
+            <li><span class="help-kbd">N</span> Jump to next question</li>
+            <li><span class="help-kbd">P</span> Jump to previous question</li>
+            <li><span class="help-kbd">F</span> Flag/unflag current</li>
+            <li><span class="help-kbd">1-9</span> Select choice A–I</li>
+            <li><span class="help-kbd">?</span> Open this help</li>
+          </ul>
+          <div class="mt-4 text-right"><button type="button" id="closeShortcutsBtn" class="focus-ring px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold">Close</button></div>
+        </div>
+      </div>
+
+      <div id="leaveConfirmModal" class="fixed inset-0 z-[1300] hidden items-center justify-center bg-slate-900/45 p-4">
+        <div class="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl p-5">
+          <h3 class="m-0 text-lg font-bold text-[#143D59]">Leave diagnostic exam?</h3>
+          <p class="mt-2 text-sm text-slate-600">Your attempt is in progress. You can stay here, or leave and continue later from your exam list.</p>
+          <div class="mt-4 flex flex-wrap gap-2 justify-end">
+            <button type="button" id="stayOnExamBtn" class="focus-ring px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold">Stay here</button>
+            <button type="button" id="leaveExamBtn" class="focus-ring px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold">Leave page</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      (function () {
+        var form = document.getElementById('examForm');
+        if (!form) return;
+        var ajaxUrl = 'college_diagnostic_ajax';
+        var attemptId = parseInt(form.getAttribute('data-attempt-id'), 10);
+        var csrf = form.getAttribute('data-csrf');
+        var batchId = parseInt(form.getAttribute('data-batch-id'), 10);
+        var totalQuestions = parseInt(form.getAttribute('data-total'), 10) || 0;
+        var remAttr = form.getAttribute('data-remaining');
+        var countdown = remAttr === '' || remAttr === null ? null : Math.max(0, parseInt(remAttr, 10) || 0);
+        var initialRemaining = countdown;
+        var circumference = 2 * Math.PI * 54;
+        var panels = Array.prototype.slice.call(document.querySelectorAll('[data-question-panel]'));
+        var state = {
+          currentIndex: 0,
+          flags: new Set(<?php echo json_encode(array_values(array_filter(array_map('intval', (array)($savedUiState['flags'] ?? []))))); ?>),
+          answered: new Set(<?php echo json_encode(array_values(array_unique(array_map('intval', $initialAnsweredIds)))); ?>),
+          filter: 'all',
+          submitting: false,
+          online: navigator.onLine,
+          submitConfirmStep: 0
+        };
+        var timerWrap = document.getElementById('examTimerCircle');
+        var timerValue = document.getElementById('examTimerCircleValue');
+        var timerProgress = document.getElementById('examTimerCircleProgress');
+        var progressBar = document.getElementById('progressBar');
+        var answeredCountEl = document.getElementById('answeredCountNum');
+        var flaggedCountEl = document.getElementById('flaggedCount');
+        var currentLabel = document.getElementById('examCurrentLabel');
+        var connBanner = document.getElementById('examConnBanner');
+        var connBannerText = document.getElementById('examConnBannerText');
+        var savedToast = document.getElementById('examSavedToast');
+        var warnToast = document.getElementById('examTimeWarningToast');
+        var navigatorEl = document.getElementById('questionNavigator');
+        var mobileNavEl = document.getElementById('mobileQuestionNavigator');
+        var submitExamBtn = document.getElementById('submitExamBtn');
+        var submitExamBtnText = document.getElementById('submitExamBtnText');
+        var submitAnsweredNum = document.getElementById('submitAnsweredNum');
+        var submitIncompleteHint = document.getElementById('submitIncompleteHint');
+        var mSubmitBtn = document.getElementById('mSubmitBtn');
+        var tabBlurLastSent = 0;
+        var examPageReadyAt = Date.now();
+        var warned5 = false, warned1 = false, warned30 = false;
+        var saveRetryTimers = {};
+        var inflightSaves = {};
+        var answersLocked = false;
+        var scrollSyncFromClick = false;
+        var scrollSyncTimer = null;
+
+        function showSavedToast(msg) {
+          if (!savedToast) return;
+          savedToast.textContent = msg || 'Answer saved';
+          savedToast.classList.add('show');
+          clearTimeout(showSavedToast._t);
+          showSavedToast._t = setTimeout(function () { savedToast.classList.remove('show'); }, 1800);
+        }
+        function showWarnToast(msg, kind) {
+          if (!warnToast) return;
+          warnToast.textContent = msg;
+          warnToast.className = 'exam-time-warning-toast show ' + (kind || 'warning');
+          clearTimeout(showWarnToast._t);
+          showWarnToast._t = setTimeout(function () { warnToast.classList.remove('show'); }, 3500);
+        }
+        function setConn(online, recovering) {
+          state.online = online;
+          if (!connBanner) return;
+          if (!online) {
+            connBanner.classList.add('is-on');
+            connBanner.classList.remove('is-ok');
+            if (connBannerText) connBannerText.textContent = 'Connection interrupted. Your answers are being preserved. Reconnecting...';
+          } else if (recovering) {
+            connBanner.classList.add('is-on', 'is-ok');
+            if (connBannerText) connBannerText.textContent = 'Connected — answers saved';
+            clearTimeout(setConn._t);
+            setConn._t = setTimeout(function () { connBanner.classList.remove('is-on', 'is-ok'); }, 2200);
+          } else {
+            connBanner.classList.remove('is-on', 'is-ok');
+          }
+        }
+        window.addEventListener('online', function () { setConn(true, true); });
+        window.addEventListener('offline', function () { setConn(false); });
+        setConn(navigator.onLine);
+
+        function request(action, payload) {
+          var body = new URLSearchParams();
+          body.set('action', action);
+          Object.keys(payload || {}).forEach(function (k) { body.set(k, String(payload[k])); });
+          return fetch(ajaxUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body, credentials: 'same-origin' })
+            .then(function (r) {
+              return r.text().then(function (text) {
+                var data = null;
+                try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+                if (!r.ok) {
+                  throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+                }
+                if (data === null) {
+                  throw new Error('Invalid server response');
+                }
+                return data;
+              });
+            });
+        }
+
+        function getLocalAnswersMap() {
+          var map = {};
+          // Merge durable local backup first, then overlay current radio selections.
+          try {
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') {
+                Object.keys(parsed).forEach(function (qid) {
+                  var v = String(parsed[qid] || '').toUpperCase();
+                  if (/^[A-Z]$/.test(v)) map[parseInt(qid, 10)] = v;
+                });
+              }
+            }
+          } catch (e) {}
+          panels.forEach(function (panel) {
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10);
+            if (!qid) return;
+            var checked = panel.querySelector('input[type=radio]:checked');
+            if (checked && /^[A-Z]$/i.test(String(checked.value || ''))) {
+              map[qid] = String(checked.value).toUpperCase();
+            }
+          });
+          return map;
+        }
+        function answerBackupKey() {
+          return 'ereview_diag_exam_answers_' + attemptId;
+        }
+        function persistAnswerBackup(qid, value) {
+          try {
+            var map = {};
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') map = parsed;
+            }
+            map[String(qid)] = String(value).toUpperCase();
+            localStorage.setItem(answerBackupKey(), JSON.stringify(map));
+          } catch (e) {}
+        }
+        function clearAnswerBackup() {
+          try { localStorage.removeItem(answerBackupKey()); } catch (e) {}
+        }
+        function localAnswersPayload() {
+          var map = getLocalAnswersMap();
+          return Object.keys(map).map(function (qid) {
+            return { question_id: parseInt(qid, 10), selected_answer: map[qid] };
+          });
+        }
+        function isQuestionAnsweredLocal(qid) {
+          if (state.answered.has(qid)) return true;
+          var map = getLocalAnswersMap();
+          return !!map[qid];
+        }
+
+        function sendVisibility(visibility) {
+          var now = Date.now();
+          if (visibility === 'hidden') {
+            if (now - examPageReadyAt < 1500) return;
+            if (now - tabBlurLastSent < 2200) return;
+            tabBlurLastSent = now;
+          }
+          request('tab_visibility', {
+            csrf_token: csrf,
+            attempt_id: attemptId,
+            visibility: visibility,
+            client_ts: now
+          }).catch(function () {});
+        }
+        var wasHidden = false;
+        var privacyShield = document.getElementById('examPrivacyShield');
+        var securityOverlay = document.getElementById('examSecurityOverlay');
+        var securityTitle = document.getElementById('examSecurityTitle');
+        var securityMessage = document.getElementById('examSecurityMessage');
+        var securityContinue = document.getElementById('examSecurityContinueBtn');
+        var returnOverlay = document.getElementById('examReturnOverlay');
+        var returnBtn = document.getElementById('examReturnContinueBtn');
+        var securityMessages = {
+          screenshot: {
+            title: 'Screenshots are not allowed',
+            message: 'Screen capture tools (including Snipping Tool / Win + Shift + S) are not allowed. Exam content has been hidden. Return to the exam window to continue.'
+          },
+          visibility: {
+            title: 'Stay on the exam page',
+            message: 'You left the exam window. Switching tabs or apps is recorded. Exam content stays hidden until you return.'
+          },
+          blur: {
+            title: 'Stay focused on your exam',
+            message: 'The exam window lost focus. Content is hidden while another window is active. Click Return to exam to continue.'
+          },
+          win_key: {
+            title: 'Windows key / app switch blocked',
+            message: 'Using the Windows key or leaving the exam can expose screen-capture tools. Exam content is hidden. Return here to continue.'
+          }
+        };
+        function setPrivacyShield(on) {
+          if (!privacyShield) return;
+          privacyShield.classList.toggle('is-active', !!on);
+          privacyShield.setAttribute('aria-hidden', on ? 'false' : 'true');
+          document.body.classList.toggle('exam-content-obscured', !!on);
+        }
+        function showSecurityOverlay(reason) {
+          var meta = securityMessages[reason] || securityMessages.visibility;
+          if (securityTitle) securityTitle.textContent = meta.title;
+          if (securityMessage) securityMessage.textContent = meta.message;
+          if (securityOverlay) securityOverlay.classList.add('is-on');
+          setPrivacyShield(true);
+        }
+        function hideSecurityOverlay() {
+          if (securityOverlay) securityOverlay.classList.remove('is-on');
+          if (returnOverlay) returnOverlay.classList.remove('is-on');
+          if (document.hasFocus() && !document.hidden) {
+            setPrivacyShield(false);
+          }
+        }
+        function showReturnWarning() {
+          showSecurityOverlay('visibility');
+        }
+        function hideReturnWarning() {
+          hideSecurityOverlay();
+        }
+        if (securityContinue) securityContinue.addEventListener('click', hideSecurityOverlay);
+        if (returnBtn) returnBtn.addEventListener('click', hideReturnWarning);
+
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'hidden') {
+            wasHidden = true;
+            setPrivacyShield(true);
+            sendVisibility('hidden');
+          } else {
+            sendVisibility('visible');
+            if (wasHidden) {
+              wasHidden = false;
+              showSecurityOverlay('visibility');
+            } else if (document.hasFocus() && (!securityOverlay || !securityOverlay.classList.contains('is-on'))) {
+              setPrivacyShield(false);
+            }
+          }
+        });
+        // Blur/focus: hide content immediately (helps against Snipping Tool) — do NOT double-count tab switches.
+        window.addEventListener('blur', function () {
+          if (state.submitting) return;
+          setPrivacyShield(true);
+          showSecurityOverlay('blur');
+        });
+        window.addEventListener('focus', function () {
+          if (securityOverlay && securityOverlay.classList.contains('is-on')) return;
+          if (!document.hidden) setPrivacyShield(false);
+        });
+        setInterval(function () {
+          if (state.submitting) return;
+          if (!document.hasFocus() || document.hidden) setPrivacyShield(true);
+        }, 350);
+
+        function isWinKey(e) {
+          var code = e.code || '';
+          var key = e.key || '';
+          var isMetaCode = code === 'MetaLeft' || code === 'MetaRight' || code === 'OSLeft' || code === 'OSRight'
+            || key === 'Meta' || key === 'OS';
+          if (!isMetaCode) return false;
+          // Only treat as Windows key on Windows — Meta is Command on macOS.
+          var ua = navigator.userAgent || '';
+          return /Windows/i.test(ua) || /Win/i.test(navigator.platform || '');
+        }
+        function triggerScreenshotBlock(reason) {
+          setPrivacyShield(true);
+          showSecurityOverlay(reason || 'screenshot');
+        }
+        window.addEventListener('keydown', function (e) {
+          if (state.submitting) return;
+          var key = (e.key || '').toLowerCase();
+          var ctrlLike = e.ctrlKey || e.metaKey;
+          if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+            triggerScreenshotBlock('screenshot');
+            return;
+          }
+          // Win key alone / as modifier — hide content before Snipping Tool can capture questions.
+          if (isWinKey(e)) {
+            triggerScreenshotBlock('win_key');
+            return;
+          }
+          // Snipping Tool / macOS capture style shortcuts
+          if (ctrlLike && e.shiftKey && (key === 's' || key === '3' || key === '4' || key === '5')) {
+            e.preventDefault();
+            triggerScreenshotBlock('screenshot');
+            return;
+          }
+          if (e.shiftKey && e.metaKey && key === 's') {
+            e.preventDefault();
+            triggerScreenshotBlock('screenshot');
+          }
+        }, true);
+        window.addEventListener('keyup', function (e) {
+          if (state.submitting) return;
+          if (e.key === 'PrintScreen' || e.code === 'PrintScreen' || isWinKey(e)) {
+            triggerScreenshotBlock(isWinKey(e) ? 'win_key' : 'screenshot');
+          }
+        }, true);
+
+        document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+        document.addEventListener('copy', function (e) { e.preventDefault(); });
+        document.addEventListener('cut', function (e) { e.preventDefault(); });
+        document.addEventListener('paste', function (e) { e.preventDefault(); });
+        window.addEventListener('beforeprint', function () {
+          triggerScreenshotBlock('screenshot');
+          showWarnToast('Printing is disabled during an active exam.', 'danger');
+        });
+
+        document.querySelectorAll('.exam-no-copy').forEach(function (el) {
+          ['copy', 'cut', 'contextmenu'].forEach(function (ev) {
+            el.addEventListener(ev, function (e) { e.preventDefault(); });
+          });
+        });
+
+        function fmtTime(sec) {
+          if (sec === null || sec === undefined) return '--:--';
+          sec = Math.max(0, sec | 0);
+          var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+          if (h > 0) return h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+          return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function updateTimerVisual() {
+          if (countdown === null || !timerWrap || !timerValue) return;
+          timerValue.textContent = fmtTime(countdown);
+          timerWrap.classList.remove('warning', 'danger');
+          if (countdown <= 60) timerWrap.classList.add('danger');
+          else if (countdown <= 300) timerWrap.classList.add('warning');
+          if (timerProgress && initialRemaining && initialRemaining > 0) {
+            var pct = Math.max(0, Math.min(1, countdown / initialRemaining));
+            timerProgress.style.strokeDashoffset = String(circumference * (1 - pct));
+          }
+          if (countdown <= 300 && countdown > 60 && !warned5) { warned5 = true; showWarnToast('5 minutes remaining', 'warning'); }
+          if (countdown <= 60 && countdown > 30 && !warned1) { warned1 = true; showWarnToast('1 minute remaining', 'danger'); }
+          if (countdown <= 30 && countdown > 0 && !warned30) { warned30 = true; showWarnToast('30 seconds remaining', 'danger'); }
+        }
+        function updateCounts() {
+          var uniq = {};
+          var map = getLocalAnswersMap();
+          Object.keys(map).forEach(function (qid) { uniq[qid] = true; });
+          state.answered.forEach(function (qid) { uniq[qid] = true; });
+          var n = Object.keys(uniq).length;
+          if (answeredCountEl) answeredCountEl.textContent = String(n);
+          if (flaggedCountEl) flaggedCountEl.textContent = String(state.flags.size);
+          if (progressBar && totalQuestions > 0) progressBar.style.width = Math.round((n / totalQuestions) * 100) + '%';
+          if (currentLabel) currentLabel.textContent = String(state.currentIndex + 1);
+          if (submitAnsweredNum) submitAnsweredNum.textContent = String(n);
+          updateSubmitButton();
+        }
+        function unansweredList() {
+          var list = [];
+          panels.forEach(function (p, idx) {
+            var qid = parseInt(p.getAttribute('data-question-id'), 10);
+            if (!isQuestionAnsweredLocal(qid)) list.push(idx + 1);
+          });
+          return list;
+        }
+        function updateSubmitButton() {
+          var answeredN = totalQuestions - unansweredCount();
+          var complete = unansweredCount() === 0 && totalQuestions > 0;
+          if (submitExamBtn) {
+            // Keep clickable while incomplete so we can show which questions remain.
+            submitExamBtn.disabled = false;
+            submitExamBtn.classList.toggle('is-locked', !complete);
+            submitExamBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
+            if (submitExamBtnText) {
+              submitExamBtnText.textContent = complete
+                ? 'Submit diagnostic'
+                : ('Answer all questions to submit (' + answeredN + '/' + totalQuestions + ')');
+            }
+          }
+          if (mSubmitBtn) {
+            mSubmitBtn.disabled = false;
+            mSubmitBtn.classList.toggle('is-locked', !complete);
+            mSubmitBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
+            mSubmitBtn.textContent = complete ? 'Submit' : (answeredN + '/' + totalQuestions);
+          }
+          if (submitIncompleteHint && complete) {
+            submitIncompleteHint.classList.add('hidden');
+            submitIncompleteHint.textContent = '';
+          }
+          document.querySelectorAll('.flagBtn').forEach(function (btn) {
+            var qid = parseInt(btn.getAttribute('data-question-id'), 10);
+            btn.classList.toggle('is-on', state.flags.has(qid));
+          });
+        }
+        function updatePrimaryActionUI() {
+          updateSubmitButton();
+        }
+        function unansweredCount() { return unansweredList().length; }
+        function syncChoiceStyles() {
+          panels.forEach(function (panel) {
+            panel.querySelectorAll('[data-choice-row]').forEach(function (row) {
+              var input = row.querySelector('input[type=radio]');
+              row.classList.toggle('selected', !!(input && input.checked));
+            });
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10);
+            panel.classList.toggle('is-answered', isQuestionAnsweredLocal(qid));
+          });
+        }
+        function renderNav(target) {
+          if (!target) return;
+          target.innerHTML = '';
+          panels.forEach(function (panel, idx) {
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10);
+            var answered = isQuestionAnsweredLocal(qid), flagged = state.flags.has(qid);
+            if (state.filter === 'flagged' && !flagged) return;
+            if (state.filter === 'unanswered' && answered) return;
+            var a = document.createElement('a');
+            a.href = '#q' + (idx + 1);
+            a.className = '';
+            if (idx === state.currentIndex) a.classList.add('current');
+            if (answered) a.classList.add('answered');
+            if (flagged) a.classList.add('flagged');
+            a.setAttribute('data-question-id', String(qid));
+            a.innerHTML = '<span class="q-num">' + (idx + 1) + '</span><span>Question ' + (idx + 1) + '</span>' +
+              (answered ? '<i class="bi bi-check-circle-fill q-check"></i>' : (flagged ? '<i class="bi bi-flag-fill q-check" style="color:#d97706"></i>' : ''));
+            a.addEventListener('click', function (e) {
+              e.preventDefault();
+              scrollToQuestion(idx, true);
+              closeMobileDrawer();
+            });
+            target.appendChild(a);
+          });
+        }
+        function renderNavigator() {
+          renderNav(navigatorEl);
+          renderNav(mobileNavEl);
+        }
+        function scrollToQuestion(i, intentional) {
+          i = Math.max(0, Math.min(totalQuestions - 1, i));
+          state.currentIndex = i;
+          scrollSyncFromClick = true;
+          clearTimeout(scrollSyncTimer);
+          scrollSyncTimer = setTimeout(function () { scrollSyncFromClick = false; }, 700);
+          var panel = panels[i];
+          if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try { panel.focus({ preventScroll: true }); } catch (e) {}
+          }
+          updateCounts();
+          renderNavigator();
+          queueStateSync();
+        }
+        function setCurrentIndex(i) {
+          scrollToQuestion(i, true);
+        }
+        function setCurrentIndexFromScroll(i) {
+          i = Math.max(0, Math.min(totalQuestions - 1, i));
+          if (i === state.currentIndex) return;
+          state.currentIndex = i;
+          updateCounts();
+          renderNavigator();
+          queueStateSync();
+        }
+        function findNextUnansweredAfter(fromIndex) {
+          for (var i = fromIndex + 1; i < panels.length; i++) {
+            var qid = parseInt(panels[i].getAttribute('data-question-id'), 10);
+            if (!isQuestionAnsweredLocal(qid)) return i;
+          }
+          for (var j = 0; j <= fromIndex; j++) {
+            var qid2 = parseInt(panels[j].getAttribute('data-question-id'), 10);
+            if (!isQuestionAnsweredLocal(qid2)) return j;
+          }
+          return -1;
+        }
+
+        var stateTimer = null;
+        function queueStateSync() {
+          if (stateTimer) clearTimeout(stateTimer);
+          stateTimer = setTimeout(function () {
+            request('sync_state', {
+              csrf_token: csrf,
+              attempt_id: attemptId,
+              current_index: state.currentIndex,
+              flags: JSON.stringify(Array.from(state.flags.values()))
+            }).catch(function () {});
+          }, 350);
+        }
+
+        function lockAnswerInputs() {
+          answersLocked = true;
+          form.querySelectorAll('input[type=radio]').forEach(function (inp) {
+            inp.disabled = true;
+          });
+        }
+
+        function awaitInflightSaves(maxWaitMs) {
+          maxWaitMs = typeof maxWaitMs === 'number' ? maxWaitMs : 2500;
+          var pending = Object.keys(inflightSaves).map(function (k) { return inflightSaves[k]; }).filter(Boolean);
+          if (!pending.length) return Promise.resolve();
+          return Promise.race([
+            Promise.allSettled(pending),
+            new Promise(function (resolve) { setTimeout(resolve, maxWaitMs); })
+          ]);
+        }
+
+        function saveAnswer(qid, value, fromIndex, attempt) {
+          attempt = attempt || 1;
+          if (answersLocked || state.submitting) {
+            return Promise.resolve(null);
+          }
+          if (attempt > 1) showWarnToast('Unable to save — retrying...', 'warning');
+          else if (warnToast) warnToast.classList.remove('show');
+          var p = request('save_answer', {
+            csrf_token: csrf,
+            attempt_id: attemptId,
+            question_id: qid,
+            selected_answer: value
+          }).then(function (data) {
+            if (!data || !data.ok) throw new Error((data && data.error) || 'Save failed');
+            setConn(true, attempt > 1);
+            showSavedToast('Answer saved');
+            var wasAnswered = state.answered.has(qid);
+            state.answered.add(qid);
+            syncChoiceStyles();
+            updateCounts();
+            renderNavigator();
+            // Auto-advance only after first successful answer (changing an answer does not yank the page).
+            if (!wasAnswered && typeof fromIndex === 'number' && fromIndex >= 0) {
+              var nextIdx = findNextUnansweredAfter(fromIndex);
+              if (nextIdx >= 0 && nextIdx !== fromIndex) {
+                setTimeout(function () { scrollToQuestion(nextIdx, false); }, 180);
+              } else if (unansweredCount() === 0) {
+                var submitCard = document.querySelector('.exam-submit-card');
+                if (submitCard) submitCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }
+            return data;
+          }).catch(function () {
+            setConn(false);
+            if (answersLocked || state.submitting) return null;
+            if (attempt < 4) {
+              clearTimeout(saveRetryTimers[qid]);
+              saveRetryTimers[qid] = setTimeout(function () { saveAnswer(qid, value, fromIndex, attempt + 1); }, 450 * attempt);
+              showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
+            } else {
+              showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
+            }
+            return null;
+          }).finally(function () {
+            if (inflightSaves[qid] === p) delete inflightSaves[qid];
+          });
+          inflightSaves[qid] = p;
+          return p;
+        }
+
+        function flushAllLocalAnswers() {
+          // Prefer one submit payload over N round-trips (faster + survives flaky saves).
+          return Promise.resolve({ ok: true, answers: localAnswersPayload() });
+        }
+
+        function openTimeUpModal() {
+          var sm = document.getElementById('submitConfirmModal');
+          if (sm) { sm.classList.add('hidden'); sm.classList.remove('flex'); }
+          var m = document.getElementById('timeUpModal');
+          if (!m) return;
+          m.classList.remove('hidden'); m.classList.add('flex');
+        }
+        function closeTimeUpModal() {
+          var m = document.getElementById('timeUpModal');
+          if (!m) return;
+          m.classList.add('hidden'); m.classList.remove('flex');
+        }
+
+        function postSubmitPayload(reason, answersJson, useKeepalive) {
+          var body = new URLSearchParams();
+          body.set('action', 'submit');
+          body.set('csrf_token', csrf);
+          body.set('attempt_id', String(attemptId));
+          body.set('reason', reason || 'manual');
+          body.set('answers', answersJson || '[]');
+          var opts = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body,
+            credentials: 'same-origin'
+          };
+          if (useKeepalive) opts.keepalive = true;
+          return fetch(ajaxUrl, opts).then(function (r) {
+            return r.text().then(function (text) {
+              var data = null;
+              try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+              if (!r.ok) throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+              if (data === null) throw new Error('Invalid server response');
+              return data;
+            });
+          });
+        }
+
+        /** Time expired: lock inputs, await in-flight autosaves briefly, then one atomic timeout submit. */
+        function autoSubmitOnTimeUp(reason, attempt) {
+          reason = reason || 'timeout';
+          attempt = attempt || 1;
+          if (state.submitting && attempt === 1) return;
+          state.submitting = true;
+          countdown = 0;
+          lockAnswerInputs();
+          Object.keys(saveRetryTimers).forEach(function (k) {
+            clearTimeout(saveRetryTimers[k]);
+            delete saveRetryTimers[k];
+          });
+          openTimeUpModal();
+          window.onbeforeunload = null;
+
+          awaitInflightSaves(2500).then(function () {
+            var answersJson = JSON.stringify(localAnswersPayload());
+            // Prefer waiting for server confirmation over keepalive fire-and-forget.
+            return postSubmitPayload(reason, answersJson, false);
+          }).then(function (data) {
+            if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
+            clearAnswerBackup();
+            window.location.href = 'college_diagnostic_take?batch_id=' + batchId + '&review=1&reason=' + encodeURIComponent(reason);
+          }).catch(function () {
+            if (attempt < 8) {
+              setTimeout(function () {
+                state.submitting = false;
+                autoSubmitOnTimeUp(reason, attempt + 1);
+              }, Math.min(8000, 900 * attempt));
+            } else {
+              state.submitting = false;
+              showWarnToast('Time is up but submit failed. Retrying… check your connection.', 'danger');
+              setTimeout(function () {
+                autoSubmitOnTimeUp(reason, 1);
+              }, 5000);
+            }
+          });
+        }
+
+        function submitNow(reason) {
+          if (state.submitting) return;
+          var isTimeout = (reason === 'timeout' || reason === 'timeout-sync');
+          if (isTimeout) {
+            autoSubmitOnTimeUp(reason);
+            return;
+          }
+          if (unansweredCount() > 0) {
+            var miss = unansweredList();
+            var msg = 'Please answer all questions before submitting the exam.';
+            if (miss.length) {
+              var qLabel;
+              if (miss.length === 1) qLabel = 'Question ' + miss[0];
+              else if (miss.length === 2) qLabel = 'Questions ' + miss[0] + ' and ' + miss[1];
+              else qLabel = 'Questions ' + miss.slice(0, -1).join(', ') + ', and ' + miss[miss.length - 1];
+              msg += ' ' + miss.length + ' question' + (miss.length === 1 ? '' : 's') + ' unanswered: ' + qLabel + '.';
+            }
+            if (submitIncompleteHint) {
+              submitIncompleteHint.textContent = msg;
+              submitIncompleteHint.classList.remove('hidden');
+            }
+            showWarnToast(msg, 'danger');
+            var firstMiss = miss.length ? miss[0] - 1 : 0;
+            scrollToQuestion(firstMiss, true);
+            return;
+          }
+          state.submitting = true;
+          var overlay = document.getElementById('quizSubmitOverlay');
+          if (overlay) overlay.classList.add('show');
+          flushAllLocalAnswers().then(function () {
+            var answersJson = JSON.stringify(localAnswersPayload());
+            return postSubmitPayload(reason || 'manual', answersJson, false);
+          }).then(function (data) {
+            if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
+            clearAnswerBackup();
+            window.onbeforeunload = null;
+            window.location.href = 'college_diagnostic_take?batch_id=' + batchId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
+          }).catch(function (err) {
+            state.submitting = false;
+            if (overlay) overlay.classList.remove('show');
+            var msg = (err && err.message) ? err.message : 'Submit failed';
+            if (submitIncompleteHint) {
+              submitIncompleteHint.textContent = msg;
+              submitIncompleteHint.classList.remove('hidden');
+            }
+            showWarnToast(msg, 'danger');
+            alert('Could not submit exam. ' + msg);
+          });
+        }
+
+        form.querySelectorAll('input[type=radio]').forEach(function (inp) {
+          inp.addEventListener('change', function () {
+            if (answersLocked || state.submitting) return;
+            var qid = parseInt(inp.getAttribute('data-question-id'), 10);
+            if (!qid) return;
+            var panel = inp.closest('[data-question-panel]');
+            var fromIndex = panel ? parseInt(panel.getAttribute('data-index'), 10) : -1;
+            // Reflect selection immediately (even if autosave is slow/offline).
+            persistAnswerBackup(qid, inp.value);
+            syncChoiceStyles();
+            updateCounts();
+            renderNavigator();
+            saveAnswer(qid, inp.value, fromIndex);
+          });
+        });
+
+        // Restore selections from local backup when autosave previously failed.
+        (function restoreAnswerBackup() {
+          var map = {};
+          try {
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') map = parsed;
+            }
+          } catch (e) { return; }
+          Object.keys(map).forEach(function (qidStr) {
+            var qid = parseInt(qidStr, 10);
+            var val = String(map[qidStr] || '').toUpperCase();
+            if (!qid || !/^[A-Z]$/.test(val)) return;
+            var inp = form.querySelector('input[type=radio][data-question-id="' + qid + '"][value="' + val + '"]');
+            if (inp && !inp.checked) {
+              inp.checked = true;
+            }
+          });
+          syncChoiceStyles();
+          updateCounts();
+          renderNavigator();
+        })();
+        document.querySelectorAll('.flagBtn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var qid = parseInt(btn.getAttribute('data-question-id'), 10);
+            if (!qid) return;
+            if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
+            updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
+          });
+        });
+        document.querySelectorAll('[data-choice-row]').forEach(function (row) {
+          row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              var input = row.querySelector('input[type=radio]');
+              if (input) { input.checked = true; input.dispatchEvent(new Event('change', { bubbles: true })); }
+            }
+          });
+        });
+
+        function tryOpenSubmit() {
+          if (unansweredCount() > 0) {
+            submitNow('manual');
+            return;
+          }
+          openSubmitModal();
+        }
+        if (submitExamBtn) submitExamBtn.addEventListener('click', tryOpenSubmit);
+        if (mSubmitBtn) mSubmitBtn.addEventListener('click', tryOpenSubmit);
+        document.getElementById('mFlagBtn').addEventListener('click', function () {
+          var p = panels[state.currentIndex]; if (!p) return;
+          var qid = parseInt(p.getAttribute('data-question-id'), 10); if (!qid) return;
+          if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
+          updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
+        });
+        document.querySelectorAll('.exam-filter-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            state.filter = btn.getAttribute('data-filter') || 'all';
+            document.querySelectorAll('.exam-filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+            btn.classList.add('is-active');
+            renderNavigator();
+          });
+        });
+        var qListSection = document.getElementById('examQListSection');
+        var qListTrigger = document.getElementById('examQListTrigger');
+        if (qListTrigger && qListSection) {
+          qListTrigger.addEventListener('click', function () {
+            qListSection.classList.toggle('collapsed');
+            qListTrigger.setAttribute('aria-expanded', qListSection.classList.contains('collapsed') ? 'false' : 'true');
+          });
+        }
+
+        var submitModal = document.getElementById('submitConfirmModal');
+        function openSubmitModal() {
+          if (unansweredCount() > 0) {
+            submitNow('manual');
+            return;
+          }
+          state.submitConfirmStep = 0;
+          document.getElementById('doubleConfirmHint').classList.add('hidden');
+          var answeredN = totalQuestions - unansweredCount();
+          document.getElementById('sumAnswered').textContent = String(answeredN);
+          var u = unansweredCount();
+          document.getElementById('sumUnanswered').textContent = String(u);
+          document.getElementById('sumFlagged').textContent = String(state.flags.size);
+          document.getElementById('sumTimeRemaining').textContent = fmtTime(countdown);
+          var ban = document.getElementById('submitUnansweredBanner');
+          var nums = document.getElementById('submitUnansweredNums');
+          if (ban && nums) {
+            ban.classList.remove('submit-unanswered-ok', 'submit-unanswered-warn');
+            if (u === 0) {
+              ban.classList.add('submit-unanswered-ok');
+              nums.classList.add('hidden');
+              nums.textContent = '';
+            } else {
+              ban.classList.add('submit-unanswered-warn');
+              nums.textContent = 'Unanswered question #' + unansweredList().join(', #');
+              nums.classList.remove('hidden');
+            }
+          }
+          submitModal.classList.remove('hidden'); submitModal.classList.add('flex');
+        }
+        function closeSubmitModal() { submitModal.classList.add('hidden'); submitModal.classList.remove('flex'); }
+        document.getElementById('closeSubmitModalBtn').addEventListener('click', closeSubmitModal);
+        document.getElementById('reviewUnansweredBtn').addEventListener('click', function () {
+          closeSubmitModal();
+          state.filter = 'unanswered';
+          document.querySelectorAll('.exam-filter-btn').forEach(function (b) {
+            b.classList.toggle('is-active', b.getAttribute('data-filter') === 'unanswered');
+          });
+          renderNavigator();
+          var idx = panels.findIndex(function (p) {
+            return !isQuestionAnsweredLocal(parseInt(p.getAttribute('data-question-id'), 10));
+          });
+          if (idx >= 0) setCurrentIndex(idx);
+        });
+        document.getElementById('confirmSubmitBtn').addEventListener('click', function () {
+          if (state.submitConfirmStep === 0) {
+            state.submitConfirmStep = 1;
+            document.getElementById('doubleConfirmHint').classList.remove('hidden');
+            return;
+          }
+          closeSubmitModal();
+          submitNow('manual');
+        });
+
+        var shortcutsModal = document.getElementById('shortcutsModal');
+        function openShortcuts() { shortcutsModal.classList.remove('hidden'); shortcutsModal.classList.add('flex'); }
+        function closeShortcuts() { shortcutsModal.classList.add('hidden'); shortcutsModal.classList.remove('flex'); }
+        var closeShortcutsBtn = document.getElementById('closeShortcutsBtn');
+        if (closeShortcutsBtn) closeShortcutsBtn.addEventListener('click', closeShortcuts);
+
+        function openMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.remove('hidden'); }
+        function closeMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.add('hidden'); }
+        document.getElementById('mIndexBtn').addEventListener('click', openMobileDrawer);
+        document.getElementById('closeMobileDrawerBtn').addEventListener('click', closeMobileDrawer);
+        document.getElementById('mobileIndexDrawer').addEventListener('click', function (e) { if (e.target === e.currentTarget) closeMobileDrawer(); });
+
+        document.addEventListener('keydown', function (e) {
+          if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+          if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openShortcuts(); return; }
+          if (e.key === 'n' || e.key === 'N') {
+            e.preventDefault();
+            if (state.currentIndex < totalQuestions - 1) setCurrentIndex(state.currentIndex + 1);
+            else {
+              var submitCardJump = document.querySelector('.exam-submit-card');
+              if (submitCardJump) submitCardJump.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+          if (e.key === 'p' || e.key === 'P') {
+            e.preventDefault();
+            setCurrentIndex(state.currentIndex - 1);
+          }
+          if (e.key === 'f' || e.key === 'F') {
+            var panel = panels[state.currentIndex]; if (!panel) return;
+            var qid = parseInt(panel.getAttribute('data-question-id'), 10); if (!qid) return;
+            if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
+            updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
+          }
+          if (/^[1-9]$/.test(e.key)) {
+            var panel2 = panels[state.currentIndex]; if (!panel2) return;
+            var radios = panel2.querySelectorAll('input[type=radio]');
+            var idx = parseInt(e.key, 10) - 1;
+            if (radios[idx]) { radios[idx].checked = true; radios[idx].dispatchEvent(new Event('change', { bubbles: true })); }
+          }
+        });
+
+        if ('IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (entries) {
+            if (scrollSyncFromClick) return;
+            var best = null;
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              if (!best || entry.intersectionRatio > best.intersectionRatio) best = entry;
+            });
+            if (!best || !best.target) return;
+            var idx = parseInt(best.target.getAttribute('data-index'), 10);
+            if (isFinite(idx)) setCurrentIndexFromScroll(idx);
+          }, { root: null, rootMargin: '-20% 0px -55% 0px', threshold: [0.15, 0.35, 0.55] });
+          panels.forEach(function (p) {
+            p.setAttribute('tabindex', '-1');
+            io.observe(p);
+          });
+        }
+
+        var leaveModal = document.getElementById('leaveConfirmModal');
+        var leaveTargetUrl = '';
+        function openLeaveModal(url) {
+          leaveTargetUrl = url || '';
+          leaveModal.classList.remove('hidden'); leaveModal.classList.add('flex');
+        }
+        function closeLeaveModal() {
+          leaveTargetUrl = '';
+          leaveModal.classList.add('hidden'); leaveModal.classList.remove('flex');
+        }
+        document.getElementById('stayOnExamBtn').addEventListener('click', closeLeaveModal);
+        document.getElementById('leaveExamBtn').addEventListener('click', function () {
+          state.submitting = true;
+          if (leaveTargetUrl) window.location.href = leaveTargetUrl;
+        });
+        leaveModal.addEventListener('click', function (e) { if (e.target === e.currentTarget) closeLeaveModal(); });
+        document.querySelectorAll('a[href]').forEach(function (link) {
+          link.addEventListener('click', function (e) {
+            var href = link.getAttribute('href') || '';
+            if (!href || href[0] === '#' || /^javascript:/i.test(href)) return;
+            if (state.submitting) return;
+            if (link.hasAttribute('data-allow-leave')) return;
+            e.preventDefault();
+            openLeaveModal(link.href);
+          });
+        });
+        window.onbeforeunload = function () {
+          if (state.submitting) return;
+          return 'Your diagnostic exam is still in progress.';
+        };
+
+        function timerTick() {
+          if (countdown === null) {
+            if (timerValue) timerValue.textContent = '--:--';
+            return;
+          }
+          if (countdown <= 0) {
+            if (timerValue) timerValue.textContent = '0:00';
+            updateTimerVisual();
+            autoSubmitOnTimeUp('timeout');
+            return;
+          }
+          updateTimerVisual();
+          countdown--;
+          setTimeout(timerTick, 1000);
+        }
+
+        var timeSyncTimer = null;
+        var timeSyncMs = 15000;
+        function runTimeSyncTick() {
+          if (state.submitting) return;
+          request('get_time', { attempt_id: attemptId }).then(function (data) {
+            if (data && data.ok && data.remaining_seconds !== null && data.remaining_seconds !== undefined) {
+              countdown = Math.max(0, parseInt(data.remaining_seconds, 10) || 0);
+              if (countdown <= 0) {
+                autoSubmitOnTimeUp('timeout-sync');
+                return;
+              }
+              updateTimerVisual();
+              // Poll faster in the last minute so server clock wins over drift.
+              if (countdown <= 60 && timeSyncMs > 5000) {
+                scheduleTimeSync(5000);
+              }
+            }
+          }).catch(function () {});
+        }
+        function scheduleTimeSync(ms) {
+          if (typeof ms === 'number' && ms > 0) timeSyncMs = ms;
+          if (timeSyncTimer) clearInterval(timeSyncTimer);
+          timeSyncTimer = setInterval(runTimeSyncTick, timeSyncMs);
+        }
+
+        request('load_state', { csrf_token: csrf, attempt_id: attemptId }).then(function (data) {
+          if (data && data.ok && data.state) {
+            var s = data.state;
+            if (Array.isArray(s.flags)) state.flags = new Set(s.flags.map(function (v) { return parseInt(v, 10); }).filter(function (v) { return v > 0; }));
+            if (typeof s.current_index === 'number' && isFinite(s.current_index)) {
+              state.currentIndex = Math.max(0, Math.min(totalQuestions - 1, s.current_index));
+            }
+          }
+        }).catch(function () {})
+          .finally(function () {
+            updateCounts();
+            syncChoiceStyles();
+            updatePrimaryActionUI();
+            renderNavigator();
+            // Resume focus without forcing a jarring scroll to Q1 when already mid-page.
+            if (state.currentIndex > 0 && panels[state.currentIndex]) {
+              scrollToQuestion(state.currentIndex, true);
+            }
+            if (countdown !== null && countdown <= 0) {
+              autoSubmitOnTimeUp('timeout');
+            } else {
+              timerTick();
+              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 15000);
+            }
+            setInterval(function () { if (!state.submitting) queueStateSync(); }, 15000);
+          });
+      })();
+      </script>
+
+    <?php else: ?>
+      <p class="text-gray-600 mt-6">Unable to load this diagnostic exam.</p>
     <?php endif; ?>
-    <a href="college_exams" class="cer-back"><i class="bi bi-arrow-left"></i> Back to exams</a>
   </div>
-
-  <?php elseif ($attempt && $attemptStatus === 'in_progress'): ?>
-  <div class="exam-toolbar flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <div id="subjectLabel" class="font-bold text-[#143D59]">—</div>
-      <div id="progressLabel" class="text-xs text-gray-500">—</div>
-    </div>
-    <div class="flex items-center gap-2">
-      <span id="timerBadge" class="time-badge">—</span>
-      <button type="button" id="submitBtn" class="action-btn action-next">Submit diagnostic</button>
-    </div>
-  </div>
-
-  <div class="exam-grid">
-    <div class="diag-card p-5">
-      <div id="questionText" class="text-base leading-relaxed mb-4"></div>
-      <div id="choicesWrap"></div>
-      <div class="flex justify-between mt-4">
-        <button type="button" id="prevBtn" class="action-btn action-prev">Previous</button>
-        <button type="button" id="nextBtn" class="action-btn action-next">Next</button>
-      </div>
-    </div>
-    <aside class="diag-card p-4">
-      <h3 class="text-sm font-bold text-[#143D59] mt-0">Subjects</h3>
-      <div id="subjectNav" class="flex flex-wrap gap-1 mb-3"></div>
-      <h3 class="text-sm font-bold text-[#143D59]">Progress</h3>
-      <div id="questionGrid" class="grid grid-cols-6 gap-1 mt-2"></div>
-    </aside>
-  </div>
-
-  <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-xl p-5 max-w-md w-full">
-      <h3 class="font-bold text-lg m-0">Submit diagnostic?</h3>
-      <p id="submitSummary" class="text-sm text-gray-600 mt-2"></p>
-      <div class="flex justify-end gap-2 mt-4">
-        <button type="button" id="cancelSubmit" class="action-btn action-prev">Cancel</button>
-        <button type="button" id="confirmSubmit" class="action-btn action-next">Submit now</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-  (function(){
-    var questions = <?php echo json_encode($questionsForJs, JSON_UNESCAPED_UNICODE); ?>;
-    var subjectNav = <?php echo json_encode($subjectNavList, JSON_UNESCAPED_UNICODE); ?>;
-    var answers = <?php echo json_encode($initialAnswers, JSON_UNESCAPED_UNICODE); ?>;
-    var attemptId = <?php echo (int)($attempt['attempt_id'] ?? 0); ?>;
-    var csrf = <?php echo json_encode($csrf); ?>;
-    var ajaxUrl = 'college_diagnostic_ajax';
-    var idx = <?php echo (int)($savedUiState['current_index'] ?? 0); ?>;
-    var flags = <?php echo json_encode($savedUiState['flags'] ?? [], JSON_UNESCAPED_UNICODE); ?>;
-    var remaining = <?php echo $remainingSeconds !== null ? (int)$remainingSeconds : 'null'; ?>;
-
-    function escHtml(s){ var d=document.createElement('div'); d.innerHTML=s||''; return d.innerHTML; }
-    function qBySubjectPos(i){
-      var q=questions[i]; if(!q) return {sub:0, pos:0, total:0};
-      var nav=subjectNav.find(function(n){ return n.subject_id===q.subject_id; });
-      var start=nav?nav.start_index:0;
-      return { sub: q.subject_id, pos: i-start+1, total: nav?nav.count:0, code: q.subject_code };
-    }
-    function render(){
-      var q=questions[idx]; if(!q) return;
-      var meta=qBySubjectPos(idx);
-      document.getElementById('subjectLabel').textContent=meta.code+' — Question '+meta.pos+' of '+meta.total;
-      document.getElementById('progressLabel').textContent='Overall '+(idx+1)+' / '+questions.length;
-      document.getElementById('questionText').innerHTML=escHtml(q.question_text);
-      var wrap=document.getElementById('choicesWrap'); wrap.innerHTML='';
-      ['A','B','C','D'].forEach(function(L){
-        var key='choice_'+L.toLowerCase(); var val=q[key]||'';
-        if(!val) return;
-        var sel=(answers[q.question_id]||'')===L;
-        var row=document.createElement('label');
-        row.className='exam-choice'+(sel?' selected':'');
-        row.innerHTML='<input type="radio" class="sr-only" name="ans" value="'+L+'"'+(sel?' checked':'')+'>'+
-          '<span class="exam-choice-letter">'+L+'</span>'+
-          '<div class="exam-choice-text">'+escHtml(val)+'</div>'+
-          '<span class="exam-choice-check" aria-hidden="true"><i class="bi bi-check"></i></span>';
-        row.onclick=function(e){ if(e.target.tagName!=='INPUT') row.querySelector('input').checked=true; saveAnswer(L); render(); };
-        row.querySelector('input').onchange=function(){ saveAnswer(L); render(); };
-        wrap.appendChild(row);
-      });
-      document.getElementById('prevBtn').disabled=idx<=0;
-      document.getElementById('nextBtn').disabled=idx>=questions.length-1;
-      renderSubjectNav(); renderGrid();
-    }
-    function renderSubjectNav(){
-      var el=document.getElementById('subjectNav'); el.innerHTML='';
-      var cur=questions[idx]?questions[idx].subject_id:0;
-      subjectNav.forEach(function(s){
-        var b=document.createElement('button');
-        b.type='button'; b.className='subject-pill'+(s.subject_id===cur?' is-active':'');
-        b.textContent=s.subject_code;
-        b.onclick=function(){ idx=s.start_index; syncState(); render(); };
-        el.appendChild(b);
-      });
-    }
-    function renderGrid(){
-      var g=document.getElementById('questionGrid'); g.innerHTML='';
-      questions.forEach(function(q,i){
-        var b=document.createElement('button');
-        b.type='button';
-        var cls='qchip';
-        if(i===idx) cls+=' qchip-current';
-        if(answers[q.question_id]) cls+=' qchip-answered';
-        b.className=cls; b.textContent=String(i+1);
-        b.onclick=function(){ idx=i; syncState(); render(); };
-        g.appendChild(b);
-      });
-    }
-    function saveAnswer(L){
-      answers[questions[idx].question_id]=L;
-      var fd=new FormData();
-      fd.append('action','save_answer'); fd.append('csrf_token',csrf);
-      fd.append('attempt_id',attemptId); fd.append('question_id',questions[idx].question_id);
-      fd.append('selected_answer',L);
-      fetch(ajaxUrl,{method:'POST',body:fd,credentials:'same-origin'});
-    }
-    function syncState(){
-      var fd=new FormData();
-      fd.append('action','sync_state'); fd.append('csrf_token',csrf);
-      fd.append('attempt_id',attemptId); fd.append('current_index',idx);
-      fd.append('flags',JSON.stringify(flags));
-      fetch(ajaxUrl,{method:'POST',body:fd,credentials:'same-origin'});
-    }
-    function tickTimer(){
-      if(remaining===null) return;
-      var el=document.getElementById('timerBadge');
-      if(remaining<=0){ el.textContent='Time up'; el.className='time-badge time-critical'; autoSubmit(); return; }
-      var m=Math.floor(remaining/60), s=remaining%60;
-      el.textContent=m+':'+(s<10?'0':'')+s;
-      if(remaining<=300) el.className='time-badge time-critical';
-      remaining--;
-    }
-    function autoSubmit(){ confirmSubmit(true); }
-    function confirmSubmit(force){
-      var fd=new FormData();
-      fd.append('action','submit'); fd.append('csrf_token',csrf); fd.append('attempt_id',attemptId);
-      fetch(ajaxUrl,{method:'POST',body:fd,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
-        if(j.ok) window.location='college_diagnostic_take?batch_id=<?php echo (int)$batchId; ?>&review=1';
-        else if(!force) alert(j.error||'Submit failed');
-      });
-    }
-    document.getElementById('prevBtn').onclick=function(){ if(idx>0){ idx--; syncState(); render(); } };
-    document.getElementById('nextBtn').onclick=function(){ if(idx<questions.length-1){ idx++; syncState(); render(); } };
-    document.getElementById('submitBtn').onclick=function(){
-      var ans=Object.keys(answers).length;
-      document.getElementById('submitSummary').textContent='Answered '+ans+' of '+questions.length+' questions.';
-      document.getElementById('submitModal').classList.remove('hidden');
-    };
-    document.getElementById('cancelSubmit').onclick=function(){ document.getElementById('submitModal').classList.add('hidden'); };
-    document.getElementById('confirmSubmit').onclick=function(){ document.getElementById('submitModal').classList.add('hidden'); confirmSubmit(false); };
-    document.addEventListener('visibilitychange',function(){
-      if(document.hidden){
-        var fd=new FormData(); fd.append('action','tab_blur'); fd.append('csrf_token',csrf); fd.append('attempt_id',attemptId);
-        fetch(ajaxUrl,{method:'POST',body:fd,credentials:'same-origin'});
-      }
-    });
-    // Heartbeat via sync_state every 15s (parity with regular exam)
-    setInterval(function(){ syncState(); }, 15000);
-    render(); setInterval(tickTimer,1000); tickTimer();
-  })();
-  </script>
-  <?php else: ?>
-  <div class="diag-card p-6"><p class="text-gray-600 m-0">Unable to load diagnostic session.</p></div>
-  <?php endif; ?>
-</main>
 </body>
 </html>

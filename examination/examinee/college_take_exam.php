@@ -541,21 +541,30 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               <?php foreach ($questions as $index => $q): ?>
                 <?php
                   $qid = (int)$q['question_id'];
-                  $letters = ['A' => $q['choice_a'], 'B' => $q['choice_b'], 'C' => $q['choice_c'], 'D' => $q['choice_d']];
+                  $displayChoices = college_exam_question_display_choices($q);
+                  $isTfQ = college_exam_question_type_is_tf((string)($q['question_type'] ?? ''));
                   $prev = strtoupper((string)($answersMap[$qid]['selected_answer'] ?? ''));
                 ?>
-                <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" id="q<?php echo ($index + 1); ?>">
+                <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" data-question-type="<?php echo $isTfQ ? 'tf' : 'mcq'; ?>" id="q<?php echo ($index + 1); ?>">
                   <div class="flex items-start justify-between gap-3 mb-2">
                     <div class="exam-question-label m-0">Question <?php echo ($index + 1); ?> of <?php echo $qTotal; ?> <span class="exam-answered-pill" aria-hidden="true">✓</span></div>
                     <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Flag question <?php echo ($index + 1); ?>"><i class="bi bi-flag"></i> Flag</button>
                   </div>
                   <div class="exam-question-text exam-no-copy quiz-rich-text"><?php echo renderQuizRichText($q['question_text']); ?></div>
                   <div class="exam-choices">
-                    <?php foreach ($letters as $L => $txt): if ($txt === null || $txt === '') { continue; } ?>
+                    <?php foreach ($displayChoices as $choice): ?>
+                      <?php
+                        $L = $choice['letter'];
+                        $label = $choice['label'];
+                        $showLetter = !empty($choice['show_letter']);
+                        $aria = $showLetter ? ('Choice ' . $L) : $label;
+                      ?>
                       <label class="exam-choice focus-ring exam-no-copy <?php echo $prev === $L ? 'selected' : ''; ?>" data-choice-row tabindex="0">
-                        <input type="radio" class="sr-only" name="q_<?php echo $qid; ?>" value="<?php echo h($L); ?>" data-question-id="<?php echo $qid; ?>" <?php echo $prev === $L ? 'checked' : ''; ?> aria-label="Choice <?php echo h($L); ?>">
-                        <span class="exam-choice-letter"><?php echo h($L); ?></span>
-                        <div class="exam-choice-text"><?php echo nl2br(h($txt)); ?></div>
+                        <input type="radio" class="sr-only" name="q_<?php echo $qid; ?>" value="<?php echo h($L); ?>" data-question-id="<?php echo $qid; ?>" <?php echo $prev === $L ? 'checked' : ''; ?> aria-label="<?php echo h($aria); ?>">
+                        <?php if ($showLetter): ?>
+                          <span class="exam-choice-letter"><?php echo h($L); ?></span>
+                        <?php endif; ?>
+                        <div class="exam-choice-text"><?php echo $showLetter ? nl2br(h($label)) : h($label); ?></div>
                         <span class="exam-choice-check" aria-hidden="true"><i class="bi bi-check"></i></span>
                       </label>
                     <?php endforeach; ?>
@@ -778,6 +787,8 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         var examPageReadyAt = Date.now();
         var warned5 = false, warned1 = false, warned30 = false;
         var saveRetryTimers = {};
+        var inflightSaves = {};
+        var answersLocked = false;
         var scrollSyncFromClick = false;
         var scrollSyncTimer = null;
 
@@ -837,6 +848,19 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
 
         function getLocalAnswersMap() {
           var map = {};
+          // Merge durable local backup first, then overlay current radio selections.
+          try {
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') {
+                Object.keys(parsed).forEach(function (qid) {
+                  var v = String(parsed[qid] || '').toUpperCase();
+                  if (/^[A-D]$/.test(v)) map[parseInt(qid, 10)] = v;
+                });
+              }
+            }
+          } catch (e) {}
           panels.forEach(function (panel) {
             var qid = parseInt(panel.getAttribute('data-question-id'), 10);
             if (!qid) return;
@@ -846,6 +870,24 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             }
           });
           return map;
+        }
+        function answerBackupKey() {
+          return 'ereview_exam_answers_' + attemptId;
+        }
+        function persistAnswerBackup(qid, value) {
+          try {
+            var map = {};
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') map = parsed;
+            }
+            map[String(qid)] = String(value).toUpperCase();
+            localStorage.setItem(answerBackupKey(), JSON.stringify(map));
+          } catch (e) {}
+        }
+        function clearAnswerBackup() {
+          try { localStorage.removeItem(answerBackupKey()); } catch (e) {}
         }
         function localAnswersPayload() {
           var map = getLocalAnswersMap();
@@ -1183,11 +1225,31 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           }, 350);
         }
 
+        function lockAnswerInputs() {
+          answersLocked = true;
+          form.querySelectorAll('input[type=radio]').forEach(function (inp) {
+            inp.disabled = true;
+          });
+        }
+
+        function awaitInflightSaves(maxWaitMs) {
+          maxWaitMs = typeof maxWaitMs === 'number' ? maxWaitMs : 2500;
+          var pending = Object.keys(inflightSaves).map(function (k) { return inflightSaves[k]; }).filter(Boolean);
+          if (!pending.length) return Promise.resolve();
+          return Promise.race([
+            Promise.allSettled(pending),
+            new Promise(function (resolve) { setTimeout(resolve, maxWaitMs); })
+          ]);
+        }
+
         function saveAnswer(qid, value, fromIndex, attempt) {
           attempt = attempt || 1;
+          if (answersLocked || state.submitting) {
+            return Promise.resolve(null);
+          }
           if (attempt > 1) showWarnToast('Unable to save — retrying...', 'warning');
           else if (warnToast) warnToast.classList.remove('show');
-          return request('save_answer', {
+          var p = request('save_answer', {
             csrf_token: csrf,
             attempt_id: attemptId,
             question_id: qid,
@@ -1214,6 +1276,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             return data;
           }).catch(function () {
             setConn(false);
+            if (answersLocked || state.submitting) return null;
             if (attempt < 4) {
               clearTimeout(saveRetryTimers[qid]);
               saveRetryTimers[qid] = setTimeout(function () { saveAnswer(qid, value, fromIndex, attempt + 1); }, 450 * attempt);
@@ -1222,7 +1285,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
             }
             return null;
+          }).finally(function () {
+            if (inflightSaves[qid] === p) delete inflightSaves[qid];
           });
+          inflightSaves[qid] = p;
+          return p;
         }
 
         function flushAllLocalAnswers() {
@@ -1268,23 +1335,30 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           });
         }
 
-        /** Time expired: save all on-screen answers then auto-submit (incomplete OK). */
+        /** Time expired: lock inputs, await in-flight autosaves briefly, then one atomic timeout submit. */
         function autoSubmitOnTimeUp(reason, attempt) {
           reason = reason || 'timeout';
           attempt = attempt || 1;
           if (state.submitting && attempt === 1) return;
           state.submitting = true;
           countdown = 0;
-          // Do NOT disable radios while time remains — students may change answers until 0:00.
-          // At time-up we only show the modal + submit; latest selections are included in the payload.
+          lockAnswerInputs();
+          Object.keys(saveRetryTimers).forEach(function (k) {
+            clearTimeout(saveRetryTimers[k]);
+            delete saveRetryTimers[k];
+          });
           openTimeUpModal();
           window.onbeforeunload = null;
-          var answersJson = JSON.stringify(localAnswersPayload());
-          postSubmitPayload(reason, answersJson, true).then(function (data) {
+
+          awaitInflightSaves(2500).then(function () {
+            var answersJson = JSON.stringify(localAnswersPayload());
+            // Prefer waiting for server confirmation over keepalive fire-and-forget.
+            return postSubmitPayload(reason, answersJson, false);
+          }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
+            clearAnswerBackup();
             window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason);
           }).catch(function () {
-            // Keep retrying — re-read latest selections each attempt (students may still adjust if modal is up).
             if (attempt < 8) {
               setTimeout(function () {
                 state.submitting = false;
@@ -1334,6 +1408,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             return postSubmitPayload(reason || 'manual', answersJson, false);
           }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
+            clearAnswerBackup();
             window.onbeforeunload = null;
             window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
           }).catch(function (err) {
@@ -1351,17 +1426,43 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
 
         form.querySelectorAll('input[type=radio]').forEach(function (inp) {
           inp.addEventListener('change', function () {
+            if (answersLocked || state.submitting) return;
             var qid = parseInt(inp.getAttribute('data-question-id'), 10);
             if (!qid) return;
             var panel = inp.closest('[data-question-panel]');
             var fromIndex = panel ? parseInt(panel.getAttribute('data-index'), 10) : -1;
             // Reflect selection immediately (even if autosave is slow/offline).
+            persistAnswerBackup(qid, inp.value);
             syncChoiceStyles();
             updateCounts();
             renderNavigator();
             saveAnswer(qid, inp.value, fromIndex);
           });
         });
+
+        // Restore selections from local backup when autosave previously failed.
+        (function restoreAnswerBackup() {
+          var map = {};
+          try {
+            var raw = localStorage.getItem(answerBackupKey());
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') map = parsed;
+            }
+          } catch (e) { return; }
+          Object.keys(map).forEach(function (qidStr) {
+            var qid = parseInt(qidStr, 10);
+            var val = String(map[qidStr] || '').toUpperCase();
+            if (!qid || !/^[A-D]$/.test(val)) return;
+            var inp = form.querySelector('input[type=radio][data-question-id="' + qid + '"][value="' + val + '"]');
+            if (inp && !inp.checked) {
+              inp.checked = true;
+            }
+          });
+          syncChoiceStyles();
+          updateCounts();
+          renderNavigator();
+        })();
         document.querySelectorAll('.flagBtn').forEach(function (btn) {
           btn.addEventListener('click', function () {
             var qid = parseInt(btn.getAttribute('data-question-id'), 10);

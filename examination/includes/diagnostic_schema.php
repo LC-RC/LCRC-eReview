@@ -162,3 +162,12 @@ foreach ($seeds as [$code, $name, $ord]) {
     $nEsc = mysqli_real_escape_string($conn, $name);
     @mysqli_query($conn, "INSERT IGNORE INTO diagnostic_subjects (subject_code, subject_name, sort_order, is_active) VALUES ('{$cEsc}', '{$nEsc}', " . (int)$ord . ", 1)");
 }
+
+/* Optional extra MCQ letters E+ (A–D remain in choice_a–d). Idempotent. */
+$chkExtra = @mysqli_query($conn, "SHOW COLUMNS FROM `diagnostic_questions` LIKE 'extra_choices_json'");
+if ($chkExtra && mysqli_num_rows($chkExtra) === 0) {
+    @mysqli_query($conn, "ALTER TABLE `diagnostic_questions` ADD COLUMN `extra_choices_json` LONGTEXT NULL COMMENT 'Optional MCQ choices E+ as JSON object' AFTER `choice_d`");
+}
+if ($chkExtra) {
+    mysqli_free_result($chkExtra);
+}

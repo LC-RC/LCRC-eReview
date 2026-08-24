@@ -70,6 +70,61 @@ function examination_questions_load_regular(mysqli $conn, int $examId): array
 }
 
 /**
+ * Decode optional E+ choices from diagnostic_questions.extra_choices_json.
+ *
+ * @return array<string,string> letter => text (E, F, …)
+ */
+function examination_questions_diagnostic_extra_choices_decode(?string $json): array
+{
+    return diagnostic_exam_extra_choices_decode($json);
+}
+
+/**
+ * @param array<string,mixed> $data
+ * @return array{ok:bool,error?:string,json?:?string,map?:array<string,string>}
+ */
+function examination_questions_diagnostic_extra_choices_normalize(array $data): array
+{
+    $raw = $data['extra_choices'] ?? ($data['extra_choices_json'] ?? null);
+    if (is_string($raw) && $raw !== '') {
+        $decoded = json_decode($raw, true);
+        $raw = is_array($decoded) ? $decoded : [];
+    }
+    if (!is_array($raw)) {
+        $raw = [];
+    }
+    $map = [];
+    foreach ($raw as $k => $v) {
+        $L = strtoupper(trim((string)$k));
+        if (!preg_match('/^[E-Z]$/', $L)) {
+            continue;
+        }
+        $text = trim((string)$v);
+        if ($text === '') {
+            continue;
+        }
+        $map[$L] = $text;
+    }
+    // Contiguous from E — no gaps (E then G without F)
+    $expected = 'E';
+    foreach ($map as $L => $_t) {
+        if ($L !== $expected) {
+            return ['ok' => false, 'error' => 'Extra choices must be contiguous starting at E (no gaps).'];
+        }
+        $expected = chr(ord($expected) + 1);
+        if ($expected > 'Z') {
+            break;
+        }
+    }
+    if ($map === []) {
+        return ['ok' => true, 'json' => null, 'map' => []];
+    }
+    ksort($map);
+
+    return ['ok' => true, 'json' => json_encode($map, JSON_UNESCAPED_UNICODE), 'map' => $map];
+}
+
+/**
  * @return array{authored:int,required:int,ok:bool,subjects:list<array>}
  */
 function examination_questions_diagnostic_supply(mysqli $conn, int $batchId): array
@@ -188,6 +243,13 @@ function examination_questions_normalize_regular_row(array $data, bool $strict):
     $d = trim((string)($data['choice_d'] ?? ''));
     $ok = strtoupper(trim((string)($data['correct_answer'] ?? '')));
     if ($type === 'tf') {
+        // Reject stale/extra C–D before normalizing storage to True/False + A/B.
+        if ($strict && ($c !== '' || $d !== '')) {
+            return [
+                'ok' => false,
+                'error' => 'True or False questions may only contain True and False choices. Leave choice C and D blank.',
+            ];
+        }
         $a = 'True';
         $b = 'False';
         $c = '';
@@ -201,11 +263,11 @@ function examination_questions_normalize_regular_row(array $data, bool $strict):
     } else {
         if ($strict) {
             if ($a === '' || $b === '') {
-                return ['ok' => false, 'error' => 'Enter at least choices A and B.'];
+                return ['ok' => false, 'error' => 'Multiple Choice questions require at least two choices (A and B).'];
             }
             // Compact trailing empty slots (C/D may be unused); do not allow gap after filled.
             if ($c === '' && $d !== '') {
-                return ['ok' => false, 'error' => 'Fill choice C before using choice D, or clear D.'];
+                return ['ok' => false, 'error' => 'Choice D cannot be filled while Choice C is empty.'];
             }
             if ($ok === '') {
                 return ['ok' => false, 'error' => 'Please select the correct answer.'];
@@ -215,7 +277,7 @@ function examination_questions_normalize_regular_row(array $data, bool $strict):
             }
             $map = ['A' => $a, 'B' => $b, 'C' => $c, 'D' => $d];
             if (trim((string)($map[$ok] ?? '')) === '') {
-                return ['ok' => false, 'error' => 'The correct answer must match a filled choice.'];
+                return ['ok' => false, 'error' => 'Correct answer must match one of the available choices.'];
             }
         } elseif (!preg_match('/^[A-D]$/', $ok)) {
             $ok = '';
@@ -337,31 +399,212 @@ function examination_questions_regular_delete_one(mysqli $conn, int $examId, int
 }
 
 /**
- * Append imported questions (legacy CSV/paste shape). Never delete-all.
+ * Validate one import row (regular or diagnostic). Friendly professor messages.
+ *
+ * @param array{question_text?:string,question_type?:string,choice_a?:string,choice_b?:string,choice_c?:string,choice_d?:string,correct_answer?:string} $data
+ * @return array{ok:bool,error?:string,row?:array}
+ */
+function examination_questions_validate_import_row(array $data, string $examType): array
+{
+    $examType = examination_normalize_exam_type($examType) ?: 'regular';
+    $type = strtolower(trim((string)($data['question_type'] ?? 'mcq')));
+    if ($type !== 'tf') {
+        $type = 'mcq';
+    }
+    if ($examType === 'diagnostic' && $type === 'tf') {
+        return [
+            'ok' => false,
+            'error' => 'Diagnostic examinations currently support Multiple Choice questions only.',
+        ];
+    }
+    $data['question_type'] = $type;
+
+    if ($examType === 'diagnostic') {
+        $qt = sanitizeQuizRichHtmlForStorage(trim((string)($data['question_text'] ?? '')));
+        if ($qt === '') {
+            return ['ok' => false, 'error' => 'Question text is required.'];
+        }
+        $a = trim((string)($data['choice_a'] ?? ''));
+        $b = trim((string)($data['choice_b'] ?? ''));
+        $c = trim((string)($data['choice_c'] ?? ''));
+        $d = trim((string)($data['choice_d'] ?? ''));
+        $cor = strtoupper(trim((string)($data['correct_answer'] ?? '')));
+        if ($a === '' || $b === '') {
+            return ['ok' => false, 'error' => 'Multiple Choice questions require at least two choices (A and B).'];
+        }
+        if ($c === '' && $d !== '') {
+            return ['ok' => false, 'error' => 'Choice D cannot be filled while Choice C is empty.'];
+        }
+        if ($cor === '' || !preg_match('/^[A-D]$/', $cor)) {
+            return ['ok' => false, 'error' => 'Please select the correct answer.'];
+        }
+        $map = ['A' => $a, 'B' => $b, 'C' => $c, 'D' => $d];
+        if (trim((string)($map[$cor] ?? '')) === '') {
+            return ['ok' => false, 'error' => 'Correct answer must match one of the available choices.'];
+        }
+
+        return [
+            'ok' => true,
+            'row' => [
+                'question_type' => 'mcq',
+                'question_text' => $qt,
+                'choice_a' => $a,
+                'choice_b' => $b,
+                'choice_c' => $c,
+                'choice_d' => $d,
+                'correct_answer' => $cor,
+            ],
+        ];
+    }
+
+    return examination_questions_normalize_regular_row($data, true);
+}
+
+/**
+ * Validate every import row. No database writes. Fail closed if any row is invalid.
  *
  * @param list<array> $rows
- * @return array{ok:bool,error?:string,imported?:int}
+ * @return array{ok:bool,detected:int,valid:int,invalid:int,errors:list<array{row:int,message:string}>,rows:list<array>,error?:string}
+ */
+function examination_questions_validate_import_all(array $rows, string $examType): array
+{
+    $errors = [];
+    $normalized = [];
+    $detected = 0;
+    foreach ($rows as $idx => $data) {
+        if (!is_array($data)) {
+            $errors[] = ['row' => $idx + 1, 'message' => 'Invalid question row.'];
+            continue;
+        }
+        $detected++;
+        $sourceRow = (int)($data['_source_row'] ?? ($idx + 1));
+        $res = examination_questions_validate_import_row($data, $examType);
+        if (empty($res['ok'])) {
+            $errors[] = [
+                'row' => $sourceRow > 0 ? $sourceRow : ($idx + 1),
+                'message' => (string)($res['error'] ?? 'Invalid question.'),
+            ];
+            continue;
+        }
+        $normalized[] = $res['row'];
+    }
+
+    $invalid = count($errors);
+    $valid = count($normalized);
+    if ($detected === 0) {
+        return [
+            'ok' => false,
+            'detected' => 0,
+            'valid' => 0,
+            'invalid' => 0,
+            'errors' => [['row' => 0, 'message' => 'No questions found to import.']],
+            'rows' => [],
+            'error' => 'No questions found to import.',
+        ];
+    }
+    if ($invalid > 0) {
+        return [
+            'ok' => false,
+            'detected' => $detected,
+            'valid' => $valid,
+            'invalid' => $invalid,
+            'errors' => $errors,
+            'rows' => [],
+            'error' => 'Some questions contain errors. Please fix them before importing.',
+        ];
+    }
+
+    return [
+        'ok' => true,
+        'detected' => $detected,
+        'valid' => $valid,
+        'invalid' => 0,
+        'errors' => [],
+        'rows' => $normalized,
+    ];
+}
+
+/**
+ * Append imported questions atomically. Validates ALL rows first; never partial-inserts.
+ *
+ * @param list<array> $rows
+ * @return array{ok:bool,error?:string,imported?:int,detected?:int,valid?:int,invalid?:int,errors?:list<array{row:int,message:string}>}
  */
 function examination_questions_regular_import_append(mysqli $conn, int $examId, int $professorId, array $rows): array
 {
     if ($examId <= 0 || examination_questions_mutations_locked($conn, 'regular', $examId)) {
         return ['ok' => false, 'error' => 'Questions are locked because this examination already has student attempts.'];
     }
-    $imported = 0;
-    foreach ($rows as $data) {
-        if (!is_array($data)) {
-            continue;
+    $own = @mysqli_query($conn, 'SELECT exam_id FROM college_exams WHERE exam_id=' . (int)$examId . ' AND created_by=' . (int)$professorId . ' LIMIT 1');
+    if (!$own || !mysqli_fetch_assoc($own)) {
+        if ($own) {
+            mysqli_free_result($own);
         }
-        $res = examination_questions_regular_save_one($conn, $examId, $professorId, 0, $data);
-        if (!empty($res['ok'])) {
-            $imported++;
-        }
+
+        return ['ok' => false, 'error' => 'Examination not found.'];
     }
-    if ($imported === 0) {
-        return ['ok' => false, 'error' => 'No valid questions to import.'];
+    mysqli_free_result($own);
+
+    $batch = examination_questions_validate_import_all($rows, 'regular');
+    if (empty($batch['ok'])) {
+        return $batch;
     }
 
-    return ['ok' => true, 'imported' => $imported];
+    $sort = 0;
+    $sr = @mysqli_query($conn, 'SELECT COALESCE(MAX(sort_order), -1) AS m FROM college_exam_questions WHERE exam_id=' . (int)$examId);
+    if ($sr && ($sm = mysqli_fetch_assoc($sr))) {
+        $sort = (int)($sm['m'] ?? -1) + 1;
+        mysqli_free_result($sr);
+    }
+
+    if (!mysqli_begin_transaction($conn)) {
+        return ['ok' => false, 'error' => 'Could not start import. Please try again.'];
+    }
+
+    $imported = 0;
+    try {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?)'
+        );
+        if (!$ins) {
+            throw new RuntimeException('prepare_failed');
+        }
+        foreach ($batch['rows'] as $row) {
+            $qtype = (string)$row['question_type'];
+            $qtext = (string)$row['question_text'];
+            $a = (string)$row['choice_a'];
+            $b = (string)$row['choice_b'];
+            $c = (string)$row['choice_c'];
+            $d = (string)$row['choice_d'];
+            $cor = (string)$row['correct_answer'];
+            mysqli_stmt_bind_param($ins, 'isssssssi', $examId, $qtype, $qtext, $a, $b, $c, $d, $cor, $sort);
+            if (!mysqli_stmt_execute($ins)) {
+                mysqli_stmt_close($ins);
+                throw new RuntimeException('insert_failed');
+            }
+            $sort++;
+            $imported++;
+        }
+        mysqli_stmt_close($ins);
+        if (!mysqli_commit($conn)) {
+            throw new RuntimeException('commit_failed');
+        }
+    } catch (Throwable $e) {
+        @mysqli_rollback($conn);
+        error_log('[examination_questions_regular_import] ' . $e->getMessage() . ' exam_id=' . $examId);
+
+        return ['ok' => false, 'error' => 'Import failed and no questions were added. Please try again.'];
+    }
+
+    return [
+        'ok' => true,
+        'imported' => $imported,
+        'detected' => (int)$batch['detected'],
+        'valid' => (int)$batch['valid'],
+        'invalid' => 0,
+        'errors' => [],
+    ];
 }
 
 /**
@@ -398,26 +641,58 @@ function examination_questions_diagnostic_save_one(mysqli $conn, int $batchId, i
     $d = trim((string)($data['choice_d'] ?? ''));
     $cor = strtoupper(trim((string)($data['correct_answer'] ?? '')));
     if ($a === '' || $b === '') {
-        return ['ok' => false, 'error' => 'Enter at least choices A and B.'];
+        return ['ok' => false, 'error' => 'Multiple Choice questions require at least two choices (A and B).'];
     }
     if ($c === '' && $d !== '') {
-        return ['ok' => false, 'error' => 'Fill choice C before using choice D, or clear D.'];
+        return ['ok' => false, 'error' => 'Choice D cannot be filled while Choice C is empty.'];
     }
-    if ($cor === '' || !preg_match('/^[A-D]$/', $cor)) {
+    $extraRes = examination_questions_diagnostic_extra_choices_normalize($data);
+    if (empty($extraRes['ok'])) {
+        return ['ok' => false, 'error' => (string)($extraRes['error'] ?? 'Invalid extra choices.')];
+    }
+    $extraMap = $extraRes['map'] ?? [];
+    $extraJson = $extraRes['json'] ?? null;
+    if ($extraJson === null) {
+        $extraJson = '';
+    }
+    if ($extraMap !== [] && $d === '') {
+        return ['ok' => false, 'error' => 'Fill choices A–D before adding E and beyond.'];
+    }
+    if ($cor === '' || !preg_match('/^[A-Z]$/', $cor)) {
         return ['ok' => false, 'error' => 'Please select the correct answer.'];
     }
-    $map = ['A' => $a, 'B' => $b, 'C' => $c, 'D' => $d];
+    $map = ['A' => $a, 'B' => $b, 'C' => $c, 'D' => $d] + $extraMap;
     if (trim((string)($map[$cor] ?? '')) === '') {
-        return ['ok' => false, 'error' => 'The correct answer must match a filled choice.'];
+        return ['ok' => false, 'error' => 'Correct answer must match one of the available choices.'];
     }
     $qtype = 'mcq';
 
+    $hasExtraCol = false;
+    $colChk = @mysqli_query($conn, "SHOW COLUMNS FROM `diagnostic_questions` LIKE 'extra_choices_json'");
+    if ($colChk && mysqli_num_rows($colChk) > 0) {
+        $hasExtraCol = true;
+    }
+    if ($colChk) {
+        mysqli_free_result($colChk);
+    }
+    if ($extraMap !== [] && !$hasExtraCol) {
+        return ['ok' => false, 'error' => 'Extra choices (E+) require a database update. Please reload and try again.'];
+    }
+
     if ($questionId > 0) {
-        $upd = mysqli_prepare(
-            $conn,
-            'UPDATE diagnostic_questions SET question_text=?, question_type=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=? WHERE question_id=? AND batch_id=? AND subject_id=?'
-        );
-        mysqli_stmt_bind_param($upd, 'sssssssiii', $qt, $qtype, $a, $b, $c, $d, $cor, $questionId, $batchId, $subjectId);
+        if ($hasExtraCol) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE diagnostic_questions SET question_text=?, question_type=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, extra_choices_json=?, correct_answer=? WHERE question_id=? AND batch_id=? AND subject_id=?'
+            );
+            mysqli_stmt_bind_param($upd, 'ssssssssiii', $qt, $qtype, $a, $b, $c, $d, $extraJson, $cor, $questionId, $batchId, $subjectId);
+        } else {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE diagnostic_questions SET question_text=?, question_type=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=? WHERE question_id=? AND batch_id=? AND subject_id=?'
+            );
+            mysqli_stmt_bind_param($upd, 'sssssssiii', $qt, $qtype, $a, $b, $c, $d, $cor, $questionId, $batchId, $subjectId);
+        }
         mysqli_stmt_execute($upd);
         mysqli_stmt_close($upd);
 
@@ -433,11 +708,19 @@ function examination_questions_diagnostic_save_one(mysqli $conn, int $batchId, i
         $sort = (int)($sm['m'] ?? 0) + 1;
         mysqli_free_result($sr);
     }
-    $ins = mysqli_prepare(
-        $conn,
-        'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
-    );
-    mysqli_stmt_bind_param($ins, 'iisssssssi', $batchId, $subjectId, $qt, $qtype, $a, $b, $c, $d, $cor, $sort);
+    if ($hasExtraCol) {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, extra_choices_json, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param($ins, 'iissssssssi', $batchId, $subjectId, $qt, $qtype, $a, $b, $c, $d, $extraJson, $cor, $sort);
+    } else {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param($ins, 'iisssssssi', $batchId, $subjectId, $qt, $qtype, $a, $b, $c, $d, $cor, $sort);
+    }
     mysqli_stmt_execute($ins);
     $newId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($ins);
@@ -463,29 +746,94 @@ function examination_questions_diagnostic_delete_one(mysqli $conn, int $batchId,
 }
 
 /**
+ * Append diagnostic questions atomically for one subject. Validate-all first.
+ *
  * @param list<array> $rows
- * @return array{ok:bool,error?:string,imported?:int}
+ * @return array{ok:bool,error?:string,imported?:int,detected?:int,valid?:int,invalid?:int,errors?:list<array{row:int,message:string}>}
  */
 function examination_questions_diagnostic_import_append(mysqli $conn, int $batchId, int $professorId, int $subjectId, array $rows): array
 {
     if ($batchId <= 0 || $subjectId <= 0 || examination_questions_mutations_locked($conn, 'diagnostic', $batchId)) {
         return ['ok' => false, 'error' => 'Questions are locked because this examination already has student attempts.'];
     }
-    $imported = 0;
-    foreach ($rows as $data) {
-        if (!is_array($data)) {
-            continue;
-        }
-        $res = examination_questions_diagnostic_save_one($conn, $batchId, $professorId, $subjectId, 0, $data);
-        if (!empty($res['ok'])) {
-            $imported++;
+    $batch = diagnostic_exam_load_batch($conn, $batchId, $professorId);
+    if (!$batch) {
+        return ['ok' => false, 'error' => 'Examination not found.'];
+    }
+    $onBatch = false;
+    foreach (diagnostic_exam_load_batch_subjects($conn, $batchId) as $bs) {
+        if ((int)($bs['subject_id'] ?? 0) === $subjectId) {
+            $onBatch = true;
+            break;
         }
     }
-    if ($imported === 0) {
-        return ['ok' => false, 'error' => 'No valid questions to import.'];
+    if (!$onBatch) {
+        return ['ok' => false, 'error' => 'Please select a subject before importing diagnostic questions.'];
     }
 
-    return ['ok' => true, 'imported' => $imported];
+    $validated = examination_questions_validate_import_all($rows, 'diagnostic');
+    if (empty($validated['ok'])) {
+        return $validated;
+    }
+
+    $sort = 0;
+    $sr = @mysqli_query(
+        $conn,
+        'SELECT COALESCE(MAX(sort_order), 0) AS m FROM diagnostic_questions WHERE batch_id=' . (int)$batchId . ' AND subject_id=' . (int)$subjectId
+    );
+    if ($sr && ($sm = mysqli_fetch_assoc($sr))) {
+        $sort = (int)($sm['m'] ?? 0) + 1;
+        mysqli_free_result($sr);
+    }
+
+    if (!mysqli_begin_transaction($conn)) {
+        return ['ok' => false, 'error' => 'Could not start import. Please try again.'];
+    }
+
+    $imported = 0;
+    try {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
+        );
+        if (!$ins) {
+            throw new RuntimeException('prepare_failed');
+        }
+        foreach ($validated['rows'] as $row) {
+            $qt = (string)$row['question_text'];
+            $qtype = 'mcq';
+            $a = (string)$row['choice_a'];
+            $b = (string)$row['choice_b'];
+            $c = (string)$row['choice_c'];
+            $d = (string)$row['choice_d'];
+            $cor = (string)$row['correct_answer'];
+            mysqli_stmt_bind_param($ins, 'iisssssssi', $batchId, $subjectId, $qt, $qtype, $a, $b, $c, $d, $cor, $sort);
+            if (!mysqli_stmt_execute($ins)) {
+                mysqli_stmt_close($ins);
+                throw new RuntimeException('insert_failed');
+            }
+            $sort++;
+            $imported++;
+        }
+        mysqli_stmt_close($ins);
+        if (!mysqli_commit($conn)) {
+            throw new RuntimeException('commit_failed');
+        }
+    } catch (Throwable $e) {
+        @mysqli_rollback($conn);
+        error_log('[examination_questions_diagnostic_import] ' . $e->getMessage() . ' batch_id=' . $batchId . ' subject_id=' . $subjectId);
+
+        return ['ok' => false, 'error' => 'Import failed and no questions were added. Please try again.'];
+    }
+
+    return [
+        'ok' => true,
+        'imported' => $imported,
+        'detected' => (int)$validated['detected'],
+        'valid' => (int)$validated['valid'],
+        'invalid' => 0,
+        'errors' => [],
+    ];
 }
 
 /**

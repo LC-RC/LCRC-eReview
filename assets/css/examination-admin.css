@@ -1124,6 +1124,827 @@ body.admin-app.examination-admin-page .upload-tasks-table .student-action-cell {
 }
 
 /* ---- Examination Question Builder ---- */
+.eqb-rapid-modal__subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.72;
+}
+.eqb-rapid-modal__footer-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.diag-authoring {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  padding: 1.15rem 1.2rem 1.25rem;
+  box-shadow: none;
+}
+.diag-exam-portal .diag-authoring {
+  border-radius: 0.65rem;
+}
+.diag-authoring__eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1665a0;
+}
+.diag-authoring__title {
+  margin: 0.2rem 0 0.3rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.diag-authoring__lede {
+  margin: 0 0 1rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #64748b;
+  max-width: 42rem;
+}
+.diag-authoring__section-label {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.diag-subject-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+.diag-subject-nav__tab {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.diag-subject-nav__tab:hover {
+  border-color: rgba(22, 101, 160, 0.35);
+  background: #f1f5f9;
+}
+.diag-subject-nav__tab.is-active {
+  border-color: rgba(22, 101, 160, 0.5);
+  background: #eef6fc;
+  box-shadow: inset 0 0 0 1px rgba(22, 101, 160, 0.12);
+}
+.diag-subject-nav__tab.is-complete .diag-subject-nav__code {
+  color: #15803d;
+}
+.diag-subject-nav__code {
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+.diag-subject-nav__meta {
+  font-size: 0.75rem;
+  font-weight: 650;
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+.diag-subject-stage__intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.diag-subject-stage__code {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.diag-subject-stage__name {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.diag-subject-stage__fullname {
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+.diag-subject-stage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.diag-progress {
+  margin-bottom: 0.95rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.55rem;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.diag-progress__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: #143d59;
+}
+.diag-progress__bar {
+  margin-top: 0.55rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  overflow: hidden;
+}
+.diag-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #1665a0;
+  transition: width 0.25s ease;
+}
+.diag-progress__status {
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.diag-progress__done {
+  color: #15803d;
+  font-weight: 700;
+}
+.diag-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.diag-q-table-wrap {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 0.55rem;
+  background: #fff;
+}
+.diag-q-table-wrap .eqb-table--diagnostic {
+  table-layout: fixed;
+  width: 100%;
+}
+.diag-q-table__question {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diag-q-inline-delete {
+  display: inline;
+  margin: 0;
+}
+.eqb-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  white-space: nowrap;
+}
+.diag-q-card {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 0.95rem;
+  padding: 1rem 1.1rem 1.05rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+.diag-q-card--slot {
+  border-style: dashed;
+  background: #fafbfc;
+}
+.diag-q-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+.diag-q-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.diag-q-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  opacity: 0.8;
+}
+.diag-q-card__slot-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+.diag-q-card__preview {
+  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #334155;
+}
+.diag-q-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.diag-authoring__footer-add {
+  margin-top: 0.95rem;
+  display: flex;
+  justify-content: flex-start;
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+.eqb-toolbar__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex: 1 1 auto;
+}
+.eqb-table--diagnostic th:nth-child(1),
+.eqb-table--diagnostic td:nth-child(1) { width: 3rem; }
+.eqb-table--diagnostic th:nth-child(3),
+.eqb-table--diagnostic td:nth-child(3) { width: 6.5rem; }
+.eqb-table--diagnostic th:nth-child(4),
+.eqb-table--diagnostic td:nth-child(4) { width: 7.5rem; }
+.eqb-table--diagnostic th:nth-child(5),
+.eqb-table--diagnostic td:nth-child(5) { width: 8.5rem; }
+
+/* ============================================================
+   Diagnostic Exam portal — scoped under .diag-exam-portal
+   Does not alter Regular Exam pages.
+   ============================================================ */
+body.diag-exam-portal.admin-app #main.admin-main-shell,
+body.diag-exam-portal.admin-app .admin-content {
+  background: #f4f6f9 !important;
+}
+body.diag-exam-portal .students-view-tabs {
+  margin-bottom: 0.85rem;
+}
+.diag-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 1120px;
+  margin: 0 auto 1.5rem;
+  padding-bottom: 1.25rem;
+}
+.diag-workspace-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.diag-workspace-bar__eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1d4f7a;
+}
+.diag-workspace-bar__title {
+  margin: 0.15rem 0 0.2rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f1f33;
+  line-height: 1.2;
+}
+.diag-workspace-bar__lede {
+  margin: 0 0 0.45rem;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+.diag-workspace-bar__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.diag-workspace-bar__summary {
+  font-size: 0.8rem;
+  color: #475569;
+}
+.diag-workspace-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.diag-panel {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.95rem 1.05rem 1.05rem;
+}
+.diag-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.diag-panel__title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f1f33;
+  letter-spacing: -0.01em;
+}
+.diag-panel__desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+  max-width: 46rem;
+}
+.diag-panel__head .diag-panel__desc {
+  margin-bottom: 0;
+}
+.diag-panel__hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+.diag-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+  gap: 1rem 1.35rem;
+}
+.diag-details-grid__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.diag-field {
+  display: block;
+}
+.diag-field__label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.diag-field__control {
+  width: 100%;
+  height: 2.35rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #0f1f33;
+  line-height: 1.3;
+}
+textarea.diag-field__control {
+  height: auto;
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+.diag-field__control:focus {
+  outline: none;
+  border-color: rgba(29, 79, 122, 0.55);
+  box-shadow: 0 0 0 3px rgba(29, 79, 122, 0.12);
+}
+.diag-inline-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+.diag-inline-pair__hint {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+.diag-inline-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+.diag-type-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+.diag-type-pick__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.diag-type-pick__item.is-active {
+  border-color: rgba(29, 79, 122, 0.45);
+  background: #f3f8fc;
+}
+.diag-subject-live {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: #475569;
+  white-space: nowrap;
+}
+.diag-subject-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+.diag-subject-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.diag-subject-card.is-selected {
+  border-color: rgba(29, 79, 122, 0.38);
+  background: #f7fbfe;
+}
+.diag-subject-card__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.diag-subject-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.diag-subject-card__check {
+  margin-top: 0.2rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+  accent-color: #1d4f7a;
+}
+.diag-subject-card__identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+.diag-subject-card__code {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f1f33;
+  line-height: 1.2;
+}
+.diag-subject-card__name {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: #64748b;
+}
+.diag-subject-card__qty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  flex: 0 0 auto;
+}
+.diag-subject-card__qty-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.diag-subject-card__qty input[data-diag-subject-qty],
+.diag-subject-card__qty-row input[data-diag-subject-qty] {
+  width: 3.75rem;
+  height: 2rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  text-align: center;
+}
+.diag-subject-card__qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.diag-subject-card__count-label {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.diag-subject-selection {
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+.diag-subject-selection__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.diag-subject-selection__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  font-variant-numeric: tabular-nums;
+}
+.diag-choice-group__label {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.diag-choice-group__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+}
+.diag-choice-group__options--wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 0.75rem;
+}
+.diag-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: #1e293b;
+  cursor: pointer;
+}
+.diag-advanced-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.diag-user-list {
+  max-height: 14rem;
+  overflow: auto;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  background: #fafbfc;
+}
+.diag-user-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0;
+  font-size: 0.84rem;
+}
+.diag-workspace-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+.diag-exam-portal .diag-authoring {
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  padding: 0.95rem 1.05rem 1.05rem;
+  box-shadow: none;
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.diag-exam-portal .eqb-rapid-modal {
+  border-radius: 12px;
+}
+.diag-exam-portal .eqb-choice-row {
+  gap: 0.45rem;
+  margin-bottom: 0.4rem;
+  align-items: center;
+}
+.diag-exam-portal .eqb-choice-input {
+  height: 2.2rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+}
+.diag-exam-portal .eqb-choice-letter {
+  width: 1.5rem;
+  font-weight: 800;
+}
+@media (max-width: 900px) {
+  .diag-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .diag-choice-group__options--wrap {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .diag-subject-grid,
+  .diag-type-pick {
+    grid-template-columns: 1fr;
+  }
+  .diag-workspace-bar {
+    position: static;
+  }
+  .diag-subject-live {
+    align-items: flex-start;
+  }
+}
+
+/* Legacy portal bits kept for modal / questions */
+.diag-portal-topbar { display: flex; justify-content: flex-end; margin: 0 0 0.75rem; }
+.diag-portal-section {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.95rem 1.05rem;
+}
+.diag-portal-section__title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f1f33;
+}
+.diag-portal-section__desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+.diag-subjects-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+.diag-subjects-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.diag-subjects-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+}
+.diag-subjects-table td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+}
+.diag-subjects-table tr:last-child td {
+  border-bottom: 0;
+}
+.diag-subjects-table__inc {
+  width: 3.25rem;
+  text-align: center !important;
+}
+.diag-subjects-table__qty {
+  width: 9.5rem;
+  white-space: nowrap;
+}
+.diag-subject-row.is-active td {
+  background: rgba(224, 242, 254, 0.45);
+}
+.diag-subject-row__code {
+  display: inline-block;
+  min-width: 3.25rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #143d59;
+  margin-right: 0.55rem;
+}
+.diag-subject-row__name {
+  color: #475569;
+  font-size: 0.86rem;
+}
+.diag-subjects-table__qty input[data-diag-subject-qty] {
+  width: 3.5rem;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 0.45rem;
+  font-size: 0.88rem;
+  text-align: center;
+}
+.diag-subject-row__count-label {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  margin-left: 0.3rem;
+}
+.eqb-correct-select {
+  max-width: 28rem;
+  width: 100%;
+}
+.diag-subjects-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.diag-config-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+.eqb-correct-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.1rem;
+  margin-top: 0.35rem;
+}
+.eqb-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.diag-questions-workspace .eqb-table-wrap {
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .diag-subjects-table__qty {
+    width: auto;
+  }
+  .diag-subject-row__name {
+    display: block;
+    margin-top: 0.15rem;
+  }
+  .diag-q-table__question {
+    white-space: normal;
+  }
+}
 .eqb-panel, .eqb-builder {
   border-radius: 0.9rem;
   border: 1px solid var(--admin-border, #dbe7f5);
@@ -1331,6 +2152,186 @@ body.admin-app.examination-admin-page .upload-tasks-table .student-action-cell {
   }
   .eqb-table-wrap { overflow-x: auto; }
   .eqb-row-actions { flex-direction: column; align-items: stretch; }
+}
+
+.eqb-toolbar--filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+.eqb-filter-select { min-width: 10rem; width: auto; }
+.eqb-inline-form { margin: 0; display: block; }
+.eqb-more-wrap { position: relative; display: inline-flex; }
+.eqb-more-wrap .admin-student-action-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 30;
+  min-width: 9.5rem;
+}
+.eqb-rapid-modal {
+  /* Fallback if specificity loses — real size is forced below via body.admin-app… */
+  width: min(1100px, calc(100vw - 80px));
+  max-width: 1100px;
+  height: min(90vh, 56rem);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/*
+ * CRITICAL: examination pages force `.admin-modal { width: min(100%, 32rem) }`
+ * (~512px) in professor-examination-ui.css / admin-students.css.
+ * Override the actual dialog container for Add/Edit Questions.
+ */
+body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal,
+body.admin-app.admin-students-page .admin-modal.eqb-rapid-modal,
+body.admin-app.examination-admin-page.admin-students-page .admin-modal.eqb-rapid-modal {
+  width: min(1100px, calc(100vw - 80px)) !important;
+  max-width: 1100px !important;
+  min-width: min(900px, calc(100vw - 48px));
+  height: min(90vh, 56rem) !important;
+  max-height: 90vh !important;
+  margin: 1.25rem auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 1rem !important;
+}
+
+body.admin-app.examination-admin-page #eqbRapidOverlay.admin-modal-overlay,
+body.admin-app.examination-admin-page #eqbEditOverlay.admin-modal-overlay,
+body.admin-app.admin-students-page #eqbRapidOverlay.admin-modal-overlay,
+body.admin-app.admin-students-page #eqbEditOverlay.admin-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.eqb-rapid-modal__header,
+.eqb-rapid-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 1.35rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  flex: 0 0 auto;
+}
+.eqb-rapid-modal__footer {
+  border-bottom: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.eqb-rapid-modal__body {
+  padding: 1.05rem 1.35rem 1.35rem;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.eqb-rapid-entry {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 0.95rem;
+  padding: 1.05rem 1.25rem 1.2rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  width: 100%;
+  box-sizing: border-box;
+}
+.eqb-rapid-entry__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.eqb-rapid-entry__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.eqb-rapid-text,
+.eqb-rapid-entry .eqb-choice-input,
+.eqb-rapid-entry .eqb-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.eqb-rapid-text {
+  min-height: 12rem;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  resize: vertical;
+}
+.eqb-type-panel[hidden],
+.eqb-type-panel.is-hidden {
+  display: none !important;
+}
+.eqb-rapid-entry .tox-tinymce {
+  border-radius: 0.55rem !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  width: 100% !important;
+}
+.eqb-save-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+.eqb-save-status.is-draft { color: #64748b; }
+.eqb-save-status.is-saving,
+.eqb-save-status.is-retry { color: #0369a1; }
+.eqb-save-status.is-saved { color: #15803d; }
+.eqb-save-status.is-error { color: #b91c1c; }
+.eqb-tf-radio {
+  width: 1.5rem;
+  text-align: center;
+  opacity: 0.7;
+}
+html[data-admin-theme="dark"] .eqb-rapid-entry,
+html[data-admin-theme="dark"] .eqb-rapid-text {
+  background: rgba(15, 23, 42, 0.35);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: inherit;
+}
+@media (max-width: 1100px) {
+  body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal,
+  body.admin-app.admin-students-page .admin-modal.eqb-rapid-modal,
+  body.admin-app.examination-admin-page.admin-students-page .admin-modal.eqb-rapid-modal {
+    width: min(1000px, calc(100vw - 48px)) !important;
+    min-width: 0;
+  }
+}
+@media (max-width: 900px) {
+  body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal,
+  body.admin-app.admin-students-page .admin-modal.eqb-rapid-modal,
+  body.admin-app.examination-admin-page.admin-students-page .admin-modal.eqb-rapid-modal {
+    width: min(96vw, calc(100vw - 24px)) !important;
+    max-width: 96vw !important;
+    min-width: 0 !important;
+    height: min(92vh, 56rem) !important;
+    max-height: 92vh !important;
+    margin: 0.65rem auto !important;
+  }
+  .eqb-rapid-modal__body {
+    padding: 0.85rem 0.9rem 1rem;
+  }
+  .eqb-rapid-entry {
+    padding: 0.85rem 0.9rem 1rem;
+  }
 }
 
 /* =========================================================

@@ -9,11 +9,13 @@ require_once dirname(__DIR__) . '/includes/college_exam_helpers.php';
 require_once dirname(__DIR__) . '/includes/diagnostic_exam_helpers.php';
 require_once dirname(__DIR__) . '/includes/examination_domain.php';
 require_once dirname(__DIR__) . '/includes/examination_questions.php';
+require_once dirname(__DIR__) . '/includes/examination_question_import.php';
 
 $pageTitle = 'Examination';
 $uid = (int)getCurrentUserId();
 $csrf = generateCSRFToken();
 $error = null;
+$importErrors = [];
 
 $examType = examination_domain_resolve_type_from_request($_GET);
 if ($examType === '' && isset($_GET['exam_type'])) {
@@ -41,6 +43,12 @@ if (!$isNew) {
         exit;
     }
     $examType = (string)$existing['exam_type'];
+}
+
+// Template download — Word (.docx) preferred; ?format=csv for CSV fallback.
+if ($step === 'questions' && !$isNew && isset($_GET['download_question_template'])) {
+    $fmt = strtolower(trim((string)($_GET['format'] ?? 'docx')));
+    examination_question_import_send_template($examType, $fmt === 'csv' ? 'csv' : 'docx');
 }
 
 /**
@@ -140,17 +148,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
                 $error = (string)($res['error'] ?? 'Could not delete question.');
             } elseif ($action === 'import_questions' && $postType === 'regular') {
-                $raw = $_POST['import_json'] ?? '';
-                $rows = json_decode((string)$raw, true);
-                if (!is_array($rows)) {
-                    $error = 'Import data is invalid.';
+                $resolved = examination_question_import_resolve_rows_from_request();
+                if (empty($resolved['ok'])) {
+                    $error = (string)($resolved['error'] ?? 'Import data is invalid.');
                 } else {
-                    $res = examination_questions_regular_import_append($conn, $postId, $uid, $rows);
+                    $res = examination_questions_regular_import_append($conn, $postId, $uid, $resolved['rows']);
                     if (!empty($res['ok'])) {
-                        $_SESSION['examination_flash'] = 'Imported ' . (int)($res['imported'] ?? 0) . ' question(s).';
+                        $_SESSION['examination_flash'] = 'Imported ' . (int)($res['imported'] ?? 0)
+                            . ' question(s). Importing again will add another set (existing questions are kept).';
                         examination_edit_redirect_questions($postType, $postId);
                     }
                     $error = (string)($res['error'] ?? 'Import failed.');
+                    if (!empty($res['errors']) && is_array($res['errors'])) {
+                        $importErrors = $res['errors'];
+                    }
                 }
             } elseif ($action === 'save_question' && $postType === 'diagnostic') {
                 $qid = (int)($_POST['question_id'] ?? 0);
@@ -184,17 +195,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $error = (string)($res['error'] ?? 'Could not delete question.');
             } elseif ($action === 'import_questions' && $postType === 'diagnostic') {
                 $sid = (int)($_POST['subject_id'] ?? 0);
-                $raw = $_POST['import_json'] ?? '';
-                $rows = json_decode((string)$raw, true);
-                if (!is_array($rows) || $sid <= 0) {
-                    $error = 'Import data is invalid.';
+                if ($sid <= 0) {
+                    $error = 'Please select a subject before importing diagnostic questions.';
                 } else {
-                    $res = examination_questions_diagnostic_import_append($conn, $postId, $uid, $sid, $rows);
-                    if (!empty($res['ok'])) {
-                        $_SESSION['examination_flash'] = 'Imported ' . (int)($res['imported'] ?? 0) . ' question(s).';
-                        examination_edit_redirect_questions($postType, $postId, $sid);
+                    $resolved = examination_question_import_resolve_rows_from_request();
+                    if (empty($resolved['ok'])) {
+                        $error = (string)($resolved['error'] ?? 'Import data is invalid.');
+                    } else {
+                        $res = examination_questions_diagnostic_import_append($conn, $postId, $uid, $sid, $resolved['rows']);
+                        if (!empty($res['ok'])) {
+                            $_SESSION['examination_flash'] = 'Imported ' . (int)($res['imported'] ?? 0)
+                                . ' question(s). Importing again will add another set (existing questions are kept).';
+                            examination_edit_redirect_questions($postType, $postId, $sid);
+                        }
+                        $error = (string)($res['error'] ?? 'Import failed.');
+                        if (!empty($res['errors']) && is_array($res['errors'])) {
+                            $importErrors = $res['errors'];
+                        }
                     }
-                    $error = (string)($res['error'] ?? 'Import failed.');
                 }
             } else {
                 $error = 'Unknown questions action.';

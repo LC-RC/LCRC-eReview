@@ -34,6 +34,42 @@
 /** @var string|null $error */
 
 $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
+if ($examType === 'diagnostic' && !$isModalRender) {
+    $formClass = 'diag-portal';
+}
+
+$diagPublished = ($examType === 'diagnostic' && !$isNew && is_array($rec ?? null)) ? !empty($rec['is_published']) : false;
+$diagDurationMinutes = ((int)($timeParts['hours'] ?? 0) * 60) + (int)($timeParts['minutes'] ?? 0);
+$diagAudienceLabels = [
+    'college_student' => 'College Students',
+    'reviewee' => 'Reviewees',
+    'both' => 'Both',
+];
+$diagAudienceLabel = $diagAudienceLabels[$scopeVal] ?? 'Audience';
+$diagSummarySubjectCount = 0;
+$diagSummaryQuestionTotal = 0;
+$diagSummaryCodeParts = [];
+$diagSummaryQtyParts = [];
+if ($examType === 'diagnostic') {
+    foreach ($subjectCatalog as $subSum) {
+        $sidSum = (int)($subSum['subject_id'] ?? 0);
+        if ($sidSum <= 0 || !in_array($sidSum, $selectedSubjects, true)) {
+            continue;
+        }
+        $diagSummarySubjectCount++;
+        $codeSum = (string)($subSum['subject_code'] ?? '');
+        $reqSum = (int)($questionsRequired[$sidSum] ?? 0);
+        if ($codeSum !== '') {
+            $diagSummaryCodeParts[] = $codeSum;
+        }
+        if ($reqSum > 0) {
+            $diagSummaryQuestionTotal += $reqSum;
+            $diagSummaryQtyParts[] = (string)$reqSum;
+        } else {
+            $diagSummaryQtyParts[] = 'all';
+        }
+    }
+}
 
 ?>
 <form method="post" id="examinationConfigForm" class="<?php echo h($formClass); ?>" action="<?php echo h($formAction); ?>">
@@ -60,12 +96,20 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
     </div>
   <?php endif; ?>
 
+  <?php if ($examType === 'diagnostic' && !$isModalRender): ?>
+  <?php require __DIR__ . '/examination_edit_config_form_diagnostic.php'; ?>
+
+  <?php else: /* Regular exam OR diagnostic modal */ ?>
+
   <section class="<?php echo h($editSectionClass); ?>">
-    <h2 class="<?php echo h($editSectionHeadingClass); ?>">Basic information</h2>
+    <h2 class="<?php echo h($editSectionHeadingClass); ?>"><?php echo $examType === 'diagnostic' ? 'Exam Information' : 'Basic information'; ?></h2>
+    <?php if ($examType === 'diagnostic'): ?>
+      <p class="diag-portal-section__desc">Title and description shown to examinees for this diagnostic.</p>
+    <?php endif; ?>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <label class="block">
         <span class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Title</span>
-        <input class="w-full" type="text" name="title" required value="<?php echo h($titleVal); ?>">
+        <input class="w-full" type="text" name="title" required value="<?php echo h($titleVal); ?>" <?php echo ($examType === 'diagnostic' && !$isModalRender) ? 'id="diagTitleInput"' : ''; ?>>
       </label>
       <label class="block md:col-span-2">
         <span class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Description</span>
@@ -89,10 +133,67 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
   </section>
   <?php endif; ?>
 
+  <?php if ($examType === 'diagnostic'): ?>
+  <section class="<?php echo h($editSectionClass); ?>" id="subjectsPanel">
+    <h2 class="<?php echo h($editSectionHeadingClass); ?>">Subjects &amp; Question Allocation</h2>
+    <p class="diag-portal-section__desc">
+      Include CPA subjects and set how many questions to use per subject.
+      Entering a positive number automatically includes that subject.
+      <strong>Checked + 0</strong> = use all authored questions for that subject.
+      Unchecked subjects are excluded.
+    </p>
+    <div class="diag-subject-grid" id="diagSubjectGrid">
+      <?php foreach ($subjectCatalog as $sub): ?>
+        <?php
+          $sid = (int)($sub['subject_id'] ?? 0);
+          $checked = in_array($sid, $selectedSubjects, true);
+          $reqVal = (int)($questionsRequired[$sid] ?? 0);
+          $code = (string)($sub['subject_code'] ?? '');
+          $name = (string)($sub['subject_name'] ?? '');
+        ?>
+        <div class="diag-subject-card <?php echo $checked ? 'is-selected' : ''; ?>" data-diag-subject-row data-subject-code="<?php echo h($code); ?>">
+          <div class="diag-subject-card__main">
+            <input type="checkbox" name="subject_ids[]" value="<?php echo $sid; ?>" <?php echo $checked ? 'checked' : ''; ?> class="diag-subject-card__check" data-diag-subject-toggle aria-label="Include <?php echo h($code); ?>">
+            <div class="diag-subject-card__identity">
+              <span class="diag-subject-card__code"><?php echo h($code); ?></span>
+              <span class="diag-subject-card__name"><?php echo h($name); ?></span>
+            </div>
+          </div>
+          <label class="diag-subject-card__qty">
+            <span class="diag-subject-card__qty-label">Questions</span>
+            <input type="number" min="0" step="1" inputmode="numeric" name="questions_required[<?php echo $sid; ?>]" value="<?php echo $reqVal; ?>" placeholder="0" data-diag-subject-qty aria-label="Questions for <?php echo h($code); ?>">
+          </label>
+        </div>
+      <?php endforeach; ?>
+    </div>
+    <div class="diag-subject-selection" id="diagSubjectSelection" <?php echo $diagSummarySubjectCount > 0 ? '' : 'hidden'; ?>>
+      <h3 class="diag-subject-selection__title">Selected Subjects</h3>
+      <div class="diag-subject-selection__chips" id="diagSubjectSelectionChips">
+        <?php foreach ($subjectCatalog as $subChip): ?>
+          <?php
+            $sidChip = (int)($subChip['subject_id'] ?? 0);
+            if ($sidChip <= 0 || !in_array($sidChip, $selectedSubjects, true)) {
+                continue;
+            }
+            $codeChip = (string)($subChip['subject_code'] ?? '');
+            $reqChip = (int)($questionsRequired[$sidChip] ?? 0);
+            $qtyLabel = $reqChip > 0 ? (string)$reqChip : 'all';
+          ?>
+          <span class="diag-subject-selection__chip"><?php echo h($codeChip); ?> <?php echo h($qtyLabel); ?></span>
+        <?php endforeach; ?>
+      </div>
+      <p class="diag-subject-selection__total">Total Questions: <strong id="diagSubjectSelectionTotal"><?php echo (int)$diagSummaryQuestionTotal; ?></strong></p>
+    </div>
+  </section>
+  <?php endif; ?>
+
   <section class="<?php echo h($editSectionClass); ?>" id="examineePanel">
-    <h2 class="<?php echo h($editSectionHeadingClass); ?>">Examinee type</h2>
+    <h2 class="<?php echo h($editSectionHeadingClass); ?>"><?php echo $examType === 'diagnostic' ? 'Audience &amp; Assignment' : 'Examinee type'; ?></h2>
+    <?php if ($examType === 'diagnostic'): ?>
+      <p class="diag-portal-section__desc">Who can take this diagnostic and how they are assigned.</p>
+    <?php endif; ?>
     <div class="flex flex-wrap gap-4">
-      <?php foreach (['college_student' => 'College Student', 'reviewee' => 'Reviewee', 'both' => 'Both'] as $sk => $sl): ?>
+      <?php foreach (['college_student' => 'College Students', 'reviewee' => 'Reviewees', 'both' => 'Both'] as $sk => $sl): ?>
         <label class="font-semibold"><input type="radio" name="examinee_scope" value="<?php echo h($sk); ?>" <?php echo $scopeVal === $sk ? 'checked' : ''; ?>> <?php echo h($sl); ?></label>
       <?php endforeach; ?>
     </div>
@@ -100,7 +201,7 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
   </section>
 
   <section class="<?php echo h($editSectionClass); ?>" id="assignmentPanel">
-    <h2 class="<?php echo h($editSectionHeadingClass); ?>">Audience / Assignment</h2>
+    <h2 class="<?php echo h($editSectionHeadingClass); ?>"><?php echo $examType === 'diagnostic' ? 'Assignment mode' : 'Audience / Assignment'; ?></h2>
 
     <div id="assignmentCollegeStudent" class="hidden">
       <p class="text-sm font-semibold mb-2">College students</p>
@@ -194,27 +295,6 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
     </div>
   </section>
 
-  <?php if ($examType === 'diagnostic'): ?>
-  <section class="<?php echo h($editSectionClass); ?>" id="subjectsPanel">
-    <h2 class="<?php echo h($editSectionHeadingClass); ?>">Subjects</h2>
-    <p class="text-sm opacity-70 mt-0 mb-3">Select subjects and optional question caps (0 = use all authored questions per subject). Detailed question authoring is in the Questions step.</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-      <?php foreach ($subjectCatalog as $sub): ?>
-        <?php $sid = (int)($sub['subject_id'] ?? 0); ?>
-        <div class="rounded-xl border p-3 page-table">
-          <label class="font-semibold">
-            <input type="checkbox" name="subject_ids[]" value="<?php echo $sid; ?>" <?php echo in_array($sid, $selectedSubjects, true) ? 'checked' : ''; ?>>
-            <?php echo h((string)($sub['subject_code'] ?? '')); ?> — <?php echo h((string)($sub['subject_name'] ?? '')); ?>
-          </label>
-          <label class="block text-xs mt-2 opacity-70">Questions to use
-            <input class="w-full mt-1" type="number" min="0" name="questions_required[<?php echo $sid; ?>]" value="<?php echo (int)($questionsRequired[$sid] ?? 0); ?>">
-          </label>
-        </div>
-      <?php endforeach; ?>
-    </div>
-  </section>
-  <?php endif; ?>
-
   <section class="<?php echo h($editSectionClass); ?>">
     <h2 class="<?php echo h($editSectionHeadingClass); ?>">Schedule &amp; Access</h2>
     <div class="examination-form-section">
@@ -303,6 +383,9 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
   </div>
   <p class="text-sm opacity-70">Saving a draft does not require questions. Full publish validation for question banks is deferred to a later phase.</p>
   <?php endif; ?>
+
+
+  <?php endif; /* diagnostic portal vs regular/modal */ ?>
 
 </form>
 
@@ -438,6 +521,102 @@ $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
 
   setCheckedMode(initialMode);
   syncPanels();
+
+  form.querySelectorAll('[data-diag-subject-row]').forEach(function (row) {
+    var cb = row.querySelector('[data-diag-subject-toggle]');
+    var qty = row.querySelector('[data-diag-subject-qty]');
+    if (!cb || !qty) return;
+
+    function syncRowActive() {
+      row.classList.toggle('is-selected', !!cb.checked);
+      row.classList.toggle('is-active', !!cb.checked);
+    }
+
+    function normalizeQty() {
+      var raw = String(qty.value || '').trim();
+      if (raw === '') return null; // empty — leave include state alone
+      var n = parseInt(raw, 10);
+      if (!isFinite(n) || n < 0) {
+        qty.value = '0';
+        return 0;
+      }
+      qty.value = String(n);
+      return n;
+    }
+
+    function onQtyChange() {
+      var n = normalizeQty();
+      // Positive count → auto-include. Do NOT auto-uncheck on 0:
+      // checked + 0 means "use all authored questions" in the backend.
+      if (n !== null && n > 0) {
+        cb.checked = true;
+      }
+      syncRowActive();
+      syncDiagSubjectSummary();
+    }
+
+    cb.addEventListener('change', function () {
+      syncRowActive();
+      syncDiagSubjectSummary();
+    });
+    qty.addEventListener('input', onQtyChange);
+    qty.addEventListener('change', onQtyChange);
+    syncRowActive();
+  });
+
+  function syncDiagSubjectSummary() {
+    var selection = document.getElementById('diagSubjectSelection');
+    var chipsEl = document.getElementById('diagSubjectSelectionChips');
+    var totalEl = document.getElementById('diagSubjectSelectionTotal');
+    var liveSubjects = document.getElementById('diagLiveSubjectCount');
+    var liveQuestions = document.getElementById('diagLiveQuestionTotal');
+    var stickySubjects = document.getElementById('diagStickySubjectCount');
+    var stickyQuestions = document.getElementById('diagStickyQuestionTotal');
+    var stickyCodes = document.getElementById('diagStickyCodes');
+    var titleEl = document.getElementById('diagWorkspaceTitle') || document.querySelector('.diag-portal-header__title');
+    var titleInput = document.getElementById('diagTitleInput');
+
+    var selected = [];
+    var total = 0;
+    form.querySelectorAll('[data-diag-subject-row]').forEach(function (row) {
+      var cb = row.querySelector('[data-diag-subject-toggle]');
+      var qty = row.querySelector('[data-diag-subject-qty]');
+      if (!cb || !cb.checked) return;
+      var code = row.getAttribute('data-subject-code') || '';
+      var n = parseInt(String(qty && qty.value != null ? qty.value : '0'), 10);
+      if (!isFinite(n) || n < 0) n = 0;
+      selected.push({ code: code, qty: n });
+      if (n > 0) total += n;
+    });
+
+    if (selection) selection.hidden = selected.length === 0;
+    if (chipsEl) {
+      chipsEl.innerHTML = selected.map(function (s) {
+        var label = (s.code || 'Subject') + ' ' + (s.qty > 0 ? String(s.qty) : 'all');
+        return '<span class="diag-subject-selection__chip">' + label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+      }).join('');
+    }
+    if (totalEl) totalEl.textContent = String(total);
+    if (liveSubjects) liveSubjects.textContent = String(selected.length);
+    if (liveQuestions) liveQuestions.textContent = String(total);
+    if (stickySubjects) stickySubjects.textContent = String(selected.length);
+    if (stickyQuestions) stickyQuestions.textContent = String(total);
+    if (stickyCodes) {
+      stickyCodes.textContent = selected.length
+        ? selected.map(function (s) { return s.code; }).filter(Boolean).join(' · ')
+        : 'No subjects';
+    }
+    if (titleEl && titleInput) {
+      var t = String(titleInput.value || '').trim();
+      titleEl.textContent = t !== '' ? t : 'CPA Diagnostic Assessment';
+    }
+  }
+
+  var diagTitleInput = document.getElementById('diagTitleInput');
+  if (diagTitleInput) {
+    diagTitleInput.addEventListener('input', syncDiagSubjectSummary);
+  }
+  syncDiagSubjectSummary();
 
 })();
 </script>

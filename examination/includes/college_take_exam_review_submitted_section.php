@@ -136,7 +136,7 @@ if ($reviewAccessSt === 'no_schedule') {
       <h3 class="cer-review__title">Question review</h3>
       <?php $i = 1; foreach ($questions as $q): ?>
         <?php
-          $letters = ['A' => $q['choice_a'], 'B' => $q['choice_b'], 'C' => $q['choice_c'], 'D' => $q['choice_d']];
+          $displayChoices = college_exam_question_display_choices($q);
           $sel = strtoupper(trim((string)($answersMap[(int)$q['question_id']]['selected_answer'] ?? '')));
           $hasAns = $sel !== '';
           $correctLetter = strtoupper(trim((string)($q['correct_answer'] ?? '')));
@@ -162,10 +162,10 @@ if ($reviewAccessSt === 'no_schedule') {
           </div>
           <div class="cer-q-card__stem quiz-rich-text"><?php echo renderQuizRichText($q['question_text']); ?></div>
           <div class="cer-q-choices">
-            <?php foreach ($letters as $L => $txt):
-                if ($txt === null || $txt === '') {
-                    continue;
-                }
+            <?php foreach ($displayChoices as $choice):
+                $L = $choice['letter'];
+                $txt = $choice['label'];
+                $showLetter = !empty($choice['show_letter']);
                 $isCorrect = $correctLetter === $L;
                 $picked = $hasAns && $sel === $L;
                 $cls = 'cer-choice';
@@ -180,8 +180,10 @@ if ($reviewAccessSt === 'no_schedule') {
                 }
             ?>
               <div class="<?php echo h($cls); ?>">
-                <span class="cer-choice__letter"><?php echo h($L); ?></span>
-                <div class="cer-choice__text"><?php echo nl2br(h($txt)); ?></div>
+                <?php if ($showLetter): ?>
+                  <span class="cer-choice__letter"><?php echo h($L); ?></span>
+                <?php endif; ?>
+                <div class="cer-choice__text"><?php echo $showLetter ? nl2br(h($txt)) : h($txt); ?></div>
                 <div class="cer-choice__tags">
                   <?php if ($picked): ?><span class="cer-tag cer-tag--yours">Your answer</span><?php endif; ?>
                   <?php if ($isCorrect): ?><span class="cer-tag cer-tag--correct">Correct answer</span><?php endif; ?>

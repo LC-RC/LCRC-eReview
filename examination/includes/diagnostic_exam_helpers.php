@@ -12,6 +12,37 @@ declare(strict_types=1);
     }
 })();
 
+/**
+ * Decode optional E+ choices from diagnostic_questions.extra_choices_json.
+ *
+ * @return array<string,string>
+ */
+function diagnostic_exam_extra_choices_decode(?string $json): array
+{
+    if ($json === null || trim($json) === '') {
+        return [];
+    }
+    $decoded = json_decode($json, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+    $out = [];
+    foreach ($decoded as $k => $v) {
+        $L = strtoupper(trim((string)$k));
+        if (!preg_match('/^[E-Z]$/', $L)) {
+            continue;
+        }
+        $text = trim((string)$v);
+        if ($text === '') {
+            continue;
+        }
+        $out[$L] = $text;
+    }
+    ksort($out);
+
+    return $out;
+}
+
 function diagnostic_exam_human_duration(int $seconds): string
 {
     if ($seconds <= 0) {

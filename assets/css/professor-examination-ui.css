@@ -493,6 +493,43 @@ body.admin-app.examination-admin-page .admin-modal {
   border-radius: 0.95rem;
 }
 
+/* Add/Edit Questions rapid-entry: large desktop workspace (not the 32rem popup). */
+body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal {
+  width: min(1100px, calc(100vw - 80px)) !important;
+  max-width: 1100px !important;
+  min-width: min(900px, calc(100vw - 48px));
+  height: min(90vh, 56rem) !important;
+  max-height: 90vh !important;
+  margin: 1.25rem auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 1rem !important;
+}
+body.admin-app.examination-admin-page #eqbRapidOverlay.admin-modal-overlay,
+body.admin-app.examination-admin-page #eqbEditOverlay.admin-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+@media (max-width: 1100px) {
+  body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal {
+    width: min(1000px, calc(100vw - 48px)) !important;
+    min-width: 0;
+  }
+}
+@media (max-width: 900px) {
+  body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal {
+    width: min(96vw, calc(100vw - 24px)) !important;
+    max-width: 96vw !important;
+    min-width: 0 !important;
+    height: min(92vh, 56rem) !important;
+    max-height: 92vh !important;
+    margin: 0.65rem auto !important;
+  }
+}
+
 /* Topbar / sidebar polish (exam pages only) */
 body.admin-app.examination-admin-page .admin-topbar-search-wrap {
   border-radius: 0.75rem;

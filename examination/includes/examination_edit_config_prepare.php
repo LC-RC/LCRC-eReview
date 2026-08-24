@@ -86,6 +86,11 @@ $subjectCatalog = is_array($extras['subjects'] ?? null) ? $extras['subjects'] : 
 $editSectionClass = $isModalRender ? 'examination-form-section' : 'rounded-xl overflow-hidden page-table p-6';
 $editSectionHeadingClass = $isModalRender ? 'examination-form-section__title' : 'text-base font-bold mb-3';
 
+if ($examType === 'diagnostic' && !$isModalRender) {
+    $editSectionClass = 'diag-portal-section';
+    $editSectionHeadingClass = 'diag-portal-section__title';
+}
+
 $formAction = $isNew
     ? ('professor_examination_edit?exam_type=' . rawurlencode($examType) . ($isModalRender ? '&modal=1' : ''))
     : (examination_domain_edit_url($examType, $sourceId, 'config') . ($isModalRender ? '&modal=1' : ''));

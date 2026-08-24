@@ -24,6 +24,11 @@ $action = (string)($_POST['action'] ?? '');
 if ($action === 'load_state' || $action === '') {
     college_exam_finalize_expired_in_progress($conn, 0, $userId, 0);
 }
+// Release PHP session lock after auth/session values are read so concurrent examinee
+// AJAX (autosave, heartbeat, submit) does not serialize behind this request.
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
 
 function college_exam_ajax_verify_attempt_access(mysqli $conn, array $attempt, int $userId): bool
 {
@@ -208,10 +213,11 @@ if ($action === 'save_answer') {
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
     $questionId = sanitizeInt($_POST['question_id'] ?? 0);
     $selected = strtoupper(trim((string)($_POST['selected_answer'] ?? '')));
-    // Allow save after timer end so the client can flush selections before timeout submit.
-    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId, false);
+    // Stop accepting new interactive answers at official expires_at.
+    // Timeout flush goes through action=submit (bulk payload), not save_answer.
+    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId, true);
     if (!$attempt) {
-        echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
+        echo json_encode(['ok' => false, 'error' => 'Attempt not active', 'expired' => true]);
         exit;
     }
 
@@ -353,6 +359,10 @@ if ($action === 'get_time') {
 }
 
 if ($action === 'submit') {
+    // Finish flush+finalize even if the browser tab closes during timeout rush.
+    ignore_user_abort(true);
+    @set_time_limit(120);
+
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         echo json_encode(['ok' => false, 'error' => 'Invalid request']);
@@ -362,29 +372,96 @@ if ($action === 'submit') {
     $reason = strtolower(trim((string)($_POST['reason'] ?? 'manual')));
     $allowIncomplete = in_array($reason, ['timeout', 'timeout-sync', 'expired'], true);
 
-    $attempt = college_exam_ajax_load_active_attempt($conn, $attemptId, $userId, false);
-    if (!$attempt) {
-        $stmt = mysqli_prepare($conn, "SELECT attempt_id, exam_id, status, expires_at FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
-        mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
-        mysqli_stmt_execute($stmt);
-        $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-        mysqli_stmt_close($stmt);
-        if (!$attempt || (string)($attempt['status'] ?? '') !== 'in_progress') {
-            echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
-            exit;
-        }
-        if (!college_exam_ajax_verify_attempt_access($conn, $attempt, $userId)) {
-            echo json_encode(['ok' => false, 'error' => 'Access denied']);
-            exit;
+    $answersRaw = $_POST['answers'] ?? '';
+    $decodedAnswers = [];
+    if (is_string($answersRaw) && $answersRaw !== '') {
+        $tmp = json_decode($answersRaw, true);
+        if (is_array($tmp)) {
+            $decodedAnswers = $tmp;
         }
     }
+    $payloadCount = count($decodedAnswers);
 
-    // Flush client-side selections with the submit request (covers failed autosaves).
-    $answersRaw = $_POST['answers'] ?? '';
-    if (is_string($answersRaw) && $answersRaw !== '') {
-        $decoded = json_decode($answersRaw, true);
-        if (is_array($decoded)) {
-            college_exam_upsert_attempt_answers_payload($conn, $attemptId, $userId, $decoded);
+    if (!mysqli_begin_transaction($conn)) {
+        error_log(sprintf(
+            '[college_exam_submit] begin_transaction failed attempt_id=%d user_id=%d payload_count=%d db=%s',
+            $attemptId,
+            $userId,
+            $payloadCount,
+            mysqli_error($conn)
+        ));
+        echo json_encode(['ok' => false, 'error' => 'Could not start submit transaction', 'retry' => true]);
+        exit;
+    }
+
+    $locked = null;
+    $lockStmt = mysqli_prepare(
+        $conn,
+        'SELECT attempt_id, exam_id, status, expires_at, score, correct_count, total_count
+         FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1 FOR UPDATE'
+    );
+    if ($lockStmt) {
+        mysqli_stmt_bind_param($lockStmt, 'ii', $attemptId, $userId);
+        mysqli_stmt_execute($lockStmt);
+        $locked = mysqli_fetch_assoc(mysqli_stmt_get_result($lockStmt));
+        mysqli_stmt_close($lockStmt);
+    }
+    if (!$locked) {
+        mysqli_rollback($conn);
+        echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
+        exit;
+    }
+    if (!college_exam_ajax_verify_attempt_access($conn, $locked, $userId)) {
+        mysqli_rollback($conn);
+        echo json_encode(['ok' => false, 'error' => 'Access denied']);
+        exit;
+    }
+
+    $lockedStatus = college_exam_attempt_status_normalized($locked);
+    if ($lockedStatus === 'submitted') {
+        mysqli_commit($conn);
+        echo json_encode([
+            'ok' => true,
+            'already_submitted' => true,
+            'score' => (float)($locked['score'] ?? 0),
+            'correct' => (int)($locked['correct_count'] ?? 0),
+            'total' => (int)($locked['total_count'] ?? 0),
+        ]);
+        exit;
+    }
+    if ($lockedStatus !== 'in_progress') {
+        mysqli_rollback($conn);
+        echo json_encode(['ok' => false, 'error' => 'Attempt not active']);
+        exit;
+    }
+
+    $attempt = $locked;
+
+    // Atomic flush: persist complete client payload BEFORE finalize.
+    if ($payloadCount > 0) {
+        $flush = college_exam_upsert_attempt_answers_payload($conn, $attemptId, $userId, $decodedAnswers);
+        if (empty($flush['ok'])) {
+            mysqli_rollback($conn);
+            error_log(sprintf(
+                '[college_exam_submit] answer flush failed attempt_id=%d user_id=%d reason=%s payload_count=%d saved=%d errors=%d skipped=%d error=%s db_error=%s',
+                $attemptId,
+                $userId,
+                $reason,
+                (int)($flush['payload_count'] ?? $payloadCount),
+                (int)($flush['saved'] ?? 0),
+                (int)($flush['errors'] ?? 0),
+                (int)($flush['skipped'] ?? 0),
+                (string)($flush['error'] ?? ''),
+                (string)($flush['db_error'] ?? '')
+            ));
+            echo json_encode([
+                'ok' => false,
+                'error' => 'Could not save answers before submit',
+                'retry' => true,
+                'payload_count' => (int)($flush['payload_count'] ?? $payloadCount),
+                'saved' => (int)($flush['saved'] ?? 0),
+            ]);
+            exit;
         }
     }
 
@@ -424,6 +501,7 @@ if ($action === 'submit') {
         }
         $answered = count($answeredIds);
         if ($qTotal > 0 && $answered < $qTotal) {
+            mysqli_commit($conn); // keep flushed answers; do not finalize
             $missing = [];
             foreach ($questionsChk as $i => $qRow) {
                 $qid = (int)($qRow['question_id'] ?? 0);
@@ -443,12 +521,36 @@ if ($action === 'submit') {
     }
 
     $result = college_exam_finalize_attempt($conn, $attemptId, $userId);
-    if (!$result['ok']) {
-        echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'Submit failed']);
+    if (empty($result['ok'])) {
+        mysqli_rollback($conn);
+        error_log(sprintf(
+            '[college_exam_submit] finalize failed attempt_id=%d user_id=%d reason=%s payload_count=%d error=%s',
+            $attemptId,
+            $userId,
+            $reason,
+            $payloadCount,
+            (string)($result['error'] ?? '')
+        ));
+        echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'Submit failed', 'retry' => true]);
         exit;
     }
+
+    if (!mysqli_commit($conn)) {
+        mysqli_rollback($conn);
+        error_log(sprintf(
+            '[college_exam_submit] commit failed attempt_id=%d user_id=%d payload_count=%d db=%s',
+            $attemptId,
+            $userId,
+            $payloadCount,
+            mysqli_error($conn)
+        ));
+        echo json_encode(['ok' => false, 'error' => 'Submit commit failed', 'retry' => true]);
+        exit;
+    }
+
     echo json_encode([
         'ok' => true,
+        'already_submitted' => !empty($result['already_submitted']),
         'score' => $result['score'],
         'correct' => $result['correct'],
         'total' => $result['total'],
