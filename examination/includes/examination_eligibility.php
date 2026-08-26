@@ -19,6 +19,31 @@ function examination_exam_type_normalize(string $examType): string
     return $t === 'diagnostic' ? 'diagnostic' : 'regular';
 }
 
+/**
+ * Canonical "now" for college examination scheduling (Asia/Manila via session_config).
+ */
+function examination_schedule_now_sql(): string
+{
+    return date('Y-m-d H:i:s');
+}
+
+/**
+ * Parse a MySQL datetime stored in app-local time to Unix timestamp.
+ */
+function examination_schedule_to_timestamp(?string $sqlDt): ?int
+{
+    if ($sqlDt === null) {
+        return null;
+    }
+    $s = trim($sqlDt);
+    if ($s === '' || preg_match('/^0000-00-00(\s00:00:00)?$/', $s)) {
+        return null;
+    }
+    $ts = strtotime($s);
+
+    return $ts === false ? null : $ts;
+}
+
 function examination_record_is_published(array $record, string $examType): bool
 {
     if ($examType === 'diagnostic') {
@@ -30,14 +55,80 @@ function examination_record_is_published(array $record, string $examType): bool
 
 function examination_record_schedule_is_open(array $record, string $nowSql): bool
 {
-    if (!empty($record['available_from']) && (string)$record['available_from'] > $nowSql) {
+    $nowTs = examination_schedule_to_timestamp($nowSql) ?? time();
+    $startsTs = examination_schedule_to_timestamp(isset($record['available_from']) ? (string)$record['available_from'] : null);
+    $endsTs = examination_schedule_to_timestamp(isset($record['deadline']) ? (string)$record['deadline'] : null);
+
+    if ($startsTs !== null && $nowTs < $startsTs) {
         return false;
     }
-    if (!empty($record['deadline']) && (string)$record['deadline'] < $nowSql) {
+    if ($endsTs !== null && $nowTs >= $endsTs) {
         return false;
     }
 
     return true;
+}
+
+/**
+ * Pick the most relevant attempt when multiple rows exist for one exam/batch.
+ *
+ * @param array<string,mixed> $existing
+ * @param array<string,mixed> $candidate
+ * @return array<string,mixed>
+ */
+function examination_student_pick_attempt_row(array $existing, array $candidate): array
+{
+    if ($existing === []) {
+        return $candidate;
+    }
+
+    $rank = static function (array $row): int {
+        $st = strtolower(trim((string)($row['attempt_status'] ?? $row['status'] ?? '')));
+
+        return match ($st) {
+            'in_progress' => 300,
+            'submitted' => 200,
+            'expired' => !empty($row['submitted_at']) ? 180 : 100,
+            default => 50,
+        };
+    };
+
+    $existingRank = $rank($existing);
+    $candidateRank = $rank($candidate);
+    if ($candidateRank !== $existingRank) {
+        return $candidateRank > $existingRank ? $candidate : $existing;
+    }
+
+    $existingStarted = examination_schedule_to_timestamp(isset($existing['started_at']) ? (string)$existing['started_at'] : null) ?? 0;
+    $candidateStarted = examination_schedule_to_timestamp(isset($candidate['started_at']) ? (string)$candidate['started_at'] : null) ?? 0;
+    if ($candidateStarted !== $existingStarted) {
+        return $candidateStarted > $existingStarted ? $candidate : $existing;
+    }
+
+    $existingId = (int)($existing['attempt_id'] ?? $existing['submission_id'] ?? 0);
+    $candidateId = (int)($candidate['attempt_id'] ?? $candidate['submission_id'] ?? 0);
+
+    return $candidateId >= $existingId ? $candidate : $existing;
+}
+
+function examination_student_attempt_is_submitted(array $item): bool
+{
+    $st = strtolower(trim((string)($item['attempt_status'] ?? '')));
+
+    return $st === 'submitted' || ($st === 'expired' && !empty($item['submitted_at']));
+}
+
+function examination_student_attempt_was_started(array $item): bool
+{
+    if (examination_student_attempt_is_submitted($item)) {
+        return true;
+    }
+    $st = strtolower(trim((string)($item['attempt_status'] ?? '')));
+    if (in_array($st, ['in_progress', 'expired'], true)) {
+        return true;
+    }
+
+    return examination_schedule_to_timestamp(isset($item['started_at']) ? (string)$item['started_at'] : null) !== null;
 }
 
 function examination_user_in_assigned_sections(mysqli $conn, string $examType, int $sourceId, string $section): bool
@@ -480,10 +571,70 @@ function examination_student_normalize_record(array $record, string $examType): 
         'available_from' => $record['available_from'] ?? null,
         'deadline' => $record['deadline'] ?? null,
         'time_limit_seconds' => max(0, (int)($record['time_limit_seconds'] ?? 0)),
-        'created_at' => $record['created_at'] ?? $record['updated_at'] ?? null,
+        'created_at' => $record['created_at'] ?? null,
+        'updated_at' => $record['updated_at'] ?? null,
         'created_by' => (int)($record['created_by'] ?? 0),
         '_record' => $record,
     ];
+}
+
+/**
+ * Canonical recency timestamp for student exam ordering (newest created/uploaded first).
+ * Uses created_at from the exam/batch row; falls back to updated_at then source id.
+ */
+function examination_student_recency_timestamp(array $item): int
+{
+    $record = is_array($item['_record'] ?? null) ? $item['_record'] : $item;
+    foreach (['created_at', 'updated_at'] as $field) {
+        $raw = $record[$field] ?? $item[$field] ?? null;
+        $ts = examination_schedule_to_timestamp($raw !== null ? (string)$raw : null);
+        if ($ts !== null) {
+            return $ts;
+        }
+    }
+
+    return (int)($item['source_id'] ?? 0);
+}
+
+/**
+ * Sort normalized student exam rows for catalog views.
+ *
+ * @param list<array<string,mixed>> $items
+ * @return list<array<string,mixed>>
+ */
+function examination_student_sort_items(array $items, string $sort): array
+{
+    $validSorts = ['recent', 'oldest', 'deadline_asc', 'deadline_desc', 'title_asc', 'title_desc', 'opens_asc'];
+    if (!in_array($sort, $validSorts, true)) {
+        $sort = 'recent';
+    }
+
+    usort($items, static function ($a, $b) use ($sort) {
+        $ta = examination_schedule_to_timestamp(isset($a['deadline']) ? (string)$a['deadline'] : null) ?? PHP_INT_MAX;
+        $tb = examination_schedule_to_timestamp(isset($b['deadline']) ? (string)$b['deadline'] : null) ?? PHP_INT_MAX;
+        $ca = examination_student_recency_timestamp($a);
+        $cb = examination_student_recency_timestamp($b);
+        $oa = examination_schedule_to_timestamp(isset($a['available_from']) ? (string)$a['available_from'] : null) ?? PHP_INT_MAX;
+        $ob = examination_schedule_to_timestamp(isset($b['available_from']) ? (string)$b['available_from'] : null) ?? PHP_INT_MAX;
+
+        $cmp = match ($sort) {
+            'oldest' => $ca <=> $cb,
+            'deadline_desc' => $tb <=> $ta,
+            'title_asc' => strcasecmp((string)($a['title'] ?? ''), (string)($b['title'] ?? '')),
+            'title_desc' => strcasecmp((string)($b['title'] ?? ''), (string)($a['title'] ?? '')),
+            'opens_asc' => $oa <=> $ob,
+            'deadline_asc' => $ta <=> $tb,
+            default => $cb <=> $ca,
+        };
+
+        if ($cmp !== 0) {
+            return $cmp;
+        }
+
+        return ((int)($b['source_id'] ?? 0)) <=> ((int)($a['source_id'] ?? 0));
+    });
+
+    return $items;
 }
 
 function examination_student_take_url(string $examType, int $sourceId, bool $review = false): string
@@ -548,47 +699,51 @@ function examination_student_resolve_bucket(mysqli $conn, array $item, string $n
 {
     require_once __DIR__ . '/college_exam_helpers.php';
 
-    $st = (string)($item['attempt_status'] ?? '');
+    $st = strtolower(trim((string)($item['attempt_status'] ?? '')));
     $examType = examination_exam_type_normalize((string)($item['exam_type'] ?? 'regular'));
-    $isAvail = examination_record_is_published($item['_record'], $examType)
-        && examination_record_schedule_is_open($item, $nowSql);
+    $record = is_array($item['_record'] ?? null) ? $item['_record'] : $item;
+
+    if (!examination_record_is_published($record, $examType)) {
+        return 'missed';
+    }
+
+    $nowTs = examination_schedule_to_timestamp($nowSql) ?? time();
+    $startsTs = examination_schedule_to_timestamp(isset($item['available_from']) ? (string)$item['available_from'] : null);
+    $endsTs = examination_schedule_to_timestamp(isset($item['deadline']) ? (string)$item['deadline'] : null);
 
     $globalDoneNoDeadline = false;
     if ($examType === 'regular') {
         $globalDoneNoDeadline = college_exam_finished_all_submitted_no_deadline(
             $conn,
-            $item['_record'],
+            $record,
             (int)($item['_submitted_count'] ?? 0)
         );
-        if ($globalDoneNoDeadline && $st !== 'in_progress') {
-            $isAvail = false;
-        }
     }
 
-    $isUpcoming = !empty($item['available_from']) && (string)$item['available_from'] > $nowSql;
-    $isMissed = !empty($item['deadline']) && (string)$item['deadline'] < $nowSql && $st !== 'submitted';
-    $terminalExpired = $st === 'expired' && !empty($item['submitted_at']);
-
-    if ($st === 'submitted' || $terminalExpired) {
+    if (examination_student_attempt_is_submitted($item)) {
         return 'finished';
     }
-    if ($examType === 'regular' && $globalDoneNoDeadline && $st === 'in_progress') {
+
+    if ($st === 'in_progress') {
         return 'open';
-    }
-    if ($isMissed || $st === 'expired') {
-        return 'missed';
-    }
-    if ($isUpcoming) {
-        return 'upcoming';
-    }
-    if ($isAvail) {
-        return 'open';
-    }
-    if ($globalDoneNoDeadline) {
-        return 'missed';
     }
 
-    return 'missed';
+    if ($startsTs !== null && $nowTs < $startsTs) {
+        return 'upcoming';
+    }
+
+    $windowEnded = ($endsTs !== null && $nowTs >= $endsTs)
+        || ($globalDoneNoDeadline && $examType === 'regular');
+
+    if ($windowEnded) {
+        if (!examination_student_attempt_was_started($item)) {
+            return 'missed';
+        }
+
+        return 'finished';
+    }
+
+    return 'open';
 }
 
 /**
@@ -596,24 +751,28 @@ function examination_student_resolve_bucket(mysqli $conn, array $item, string $n
  */
 function examination_student_status_meta(array $item, string $bucket): array
 {
-    $st = (string)($item['attempt_status'] ?? '');
-    if ($st === 'submitted' || ($st === 'expired' && !empty($item['submitted_at']))) {
+    $st = strtolower(trim((string)($item['attempt_status'] ?? '')));
+    if (examination_student_attempt_is_submitted($item)) {
         return ['key' => 'submitted', 'label' => 'Submitted'];
     }
     if ($st === 'in_progress') {
         return ['key' => 'in_progress', 'label' => 'In progress'];
     }
     if ($bucket === 'open') {
-        return ['key' => 'open', 'label' => 'Open'];
+        return ['key' => 'open', 'label' => 'Open now'];
     }
     if ($bucket === 'upcoming') {
         return ['key' => 'upcoming', 'label' => 'Upcoming'];
     }
-    if ($bucket === 'finished') {
-        return ['key' => 'finished', 'label' => 'Finished'];
-    }
-    if ($st === 'expired' || $bucket === 'missed') {
+    if ($bucket === 'missed') {
         return ['key' => 'missed', 'label' => 'Missed'];
+    }
+    if ($bucket === 'finished') {
+        if (examination_student_attempt_was_started($item)) {
+            return ['key' => 'finished', 'label' => 'Finished'];
+        }
+
+        return ['key' => 'closed', 'label' => 'Closed'];
     }
 
     return ['key' => 'locked', 'label' => 'Locked'];
@@ -697,13 +856,21 @@ function examination_student_load_assigned_exams(mysqli $conn, int $userId, stri
     if ($regularIds !== []) {
         $inSql = implode(',', $regularIds);
         $aq = mysqli_query($conn, "
-          SELECT exam_id, status AS attempt_status, score, correct_count, total_count, submitted_at, started_at
+          SELECT attempt_id, exam_id, status AS attempt_status, score, correct_count, total_count, submitted_at, started_at
           FROM college_exam_attempts
           WHERE user_id = {$userId} AND exam_id IN ({$inSql})
+          ORDER BY started_at DESC, attempt_id DESC
         ");
         if ($aq) {
             while ($ar = mysqli_fetch_assoc($aq)) {
-                $attemptByRegular[(int)($ar['exam_id'] ?? 0)] = $ar;
+                $eid = (int)($ar['exam_id'] ?? 0);
+                if ($eid <= 0) {
+                    continue;
+                }
+                $attemptByRegular[$eid] = examination_student_pick_attempt_row(
+                    $attemptByRegular[$eid] ?? [],
+                    $ar
+                );
             }
             mysqli_free_result($aq);
         }
@@ -713,13 +880,21 @@ function examination_student_load_assigned_exams(mysqli $conn, int $userId, stri
     if ($diagIds !== []) {
         $inSql = implode(',', $diagIds);
         $aq = mysqli_query($conn, "
-          SELECT batch_id, status AS attempt_status, score, correct_count, total_count, submitted_at, started_at
+          SELECT attempt_id, batch_id, status AS attempt_status, score, correct_count, total_count, submitted_at, started_at
           FROM diagnostic_attempts
           WHERE user_id = {$userId} AND batch_id IN ({$inSql})
+          ORDER BY started_at DESC, attempt_id DESC
         ");
         if ($aq) {
             while ($ar = mysqli_fetch_assoc($aq)) {
-                $attemptByDiagnostic[(int)($ar['batch_id'] ?? 0)] = $ar;
+                $bid = (int)($ar['batch_id'] ?? 0);
+                if ($bid <= 0) {
+                    continue;
+                }
+                $attemptByDiagnostic[$bid] = examination_student_pick_attempt_row(
+                    $attemptByDiagnostic[$bid] ?? [],
+                    $ar
+                );
             }
             mysqli_free_result($aq);
         }

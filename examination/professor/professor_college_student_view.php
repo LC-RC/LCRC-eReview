@@ -22,7 +22,18 @@ mysqli_stmt_bind_param($stmt, 'i', $userId);
 mysqli_stmt_execute($stmt);
 $u = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
-if (!$u || !ereview_user_has_college_examination_access($conn, $userId, $u)) {
+$role = (string) ($u['role'] ?? '');
+$platformColsReady = ereview_platform_access_columns_ready($conn);
+$inRoster = false;
+if ($u) {
+    if ($role === 'college_student') {
+        $inRoster = true;
+    } elseif ($platformColsReady && $role === 'student') {
+        $accessVal = ereview_user_college_examination_access_value($u);
+        $inRoster = in_array($accessVal, ['active', 'suspended'], true);
+    }
+}
+if (!$u || !$inRoster) {
     $_SESSION['message'] = 'Examinee not found.';
     header('Location: professor_college_students');
     exit;
@@ -34,6 +45,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string)($_POST['action'] ?? '');
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $editErr = 'Invalid security token.';
+    } elseif ($action === 'approve_account' && $role === 'college_student') {
+        $upd = mysqli_prepare($conn, "UPDATE users SET status='approved' WHERE user_id=? AND role='college_student' LIMIT 1");
+        mysqli_stmt_bind_param($upd, 'i', $userId);
+        mysqli_stmt_execute($upd);
+        $changed = mysqli_stmt_affected_rows($upd) > 0;
+        mysqli_stmt_close($upd);
+        if ($changed) {
+            $u['status'] = 'approved';
+            $editFlash = 'Account approved. The student can now sign in.';
+        } else {
+            $editErr = 'Could not approve account.';
+        }
+    } elseif ($action === 'reject_account' && $role === 'college_student') {
+        $upd = mysqli_prepare($conn, "UPDATE users SET status='rejected' WHERE user_id=? AND role='college_student' LIMIT 1");
+        mysqli_stmt_bind_param($upd, 'i', $userId);
+        mysqli_stmt_execute($upd);
+        $changed = mysqli_stmt_affected_rows($upd) > 0;
+        mysqli_stmt_close($upd);
+        if ($changed) {
+            $u['status'] = 'rejected';
+            $editFlash = 'Registration rejected.';
+        } else {
+            $editErr = 'Could not reject account.';
+        }
     } elseif ($action === 'save_examinee_type') {
         $newType = strtolower(trim((string)($_POST['review_type'] ?? '')));
         if (!in_array($newType, ['undergrad', 'reviewee'], true)) {
@@ -100,7 +135,8 @@ if (!empty($u['created_at'])) {
     $createdFmt = $ts2 !== false ? date('M j, Y', $ts2) : '-';
 }
 
-$statusBadgeClass = match ((string)($u['status'] ?? '')) {
+$statusLower = strtolower((string) ($u['status'] ?? ''));
+$statusBadgeClass = match ($statusLower) {
     'approved' => 'admin-badge--success',
     'pending' => 'admin-badge--warning',
     'rejected' => 'admin-badge--danger',
@@ -175,6 +211,34 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         <div class="examination-info-tile-v"><?php echo h($createdFmt); ?></div>
       </div>
     </div>
+
+    <?php if ($role === 'college_student' && in_array($statusLower, ['pending', 'rejected'], true)): ?>
+    <h2 class="examination-section-title"><i class="bi bi-shield-check"></i> Account approval</h2>
+    <div class="rounded-xl overflow-hidden page-table p-4 mb-4 max-w-xl">
+      <?php if ($statusLower === 'pending'): ?>
+        <p class="text-sm opacity-80 mb-3">This student registered online and is waiting for approval before they can sign in.</p>
+        <div class="flex flex-wrap gap-2">
+          <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="action" value="approve_account">
+            <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Approve account</button>
+          </form>
+          <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" onsubmit="return confirm('Reject this registration? The student will not be able to sign in.');">
+            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+            <input type="hidden" name="action" value="reject_account">
+            <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-x-circle"></i> Reject</button>
+          </form>
+        </div>
+      <?php else: ?>
+        <p class="text-sm opacity-80 mb-3">This registration was rejected. You can approve the account if the student should be allowed to sign in.</p>
+        <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>">
+          <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <input type="hidden" name="action" value="approve_account">
+          <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Approve account</button>
+        </form>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <h2 class="examination-section-title"><i class="bi bi-pencil-square"></i> Correct examinee type</h2>
     <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" class="rounded-xl overflow-hidden page-table p-4 mb-4 max-w-xl">

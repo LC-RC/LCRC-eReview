@@ -231,6 +231,24 @@ function ereview_user_can_authenticate(mysqli $conn, array $user): array
         }
     }
 
+    if (($user['role'] ?? $role) === 'college_student') {
+        $accountStatus = strtolower((string) ($user['status'] ?? ''));
+        if ($accountStatus === 'pending') {
+            return [
+                'ok' => false,
+                'error' => 'Your registration is pending approval. Please wait for a professor or administrator to approve your account before signing in.',
+                'error_type' => 'pending_approval',
+            ];
+        }
+        if ($accountStatus === 'rejected') {
+            return [
+                'ok' => false,
+                'error' => 'Your registration was not approved. Contact your professor or administrator for assistance.',
+                'error_type' => 'rejected',
+            ];
+        }
+    }
+
     return [
         'ok' => false,
         'error' => 'Your account does not have access to any platform module.',

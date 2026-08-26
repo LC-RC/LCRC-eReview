@@ -179,6 +179,56 @@ function college_exam_seconds_exam_window_remaining(?string $availableFromSql, ?
 }
 
 /**
+ * Traditional percentage from correct/total (100 × correct / total).
+ * Used for student-facing displays where the fraction and % must match.
+ */
+function college_exam_compute_traditional_score_percentage(int $correct, int $total): float
+{
+    if ($total <= 0) {
+        return 0.0;
+    }
+
+    return round(100.0 * (float)$correct / (float)$total);
+}
+
+/**
+ * Normalized score display for student catalog cards (fraction + matching traditional %).
+ *
+ * @return array{fraction:string,percent:float,percent_label:string}|null null when no scorable total
+ */
+function college_exam_score_display_from_counts(?int $correctCount, ?int $totalCount, int $fallbackQuestionTotal = 0): ?array
+{
+    $tot = ($totalCount !== null && (int)$totalCount > 0)
+        ? (int)$totalCount
+        : (($fallbackQuestionTotal > 0) ? $fallbackQuestionTotal : null);
+    if ($tot === null) {
+        return null;
+    }
+
+    $correct = ($correctCount !== null) ? max(0, (int)$correctCount) : 0;
+    $percent = college_exam_compute_traditional_score_percentage($correct, $tot);
+
+    return [
+        'fraction' => $correct . '/' . $tot,
+        'percent' => $percent,
+        'percent_label' => college_exam_format_score_percent($percent),
+    ];
+}
+
+/**
+ * Student-facing score line: "correct/total | XX%" using traditional percentage.
+ */
+function college_exam_format_score_total_line_traditional(?int $correctCount, ?int $totalCount, int $fallbackQuestionTotal = 0): string
+{
+    $display = college_exam_score_display_from_counts($correctCount, $totalCount, $fallbackQuestionTotal);
+    if ($display === null) {
+        return '—';
+    }
+
+    return $display['fraction'] . ' | ' . $display['percent_label'];
+}
+
+/**
  * CEO grading curve: stored percentage = 50 + 0.5 × (traditional %), where traditional = 100 × correct / total.
  * Example: 40/50 correct → 50 + 0.5×80 = 90.00.
  */

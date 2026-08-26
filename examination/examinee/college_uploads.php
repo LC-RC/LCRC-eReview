@@ -2,6 +2,8 @@
 require_once dirname(__DIR__, 2) . '/auth.php';
 require_once dirname(__DIR__, 2) . '/includes/platform_access.php';
 ereview_require_college_examination_portal();
+require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
+college_student_uploads_enforce_enabled($conn);
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
 

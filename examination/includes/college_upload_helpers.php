@@ -503,6 +503,11 @@ function college_upload_user_matches_task(mysqli $conn, int $userId, array $task
  */
 function college_upload_list_for_student(mysqli $conn, int $userId): array
 {
+    require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
+    if (!college_student_uploads_is_enabled($conn)) {
+        return [];
+    }
+
     $rows = [];
     $q = mysqli_query($conn, 'SELECT * FROM college_upload_tasks WHERE is_open=1 ORDER BY deadline ASC');
     if (!$q) {
@@ -522,6 +527,11 @@ function college_upload_list_for_student(mysqli $conn, int $userId): array
 /** @return array<string,mixed>|null */
 function college_upload_fetch_task_for_student(mysqli $conn, int $taskId, int $userId): ?array
 {
+    require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
+    if (!college_student_uploads_is_enabled($conn)) {
+        return null;
+    }
+
     $stmt = mysqli_prepare($conn, 'SELECT * FROM college_upload_tasks WHERE task_id=? AND is_open=1 LIMIT 1');
     if (!$stmt) {
         return null;

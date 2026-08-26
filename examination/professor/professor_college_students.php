@@ -218,7 +218,7 @@ $adminLoadStudentsCss = true;
 $adminHeroIcon = 'people';
 $adminHeroTitle = 'Students';
 $adminHeroSubtitle = 'Examination roster only: native college accounts and eReview students with exam access. Enable new access from LMS Admin → Students.';
-$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="professor_create_college_student"><i class="bi bi-person-plus"></i> Add Student</a>'
+$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Register Student</a>'
     . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
 
 $statusChipMeta = [
@@ -357,7 +357,7 @@ $apiUrl = ereview_url('professor_college_students_api');
               <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Clear filters</a>
             <?php endif; ?>
             <?php if ($isStudentTab): ?>
-              <a href="professor_create_college_student" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Add Student</a>
+              <a href="student_registration" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Register Student</a>
             <?php else: ?>
               <a href="professor_create_reviewee" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-badge"></i> Add Reviewee</a>
             <?php endif; ?>

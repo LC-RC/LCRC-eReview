@@ -12,7 +12,7 @@ $pageTitle = 'College Portal';
 $uid = getCurrentUserId();
 $csrf = generateCSRFToken();
 
-$now = date('Y-m-d H:i:s');
+$now = examination_schedule_now_sql();
 $uidDash = (int)$uid;
 if ($uidDash > 0) {
     college_exam_finalize_expired_in_progress($conn, 0, $uidDash, 0);
@@ -59,42 +59,47 @@ $pendingUploads = 0;
 $uploadDue = [];
 $dueSoonUploads = 0;
 $openUploadTasksTotal = 0;
-require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
-$eligibleUploadTasks = college_upload_list_for_student($conn, $uidDash);
-foreach ($eligibleUploadTasks as $taskRow) {
-    $deadline = (string)($taskRow['deadline'] ?? '');
-    if ($deadline === '' || $deadline < $now) {
-        continue;
-    }
-    $openUploadTasksTotal++;
-    $taskId = (int)($taskRow['task_id'] ?? 0);
-    $hasSubmission = false;
-    if ($taskId > 0) {
-        $sq = @mysqli_query(
-            $conn,
-            'SELECT submission_id FROM college_submissions WHERE task_id=' . $taskId . ' AND user_id=' . $uidDash . ' LIMIT 1'
-        );
-        if ($sq && mysqli_fetch_assoc($sq)) {
-            $hasSubmission = true;
+$uploadsModuleEnabled = false;
+require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
+$uploadsModuleEnabled = college_student_uploads_is_enabled($conn);
+if ($uploadsModuleEnabled) {
+    require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
+    $eligibleUploadTasks = college_upload_list_for_student($conn, $uidDash);
+    foreach ($eligibleUploadTasks as $taskRow) {
+        $deadline = (string)($taskRow['deadline'] ?? '');
+        if ($deadline === '' || $deadline < $now) {
+            continue;
         }
-        if ($sq) {
-            mysqli_free_result($sq);
+        $openUploadTasksTotal++;
+        $taskId = (int)($taskRow['task_id'] ?? 0);
+        $hasSubmission = false;
+        if ($taskId > 0) {
+            $sq = @mysqli_query(
+                $conn,
+                'SELECT submission_id FROM college_submissions WHERE task_id=' . $taskId . ' AND user_id=' . $uidDash . ' LIMIT 1'
+            );
+            if ($sq && mysqli_fetch_assoc($sq)) {
+                $hasSubmission = true;
+            }
+            if ($sq) {
+                mysqli_free_result($sq);
+            }
         }
-    }
-    if ($hasSubmission) {
-        continue;
-    }
-    $pendingUploads++;
-    $dTs = strtotime($deadline);
-    if ($dTs !== false && $dTs <= $soonTs) {
-        $dueSoonUploads++;
-    }
-    if (count($uploadDue) < 5) {
-        $uploadDue[] = [
-            'task_id' => $taskId,
-            'title' => (string)($taskRow['title'] ?? ''),
-            'deadline' => $deadline,
-        ];
+        if ($hasSubmission) {
+            continue;
+        }
+        $pendingUploads++;
+        $dTs = strtotime($deadline);
+        if ($dTs !== false && $dTs <= $soonTs) {
+            $dueSoonUploads++;
+        }
+        if (count($uploadDue) < 5) {
+            $uploadDue[] = [
+                'task_id' => $taskId,
+                'title' => (string)($taskRow['title'] ?? ''),
+                'deadline' => $deadline,
+            ];
+        }
     }
 }
 
@@ -126,13 +131,16 @@ if ($r7) {
     mysqli_free_result($r7);
 }
 
-$r8 = @mysqli_query($conn, "
-  SELECT DATE_FORMAT(submitted_at, '%x-%v') AS yw, COUNT(*) AS c
-  FROM college_submissions
-  WHERE user_id=" . (int)$uid . "
-    AND submitted_at >= DATE_SUB(CURDATE(), INTERVAL 8 WEEK)
-  GROUP BY yw
-");
+$r8 = null;
+if ($uploadsModuleEnabled) {
+    $r8 = @mysqli_query($conn, "
+      SELECT DATE_FORMAT(submitted_at, '%x-%v') AS yw, COUNT(*) AS c
+      FROM college_submissions
+      WHERE user_id=" . (int)$uid . "
+        AND submitted_at >= DATE_SUB(CURDATE(), INTERVAL 8 WEEK)
+      GROUP BY yw
+    ");
+}
 if ($r8) {
     while ($row = mysqli_fetch_assoc($r8)) {
         $key = (string)($row['yw'] ?? '');
@@ -240,10 +248,9 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
               $rScore = '-';
               $rst = (string)($recent['attempt_status'] ?? '');
               if ($rst === 'submitted' || ($rst === 'expired' && !empty($recent['submitted_at']))) {
-                  $rScore = college_exam_format_score_total_line(
+                  $rScore = college_exam_format_score_total_line_traditional(
                       isset($recent['correct_count']) ? (int)$recent['correct_count'] : null,
                       isset($recent['total_count']) ? (int)$recent['total_count'] : null,
-                      $recent['score'] ?? null,
                       (int)($recent['_q_count'] ?? 0)
                   );
               }
@@ -279,7 +286,9 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
         <h2 class="cp-dash-panel__title" id="dash-activity">Activity trend</h2>
       </div>
       <div class="cp-dash-panel__body">
-      <p class="cp-dash-panel__desc">Exam submissions and uploads over the last 8 weeks · Engagement <?php echo (int)$examEngagementPct; ?>% · Upload completion <?php echo (int)$uploadCompletionPct; ?>%</p>
+      <p class="cp-dash-panel__desc"><?php echo $uploadsModuleEnabled
+          ? 'Exam submissions and uploads over the last 8 weeks · Engagement ' . (int)$examEngagementPct . '% · Upload completion ' . (int)$uploadCompletionPct . '%'
+          : 'Exam submissions over the last 8 weeks · Engagement ' . (int)$examEngagementPct . '%'; ?></p>
       <div class="cp-chart-wrap cp-chart-wrap--compact">
         <canvas id="collegeActivityChart" aria-label="Weekly activity trend"></canvas>
       </div>
@@ -287,7 +296,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
     </section>
     <?php endif; ?>
 
-    <?php if (!empty($upcoming) || !empty($uploadDue)): ?>
+    <?php if (!empty($upcoming) || ($uploadsModuleEnabled && !empty($uploadDue))): ?>
     <section class="cp-dash-panel cp-anim delay-4" aria-labelledby="dash-deadlines">
       <div class="cp-dash-panel__head">
         <h2 class="cp-dash-panel__title" id="dash-deadlines">Upcoming deadlines</h2>
@@ -315,6 +324,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
           <?php endif; ?>
         </div>
 
+        <?php if ($uploadsModuleEnabled): ?>
         <div class="cp-split-panels__col">
           <h3 class="cp-split-panels__label"><i class="bi bi-upload"></i> Upload due</h3>
           <?php if (empty($uploadDue)): ?>
@@ -332,6 +342,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
             </ul>
           <?php endif; ?>
         </div>
+        <?php endif; ?>
       </div>
       </div>
     </section>

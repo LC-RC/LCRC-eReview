@@ -13,12 +13,20 @@ if (!isLoggedIn()) {
 }
 
 require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
+require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
 
 $role = (string)($_SESSION['role'] ?? '');
 $uid = (int)getCurrentUserId();
 $sid = sanitizeInt($_GET['s'] ?? 0);
 
 if ($sid <= 0 || ($role !== 'college_student' && $role !== 'professor_admin')) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Forbidden';
+    exit;
+}
+
+if ($role === 'college_student' && !college_student_uploads_is_enabled($conn)) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=UTF-8');
     echo 'Forbidden';

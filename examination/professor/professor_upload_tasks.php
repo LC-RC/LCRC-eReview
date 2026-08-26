@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/includes/examination_admin_bootstrap.php';
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_upload_helpers.php';
 require_once dirname(__DIR__) . '/includes/college_sections.php';
+require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
 
 $pageTitle = 'Upload tasks';
 $uid = getCurrentUserId();
@@ -12,6 +13,7 @@ $csrf = generateCSRFToken();
 $allowedCsv = college_upload_allowed_extensions_csv();
 college_sections_ensure_schema($conn);
 $sectionOptions = college_sections_active_names($conn);
+$studentUploadsEnabled = college_student_uploads_is_enabled($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -22,6 +24,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $action = $_POST['action'] ?? '';
     $tid = sanitizeInt($_POST['task_id'] ?? 0);
+
+    if ($action === 'save_uploads_module') {
+        $enabled = !empty($_POST['college_student_uploads_enabled']);
+        if (college_student_uploads_set_enabled($conn, $enabled)) {
+            $_SESSION['message'] = $enabled
+                ? 'Student uploads are now enabled for the College portal.'
+                : 'Student uploads are now disabled. Upload pages are hidden from students.';
+        } else {
+            $_SESSION['error'] = 'Could not save the student uploads setting.';
+        }
+        header('Location: professor_upload_tasks');
+        exit;
+    }
 
     if ($action === 'delete' && $tid > 0) {
         $chk = mysqli_prepare($conn, 'SELECT task_id, title FROM college_upload_tasks WHERE task_id=? AND created_by=? LIMIT 1');
@@ -213,6 +228,36 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
   <div class="examination-page-shell">
+    <section class="examination-module-setting mb-4" aria-labelledby="put-student-uploads-setting">
+      <form method="post" class="examination-module-setting__form" id="putUploadsModuleForm">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="action" value="save_uploads_module">
+        <div class="examination-module-setting__copy">
+          <h2 class="examination-module-setting__title" id="put-student-uploads-setting">Student Uploads</h2>
+          <p class="examination-module-setting__desc">Allow students to submit files for upload tasks in the College portal. Individual tasks still require publishing and section targeting.</p>
+        </div>
+        <div class="examination-module-setting__control">
+          <label class="exam-lms-switch" title="<?php echo $studentUploadsEnabled ? 'Student uploads enabled' : 'Student uploads disabled'; ?>">
+            <input
+              type="checkbox"
+              name="college_student_uploads_enabled"
+              value="1"
+              class="exam-lms-switch__input"
+              <?php echo $studentUploadsEnabled ? 'checked' : ''; ?>
+              onchange="this.form.submit()"
+            >
+            <span class="exam-lms-switch__track" aria-hidden="true">
+              <span class="exam-lms-switch__label exam-lms-switch__label--off">OFF</span>
+              <span class="exam-lms-switch__thumb"></span>
+              <span class="exam-lms-switch__label exam-lms-switch__label--on">ON</span>
+            </span>
+            <span class="sr-only">Allow student uploads</span>
+          </label>
+          <p class="examination-module-setting__state"><?php echo $studentUploadsEnabled ? 'Currently ON — students can access upload tasks.' : 'Currently OFF — upload navigation and pages are hidden from students.'; ?></p>
+        </div>
+      </form>
+    </section>
+
     <div class="examination-kpi-grid mb-4">
       <div class="examination-kpi-card"><div class="examination-kpi-card__label">Total tasks</div><div class="examination-kpi-card__value"><?php echo (int) $totalTasks; ?></div></div>
       <div class="examination-kpi-card"><div class="examination-kpi-card__label">Open tasks</div><div class="examination-kpi-card__value"><?php echo (int) $openTasks; ?></div></div>

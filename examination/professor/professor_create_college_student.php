@@ -3,6 +3,8 @@ require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_sections.php';
+require_once dirname(__DIR__) . '/includes/college_student_create.php';
+require_once dirname(__DIR__, 2) . '/includes/url_helpers.php';
 
 $pageTitle = 'Add college student';
 $csrf = generateCSRFToken();
@@ -17,139 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($token)) {
         $error = 'Invalid request.';
     } else {
-        $fullName = trim($_POST['full_name'] ?? '');
-        $section = trim($_POST['section'] ?? '');
-        $studentNumber = trim($_POST['student_number'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $school = trim($_POST['school'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $confirmPassword = $_POST['confirm_password'] ?? '';
-        $avatarUseDefault = !empty($_POST['use_default_avatar']) ? 1 : 0;
-        $profilePicturePath = '';
-        $uploadedAvatar = $_FILES['profile_picture'] ?? null;
-        $canonicalSection = college_sections_resolve_active_name($conn, $section);
-
-        if ($fullName === '' || $canonicalSection === null || $school === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = 'Please enter a valid full name, section (from the list), school, and email.';
-        } elseif ($studentNumber !== '' && (strlen($studentNumber) > 32 || !preg_match('/^[A-Za-z0-9_-]+$/', $studentNumber))) {
-            $error = 'Student number must be at most 32 characters and use only letters, digits, hyphen, or underscore.';
-        } elseif ($password === '' || strlen($password) < 8) {
-            $error = 'Password must be at least 8 characters.';
-        } elseif ($confirmPassword === '' || $confirmPassword !== $password) {
-            $error = 'Passwords do not match.';
+        $result = college_student_create_from_request($conn, $_POST, $_FILES);
+        if (!$result['ok']) {
+            $error = $result['error'] ?? 'Could not create account.';
+            $avatarUseDefault = !empty($_POST['use_default_avatar']) ? 1 : 0;
+            if (!empty($result['avatar_preview_path'])) {
+                $avatarPreviewPath = (string) $result['avatar_preview_path'];
+            }
         } else {
-            $section = $canonicalSection;
-            if ($avatarUseDefault !== 1 && $uploadedAvatar && !empty($uploadedAvatar['name'])) {
-                $errCode = (int)($uploadedAvatar['error'] ?? UPLOAD_ERR_NO_FILE);
-                if ($errCode !== UPLOAD_ERR_OK) {
-                    $error = 'Could not upload profile picture.';
-                } else {
-                    $tmpFile = (string)($uploadedAvatar['tmp_name'] ?? '');
-                    $origName = (string)($uploadedAvatar['name'] ?? '');
-                    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                    $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-                    if (!in_array($ext, $allowedExt, true)) {
-                        $error = 'Profile picture must be JPG, PNG, WEBP, or GIF.';
-                    } elseif (!is_uploaded_file($tmpFile)) {
-                        $error = 'Invalid profile picture upload.';
-                    } else {
-                        $size = (int)($uploadedAvatar['size'] ?? 0);
-                        if ($size <= 0 || $size > (4 * 1024 * 1024)) {
-                            $error = 'Profile picture must be up to 4MB.';
-                        } else {
-                            $uploadDirAbs = dirname(__DIR__, 2) . '/uploads/profile_pictures';
-                            if (!is_dir($uploadDirAbs)) {
-                                @mkdir($uploadDirAbs, 0775, true);
-                            }
-                            if (!is_dir($uploadDirAbs) || !is_writable($uploadDirAbs)) {
-                                $error = 'Profile picture folder is not writable.';
-                            } else {
-                                $fileBase = 'college_student_' . date('Ymd_His') . '_' . bin2hex(random_bytes(5));
-                                $destAbs = $uploadDirAbs . '/' . $fileBase . '.' . $ext;
-                                if (!@move_uploaded_file($tmpFile, $destAbs)) {
-                                    $error = 'Failed to save profile picture.';
-                                } else {
-                                    $profilePicturePath = 'uploads/profile_pictures/' . basename($destAbs);
-                                    $avatarPreviewPath = $profilePicturePath;
-                                }
-                            }
-                        }
-                    }
-                }
-            } elseif ($avatarUseDefault !== 1) {
-                $error = 'Please upload a profile picture or enable default avatar.';
-            }
-        }
-        if ($error === null) {
-            $avatarPreviewPath = $profilePicturePath;
-        }
-        if ($error === null) {
-            $stmt = mysqli_prepare($conn, "SELECT user_id, role, email FROM users WHERE email=? LIMIT 1");
-            mysqli_stmt_bind_param($stmt, 's', $email);
-            mysqli_stmt_execute($stmt);
-            $existingRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-            mysqli_stmt_close($stmt);
-            if ($existingRow) {
-                $existingId = (int)($existingRow['user_id'] ?? 0);
-                $existingRole = (string)($existingRow['role'] ?? '');
-                $error = 'An account with this email already exists (user ID #' . $existingId . '). '
-                    . 'Ask an administrator to enable College Examination on that existing account instead of creating a duplicate.';
-            } else {
-                if ($error === null && $studentNumber !== '') {
-                    $chkSn = mysqli_prepare($conn, 'SELECT user_id FROM users WHERE student_number=? LIMIT 1');
-                    mysqli_stmt_bind_param($chkSn, 's', $studentNumber);
-                    mysqli_stmt_execute($chkSn);
-                    if (mysqli_fetch_assoc(mysqli_stmt_get_result($chkSn))) {
-                        mysqli_stmt_close($chkSn);
-                        $error = 'That student number is already assigned.';
-                    } else {
-                        mysqli_stmt_close($chkSn);
-                    }
-                }
-            }
-            if ($error === null) {
-                $hash = password_hash($password, PASSWORD_DEFAULT);
-                $hasEv = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
-                $evCol = $hasEv && mysqli_fetch_assoc($hasEv);
-
-                $hasPp = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'profile_picture'");
-                $ppCol = $hasPp && mysqli_fetch_assoc($hasPp);
-                $hasUa = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'use_default_avatar'");
-                $uaCol = $hasUa && mysqli_fetch_assoc($hasUa);
-
-                if ($evCol && $ppCol && $uaCol) {
-                    $ins = mysqli_prepare($conn, "INSERT INTO users (full_name, review_type, school, section, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status, email_verified) VALUES (?, 'undergrad', ?, ?, NULL, NULL, ?, ?, ?, ?, 'college_student', 'approved', 1)");
-                    mysqli_stmt_bind_param($ins, 'sssisss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $hash);
-                } elseif ($ppCol && $uaCol) {
-                    $ins = mysqli_prepare($conn, "INSERT INTO users (full_name, review_type, school, section, school_other, payment_proof, profile_picture, use_default_avatar, email, password, role, status) VALUES (?, 'undergrad', ?, ?, NULL, NULL, ?, ?, ?, ?, 'college_student', 'approved')");
-                    mysqli_stmt_bind_param($ins, 'sssisss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $hash);
-                } elseif ($evCol) {
-                    $ins = mysqli_prepare($conn, "INSERT INTO users (full_name, review_type, school, section, school_other, payment_proof, email, password, role, status, email_verified) VALUES (?, 'undergrad', ?, ?, NULL, NULL, ?, ?, 'college_student', 'approved', 1)");
-                    mysqli_stmt_bind_param($ins, 'sssss', $fullName, $school, $section, $email, $hash);
-                } else {
-                    $ins = mysqli_prepare($conn, "INSERT INTO users (full_name, review_type, school, section, school_other, payment_proof, email, password, role, status) VALUES (?, 'undergrad', ?, ?, NULL, NULL, ?, ?, 'college_student', 'approved')");
-                    mysqli_stmt_bind_param($ins, 'sssss', $fullName, $school, $section, $email, $hash);
-                }
-                if ($ins && mysqli_stmt_execute($ins)) {
-                    $newId = (int)mysqli_insert_id($conn);
-                    mysqli_stmt_close($ins);
-                    if ($newId > 0 && $studentNumber !== '') {
-                        $updSn = mysqli_prepare($conn, 'UPDATE users SET student_number=? WHERE user_id=?');
-                        mysqli_stmt_bind_param($updSn, 'si', $studentNumber, $newId);
-                        mysqli_stmt_execute($updSn);
-                        mysqli_stmt_close($updSn);
-                    }
-                    $success = 'Account created. The student can sign in at the main login page.';
-                    $_POST = [];
-                    $avatarPreviewPath = '';
-                    $avatarUseDefault = 1;
-                } else {
-                    $error = 'Could not create account.';
-                    if ($ins) {
-                        mysqli_stmt_close($ins);
-                    }
-                }
-            }
+            $success = 'Account created. The student can sign in at the main login page.';
+            $_POST = [];
+            $avatarPreviewPath = '';
+            $avatarUseDefault = 1;
         }
     }
 }
@@ -158,7 +39,8 @@ $pageTitle = 'Add college student';
 $adminHeroIcon = 'person-plus';
 $adminHeroTitle = 'Create college student';
 $adminHeroSubtitle = 'Creates an approved account with review_type=undergrad (College Student).';
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_college_students"><i class="bi bi-arrow-left"></i> Back to students</a>';
+$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_college_students"><i class="bi bi-arrow-left"></i> Back to students</a>'
+    . ' <a class="admin-btn admin-btn--ghost admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Registration form</a>';
 ?>
 <!DOCTYPE html>
 <html lang="en">

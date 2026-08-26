@@ -1,0 +1,7 @@
+.probe_secret
+config.local.env
+config.env
+sessions/*
+!sessions/.gitignore
+artifacts/*
+!artifacts/.gitignore

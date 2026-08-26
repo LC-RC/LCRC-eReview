@@ -195,6 +195,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             null
         );
         $target = ereview_resolve_post_login_url($conn, $user);
+        $customRedirect = ereview_consume_post_login_redirect((string) ($user['role'] ?? ''));
+        if ($customRedirect !== null) {
+            $target = $customRedirect;
+        }
         if (($user['role'] ?? '') === 'admin' && !admin_can('dashboard')) {
             $firstKey = null;
             $keys = admin_acl_session_keys();

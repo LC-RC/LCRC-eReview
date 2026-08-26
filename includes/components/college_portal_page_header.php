@@ -10,6 +10,7 @@
  * @var string|null $cpPageBackLabel
  * @var string|null $cpPageActionHtml
  * @var array|null  $cpPageStats
+ * @var string      $cpPageStatsVariant  inline|cards (default inline)
  * @var string      $cpPageClass
  * @var string      $cpPageVariant   compact|editorial (default compact)
  */
@@ -21,6 +22,7 @@ $cpPageBackHref = isset($cpPageBackHref) ? trim((string)$cpPageBackHref) : '';
 $cpPageBackLabel = trim((string)($cpPageBackLabel ?? 'Back'));
 $cpPageActionHtml = (string)($cpPageActionHtml ?? '');
 $cpPageStats = is_array($cpPageStats ?? null) ? $cpPageStats : [];
+$cpPageStatsVariant = trim((string)($cpPageStatsVariant ?? 'inline'));
 $cpPageClass = trim((string)($cpPageClass ?? 'cp-anim delay-1'));
 $cpPageVariant = trim((string)($cpPageVariant ?? 'compact'));
 $isCompact = ($cpPageVariant !== 'editorial');
@@ -51,14 +53,31 @@ $titleClass = $isCompact ? 'cp-page-header__title' : 'cp-page-header__title cp-t
     <?php endif; ?>
   </div>
   <?php if ($cpPageStats !== []): ?>
-    <div class="cp-page-header__stats cp-summary-inline" aria-label="Summary">
-      <?php foreach ($cpPageStats as $i => $stat): ?>
-        <?php if ($i > 0): ?><span class="cp-summary-inline__sep" aria-hidden="true"></span><?php endif; ?>
-        <div class="cp-summary-inline__item">
-          <span class="cp-summary-inline__k"><?php echo h((string)($stat['label'] ?? '')); ?></span>
-          <span class="cp-summary-inline__v"><?php echo h((string)($stat['value'] ?? '')); ?></span>
-        </div>
-      <?php endforeach; ?>
-    </div>
+    <?php if ($cpPageStatsVariant === 'cards'): ?>
+      <div class="cp-page-header__stats cp-exam-stat-cards" aria-label="Summary">
+        <?php foreach ($cpPageStats as $stat):
+          $statTone = trim((string)($stat['tone'] ?? 'blue'));
+          $statIcon = trim((string)($stat['icon'] ?? 'bi-grid'));
+        ?>
+          <div class="cp-exam-stat-card cp-exam-stat-card--<?php echo h($statTone); ?>">
+            <span class="cp-exam-stat-card__icon" aria-hidden="true"><i class="bi <?php echo h($statIcon); ?>"></i></span>
+            <div class="cp-exam-stat-card__body">
+              <span class="cp-exam-stat-card__k"><?php echo h((string)($stat['label'] ?? '')); ?></span>
+              <span class="cp-exam-stat-card__v"><?php echo h((string)($stat['value'] ?? '')); ?></span>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <div class="cp-page-header__stats cp-summary-inline" aria-label="Summary">
+        <?php foreach ($cpPageStats as $i => $stat): ?>
+          <?php if ($i > 0): ?><span class="cp-summary-inline__sep" aria-hidden="true"></span><?php endif; ?>
+          <div class="cp-summary-inline__item">
+            <span class="cp-summary-inline__k"><?php echo h((string)($stat['label'] ?? '')); ?></span>
+            <span class="cp-summary-inline__v"><?php echo h((string)($stat['value'] ?? '')); ?></span>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   <?php endif; ?>
 </header>

@@ -18,7 +18,7 @@ $appShellNavConfig = [
     [
         'label' => 'Examination',
         'items' => [
-            ['label' => 'Students', 'href' => 'professor_college_students', 'icon' => 'bi-people', 'title' => 'College students and reviewees for examinations', 'active' => ['professor_college_students', 'professor_create_college_student', 'professor_create_reviewee', 'professor_college_student_view']],
+            ['label' => 'Students', 'href' => 'professor_college_students', 'icon' => 'bi-people', 'title' => 'College students and reviewees for examinations', 'active' => ['professor_college_students', 'student_registration', 'professor_create_college_student', 'professor_create_reviewee', 'professor_college_student_view']],
             ['label' => 'Sections', 'href' => 'professor_college_sections', 'icon' => 'bi-collection', 'title' => 'Centralized College Examination sections', 'active' => ['professor_college_sections']],
             ['label' => 'Examinations', 'href' => 'professor_examinations', 'icon' => 'bi-journal-text', 'title' => 'All examinations', 'active' => ['professor_examinations', 'professor_examination_edit', 'professor_exams', 'professor_exam_edit', 'professor_diagnostic_batches', 'professor_diagnostic_batch_edit']],
             ['label' => 'Monitoring', 'href' => 'professor_examination_monitor', 'icon' => 'bi-graph-up', 'title' => 'Examination monitoring', 'active' => ['professor_examination_monitor', 'professor_exam_monitor', 'professor_diagnostic_monitor']],

@@ -11,7 +11,7 @@ require_once dirname(__DIR__) . '/includes/examination_eligibility.php';
 $pageTitle = 'Exams';
 $uid = getCurrentUserId();
 $uidInt = (int)($uid ?? 0);
-$now = date('Y-m-d H:i:s');
+$now = examination_schedule_now_sql();
 if ($uidInt > 0) {
     college_exam_finalize_expired_in_progress($conn, 0, $uidInt, 0);
     diagnostic_exam_finalize_expired_in_progress($conn, 0, $uidInt);
@@ -19,10 +19,10 @@ if ($uidInt > 0) {
 
 $q = trim((string)($_GET['q'] ?? ''));
 $view = (string)($_GET['view'] ?? 'all');
-$sort = (string)($_GET['sort'] ?? 'deadline_asc');
-$display = (string)($_GET['display'] ?? 'card');
+$sort = (string)($_GET['sort'] ?? 'recent');
+$displayParam = isset($_GET['display']) ? trim((string)$_GET['display']) : '';
 $validViews = ['all', 'open', 'upcoming', 'finished', 'completed', 'missed'];
-$validSorts = ['deadline_asc', 'deadline_desc', 'title_asc', 'title_desc', 'recent'];
+$validSorts = ['recent', 'oldest', 'deadline_asc', 'deadline_desc', 'title_asc', 'title_desc', 'opens_asc'];
 $validDisplays = ['list', 'card'];
 if ($view === 'completed') {
     $view = 'finished';
@@ -31,47 +31,44 @@ if (!in_array($view, $validViews, true)) {
     $view = 'all';
 }
 if (!in_array($sort, $validSorts, true)) {
-    $sort = 'deadline_asc';
+    $sort = 'recent';
 }
-if (!in_array($display, $validDisplays, true)) {
-    $display = 'card';
-}
+$display = in_array($displayParam, $validDisplays, true) ? $displayParam : 'card';
 
-function college_exams_status_pill_class(string $statusKey): string
+function college_exams_empty_state(string $viewKey): array
 {
-    return match ($statusKey) {
-        'open' => 'status-open',
-        'upcoming' => 'status-upcoming',
-        'in_progress' => 'status-progress',
-        'submitted', 'finished' => 'status-done',
-        'missed' => 'status-missed',
-        default => 'status-closed',
+    return match ($viewKey) {
+        'open' => [
+            'icon' => 'bi-unlock',
+            'title' => 'No open examinations',
+            'text' => 'You do not have any examinations open right now. Check upcoming exams or switch to All.',
+        ],
+        'upcoming' => [
+            'icon' => 'bi-clock-history',
+            'title' => 'No upcoming examinations',
+            'text' => 'You do not have any upcoming examinations at the moment.',
+        ],
+        'finished' => [
+            'icon' => 'bi-check-circle',
+            'title' => 'No finished examinations',
+            'text' => 'Completed examinations will appear here after you submit an attempt.',
+        ],
+        'missed' => [
+            'icon' => 'bi-exclamation-circle',
+            'title' => 'No missed examinations',
+            'text' => 'Examinations you miss after the deadline will be listed here.',
+        ],
+        default => [
+            'icon' => 'bi-journal-x',
+            'title' => 'No examinations match this filter',
+            'text' => 'Try another search term or switch to a different status filter.',
+        ],
     };
 }
 
-function college_exams_status_icon(string $statusKey): string
+function college_exams_display_query(string $display): string
 {
-    return match ($statusKey) {
-        'open' => 'bi-unlock',
-        'upcoming' => 'bi-clock',
-        'in_progress' => 'bi-play-circle',
-        'submitted', 'finished' => 'bi-check-circle',
-        'missed' => 'bi-exclamation-circle',
-        default => 'bi-lock',
-    };
-}
-
-function college_exams_format_datetime(?string $value, string $fallback = '-'): string
-{
-    if ($value === null || trim($value) === '') {
-        return $fallback;
-    }
-    $ts = strtotime($value);
-    if ($ts === false) {
-        return $fallback;
-    }
-
-    return date('M j, Y g:i A', $ts);
+    return $display === 'card' ? '' : '&display=' . urlencode($display);
 }
 
 $allItems = examination_student_load_assigned_exams($conn, $uidInt, $now);
@@ -101,25 +98,13 @@ foreach ($allItems as $item) {
     $list[] = $item;
 }
 
-usort($list, static function ($a, $b) use ($sort) {
-    $ta = strtotime((string)($a['deadline'] ?? '')) ?: PHP_INT_MAX;
-    $tb = strtotime((string)($b['deadline'] ?? '')) ?: PHP_INT_MAX;
-    $ca = strtotime((string)($a['created_at'] ?? '')) ?: 0;
-    $cb = strtotime((string)($b['created_at'] ?? '')) ?: 0;
-    switch ($sort) {
-        case 'deadline_desc':
-            return $tb <=> $ta;
-        case 'title_asc':
-            return strcasecmp((string)($a['title'] ?? ''), (string)($b['title'] ?? ''));
-        case 'title_desc':
-            return strcasecmp((string)($b['title'] ?? ''), (string)($a['title'] ?? ''));
-        case 'recent':
-            return $cb <=> $ca;
-        case 'deadline_asc':
-        default:
-            return $ta <=> $tb;
-    }
-});
+$list = examination_student_sort_items($list, $sort);
+
+$emptyState = college_exams_empty_state($view);
+$displayQuery = college_exams_display_query($display);
+$filterQuerySuffix = '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . $displayQuery;
+$listLayout = $display === 'card' ? 'card' : 'lms';
+$listContainerClass = $display === 'card' ? 'cp-exam-grid cp-exam-grid--catalog' : 'cp-exam-lms-list';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,11 +113,13 @@ usort($list, static function ($a, $b) use ($sort) {
 </head>
 <body class="font-sans antialiased<?php echo !empty($examinationStudentBodyClass) ? ' ' . h($examinationStudentBodyClass) : ''; ?>">
   <?php include __DIR__ . '/college_student_sidebar.php'; ?>
-  <div class="cp-page-shell cp-content cp-content--catalog ereview-shell-no-fade pt-2">
+  <div class="cp-page-shell cp-content cp-content--catalog cp-exams-lms cp-exams-catalog ereview-shell-no-fade pt-2">
     <?php
-      $cpPageVariant = 'compact';
+      $cpPageVariant = 'editorial';
+      $cpPageIcon = 'bi-journal-text';
       $cpPageTitle = 'Examinations';
       $cpPageSubtitle = 'Manage your available college examinations.';
+      $cpPageStatsVariant = 'inline';
       $cpPageStats = [
           ['label' => 'Total', 'value' => (int)$countMap['all']],
           ['label' => 'Open now', 'value' => (int)$countMap['open']],
@@ -142,83 +129,77 @@ usort($list, static function ($a, $b) use ($sort) {
       require dirname(__DIR__, 2) . '/includes/components/college_portal_page_header.php';
     ?>
 
-    <section class="cp-dash-panel cp-anim delay-2" aria-label="Examination filters">
-      <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title">Browse examinations</h2>
-      </div>
-      <div class="cp-dash-panel__body">
-    <div class="cp-toolbar-inline">
-      <form method="get" class="cp-toolbar-inline__search search-sort-form">
-        <div class="cp-search-bar__field">
-          <i class="bi bi-search" aria-hidden="true"></i>
-          <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search examinations..." class="search-input" aria-label="Search examinations">
-        </div>
-        <select name="sort" class="sort-select" aria-label="Sort examinations">
-          <option value="deadline_asc" <?php echo $sort === 'deadline_asc' ? 'selected' : ''; ?>>Closes (soonest)</option>
-          <option value="deadline_desc" <?php echo $sort === 'deadline_desc' ? 'selected' : ''; ?>>Closes (latest)</option>
-          <option value="title_asc" <?php echo $sort === 'title_asc' ? 'selected' : ''; ?>>Title A–Z</option>
-          <option value="title_desc" <?php echo $sort === 'title_desc' ? 'selected' : ''; ?>>Title Z–A</option>
-          <option value="recent" <?php echo $sort === 'recent' ? 'selected' : ''; ?>>Recently created</option>
-        </select>
-        <input type="hidden" name="display" value="<?php echo h($display); ?>">
-        <button class="cp-btn cp-btn--secondary cp-btn--sm" type="submit">Apply</button>
-        <div class="cp-view-toggle">
-          <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=card'); ?>" class="view-chip <?php echo $display === 'card' ? 'is-active' : ''; ?>" title="Card view"><i class="bi bi-grid-3x3-gap"></i></a>
-          <a href="<?php echo h('?view=' . urlencode($view) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=list'); ?>" class="view-chip <?php echo $display === 'list' ? 'is-active' : ''; ?>" title="List view"><i class="bi bi-list-ul"></i></a>
-        </div>
-      </form>
-      <div class="filters-row cp-toolbar-inline__filters">
-        <?php
-          $views = [
-              'all' => ['All', $countMap['all'], 'bi-grid'],
-              'open' => ['Open now', $countMap['open'], 'bi-play-circle'],
-              'upcoming' => ['Upcoming', $countMap['upcoming'], 'bi-clock-history'],
-              'finished' => ['Finished', $countMap['finished'], 'bi-check-circle'],
-              'missed' => ['Missed', $countMap['missed'], 'bi-exclamation-circle'],
-          ];
-          foreach ($views as $k => $v):
-            $url = '?view=' . urlencode($k) . '&sort=' . urlencode($sort) . '&q=' . urlencode($q) . '&display=' . urlencode($display);
-        ?>
-          <a href="<?php echo h($url); ?>" class="filter-pill filter-pill--compact <?php echo $k === 'finished' ? 'filter-finished ' : ''; ?><?php echo $view === $k ? 'is-active' : ''; ?>"><?php echo h($v[0]); ?> <span class="filter-pill__count"><?php echo (int)$v[1]; ?></span></a>
-        <?php endforeach; ?>
-      </div>
-    </div>
-      </div>
-    </section>
+    <section class="cp-exams-browser cp-anim delay-2" aria-label="Examination browser">
+      <div class="cp-exams-browser__toolbar cp-glass-surface">
+        <form method="get" class="cp-exams-browser__search search-sort-form">
+          <div class="cp-search-bar__field cp-search-bar__field--wide">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search examinations..." class="search-input" aria-label="Search examinations">
+          </div>
+          <select name="sort" class="sort-select" aria-label="Sort examinations" onchange="this.form.submit()">
+            <option value="recent" <?php echo $sort === 'recent' ? 'selected' : ''; ?>>Newest</option>
+            <option value="oldest" <?php echo $sort === 'oldest' ? 'selected' : ''; ?>>Oldest</option>
+            <option value="deadline_asc" <?php echo $sort === 'deadline_asc' ? 'selected' : ''; ?>>Closing soon</option>
+            <option value="opens_asc" <?php echo $sort === 'opens_asc' ? 'selected' : ''; ?>>Opening soon</option>
+          </select>
+          <?php if ($view !== 'all'): ?>
+            <input type="hidden" name="view" value="<?php echo h($view); ?>">
+          <?php endif; ?>
+          <?php if ($display === 'list'): ?>
+            <input type="hidden" name="display" value="list">
+          <?php endif; ?>
+        </form>
 
-    <section class="cp-dash-panel cp-anim delay-3" aria-label="Examination list">
-      <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title">Examination list</h2>
-        <span class="cp-dash-panel__meta"><?php echo (int)count($list); ?> shown</span>
+        <div class="cp-exams-browser__controls">
+          <div class="cp-exams-browser__filters filters-row">
+            <?php
+              $views = [
+                  'all' => ['All', $countMap['all']],
+                  'open' => ['Open now', $countMap['open']],
+                  'upcoming' => ['Upcoming', $countMap['upcoming']],
+                  'finished' => ['Finished', $countMap['finished']],
+                  'missed' => ['Missed', $countMap['missed']],
+              ];
+              foreach ($views as $k => $v):
+                $url = '?view=' . urlencode($k) . $filterQuerySuffix;
+            ?>
+              <a href="<?php echo h($url); ?>" class="filter-pill filter-pill--compact <?php echo $k === 'finished' ? 'filter-finished ' : ''; ?><?php echo $view === $k ? 'is-active' : ''; ?>"><?php echo h($v[0]); ?> <span class="filter-pill__count"><?php echo (int)$v[1]; ?></span></a>
+            <?php endforeach; ?>
+          </div>
+
+          <div class="cp-view-toggle" role="group" aria-label="Display layout">
+            <?php
+              $listUrl = '?display=list' . ($view !== 'all' ? '&view=' . urlencode($view) : '') . '&sort=' . urlencode($sort) . '&q=' . urlencode($q);
+              $cardUrl = '?' . ($view !== 'all' ? 'view=' . urlencode($view) . '&' : '') . 'sort=' . urlencode($sort) . '&q=' . urlencode($q);
+              if ($cardUrl === '?') {
+                  $cardUrl = 'college_exams';
+              }
+            ?>
+            <a href="<?php echo h($listUrl); ?>" class="cp-view-toggle__btn<?php echo $display === 'list' ? ' is-active' : ''; ?>" aria-pressed="<?php echo $display === 'list' ? 'true' : 'false'; ?>"><i class="bi bi-list-ul" aria-hidden="true"></i><span>List</span></a>
+            <a href="<?php echo h($cardUrl); ?>" class="cp-view-toggle__btn<?php echo $display === 'card' ? ' is-active' : ''; ?>" aria-pressed="<?php echo $display === 'card' ? 'true' : 'false'; ?>"><i class="bi bi-grid" aria-hidden="true"></i><span>Grid</span></a>
+          </div>
+        </div>
       </div>
-      <div class="cp-dash-panel__body">
-    <div class="cp-catalog-list" data-ereview-exam-count="<?php echo (int)count($list); ?>">
-      <?php if (count($list) === 0): ?>
-        <div class="cp-empty-surface">
-          <div class="cp-empty-surface__icon"><i class="bi bi-journal-x"></i></div>
-          <h3 class="cp-empty-surface__title">No examinations match this filter</h3>
-          <p class="cp-empty-surface__text">Try another search term or switch to a different status filter.</p>
-        </div>
-      <?php elseif ($display === 'list'): ?>
-        <div class="cp-exam-list">
-          <?php foreach ($list as $e):
-            $cpExam = $e;
-            $cpExamLayout = 'row';
-            $cpExamFeatured = false;
-            require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
-          endforeach; ?>
-        </div>
-      <?php else: ?>
-        <div class="cp-exam-grid">
-          <?php foreach ($list as $e):
-            $cpExam = $e;
-            $cpExamLayout = 'card';
-            $cpExamFeatured = false;
-            require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
-          endforeach; ?>
-        </div>
-      <?php endif; ?>
-    </div>
+
+      <div class="<?php echo h($listContainerClass); ?>" data-ereview-exam-count="<?php echo (int)count($list); ?>">
+        <?php if (count($list) === 0): ?>
+          <div class="cp-empty-surface cp-empty-surface--catalog">
+            <div class="cp-empty-surface__icon"><i class="bi <?php echo h($emptyState['icon']); ?>"></i></div>
+            <h3 class="cp-empty-surface__title"><?php echo h($emptyState['title']); ?></h3>
+            <p class="cp-empty-surface__text"><?php echo h($emptyState['text']); ?></p>
+          </div>
+        <?php else: ?>
+          <?php $examIndex = 0; foreach ($list as $e): ?>
+            <?php
+              $cpExam = $e;
+              $cpExamLayout = $listLayout;
+              $cpExamFeatured = false;
+              $cpExamIsNewest = ($sort === 'recent' && $examIndex === 0);
+              require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
+              $examIndex++;
+            ?>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
     </section>
   </div>

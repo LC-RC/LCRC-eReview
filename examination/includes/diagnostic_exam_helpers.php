@@ -93,13 +93,9 @@ function diagnostic_exam_batch_is_open(array $batch, string $nowSql): bool
     if (!diagnostic_exam_batch_is_published($batch)) {
         return false;
     }
-    if (!empty($batch['available_from']) && (string)$batch['available_from'] > $nowSql) {
-        return false;
-    }
-    if (!empty($batch['deadline']) && (string)$batch['deadline'] < $nowSql) {
-        return false;
-    }
-    return true;
+    require_once __DIR__ . '/examination_eligibility.php';
+
+    return examination_record_schedule_is_open($batch, $nowSql);
 }
 
 function diagnostic_exam_load_subject_catalog(mysqli $conn): array

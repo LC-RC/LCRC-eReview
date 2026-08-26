@@ -77,3 +77,43 @@ if (!function_exists('ereview_page_matches')) {
         return ereview_page_basename($current) === ereview_page_basename($candidate);
     }
 }
+
+if (!function_exists('ereview_set_post_login_redirect')) {
+    /**
+     * Remember a safe internal page to open after login (basename only, no query).
+     */
+    function ereview_set_post_login_redirect(string $basename): void
+    {
+        $basename = preg_replace('/\.php$/i', '', trim($basename));
+        if ($basename !== '' && preg_match('/^[a-z0-9_]+$/', $basename)) {
+            $_SESSION['post_login_redirect'] = $basename;
+        }
+    }
+}
+
+if (!function_exists('ereview_consume_post_login_redirect')) {
+    /**
+     * Return extensionless URL for a stored post-login redirect, or null if none/invalid.
+     */
+    function ereview_consume_post_login_redirect(?string $role = null): ?string
+    {
+        $path = $_SESSION['post_login_redirect'] ?? null;
+        unset($_SESSION['post_login_redirect']);
+        if (!is_string($path) || $path === '' || !preg_match('/^[a-z0-9_]+$/', $path)) {
+            return null;
+        }
+
+        $professorAllowed = [
+            'student_registration',
+            'professor_college_students',
+            'professor_create_college_student',
+            'professor_admin_dashboard',
+        ];
+
+        if ($role === 'professor_admin' && in_array($path, $professorAllowed, true)) {
+            return ereview_url($path);
+        }
+
+        return null;
+    }
+}

@@ -60,14 +60,20 @@ $appShellProfileImage = ($avatarPath !== '' && !$useDefaultAvatar) ? $avatarPath
 $appShellTopbarAvatarImage = $appShellProfileImage;
 $appShellTopbarAvatarInitial = $avatarInitial;
 
+require_once dirname(__DIR__, 2) . '/includes/college_student_uploads.php';
+
+$collegePortalNavItems = [
+    ['label' => 'Dashboard', 'href' => 'college_student_dashboard', 'icon' => 'bi-speedometer2', 'active' => ['college_student_dashboard']],
+    ['label' => 'Exams', 'href' => 'college_exams', 'icon' => 'bi-journal-text', 'active' => ['college_exams', 'college_take_exam', 'college_diagnostic_take']],
+];
+if (college_student_uploads_nav_visible($conn, $uid)) {
+    $collegePortalNavItems[] = ['label' => 'Uploads', 'href' => 'college_uploads', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads', 'college_upload_task']];
+}
+
 $appShellNavConfig = [
     [
         'label' => 'College portal',
-        'items' => [
-            ['label' => 'Dashboard', 'href' => 'college_student_dashboard', 'icon' => 'bi-speedometer2', 'active' => ['college_student_dashboard']],
-            ['label' => 'Exams', 'href' => 'college_exams', 'icon' => 'bi-journal-text', 'active' => ['college_exams', 'college_take_exam', 'college_diagnostic_take']],
-            ['label' => 'Uploads', 'href' => 'college_uploads', 'icon' => 'bi-cloud-upload', 'active' => ['college_uploads', 'college_upload_task']],
-        ],
+        'items' => $collegePortalNavItems,
     ],
 ];
 
