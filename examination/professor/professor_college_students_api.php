@@ -15,6 +15,7 @@ $mutating = in_array($action, [
     'bulk_assign_section',
     'bulk_disable_college_examination',
     'bulk_remove_from_examination',
+    'approve_college_students',
 ], true);
 
 if ($mutating) {
@@ -104,6 +105,107 @@ function pcs_api_user_has_college_exam(array $row): bool
         (int) ($row['user_id'] ?? 0),
         $row
     );
+}
+
+if ($action === 'approve_college_students' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userIds = pcs_api_parse_user_ids($_POST['user_ids'] ?? []);
+    $sectionRaw = trim((string) ($_POST['section'] ?? ''));
+    $sectionProvided = ($sectionRaw !== '' && $sectionRaw !== '__none__');
+    $sectionVal = null;
+
+    if ($sectionProvided) {
+        if (mb_strlen($sectionRaw) > 100) {
+            pcs_api_json(['ok' => false, 'error' => 'Section must be at most 100 characters.'], 422);
+        }
+        $canonicalSection = college_sections_resolve_active_name($conn, $sectionRaw);
+        if ($canonicalSection === null) {
+            pcs_api_json(['ok' => false, 'error' => 'Select an active section from the College Examination Sections list.'], 422);
+        }
+        $sectionVal = $canonicalSection;
+    }
+
+    mysqli_begin_transaction($conn);
+    try {
+        $found = pcs_api_lock_users($conn, $userIds);
+        $needSection = [];
+
+        foreach ($found as $uid => $row) {
+            $role = (string) ($row['role'] ?? '');
+            $status = strtolower((string) ($row['status'] ?? ''));
+            if ($role !== 'college_student') {
+                throw new InvalidArgumentException('User #' . $uid . ' is not a native college student registration.');
+            }
+            if (!in_array($status, ['pending', 'rejected'], true)) {
+                throw new InvalidArgumentException('User #' . $uid . ' is already ' . ($status !== '' ? $status : 'approved') . '.');
+            }
+            $existingSection = trim((string) ($row['section'] ?? ''));
+            if ($existingSection === '' && $sectionVal === null) {
+                $needSection[] = $uid;
+            }
+        }
+
+        if ($needSection !== []) {
+            throw new InvalidArgumentException(
+                count($needSection) === 1
+                    ? 'Assign a section before approving this student.'
+                    : ('Assign a section before approving. ' . count($needSection) . ' selected student(s) have no section.')
+            );
+        }
+
+        foreach ($userIds as $uid) {
+            if ($sectionVal !== null) {
+                $upd = mysqli_prepare(
+                    $conn,
+                    "UPDATE users
+                     SET status='approved', section=?
+                     WHERE user_id=? AND role='college_student' AND status IN ('pending','rejected')
+                     LIMIT 1"
+                );
+                if (!$upd) {
+                    throw new RuntimeException('Could not prepare approve update.');
+                }
+                mysqli_stmt_bind_param($upd, 'si', $sectionVal, $uid);
+            } else {
+                $upd = mysqli_prepare(
+                    $conn,
+                    "UPDATE users
+                     SET status='approved'
+                     WHERE user_id=? AND role='college_student' AND status IN ('pending','rejected')
+                     LIMIT 1"
+                );
+                if (!$upd) {
+                    throw new RuntimeException('Could not prepare approve update.');
+                }
+                mysqli_stmt_bind_param($upd, 'i', $uid);
+            }
+            if (!mysqli_stmt_execute($upd) || mysqli_stmt_affected_rows($upd) < 1) {
+                mysqli_stmt_close($upd);
+                throw new RuntimeException('Could not approve student #' . $uid . '.');
+            }
+            mysqli_stmt_close($upd);
+        }
+
+        mysqli_commit($conn);
+    } catch (InvalidArgumentException $e) {
+        mysqli_rollback($conn);
+        pcs_api_json(['ok' => false, 'error' => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        pcs_api_json(['ok' => false, 'error' => $e->getMessage()], 500);
+    }
+
+    $count = count($userIds);
+    $msg = 'Approved ' . $count . ' student' . ($count === 1 ? '' : 's') . '. They can now sign in.';
+    if ($sectionVal !== null) {
+        $msg .= ' Section: ' . $sectionVal . '.';
+    }
+    pcs_api_json([
+        'ok' => true,
+        'approved_count' => $count,
+        'user_ids' => $userIds,
+        'section' => $sectionVal,
+        'message' => $msg,
+    ]);
 }
 
 if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -243,12 +345,15 @@ if ($action === 'bulk_assign_section' && $_SERVER['REQUEST_METHOD'] === 'POST') 
         $found = pcs_api_lock_users($conn, $userIds);
 
         foreach ($found as $uid => $row) {
-            if (!pcs_api_user_has_college_exam($row)) {
-                throw new InvalidArgumentException('User #' . $uid . ' does not have College Examination access. Enable access first.');
-            }
+            $role = (string) ($row['role'] ?? '');
             $rt = strtolower(trim((string) ($row['review_type'] ?? '')));
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
             if ($rt !== 'undergrad') {
                 throw new InvalidArgumentException('User #' . $uid . ' is not a college student profile. Sections apply to undergrad examinees only.');
+            }
+            $nativeOk = ($role === 'college_student' && in_array($status, ['pending', 'approved', 'rejected'], true));
+            if (!$nativeOk && !pcs_api_user_has_college_exam($row)) {
+                throw new InvalidArgumentException('User #' . $uid . ' does not have College Examination access. Enable access first.');
             }
         }
 

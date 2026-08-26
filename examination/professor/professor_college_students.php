@@ -308,6 +308,7 @@ $apiUrl = ereview_url('professor_college_students_api');
       <div class="students-bulk-bar__actions">
         <button type="button" id="pcsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
         <?php if ($isStudentTab): ?>
+          <button type="button" id="pcsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Approve</button>
           <button type="button" id="pcsBulkEnableBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
           <button type="button" id="pcsBulkSectionBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-collection"></i> Assign Section</button>
           <button type="button" id="pcsBulkDisableBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
@@ -415,12 +416,17 @@ $apiUrl = ereview_url('professor_college_students_api');
                       : 'none';
                   $hasCollEx = ereview_user_has_college_examination_access($conn, $uid, $u);
                   $canEnable = ($role === 'student' && !$hasCollEx && $collExAccessVal !== 'suspended' && $statusLower !== 'rejected');
-                  $canAssignSection = ($isStudentTab && $hasCollEx);
+                  $canAssignSection = ($isStudentTab && (
+                      $hasCollEx
+                      || ($role === 'college_student' && in_array($statusLower, ['pending', 'approved'], true))
+                  ));
                   $canDisable = ($role === 'student' && $hasCollEx);
                   // LMS-linked: remove exam access only. Native college: hard-delete account.
                   $canRemoveFromExam = ($role === 'student' && in_array($collExAccessVal, ['active', 'suspended'], true));
                   $canDeleteNative = ($role === 'college_student');
                   $canRowDelete = ($canRemoveFromExam || $canDeleteNative);
+                  $canApprove = ($role === 'college_student' && in_array($statusLower, ['pending', 'rejected'], true));
+                  $approveNeedsSection = ($canApprove && $sectionTxt === '');
                   $statusBadge = match ($statusLower) {
                       'approved' => 'admin-badge--success',
                       'pending' => 'admin-badge--warning',
@@ -429,7 +435,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                   };
                   $createdFmt = !empty($u['created_at']) ? date('M j, Y', strtotime((string) $u['created_at'])) : '—';
                 ?>
-                <tr data-user-id="<?php echo $uid; ?>">
+                <tr data-user-id="<?php echo $uid; ?>"<?php if ($canApprove): ?> data-approvable="1" data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"<?php endif; ?>>
                   <?php if ($isStudentTab): ?>
                   <td class="student-select-col" data-label="Select">
                     <input type="checkbox"
@@ -441,7 +447,8 @@ $apiUrl = ereview_url('professor_college_students_api');
                            <?php if ($canAssignSection): ?>data-sectionable="1"<?php endif; ?>
                            <?php if ($canDisable): ?>data-disableable="1"<?php endif; ?>
                            <?php if ($canRemoveFromExam): ?>data-removable="1"<?php endif; ?>
-                           <?php if ($canDeleteNative): ?>data-deletable="1"<?php endif; ?>>
+                           <?php if ($canDeleteNative): ?>data-deletable="1"<?php endif; ?>
+                           <?php if ($canApprove): ?>data-approvable="1" data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>"<?php endif; ?>>
                   </td>
                   <?php endif; ?>
                   <td class="college-student-account-cell" data-label="Account">
@@ -468,7 +475,11 @@ $apiUrl = ereview_url('professor_college_students_api');
                   </td>
                   <?php if ($isStudentTab): ?>
                     <td class="pcs-col-exam" data-label="College Exam">
-                      <?php if ($hasCollEx): ?>
+                      <?php if ($role === 'college_student' && $statusLower === 'pending'): ?>
+                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending approval</span>
+                      <?php elseif ($role === 'college_student' && $statusLower === 'rejected'): ?>
+                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-x-circle" aria-hidden="true"></i> Rejected</span>
+                      <?php elseif ($hasCollEx): ?>
                         <span class="commerce-pill commerce-pill--verified"><i class="bi bi-check2-circle" aria-hidden="true"></i> Active</span>
                       <?php elseif ($collExAccessVal === 'suspended'): ?>
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspended</span>
@@ -477,7 +488,13 @@ $apiUrl = ereview_url('professor_college_students_api');
                       <?php endif; ?>
                     </td>
                     <td class="pcs-col-section" data-label="Section">
-                      <?php if (!$hasCollEx && $collExAccessVal !== 'suspended'): ?>
+                      <?php if ($role === 'college_student'): ?>
+                        <?php if ($sectionTxt !== ''): ?>
+                          <span class="admin-badge admin-badge--info"><?php echo h($sectionTxt); ?></span>
+                        <?php else: ?>
+                          <span class="student-meta">Not set</span>
+                        <?php endif; ?>
+                      <?php elseif (!$hasCollEx && $collExAccessVal !== 'suspended'): ?>
                         <span class="student-meta">Not enabled</span>
                       <?php elseif ($sectionTxt !== ''): ?>
                         <span class="admin-badge admin-badge--info"><?php echo h($sectionTxt); ?></span>
@@ -490,6 +507,18 @@ $apiUrl = ereview_url('professor_college_students_api');
                   <td class="pcs-col-created" data-label="Created"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
                   <td class="student-action-cell" data-label="Actions">
                     <div class="student-action-cluster">
+                      <?php if ($canApprove): ?>
+                        <button type="button"
+                                class="admin-btn admin-btn--primary admin-btn--sm js-pcs-approve-one"
+                                data-user-id="<?php echo $uid; ?>"
+                                data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
+                                data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>"
+                                data-section="<?php echo h($sectionTxt); ?>"
+                                title="<?php echo $approveNeedsSection ? 'Choose a section, then approve' : 'Approve so the student can sign in'; ?>">
+                          <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                          <?php echo $approveNeedsSection ? 'Approve &amp; set section' : 'Approve'; ?>
+                        </button>
+                      <?php endif; ?>
                       <a class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
                       <div class="admin-student-action-menu-wrap" data-admin-student-action-menu>
                         <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h((string) ($u['full_name'] ?? '')); ?>">
@@ -497,6 +526,9 @@ $apiUrl = ereview_url('professor_college_students_api');
                         </button>
                         <div class="admin-student-action-menu" data-action-menu-list role="menu">
                           <a role="menuitem" class="admin-student-action-item" href="professor_college_student_view?id=<?php echo $uid; ?>"><i class="bi bi-eye" aria-hidden="true"></i> View student</a>
+                          <?php if ($canApprove): ?>
+                            <button type="button" class="admin-student-action-item js-pcs-approve-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>" data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>" data-section="<?php echo h($sectionTxt); ?>"><i class="bi bi-check2-circle" aria-hidden="true"></i> <?php echo $approveNeedsSection ? 'Approve & set section' : 'Approve account'; ?></button>
+                          <?php endif; ?>
                           <a role="menuitem" class="admin-student-action-item" href="professor_college_student_view?id=<?php echo $uid; ?>#college-examination"><i class="bi bi-sliders" aria-hidden="true"></i> Manage access</a>
                           <?php if ($canEnable): ?>
                             <button type="button" class="admin-student-action-item js-pcs-enable-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-clipboard-check" aria-hidden="true"></i> Enable College Examination</button>
@@ -548,6 +580,36 @@ $apiUrl = ereview_url('professor_college_students_api');
   </div>
 
   <?php if ($isStudentTab): ?>
+  <div id="pcsApproveModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsApproveTitle">
+      <form id="pcsApproveForm">
+        <div class="admin-modal__hero">
+          <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-check2-circle"></i></span>
+          <div>
+            <h3 id="pcsApproveTitle" class="admin-modal__title">Approve student</h3>
+            <p class="admin-modal__desc" id="pcsApproveDesc"><strong id="pcsApproveCount">0</strong> student(s) selected</p>
+            <p class="admin-modal__desc" id="pcsApproveHint">Assign a section, then approve so the student can sign in.</p>
+          </div>
+        </div>
+        <div class="admin-modal__field" id="pcsApproveSectionField">
+          <label for="pcsApproveSection">Section</label>
+          <select id="pcsApproveSection" name="section" required>
+            <option value="">Select section</option>
+            <?php foreach ($sectionOptions as $secOpt): ?>
+              <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="college-exam-modal-hint text-xs mt-1 mb-0 opacity-80">Required when the student has no section yet.</p>
+        </div>
+        <div id="pcsApproveError" class="admin-modal__error"></div>
+        <div class="admin-modal__actions">
+          <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsApproveCancel">Cancel</button>
+          <button type="submit" class="admin-modal__btn admin-modal__btn--ok" id="pcsApproveSubmit"><i class="bi bi-check2-circle"></i> Approve</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
   <div id="pcsEnableModalOverlay" class="admin-modal-overlay" aria-hidden="true">
     <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsEnableTitle">
       <form id="pcsEnableForm">
@@ -728,6 +790,12 @@ $apiUrl = ereview_url('professor_college_students_api');
         enableBtn.disabled = enableN === 0;
         enableBtn.title = enableN === 0 ? 'Select eReview students without College Examination access' : ('Enable College Examination for ' + enableN + ' selected student(s)');
       }
+      var approveBtn = document.getElementById('pcsBulkApproveBtn');
+      if (approveBtn) {
+        var approveN = selected.filter(function (cb) { return cb.getAttribute('data-approvable') === '1'; }).length;
+        approveBtn.disabled = approveN === 0;
+        approveBtn.title = approveN === 0 ? 'Select pending/rejected college registrations to approve' : ('Approve ' + approveN + ' selected student(s)');
+      }
       var sectionBtn = document.getElementById('pcsBulkSectionBtn');
       if (sectionBtn) {
         var secN = selected.filter(function (cb) { return cb.getAttribute('data-sectionable') === '1'; }).length;
@@ -800,6 +868,7 @@ $apiUrl = ereview_url('professor_college_students_api');
     }
 
     var pendingIds = [];
+    var pendingApproveNeedsSection = false;
 
     function openOverlay(id) {
       var el = document.getElementById(id);
@@ -813,6 +882,127 @@ $apiUrl = ereview_url('professor_college_students_api');
       el.classList.remove('is-open');
       el.setAttribute('aria-hidden', 'true');
     }
+
+    function submitApprove(ids, sectionVal, errEl, submitBtn) {
+      var payload = { user_ids: ids };
+      if (sectionVal) payload.section = sectionVal;
+      if (submitBtn) submitBtn.disabled = true;
+      return apiPost('approve_college_students', payload, function (data) {
+        closeOverlay('pcsApproveModalOverlay');
+        showFlash('success', data.message || 'Student approved.');
+        setTimeout(function () { window.location.reload(); }, 600);
+      }, errEl).finally(function () {
+        if (submitBtn) submitBtn.disabled = false;
+      });
+    }
+
+    function openApproveModal(ids, needsSection, studentName) {
+      pendingIds = ids.slice();
+      pendingApproveNeedsSection = !!needsSection;
+      var n = pendingIds.length;
+      var countEl = document.getElementById('pcsApproveCount');
+      if (countEl) countEl.textContent = String(n);
+      var desc = document.getElementById('pcsApproveDesc');
+      if (desc && studentName && n === 1) {
+        desc.innerHTML = 'Approve <strong></strong>';
+        desc.querySelector('strong').textContent = studentName;
+      } else if (desc) {
+        desc.innerHTML = '<strong id="pcsApproveCount">' + n + '</strong> student(s) selected';
+      }
+      var hint = document.getElementById('pcsApproveHint');
+      var sectionField = document.getElementById('pcsApproveSectionField');
+      var sectionSelect = document.getElementById('pcsApproveSection');
+      if (pendingApproveNeedsSection) {
+        if (hint) hint.textContent = 'This registration has no section yet. Choose a section, then approve.';
+        if (sectionField) sectionField.hidden = false;
+        if (sectionSelect) {
+          sectionSelect.required = true;
+          sectionSelect.value = '';
+        }
+        var titleEl = document.getElementById('pcsApproveTitle');
+        if (titleEl) titleEl.textContent = 'Approve & set section';
+        var submitBtnLabel = document.getElementById('pcsApproveSubmit');
+        if (submitBtnLabel) submitBtnLabel.innerHTML = '<i class="bi bi-check2-circle"></i> Approve &amp; set section';
+      } else {
+        if (hint) hint.textContent = 'Section is already set. Confirm approval so the student can sign in to the College Examination portal.';
+        if (sectionField) sectionField.hidden = true;
+        if (sectionSelect) {
+          sectionSelect.required = false;
+          sectionSelect.value = '';
+        }
+        var titleEl2 = document.getElementById('pcsApproveTitle');
+        if (titleEl2) titleEl2.textContent = 'Approve student';
+        var submitBtnLabel2 = document.getElementById('pcsApproveSubmit');
+        if (submitBtnLabel2) submitBtnLabel2.innerHTML = '<i class="bi bi-check2-circle"></i> Approve';
+      }
+      var err = document.getElementById('pcsApproveError');
+      if (err) err.textContent = '';
+      openOverlay('pcsApproveModalOverlay');
+    }
+
+    function startApprove(ids, boxesOrMeta) {
+      ids = (ids || []).filter(Boolean);
+      if (!ids.length) return;
+      var needsSection = false;
+      var studentName = '';
+      if (Array.isArray(boxesOrMeta)) {
+        boxesOrMeta.forEach(function (cb) {
+          if (cb.getAttribute('data-has-section') !== '1') needsSection = true;
+          if (!studentName) studentName = cb.getAttribute('data-student-name') || '';
+        });
+      } else if (boxesOrMeta && typeof boxesOrMeta === 'object') {
+        needsSection = boxesOrMeta.hasSection !== true;
+        studentName = boxesOrMeta.name || '';
+      }
+      // Direct approve when every selected student already has a section.
+      if (!needsSection && ids.length === 1) {
+        openApproveModal(ids, false, studentName);
+        return;
+      }
+      openApproveModal(ids, needsSection, studentName);
+    }
+
+    var approveForm = document.getElementById('pcsApproveForm');
+    if (approveForm) {
+      approveForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (pendingIds.length === 0) return;
+        var errEl = document.getElementById('pcsApproveError');
+        var submitBtn = document.getElementById('pcsApproveSubmit');
+        var sectionSelect = document.getElementById('pcsApproveSection');
+        var sectionVal = '';
+        if (pendingApproveNeedsSection) {
+          sectionVal = (sectionSelect && sectionSelect.value) ? sectionSelect.value.trim() : '';
+          if (!sectionVal) {
+            if (errEl) errEl.textContent = 'Select a section before approving.';
+            return;
+          }
+        }
+        submitApprove(pendingIds, sectionVal, errEl, submitBtn);
+      });
+    }
+    var approveCancel = document.getElementById('pcsApproveCancel');
+    if (approveCancel) approveCancel.addEventListener('click', function () { closeOverlay('pcsApproveModalOverlay'); });
+    var approveOverlay = document.getElementById('pcsApproveModalOverlay');
+    if (approveOverlay) approveOverlay.addEventListener('click', function (e) { if (e.target === approveOverlay) closeOverlay('pcsApproveModalOverlay'); });
+
+    var bulkApprove = document.getElementById('pcsBulkApproveBtn');
+    if (bulkApprove) {
+      bulkApprove.addEventListener('click', function () {
+        var boxes = selectedBoxes().filter(function (cb) { return cb.getAttribute('data-approvable') === '1'; });
+        var ids = boxes.map(function (cb) { return cb.value; });
+        if (ids.length) startApprove(ids, boxes);
+      });
+    }
+    document.querySelectorAll('.js-pcs-approve-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        startApprove([btn.getAttribute('data-user-id')], {
+          hasSection: btn.getAttribute('data-has-section') === '1',
+          name: btn.getAttribute('data-student-name') || ''
+        });
+      });
+    });
 
     function openEnableModal(ids) {
       pendingIds = ids.slice();
@@ -1084,7 +1274,7 @@ $apiUrl = ereview_url('professor_college_students_api');
 
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'pcsBulkRemoveModalOverlay', 'deleteStudentModal'].forEach(function (id) {
+      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'pcsBulkRemoveModalOverlay', 'pcsApproveModalOverlay', 'deleteStudentModal'].forEach(function (id) {
         closeOverlay(id);
       });
       if (deleteModal) {

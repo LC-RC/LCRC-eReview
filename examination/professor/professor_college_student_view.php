@@ -2,6 +2,7 @@
 require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
+require_once dirname(__DIR__) . '/includes/college_sections.php';
 require_once dirname(__DIR__, 2) . '/includes/profile_avatar.php';
 require_once dirname(__DIR__, 2) . '/includes/platform_access.php';
 
@@ -12,6 +13,9 @@ if ($userId <= 0) {
     header('Location: professor_college_students');
     exit;
 }
+
+college_sections_ensure_schema($conn);
+$sectionOptions = college_sections_active_names($conn);
 
 $stmt = mysqli_prepare(
     $conn,
@@ -46,16 +50,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $editErr = 'Invalid security token.';
     } elseif ($action === 'approve_account' && $role === 'college_student') {
-        $upd = mysqli_prepare($conn, "UPDATE users SET status='approved' WHERE user_id=? AND role='college_student' LIMIT 1");
-        mysqli_stmt_bind_param($upd, 'i', $userId);
-        mysqli_stmt_execute($upd);
-        $changed = mysqli_stmt_affected_rows($upd) > 0;
-        mysqli_stmt_close($upd);
-        if ($changed) {
-            $u['status'] = 'approved';
-            $editFlash = 'Account approved. The student can now sign in.';
-        } else {
-            $editErr = 'Could not approve account.';
+        $existingSection = trim((string) ($u['section'] ?? ''));
+        $sectionRaw = trim((string) ($_POST['section'] ?? ''));
+        $sectionVal = null;
+        if ($sectionRaw !== '') {
+            $canonical = college_sections_resolve_active_name($conn, $sectionRaw);
+            if ($canonical === null) {
+                $editErr = 'Select an active section from the list.';
+            } else {
+                $sectionVal = $canonical;
+            }
+        }
+        if ($editErr === null && $existingSection === '' && $sectionVal === null) {
+            $editErr = 'Assign a section before approving this student.';
+        }
+        if ($editErr === null) {
+            if ($sectionVal !== null) {
+                $upd = mysqli_prepare($conn, "UPDATE users SET status='approved', section=? WHERE user_id=? AND role='college_student' LIMIT 1");
+                mysqli_stmt_bind_param($upd, 'si', $sectionVal, $userId);
+            } else {
+                $upd = mysqli_prepare($conn, "UPDATE users SET status='approved' WHERE user_id=? AND role='college_student' LIMIT 1");
+                mysqli_stmt_bind_param($upd, 'i', $userId);
+            }
+            mysqli_stmt_execute($upd);
+            $changed = mysqli_stmt_affected_rows($upd) > 0;
+            mysqli_stmt_close($upd);
+            if ($changed) {
+                $u['status'] = 'approved';
+                if ($sectionVal !== null) {
+                    $u['section'] = $sectionVal;
+                }
+                $editFlash = 'Account approved. The student can now sign in.';
+            } else {
+                $editErr = 'Could not approve account.';
+            }
         }
     } elseif ($action === 'reject_account' && $role === 'college_student') {
         $upd = mysqli_prepare($conn, "UPDATE users SET status='rejected' WHERE user_id=? AND role='college_student' LIMIT 1");
@@ -213,28 +241,36 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
 
     <?php if ($role === 'college_student' && in_array($statusLower, ['pending', 'rejected'], true)): ?>
+    <?php $sectionTxt = trim((string) ($u['section'] ?? '')); ?>
     <h2 class="examination-section-title"><i class="bi bi-shield-check"></i> Account approval</h2>
     <div class="rounded-xl overflow-hidden page-table p-4 mb-4 max-w-xl">
       <?php if ($statusLower === 'pending'): ?>
         <p class="text-sm opacity-80 mb-3">This student registered online and is waiting for approval before they can sign in.</p>
-        <div class="flex flex-wrap gap-2">
-          <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="action" value="approve_account">
-            <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Approve account</button>
-          </form>
-          <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" onsubmit="return confirm('Reject this registration? The student will not be able to sign in.');">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="action" value="reject_account">
-            <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-x-circle"></i> Reject</button>
-          </form>
-        </div>
       <?php else: ?>
         <p class="text-sm opacity-80 mb-3">This registration was rejected. You can approve the account if the student should be allowed to sign in.</p>
-        <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>">
+      <?php endif; ?>
+      <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" class="flex flex-col gap-3 mb-3">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="action" value="approve_account">
+        <?php if ($sectionTxt === ''): ?>
+          <label class="block text-xs font-semibold uppercase tracking-wide opacity-70">Section <span class="text-red-500">*</span></label>
+          <select name="section" required class="w-full">
+            <option value=""><?php echo $sectionOptions === [] ? 'No active sections — create under Sections first' : 'Select section'; ?></option>
+            <?php foreach ($sectionOptions as $secOpt): ?>
+              <option value="<?php echo h($secOpt); ?>"><?php echo h($secOpt); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="text-xs opacity-70 m-0">Required before approval when the student has no section yet.</p>
+        <?php else: ?>
+          <p class="text-sm m-0">Section: <strong><?php echo h($sectionTxt); ?></strong></p>
+        <?php endif; ?>
+        <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm self-start" <?php echo ($sectionTxt === '' && $sectionOptions === []) ? 'disabled' : ''; ?>><i class="bi bi-check2-circle"></i> <?php echo $sectionTxt !== '' ? 'Approve account' : 'Approve &amp; set section'; ?></button>
+      </form>
+      <?php if ($statusLower === 'pending'): ?>
+        <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" onsubmit="return confirm('Reject this registration? The student will not be able to sign in.');">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-          <input type="hidden" name="action" value="approve_account">
-          <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Approve account</button>
+          <input type="hidden" name="action" value="reject_account">
+          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-x-circle"></i> Reject</button>
         </form>
       <?php endif; ?>
     </div>
