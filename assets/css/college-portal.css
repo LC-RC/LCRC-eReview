@@ -1884,27 +1884,35 @@ body.college-examination-portal .cu-tile-icon {
 }
 
 /* =============================================================================
-   Examination workspace — focused take interface (visual only)
+   Examination workspace — focused take interface (shell only; layout in exam-take-shared.css)
    ============================================================================= */
 body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
   background: #eef2f7;
 }
 
+@media (max-width: 767px) {
+  body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+    padding: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+    padding-top: 0.35rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
 body.college-examination-portal.exam-taking-mode .exam-take-wrap {
-  max-width: 1180px;
+  max-width: 1440px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 1rem 2rem;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-bar {
-  border-radius: var(--cp-radius-lg);
-  border: 1px solid var(--cp-border);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: var(--cp-shadow);
-  margin-bottom: 0.5rem;
-  overflow: hidden;
+  display: none;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-progress-fill {
@@ -1919,36 +1927,12 @@ body.college-examination-portal.exam-taking-mode .exam-question-card {
   border-radius: var(--cp-radius-lg);
   border: 1px solid var(--cp-border);
   box-shadow: var(--cp-shadow);
-  padding: 1.5rem 1.75rem;
-}
-
-body.college-examination-portal.exam-taking-mode .exam-question-text {
-  font-size: 1.125rem;
-  line-height: 1.65;
-  letter-spacing: -0.01em;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-choice {
   border-radius: var(--cp-radius-sm);
   border-width: 1.5px;
-  min-height: 3.25rem;
-}
-
-body.college-examination-portal.exam-taking-mode .exam-choice:hover {
-  border-color: rgba(22, 101, 160, 0.45);
-  background: var(--cp-primary-soft);
-  box-shadow: none;
-}
-
-body.college-examination-portal.exam-taking-mode .exam-choice.selected {
-  border-color: var(--cp-primary);
-  background: var(--cp-primary-soft);
-  box-shadow: inset 0 0 0 1px rgba(22, 101, 160, 0.18);
-}
-
-body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-letter {
-  background: var(--cp-primary);
-  color: #fff;
+  min-height: 3rem;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-sidebar-card {
@@ -2022,9 +2006,11 @@ html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode
 }
 
 html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-bar,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome,
 html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-question-card,
 html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-sidebar-card,
-html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-card {
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom {
   background: var(--cp-surface);
   border-color: var(--cp-border);
 }
@@ -3866,6 +3852,12 @@ body.college-examination-portal .cp-exams-catalog .cp-exam-grid--catalog {
 @media (min-width: 768px) {
   body.college-examination-portal .cp-exams-catalog .cp-exam-grid--catalog {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  body.college-examination-portal .cp-exams-catalog .cp-exam-grid--catalog {
+    gap: 0.9rem;
   }
 }
 

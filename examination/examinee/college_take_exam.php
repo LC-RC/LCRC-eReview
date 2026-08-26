@@ -547,39 +547,12 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
       <div class="exam-page-container exam-take-wrap dash-anim delay-2">
         <div id="examConnBanner" class="exam-conn-banner" role="status"><i class="bi bi-wifi-off mr-1"></i> <span id="examConnBannerText">Connection interrupted. Your answers are being preserved. Reconnecting...</span></div>
 
-        <div class="exam-bar exam-workspace-bar">
-          <div class="exam-workspace-bar__inner">
-            <div class="exam-workspace-bar__left">
-              <div class="exam-workspace-brand">
-                <span class="exam-workspace-brand__mark" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></span>
-                <span class="exam-workspace-brand__text">LCRC eReview</span>
-              </div>
-              <div class="exam-workspace-bar__meta">
-                <div class="exam-title"><?php echo h($exam['title']); ?></div>
-                <div class="exam-subject">Regular exam · <?php echo h($profName); ?></div>
-              </div>
-            </div>
-            <div class="exam-workspace-bar__center">
-              <p class="exam-workspace-progress-k">Question <span id="examCurrentLabel">1</span> of <?php echo $qTotal; ?></p>
-              <div class="exam-progress-bar" aria-hidden="true"><div id="progressBar" class="exam-progress-fill" style="width:0%"></div></div>
-              <p class="exam-workspace-progress-sub" aria-live="polite"><strong id="answeredCountNum">0</strong> of <?php echo $qTotal; ?> completed · <span id="flaggedCount">0</span> flagged</p>
-            </div>
-            <div class="exam-workspace-bar__timer">
-              <p class="exam-timer-card__label">Time remaining</p>
-              <div id="examTimerCircle" class="exam-timer-circle-wrap exam-timer-circle-wrap--header" data-initial="<?php echo $timerInitial !== null ? (int)$timerInitial : 0; ?>">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="exam-timer-circle-track" cx="60" cy="60" r="54"></circle>
-                  <circle id="examTimerCircleProgress" class="exam-timer-circle-progress" cx="60" cy="60" r="54"
-                    stroke-dasharray="<?php echo h((string)$timerCircumference); ?>"
-                    stroke-dashoffset="0"></circle>
-                </svg>
-                <div class="exam-timer-circle-inner">
-                  <div id="examTimerCircleValue" class="exam-timer-circle-value">--:--</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <?php
+          $examChromeTitle = (string)$exam['title'];
+          $examChromeSubtitle = 'Regular exam · ' . $profName;
+          $examChromeSubmitLabel = 'Submit exam';
+          require dirname(__DIR__) . '/includes/college_exam_take_workspace_header.php';
+        ?>
 
         <div class="exam-layout exam-workspace-layout">
           <div class="exam-main exam-workspace-main">
@@ -620,22 +593,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               <?php endforeach; ?>
             </form>
 
-            <div class="exam-action-bar" id="examActionBar">
-              <div class="exam-action-bar__left">
-                <button type="button" id="examPrevBtn" class="exam-action-btn exam-action-btn--ghost" disabled><i class="bi bi-arrow-left"></i> Previous</button>
-              </div>
-              <div class="exam-action-bar__center">
-                <button type="button" id="examMarkReviewBtn" class="exam-action-btn exam-action-btn--mark focus-ring"><i class="bi bi-flag"></i> Mark for review</button>
-              </div>
-              <div class="exam-action-bar__right">
-                <button type="button" id="examNextBtn" class="exam-action-btn exam-action-btn--primary">Next <i class="bi bi-arrow-right"></i></button>
-                <button type="button" id="submitExamBtn" class="exam-action-btn exam-action-btn--submit exam-btn-submit focus-ring is-locked" aria-disabled="true" hidden>
-                  <i class="bi bi-send-fill"></i> <span id="submitExamBtnText">Submit exam</span>
-                </button>
-              </div>
-            </div>
-            <p id="submitIncompleteHint" class="exam-submit-hint hidden" role="status"></p>
-            <div class="exam-submit-progress sr-only" id="submitProgressLabel"><span id="submitAnsweredNum">0</span> of <?php echo $qTotal; ?> answered</div>
+            <?php require dirname(__DIR__) . '/includes/college_exam_take_workspace_footer.php'; ?>
           </div>
 
           <aside class="exam-sidebar exam-workspace-sidebar">
@@ -644,6 +602,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               <div class="exam-filter-row">
                 <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
+                <button type="button" class="exam-filter-btn focus-ring" data-filter="answered">Answered</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
               </div>
               <div class="exam-sidebar-section" id="examQListSection">
@@ -656,26 +615,29 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
                 </div>
               </div>
             </div>
-            <div class="exam-sidebar-card exam-timer-card exam-timer-card--mobile">
-              <div class="exam-sidebar-title">Time remaining</div>
-              <div class="exam-timer-mobile-value" id="examTimerMobileMirror" aria-hidden="true">--:--</div>
-            </div>
           </aside>
         </div>
 
-        <div class="exam-mobile-nav" id="mobileNav">
-          <button type="button" id="mIndexBtn" class="focus-ring">Index</button>
-          <button type="button" id="mFlagBtn" class="focus-ring">Flag</button>
-          <button type="button" id="mSubmitBtn" class="exam-mobile-next focus-ring is-locked" aria-disabled="true">Submit</button>
-        </div>
-
-        <div id="mobileIndexDrawer" class="fixed inset-0 z-[1200] hidden bg-slate-900/45 p-4">
-          <div class="w-full max-w-lg mx-auto mt-10 rounded-xl bg-white border border-slate-200 shadow-xl p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-bold text-[#143D59] m-0">Question index</h3>
-              <button type="button" id="closeMobileDrawerBtn" class="focus-ring px-2 py-1 rounded border border-slate-200 text-slate-700"><i class="bi bi-x-lg"></i></button>
+        <div id="examQnavDrawer" class="exam-qnav-drawer" hidden aria-hidden="true">
+          <button type="button" class="exam-qnav-drawer__backdrop" id="examQnavDrawerBackdrop" aria-label="Close question navigator"></button>
+          <div class="exam-qnav-drawer__sheet" role="dialog" aria-modal="true" aria-labelledby="examQnavDrawerTitle">
+            <header class="exam-qnav-drawer__head">
+              <h2 id="examQnavDrawerTitle" class="exam-qnav-drawer__title">Question navigator</h2>
+              <button type="button" id="closeMobileDrawerBtn" class="exam-qnav-drawer__close focus-ring" aria-label="Close question navigator"><i class="bi bi-x-lg"></i></button>
+            </header>
+            <div class="exam-filter-row exam-filter-row--drawer">
+              <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="answered">Answered</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
             </div>
-            <div id="mobileQuestionNavigator" class="exam-q-list"></div>
+            <div id="mobileQuestionNavigator" class="exam-q-list exam-q-grid exam-q-grid--drawer" aria-label="Question navigator"></div>
+            <div class="cp-qnav-legend cp-qnav-legend--drawer" aria-hidden="true">
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--answered"></span> Answered</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--current"></span> Current</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--unanswered"></span> Unanswered</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--flagged"></span> Flagged</span>
+            </div>
           </div>
         </div>
       </div>
@@ -830,7 +792,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         var submitExamBtnText = document.getElementById('submitExamBtnText');
         var submitAnsweredNum = document.getElementById('submitAnsweredNum');
         var submitIncompleteHint = document.getElementById('submitIncompleteHint');
-        var mSubmitBtn = document.getElementById('mSubmitBtn');
+        var examQuestionsBtn = document.getElementById('examQuestionsBtn');
+        var examQnavDrawer = document.getElementById('examQnavDrawer');
+        var examNavCurrentLabel = document.getElementById('examNavCurrentLabel');
+        var examTimerCompact = document.getElementById('examTimerCompact');
+        var examTimerCompactWrap = document.getElementById('examTimerCompactWrap');
         var tabBlurLastSent = 0;
         var examPageReadyAt = Date.now();
         var warned5 = false, warned1 = false, warned30 = false;
@@ -1128,28 +1094,25 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (countdown <= 300 && countdown > 60 && !warned5) { warned5 = true; showWarnToast('5 minutes remaining', 'warning'); }
           if (countdown <= 60 && countdown > 30 && !warned1) { warned1 = true; showWarnToast('1 minute remaining', 'danger'); }
           if (countdown <= 30 && countdown > 0 && !warned30) { warned30 = true; showWarnToast('30 seconds remaining', 'danger'); }
-          var timerMirror = document.getElementById('examTimerMobileMirror');
-          if (timerMirror && timerValue) timerMirror.textContent = timerValue.textContent;
+          if (examTimerCompact && timerValue) examTimerCompact.textContent = timerValue.textContent;
+          if (examTimerCompactWrap && timerWrap) {
+            examTimerCompactWrap.classList.toggle('warning', timerWrap.classList.contains('warning'));
+            examTimerCompactWrap.classList.toggle('danger', timerWrap.classList.contains('danger'));
+          }
         }
         function updateActionBarUI() {
           var prevBtn = document.getElementById('examPrevBtn');
           var nextBtn = document.getElementById('examNextBtn');
-          var markReviewBtn = document.getElementById('examMarkReviewBtn');
           var onLast = state.currentIndex >= totalQuestions - 1;
           var complete = unansweredCount() === 0 && totalQuestions > 0;
           if (prevBtn) prevBtn.disabled = state.currentIndex <= 0;
           if (nextBtn) {
             nextBtn.hidden = onLast && complete;
             if (onLast && !complete) {
-              nextBtn.innerHTML = '<i class="bi bi-list-check"></i> Review answers';
+              nextBtn.innerHTML = '<i class="bi bi-list-check" aria-hidden="true"></i><span>Review</span>';
             } else if (!onLast) {
-              nextBtn.innerHTML = 'Next <i class="bi bi-arrow-right"></i>';
+              nextBtn.innerHTML = '<span>Next</span><i class="bi bi-arrow-right" aria-hidden="true"></i>';
             }
-          }
-          if (markReviewBtn) {
-            var panel = panels[state.currentIndex];
-            var qid = panel ? parseInt(panel.getAttribute('data-question-id'), 10) : 0;
-            markReviewBtn.classList.toggle('is-on', qid > 0 && state.flags.has(qid));
           }
         }
         function updateCounts() {
@@ -1162,6 +1125,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (flaggedCountEl) flaggedCountEl.textContent = String(state.flags.size);
           if (progressBar && totalQuestions > 0) progressBar.style.width = Math.round((n / totalQuestions) * 100) + '%';
           if (currentLabel) currentLabel.textContent = String(state.currentIndex + 1);
+          if (examNavCurrentLabel) examNavCurrentLabel.textContent = String(state.currentIndex + 1);
           if (submitAnsweredNum) submitAnsweredNum.textContent = String(n);
           updateSubmitButton();
           updateActionBarUI();
@@ -1177,24 +1141,24 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         function updateSubmitButton() {
           var answeredN = totalQuestions - unansweredCount();
           var complete = unansweredCount() === 0 && totalQuestions > 0;
+          var examSubmitStatus = document.getElementById('examSubmitStatus');
+          if (examSubmitStatus) {
+            var statusNum = document.getElementById('submitAnsweredNum');
+            if (statusNum) {
+              statusNum.textContent = String(answeredN);
+            } else {
+              examSubmitStatus.textContent = answeredN + ' of ' + totalQuestions + ' answered';
+            }
+            examSubmitStatus.classList.toggle('is-complete', complete);
+          }
           if (submitExamBtn) {
-            // Keep clickable while incomplete so we can show which questions remain.
             submitExamBtn.disabled = false;
-            var onLast = state.currentIndex >= totalQuestions - 1;
             submitExamBtn.hidden = !complete;
             submitExamBtn.classList.toggle('is-locked', !complete);
             submitExamBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
             if (submitExamBtnText) {
-              submitExamBtnText.textContent = complete
-                ? 'Submit exam'
-                : ('Answer all questions to submit (' + answeredN + '/' + totalQuestions + ')');
+              submitExamBtnText.textContent = 'Submit exam';
             }
-          }
-          if (mSubmitBtn) {
-            mSubmitBtn.disabled = false;
-            mSubmitBtn.classList.toggle('is-locked', !complete);
-            mSubmitBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
-            mSubmitBtn.textContent = complete ? 'Submit' : (answeredN + '/' + totalQuestions);
           }
           if (submitIncompleteHint && complete) {
             submitIncompleteHint.classList.add('hidden');
@@ -1227,6 +1191,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             var answered = isQuestionAnsweredLocal(qid), flagged = state.flags.has(qid);
             if (state.filter === 'flagged' && !flagged) return;
             if (state.filter === 'unanswered' && answered) return;
+            if (state.filter === 'answered' && !answered) return;
             var a = document.createElement('a');
             a.href = '#q' + (idx + 1);
             a.className = '';
@@ -1563,18 +1528,12 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           openSubmitModal();
         }
         if (submitExamBtn) submitExamBtn.addEventListener('click', tryOpenSubmit);
-        if (mSubmitBtn) mSubmitBtn.addEventListener('click', tryOpenSubmit);
-        document.getElementById('mFlagBtn').addEventListener('click', function () {
-          var p = panels[state.currentIndex]; if (!p) return;
-          var qid = parseInt(p.getAttribute('data-question-id'), 10); if (!qid) return;
-          if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
-          updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
-        });
         document.querySelectorAll('.exam-filter-btn').forEach(function (btn) {
           btn.addEventListener('click', function () {
             state.filter = btn.getAttribute('data-filter') || 'all';
-            document.querySelectorAll('.exam-filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
-            btn.classList.add('is-active');
+            document.querySelectorAll('.exam-filter-btn').forEach(function (b) {
+              b.classList.toggle('is-active', (b.getAttribute('data-filter') || 'all') === state.filter);
+            });
             renderNavigator();
           });
         });
@@ -1647,15 +1606,38 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         var closeShortcutsBtn = document.getElementById('closeShortcutsBtn');
         if (closeShortcutsBtn) closeShortcutsBtn.addEventListener('click', closeShortcuts);
 
-        function openMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.remove('hidden'); }
-        function closeMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.add('hidden'); }
-        document.getElementById('mIndexBtn').addEventListener('click', openMobileDrawer);
-        document.getElementById('closeMobileDrawerBtn').addEventListener('click', closeMobileDrawer);
-        document.getElementById('mobileIndexDrawer').addEventListener('click', function (e) { if (e.target === e.currentTarget) closeMobileDrawer(); });
+        function openMobileDrawer() {
+          if (!examQnavDrawer) return;
+          examQnavDrawer.hidden = false;
+          examQnavDrawer.setAttribute('aria-hidden', 'false');
+          if (examQuestionsBtn) examQuestionsBtn.setAttribute('aria-expanded', 'true');
+          document.body.classList.add('exam-qnav-drawer-open');
+        }
+        function closeMobileDrawer() {
+          if (!examQnavDrawer) return;
+          examQnavDrawer.hidden = true;
+          examQnavDrawer.setAttribute('aria-hidden', 'true');
+          if (examQuestionsBtn) examQuestionsBtn.setAttribute('aria-expanded', 'false');
+          document.body.classList.remove('exam-qnav-drawer-open');
+        }
+        if (examQuestionsBtn) examQuestionsBtn.addEventListener('click', openMobileDrawer);
+        var closeMobileDrawerBtn = document.getElementById('closeMobileDrawerBtn');
+        if (closeMobileDrawerBtn) closeMobileDrawerBtn.addEventListener('click', closeMobileDrawer);
+        var examQnavDrawerBackdrop = document.getElementById('examQnavDrawerBackdrop');
+        if (examQnavDrawerBackdrop) examQnavDrawerBackdrop.addEventListener('click', closeMobileDrawer);
+        if (examQnavDrawer) {
+          examQnavDrawer.addEventListener('click', function (e) {
+            if (e.target === examQnavDrawer) closeMobileDrawer();
+          });
+        }
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && examQnavDrawer && !examQnavDrawer.hidden) {
+            closeMobileDrawer();
+          }
+        });
 
         var examPrevBtn = document.getElementById('examPrevBtn');
         var examNextBtn = document.getElementById('examNextBtn');
-        var examMarkReviewBtn = document.getElementById('examMarkReviewBtn');
         if (examPrevBtn) {
           examPrevBtn.addEventListener('click', function () {
             if (state.currentIndex > 0) setCurrentIndex(state.currentIndex - 1);
@@ -1675,15 +1657,6 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (state.currentIndex < totalQuestions - 1) setCurrentIndex(state.currentIndex + 1);
           });
         }
-        if (examMarkReviewBtn) {
-          examMarkReviewBtn.addEventListener('click', function () {
-            var panel = panels[state.currentIndex]; if (!panel) return;
-            var qid = parseInt(panel.getAttribute('data-question-id'), 10); if (!qid) return;
-            if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
-            updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
-          });
-        }
-
         document.addEventListener('keydown', function (e) {
           if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
           if (e.key === '?' || (e.shiftKey && e.key === '/')) { e.preventDefault(); openShortcuts(); return; }
@@ -1742,6 +1715,15 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           leaveModal.classList.add('hidden'); leaveModal.classList.remove('flex');
         }
         document.getElementById('stayOnExamBtn').addEventListener('click', closeLeaveModal);
+        var examExitBtn = document.getElementById('examExitBtn');
+        if (examExitBtn) {
+          examExitBtn.addEventListener('click', function () {
+            var href = examExitBtn.getAttribute('data-exit-href') || 'college_exams';
+            var exitLink = document.createElement('a');
+            exitLink.href = href;
+            openLeaveModal(exitLink.href);
+          });
+        }
         document.getElementById('leaveExamBtn').addEventListener('click', function () {
           state.submitting = true;
           if (leaveTargetUrl) window.location.href = leaveTargetUrl;

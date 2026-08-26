@@ -388,22 +388,15 @@ if ($reviewMode && $attemptSubmitted) {
       <div class="exam-page-container exam-take-wrap dash-anim delay-2">
         <div id="examConnBanner" class="exam-conn-banner" role="status"><i class="bi bi-wifi-off mr-1"></i> <span id="examConnBannerText">Connection interrupted. Your answers are being preserved. Reconnecting...</span></div>
 
-        <div class="exam-bar">
-          <div class="exam-header">
-            <div class="exam-header-left">
-              <div class="exam-title"><?php echo h($batchTitle); ?></div>
-              <div class="exam-subject">Diagnostic exam · <?php echo h($profName); ?></div>
-            </div>
-            <div class="exam-q-badge exam-progress-badge" aria-live="polite"><strong id="answeredCountNum">0</strong> / <strong><?php echo $qTotal; ?></strong> answered</div>
-          </div>
-          <div class="exam-progress-wrap">
-            <div class="exam-progress-bar" aria-hidden="true"><div id="progressBar" class="exam-progress-fill" style="width:0%"></div></div>
-            <div class="exam-progress-label">Focusing question <span id="examCurrentLabel">1</span> of <?php echo $qTotal; ?> · Flagged <span id="flaggedCount">0</span></div>
-          </div>
-        </div>
+        <?php
+          $examChromeTitle = (string)$batchTitle;
+          $examChromeSubtitle = 'Diagnostic exam · ' . $profName;
+          $examChromeSubmitLabel = 'Submit diagnostic';
+          require dirname(__DIR__) . '/includes/college_exam_take_workspace_header.php';
+        ?>
 
-        <div class="exam-layout mt-4">
-          <div class="exam-main">
+        <div class="exam-layout exam-workspace-layout mt-4">
+          <div class="exam-main exam-workspace-main">
             <form id="examForm" data-attempt-id="<?php echo (int)$attempt['attempt_id']; ?>" data-csrf="<?php echo h($csrf); ?>" data-batch-id="<?php echo (int)$batchId; ?>" data-total="<?php echo $qTotal; ?>" data-remaining="<?php echo $timerInitial !== null ? (int)$timerInitial : ''; ?>">
               <?php foreach ($questions as $index => $q): ?>
                 <?php
@@ -447,66 +440,51 @@ if ($reviewMode && $attemptSubmitted) {
               <?php endforeach; ?>
             </form>
 
-            <div class="exam-nav-card exam-submit-card">
-              <div class="exam-submit-progress" id="submitProgressLabel"><span id="submitAnsweredNum">0</span> of <?php echo $qTotal; ?> answered</div>
-              <button type="button" id="submitExamBtn" class="exam-btn-submit focus-ring is-locked" aria-disabled="true">
-                <i class="bi bi-send-fill"></i> <span id="submitExamBtnText">Answer all questions to submit</span>
-              </button>
-              <p id="submitIncompleteHint" class="exam-submit-hint hidden" role="status"></p>
-            </div>
+            <?php require dirname(__DIR__) . '/includes/college_exam_take_workspace_footer.php'; ?>
           </div>
 
-          <aside class="exam-sidebar">
-            <div class="exam-sidebar-card mb-3 exam-timer-card">
-              <div class="exam-sidebar-title">Time Remaining</div>
-              <div id="examTimerCircle" class="exam-timer-circle-wrap" data-initial="<?php echo $timerInitial !== null ? (int)$timerInitial : 0; ?>">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="exam-timer-circle-track" cx="60" cy="60" r="54"></circle>
-                  <circle id="examTimerCircleProgress" class="exam-timer-circle-progress" cx="60" cy="60" r="54"
-                    stroke-dasharray="<?php echo h((string)$timerCircumference); ?>"
-                    stroke-dashoffset="0"></circle>
-                </svg>
-                <div class="exam-timer-circle-inner">
-                  <div id="examTimerCircleValue" class="exam-timer-circle-value">--:--</div>
-                  <div class="exam-timer-circle-label">remaining</div>
-                </div>
-              </div>
-            </div>
-            <div class="exam-sidebar-card">
+          <aside class="exam-sidebar exam-workspace-sidebar">
+            <div class="exam-sidebar-card exam-navigator-card">
+              <div class="exam-sidebar-title">Question navigator</div>
               <div class="exam-filter-row">
                 <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
+                <button type="button" class="exam-filter-btn focus-ring" data-filter="answered">Answered</button>
                 <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
               </div>
               <div class="exam-sidebar-section" id="examQListSection">
-                <button type="button" class="exam-sidebar-section-head" id="examQListTrigger" aria-expanded="true">
-                  <span>Questions</span>
-                  <i class="bi bi-chevron-up"></i>
-                </button>
-                <div id="questionNavigator" class="exam-q-list" aria-label="Question navigator"></div>
+                <div id="questionNavigator" class="exam-q-list exam-q-grid" aria-label="Question navigator"></div>
                 <div class="cp-qnav-legend" aria-hidden="true">
                   <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--answered"></span> Answered</span>
                   <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--current"></span> Current</span>
                   <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--unanswered"></span> Unanswered</span>
+                  <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--flagged"></span> Flagged</span>
                 </div>
               </div>
             </div>
           </aside>
         </div>
 
-        <div class="exam-mobile-nav" id="mobileNav">
-          <button type="button" id="mIndexBtn" class="focus-ring">Index</button>
-          <button type="button" id="mFlagBtn" class="focus-ring">Flag</button>
-          <button type="button" id="mSubmitBtn" class="exam-mobile-next focus-ring is-locked" aria-disabled="true">Submit</button>
-        </div>
-
-        <div id="mobileIndexDrawer" class="fixed inset-0 z-[1200] hidden bg-slate-900/45 p-4">
-          <div class="w-full max-w-lg mx-auto mt-10 rounded-xl bg-white border border-slate-200 shadow-xl p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-bold text-[#143D59] m-0">Question index</h3>
-              <button type="button" id="closeMobileDrawerBtn" class="focus-ring px-2 py-1 rounded border border-slate-200 text-slate-700"><i class="bi bi-x-lg"></i></button>
+        <div id="examQnavDrawer" class="exam-qnav-drawer" hidden aria-hidden="true">
+          <button type="button" class="exam-qnav-drawer__backdrop" id="examQnavDrawerBackdrop" aria-label="Close question navigator"></button>
+          <div class="exam-qnav-drawer__sheet" role="dialog" aria-modal="true" aria-labelledby="examQnavDrawerTitle">
+            <header class="exam-qnav-drawer__head">
+              <h2 id="examQnavDrawerTitle" class="exam-qnav-drawer__title">Question navigator</h2>
+              <button type="button" id="closeMobileDrawerBtn" class="exam-qnav-drawer__close focus-ring" aria-label="Close question navigator"><i class="bi bi-x-lg"></i></button>
+            </header>
+            <div class="exam-filter-row exam-filter-row--drawer">
+              <button type="button" class="exam-filter-btn focus-ring is-active" data-filter="all">All</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="unanswered">Unanswered</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="answered">Answered</button>
+              <button type="button" class="exam-filter-btn focus-ring" data-filter="flagged">Flagged</button>
             </div>
-            <div id="mobileQuestionNavigator" class="exam-q-list"></div>
+            <div id="mobileQuestionNavigator" class="exam-q-list exam-q-grid exam-q-grid--drawer" aria-label="Question navigator"></div>
+            <div class="cp-qnav-legend cp-qnav-legend--drawer" aria-hidden="true">
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--answered"></span> Answered</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--current"></span> Current</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--unanswered"></span> Unanswered</span>
+              <span class="cp-qnav-legend__item"><span class="cp-qnav-legend__dot cp-qnav-legend__dot--flagged"></span> Flagged</span>
+            </div>
           </div>
         </div>
       </div>
@@ -661,7 +639,11 @@ if ($reviewMode && $attemptSubmitted) {
         var submitExamBtnText = document.getElementById('submitExamBtnText');
         var submitAnsweredNum = document.getElementById('submitAnsweredNum');
         var submitIncompleteHint = document.getElementById('submitIncompleteHint');
-        var mSubmitBtn = document.getElementById('mSubmitBtn');
+        var examQuestionsBtn = document.getElementById('examQuestionsBtn');
+        var examQnavDrawer = document.getElementById('examQnavDrawer');
+        var examNavCurrentLabel = document.getElementById('examNavCurrentLabel');
+        var examTimerCompact = document.getElementById('examTimerCompact');
+        var examTimerCompactWrap = document.getElementById('examTimerCompactWrap');
         var tabBlurLastSent = 0;
         var examPageReadyAt = Date.now();
         var warned5 = false, warned1 = false, warned30 = false;
@@ -959,6 +941,26 @@ if ($reviewMode && $attemptSubmitted) {
           if (countdown <= 300 && countdown > 60 && !warned5) { warned5 = true; showWarnToast('5 minutes remaining', 'warning'); }
           if (countdown <= 60 && countdown > 30 && !warned1) { warned1 = true; showWarnToast('1 minute remaining', 'danger'); }
           if (countdown <= 30 && countdown > 0 && !warned30) { warned30 = true; showWarnToast('30 seconds remaining', 'danger'); }
+          if (examTimerCompact && timerValue) examTimerCompact.textContent = timerValue.textContent;
+          if (examTimerCompactWrap && timerWrap) {
+            examTimerCompactWrap.classList.toggle('warning', timerWrap.classList.contains('warning'));
+            examTimerCompactWrap.classList.toggle('danger', timerWrap.classList.contains('danger'));
+          }
+        }
+        function updateActionBarUI() {
+          var prevBtn = document.getElementById('examPrevBtn');
+          var nextBtn = document.getElementById('examNextBtn');
+          var onLast = state.currentIndex >= totalQuestions - 1;
+          var complete = unansweredCount() === 0 && totalQuestions > 0;
+          if (prevBtn) prevBtn.disabled = state.currentIndex <= 0;
+          if (nextBtn) {
+            nextBtn.hidden = onLast && complete;
+            if (onLast && !complete) {
+              nextBtn.innerHTML = '<i class="bi bi-list-check" aria-hidden="true"></i><span>Review</span>';
+            } else if (!onLast) {
+              nextBtn.innerHTML = '<span>Next</span><i class="bi bi-arrow-right" aria-hidden="true"></i>';
+            }
+          }
         }
         function updateCounts() {
           var uniq = {};
@@ -970,8 +972,10 @@ if ($reviewMode && $attemptSubmitted) {
           if (flaggedCountEl) flaggedCountEl.textContent = String(state.flags.size);
           if (progressBar && totalQuestions > 0) progressBar.style.width = Math.round((n / totalQuestions) * 100) + '%';
           if (currentLabel) currentLabel.textContent = String(state.currentIndex + 1);
+          if (examNavCurrentLabel) examNavCurrentLabel.textContent = String(state.currentIndex + 1);
           if (submitAnsweredNum) submitAnsweredNum.textContent = String(n);
           updateSubmitButton();
+          updateActionBarUI();
         }
         function unansweredList() {
           var list = [];
@@ -984,22 +988,24 @@ if ($reviewMode && $attemptSubmitted) {
         function updateSubmitButton() {
           var answeredN = totalQuestions - unansweredCount();
           var complete = unansweredCount() === 0 && totalQuestions > 0;
+          var examSubmitStatus = document.getElementById('examSubmitStatus');
+          if (examSubmitStatus) {
+            var statusNum = document.getElementById('submitAnsweredNum');
+            if (statusNum) {
+              statusNum.textContent = String(answeredN);
+            } else {
+              examSubmitStatus.textContent = answeredN + ' of ' + totalQuestions + ' answered';
+            }
+            examSubmitStatus.classList.toggle('is-complete', complete);
+          }
           if (submitExamBtn) {
-            // Keep clickable while incomplete so we can show which questions remain.
             submitExamBtn.disabled = false;
+            submitExamBtn.hidden = !complete;
             submitExamBtn.classList.toggle('is-locked', !complete);
             submitExamBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
             if (submitExamBtnText) {
-              submitExamBtnText.textContent = complete
-                ? 'Submit diagnostic'
-                : ('Answer all questions to submit (' + answeredN + '/' + totalQuestions + ')');
+              submitExamBtnText.textContent = 'Submit diagnostic';
             }
-          }
-          if (mSubmitBtn) {
-            mSubmitBtn.disabled = false;
-            mSubmitBtn.classList.toggle('is-locked', !complete);
-            mSubmitBtn.setAttribute('aria-disabled', complete ? 'false' : 'true');
-            mSubmitBtn.textContent = complete ? 'Submit' : (answeredN + '/' + totalQuestions);
           }
           if (submitIncompleteHint && complete) {
             submitIncompleteHint.classList.add('hidden');
@@ -1032,6 +1038,7 @@ if ($reviewMode && $attemptSubmitted) {
             var answered = isQuestionAnsweredLocal(qid), flagged = state.flags.has(qid);
             if (state.filter === 'flagged' && !flagged) return;
             if (state.filter === 'unanswered' && answered) return;
+            if (state.filter === 'answered' && !answered) return;
             var a = document.createElement('a');
             a.href = '#q' + (idx + 1);
             a.className = '';
@@ -1368,29 +1375,15 @@ if ($reviewMode && $attemptSubmitted) {
           openSubmitModal();
         }
         if (submitExamBtn) submitExamBtn.addEventListener('click', tryOpenSubmit);
-        if (mSubmitBtn) mSubmitBtn.addEventListener('click', tryOpenSubmit);
-        document.getElementById('mFlagBtn').addEventListener('click', function () {
-          var p = panels[state.currentIndex]; if (!p) return;
-          var qid = parseInt(p.getAttribute('data-question-id'), 10); if (!qid) return;
-          if (state.flags.has(qid)) state.flags.delete(qid); else state.flags.add(qid);
-          updateCounts(); renderNavigator(); updatePrimaryActionUI(); queueStateSync();
-        });
         document.querySelectorAll('.exam-filter-btn').forEach(function (btn) {
           btn.addEventListener('click', function () {
             state.filter = btn.getAttribute('data-filter') || 'all';
-            document.querySelectorAll('.exam-filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
-            btn.classList.add('is-active');
+            document.querySelectorAll('.exam-filter-btn').forEach(function (b) {
+              b.classList.toggle('is-active', (b.getAttribute('data-filter') || 'all') === state.filter);
+            });
             renderNavigator();
           });
         });
-        var qListSection = document.getElementById('examQListSection');
-        var qListTrigger = document.getElementById('examQListTrigger');
-        if (qListTrigger && qListSection) {
-          qListTrigger.addEventListener('click', function () {
-            qListSection.classList.toggle('collapsed');
-            qListTrigger.setAttribute('aria-expanded', qListSection.classList.contains('collapsed') ? 'false' : 'true');
-          });
-        }
 
         var submitModal = document.getElementById('submitConfirmModal');
         function openSubmitModal() {
@@ -1452,11 +1445,58 @@ if ($reviewMode && $attemptSubmitted) {
         var closeShortcutsBtn = document.getElementById('closeShortcutsBtn');
         if (closeShortcutsBtn) closeShortcutsBtn.addEventListener('click', closeShortcuts);
 
-        function openMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.remove('hidden'); }
-        function closeMobileDrawer() { document.getElementById('mobileIndexDrawer').classList.add('hidden'); }
-        document.getElementById('mIndexBtn').addEventListener('click', openMobileDrawer);
-        document.getElementById('closeMobileDrawerBtn').addEventListener('click', closeMobileDrawer);
-        document.getElementById('mobileIndexDrawer').addEventListener('click', function (e) { if (e.target === e.currentTarget) closeMobileDrawer(); });
+        function openMobileDrawer() {
+          if (!examQnavDrawer) return;
+          examQnavDrawer.hidden = false;
+          examQnavDrawer.setAttribute('aria-hidden', 'false');
+          if (examQuestionsBtn) examQuestionsBtn.setAttribute('aria-expanded', 'true');
+          document.body.classList.add('exam-qnav-drawer-open');
+        }
+        function closeMobileDrawer() {
+          if (!examQnavDrawer) return;
+          examQnavDrawer.hidden = true;
+          examQnavDrawer.setAttribute('aria-hidden', 'true');
+          if (examQuestionsBtn) examQuestionsBtn.setAttribute('aria-expanded', 'false');
+          document.body.classList.remove('exam-qnav-drawer-open');
+        }
+        if (examQuestionsBtn) examQuestionsBtn.addEventListener('click', openMobileDrawer);
+        var closeMobileDrawerBtn = document.getElementById('closeMobileDrawerBtn');
+        if (closeMobileDrawerBtn) closeMobileDrawerBtn.addEventListener('click', closeMobileDrawer);
+        var examQnavDrawerBackdrop = document.getElementById('examQnavDrawerBackdrop');
+        if (examQnavDrawerBackdrop) examQnavDrawerBackdrop.addEventListener('click', closeMobileDrawer);
+        if (examQnavDrawer) {
+          examQnavDrawer.addEventListener('click', function (e) {
+            if (e.target === examQnavDrawer) closeMobileDrawer();
+          });
+        }
+
+        var examPrevBtn = document.getElementById('examPrevBtn');
+        var examNextBtn = document.getElementById('examNextBtn');
+        if (examPrevBtn) {
+          examPrevBtn.addEventListener('click', function () {
+            if (state.currentIndex > 0) setCurrentIndex(state.currentIndex - 1);
+          });
+        }
+        if (examNextBtn) {
+          examNextBtn.addEventListener('click', function () {
+            var onLast = state.currentIndex >= totalQuestions - 1;
+            if (onLast) {
+              var idx = panels.findIndex(function (p) {
+                return !isQuestionAnsweredLocal(parseInt(p.getAttribute('data-question-id'), 10));
+              });
+              if (idx >= 0) setCurrentIndex(idx);
+              else tryOpenSubmit();
+              return;
+            }
+            if (state.currentIndex < totalQuestions - 1) setCurrentIndex(state.currentIndex + 1);
+          });
+        }
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && examQnavDrawer && !examQnavDrawer.hidden) {
+            closeMobileDrawer();
+          }
+        });
 
         document.addEventListener('keydown', function (e) {
           if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
@@ -1516,6 +1556,15 @@ if ($reviewMode && $attemptSubmitted) {
           leaveModal.classList.add('hidden'); leaveModal.classList.remove('flex');
         }
         document.getElementById('stayOnExamBtn').addEventListener('click', closeLeaveModal);
+        var examExitBtn = document.getElementById('examExitBtn');
+        if (examExitBtn) {
+          examExitBtn.addEventListener('click', function () {
+            var href = examExitBtn.getAttribute('data-exit-href') || 'college_exams';
+            var exitLink = document.createElement('a');
+            exitLink.href = href;
+            openLeaveModal(exitLink.href);
+          });
+        }
         document.getElementById('leaveExamBtn').addEventListener('click', function () {
           state.submitting = true;
           if (leaveTargetUrl) window.location.href = leaveTargetUrl;

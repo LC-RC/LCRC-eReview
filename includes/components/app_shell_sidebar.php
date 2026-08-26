@@ -251,7 +251,15 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     syncToggleAria();
   }
 
+  function isExamTakingLocked() {
+    return body.classList.contains('exam-taking-mode')
+      && body.classList.contains('college-examination-portal');
+  }
+
   function toggleSidebar() {
+    if (isExamTakingLocked()) {
+      return;
+    }
     if (body.classList.contains('sidebar-expanded')) {
       closeSidebar();
     } else {
@@ -284,6 +292,11 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   }
 
   aside.addEventListener('click', function (ev) {
+    if (isExamTakingLocked()) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      return;
+    }
     var target = ev.target;
     if (!target || !target.closest) return;
     var navLink = target.closest('.app-shell-nav-link');
