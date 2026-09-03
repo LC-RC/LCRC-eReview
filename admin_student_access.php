@@ -250,6 +250,7 @@ $adminBreadcrumbs = [
       padding: 0.2rem 0.55rem; border-radius: 999px;
     }
   </style>
+  <script src="<?php echo h(function_exists('ereview_url') ? ereview_url('assets/js/admin_sca_picker.js') : 'assets/js/admin_sca_picker.js'); ?>"></script>
   <script>
   document.addEventListener('alpine:init', function () {
     Alpine.data('studentAccessAdmin', function () {
@@ -269,6 +270,7 @@ $adminBreadcrumbs = [
         permissions: [],
         newPermissions: [],
         bulkPermissions: [],
+        subjectModes: {},
         toasts: [],
         toastSeq: 0,
         stickyFlash: '',
@@ -513,6 +515,7 @@ $adminBreadcrumbs = [
             const data = await this.apiGet('student', { user_id: id });
             this.student = data.user;
             this.permissions = data.permissions || [];
+            this.inferSubjectModesFromPermissions();
             this.edit = {
               full_name: data.user.full_name || '',
               email: data.user.email || '',
@@ -528,71 +531,6 @@ $adminBreadcrumbs = [
           }
         },
 
-        isChecked(type, id) {
-          return this.activePermissionList.some(p => p.content_type === type && Number(p.content_id) === Number(id));
-        },
-        toggle(type, id, on) {
-          const key = this.permissionListKey;
-          this[key] = this[key].filter(p => !(p.content_type === type && Number(p.content_id) === Number(id)));
-          if (on) this[key].push({ content_type: type, content_id: Number(id) });
-        },
-        toggleFullLms(on) {
-          const key = this.permissionListKey;
-          this[key] = this[key].filter(p => p.content_type !== 'full_lms');
-          if (on) this[key].push({ content_type: 'full_lms', content_id: 0 });
-        },
-        /** 'full' | 'selected' | 'none' */
-        subjectMode(subjectId) {
-          if (this.isChecked('subject', subjectId)) return 'full';
-          const sub = (this.catalog.subjects || []).find(s => Number(s.id) === Number(subjectId));
-          if (!sub) return 'none';
-          const lessonIds = (sub.lessons || []).map(l => Number(l.id));
-          const quizIds = (sub.quizzes || []).map(q => Number(q.id));
-          const videoIds = [];
-          const handoutIds = [];
-          (sub.lessons || []).forEach(l => {
-            (l.videos || []).forEach(v => videoIds.push(Number(v.id)));
-            (l.handouts || []).forEach(h => handoutIds.push(Number(h.id)));
-          });
-          const hit = this.activePermissionList.some(p => {
-            const id = Number(p.content_id);
-            if (p.content_type === 'lesson' && lessonIds.includes(id)) return true;
-            if (p.content_type === 'quiz' && quizIds.includes(id)) return true;
-            if (p.content_type === 'video' && videoIds.includes(id)) return true;
-            if (p.content_type === 'handout' && handoutIds.includes(id)) return true;
-            return false;
-          });
-          return hit ? 'selected' : 'none';
-        },
-        clearSubjectChildren(sub) {
-          const key = this.permissionListKey;
-          const lessonIds = new Set((sub.lessons || []).map(l => Number(l.id)));
-          const quizIds = new Set((sub.quizzes || []).map(q => Number(q.id)));
-          const videoIds = new Set();
-          const handoutIds = new Set();
-          (sub.lessons || []).forEach(l => {
-            (l.videos || []).forEach(v => videoIds.add(Number(v.id)));
-            (l.handouts || []).forEach(h => handoutIds.add(Number(h.id)));
-          });
-          this[key] = this[key].filter(p => {
-            const id = Number(p.content_id);
-            if (p.content_type === 'subject' && id === Number(sub.id)) return false;
-            if (p.content_type === 'lesson' && lessonIds.has(id)) return false;
-            if (p.content_type === 'quiz' && quizIds.has(id)) return false;
-            if (p.content_type === 'video' && videoIds.has(id)) return false;
-            if (p.content_type === 'handout' && handoutIds.has(id)) return false;
-            return true;
-          });
-        },
-        setSubjectMode(sub, mode) {
-          const key = this.permissionListKey;
-          this.clearSubjectChildren(sub);
-          if (mode === 'full') {
-            this[key].push({ content_type: 'subject', content_id: Number(sub.id) });
-          }
-          // 'selected' → leave child checkboxes for the admin; 'none' → cleared
-        },
-
         async savePermissions() {
           this.saveAction = 'permissions';
           try {
@@ -601,6 +539,7 @@ $adminBreadcrumbs = [
               permissions: JSON.stringify(this.permissions)
             });
             this.permissions = data.permissions || [];
+            this.inferSubjectModesFromPermissions();
             this.showToast('Saved!', 'Content access permissions were updated successfully.', 'ok');
           } catch (e) {
             this.showToast('Save failed', e.message, 'err');
@@ -697,7 +636,8 @@ $adminBreadcrumbs = [
           } finally {
             this.saveAction = null;
           }
-        }
+        },
+        ...(window.ereviewScaPickerMethods || {})
       };
     });
   });

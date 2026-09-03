@@ -2742,11 +2742,15 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     });
   })();
 
+  </script>
+  <script src="assets/js/admin_sca_picker.js"></script>
+  <script>
   document.addEventListener('alpine:init', function () {
     function scaAccessPickerFactory() {
       return {
         catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
-        permissions: [{ content_type: 'full_lms', content_id: 0 }],
+        permissions: [],
+        subjectModes: {},
         loadingCatalog: false,
         get permissionListKey() { return 'permissions'; },
         get activePermissionList() { return this.permissions || []; },
@@ -2770,81 +2774,19 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             }
           } catch (e) { /* keep empty catalog */ }
           this.loadingCatalog = false;
-        },
-        isChecked: function (type, id) {
-          return this.activePermissionList.some(function (p) {
-            return p.content_type === type && Number(p.content_id) === Number(id);
-          });
-        },
-        toggle: function (type, id, on) {
-          this.permissions = this.permissions.filter(function (p) {
-            return !(p.content_type === type && Number(p.content_id) === Number(id));
-          });
-          if (on) this.permissions.push({ content_type: type, content_id: Number(id) });
-        },
-        toggleFullLms: function (on) {
-          this.permissions = this.permissions.filter(function (p) { return p.content_type !== 'full_lms'; });
-          if (on) this.permissions.push({ content_type: 'full_lms', content_id: 0 });
-        },
-        subjectMode: function (subjectId) {
-          if (this.isChecked('subject', subjectId)) return 'full';
-          var sub = (this.catalog.subjects || []).find(function (s) { return Number(s.id) === Number(subjectId); });
-          if (!sub) return 'none';
-          var lessonIds = (sub.lessons || []).map(function (l) { return Number(l.id); });
-          var quizIds = (sub.quizzes || []).map(function (q) { return Number(q.id); });
-          var videoIds = [];
-          var handoutIds = [];
-          (sub.lessons || []).forEach(function (l) {
-            (l.videos || []).forEach(function (v) { videoIds.push(Number(v.id)); });
-            (l.handouts || []).forEach(function (h) { handoutIds.push(Number(h.id)); });
-          });
-          var hit = this.activePermissionList.some(function (p) {
-            var id = Number(p.content_id);
-            if (p.content_type === 'lesson' && lessonIds.indexOf(id) !== -1) return true;
-            if (p.content_type === 'quiz' && quizIds.indexOf(id) !== -1) return true;
-            if (p.content_type === 'video' && videoIds.indexOf(id) !== -1) return true;
-            if (p.content_type === 'handout' && handoutIds.indexOf(id) !== -1) return true;
-            return false;
-          });
-          return hit ? 'selected' : 'none';
-        },
-        clearSubjectChildren: function (sub) {
-          var lessonIds = {};
-          var quizIds = {};
-          var videoIds = {};
-          var handoutIds = {};
-          (sub.lessons || []).forEach(function (l) {
-            lessonIds[Number(l.id)] = true;
-            (l.videos || []).forEach(function (v) { videoIds[Number(v.id)] = true; });
-            (l.handouts || []).forEach(function (h) { handoutIds[Number(h.id)] = true; });
-          });
-          (sub.quizzes || []).forEach(function (q) { quizIds[Number(q.id)] = true; });
-          var sid = Number(sub.id);
-          this.permissions = this.permissions.filter(function (p) {
-            var id = Number(p.content_id);
-            if (p.content_type === 'subject' && id === sid) return false;
-            if (p.content_type === 'lesson' && lessonIds[id]) return false;
-            if (p.content_type === 'quiz' && quizIds[id]) return false;
-            if (p.content_type === 'video' && videoIds[id]) return false;
-            if (p.content_type === 'handout' && handoutIds[id]) return false;
-            return true;
-          });
-        },
-        setSubjectMode: function (sub, mode) {
-          this.clearSubjectChildren(sub);
-          if (mode === 'full') {
-            this.permissions.push({ content_type: 'subject', content_id: Number(sub.id) });
-          }
+          this.inferSubjectModesFromPermissions();
         },
         resetDefaults: function () {
-          this.permissions = [{ content_type: 'full_lms', content_id: 0 }];
+          this.permissions = [];
+          this.subjectModes = {};
         },
         exportAccess: function () {
           return {
             grant_full_lms: this.hasFullLms ? '1' : '0',
             permissions: JSON.stringify(this.hasFullLms ? [{ content_type: 'full_lms', content_id: 0 }] : this.permissions)
           };
-        }
+        },
+        ...(window.ereviewScaPickerMethods || {})
       };
     }
     Alpine.data('approveAccessPicker', scaAccessPickerFactory);

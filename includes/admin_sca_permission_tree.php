@@ -18,8 +18,9 @@ $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
   </p>
 
   <p class="sca-tree-hint text-xs text-gray-500 m-0 mb-2">
-    Per subject: choose <strong>Full Subject Access</strong> (all topics) or <strong>Selected Topics</strong> (only checked topics).
-    Granting a subject does <em>not</em> unlock other subjects.
+    Per subject: choose <strong>Full Subject Access</strong> (all topics) or <strong>Selected Topics Only</strong>,
+    then check the topics you want. Uncheck <strong>Full LMS access</strong> first if it is enabled.
+    Granting one subject does <em>not</em> unlock other subjects.
   </p>
 
   <template x-for="sub in catalog.subjects" :key="'<?php echo $scope; ?>-sub-'+sub.id">

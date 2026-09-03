@@ -1020,6 +1020,7 @@ if (!empty($user['last_seen_at'])) {
     </div>
   </section>
 </div>
+<script src="assets/js/admin_sca_picker.js"></script>
 <script>
   (function () {
     var modal = document.getElementById('mediaPreviewModal');
@@ -1065,7 +1066,8 @@ if (!empty($user['last_seen_at'])) {
     Alpine.data('viewApproveAccessPicker', function () {
       return {
         catalog: { subjects: [], preboard_subjects: [], preweek_units: [], test_bank: [] },
-        permissions: [{ content_type: 'full_lms', content_id: 0 }],
+        permissions: [],
+        subjectModes: {},
         loadingCatalog: false,
         get permissionListKey() { return 'permissions'; },
         get activePermissionList() { return this.permissions || []; },
@@ -1087,21 +1089,7 @@ if (!empty($user['last_seen_at'])) {
             if (res.ok && data.ok && data.catalog) this.catalog = data.catalog;
           } catch (e) { /* ignore */ }
           this.loadingCatalog = false;
-        },
-        isChecked: function (type, id) {
-          return this.activePermissionList.some(function (p) {
-            return p.content_type === type && Number(p.content_id) === Number(id);
-          });
-        },
-        toggle: function (type, id, on) {
-          this.permissions = this.permissions.filter(function (p) {
-            return !(p.content_type === type && Number(p.content_id) === Number(id));
-          });
-          if (on) this.permissions.push({ content_type: type, content_id: Number(id) });
-        },
-        toggleFullLms: function (on) {
-          this.permissions = this.permissions.filter(function (p) { return p.content_type !== 'full_lms'; });
-          if (on) this.permissions.push({ content_type: 'full_lms', content_id: 0 });
+          this.inferSubjectModesFromPermissions();
         },
         prepareSubmit: function (e) {
           if (!this.hasFullLms && (!this.permissions || this.permissions.length === 0)) {
@@ -1110,11 +1098,12 @@ if (!empty($user['last_seen_at'])) {
               window.adminUiDialog.notice({
                 type: 'info',
                 title: 'Select access',
-                message: 'Select Full LMS access or at least one content item before approving.'
+                message: 'Select Full LMS access, Full Subject Access, or at least one topic before approving.'
               });
             }
           }
-        }
+        },
+        ...(window.ereviewScaPickerMethods || {})
       };
     });
   });
