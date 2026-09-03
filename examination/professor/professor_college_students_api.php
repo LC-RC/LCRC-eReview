@@ -249,6 +249,9 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
             if (strtolower((string) ($row['status'] ?? '')) === 'rejected') {
                 throw new InvalidArgumentException('Rejected student #' . $uid . ' cannot be enabled.');
             }
+            if (strtolower((string) ($row['status'] ?? '')) === 'archived') {
+                throw new InvalidArgumentException('Archived student #' . $uid . ' cannot be enabled. Restore the LMS account first.');
+            }
             if (pcs_api_user_has_college_exam($row)) {
                 throw new InvalidArgumentException('User #' . $uid . ' already has College Examination access.');
             }
@@ -264,7 +267,7 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
                      review_type=?
                  WHERE user_id IN ({$placeholders})
                    AND role='student'
-                   AND status<>'rejected'"
+                   AND status NOT IN ('rejected','archived')"
             );
             if (!$upd) {
                 throw new RuntimeException('Could not prepare bulk enable update.');
@@ -282,7 +285,7 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
                      section=?
                  WHERE user_id IN ({$placeholders})
                    AND role='student'
-                   AND status<>'rejected'"
+                   AND status NOT IN ('rejected','archived')"
             );
             if (!$upd) {
                 throw new RuntimeException('Could not prepare bulk enable update.');

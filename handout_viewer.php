@@ -1,26 +1,50 @@
 <?php
 require_once 'auth.php';
 requireRole('student');
+require_once __DIR__ . '/includes/student_content_access.php';
+sca_enforce_student_session($conn);
 
 $handoutId = sanitizeInt($_GET['handout_id'] ?? 0);
 $preweekHandoutId = sanitizeInt($_GET['preweek_handout_id'] ?? 0);
+$userId = (int) getCurrentUserId();
 
 $handout = null;
 if ($preweekHandoutId > 0) {
     require_once __DIR__ . '/includes/preweek_migrate.php';
-    $stmt = mysqli_prepare($conn, "SELECT handout_title, file_path, allow_download FROM preweek_handouts WHERE preweek_handout_id=? LIMIT 1");
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT h.handout_title, h.file_path, h.allow_download, h.preweek_topic_id
+         FROM preweek_handouts h
+         WHERE h.preweek_handout_id=? LIMIT 1"
+    );
     mysqli_stmt_bind_param($stmt, 'i', $preweekHandoutId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $handout = mysqli_fetch_assoc($result);
     mysqli_stmt_close($stmt);
+    $topicId = (int) ($handout['preweek_topic_id'] ?? 0);
+    if ($topicId > 0 && !sca_has_access($conn, $userId, 'preweek_topic', $topicId)) {
+        $_SESSION['error'] = defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.';
+        header('Location: student_preweek');
+        exit;
+    }
 } elseif ($handoutId > 0) {
-    $stmt = mysqli_prepare($conn, "SELECT handout_title, file_path, allow_download FROM lesson_handouts WHERE handout_id=? LIMIT 1");
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT handout_title, file_path, allow_download, lesson_id
+         FROM lesson_handouts WHERE handout_id=? LIMIT 1"
+    );
     mysqli_stmt_bind_param($stmt, 'i', $handoutId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $handout = mysqli_fetch_assoc($result);
     mysqli_stmt_close($stmt);
+    if (!sca_has_access($conn, $userId, 'handout', $handoutId)) {
+        $_SESSION['error'] = defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.';
+        $lessonId = (int) ($handout['lesson_id'] ?? 0);
+        header('Location: ' . ($lessonId > 0 ? ('student_lesson_viewer?lesson_id=' . $lessonId) : 'student_subjects'));
+        exit;
+    }
 }
 
 if (!$handout || empty($handout['file_path'])) { http_response_code(404); exit('Not Found'); }

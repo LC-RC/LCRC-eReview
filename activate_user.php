@@ -73,10 +73,9 @@ $userIds = array_values($userIds);
 if ($userIds === [] || $durationValue <= 0) {
     activate_user_respond($isAjax, false, 'Invalid user or duration value.', 'admin_students?tab=pending&q=&page=1', 400);
 }
-if (($durationUnit === 'day' && $durationValue > 3660)
-    || ($durationUnit === 'month' && $durationValue > 120)
-    || ($durationUnit === 'year' && $durationValue > 10)) {
-    activate_user_respond($isAjax, false, 'Duration value is too large for the selected unit.', 'admin_students?tab=pending&q=&page=1', 400);
+$durationError = admin_validate_duration($durationValue, $durationUnit);
+if ($durationError !== null) {
+    activate_user_respond($isAjax, false, $durationError, 'admin_students?tab=pending&q=&page=1', 400);
 }
 
 $grantFullRaw = $_POST['grant_full_lms'] ?? '0';
@@ -151,7 +150,7 @@ foreach ($userIds as $userId) {
     $enrollmentPath = '';
     $studentStmt = mysqli_prepare(
         $conn,
-        "SELECT email, full_name, role, enrollment_path FROM users WHERE user_id=? LIMIT 1"
+        "SELECT email, full_name, role, enrollment_path, status FROM users WHERE user_id=? LIMIT 1"
     );
     if (!$studentStmt) {
         $failed[] = $userId;
@@ -169,6 +168,11 @@ foreach ($userIds as $userId) {
         $enrollmentPath = (string)($studentRow['enrollment_path'] ?? '');
     }
     if ($studentRole !== 'student' || $studentEmail === '') {
+        $failed[] = $userId;
+        continue;
+    }
+    if (strcasecmp((string) ($studentRow['status'] ?? ''), 'archived') === 0
+        || strcasecmp((string) ($studentRow['status'] ?? ''), 'rejected') === 0) {
         $failed[] = $userId;
         continue;
     }
@@ -213,6 +217,39 @@ foreach ($userIds as $userId) {
         if (empty($grantRes['ok'])) {
             $failed[] = $userId;
             continue;
+        }
+        // Align users.access_end + grants to the real requested unit (hour/day/month/year),
+        // not the approximate months used by the grant helper.
+        $setWin = mysqli_prepare(
+            $conn,
+            "UPDATE users
+             SET access_start = IFNULL(access_start, NOW()),
+                 access_end = DATE_ADD(NOW(), INTERVAL ? {$intervalUnit}),
+                 access_months = ?
+             WHERE user_id = ? AND role = 'student'
+             LIMIT 1"
+        );
+        if ($setWin) {
+            mysqli_stmt_bind_param($setWin, 'iii', $durationValue, $months, $userId);
+            mysqli_stmt_execute($setWin);
+            mysqli_stmt_close($setWin);
+            $endQ = mysqli_prepare($conn, 'SELECT access_end FROM users WHERE user_id = ? LIMIT 1');
+            $endSql = '';
+            if ($endQ) {
+                mysqli_stmt_bind_param($endQ, 'i', $userId);
+                mysqli_stmt_execute($endQ);
+                $endRes = mysqli_stmt_get_result($endQ);
+                $endRow = $endRes ? mysqli_fetch_assoc($endRes) : null;
+                mysqli_stmt_close($endQ);
+                $endSql = trim((string) ($endRow['access_end'] ?? ''));
+            }
+            if ($endSql !== '') {
+                admin_sync_access_grants_with_window($conn, $userId, 'set', [
+                    'duration_value' => $durationValue,
+                    'interval_unit' => $intervalUnit,
+                    'absolute_end' => $endSql,
+                ]);
+            }
         }
         $permOk = $grantFull
             ? sca_save_user_permissions_preserving_commerce(

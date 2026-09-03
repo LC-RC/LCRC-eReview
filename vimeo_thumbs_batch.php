@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/includes/vimeo_helpers.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 
 header('Content-Type: application/json; charset=utf-8');
@@ -12,6 +13,13 @@ header('Cache-Control: no-store, no-cache, must-revalidate');
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
 if ($subjectId <= 0) {
     echo json_encode(['ok' => false, 'error' => 'bad_subject']);
+    exit;
+}
+
+$userId = (int) getCurrentUserId();
+if ($userId <= 0 || !sca_subject_has_any_access($conn, $userId, $subjectId)) {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'error' => 'access_denied']);
     exit;
 }
 

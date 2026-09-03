@@ -6,6 +6,7 @@
 require_once __DIR__ . '/includes/quiz_http_debug.php';
 require_once 'auth.php';
 requireRole('student');
+require_once __DIR__ . '/includes/student_content_access.php';
 
 if (function_exists('mysqli_report')) {
     mysqli_report(MYSQLI_REPORT_OFF);
@@ -55,6 +56,11 @@ if ($action === 'save_answer') {
 
     if (!$attempt || $attempt['status'] !== 'in_progress') {
         echo json_encode(['ok' => false, 'error' => 'Attempt not found or already submitted']);
+        exit;
+    }
+    $quizId = (int) ($attempt['quiz_id'] ?? 0);
+    if ($quizId <= 0 || !sca_has_access($conn, (int) $userId, 'quiz', $quizId)) {
+        echo json_encode(['ok' => false, 'error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
         exit;
     }
     $expRaw = $attempt['expires_at'] ?? '';
@@ -114,13 +120,18 @@ if ($action === 'save_answer') {
 // ----- Get remaining seconds (for timer sync) -----
 if ($action === 'get_time') {
     $attemptId = sanitizeInt($_POST['attempt_id'] ?? 0);
-    $stmt = mysqli_prepare($conn, "SELECT expires_at, status FROM quiz_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
+    $stmt = mysqli_prepare($conn, "SELECT expires_at, status, quiz_id FROM quiz_attempts WHERE attempt_id=? AND user_id=? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($stmt);
     $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
     mysqli_stmt_close($stmt);
     if (!$row || $row['status'] !== 'in_progress') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
+        exit;
+    }
+    $quizIdTime = (int) ($row['quiz_id'] ?? 0);
+    if ($quizIdTime <= 0 || !sca_has_access($conn, (int) $userId, 'quiz', $quizIdTime)) {
+        echo json_encode(['ok' => false, 'remaining_seconds' => 0, 'error' => 'access_denied']);
         exit;
     }
     $expRaw2 = $row['expires_at'] ?? '';

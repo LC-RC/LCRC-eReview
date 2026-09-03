@@ -194,7 +194,8 @@ function commerce_admin_grant_manual_access(
     if (!$user || (string) ($user['role'] ?? '') !== 'student') {
         return ['ok' => false, 'error' => 'not_student'];
     }
-    if (strtolower((string) ($user['status'] ?? '')) === 'rejected') {
+    if (strtolower((string) ($user['status'] ?? '')) === 'rejected'
+        || strtolower((string) ($user['status'] ?? '')) === 'archived') {
         return ['ok' => false, 'error' => 'rejected_student'];
     }
 

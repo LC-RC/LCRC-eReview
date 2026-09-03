@@ -5,9 +5,12 @@
 require_once 'auth.php';
 requireRole('student');
 require_once __DIR__ . '/includes/student_activity.php';
+require_once __DIR__ . '/includes/student_content_access.php';
+sca_enforce_student_session($conn);
 
 $handoutId = sanitizeInt($_GET['handout_id'] ?? 0);
 $preweekHandoutId = sanitizeInt($_GET['preweek_handout_id'] ?? 0);
+$userId = (int) getCurrentUserId();
 
 $handout = null;
 $lessonId = null;
@@ -30,6 +33,11 @@ if ($preweekHandoutId > 0) {
     }
     if ($handout) {
         $subjectId = (int) ($handout['subject_id'] ?? 0) ?: null;
+        $topicId = (int) ($handout['preweek_topic_id'] ?? 0);
+        if ($topicId > 0 && !sca_has_access($conn, $userId, 'preweek_topic', $topicId)) {
+            http_response_code(403);
+            exit(defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'Access denied.');
+        }
     }
 } elseif ($handoutId > 0) {
     $stmt = mysqli_prepare(
@@ -48,6 +56,10 @@ if ($preweekHandoutId > 0) {
     if ($handout) {
         $lessonId = (int) ($handout['lesson_id'] ?? 0) ?: null;
         $subjectId = (int) ($handout['subject_id'] ?? 0) ?: null;
+        if (!sca_has_access($conn, $userId, 'handout', $handoutId)) {
+            http_response_code(403);
+            exit(defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'Access denied.');
+        }
     }
 }
 

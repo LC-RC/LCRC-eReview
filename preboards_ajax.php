@@ -7,6 +7,7 @@ require_once 'auth.php';
 requireRole('student');
 require_once __DIR__ . '/includes/preboards_migrate.php';
 require_once __DIR__ . '/includes/preboards_helpers.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 
 header('Content-Type: application/json');
 
@@ -46,6 +47,11 @@ if ($action === 'save_answer') {
     mysqli_stmt_close($stmt);
     if (!$attempt || $attempt['status'] !== 'in_progress') {
         echo json_encode(['ok' => false, 'error' => 'Attempt not found or already submitted']);
+        exit;
+    }
+    $setId = (int) ($attempt['preboards_set_id'] ?? 0);
+    if ($setId <= 0 || !sca_has_access($conn, (int) $userId, 'preboard_set', $setId)) {
+        echo json_encode(['ok' => false, 'error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
         exit;
     }
     if (!empty($attempt['expires_at']) && strtotime($attempt['expires_at']) < time()) {
@@ -97,6 +103,11 @@ if ($action === 'get_time') {
     mysqli_stmt_close($stmt);
     if (!$row || $row['status'] !== 'in_progress') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
+        exit;
+    }
+    $setIdTime = (int) ($row['preboards_set_id'] ?? 0);
+    if ($setIdTime <= 0 || !sca_has_access($conn, (int) $userId, 'preboard_set', $setIdTime)) {
+        echo json_encode(['ok' => false, 'remaining_seconds' => 0, 'error' => 'access_denied']);
         exit;
     }
     $remaining = 0;

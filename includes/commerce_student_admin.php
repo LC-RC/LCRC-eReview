@@ -194,6 +194,9 @@ function commerce_admin_label_account_status(string $status): string
     if ($s === 'rejected') {
         return 'Rejected';
     }
+    if ($s === 'archived') {
+        return 'Archived';
+    }
     if ($s === 'pending') {
         return 'Pending Activation';
     }

@@ -524,6 +524,12 @@ function sca_preboard_has_granular_grant(mysqli $conn, int $userId, int $setId, 
 
 function sca_enforce_student_session(mysqli $conn, string $redirect = 'index'): void
 {
+    // Prefer centralized enforcer (clears session + JSON-aware).
+    require_once __DIR__ . '/platform_access.php';
+    if (function_exists('ereview_enforce_lms_student_session')) {
+        ereview_enforce_lms_student_session($conn);
+        return;
+    }
     $uid = (int) ($_SESSION['user_id'] ?? 0);
     if ($uid <= 0) {
         return;

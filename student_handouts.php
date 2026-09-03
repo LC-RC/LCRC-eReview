@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
 requireRole('student');
+require_once __DIR__ . '/includes/student_content_access.php';
+sca_enforce_student_session($conn);
 
 $lessonId = sanitizeInt($_GET['lesson_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
@@ -13,6 +15,11 @@ $result = mysqli_stmt_get_result($stmt);
 $lesson = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 if (!$lesson) { header('Location: student_subjects'); exit; }
+if (!sca_has_access($conn, (int) getCurrentUserId(), 'lesson', (int) $lessonId)) {
+    $_SESSION['error'] = defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.';
+    header('Location: student_subject?subject_id=' . (int) ($lesson['subject_id'] ?? 0));
+    exit;
+}
 
 $handoutsResult = mysqli_query($conn, "SELECT * FROM lesson_handouts WHERE lesson_id=".$lessonId." ORDER BY handout_id DESC");
 $pageTitle = $lesson['title'] . ' - Handouts';

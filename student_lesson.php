@@ -1,6 +1,8 @@
 <?php
 require_once 'auth.php';
 requireRole('student');
+require_once __DIR__ . '/includes/student_content_access.php';
+sca_enforce_student_session($conn);
 
 $lessonId = sanitizeInt($_GET['lesson_id'] ?? 0);
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
@@ -14,6 +16,11 @@ $lesson = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 if (!$lesson) { header('Location: student_subjects'); exit; }
 $subjectId = (int)$lesson['subject_id'];
+if (!sca_has_access($conn, (int) getCurrentUserId(), 'lesson', $lessonId)) {
+    $_SESSION['error'] = defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.';
+    header('Location: student_subject?subject_id=' . $subjectId);
+    exit;
+}
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM lesson_videos WHERE lesson_id=? ORDER BY video_id ASC");
 mysqli_stmt_bind_param($stmt, 'i', $lessonId);

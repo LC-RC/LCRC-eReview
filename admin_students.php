@@ -18,10 +18,10 @@ college_sections_seed_from_existing($conn);
 $collegeExamSectionSuggestions = college_sections_active_names($conn);
 
 $view = $_GET['view'] ?? 'students';
-if (!in_array($view, ['students', 'deleted'], true)) { $view = 'students'; }
+if (!in_array($view, ['students', 'deleted', 'archived'], true)) { $view = 'students'; }
 
 $tab = $_GET['tab'] ?? 'enrolled';
-if (!in_array($tab, ['enrolled','pending','expired','rejected','all'], true)) { $tab = 'enrolled'; }
+if (!in_array($tab, ['enrolled','pending','expired','rejected','archived','all'], true)) { $tab = 'enrolled'; }
 
 $q = trim($_GET['q'] ?? '');
 $dq = trim($_GET['dq'] ?? '');
@@ -55,14 +55,17 @@ $activeGrantJoin = "LEFT JOIN (
       AND source IN ('purchase','free_access','admin_manual')
 ) ag ON ag.user_id = u.user_id";
 $tabWhereMap = [
-  'enrolled' => "u.role='student' AND ag.user_id IS NOT NULL",
+  'enrolled' => "u.role='student' AND u.status='approved' AND ag.user_id IS NOT NULL",
   'pending'  => "u.role='student' AND u.status='pending' AND ag.user_id IS NULL",
   'expired'  => "u.role='student' AND u.status='approved' AND u.access_end IS NOT NULL AND u.access_end < ? AND ag.user_id IS NULL",
   'rejected' => "u.role='student' AND u.status='rejected'",
-  'all'      => "u.role='student'",
+  'archived'=> "u.role='student' AND u.status='archived'",
+  'all'      => "u.role='student' AND u.status <> 'archived'",
 ];
 $tabWhere = $tabWhereMap[$tab];
 
+require_once __DIR__ . '/includes/admin_account_window.php';
+admin_ensure_user_status_archived($conn);
 require_once __DIR__ . '/includes/schema_introspection.php';
 $hasProfilePicture = ereview_schema_column_exists($conn, 'users', 'profile_picture');
 $hasUseDefaultAvatar = ereview_schema_column_exists($conn, 'users', 'use_default_avatar');
@@ -92,17 +95,19 @@ if ($q === '' && session_status() === PHP_SESSION_ACTIVE) {
       'pending' => (int) ($cachedCounts['pending'] ?? 0),
       'expired' => (int) ($cachedCounts['expired'] ?? 0),
       'rejected' => (int) ($cachedCounts['rejected'] ?? 0),
+      'archived' => (int) ($cachedCounts['archived'] ?? 0),
       'all' => (int) ($cachedCounts['all'] ?? 0),
     ];
   }
 }
 if ($counts === null) {
   $countSql = "SELECT
-      SUM(CASE WHEN ag.user_id IS NOT NULL THEN 1 ELSE 0 END) AS enrolled,
+      SUM(CASE WHEN u.status='approved' AND ag.user_id IS NOT NULL THEN 1 ELSE 0 END) AS enrolled,
       SUM(CASE WHEN u.status='pending' AND ag.user_id IS NULL THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN u.status='approved' AND u.access_end IS NOT NULL AND u.access_end < ? AND ag.user_id IS NULL THEN 1 ELSE 0 END) AS expired,
       SUM(CASE WHEN u.status='rejected' THEN 1 ELSE 0 END) AS rejected,
-      COUNT(*) AS all_students
+      SUM(CASE WHEN u.status='archived' THEN 1 ELSE 0 END) AS archived,
+      SUM(CASE WHEN u.status <> 'archived' THEN 1 ELSE 0 END) AS all_students
     FROM users u
     {$activeGrantJoin}
     WHERE u.role='student'";
@@ -124,6 +129,7 @@ if ($counts === null) {
     'pending' => (int) ($countRow['pending'] ?? 0),
     'expired' => (int) ($countRow['expired'] ?? 0),
     'rejected' => (int) ($countRow['rejected'] ?? 0),
+    'archived' => (int) ($countRow['archived'] ?? 0),
     'all' => (int) ($countRow['all_students'] ?? 0),
   ];
   if ($q === '' && session_status() === PHP_SESSION_ACTIVE) {
@@ -1340,10 +1346,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   <div class="students-page-shell">
     <nav class="students-view-tabs" aria-label="Students sections">
       <a href="<?php echo h($studentsViewUrl); ?>" class="students-view-tab <?php echo $view === 'students' ? 'is-active' : ''; ?>">Students</a>
-      <a href="<?php echo h($deletedViewUrl); ?>" class="students-view-tab <?php echo $view === 'deleted' ? 'is-active' : ''; ?>">Deleted Users Log</a>
+      <a href="<?php echo h($deletedViewUrl); ?>" class="students-view-tab <?php echo $view === 'deleted' ? 'is-active' : ''; ?>">Historical Deletion Log</a>
     </nav>
 
     <?php if ($view === 'deleted'): ?>
+      <div class="admin-flash admin-flash--info mb-3 p-3 rounded-xl text-sm">
+        This log keeps snapshots of past hard deletions (legacy). Active archiving uses the <strong>Archived</strong> status tab — student rows and exam history are preserved there.
+      </div>
       <div class="students-toolbar page-filter">
         <form method="GET" class="students-toolbar__search">
           <input type="hidden" name="view" value="deleted">
@@ -1424,6 +1433,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               'pending' => ['Needs review', 'bi-hourglass-split'],
               'expired' => ['Expired', 'bi-calendar-x'],
               'rejected' => ['Rejected', 'bi-x-circle'],
+              'archived' => ['Archived', 'bi-archive'],
               'all' => ['All', 'bi-collection'],
             ];
             foreach ($statusChips as $key => $meta):
@@ -1471,7 +1481,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           <button type="button" id="studentsBulkSuspendBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
           <button type="button" id="studentsBulkGrantBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-key"></i> Grant Access</button>
           <button type="button" id="studentsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-check2-circle"></i> Continue</button>
-          <button type="button" id="studentsBulkDeleteBtn" class="admin-modal__btn admin-modal__btn--danger"><i class="bi bi-trash"></i> Delete</button>
+          <button type="button" id="studentsBulkDeleteBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-archive"></i> Archive</button>
         </div>
       </div>
 
@@ -1542,6 +1552,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                   elseif ($tab === 'enrolled') $emptyHint = 'Active students with an approved login account will appear here.';
                   elseif ($tab === 'expired') $emptyHint = 'Students whose account window has ended will appear here.';
                   elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
+                  elseif ($tab === 'archived') $emptyHint = 'Archived students are preserved here and can be restored.';
                 ?>
                 <tr>
                   <td colspan="9" class="students-empty-cell">
@@ -1567,22 +1578,24 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         : 'none';
                     $collExActive = ereview_user_has_college_examination_access($conn, (int) $row['user_id'], $row);
                     $createdFmt = !empty($row['created_at']) ? date('M j, Y', strtotime((string) $row['created_at'])) : '—';
+                    $rowStatus = strtolower((string) ($row['status'] ?? ''));
+                    $isArchivedOrRejected = ($rowStatus === 'rejected' || $rowStatus === 'archived');
                     $payTone = (string) ($dash['payment_tone'] ?? 'neutral');
                     $accessTone = (string) ($dash['access_tone'] ?? 'none');
-                    $showRepairActivation = !empty($dash['show_repair_activation']) || !empty($dash['activation_required']);
-                    $canBulkGrant = ($accessTone !== 'granted' && (string) $row['status'] !== 'rejected');
-                    $canBulkLegacyApprove = (!$isCommerceRow && (string) $row['status'] !== 'approved');
-                    // List query is already role=student; do not require a selected role column.
-                    $canCollegeExamEnable = ((string) $row['status'] !== 'rejected' && !$collExActive);
-                    // Section assignment only for College Examination users (active or suspended).
-                    $canCollegeExamSection = ($collExActive || $collExAccessVal === 'suspended');
-                    $canCollegeExamSuspend = $collExActive;
-                    $canCollegeExamSelect = ((string) $row['status'] !== 'rejected');
+                    $showRepairActivation = !$isArchivedOrRejected
+                        && (!empty($dash['show_repair_activation']) || !empty($dash['activation_required']));
+                    // Single eligibility block (no duplicate overwrites). Archived/rejected never actionable.
+                    $canBulkGrant = !$isArchivedOrRejected && $accessTone !== 'granted';
+                    $canBulkLegacyApprove = !$isArchivedOrRejected && !$isCommerceRow && $rowStatus !== 'approved';
+                    $canCollegeExamEnable = !$isArchivedOrRejected && !$collExActive;
+                    $canCollegeExamSection = !$isArchivedOrRejected && ($collExActive || $collExAccessVal === 'suspended');
+                    $canCollegeExamSuspend = !$isArchivedOrRejected && $collExActive;
+                    $canCollegeExamSelect = !$isArchivedOrRejected;
                     $canBulkSelect = $canBulkGrant || $showRepairActivation || $canBulkLegacyApprove || $canCollegeExamSelect;
                     $payStatusRow = (string) ($dash['payment_status'] ?? '');
-                    $needsProofRemind = $isCommerceRow
+                    $needsProofRemind = !$isArchivedOrRejected
+                        && $isCommerceRow
                         && $accessTone !== 'granted'
-                        && (string) $row['status'] !== 'rejected'
                         && !$hasCommerceProof
                         && (
                             $proofUi === 'Not Uploaded'
@@ -1639,7 +1652,14 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       $accessWindowTone = 'partial';
                     }
                     $statusClass = strtolower((string)$row['status']);
-                    $badgeClass = $statusClass === 'approved' ? 'bg-green-100 text-green-800' : ($statusClass === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800');
+                    $badgeClass = $statusClass === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : ($statusClass === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : ($statusClass === 'archived'
+                          ? 'bg-slate-200 text-slate-800'
+                          : 'bg-amber-100 text-amber-800'));
+                    $statusLabel = $statusClass === 'archived' ? 'Archived' : ucfirst((string) ($row['status'] ?? 'pending'));
                     $hasProof = !empty($row['payment_proof']);
                     $isExpired = ($statusClass === 'approved' && !empty($row['access_end']) && strtotime($row['access_end']) < time());
                     $avatarPath = ereview_avatar_public_path($row['profile_picture'] ?? '');
@@ -1794,6 +1814,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     <td class="col-account-status">
                       <span class="commerce-pill <?php echo $accountUi === 'Active' ? 'commerce-pill--verified' : ($accountUi === 'Rejected' ? 'commerce-pill--rejected' : 'commerce-pill--awaiting'); ?>">
                         <?php if ($accountUi === 'Active'): ?><i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                        <?php elseif ($accountUi === 'Archived'): ?><i class="bi bi-archive" aria-hidden="true"></i>
+                        <?php elseif ($accountUi === 'Rejected'): ?><i class="bi bi-x-circle-fill" aria-hidden="true"></i>
                         <?php else: ?><i class="bi bi-hourglass-split" aria-hidden="true"></i>
                         <?php endif; ?>
                         <?php echo h($accountUi); ?>
@@ -1884,7 +1906,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                                 <label class="sr-only" for="extend-duration-<?php echo (int)$row['user_id']; ?>">Duration to extend</label>
                                 <input id="extend-duration-<?php echo (int)$row['user_id']; ?>" type="number" min="1" name="duration_value" placeholder="+ Amount" required title="Amount to add">
                                 <select name="duration_unit" class="student-extend-unit" aria-label="Duration unit" title="Days, months, or years">
-                                  <option value="day">Days</option>
+                                  <option value="hour">Hours</option>
+                    <option value="day">Days</option>
                                   <option value="month" selected>Months</option>
                                   <option value="year">Years</option>
                                 </select>
@@ -1892,9 +1915,15 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                               </form>
                               <a role="menuitem" class="admin-student-action-item" href="admin_student_view?id=<?php echo (int)$row['user_id']; ?>#account-window-edit"><i class="bi bi-pencil-square" aria-hidden="true"></i> Edit account window</a>
                             <?php endif; ?>
-                            <button type="button" class="admin-student-action-item admin-student-action-item--danger admin-student-action-item--section js-delete-student-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-user-name="<?php echo h($row['full_name']); ?>" data-user-email="<?php echo h($row['email']); ?>">
-                              <i class="bi bi-trash" aria-hidden="true"></i> Delete
+                            <?php if ((string)($row['status'] ?? '') === 'archived'): ?>
+                            <button type="button" class="admin-student-action-item admin-student-action-item--section js-restore-student-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-user-name="<?php echo h($row['full_name']); ?>" data-user-email="<?php echo h($row['email']); ?>">
+                              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Restore Student
                             </button>
+                            <?php else: ?>
+                            <button type="button" class="admin-student-action-item admin-student-action-item--section js-delete-student-btn" role="menuitem" data-user-id="<?php echo (int)$row['user_id']; ?>" data-user-name="<?php echo h($row['full_name']); ?>" data-user-email="<?php echo h($row['email']); ?>">
+                              <i class="bi bi-archive" aria-hidden="true"></i> Archive Student
+                            </button>
+                            <?php endif; ?>
                           </div>
                         </div>
                       </div>
@@ -2144,7 +2173,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <input type="number" id="approveConfirmMonths" min="1" max="3660" value="6" required style="flex:1;">
         <select id="approveConfirmUnit" aria-label="Duration unit" style="min-width:7rem;">
-          <option value="day">Days</option>
+          <option value="hour">Hours</option>
+                    <option value="day">Days</option>
           <option value="month" selected>Months</option>
           <option value="year">Years</option>
         </select>
@@ -2190,34 +2220,36 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   </section>
 </div>
 <div id="deleteStudentModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-  <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="deleteStudentModalTitle">
+  <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="deleteStudentModalTitle">
     <div class="admin-modal__hero">
-      <span class="admin-modal__hero-icon"><i class="bi bi-shield-exclamation"></i></span>
+      <span class="admin-modal__hero-icon"><i class="bi bi-archive"></i></span>
       <div>
-        <h3 id="deleteStudentModalTitle" class="admin-modal__title">Delete Student Account</h3>
-        <p class="admin-modal__desc">You are about to permanently delete <strong id="deleteStudentModalName">this student</strong>.</p>
+        <h3 id="deleteStudentModalTitle" class="admin-modal__title">Archive Student</h3>
+        <p class="admin-modal__desc">You are about to archive <strong id="deleteStudentModalName">this student</strong>.</p>
       </div>
     </div>
-    <div class="admin-modal__warn">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span>This action is irreversible and will remove the account permanently. Enter your admin password to continue.</span>
+    <div class="admin-modal__warn" style="background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a;">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>Archiving removes the student from Active Students but <strong>preserves</strong> their account, profile, exams, answers, scores, and access history. Enter your admin password to continue.</span>
     </div>
     <form id="deleteStudentForm">
       <input type="hidden" id="deleteStudentUserId" value="">
+      <input type="hidden" id="deleteStudentAction" value="archive">
       <div class="admin-modal__field">
-        <label for="deleteStudentReason">Reason for deletion</label>
+        <label for="deleteStudentReason">Reason for archiving</label>
         <select id="deleteStudentReason" required>
           <option value="">Select a reason...</option>
           <option value="duplicate">Duplicate account</option>
           <option value="fraud">Fraud or invalid registration</option>
           <option value="request">Requested by user</option>
           <option value="inactive">Inactive or abandoned account</option>
+          <option value="graduated">Completed / graduated</option>
           <option value="other">Other</option>
         </select>
       </div>
       <div class="admin-modal__field" id="deleteStudentReasonOtherWrap" style="display:none;">
         <label for="deleteStudentReasonOther">Specify reason</label>
-        <input id="deleteStudentReasonOther" type="text" maxlength="220" placeholder="Type the specific deletion reason">
+        <input id="deleteStudentReasonOther" type="text" maxlength="220" placeholder="Type the specific archive reason">
       </div>
       <div class="admin-modal__field">
         <label for="deleteStudentAdminPassword">Admin Password</label>
@@ -2226,7 +2258,31 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       <div id="deleteStudentModalError" class="admin-modal__error"></div>
       <div class="admin-modal__actions">
         <button type="button" id="deleteStudentCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
-        <button type="submit" id="deleteStudentConfirmBtn" class="admin-modal__btn admin-modal__btn--danger">Confirm Delete</button>
+        <button type="submit" id="deleteStudentConfirmBtn" class="admin-modal__btn admin-modal__btn--ok">Confirm Archive</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<div id="restoreStudentModalOverlay" class="admin-modal-overlay" aria-hidden="true">
+  <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="restoreStudentModalTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon"><i class="bi bi-arrow-counterclockwise"></i></span>
+      <div>
+        <h3 id="restoreStudentModalTitle" class="admin-modal__title">Restore Student</h3>
+        <p class="admin-modal__desc">Restore <strong id="restoreStudentModalName">this student</strong> to the active roster without recreating the account.</p>
+      </div>
+    </div>
+    <form id="restoreStudentForm">
+      <input type="hidden" id="restoreStudentUserId" value="">
+      <div class="admin-modal__field">
+        <label for="restoreStudentAdminPassword">Admin Password</label>
+        <input id="restoreStudentAdminPassword" type="password" autocomplete="current-password" required placeholder="Enter admin password">
+      </div>
+      <div id="restoreStudentModalError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" id="restoreStudentCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+        <button type="submit" id="restoreStudentConfirmBtn" class="admin-modal__btn admin-modal__btn--ok">Confirm Restore</button>
       </div>
     </form>
   </section>
@@ -2235,7 +2291,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 <div id="deleteFeedbackModalOverlay" class="admin-modal-overlay" aria-hidden="true">
   <section class="admin-modal admin-feedback-modal" role="dialog" aria-modal="true" aria-labelledby="deleteFeedbackTitle">
     <span id="deleteFeedbackIcon" class="admin-feedback-icon admin-feedback-icon--error"><i class="bi bi-x-octagon-fill"></i></span>
-    <h3 id="deleteFeedbackTitle" class="admin-modal__title">Delete status</h3>
+    <h3 id="deleteFeedbackTitle" class="admin-modal__title">Archive status</h3>
     <p id="deleteFeedbackMessage" class="admin-modal__desc">Message</p>
     <div class="admin-modal__actions">
       <button type="button" id="deleteFeedbackCloseBtn" class="admin-modal__btn admin-modal__btn--ok">OK</button>
@@ -3544,7 +3600,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         var ids = sel && typeof sel.ids === 'function' ? sel.ids() : [];
         if (ids.length === 0) {
           if (window.adminStudentsNotice) {
-            window.adminStudentsNotice.show('info', 'No students selected', 'Select one or more students to delete.');
+            window.adminStudentsNotice.show('info', 'No students selected', 'Select one or more students to archive.');
           }
           return;
         }
@@ -3599,7 +3655,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         return;
       }
       if (!reason) {
-        errEl.textContent = 'Please select a deletion reason.';
+        errEl.textContent = 'Please select a reason.';
         if (reasonEl) reasonEl.focus();
         return;
       }
@@ -3616,11 +3672,11 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
       errEl.textContent = '';
       confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Deleting...';
+      confirmBtn.textContent = 'Archiving...';
       closeModal();
       showLoading(
-        ids.length === 1 ? 'Deleting student account...' : ('Deleting ' + ids.length + ' student accounts...'),
-        'Securing audit log and processing deletion.'
+        ids.length === 1 ? 'Archiving student...' : ('Archiving ' + ids.length + ' students...'),
+        'Preserving records and moving students out of Active.'
       );
 
       var deletedIds = [];
@@ -3636,23 +3692,24 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           if (deletedIds.length === ids.length) {
             showFeedback(
               'success',
-              deletedIds.length === 1 ? 'User successfully deleted' : (deletedIds.length + ' users successfully deleted'),
+              deletedIds.length === 1 ? 'Student archived' : (deletedIds.length + ' students archived'),
               deletedIds.length === 1
-                ? 'The selected student account was permanently removed.'
-                : ('Permanently removed ' + deletedIds.length + ' selected student accounts.')
+                ? 'The student was removed from Active Students. All records were preserved.'
+                : ('Archived ' + deletedIds.length + ' students. All records were preserved.')
             );
           } else if (deletedIds.length > 0) {
-            showFeedback('error', 'Partial delete', 'Deleted ' + deletedIds.length + ' of ' + ids.length + '. ' + (failedMsg || ''));
+            showFeedback('error', 'Partial archive', 'Archived ' + deletedIds.length + ' of ' + ids.length + '. ' + (failedMsg || ''));
           } else {
-            showFeedback('error', 'Delete failed', failedMsg || 'Delete failed. Please try again.');
+            showFeedback('error', 'Archive failed', failedMsg || 'Archive failed. Please try again.');
           }
           confirmBtn.disabled = false;
-          confirmBtn.textContent = 'Confirm Delete';
+          confirmBtn.textContent = 'Confirm Archive';
           return;
         }
 
         var body = new URLSearchParams();
         body.set('csrf_token', csrf);
+        body.set('action', 'archive');
         body.set('user_id', String(ids[index]));
         body.set('admin_password', password);
         body.set('delete_reason', reason);
@@ -3667,12 +3724,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         .then(function (res) { return res.json(); })
         .then(function (data) {
           if (!data || !data.ok) {
-            var msg = (data && data.error) ? data.error : 'Delete failed. Please try again.';
+            var msg = (data && data.error) ? data.error : 'Archive failed. Please try again.';
             if ((data && data.code) === 'INVALID_PASSWORD' || msg.toLowerCase().indexOf('incorrect password') !== -1) {
               hideLoading();
               showFeedback('error', 'Incorrect password', 'Incorrect password. Please try again with your admin password.');
               confirmBtn.disabled = false;
-              confirmBtn.textContent = 'Confirm Delete';
+              confirmBtn.textContent = 'Confirm Archive';
               return;
             }
             failedMsg = msg;
@@ -3683,12 +3740,99 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           deleteNext(index + 1);
         })
         .catch(function () {
-          failedMsg = 'Check your connection and try again.';
+          failedMsg = 'Network error while archiving.';
           deleteNext(index + 1);
         });
       }
 
       deleteNext(0);
+    });
+  })();
+
+  (function () {
+    var csrf = <?php echo json_encode($csrf); ?>;
+    var deleteUrl = 'admin_student_delete';
+    var modalOverlay = document.getElementById('restoreStudentModalOverlay');
+    var form = document.getElementById('restoreStudentForm');
+    var nameEl = document.getElementById('restoreStudentModalName');
+    var userIdEl = document.getElementById('restoreStudentUserId');
+    var passEl = document.getElementById('restoreStudentAdminPassword');
+    var errEl = document.getElementById('restoreStudentModalError');
+    var cancelBtn = document.getElementById('restoreStudentCancelBtn');
+    var confirmBtn = document.getElementById('restoreStudentConfirmBtn');
+    var feedbackOverlay = document.getElementById('deleteFeedbackModalOverlay');
+    var feedbackTitle = document.getElementById('deleteFeedbackTitle');
+    var feedbackMsg = document.getElementById('deleteFeedbackMessage');
+    var feedbackIcon = document.getElementById('deleteFeedbackIcon');
+    if (!modalOverlay || !form) return;
+
+    function openRestore(btn) {
+      userIdEl.value = btn.getAttribute('data-user-id') || '';
+      nameEl.textContent = btn.getAttribute('data-user-name') || 'this student';
+      passEl.value = '';
+      errEl.textContent = '';
+      modalOverlay.classList.add('is-open');
+      modalOverlay.setAttribute('aria-hidden', 'false');
+      setTimeout(function () { passEl.focus(); }, 40);
+    }
+    function closeRestore() {
+      modalOverlay.classList.remove('is-open');
+      modalOverlay.setAttribute('aria-hidden', 'true');
+    }
+    document.querySelectorAll('.js-restore-student-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { openRestore(btn); });
+    });
+    if (cancelBtn) cancelBtn.addEventListener('click', closeRestore);
+    modalOverlay.addEventListener('click', function (e) {
+      if (e.target === modalOverlay) closeRestore();
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var uid = parseInt(userIdEl.value || '0', 10);
+      var password = (passEl.value || '').trim();
+      if (uid <= 0) { errEl.textContent = 'Invalid student.'; return; }
+      if (!password) { errEl.textContent = 'Admin password is required.'; passEl.focus(); return; }
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Restoring...';
+      var body = new URLSearchParams();
+      body.set('csrf_token', csrf);
+      body.set('action', 'restore');
+      body.set('user_id', String(uid));
+      body.set('admin_password', password);
+      fetch(deleteUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: body.toString()
+      }).then(function (res) { return res.json(); })
+        .then(function (data) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Restore';
+          closeRestore();
+          if (!data || !data.ok) {
+            if (feedbackTitle) feedbackTitle.textContent = 'Restore failed';
+            if (feedbackMsg) feedbackMsg.textContent = (data && data.error) ? data.error : 'Could not restore student.';
+            if (feedbackIcon) {
+              feedbackIcon.className = 'admin-feedback-icon admin-feedback-icon--error';
+              feedbackIcon.innerHTML = '<i class="bi bi-x-octagon-fill"></i>';
+            }
+          } else {
+            if (feedbackTitle) feedbackTitle.textContent = 'Student restored';
+            if (feedbackMsg) feedbackMsg.textContent = data.message || 'Student returned to Active without recreating the account.';
+            if (feedbackIcon) {
+              feedbackIcon.className = 'admin-feedback-icon admin-feedback-icon--success admin-feedback-icon--pulse';
+              feedbackIcon.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+            }
+          }
+          if (feedbackOverlay) {
+            feedbackOverlay.classList.add('is-open');
+            feedbackOverlay.setAttribute('aria-hidden', 'false');
+          }
+        }).catch(function () {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Restore';
+          errEl.textContent = 'Network error.';
+        });
     });
   })();
 

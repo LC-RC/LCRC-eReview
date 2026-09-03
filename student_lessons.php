@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once __DIR__ . '/includes/content_sort_order.php';
+require_once __DIR__ . '/includes/student_content_access.php';
 requireRole('student');
 
 $subjectId = sanitizeInt($_GET['subject_id'] ?? 0);
@@ -15,6 +16,11 @@ $result = mysqli_stmt_get_result($stmt);
 $subject = mysqli_fetch_assoc($result);
 mysqli_stmt_close($stmt);
 if (!$subject) { header('Location: student_subjects'); exit; }
+if (!sca_subject_has_any_access($conn, (int) getCurrentUserId(), $subjectId)) {
+    $_SESSION['error'] = defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.';
+    header('Location: student_subjects');
+    exit;
+}
 
 $lessonsResult = mysqli_query($conn, "SELECT * FROM lessons WHERE subject_id=".$subjectId." ORDER BY " . content_sort_order_sql('', 'lesson_id'));
 $pageTitle = $subject['subject_name'] . ' - Lessons';

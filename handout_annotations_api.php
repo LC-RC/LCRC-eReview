@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 requireRole('student');
+require_once __DIR__ . '/includes/student_content_access.php';
 
 header('Content-Type: application/json');
 
@@ -27,6 +28,12 @@ if ($action === 'save') {
     
     if ($studentId <= 0) {
         echo json_encode(['error' => 'Invalid student ID', 'debug' => ['student_id' => $studentId, 'session' => $_SESSION]]);
+        exit;
+    }
+
+    if (!sca_has_access($conn, (int) $studentId, 'handout', $handoutId)) {
+        http_response_code(403);
+        echo json_encode(['error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
         exit;
     }
     
@@ -86,6 +93,12 @@ if ($action === 'load') {
         echo json_encode(['annotations' => [], 'error' => 'Invalid student ID']);
         exit;
     }
+
+    if (!sca_has_access($conn, (int) $studentId, 'handout', $handoutId)) {
+        http_response_code(403);
+        echo json_encode(['annotations' => [], 'error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
+        exit;
+    }
     
     $stmt = mysqli_prepare($conn, "SELECT annotation_id, annotation_type, page_number, x, y, width, height, content, color, font_size, created_at, updated_at FROM handout_annotations WHERE handout_id=? AND student_id=? ORDER BY page_number ASC, created_at ASC");
     mysqli_stmt_bind_param($stmt, 'ii', $handoutId, $studentId);
@@ -116,10 +129,17 @@ if ($action === 'delete') {
         exit;
     }
     
-    // Verify ownership
-    $check = mysqli_query($conn, "SELECT annotation_id FROM handout_annotations WHERE annotation_id=".$annotationId." AND student_id=".$studentId." LIMIT 1");
+    // Verify ownership + current handout SCA
+    $check = mysqli_query($conn, "SELECT annotation_id, handout_id FROM handout_annotations WHERE annotation_id=".$annotationId." AND student_id=".$studentId." LIMIT 1");
     if (!$check || mysqli_num_rows($check) == 0) {
         echo json_encode(['error' => 'Annotation not found or access denied']);
+        exit;
+    }
+    $annRow = mysqli_fetch_assoc($check);
+    $annHandoutId = (int) ($annRow['handout_id'] ?? 0);
+    if ($annHandoutId <= 0 || !sca_has_access($conn, (int) $studentId, 'handout', $annHandoutId)) {
+        http_response_code(403);
+        echo json_encode(['error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
         exit;
     }
     
@@ -143,10 +163,17 @@ if ($action === 'update') {
         exit;
     }
     
-    // Verify ownership
-    $check = mysqli_query($conn, "SELECT annotation_id FROM handout_annotations WHERE annotation_id=".$annotationId." AND student_id=".$studentId." LIMIT 1");
+    // Verify ownership + current handout SCA
+    $check = mysqli_query($conn, "SELECT annotation_id, handout_id FROM handout_annotations WHERE annotation_id=".$annotationId." AND student_id=".$studentId." LIMIT 1");
     if (!$check || mysqli_num_rows($check) == 0) {
         echo json_encode(['error' => 'Annotation not found or access denied']);
+        exit;
+    }
+    $annRow = mysqli_fetch_assoc($check);
+    $annHandoutId = (int) ($annRow['handout_id'] ?? 0);
+    if ($annHandoutId <= 0 || !sca_has_access($conn, (int) $studentId, 'handout', $annHandoutId)) {
+        http_response_code(403);
+        echo json_encode(['error' => defined('SCA_DENIED_MESSAGE') ? SCA_DENIED_MESSAGE : 'You do not have access to this content.']);
         exit;
     }
     

@@ -90,13 +90,13 @@ function commerce_activate_user_after_commerce_success(mysqli $conn, int $userId
     }
 
     $status = strtolower((string) ($user['status'] ?? ''));
-    if ($status === 'rejected') {
+    if ($status === 'rejected' || $status === 'archived') {
         return [
             'ok' => true,
             'skipped' => true,
             'activated' => false,
-            'error' => 'rejected_not_activated',
-            'user_status' => 'rejected',
+            'error' => $status === 'archived' ? 'archived_not_activated' : 'rejected_not_activated',
+            'user_status' => $status,
         ];
     }
 

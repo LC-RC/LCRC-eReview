@@ -147,7 +147,8 @@ function ereview_user_has_ereview_access(mysqli $conn, int $userId, ?array $user
     if (!$user || ($user['role'] ?? '') !== 'student') {
         return false;
     }
-    if (strtolower((string) ($user['status'] ?? '')) === 'rejected') {
+    if (strtolower((string) ($user['status'] ?? '')) === 'rejected'
+        || strtolower((string) ($user['status'] ?? '')) === 'archived') {
         return false;
     }
     $gate = commerce_student_can_login($conn, $user);
@@ -176,6 +177,102 @@ function ereview_user_has_college_examination_access(mysqli $conn, int $userId, 
     }
 
     return $access === 'active';
+}
+
+/**
+ * Server-side LMS student session gate (status / grant / access_end).
+ * Called from requireRole('student') so every student page and AJAX endpoint
+ * that uses requireRole is covered centrally.
+ *
+ * Allowlist: scripts pending students may still need without full LMS access.
+ */
+function ereview_enforce_lms_student_session(?mysqli $conn = null): void
+{
+    global $conn;
+    if ($conn === null) {
+        $conn = $GLOBALS['conn'] ?? null;
+    }
+    if (!$conn instanceof mysqli) {
+        return;
+    }
+    if (!isLoggedIn() || getCurrentUserRole() !== 'student') {
+        return;
+    }
+
+    $script = strtolower(basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    // Payment proof / messages may be needed while resolving access issues.
+    $allowWithoutFullAccess = [
+        'student_payment_proof.php' => true,
+        'logout.php' => true,
+    ];
+    if (isset($allowWithoutFullAccess[$script])) {
+        // Still hard-block archived / rejected even on allowlisted pages.
+        $uid = (int) (getCurrentUserId() ?? 0);
+        $row = ereview_user_load_platform_row($conn, $uid);
+        $st = strtolower((string) ($row['status'] ?? ''));
+        if ($st === 'archived' || $st === 'rejected') {
+            ereview_force_student_session_end(
+                (string) ($st === 'archived'
+                    ? 'Your account has been archived. Contact an administrator to restore access.'
+                    : 'Your account has been rejected.'),
+                $st
+            );
+        }
+        return;
+    }
+
+    $uid = (int) (getCurrentUserId() ?? 0);
+    $user = ereview_user_load_platform_row($conn, $uid);
+    if (!$user) {
+        ereview_force_student_session_end('Your session is no longer valid. Please sign in again.', 'invalid_user');
+    }
+
+    require_once __DIR__ . '/commerce_access_gate.php';
+    $gate = commerce_student_can_login($conn, $user);
+    if (!empty($gate['ok'])) {
+        return;
+    }
+
+    $msg = (string) ($gate['error'] ?? 'Your account access is not active.');
+    $type = (string) ($gate['error_type'] ?? 'access_denied');
+    ereview_force_student_session_end($msg, $type);
+}
+
+/**
+ * End LMS student session and reject the request (HTML redirect or JSON).
+ */
+function ereview_force_student_session_end(string $message, string $errorType = 'access_denied'): void
+{
+    $_SESSION['error'] = $message;
+    // Drop auth so archived/expired users cannot keep hopping between ungated assets.
+    unset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['full_name'], $_SESSION['email']);
+
+    $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+    $xhr = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+    $wantsJson = ($xhr === 'xmlhttprequest')
+        || (strpos($accept, 'application/json') !== false)
+        || (isset($_SERVER['CONTENT_TYPE']) && stripos((string) $_SERVER['CONTENT_TYPE'], 'application/json') !== false)
+        || preg_match('/(?:^|[_\\/.-])(?:ajax|api)(?:\\.|$)/i', basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+
+    if ($wantsJson) {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(403);
+        }
+        echo json_encode([
+            'ok' => false,
+            'error' => $message,
+            'error_type' => $errorType,
+            'logged_out' => true,
+        ]);
+        exit;
+    }
+
+    if (function_exists('ereview_redirect')) {
+        ereview_redirect('index');
+    }
+    header('Location: index');
+    exit;
 }
 
 /**
@@ -245,6 +342,13 @@ function ereview_user_can_authenticate(mysqli $conn, array $user): array
                 'ok' => false,
                 'error' => 'Your registration was not approved. Contact your professor or administrator for assistance.',
                 'error_type' => 'rejected',
+            ];
+        }
+        if ($accountStatus === 'archived') {
+            return [
+                'ok' => false,
+                'error' => 'Your account has been archived. Contact an administrator to restore access.',
+                'error_type' => 'archived',
             ];
         }
     }

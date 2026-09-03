@@ -149,8 +149,9 @@ function commerce_student_try_restore_legacy_access(mysqli $conn, int $userId, a
     if ($user === [] || (string) ($user['role'] ?? '') !== 'student') {
         return ['ok' => false, 'error' => 'not_student'];
     }
-    if (strtolower((string) ($user['status'] ?? '')) === 'rejected') {
-        return ['ok' => false, 'error' => 'rejected'];
+    $legacyStatus = strtolower((string) ($user['status'] ?? ''));
+    if ($legacyStatus === 'rejected' || $legacyStatus === 'archived') {
+        return ['ok' => false, 'error' => $legacyStatus];
     }
     if (!commerce_student_has_legacy_enrollment_signal($conn, $userId, $user)) {
         return ['ok' => true, 'skipped' => true, 'restored' => false];
@@ -248,6 +249,13 @@ function commerce_student_can_login(mysqli $conn, array $user): array
             'ok' => false,
             'error' => 'Your account has been rejected.',
             'error_type' => 'rejected',
+        ];
+    }
+    if ($status === 'archived') {
+        return [
+            'ok' => false,
+            'error' => 'Your account has been archived. Contact an administrator to restore access.',
+            'error_type' => 'archived',
         ];
     }
 

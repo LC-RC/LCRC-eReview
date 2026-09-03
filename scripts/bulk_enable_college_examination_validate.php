@@ -76,7 +76,7 @@ function test_bulk_enable(mysqli $conn, array $userIds, ?string $section, string
              college_examination_enabled_at=COALESCE(college_examination_enabled_at, NOW()),
              college_examination_enabled_by=COALESCE(college_examination_enabled_by, ?),
              review_type=?, section=?
-             WHERE user_id IN ({$placeholders}) AND role='student' AND status<>'rejected'"
+             WHERE user_id IN ({$placeholders}) AND role='student' AND status NOT IN ('rejected','archived')"
         );
         $bindTypes = 'iss' . $types;
         $bindValues = array_merge([$adminId, $reviewType, $sectionVal], $userIds);

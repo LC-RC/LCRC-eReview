@@ -17,6 +17,15 @@ if (isset($_SESSION['user_id'])) {
     touchUserPresence((int)$_SESSION['user_id']);
 }
 
+// Central LMS student session gate: status / grant / access_end / archived.
+// Runs for every auth.php include (pages + AJAX/messaging APIs), not only requireRole().
+if (isset($_SESSION['user_id'], $_SESSION['role']) && $_SESSION['role'] === 'student') {
+    require_once __DIR__ . '/includes/platform_access.php';
+    if (function_exists('ereview_enforce_lms_student_session')) {
+        ereview_enforce_lms_student_session();
+    }
+}
+
 /**
  * Check if user is logged in
  * @return bool
@@ -82,6 +91,14 @@ function requireRole($role) {
         $_SESSION['error'] = 'You do not have permission to access this page.';
         ereview_redirect('index');
         exit;
+    }
+    // LMS students: re-check status / access window / grants on every gated page
+    // (including AJAX). Prevents archived/expired sessions from lingering.
+    if ($role === 'student') {
+        require_once __DIR__ . '/includes/platform_access.php';
+        if (function_exists('ereview_enforce_lms_student_session')) {
+            ereview_enforce_lms_student_session();
+        }
     }
 }
 

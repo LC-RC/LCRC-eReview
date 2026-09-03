@@ -102,13 +102,16 @@ if ($action === 'save_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($userId <= 0) {
         sca_api_json(['ok' => false, 'error' => 'Invalid user.'], 400);
     }
-    $chk = mysqli_prepare($conn, "SELECT user_id FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
+    $chk = mysqli_prepare($conn, "SELECT user_id, status FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
     mysqli_stmt_bind_param($chk, 'i', $userId);
     mysqli_stmt_execute($chk);
     $exists = mysqli_fetch_assoc(mysqli_stmt_get_result($chk));
     mysqli_stmt_close($chk);
     if (!$exists) {
         sca_api_json(['ok' => false, 'error' => 'Student not found.'], 404);
+    }
+    if (strtolower((string) ($exists['status'] ?? '')) === 'archived') {
+        sca_api_json(['ok' => false, 'error' => 'This student is archived. Restore before changing content permissions.'], 422);
     }
     $adminId = getCurrentUserId();
     if (!sca_save_user_permissions_preserving_commerce($conn, $userId, $permissions, $adminId)) {
@@ -150,12 +153,16 @@ if ($action === 'save_bulk_permissions' && $_SERVER['REQUEST_METHOD'] === 'POST'
     $updated = 0;
     $failed = [];
     foreach ($normalizedIds as $userId) {
-        $chk = mysqli_prepare($conn, "SELECT user_id FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
+        $chk = mysqli_prepare($conn, "SELECT user_id, status FROM users WHERE user_id = ? AND role = 'student' LIMIT 1");
         mysqli_stmt_bind_param($chk, 'i', $userId);
         mysqli_stmt_execute($chk);
         $exists = mysqli_fetch_assoc(mysqli_stmt_get_result($chk));
         mysqli_stmt_close($chk);
         if (!$exists) {
+            $failed[] = $userId;
+            continue;
+        }
+        if (strtolower((string) ($exists['status'] ?? '')) === 'archived') {
             $failed[] = $userId;
             continue;
         }
@@ -279,13 +286,16 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($adminId !== null && $userId === $adminId) {
         sca_api_json(['ok' => false, 'error' => 'You cannot change your own admin password here. Use My Profile instead.'], 403);
     }
-    $roleChk = mysqli_prepare($conn, "SELECT user_id, role FROM users WHERE user_id = ? LIMIT 1");
+    $roleChk = mysqli_prepare($conn, "SELECT user_id, role, status FROM users WHERE user_id = ? LIMIT 1");
     mysqli_stmt_bind_param($roleChk, 'i', $userId);
     mysqli_stmt_execute($roleChk);
     $roleRow = mysqli_fetch_assoc(mysqli_stmt_get_result($roleChk));
     mysqli_stmt_close($roleChk);
     if (!$roleRow || ($roleRow['role'] ?? '') !== 'student') {
         sca_api_json(['ok' => false, 'error' => 'Student not found.'], 404);
+    }
+    if (strtolower((string) ($roleRow['status'] ?? '')) === 'archived') {
+        sca_api_json(['ok' => false, 'error' => 'This student is archived. Use Restore Student before editing access.'], 422);
     }
     $fullName = trim((string) ($_POST['full_name'] ?? ''));
     $email = trim((string) ($_POST['email'] ?? ''));
@@ -349,6 +359,7 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     mysqli_stmt_close($stmt);
 
     if ($months > 0 && $status === 'approved' && commerce_student_has_active_access($conn, $userId)) {
+        require_once __DIR__ . '/includes/admin_account_window.php';
         $ext = mysqli_prepare(
             $conn,
             "UPDATE users SET access_start = IFNULL(access_start, NOW()),
@@ -359,6 +370,22 @@ if ($action === 'update_student' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_bind_param($ext, 'iii', $months, $months, $userId);
         mysqli_stmt_execute($ext);
         mysqli_stmt_close($ext);
+        $endQ = mysqli_prepare($conn, 'SELECT access_end FROM users WHERE user_id = ? LIMIT 1');
+        $endSql = '';
+        if ($endQ) {
+            mysqli_stmt_bind_param($endQ, 'i', $userId);
+            mysqli_stmt_execute($endQ);
+            $endRow = mysqli_fetch_assoc(mysqli_stmt_get_result($endQ));
+            mysqli_stmt_close($endQ);
+            $endSql = trim((string) ($endRow['access_end'] ?? ''));
+        }
+        if ($endSql !== '') {
+            admin_sync_access_grants_with_window($conn, $userId, 'extend', [
+                'duration_value' => $months,
+                'interval_unit' => 'MONTH',
+                'absolute_end' => $endSql,
+            ]);
+        }
     }
 
     if ($status !== 'approved' && $status !== 'rejected') {
@@ -375,7 +402,7 @@ if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === '
         sca_api_json(['ok' => false, 'error' => 'Invalid user.'], 400);
     }
     $adminId = (int) (getCurrentUserId() ?? 0);
-    $chk = mysqli_prepare($conn, "SELECT user_id, role, college_examination_access FROM users WHERE user_id=? AND role='student' LIMIT 1");
+    $chk = mysqli_prepare($conn, "SELECT user_id, role, status, college_examination_access FROM users WHERE user_id=? AND role='student' LIMIT 1");
     if (!$chk) {
         sca_api_json(['ok' => false, 'error' => 'Could not load student.'], 500);
     }
@@ -385,6 +412,9 @@ if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === '
     mysqli_stmt_close($chk);
     if (!$row) {
         sca_api_json(['ok' => false, 'error' => 'Student not found or not an eReview student account.'], 404);
+    }
+    if (strtolower((string) ($row['status'] ?? '')) === 'archived') {
+        sca_api_json(['ok' => false, 'error' => 'This student is archived. Restore before enabling College Examination.'], 422);
     }
     $currentAccess = ereview_user_college_examination_access_value($row);
     if ($currentAccess === 'active') {
@@ -546,8 +576,8 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
                 throw new InvalidArgumentException('Staff accounts cannot be enabled for College Examination via this action.');
             }
             $status = strtolower((string) ($row['status'] ?? ''));
-            if ($status === 'rejected') {
-                throw new InvalidArgumentException('Rejected student #' . $uid . ' cannot be enabled.');
+            if ($status === 'rejected' || $status === 'archived') {
+                throw new InvalidArgumentException(ucfirst($status) . ' student #' . $uid . ' cannot be enabled.');
             }
         }
 
@@ -561,7 +591,7 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
                      review_type=?
                  WHERE user_id IN ({$placeholders})
                    AND role='student'
-                   AND status<>'rejected'"
+                   AND status NOT IN ('rejected','archived')"
             );
             if (!$upd) {
                 throw new RuntimeException('Could not prepare College Examination bulk update.');
@@ -579,7 +609,7 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
                      section=?
                  WHERE user_id IN ({$placeholders})
                    AND role='student'
-                   AND status<>'rejected'"
+                   AND status NOT IN ('rejected','archived')"
             );
             if (!$upd) {
                 throw new RuntimeException('Could not prepare College Examination bulk update.');

@@ -496,8 +496,19 @@ if (!empty($user['last_seen_at'])) {
           </div>
           <div>
             <div class="text-gray-500 text-sm">Status</div>
-            <?php $status = strtolower((string)$user['status']); $badgeClass = $status === 'approved' ? 'bg-green-100 text-green-800' : ($status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'); ?>
-            <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>"><?php echo h($user['status']); ?></span>
+            <?php
+              $status = strtolower((string)$user['status']);
+              if ($status === 'approved') {
+                  $badgeClass = 'bg-green-100 text-green-800';
+              } elseif ($status === 'rejected') {
+                  $badgeClass = 'bg-red-100 text-red-800';
+              } elseif ($status === 'archived') {
+                  $badgeClass = 'bg-slate-200 text-slate-800';
+              } else {
+                  $badgeClass = 'bg-amber-100 text-amber-800';
+              }
+            ?>
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>"><?php echo h(ucfirst($status)); ?></span>
           </div>
           <div>
             <div class="text-gray-500 text-sm">Registered</div>
@@ -568,6 +579,11 @@ if (!empty($user['last_seen_at'])) {
     <div class="lg:col-span-5">
       <div class="rounded-xl shadow-card border p-5 page-table">
         <h2 id="account-window-edit" class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="bi bi-calendar-check"></i> Account activation</h2>
+        <?php if (strtolower((string) $user['status']) === 'archived'): ?>
+          <div class="rounded-lg border border-slate-300 bg-slate-50 text-slate-800 text-sm p-3 mb-4">
+            This student is <strong>Archived</strong>. Restore the account from Student Management before changing the access window or grants.
+          </div>
+        <?php endif; ?>
         <div class="space-y-2 mb-4 text-sm">
           <div><span class="text-gray-500">Login status:</span> <span class="font-semibold text-gray-800"><?php echo h((string) $commerce['account_label']); ?></span></div>
           <div><span class="text-gray-500">Account window start:</span> <span class="font-semibold text-gray-800"><?php echo $user['access_start'] ? h($user['access_start']) : '-'; ?></span></div>
@@ -632,6 +648,7 @@ if (!empty($user['last_seen_at'])) {
                 <div>
                   <label class="block text-xs text-gray-500 mb-1" for="awDurationUnit">Unit</label>
                   <select id="awDurationUnit" name="duration_unit" class="input-custom w-28">
+                    <option value="hour">Hours</option>
                     <option value="day">Days</option>
                     <option value="month" selected>Months</option>
                     <option value="year">Years</option>
@@ -707,7 +724,8 @@ if (!empty($user['last_seen_at'])) {
             <div class="flex flex-wrap gap-2 items-end">
               <input id="viewApproveMonths" type="number" min="1" max="3660" name="duration_value" class="input-custom w-28" value="6" required>
               <select name="duration_unit" class="input-custom w-28" aria-label="Duration unit">
-                <option value="day">Days</option>
+                <option value="hour">Hours</option>
+                    <option value="day">Days</option>
                 <option value="month" selected>Months</option>
                 <option value="year">Years</option>
               </select>
@@ -739,7 +757,8 @@ if (!empty($user['last_seen_at'])) {
             <div class="flex flex-wrap gap-2 items-end mb-2">
               <input id="viewApproveMonths" type="number" min="1" max="3660" name="duration_value" class="input-custom w-28" value="6" required>
               <select name="duration_unit" class="input-custom w-28" aria-label="Duration unit">
-                <option value="day">Days</option>
+                <option value="hour">Hours</option>
+                    <option value="day">Days</option>
                 <option value="month" selected>Months</option>
                 <option value="year">Years</option>
               </select>
@@ -784,7 +803,8 @@ if (!empty($user['last_seen_at'])) {
               <div class="flex flex-wrap items-end gap-2">
                 <input type="number" min="1" max="3660" name="duration_value" class="input-custom w-24" value="1" required>
                 <select name="duration_unit" class="input-custom w-28">
-                  <option value="day">Days</option>
+                  <option value="hour">Hours</option>
+                    <option value="day">Days</option>
                   <option value="month" selected>Months</option>
                   <option value="year">Years</option>
                 </select>
