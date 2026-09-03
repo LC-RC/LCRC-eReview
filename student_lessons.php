@@ -44,23 +44,35 @@ $pageTitle = $subject['subject_name'] . ' - Lessons';
     <?php if ($lessonsResult && mysqli_num_rows($lessonsResult) > 0): ?>
       <?php while ($l = mysqli_fetch_assoc($lessonsResult)): ?>
         <?php
-          $videosCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lesson_videos WHERE lesson_id=".(int)$l['lesson_id']);
+          $lid = (int) $l['lesson_id'];
+          $lessonOpen = sca_has_access($conn, (int) getCurrentUserId(), 'lesson', $lid);
+          $videosCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lesson_videos WHERE lesson_id=".$lid);
           $videosRow = $videosCount ? mysqli_fetch_assoc($videosCount) : ['cnt' => 0];
-          $handoutsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lesson_handouts WHERE lesson_id=".(int)$l['lesson_id']);
+          $handoutsCount = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM lesson_handouts WHERE lesson_id=".$lid);
           $handoutsRow = $handoutsCount ? mysqli_fetch_assoc($handoutsCount) : ['cnt' => 0];
         ?>
-        <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 h-full flex flex-col">
+        <div class="bg-white rounded-xl shadow-card border border-gray-100 p-5 h-full flex flex-col <?php echo $lessonOpen ? '' : 'opacity-80'; ?>">
           <h2 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-            <i class="bi bi-file-text text-primary"></i> <?php echo h($l['title']); ?>
+            <i class="bi <?php echo $lessonOpen ? 'bi-file-text text-primary' : 'bi-lock-fill text-gray-400'; ?>"></i>
+            <?php echo h($l['title']); ?>
+            <?php if (!$lessonOpen): ?>
+              <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Locked</span>
+            <?php endif; ?>
           </h2>
           <p class="text-gray-500 text-sm mb-4 flex-1"><?php echo h($l['description'] ?: 'No description'); ?></p>
           <div class="flex gap-4 mb-4 text-gray-500 text-sm">
             <span><i class="bi bi-play-circle"></i> <?php echo (int)$videosRow['cnt']; ?> Videos</span>
             <span><i class="bi bi-file-earmark-pdf"></i> <?php echo (int)$handoutsRow['cnt']; ?> Handouts</span>
           </div>
-          <a href="student_lesson?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
-            <i class="bi bi-collection-play"></i> Open Lesson Materials
-          </a>
+          <?php if ($lessonOpen): ?>
+            <a href="student_lesson?lesson_id=<?php echo $lid; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">
+              <i class="bi bi-collection-play"></i> Open Lesson Materials
+            </a>
+          <?php else: ?>
+            <div class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold bg-gray-100 text-gray-500 border border-gray-200 cursor-not-allowed" title="Access not available">
+              <i class="bi bi-lock-fill"></i> Access not available
+            </div>
+          <?php endif; ?>
         </div>
       <?php endwhile; ?>
     <?php else: ?>

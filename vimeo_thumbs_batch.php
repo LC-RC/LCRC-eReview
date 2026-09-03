@@ -39,7 +39,11 @@ try {
 
 $out = [];
 foreach ($thumbs as $lid => $url) {
-    $out[(string)(int)$lid] = $url;
+    $lessonId = (int) $lid;
+    if ($lessonId <= 0 || !sca_has_access($conn, $userId, 'lesson', $lessonId)) {
+        continue;
+    }
+    $out[(string) $lessonId] = $url;
 }
 
 echo json_encode(['ok' => true, 'thumbs' => $out], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

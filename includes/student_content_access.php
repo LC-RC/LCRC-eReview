@@ -321,6 +321,19 @@ function sca_lookup_preweek_topic_unit(mysqli $conn, int $topicId): int
     return $cache[$topicId];
 }
 
+/**
+ * LMS content ACL semantics (student_content_permissions):
+ *
+ * - full_lms/0 → entire LMS
+ * - subject/{id} → FULL subject access (all lessons/topics, quizzes, videos, handouts under it)
+ * - lesson/{id} without parent subject row → that topic only (+ its videos/handouts)
+ * - quiz/video/handout exact rows → that item only (or via parent lesson/full subject)
+ *
+ * Existing subject rows remain FULL subject access (compatibility).
+ * Restricted subjects are represented by child rows WITHOUT a subject/{id} row.
+ *
+ * Login/window (access_grants) is a separate layer from this content ACL.
+ */
 function sca_has_access(mysqli $conn, int $userId, string $type, int $contentId): bool
 {
     if ($userId <= 0 || !sca_account_access_active($conn, $userId)) {
@@ -330,8 +343,11 @@ function sca_has_access(mysqli $conn, int $userId, string $type, int $contentId)
     if ($perms['full_lms']) {
         return true;
     }
-    $map = $perms['map'];
     if ($type === 'full_lms') {
+        return false;
+    }
+    // Fail closed: unknown / non-positive content ids never open access.
+    if ($type !== 'full_lms' && $contentId <= 0) {
         return false;
     }
     if (sca_perm_has($perms, $type, $contentId)) {
@@ -340,25 +356,37 @@ function sca_has_access(mysqli $conn, int $userId, string $type, int $contentId)
 
     switch ($type) {
         case 'subject':
+            // Direct subject row only (full subject). Topic-only grants do not
+            // count as "subject" access here; use sca_subject_has_any_access for page entry.
             return false;
         case 'lesson':
+            // Full subject row unlocks every topic under that subject.
+            // Without it, only explicit lesson (or child video/handout) rows unlock.
             $sid = sca_lookup_lesson_subject($conn, $contentId);
             return $sid > 0 && sca_perm_has($perms, 'subject', $sid);
         case 'quiz':
+            // Quizzes are subject-scoped: full subject unlocks all quizzes;
+            // restricted subjects require an explicit quiz row.
             $sid = sca_lookup_quiz_subject($conn, $contentId);
             return $sid > 0 && sca_perm_has($perms, 'subject', $sid);
         case 'video':
             $lid = sca_lookup_video_lesson($conn, $contentId);
-            if ($lid > 0 && (sca_perm_has($perms, 'lesson', $lid) || sca_has_access($conn, $userId, 'lesson', $lid))) {
+            if ($lid <= 0) {
+                return false;
+            }
+            if (sca_perm_has($perms, 'lesson', $lid)) {
                 return true;
             }
-            return false;
+            return sca_has_access($conn, $userId, 'lesson', $lid);
         case 'handout':
             $lid = sca_lookup_handout_lesson($conn, $contentId);
-            if ($lid > 0 && (sca_perm_has($perms, 'lesson', $lid) || sca_has_access($conn, $userId, 'lesson', $lid))) {
+            if ($lid <= 0) {
+                return false;
+            }
+            if (sca_perm_has($perms, 'lesson', $lid)) {
                 return true;
             }
-            return false;
+            return sca_has_access($conn, $userId, 'lesson', $lid);
         case 'preboard_set':
             if (sca_perm_has($perms, 'preboard_set', $contentId)) {
                 return true;
@@ -866,9 +894,67 @@ function sca_merge_permission_lists(array $a, array $b): array
 }
 
 /**
- * Replace-all SCA save that merges in active purchase + free_access grant permissions first.
- * Used by activate_user and Student Access so admin saves cannot wipe paid/FAR access rows.
- * Does not modify access_grants, login, or payment fulfillment.
+ * Collapse redundant child rows when a parent subject (full access) is granted.
+ * Keeps subject/{id} = FULL subject; drops lessons/quizzes/videos/handouts under it.
+ *
+ * @param list<array{content_type:string,content_id:int}> $permissions
+ * @return list<array{content_type:string,content_id:int}>
+ */
+function sca_collapse_full_subject_children(mysqli $conn, array $permissions): array
+{
+    $normalized = sca_normalize_permission_payload($permissions);
+    $fullSubjects = [];
+    foreach ($normalized as $p) {
+        if ($p['content_type'] === 'subject' && (int) $p['content_id'] > 0) {
+            $fullSubjects[(int) $p['content_id']] = true;
+        }
+    }
+    if ($fullSubjects === []) {
+        return $normalized;
+    }
+
+    $out = [];
+    foreach ($normalized as $p) {
+        $type = $p['content_type'];
+        $cid = (int) $p['content_id'];
+        if ($type === 'lesson') {
+            $sid = sca_lookup_lesson_subject($conn, $cid);
+            if ($sid > 0 && isset($fullSubjects[$sid])) {
+                continue;
+            }
+        } elseif ($type === 'quiz') {
+            $sid = sca_lookup_quiz_subject($conn, $cid);
+            if ($sid > 0 && isset($fullSubjects[$sid])) {
+                continue;
+            }
+        } elseif ($type === 'video') {
+            $lid = sca_lookup_video_lesson($conn, $cid);
+            $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+            if ($sid > 0 && isset($fullSubjects[$sid])) {
+                continue;
+            }
+        } elseif ($type === 'handout') {
+            $lid = sca_lookup_handout_lesson($conn, $cid);
+            $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+            if ($sid > 0 && isset($fullSubjects[$sid])) {
+                continue;
+            }
+        }
+        $out[] = $p;
+    }
+    return $out;
+}
+
+/**
+ * Replace-all SCA save used by Student Access / activate / manual grant.
+ *
+ * Content ACL (student_content_permissions) is authoritative for what the student
+ * can open. Login/window remains on access_grants — a commerce full_lms grant must
+ * NOT force SCA full_lms back when the admin intentionally saved granular access
+ * (that was the "one subject selected but entire LMS opens" bug).
+ *
+ * Non-full_lms commerce keys (purchased lessons/subjects) are still merged unless
+ * they would expand a subject the admin put into restricted (selected-topics) mode.
  *
  * @param list<array{content_type?:string,type?:string,content_id?:int|string,id?:int|string}> $permissions
  */
@@ -878,14 +964,100 @@ function sca_save_user_permissions_preserving_commerce(
     array $permissions,
     ?int $grantedBy
 ): bool {
+    $admin = sca_collapse_full_subject_children($conn, sca_normalize_permission_payload($permissions));
     $commerce = sca_commerce_active_permission_keys($conn, $userId);
-    $merged = sca_merge_permission_lists($permissions, $commerce);
-    if ($merged === []) {
-        // Preserve prior contract: empty payload is invalid for a full replace unless
-        // commerce had keys (already handled). Mirror sca_save empty → clear non-commerce only
-        // by saving commerce-only when admin sent empty but commerce exists.
-        return sca_save_user_permissions($conn, $userId, $commerce, $grantedBy);
+
+    $adminWantsFullLms = false;
+    $adminFullSubjects = [];
+    $adminRestrictedSubjects = [];
+    foreach ($admin as $p) {
+        if ($p['content_type'] === 'full_lms') {
+            $adminWantsFullLms = true;
+        }
+        if ($p['content_type'] === 'subject' && (int) $p['content_id'] > 0) {
+            $adminFullSubjects[(int) $p['content_id']] = true;
+        }
     }
+    foreach ($admin as $p) {
+        $type = $p['content_type'];
+        $cid = (int) $p['content_id'];
+        $sid = 0;
+        if ($type === 'lesson') {
+            $sid = sca_lookup_lesson_subject($conn, $cid);
+        } elseif ($type === 'quiz') {
+            $sid = sca_lookup_quiz_subject($conn, $cid);
+        } elseif ($type === 'video') {
+            $lid = sca_lookup_video_lesson($conn, $cid);
+            $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+        } elseif ($type === 'handout') {
+            $lid = sca_lookup_handout_lesson($conn, $cid);
+            $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+        }
+        if ($sid > 0 && !isset($adminFullSubjects[$sid])) {
+            $adminRestrictedSubjects[$sid] = true;
+        }
+    }
+
+    $commerceFiltered = [];
+    foreach ($commerce as $p) {
+        $type = $p['content_type'];
+        $cid = (int) $p['content_id'];
+        if ($type === 'full_lms') {
+            // Never re-inject commerce full_lms unless admin explicitly kept Full LMS.
+            if ($adminWantsFullLms) {
+                $commerceFiltered[] = $p;
+            }
+            continue;
+        }
+        if ($type === 'subject' && isset($adminRestrictedSubjects[$cid])) {
+            // Admin chose Selected Topics for this subject — do not expand to full subject.
+            continue;
+        }
+        if ($admin !== [] && $type === 'subject' && !isset($adminFullSubjects[$cid])) {
+            // Admin replace-all did not grant this subject — do not re-add from commerce.
+            continue;
+        }
+        if ($admin !== []) {
+            // For child keys under a restricted or unselected subject, skip commerce expansion.
+            $sid = 0;
+            if ($type === 'lesson') {
+                $sid = sca_lookup_lesson_subject($conn, $cid);
+            } elseif ($type === 'quiz') {
+                $sid = sca_lookup_quiz_subject($conn, $cid);
+            } elseif ($type === 'video') {
+                $lid = sca_lookup_video_lesson($conn, $cid);
+                $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+            } elseif ($type === 'handout') {
+                $lid = sca_lookup_handout_lesson($conn, $cid);
+                $sid = $lid > 0 ? sca_lookup_lesson_subject($conn, $lid) : 0;
+            }
+            if ($sid > 0 && !isset($adminFullSubjects[$sid])) {
+                // Only keep if admin already listed this exact child (merge is no-op) —
+                // skip adding extra commerce children under restricted/unselected subjects.
+                $already = false;
+                foreach ($admin as $ap) {
+                    if ($ap['content_type'] === $type && (int) $ap['content_id'] === $cid) {
+                        $already = true;
+                        break;
+                    }
+                }
+                if (!$already) {
+                    continue;
+                }
+            }
+        }
+        $commerceFiltered[] = $p;
+    }
+
+    if ($admin === []) {
+        // Explicit clear of content ACL. Do not restore commerce full_lms.
+        // Non-full_lms commerce keys that survived filtering (none when admin empty
+        // and we skip full_lms) → save empty. Login still uses access_grants.
+        return sca_save_user_permissions($conn, $userId, [], $grantedBy);
+    }
+
+    $merged = sca_merge_permission_lists($admin, $commerceFiltered);
+    $merged = sca_collapse_full_subject_children($conn, $merged);
     return sca_save_user_permissions($conn, $userId, $merged, $grantedBy);
 }
 
