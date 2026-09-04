@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/student_content_access.php';
 require_once __DIR__ . '/commerce_activation.php';
+require_once __DIR__ . '/admin_account_window.php';
 if (is_file(__DIR__ . '/commerce_fulfillment.php')) {
     require_once __DIR__ . '/commerce_fulfillment.php';
 }
@@ -18,6 +19,8 @@ if (is_file(__DIR__ . '/commerce_fulfillment.php')) {
 /**
  * Insert or extend one admin_manual access_grants row for a content key.
  *
+ * @param int $durationValue Positive duration amount
+ * @param string $intervalUnit MySQL INTERVAL unit (HOUR|DAY|MONTH|YEAR) — must be whitelist
  * @return array{ok:bool,error?:string,grant_id?:int,already_active?:bool}
  */
 function commerce_admin_upsert_manual_grant_row(
@@ -27,8 +30,15 @@ function commerce_admin_upsert_manual_grant_row(
     string $contentType,
     int $contentId,
     string $label,
-    int $months
+    int $durationValue,
+    string $intervalUnit = 'MONTH'
 ): array {
+    $durationValue = max(1, $durationValue);
+    $allowedUnits = ['HOUR', 'DAY', 'MONTH', 'YEAR'];
+    $intervalUnit = strtoupper(trim($intervalUnit));
+    if (!in_array($intervalUnit, $allowedUnits, true)) {
+        $intervalUnit = 'MONTH';
+    }
     $existing = null;
     $eq = mysqli_prepare(
         $conn,
@@ -56,7 +66,7 @@ function commerce_admin_upsert_manual_grant_row(
         $ext = mysqli_prepare(
             $conn,
             "UPDATE access_grants
-             SET ends_at = GREATEST(ends_at, DATE_ADD(NOW(), INTERVAL ? MONTH)),
+             SET ends_at = GREATEST(ends_at, DATE_ADD(NOW(), INTERVAL ? {$intervalUnit})),
                  content_label = ?,
                  granted_by = ?,
                  updated_at = NOW()
@@ -65,7 +75,7 @@ function commerce_admin_upsert_manual_grant_row(
              LIMIT 1"
         );
         if ($ext) {
-            mysqli_stmt_bind_param($ext, 'isii', $months, $label, $adminId, $grantId);
+            mysqli_stmt_bind_param($ext, 'isii', $durationValue, $label, $adminId, $grantId);
             mysqli_stmt_execute($ext);
             mysqli_stmt_close($ext);
         }
@@ -76,10 +86,10 @@ function commerce_admin_upsert_manual_grant_row(
     $gStatus = 'active';
     $ins = mysqli_prepare(
         $conn,
-        'INSERT INTO access_grants
+        "INSERT INTO access_grants
           (user_id, source, payment_id, payment_item_id, free_access_request_id,
            content_type, content_id, content_label, starts_at, ends_at, status, granted_by)
-         VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH), ?, ?)'
+         VALUES (?, ?, NULL, NULL, NULL, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? {$intervalUnit}), ?, ?)"
     );
     if (!$ins) {
         return ['ok' => false, 'error' => 'grant_prepare_failed'];
@@ -92,7 +102,7 @@ function commerce_admin_upsert_manual_grant_row(
         $contentType,
         $contentId,
         $label,
-        $months,
+        $durationValue,
         $gStatus,
         $adminId
     );
@@ -107,11 +117,13 @@ function commerce_admin_upsert_manual_grant_row(
 }
 
 /**
- * Grant LMS access for N months via access_grants.source = admin_manual + SCA.
+ * Grant LMS access via access_grants.source = admin_manual + SCA.
  * Default permissions = Full LMS. Pass topic/subject rows for by-topic access.
  *
  * @param array{
  *   months?:int,
+ *   duration_value?:int,
+ *   duration_unit?:string,
  *   activate_login?:bool,
  *   label?:string,
  *   close_open_payment?:bool,
@@ -134,13 +146,18 @@ function commerce_admin_grant_manual_access(
         return ['ok' => false, 'error' => 'commerce_schema_missing'];
     }
 
-    $months = (int) ($opts['months'] ?? 6);
-    if ($months < 1) {
-        $months = 1;
+    $durationValue = (int) ($opts['duration_value'] ?? 0);
+    $durationUnit = admin_normalize_duration_unit((string) ($opts['duration_unit'] ?? 'month'));
+    if ($durationValue < 1) {
+        $durationValue = (int) ($opts['months'] ?? 6);
+        $durationUnit = 'month';
     }
-    if ($months > 120) {
-        $months = 120;
+    $durationErr = admin_validate_duration($durationValue, $durationUnit);
+    if ($durationErr !== null) {
+        return ['ok' => false, 'error' => 'invalid_duration'];
     }
+    $intervalUnit = admin_sql_interval_unit($durationUnit);
+    $months = admin_duration_to_months_equiv($durationValue, $durationUnit);
     $activateLogin = array_key_exists('activate_login', $opts) ? (bool) $opts['activate_login'] : true;
     $closeOpenPayment = array_key_exists('close_open_payment', $opts) ? (bool) $opts['close_open_payment'] : true;
     // Emergency only - default false so Awaiting Payment / no proof stays open for Remind → upload.
@@ -236,7 +253,8 @@ function commerce_admin_grant_manual_access(
             $ctype,
             $cid,
             $rowLabel,
-            $months
+            $durationValue,
+            $intervalUnit
         );
         if (empty($row['ok'])) {
             return [

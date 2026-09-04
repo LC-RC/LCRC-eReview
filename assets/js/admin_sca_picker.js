@@ -154,6 +154,56 @@
         }
       });
       this.subjectModes = modes;
+    },
+
+    selectedTopicCount: function (sub) {
+      var lessonIds = {};
+      (sub.lessons || []).forEach(function (l) { lessonIds[Number(l.id)] = true; });
+      var list = this.activePermissionList || this.permissions || [];
+      var n = 0;
+      list.forEach(function (p) {
+        if (p.content_type === 'lesson' && lessonIds[Number(p.content_id)]) n += 1;
+      });
+      return n;
+    },
+
+    accessSummaryLines: function () {
+      if (this.hasFullLms) {
+        return ['Full LMS access — all subjects and topics unlocked'];
+      }
+      var list = this.activePermissionList || this.permissions || [];
+      if (!list.length) {
+        return ['No content selected yet'];
+      }
+      var lines = [];
+      var other = 0;
+      ((this.catalog && this.catalog.subjects) || []).forEach(function (sub) {
+        var mode = typeof this.subjectMode === 'function' ? this.subjectMode(sub.id) : 'none';
+        var label = sub.label || ('Subject #' + sub.id);
+        if (mode === 'full') {
+          lines.push(label + ' — full subject access');
+        } else if (mode === 'selected') {
+          var n = this.selectedTopicCount(sub);
+          lines.push(label + ' — ' + n + ' topic' + (n === 1 ? '' : 's') + ' selected');
+        }
+      }.bind(this));
+      list.forEach(function (p) {
+        if (['subject', 'lesson', 'full_lms'].indexOf(p.content_type) === -1) other += 1;
+      });
+      if (other) lines.push(other + ' other item' + (other === 1 ? '' : 's'));
+      if (!lines.length) lines.push(list.length + ' permission item' + (list.length === 1 ? '' : 's'));
+      return lines;
+    },
+
+    accessSummaryIsEmpty: function () {
+      if (this.hasFullLms) return false;
+      var list = this.activePermissionList || this.permissions || [];
+      return !list.length;
+    },
+
+    accessSummaryShort: function () {
+      var lines = this.accessSummaryLines();
+      return lines.join(' · ');
     }
   };
 })(window);

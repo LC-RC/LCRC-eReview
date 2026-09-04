@@ -1,142 +1,157 @@
 <?php
-/** Permission tree markup - requires Alpine parent: isChecked(), toggle(), hasFullLms, toggleFullLms(), setSubjectMode(), subjectMode(), catalog */
+/**
+ * SCA permission tree markup.
+ * Requires Alpine parent: isChecked(), toggle(), hasFullLms, toggleFullLms(),
+ * setSubjectMode(), subjectMode(), selectedTopicCount?(), catalog
+ *
+ * Optional: $scaTreeCompact = true for denser embeds (default false / workspace).
+ */
 $scaTreeScope = $scaTreeScope ?? 'tree';
 $scope = preg_replace('/[^a-z0-9_-]/i', '', (string) $scaTreeScope) ?: 'tree';
+$scaTreeCompact = !empty($scaTreeCompact);
 ?>
-<label class="flex items-center gap-2.5 font-semibold text-gray-100 mb-3 cursor-pointer p-3 rounded-lg border-2 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15 transition">
-  <input type="checkbox" class="rounded border-gray-500 w-4 h-4" :checked="hasFullLms" @change="toggleFullLms($event.target.checked)">
-  <span>
-    <span class="block text-gray-100">Full LMS access</span>
-    <span class="block text-xs font-normal text-gray-500">Unlocks all subjects, topics, preboards, pre-week, and test bank</span>
+<label class="sca-full-lms-card" :class="hasFullLms ? 'is-on' : ''">
+  <input type="checkbox" class="sca-full-lms-card__check" :checked="hasFullLms" @change="toggleFullLms($event.target.checked)">
+  <span class="sca-full-lms-card__body">
+    <span class="sca-full-lms-card__title">Full LMS access</span>
+    <span class="sca-full-lms-card__sub">Unlock all subjects, topics, preboards, pre-week, and test bank.</span>
   </span>
 </label>
 
-<div class="sca-tree" x-show="!hasFullLms">
-  <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 m-0"
+<div class="sca-tree" x-show="!hasFullLms" x-cloak>
+  <p class="sca-tree-empty"
      x-show="!loadingCatalog && catalog.subjects.length === 0 && catalog.preboard_subjects.length === 0 && catalog.preweek_units.length === 0 && catalog.test_bank.length === 0">
-  No LMS content found to assign. Add active subjects, preboards, pre-week units, or test bank items first.
+    No LMS content found to assign. Add active subjects, preboards, pre-week units, or test bank items first.
   </p>
 
-  <p class="sca-tree-hint text-xs text-gray-500 m-0 mb-2">
-    Per subject: choose <strong>Full Subject Access</strong> (all topics) or <strong>Selected Topics Only</strong>,
-    then check the topics you want. Uncheck <strong>Full LMS access</strong> first if it is enabled.
-    Granting one subject does <em>not</em> unlock other subjects.
+  <p class="sca-tree-hint">
+    Choose <strong>Full Subject Access</strong> or <strong>Selected Topics Only</strong> per subject.
+    One subject does not unlock others.
   </p>
 
-  <template x-for="sub in catalog.subjects" :key="'<?php echo $scope; ?>-sub-'+sub.id">
-    <details class="sca-subject-block" :open="subjectMode(sub.id) !== 'none'">
-      <summary class="sca-subject-summary">
-        <span class="sca-chevron" aria-hidden="true"></span>
-        <span class="sca-subject-summary__label" x-text="sub.label"></span>
-        <span class="sca-subject-summary__meta" x-text="(sub.lessons?.length || 0) + ' topic' + ((sub.lessons?.length || 0) === 1 ? '' : 's')"></span>
-        <span class="sca-subject-summary__badge text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ml-auto"
-              x-show="subjectMode(sub.id) === 'full'"
-              style="background:#dcfce7;color:#166534;">Full</span>
-        <span class="sca-subject-summary__badge text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ml-auto"
-              x-show="subjectMode(sub.id) === 'selected'"
-              style="background:#ffedd5;color:#9a3412;">Topics</span>
-      </summary>
-
-      <div class="sca-subject-modes px-3 pb-2 space-y-2">
-        <label class="sca-grant-all" style="cursor:pointer;">
-          <input type="radio"
-                 :name="'<?php echo $scope; ?>-mode-'+sub.id"
-                 :checked="subjectMode(sub.id) === 'full'"
-                 @change="setSubjectMode(sub, 'full')">
-          <span>
-            <span class="sca-grant-all__title">Full Subject Access</span>
-            <span class="sca-grant-all__sub">All topics, quizzes, videos, and handouts under this subject</span>
+  <div class="sca-subject-grid">
+    <template x-for="sub in catalog.subjects" :key="'<?php echo $scope; ?>-sub-'+sub.id">
+      <details class="sca-subject-card" :open="subjectMode(sub.id) !== 'none'" :class="'mode-' + subjectMode(sub.id)">
+        <summary class="sca-subject-card__summary">
+          <span class="sca-chevron" aria-hidden="true"></span>
+          <span class="sca-subject-card__title" x-text="sub.label"></span>
+          <span class="sca-subject-card__meta" x-text="(sub.lessons?.length || 0) + ' topic' + ((sub.lessons?.length || 0) === 1 ? '' : 's')"></span>
+          <span class="sca-subject-card__badge sca-subject-card__badge--full" x-show="subjectMode(sub.id) === 'full'">Full</span>
+          <span class="sca-subject-card__badge sca-subject-card__badge--topics" x-show="subjectMode(sub.id) === 'selected'">
+            Topics
+            <span x-text="typeof selectedTopicCount === 'function' ? (' · ' + selectedTopicCount(sub) + '/' + (sub.lessons?.length || 0)) : ''"></span>
           </span>
-        </label>
-        <label class="sca-grant-all" style="cursor:pointer;">
-          <input type="radio"
-                 :name="'<?php echo $scope; ?>-mode-'+sub.id"
-                 :checked="subjectMode(sub.id) === 'selected'"
-                 @change="setSubjectMode(sub, 'selected')">
-          <span>
-            <span class="sca-grant-all__title">Selected Topics Only</span>
-            <span class="sca-grant-all__sub">Student can open the subject page, but only checked topics are unlocked</span>
-          </span>
-        </label>
-        <button type="button"
-                class="text-xs text-gray-500 underline px-1"
-                x-show="subjectMode(sub.id) !== 'none'"
-                @click.prevent="setSubjectMode(sub, 'none')">Clear this subject</button>
-      </div>
+        </summary>
 
-      <div class="sca-topic-list" x-show="subjectMode(sub.id) === 'selected'">
-        <p class="sca-topic-list__head">Topics</p>
-        <p class="sca-topic-list__empty text-xs text-gray-500 m-0 mb-2" x-show="!(sub.lessons && sub.lessons.length)">
-          No topics yet for this subject. Add lessons/topics in Subjects admin first.
-        </p>
-        <template x-for="les in sub.lessons" :key="'<?php echo $scope; ?>-les-'+les.id">
-          <div class="sca-topic-item">
-            <label class="sca-topic-check">
-              <input type="checkbox" :checked="isChecked('lesson', les.id)" @change="toggle('lesson', les.id, $event.target.checked)">
-              <span>Topic: <span x-text="les.label"></span></span>
+        <div class="sca-subject-card__body">
+          <p class="sca-mode-label">Access mode</p>
+          <div class="sca-mode-grid">
+            <label class="sca-mode-card" :class="subjectMode(sub.id) === 'full' ? 'is-on' : ''">
+              <input type="radio"
+                     :name="'<?php echo $scope; ?>-mode-'+sub.id"
+                     :checked="subjectMode(sub.id) === 'full'"
+                     @change="setSubjectMode(sub, 'full')">
+              <span>
+                <span class="sca-mode-card__title">Full Subject Access</span>
+                <span class="sca-mode-card__sub">All topics, quizzes, videos, and handouts under this subject</span>
+              </span>
             </label>
-            <details class="sca-topic-assets" x-show="(les.videos?.length || 0) + (les.handouts?.length || 0) > 0 && !isChecked('lesson', les.id)">
-              <summary>Videos &amp; handouts</summary>
-              <template x-for="v in les.videos" :key="'<?php echo $scope; ?>-vid-'+v.id">
-                <label><input type="checkbox" :checked="isChecked('video', v.id)" @change="toggle('video', v.id, $event.target.checked)"> Video: <span x-text="v.label"></span></label>
-              </template>
-              <template x-for="h in les.handouts" :key="'<?php echo $scope; ?>-ho-'+h.id">
-                <label><input type="checkbox" :checked="isChecked('handout', h.id)" @change="toggle('handout', h.id, $event.target.checked)"> Handout: <span x-text="h.label"></span></label>
-              </template>
-            </details>
+            <label class="sca-mode-card" :class="subjectMode(sub.id) === 'selected' ? 'is-on' : ''">
+              <input type="radio"
+                     :name="'<?php echo $scope; ?>-mode-'+sub.id"
+                     :checked="subjectMode(sub.id) === 'selected'"
+                     @change="setSubjectMode(sub, 'selected')">
+              <span>
+                <span class="sca-mode-card__title">Selected Topics Only</span>
+                <span class="sca-mode-card__sub">Subject page opens; only checked topics unlock</span>
+              </span>
+            </label>
           </div>
-        </template>
+          <button type="button"
+                  class="sca-subject-clear"
+                  x-show="subjectMode(sub.id) !== 'none'"
+                  @click.prevent="setSubjectMode(sub, 'none')">Clear this subject</button>
 
-        <template x-if="sub.quizzes && sub.quizzes.length">
-          <div class="sca-quiz-list">
-            <p class="sca-topic-list__head">Quizzes (optional)</p>
-            <p class="text-xs text-gray-500 m-0 mb-2">Under Selected Topics, quizzes stay locked unless checked (Full Subject unlocks all).</p>
-            <template x-for="qz in sub.quizzes" :key="'<?php echo $scope; ?>-qz-'+qz.id">
-              <label><input type="checkbox" :checked="isChecked('quiz', qz.id)" @change="toggle('quiz', qz.id, $event.target.checked)"> Quiz: <span x-text="qz.label"></span></label>
+          <div class="sca-full-unlocked" x-show="subjectMode(sub.id) === 'full'">
+            <i class="bi bi-unlock-fill" aria-hidden="true"></i>
+            All topics unlocked for this subject.
+          </div>
+
+          <div class="sca-topic-panel" x-show="subjectMode(sub.id) === 'selected'">
+            <div class="sca-topic-panel__head">
+              <span>Topics</span>
+              <span class="sca-topic-panel__count"
+                    x-text="(typeof selectedTopicCount === 'function' ? selectedTopicCount(sub) : 0) + ' of ' + (sub.lessons?.length || 0) + ' selected'"></span>
+            </div>
+            <p class="sca-topic-panel__empty" x-show="!(sub.lessons && sub.lessons.length)">
+              No topics yet for this subject.
+            </p>
+            <div class="sca-topic-rows">
+              <template x-for="les in sub.lessons" :key="'<?php echo $scope; ?>-les-'+les.id">
+                <label class="sca-topic-row" :class="isChecked('lesson', les.id) ? 'is-on' : ''">
+                  <input type="checkbox" :checked="isChecked('lesson', les.id)" @change="toggle('lesson', les.id, $event.target.checked)">
+                  <span class="sca-topic-row__text">
+                    <span class="sca-topic-row__title" x-text="les.label"></span>
+                    <span class="sca-topic-row__meta"
+                          x-show="(les.videos?.length || 0) + (les.handouts?.length || 0) > 0"
+                          x-text="((les.videos?.length || 0) ? (les.videos.length + ' video' + (les.videos.length === 1 ? '' : 's')) : '') + ((les.videos?.length || 0) && (les.handouts?.length || 0) ? ' · ' : '') + ((les.handouts?.length || 0) ? (les.handouts.length + ' handout' + (les.handouts.length === 1 ? '' : 's')) : '')"></span>
+                  </span>
+                </label>
+              </template>
+            </div>
+
+            <template x-if="sub.quizzes && sub.quizzes.length">
+              <div class="sca-quiz-panel">
+                <p class="sca-topic-panel__head"><span>Quizzes (optional)</span></p>
+                <p class="sca-topic-panel__empty">Under Selected Topics, quizzes stay locked unless checked.</p>
+                <div class="sca-topic-rows">
+                  <template x-for="qz in sub.quizzes" :key="'<?php echo $scope; ?>-qz-'+qz.id">
+                    <label class="sca-topic-row" :class="isChecked('quiz', qz.id) ? 'is-on' : ''">
+                      <input type="checkbox" :checked="isChecked('quiz', qz.id)" @change="toggle('quiz', qz.id, $event.target.checked)">
+                      <span class="sca-topic-row__text">
+                        <span class="sca-topic-row__title">Quiz: <span x-text="qz.label"></span></span>
+                      </span>
+                    </label>
+                  </template>
+                </div>
+              </div>
             </template>
           </div>
-        </template>
-      </div>
-    </details>
-  </template>
+        </div>
+      </details>
+    </template>
+  </div>
 
-  <details x-show="catalog.preboard_subjects.length">
-    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Preboards</summary>
+  <details class="sca-extra-block" x-show="catalog.preboard_subjects.length">
+    <summary class="sca-extra-block__summary"><span class="sca-chevron" aria-hidden="true"></span> Preboards</summary>
     <template x-for="pbs in catalog.preboard_subjects" :key="'<?php echo $scope; ?>-pbs-'+pbs.id">
-      <details>
+      <details class="sca-extra-inner">
         <summary x-text="pbs.label"></summary>
-        <label><input type="checkbox" :checked="isChecked('preboard_subject', pbs.id)" @change="toggle('preboard_subject', pbs.id, $event.target.checked)"> Entire preboard subject</label>
-        <p class="sca-pb-hint text-xs text-gray-500 m-0 mb-2 pl-1">Permission to view sets - each set still follows admin open/schedule or student request.</p>
+        <label class="sca-topic-row"><input type="checkbox" :checked="isChecked('preboard_subject', pbs.id)" @change="toggle('preboard_subject', pbs.id, $event.target.checked)"><span class="sca-topic-row__text"><span class="sca-topic-row__title">Entire preboard subject</span></span></label>
         <template x-for="st in pbs.sets" :key="'<?php echo $scope; ?>-set-'+st.id">
-          <label class="sca-pb-set-label">
-            <input type="checkbox" :checked="isChecked('preboard_set', st.id)" @change="toggle('preboard_set', st.id, $event.target.checked)">
-            <span class="sca-pb-set-label__text">
-              <span>Set: <span x-text="st.label"></span></span>
-              <span class="sca-pb-status" :class="'sca-pb-status--' + (st.access_key || 'locked')" x-text="st.access_label || 'Locked'"></span>
-            </span>
-          </label>
+          <label class="sca-topic-row"><input type="checkbox" :checked="isChecked('preboard_set', st.id)" @change="toggle('preboard_set', st.id, $event.target.checked)"><span class="sca-topic-row__text"><span class="sca-topic-row__title">Set: <span x-text="st.label"></span></span></span></label>
         </template>
       </details>
     </template>
   </details>
 
-  <details x-show="catalog.preweek_units.length">
-    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Pre-week</summary>
+  <details class="sca-extra-block" x-show="catalog.preweek_units.length">
+    <summary class="sca-extra-block__summary"><span class="sca-chevron" aria-hidden="true"></span> Pre-week</summary>
     <template x-for="pu in catalog.preweek_units" :key="'<?php echo $scope; ?>-pu-'+pu.id">
-      <details>
+      <details class="sca-extra-inner">
         <summary x-text="pu.label"></summary>
-        <label><input type="checkbox" :checked="isChecked('preweek_unit', pu.id)" @change="toggle('preweek_unit', pu.id, $event.target.checked)"> Entire unit</label>
+        <label class="sca-topic-row"><input type="checkbox" :checked="isChecked('preweek_unit', pu.id)" @change="toggle('preweek_unit', pu.id, $event.target.checked)"><span class="sca-topic-row__text"><span class="sca-topic-row__title">Entire unit</span></span></label>
         <template x-for="tp in pu.topics" :key="'<?php echo $scope; ?>-tp-'+tp.id">
-          <label><input type="checkbox" :checked="isChecked('preweek_topic', tp.id)" @change="toggle('preweek_topic', tp.id, $event.target.checked)"> Topic: <span x-text="tp.label"></span></label>
+          <label class="sca-topic-row"><input type="checkbox" :checked="isChecked('preweek_topic', tp.id)" @change="toggle('preweek_topic', tp.id, $event.target.checked)"><span class="sca-topic-row__text"><span class="sca-topic-row__title" x-text="tp.label"></span></span></label>
         </template>
       </details>
     </template>
   </details>
 
-  <details x-show="catalog.test_bank.length">
-    <summary class="sca-subject-summary"><span class="sca-chevron" aria-hidden="true"></span> Test Bank</summary>
+  <details class="sca-extra-block" x-show="catalog.test_bank.length">
+    <summary class="sca-extra-block__summary"><span class="sca-chevron" aria-hidden="true"></span> Test Bank</summary>
     <template x-for="tb in catalog.test_bank" :key="'<?php echo $scope; ?>-tb-'+tb.id">
-      <label><input type="checkbox" :checked="isChecked('test_bank', tb.id)" @change="toggle('test_bank', tb.id, $event.target.checked)"> <span x-text="tb.label"></span></label>
+      <label class="sca-topic-row"><input type="checkbox" :checked="isChecked('test_bank', tb.id)" @change="toggle('test_bank', tb.id, $event.target.checked)"><span class="sca-topic-row__text"><span class="sca-topic-row__title" x-text="tb.label"></span></span></label>
     </template>
   </details>
 </div>

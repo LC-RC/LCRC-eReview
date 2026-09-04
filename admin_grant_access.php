@@ -8,6 +8,7 @@
 require_once __DIR__ . '/auth.php';
 requireAdminPage();
 require_once __DIR__ . '/includes/url_helpers.php';
+require_once __DIR__ . '/includes/admin_account_window.php';
 require_once __DIR__ . '/includes/commerce_catalog.php';
 require_once __DIR__ . '/includes/commerce_admin_manual_grant.php';
 
@@ -50,7 +51,18 @@ if (!commerce_schema_ready($conn)) {
 }
 
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
-$months = (int) ($_POST['months'] ?? 6);
+$durationValue = (int) ($_POST['duration_value'] ?? 0);
+$durationUnit = admin_normalize_duration_unit((string) ($_POST['duration_unit'] ?? 'month'));
+if ($durationValue < 1) {
+    // Legacy callers still post months only.
+    $durationValue = (int) ($_POST['months'] ?? 6);
+    $durationUnit = 'month';
+}
+$durationErr = admin_validate_duration($durationValue, $durationUnit);
+if ($durationErr !== null) {
+    admin_grant_access_respond(false, $durationErr);
+}
+$months = admin_duration_to_months_equiv($durationValue, $durationUnit);
 $activateLogin = !isset($_POST['activate_login']) || (string) $_POST['activate_login'] !== '0';
 $closeAwaitingWithoutProof = isset($_POST['close_awaiting_without_proof'])
     && in_array((string) $_POST['close_awaiting_without_proof'], ['1', 'true', 'on', 'yes'], true);
@@ -142,6 +154,8 @@ $inAppNotified = 0;
 foreach ($userIds as $userId) {
     $result = commerce_admin_grant_manual_access($conn, $userId, $adminId, [
         'months' => $months,
+        'duration_value' => $durationValue,
+        'duration_unit' => $durationUnit,
         'activate_login' => $activateLogin,
         'label' => 'Administrative Access (' . $scopeLabel . ')',
         'close_open_payment' => true,

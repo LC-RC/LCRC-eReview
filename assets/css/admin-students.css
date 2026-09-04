@@ -1100,7 +1100,8 @@ body.admin-app.admin-students-page .student-email-cell .commerce-proof-link {
   max-width: 100%;
 }
 
-/* Modal forms (Enable / Section / CRUD) � parity with admin_students.php */
+/* Modal forms (Enable / Section / CRUD) — parity with admin_students.php */
+body.admin-app.admin-students-page [x-cloak] { display: none !important; }
 body.admin-app.admin-students-page .admin-modal {
   width: min(100%, 32rem);
   border-radius: 1rem;
@@ -1110,6 +1111,694 @@ body.admin-app.admin-students-page .admin-modal--approve {
   width: min(100%, 34rem);
   max-height: min(90vh, 42rem);
   overflow: auto;
+}
+
+/* ── Grant Access workspace modal ─────────────────────────────
+   Contrast root cause (2026-09): base rules used dark-theme text
+   (#ecfdf5, pale yellows) while light theme only flipped a few titles.
+   Fix: use admin design tokens so primary/secondary text stays readable
+   in BOTH themes. Never use pale-on-pale or card-level opacity.
+*/
+body.admin-app.admin-students-page #grantAccessModalOverlay.admin-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+html.grant-access-modal-open,
+html.grant-access-modal-open body {
+  overflow: hidden;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access {
+  --ga-primary: var(--admin-text, #0b1220);
+  --ga-secondary: #344054;
+  --ga-muted: #667085;
+  --ga-surface: var(--admin-surface, #ffffff);
+  --ga-surface-2: var(--admin-surface-2, #f7f9fc);
+  --ga-border: #d0d5dd;
+  --ga-accent: #2563eb;
+  --ga-success-bg: #ecfdf5;
+  --ga-success-border: #6ee7b7;
+  --ga-success-text: #065f46;
+  --ga-success-sub: #047857;
+  --ga-warn-bg: #fffbeb;
+  --ga-warn-border: #f59e0b;
+  --ga-warn-heading: #92400e;
+  --ga-warn-text: #1f2937;
+  --ga-info: #1d4ed8;
+
+  width: min(1100px, calc(100vw - 48px)) !important;
+  max-width: 1100px !important;
+  height: min(88vh, 900px);
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 !important;
+  border-radius: 16px;
+  background: var(--ga-surface);
+  border: 1px solid var(--ga-border);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+  color: var(--ga-primary);
+}
+body.admin-app.admin-students-page .grant-access-modal__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ga-border);
+  background: var(--ga-surface-2);
+}
+body.admin-app.admin-students-page .grant-access-modal__header-main {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+body.admin-app.admin-students-page .grant-access-modal__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .grant-access-modal__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ga-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+body.admin-app.admin-students-page .grant-access-modal__student {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ga-primary);
+  line-height: 1.35;
+}
+body.admin-app.admin-students-page .grant-access-modal__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--ga-secondary);
+  line-height: 1.45;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .grant-access-modal__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--ga-border);
+  background: var(--ga-surface);
+  color: var(--ga-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .grant-access-modal__close:hover {
+  background: var(--ga-surface-2);
+}
+body.admin-app.admin-students-page .grant-access-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--ga-surface);
+  /* Prevent children from painting over siblings when content is tall */
+  position: relative;
+  isolation: isolate;
+}
+body.admin-app.admin-students-page .grant-access-section {
+  border: 1px solid var(--ga-border);
+  border-radius: 12px;
+  background: var(--ga-surface);
+  padding: 16px;
+  /* Critical: do NOT flex-shrink sections — tall picker must push summary/emergency down */
+  flex: 0 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 0;
+}
+body.admin-app.admin-students-page .grant-access-section__head h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ga-primary);
+  line-height: 1.3;
+}
+body.admin-app.admin-students-page .grant-access-section__head p {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  line-height: 1.45;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .grant-access-section--content {
+  /* Was flex:1 + min-height:0 without overflow → picker painted over summary/emergency */
+  flex: 0 0 auto;
+  min-height: auto;
+  overflow: visible;
+}
+body.admin-app.admin-students-page .grant-access-picker,
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-tree,
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-grid {
+  position: static;
+  overflow: visible;
+}
+body.admin-app.admin-students-page .grant-access-footnote,
+body.admin-app.admin-students-page .grant-access-error {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 0;
+  margin: 0;
+}
+body.admin-app.admin-students-page .grant-access-footnote {
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  line-height: 1.45;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .grant-access-section--summary {
+  padding: 12px 16px;
+}
+body.admin-app.admin-students-page .grant-access-section--summary.is-empty {
+  padding: 12px 16px;
+}
+body.admin-app.admin-students-page .grant-access-section--summary .grant-access-section__head p {
+  display: none;
+}
+body.admin-app.admin-students-page .grant-access-duration__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+body.admin-app.admin-students-page .grant-access-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ga-secondary);
+  margin-bottom: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+body.admin-app.admin-students-page .grant-access-field input,
+body.admin-app.admin-students-page .grant-access-field select {
+  width: 100%;
+  border: 1px solid var(--ga-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--ga-surface);
+  color: var(--ga-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+body.admin-app.admin-students-page .grant-access-field input:focus,
+body.admin-app.admin-students-page .grant-access-field select:focus {
+  outline: none;
+  border-color: var(--ga-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+body.admin-app.admin-students-page .grant-access-duration__until {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ga-info);
+}
+body.admin-app.admin-students-page .grant-access-picker {
+  margin-top: 12px;
+}
+body.admin-app.admin-students-page .grant-access-picker__loading {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  font-weight: 600;
+}
+body.admin-app.admin-students-page .grant-access-summary {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+body.admin-app.admin-students-page .grant-access-summary li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--ga-primary);
+  font-weight: 600;
+  line-height: 1.4;
+}
+body.admin-app.admin-students-page .grant-access-summary .bi {
+  color: #059669;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .grant-access-section--summary.is-empty .grant-access-summary .bi {
+  color: var(--ga-muted);
+}
+body.admin-app.admin-students-page .grant-access-section--summary.is-empty .grant-access-summary li {
+  color: var(--ga-secondary);
+  font-weight: 600;
+}
+body.admin-app.admin-students-page .grant-access-section--emergency {
+  border-color: var(--ga-warn-border);
+  background: var(--ga-warn-bg);
+}
+body.admin-app.admin-students-page .grant-access-emergency__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ga-warn-heading);
+  margin-bottom: 10px;
+}
+body.admin-app.admin-students-page .grant-access-emergency__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+  color: var(--ga-warn-text);
+  font-size: 0.875rem;
+}
+body.admin-app.admin-students-page .grant-access-emergency__copy {
+  display: block;
+  min-width: 0;
+}
+body.admin-app.admin-students-page .grant-access-emergency__copy strong {
+  display: block;
+  color: var(--ga-warn-heading);
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+body.admin-app.admin-students-page .grant-access-emergency__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  color: var(--ga-warn-text);
+  font-weight: 600;
+  line-height: 1.45;
+  opacity: 1;
+}
+body.admin-app.admin-students-page .grant-access-modal__footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ga-border);
+  background: var(--ga-surface-2);
+}
+body.admin-app.admin-students-page .grant-access-modal__footer-meta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--ga-primary);
+}
+body.admin-app.admin-students-page .grant-access-modal__footer-meta .muted {
+  color: var(--ga-muted);
+  font-weight: 700;
+  margin-right: 6px;
+}
+body.admin-app.admin-students-page .grant-access-modal__footer-meta strong {
+  color: var(--ga-primary);
+  font-weight: 800;
+}
+body.admin-app.admin-students-page .grant-access-modal__footer-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .grant-access-modal__footer-actions .admin-modal__btn--ok {
+  min-width: 9.5rem;
+  justify-content: center;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .admin-modal__btn--ghost {
+  background: var(--ga-surface);
+  border-color: var(--ga-border);
+  color: var(--ga-primary);
+}
+
+/* SCA picker — Grant Access (token-driven, high contrast) */
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ga-border);
+  background: var(--ga-surface-2);
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  opacity: 1;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card.is-on {
+  border-color: var(--ga-success-border);
+  background: var(--ga-success-bg);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card__title {
+  display: block;
+  font-weight: 800;
+  color: var(--ga-primary);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card.is-on .sca-full-lms-card__title {
+  color: var(--ga-success-text);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card__sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  line-height: 1.45;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card.is-on .sca-full-lms-card__sub {
+  color: var(--ga-success-sub);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card__check {
+  margin-top: 3px;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #059669;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-tree-hint,
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-tree-empty {
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  margin: 0 0 12px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-grid {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card {
+  border: 1px solid var(--ga-border);
+  border-radius: 12px;
+  background: var(--ga-surface);
+  overflow: hidden;
+  width: 100%;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 14px 16px;
+  color: var(--ga-primary);
+  font-weight: 700;
+  background: var(--ga-surface-2);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__summary::-webkit-details-marker { display: none; }
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__summary:hover {
+  background: #eff6ff;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__title {
+  font-size: 0.975rem;
+  color: var(--ga-primary);
+  font-weight: 800;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__meta {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ga-secondary);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__badge {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 800;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__badge--full {
+  background: #dcfce7;
+  color: #166534;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__badge--topics {
+  background: #ffedd5;
+  color: #9a3412;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--ga-border);
+  background: var(--ga-surface);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-label {
+  margin: 12px 0 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ga-secondary);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ga-border);
+  background: var(--ga-surface-2);
+  cursor: pointer;
+  opacity: 1;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card.is-on {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card__title {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--ga-primary);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card__sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--ga-secondary);
+  line-height: 1.4;
+  white-space: normal;
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-clear {
+  margin-top: 10px;
+  background: none;
+  border: 0;
+  color: var(--ga-accent);
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 700;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-unlocked {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ga-success-bg);
+  border: 1px solid var(--ga-success-border);
+  color: var(--ga-success-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-panel {
+  margin-top: 12px;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-panel__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--ga-primary);
+  margin-bottom: 8px;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-panel__count {
+  color: var(--ga-accent);
+  font-weight: 700;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-panel__empty {
+  font-size: 0.8125rem;
+  color: var(--ga-secondary);
+  font-weight: 500;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-rows {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ga-border);
+  background: var(--ga-surface);
+  cursor: pointer;
+  width: 100%;
+  opacity: 1;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row.is-on {
+  border-color: var(--ga-success-border);
+  background: var(--ga-success-bg);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row__title {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ga-primary);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.4;
+  word-break: break-word;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row__meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--ga-secondary);
+  font-weight: 600;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-topic-row input[type="checkbox"],
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card input[type="radio"] {
+  margin-top: 2px;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--ga-secondary);
+  border-bottom: 2px solid var(--ga-secondary);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access details[open] > summary .sca-chevron {
+  transform: rotate(45deg);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-extra-block {
+  margin-top: 12px;
+  border: 1px solid var(--ga-border);
+  border-radius: 12px;
+  padding: 4px 12px 12px;
+  background: var(--ga-surface);
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-extra-block__summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 4px;
+  color: var(--ga-primary);
+  font-weight: 700;
+}
+body.admin-app.admin-students-page .admin-modal--grant-access .sca-extra-block__summary::-webkit-details-marker { display: none; }
+
+/* Dark theme token remaps for tinted surfaces that need readable dark ink */
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access {
+  --ga-success-bg: rgba(6, 95, 70, 0.28);
+  --ga-success-border: rgba(52, 211, 153, 0.55);
+  --ga-success-text: #a7f3d0;
+  --ga-success-sub: #86efac;
+  --ga-warn-bg: rgba(120, 53, 15, 0.35);
+  --ga-warn-border: rgba(251, 191, 36, 0.55);
+  --ga-warn-heading: #fde68a;
+  --ga-warn-text: #fef3c7;
+  --ga-info: #93c5fd;
+}
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access .sca-full-lms-card:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card:hover,
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access .sca-subject-card__summary:hover {
+  background: rgba(30, 58, 138, 0.35);
+  border-color: rgba(96, 165, 250, 0.55);
+}
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-card.is-on {
+  background: rgba(30, 58, 138, 0.4);
+  border-color: rgba(96, 165, 250, 0.7);
+}
+html:not([data-admin-theme="light"]) body.admin-app.admin-students-page .admin-modal--grant-access .grant-access-modal__icon {
+  background: rgba(37, 99, 235, 0.28);
+  color: #93c5fd;
+}
+
+@media (max-width: 900px) {
+  body.admin-app.admin-students-page .admin-modal--grant-access {
+    width: min(100vw - 24px, 1100px) !important;
+    height: min(92vh, 900px);
+    max-height: min(92vh, 900px);
+  }
+  body.admin-app.admin-students-page .admin-modal--grant-access .sca-mode-grid {
+    grid-template-columns: 1fr;
+  }
+  body.admin-app.admin-students-page .grant-access-modal__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.admin-app.admin-students-page .grant-access-modal__footer-actions {
+    justify-content: stretch;
+  }
+  body.admin-app.admin-students-page .grant-access-modal__footer-actions .admin-modal__btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+@media (max-width: 640px) {
+  body.admin-app.admin-students-page .grant-access-duration__controls {
+    grid-template-columns: 1fr;
+  }
+  body.admin-app.admin-students-page .grant-access-modal__header,
+  body.admin-app.admin-students-page .grant-access-modal__body,
+  body.admin-app.admin-students-page .grant-access-modal__footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 body.admin-app.admin-students-page .admin-modal--danger {
   width: min(100%, 28rem);

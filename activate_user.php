@@ -210,9 +210,14 @@ foreach ($userIds as $userId) {
         }
         $grantRes = commerce_admin_grant_manual_access($conn, $userId, $adminId, [
             'months' => max(1, $months > 0 ? $months : 6),
+            'duration_value' => $durationValue,
+            'duration_unit' => $durationUnit,
             'activate_login' => true,
             'close_open_payment' => false,
             'label' => 'Legacy administrative access',
+            'permissions' => $grantFull
+                ? [['content_type' => 'full_lms', 'content_id' => 0]]
+                : $normalizedPerms,
         ]);
         if (empty($grantRes['ok'])) {
             $failed[] = $userId;

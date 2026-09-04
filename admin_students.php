@@ -1243,45 +1243,96 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       border: 1px solid rgba(148, 163, 184, 0.28);
       background: rgba(15, 23, 42, 0.55);
     }
+    .approve-access-box .sca-full-lms-card {
+      display: flex; gap: 0.65rem; align-items: flex-start;
+      padding: 0.7rem 0.8rem; margin-bottom: 0.65rem; cursor: pointer;
+      border-radius: 0.7rem; border: 1px solid rgba(16, 185, 129, 0.3);
+      background: rgba(6, 78, 59, 0.22);
+    }
+    .approve-access-box .sca-full-lms-card.is-on {
+      border-color: rgba(52, 211, 153, 0.55); background: rgba(6, 95, 70, 0.32);
+    }
+    .approve-access-box .sca-full-lms-card__title { display: block; font-weight: 800; color: #ecfdf5; font-size: 0.86rem; }
+    .approve-access-box .sca-full-lms-card__sub { display: block; margin-top: 0.12rem; font-size: 0.72rem; color: #86efac; }
     .approve-access-box .sca-tree {
-      max-height: 14rem; overflow-y: auto; padding-right: 0.25rem;
+      max-height: 16rem; overflow-y: auto; padding-right: 0.25rem;
     }
-    .approve-access-box .sca-tree details {
-      border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 0.55rem;
-      margin-bottom: 0.4rem; padding: 0.3rem 0.55rem; background: rgba(30, 41, 59, 0.75);
+    .approve-access-box .sca-subject-grid { display: grid; gap: 0.5rem; }
+    .approve-access-box .sca-subject-card {
+      border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 0.65rem;
+      background: rgba(30, 41, 59, 0.75); overflow: hidden;
     }
-    .approve-access-box .sca-tree summary {
-      cursor: pointer; font-weight: 700; color: #e2e8f0; list-style: none; font-size: 0.84rem;
+    .approve-access-box .sca-subject-card__summary {
+      list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center;
+      gap: 0.35rem 0.5rem; padding: 0.55rem 0.7rem; color: #e2e8f0; font-weight: 700; font-size: 0.84rem;
     }
-    .approve-access-box .sca-tree summary::-webkit-details-marker { display: none; }
-    .approve-access-box .sca-tree label {
-      display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0 0.2rem 0.85rem;
-      font-size: 0.8rem; color: #cbd5e1; cursor: pointer; border-radius: 0.35rem;
+    .approve-access-box .sca-subject-card__summary::-webkit-details-marker { display: none; }
+    .approve-access-box .sca-subject-card__meta { font-size: 0.7rem; font-weight: 600; color: #94a3b8; }
+    .approve-access-box .sca-subject-card__badge {
+      margin-left: auto; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.12rem 0.4rem; border-radius: 999px; font-weight: 800;
     }
-    .approve-access-box .sca-tree label:hover { background: rgba(51, 65, 85, 0.65); }
-    .approve-access-box .sca-tree input[type=checkbox] { accent-color: #34d399; width: 0.95rem; height: 0.95rem; }
+    .approve-access-box .sca-subject-card__badge--full { background: #dcfce7; color: #166534; }
+    .approve-access-box .sca-subject-card__badge--topics { background: #ffedd5; color: #9a3412; }
+    .approve-access-box .sca-subject-card__body { padding: 0 0.7rem 0.7rem; border-top: 1px solid rgba(148, 163, 184, 0.16); }
+    .approve-access-box .sca-mode-label {
+      margin: 0.55rem 0 0.35rem; font-size: 0.68rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8;
+    }
+    .approve-access-box .sca-mode-grid { display: grid; grid-template-columns: 1fr; gap: 0.4rem; }
+    .approve-access-box .sca-mode-card {
+      display: flex; gap: 0.45rem; align-items: flex-start; padding: 0.55rem 0.6rem;
+      border-radius: 0.55rem; border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.55); cursor: pointer;
+    }
+    .approve-access-box .sca-mode-card.is-on { border-color: rgba(96, 165, 250, 0.55); background: rgba(30, 58, 138, 0.28); }
+    .approve-access-box .sca-mode-card__title { display: block; font-size: 0.78rem; font-weight: 800; color: #f8fafc; }
+    .approve-access-box .sca-mode-card__sub { display: block; margin-top: 0.1rem; font-size: 0.7rem; color: #94a3b8; line-height: 1.35; white-space: normal; }
+    .approve-access-box .sca-subject-clear {
+      margin-top: 0.4rem; background: none; border: 0; color: #93c5fd; font-size: 0.72rem;
+      text-decoration: underline; cursor: pointer; padding: 0;
+    }
+    .approve-access-box .sca-full-unlocked {
+      margin-top: 0.5rem; padding: 0.5rem 0.6rem; border-radius: 0.5rem;
+      background: rgba(6, 95, 70, 0.28); color: #a7f3d0; font-size: 0.74rem; font-weight: 700;
+    }
+    .approve-access-box .sca-topic-panel { margin-top: 0.55rem; }
+    .approve-access-box .sca-topic-panel__head {
+      display: flex; justify-content: space-between; gap: 0.5rem;
+      font-size: 0.72rem; font-weight: 800; color: #e2e8f0; margin-bottom: 0.35rem;
+    }
+    .approve-access-box .sca-topic-panel__count { color: #93c5fd; font-weight: 700; }
+    .approve-access-box .sca-topic-rows { display: grid; gap: 0.3rem; }
+    .approve-access-box .sca-topic-row {
+      display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.5rem 0.55rem;
+      border-radius: 0.5rem; border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.45); cursor: pointer;
+    }
+    .approve-access-box .sca-topic-row.is-on { border-color: rgba(52, 211, 153, 0.4); background: rgba(6, 78, 59, 0.22); }
+    .approve-access-box .sca-topic-row__title {
+      display: block; font-size: 0.8rem; font-weight: 700; color: #f8fafc;
+      white-space: normal; line-height: 1.35; word-break: break-word;
+    }
+    .approve-access-box .sca-topic-row__meta { display: block; margin-top: 0.1rem; font-size: 0.7rem; color: #94a3b8; }
+    .approve-access-box .sca-tree input[type=checkbox],
+    .approve-access-box .sca-tree input[type=radio],
+    .approve-access-box .sca-full-lms-card input[type=checkbox] { accent-color: #34d399; width: 0.95rem; height: 0.95rem; margin-top: 0.15rem; }
     .approve-access-box .text-gray-100 { color: #f1f5f9 !important; }
     .approve-access-box .text-gray-500 { color: #94a3b8 !important; }
-    .approve-access-box .sca-tree-hint { color: #94a3b8; }
-    .approve-access-box .sca-subject-summary { display: flex; align-items: center; gap: 0.4rem; }
+    .approve-access-box .sca-tree-hint { color: #94a3b8; font-size: 0.74rem; margin: 0 0 0.55rem; }
     .approve-access-box .sca-chevron {
       width: 0.5rem; height: 0.5rem; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8;
       transform: rotate(-45deg); flex-shrink: 0;
     }
     .approve-access-box details[open] > summary .sca-chevron { transform: rotate(45deg); }
-    .approve-access-box .sca-subject-summary__meta {
-      font-size: 0.65rem; font-weight: 700; color: #cbd5e1; background: rgba(51, 65, 85, 0.9);
-      border-radius: 999px; padding: 0.1rem 0.4rem; margin-left: auto;
+    .approve-access-box .sca-extra-block {
+      margin-top: 0.55rem; border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 0.6rem; padding: 0.25rem 0.55rem 0.55rem;
     }
-    .approve-access-box .sca-grant-all {
-      align-items: flex-start !important; margin: 0.35rem 0 0.45rem; padding: 0.45rem 0.55rem !important;
-      border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 0.5rem; background: rgba(6, 78, 59, 0.35);
+    .approve-access-box .sca-extra-block__summary {
+      list-style: none; cursor: pointer; padding: 0.4rem 0.15rem; color: #e2e8f0; font-weight: 700; font-size: 0.8rem;
     }
-    .approve-access-box .sca-grant-all__title { display: block; font-weight: 800; color: #a7f3d0; font-size: 0.8rem; }
-    .approve-access-box .sca-grant-all__sub { display: block; font-size: 0.7rem; color: #86efac; }
-    .approve-access-box .sca-topic-list { border-left: 2px solid rgba(148, 163, 184, 0.35); margin-left: 0.3rem; padding-left: 0.35rem; }
-    .approve-access-box .sca-topic-list__head { color: #94a3b8; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 0.3rem 0 0.2rem; }
-    .approve-access-box .sca-topic-check { color: #f1f5f9 !important; font-weight: 600; }
+    .approve-access-box .sca-extra-block__summary::-webkit-details-marker { display: none; }
     .approve-access-customize {
       margin-top: 0.55rem; font-size: 0.78rem; color: #93c5fd; cursor: pointer; background: none; border: none; padding: 0;
       text-decoration: underline; text-underline-offset: 2px;
@@ -1291,22 +1342,25 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       background: #f8fafc;
       border-color: rgba(15, 23, 42, 0.12);
     }
-    html[data-admin-theme="light"] .approve-access-box .sca-tree details {
+    html[data-admin-theme="light"] .approve-access-box .sca-subject-card,
+    html[data-admin-theme="light"] .approve-access-box .sca-topic-row,
+    html[data-admin-theme="light"] .approve-access-box .sca-mode-card {
       background: #ffffff;
       border-color: rgba(15, 23, 42, 0.12);
     }
-    html[data-admin-theme="light"] .approve-access-box .sca-tree summary,
-    html[data-admin-theme="light"] .approve-access-box .text-gray-100,
-    html[data-admin-theme="light"] .approve-access-box .sca-topic-check { color: #0f172a !important; }
-    html[data-admin-theme="light"] .approve-access-box .sca-tree label { color: #334155; }
-    html[data-admin-theme="light"] .approve-access-box .sca-tree label:hover { background: rgba(37, 99, 235, 0.08); }
+    html[data-admin-theme="light"] .approve-access-box .sca-subject-card__summary,
+    html[data-admin-theme="light"] .approve-access-box .sca-topic-row__title,
+    html[data-admin-theme="light"] .approve-access-box .sca-mode-card__title,
+    html[data-admin-theme="light"] .approve-access-box .text-gray-100 { color: #0f172a !important; }
+    html[data-admin-theme="light"] .approve-access-box .sca-mode-card__sub,
     html[data-admin-theme="light"] .approve-access-box .text-gray-500,
-    html[data-admin-theme="light"] .approve-access-box .sca-tree-hint,
-    html[data-admin-theme="light"] .approve-access-box .sca-topic-list__head { color: #64748b !important; }
+    html[data-admin-theme="light"] .approve-access-box .sca-tree-hint { color: #64748b !important; }
     html[data-admin-theme="light"] .approve-access-box .sca-chevron { border-color: #64748b; }
-    html[data-admin-theme="light"] .approve-access-box .sca-subject-summary__meta {
-      color: #334155; background: #e2e8f0;
+    html[data-admin-theme="light"] .approve-access-box .sca-full-lms-card {
+      background: #ecfdf5; border-color: #86efac;
     }
+    html[data-admin-theme="light"] .approve-access-box .sca-full-lms-card__title { color: #065f46; }
+    html[data-admin-theme="light"] .approve-access-box .sca-full-lms-card__sub { color: #047857; }
     html[data-admin-theme="light"] .approve-access-box .sca-grant-all {
       border-color: #86efac; background: #ecfdf5;
     }
@@ -2008,39 +2062,102 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 </div>
 </main>
 <div id="grantAccessModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-  <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="grantAccessTitle" x-data="grantAccessPicker()" x-init="init()">
-    <div class="admin-modal__hero">
-      <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-key"></i></span>
-      <div>
-        <h3 id="grantAccessTitle" class="admin-modal__title">Grant Access</h3>
-        <p class="admin-modal__desc">Creates an <strong>administrative grant</strong> (Full LMS or by topic) and emails the student. Prefer <strong>Remind to upload</strong> when proof is missing - access normally follows payment review.</p>
-        <p class="admin-modal__desc"><strong id="grantAccessStudentName">Student</strong></p>
+  <section class="admin-modal admin-modal--grant-access" role="dialog" aria-modal="true" aria-labelledby="grantAccessTitle" x-data="grantAccessPicker()" x-init="init()">
+    <header class="grant-access-modal__header">
+      <div class="grant-access-modal__header-main">
+        <span class="grant-access-modal__icon" aria-hidden="true"><i class="bi bi-key-fill"></i></span>
+        <div class="grant-access-modal__header-copy">
+          <h3 id="grantAccessTitle" class="grant-access-modal__title">Grant Access</h3>
+          <p class="grant-access-modal__student" id="grantAccessStudentName">Student</p>
+          <p class="grant-access-modal__subtitle">Configure access duration and LMS content permissions for this student.</p>
+        </div>
       </div>
+      <button type="button" id="grantAccessCloseBtn" class="grant-access-modal__close" aria-label="Close Grant Access">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    </header>
+
+    <div class="grant-access-modal__body">
+      <section class="grant-access-section">
+        <div class="grant-access-section__head">
+          <h4>Access duration</h4>
+          <p>How long the administrative grant remains active.</p>
+        </div>
+        <div class="grant-access-duration">
+          <div class="grant-access-duration__controls">
+            <div class="grant-access-field">
+              <label for="grantAccessDurationValue">Duration</label>
+              <input type="number" id="grantAccessDurationValue" min="1" max="3660" value="6" required>
+            </div>
+            <div class="grant-access-field">
+              <label for="grantAccessDurationUnit">Unit</label>
+              <select id="grantAccessDurationUnit" aria-label="Duration unit">
+                <option value="hour">Hours</option>
+                <option value="day">Days</option>
+                <option value="month" selected>Months</option>
+                <option value="year">Years</option>
+              </select>
+            </div>
+          </div>
+          <p class="grant-access-duration__until" id="grantAccessUntilPreview">Access until —</p>
+        </div>
+      </section>
+
+      <section class="grant-access-section grant-access-section--content">
+        <div class="grant-access-section__head">
+          <h4>LMS content access</h4>
+          <p>Same permission model as Student Access — Full LMS, full subject, or selected topics.</p>
+        </div>
+        <div class="grant-access-picker">
+          <?php
+            $scaTreeScope = 'grant';
+            require __DIR__ . '/includes/admin_sca_permission_tree.php';
+          ?>
+          <p class="grant-access-picker__loading" x-show="loadingCatalog">Loading content catalog...</p>
+        </div>
+      </section>
+
+      <section class="grant-access-section grant-access-section--summary" :class="accessSummaryIsEmpty() ? 'is-empty' : ''">
+        <div class="grant-access-section__head">
+          <h4>Access summary</h4>
+        </div>
+        <ul class="grant-access-summary" aria-live="polite">
+          <template x-for="(line, idx) in accessSummaryLines()" :key="'sum-'+idx">
+            <li>
+              <i class="bi" :class="accessSummaryIsEmpty() ? 'bi-dash-circle' : 'bi-check2-circle'" aria-hidden="true"></i>
+              <span x-text="line"></span>
+            </li>
+          </template>
+        </ul>
+      </section>
+
+      <section id="grantAccessNoProofWrap" class="grant-access-section grant-access-section--emergency" style="display:none;">
+        <div class="grant-access-emergency">
+          <div class="grant-access-emergency__badge"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Emergency grant</div>
+          <label class="grant-access-emergency__row">
+            <input type="checkbox" id="grantAccessNoProof" value="1">
+            <span class="grant-access-emergency__copy">
+              <strong>Grant without payment proof</strong>
+              <span class="grant-access-emergency__hint">Use only for emergency/manual approvals. This bypasses the normal payment-proof review and can close Awaiting Payment.</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <p class="grant-access-footnote">Activates login if still pending, applies content permissions, and notifies the student. Does not create a second purchase grant.</p>
+      <div id="grantAccessError" class="admin-modal__error grant-access-error" role="alert"></div>
     </div>
-    <div class="admin-modal__field">
-      <label for="grantAccessMonths">Access duration (months)</label>
-      <input type="number" id="grantAccessMonths" min="1" max="120" value="6" required>
-    </div>
-    <div class="approve-access-box">
-      <p class="text-xs font-semibold text-slate-300 mb-1">Content access</p>
-      <p class="text-xs opacity-70 m-0 mb-2">Same picker as Student Access - Full LMS or choose subjects/topics.</p>
-      <?php
-        $scaTreeScope = 'grant';
-        require __DIR__ . '/includes/admin_sca_permission_tree.php';
-      ?>
-      <p class="text-xs text-gray-500 m-0 mt-2" x-show="loadingCatalog">Loading content catalog...</p>
-      <p class="text-xs m-0 mt-2" style="color:#a7f3d0;" x-text="'Access: ' + activePermCount"></p>
-    </div>
-    <label id="grantAccessNoProofWrap" class="flex items-start gap-2 text-xs mt-2 mb-2" style="display:none;color:#fcd34d;">
-      <input type="checkbox" id="grantAccessNoProof" value="1" style="margin-top:0.15rem;">
-      <span><strong>Grant without proof (emergency)</strong> - closes Awaiting Payment even if the student never uploaded GCash proof. Use Remind to upload for the normal path.</span>
-    </label>
-    <p class="text-xs opacity-70 m-0 mb-2">Activates login if still pending, applies content permissions, and emails the student. Payments already under review with proof can still be closed. Does not create a second purchase grant.</p>
-    <div id="grantAccessError" class="admin-modal__error"></div>
-    <div class="admin-modal__actions">
-      <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
-      <button type="button" id="grantAccessSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Confirm grant</button>
-    </div>
+
+    <footer class="grant-access-modal__footer">
+      <div class="grant-access-modal__footer-meta">
+        <div><span class="muted">Access</span> <strong x-text="accessSummaryShort()"></strong></div>
+        <div><span class="muted">Expires</span> <strong id="grantAccessFooterUntil">—</strong></div>
+      </div>
+      <div class="grant-access-modal__footer-actions">
+        <button type="button" id="grantAccessCancelBtn" class="admin-modal__btn admin-modal__btn--ghost">Cancel</button>
+        <button type="button" id="grantAccessSubmitBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-key"></i> Grant Access</button>
+      </div>
+    </footer>
   </section>
 </div>
 
@@ -2378,10 +2495,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       if (!btn || typeof window.adminStudentsOpenGrant !== 'function') {
         var overlay = document.getElementById('grantAccessModalOverlay');
         var nameEl = document.getElementById('grantAccessStudentName');
-        var monthsEl = document.getElementById('grantAccessMonths');
+        var durationValueEl = document.getElementById('grantAccessDurationValue') || document.getElementById('grantAccessMonths');
+        var durationUnitEl = document.getElementById('grantAccessDurationUnit');
         if (!overlay) return;
         if (nameEl) nameEl.textContent = btn.getAttribute('data-student-name') || 'Student';
-        if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
+        if (durationValueEl && (!durationValueEl.value || Number(durationValueEl.value) < 1)) durationValueEl.value = '6';
+        if (durationUnitEl && !durationUnitEl.value) durationUnitEl.value = 'month';
         overlay.dataset.pendingUserId = btn.getAttribute('data-user-id') || '';
         overlay.dataset.needsProof = btn.getAttribute('data-needs-proof') === '1' ? '1' : '0';
         overlay.classList.add('is-open');
@@ -3212,9 +3331,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     var overlay = document.getElementById('grantAccessModalOverlay');
     var modalRoot = overlay ? overlay.querySelector('section.admin-modal') : null;
     var nameEl = document.getElementById('grantAccessStudentName');
-    var monthsEl = document.getElementById('grantAccessMonths');
+    var durationValueEl = document.getElementById('grantAccessDurationValue') || document.getElementById('grantAccessMonths');
+    var durationUnitEl = document.getElementById('grantAccessDurationUnit');
+    var untilPreviewEl = document.getElementById('grantAccessUntilPreview');
+    var footerUntilEl = document.getElementById('grantAccessFooterUntil');
     var errEl = document.getElementById('grantAccessError');
     var cancelBtn = document.getElementById('grantAccessCancelBtn');
+    var closeBtn = document.getElementById('grantAccessCloseBtn');
     var submitBtn = document.getElementById('grantAccessSubmitBtn');
     var bulkGrantBtn = document.getElementById('studentsBulkGrantBtn');
     var noProofWrap = document.getElementById('grantAccessNoProofWrap');
@@ -3227,9 +3350,42 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       try { return Alpine.$data(modalRoot); } catch (e) { return null; }
     }
 
+    function durationParts() {
+      var value = durationValueEl ? Number(durationValueEl.value || 0) : 0;
+      var unit = durationUnitEl ? String(durationUnitEl.value || 'month') : 'month';
+      return { value: value, unit: unit };
+    }
+
+    function formatUntil(date) {
+      try {
+        return date.toLocaleString(undefined, {
+          year: 'numeric', month: 'long', day: 'numeric',
+          hour: 'numeric', minute: '2-digit'
+        });
+      } catch (e) {
+        return date.toISOString();
+      }
+    }
+
+    function updateUntilPreview() {
+      var parts = durationParts();
+      var label = '—';
+      if (parts.value >= 1) {
+        var d = new Date();
+        var u = parts.unit;
+        if (u === 'hour') d.setHours(d.getHours() + parts.value);
+        else if (u === 'day') d.setDate(d.getDate() + parts.value);
+        else if (u === 'year') d.setFullYear(d.getFullYear() + parts.value);
+        else d.setMonth(d.getMonth() + parts.value);
+        label = formatUntil(d);
+      }
+      if (untilPreviewEl) untilPreviewEl.textContent = 'Access until ' + label;
+      if (footerUntilEl) footerUntilEl.textContent = label;
+    }
+
     function setNoProofUi(show) {
       pendingNeedsProof = !!show;
-      if (noProofWrap) noProofWrap.style.display = show ? 'flex' : 'none';
+      if (noProofWrap) noProofWrap.style.display = show ? '' : 'none';
       if (noProofChk) noProofChk.checked = false;
     }
 
@@ -3242,25 +3398,33 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
           ? ('Student #' + pendingUserIds[0])
           : (pendingUserIds.length + ' students (same access selection)'));
       }
-      if (monthsEl && (!monthsEl.value || Number(monthsEl.value) < 1)) monthsEl.value = '6';
+      if (durationValueEl && (!durationValueEl.value || Number(durationValueEl.value) < 1)) durationValueEl.value = '6';
+      if (durationUnitEl && !durationUnitEl.value) durationUnitEl.value = 'month';
       if (errEl) errEl.textContent = '';
       setNoProofUi(!!needsProof);
       var picker = grantPicker();
       if (picker && typeof picker.resetDefaults === 'function') picker.resetDefaults();
+      updateUntilPreview();
       overlay.classList.add('is-open');
       overlay.setAttribute('aria-hidden', 'false');
-      if (monthsEl) setTimeout(function () { monthsEl.focus(); }, 40);
+      document.documentElement.classList.add('grant-access-modal-open');
+      if (durationValueEl) setTimeout(function () { durationValueEl.focus(); }, 40);
     }
     function closeGrant() {
       if (!overlay) return;
       overlay.classList.remove('is-open');
       overlay.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('grant-access-modal-open');
       pendingUserIds = [];
       setNoProofUi(false);
       if (errEl) errEl.textContent = '';
     }
 
     window.adminStudentsOpenGrant = openGrant;
+
+    if (durationValueEl) durationValueEl.addEventListener('input', updateUntilPreview);
+    if (durationUnitEl) durationUnitEl.addEventListener('change', updateUntilPreview);
+    updateUntilPreview();
 
     // Re-open with full picker state if early fallback only toggled the overlay.
     if (overlay && overlay.dataset.pendingUserId) {
@@ -3314,22 +3478,28 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       });
     }
     if (cancelBtn) cancelBtn.addEventListener('click', closeGrant);
+    if (closeBtn) closeBtn.addEventListener('click', closeGrant);
     if (overlay) {
       overlay.addEventListener('click', function (e) {
         if (e.target === overlay) closeGrant();
       });
     }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay && overlay.classList.contains('is-open')) {
+        closeGrant();
+      }
+    });
     if (!submitBtn) return;
     submitBtn.addEventListener('click', function () {
       if (pendingUserIds.length === 0) return;
-      var months = monthsEl ? Number(monthsEl.value || 0) : 0;
-      if (!months || months < 1) {
-        if (errEl) errEl.textContent = 'Enter a valid duration in months.';
+      var parts = durationParts();
+      if (!parts.value || parts.value < 1) {
+        if (errEl) errEl.textContent = 'Enter a valid access duration.';
         return;
       }
       if (pendingNeedsProof && noProofChk && !noProofChk.checked) {
         if (errEl) {
-          errEl.textContent = 'This student has no payment proof. Use Remind to upload, or check "Grant without proof (emergency)".';
+          errEl.textContent = 'This student has no payment proof. Use Remind to upload, or check "Grant without payment proof".';
         }
         return;
       }
@@ -3346,7 +3516,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         }
       }
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Granting...';
+      submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Granting Access...';
       if (errEl) errEl.textContent = '';
       var fd = new FormData();
       fd.append('csrf_token', csrf);
@@ -3355,7 +3525,14 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       } else {
         fd.append('user_ids', JSON.stringify(pendingUserIds));
       }
-      fd.append('months', String(months));
+      // Keep months for backward compatibility; prefer duration_value + duration_unit.
+      var monthsCompat = parts.unit === 'month' ? parts.value
+        : (parts.unit === 'year' ? parts.value * 12
+          : (parts.unit === 'day' ? Math.max(1, Math.ceil(parts.value / 30))
+            : Math.max(1, Math.ceil(parts.value / (24 * 30)))));
+      fd.append('months', String(monthsCompat));
+      fd.append('duration_value', String(parts.value));
+      fd.append('duration_unit', String(parts.unit));
       fd.append('activate_login', '1');
       fd.append('grant_full_lms', access.grant_full_lms);
       fd.append('permissions', access.permissions);
@@ -3381,7 +3558,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       })
       .finally(function () {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-key"></i> Confirm grant';
+        submitBtn.innerHTML = '<i class="bi bi-key"></i> Grant Access';
       });
     });
   })();
