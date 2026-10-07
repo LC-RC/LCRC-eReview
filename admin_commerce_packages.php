@@ -213,18 +213,19 @@ $adminBreadcrumbs = [
     ['Packages'],
 ];
 $adminHeroIcon = 'box-seam';
+$adminHeroEyebrow = 'Commerce';
 $adminHeroTitle = 'Packages';
 $adminHeroSubtitle = 'Database-driven sellable packages. Full LMS packages do not need content maps; mapped packages do.';
-$adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold inline-flex items-center gap-2"><i class="bi bi-plus-lg"></i> New package</a>';
+    $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn admin-btn--primary inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 font-semibold text-white shadow-[0_6px_18px_rgba(37,99,235,.24)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(37,99,235,.30)] active:scale-[.98]"><i class="bi bi-plus-lg"></i> New package</a>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-commerce-packages-page">
   <?php include 'admin_sidebar.php'; ?>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+  <div class="w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
     <?php if (!empty($_SESSION['message'])): ?>
@@ -234,49 +235,37 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
       <div class="admin-alert admin-alert--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-      <div class="xl:col-span-5">
-        <div class="quiz-admin-table-shell rounded-2xl overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-xs uppercase tracking-wide opacity-70">
-                  <th class="px-4 py-3">Package</th>
-                  <th class="px-3 py-3 whitespace-nowrap">Price</th>
-                  <th class="px-3 py-3">Flags</th>
-                  <th class="px-3 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php if ($packages === []): ?>
-                  <tr><td colspan="4" class="px-4 py-8 text-center opacity-60">No packages yet. Create one - nothing is hardcoded.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($packages as $p): ?>
-                    <tr class="border-t border-white/5 <?php echo ((int)$p['package_id'] === $editId) ? 'bg-white/5' : ''; ?>">
-                      <td class="px-4 py-3 min-w-0">
-                        <div class="font-semibold truncate"><?php echo h($p['name']); ?></div>
-                        <div class="text-xs opacity-60 truncate"><?php echo h($p['code']); ?> · <?php echo h($p['access_scope']); ?> · <?php echo (int)$p['duration_value']; ?> <?php echo h($p['duration_unit']); ?>(s)</div>
-                      </td>
-                      <td class="px-3 py-3 whitespace-nowrap font-semibold">₱<?php echo h(commerce_centavos_to_pesos_display((int)$p['price_centavos'])); ?></td>
-                      <td class="px-3 py-3">
-                        <div class="flex flex-wrap gap-1">
-                          <span class="admin-badge <?php echo !empty($p['is_active']) ? 'admin-badge--success' : 'admin-badge--neutral'; ?>"><?php echo !empty($p['is_active']) ? 'Active' : 'Off'; ?></span>
-                          <span class="admin-badge <?php echo !empty($p['is_purchasable']) ? 'admin-badge--info' : 'admin-badge--neutral'; ?>"><?php echo !empty($p['is_purchasable']) ? 'Buy' : 'Hidden'; ?></span>
-                        </div>
-                      </td>
-                      <td class="px-3 py-3 text-right whitespace-nowrap">
-                        <a class="text-sm font-semibold underline-offset-2 hover:underline" href="admin_commerce_packages?edit=<?php echo (int)$p['package_id']; ?>">Edit</a>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <div class="pkg-workspace">
+      <div class="pkg-catalog">
+            <?php if ($packages === []): ?>
+              <div class="pkg-catalog__empty quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 px-4 py-5 text-center">
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 mb-2"><i class="bi bi-inbox"></i></span>
+                <p class="m-0 text-sm font-semibold text-slate-800">No packages yet</p>
+                <p class="m-0 mt-1 text-xs text-slate-500">Create one — nothing is hardcoded.</p>
+              </div>
+            <?php else: ?>
+              <?php foreach ($packages as $p): ?>
+                <div class="pkg-card lms-content-card rounded-xl border border-white/80 bg-white/90 px-4 py-3 <?php echo ((int)$p['package_id'] === $editId) ? 'ring-2 ring-blue-400/40' : ''; ?>">
+                  <div class="pkg-card__body">
+                    <div class="min-w-0">
+                      <div class="pkg-card__name font-semibold text-slate-900"><?php echo h($p['name']); ?></div>
+                      <div class="pkg-card__meta text-xs text-slate-500 mt-0.5"><?php echo h($p['code']); ?> · <?php echo h($p['access_scope']); ?> · <?php echo (int)$p['duration_value']; ?> <?php echo h($p['duration_unit']); ?>(s)</div>
+                    </div>
+                    <div class="pkg-card__price font-semibold text-slate-900 mt-2">₱<?php echo h(commerce_centavos_to_pesos_display((int)$p['price_centavos'])); ?></div>
+                    <div class="pkg-card__status mt-1.5">
+                      <span class="admin-badge <?php echo !empty($p['is_active']) ? 'admin-badge--success' : 'admin-badge--neutral'; ?>"><?php echo !empty($p['is_active']) ? 'Active' : 'Off'; ?></span>
+                    </div>
+                    <div class="pkg-card__actions mt-2 flex flex-wrap items-center gap-2">
+                      <span class="admin-badge <?php echo !empty($p['is_purchasable']) ? 'admin-badge--info' : 'admin-badge--neutral'; ?>"><?php echo !empty($p['is_purchasable']) ? 'Buy' : 'Hidden'; ?></span>
+                      <a class="text-sm font-semibold text-blue-600 underline-offset-2 hover:underline" href="admin_commerce_packages?edit=<?php echo (int)$p['package_id']; ?>">Edit</a>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
       </div>
 
-      <div class="xl:col-span-7">
+      <div class="pkg-editor">
         <?php if ($isNew || $edit): ?>
           <?php
             $form = $edit ?: [
@@ -294,7 +283,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
             ];
             $scope = $form['access_scope'] ?? 'full_lms';
           ?>
-          <form method="post" class="quiz-admin-table-shell rounded-2xl p-5 sm:p-6 space-y-5" x-data="{ scope: '<?php echo h($scope); ?>', features: <?php
+          <form method="post" class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 shadow-[0_10px_30px_rgba(15,23,42,.07),0_2px_10px_rgba(37,99,235,.05)] backdrop-blur-xl p-5 sm:p-6 space-y-5" x-data="{ scope: '<?php echo h($scope); ?>', features: <?php
             $fj = [];
             foreach ($editFeatures as $f) {
                 $fj[] = [
@@ -311,7 +300,7 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
 
             <div>
               <h2 class="text-lg font-bold"><?php echo $edit ? 'Edit package' : 'New package'; ?></h2>
-              <p class="text-sm opacity-60 mt-1">Self-Paced / Pure Online / Hybrid typically use <strong>Full LMS</strong> + optional features (Live Zoom, Onsite). Use <strong>Mapped</strong> only for custom content bundles.</p>
+              <p class="text-sm text-slate-500 mt-1">Self-Paced / Pure Online / Hybrid typically use <strong>Full LMS</strong> + optional features (Live Zoom, Onsite). Use <strong>Mapped</strong> only for custom content bundles.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -366,12 +355,12 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               </label>
             </div>
 
-            <div class="rounded-xl border border-white/10 p-4" x-show="scope === 'mapped'" x-cloak>
+            <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4" x-show="scope === 'mapped'" x-cloak>
               <h3 class="font-bold text-sm mb-2">Included LMS content</h3>
-              <p class="text-xs opacity-60 mb-3">References existing subjects / topics (lessons). Required when scope is Mapped.</p>
+              <p class="text-xs text-slate-500 mb-3">References existing subjects / topics (lessons). Required when scope is Mapped.</p>
               <div class="max-h-64 overflow-y-auto space-y-3 pr-1">
                 <?php foreach ($picker as $sub): ?>
-                  <div class="rounded-lg bg-black/10 dark:bg-white/5 p-3">
+                  <div class="rounded-lg bg-white border border-slate-100 p-3">
                     <label class="flex items-center gap-2 font-semibold text-sm cursor-pointer">
                       <input type="checkbox" name="map_subject[]" value="<?php echo (int)$sub['subject_id']; ?>" <?php echo isset($mapSubjects[(int)$sub['subject_id']]) ? 'checked' : ''; ?>>
                       <?php echo h($sub['subject_name']); ?>
@@ -389,11 +378,11 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               </div>
             </div>
 
-            <div class="rounded-xl border border-white/10 p-4">
+            <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
               <div class="flex items-center justify-between gap-2 mb-2">
                 <div>
                   <h3 class="font-bold text-sm">Package features (non-LMS)</h3>
-                  <p class="text-xs opacity-60">e.g. Live Zoom, Onsite, Coaching - not fake LMS content.</p>
+                  <p class="text-xs text-slate-500">e.g. Live Zoom, Onsite, Coaching - not fake LMS content.</p>
                 </div>
                 <button type="button" class="admin-outline-btn px-3 py-1.5 rounded-lg text-xs font-semibold" @click="features.push({key:'',label:'',description:''})">Add</button>
               </div>
@@ -420,12 +409,14 @@ $adminHeroActions = '<a href="admin_commerce_packages?new=1" class="admin-btn ad
               <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="package_id" value="<?php echo (int)$form['package_id']; ?>">
-              <button type="submit" class="text-sm font-semibold text-red-400 hover:underline">Delete package</button>
+              <button type="submit" class="text-sm font-semibold text-rose-600 hover:underline">Delete package</button>
             </form>
           <?php endif; ?>
         <?php else: ?>
-          <div class="quiz-admin-table-shell rounded-2xl p-8 text-center opacity-70">
-            <p>Select a package to edit, or create a new one.</p>
+          <div class="pkg-editor-empty quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 px-4 py-5 text-center">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-2"><i class="bi bi-box-seam"></i></span>
+            <p class="m-0 text-sm font-semibold text-slate-800">Select a package to edit, or create a new one.</p>
+            <p class="m-0 mt-1 text-xs text-slate-500">Use New package above, or Edit on a card.</p>
           </div>
         <?php endif; ?>
       </div>

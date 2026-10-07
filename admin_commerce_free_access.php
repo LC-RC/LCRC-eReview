@@ -159,17 +159,22 @@ if ($res) {
 
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['Free Access']];
 $adminHeroIcon = 'gift';
+$adminHeroEyebrow = 'Commerce';
 $adminHeroTitle = 'Free Access';
 $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants full LMS access for a chosen duration; it does not activate the student login account.';
+if ($detail) {
+    $adminBackHref = ereview_url('admin_commerce_free_access') . ($filter === 'pending' ? '' : '?v=' . rawurlencode($filter));
+    $adminBackLabel = 'Back to list';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-commerce-free-access-page">
   <?php include 'admin_sidebar.php'; ?>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+  <div class="w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
     <?php if (!empty($_SESSION['message'])): ?>
@@ -179,7 +184,7 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
       <div class="admin-alert admin-alert--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <div class="flex flex-wrap gap-2 text-sm mb-4">
+    <div class="admin-filter-chips flex flex-wrap gap-1.5 text-xs mb-3">
       <?php
         $tabs = [
           'pending' => 'Pending',
@@ -192,50 +197,60 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
           $active = $filter === $key;
           $href = ereview_url('admin_commerce_free_access') . ($key === 'pending' ? '' : '?v=' . rawurlencode($key));
       ?>
-        <a class="px-3 py-1.5 rounded-lg border <?php echo $active ? 'border-sky-400 bg-sky-500/20 font-semibold' : 'border-white/10 opacity-80 hover:opacity-100'; ?>"
+        <a class="admin-filter-chip px-2.5 py-1 <?php echo $active ? 'is-active' : ''; ?>"
            href="<?php echo h($href); ?>"><?php echo h($label); ?></a>
       <?php endforeach; ?>
     </div>
 
     <?php if ($detail): ?>
       <?php $canAct = ((string) $detail['status'] === 'pending'); ?>
-      <div class="quiz-admin-table-shell rounded-2xl p-5 sm:p-6 mb-5 space-y-4">
+      <div class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl p-4 sm:p-5 mb-4 space-y-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-lg font-bold"><?php echo h((string) $detail['request_ref']); ?></h2>
-            <p class="text-sm opacity-70">#<?php echo (int) $detail['request_id']; ?> · status: <strong><?php echo h((string) $detail['status']); ?></strong></p>
+            <h2 class="text-lg font-bold text-slate-900"><?php echo h((string) $detail['request_ref']); ?></h2>
+            <p class="text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+              #<?php echo (int) $detail['request_id']; ?> ·
+              <?php
+                $farSt = (string) $detail['status'];
+                $farBadge = match ($farSt) {
+                  'approved' => 'admin-badge--success',
+                  'pending' => 'admin-badge--warning',
+                  'rejected', 'cancelled' => 'admin-badge--danger',
+                  default => 'admin-badge--neutral',
+                };
+              ?>
+              <span class="admin-badge <?php echo $farBadge; ?>"><?php echo h($farSt); ?></span>
+            </p>
           </div>
-          <a class="admin-outline-btn px-3 py-2 rounded-xl text-sm font-semibold"
-             href="<?php echo h(ereview_url('admin_commerce_free_access') . ($filter === 'pending' ? '' : '?v=' . rawurlencode($filter))); ?>">Back to list</a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Student</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Student</div>
             <div><?php echo h((string) ($detail['full_name'] ?? '')); ?></div>
             <div class="opacity-70"><?php echo h((string) ($detail['email'] ?? '')); ?></div>
             <div class="opacity-70">account status: <?php echo h((string) ($detail['user_status'] ?? '')); ?> (unchanged by Free Access)</div>
             <?php if (!empty($detail['user_id'])): ?>
               <div class="mt-2">
-                <a class="font-semibold underline text-sky-300" href="<?php echo h(ereview_url('admin_student_view') . '?id=' . (int) $detail['user_id']); ?>">View Student</a>
+                <a class="font-semibold underline text-blue-600" href="<?php echo h(ereview_url('admin_student_view') . '?id=' . (int) $detail['user_id']); ?>">View Student</a>
               </div>
             <?php endif; ?>
           </div>
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Request</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Request</div>
             <div>Submitted: <?php echo h((string) ($detail['created_at'] ?? '')); ?></div>
             <div class="mt-2 whitespace-pre-wrap"><?php echo h((string) ($detail['student_note'] ?? '-')); ?></div>
           </div>
         </div>
 
         <?php if (!$canAct): ?>
-          <div class="text-sm border-t border-white/10 pt-4 space-y-1">
+          <div class="text-sm border-t border-slate-100 pt-4 space-y-1">
             <div>Final status: <strong><?php echo h((string) $detail['status']); ?></strong></div>
             <div>Reviewer: <?php echo h((string) ($detailReviewer['full_name'] ?? ($detail['reviewed_by'] ? '#' . (int) $detail['reviewed_by'] : '-'))); ?></div>
             <div>Reviewed at: <?php echo h((string) ($detail['reviewed_at'] ?? '-')); ?></div>
             <div>Admin note: <?php echo h((string) ($detail['admin_note'] ?? '-')); ?></div>
             <div class="mt-2">
-              <a class="underline text-sm font-semibold" href="<?php echo h(ereview_url('admin_commerce_grants') . '?free_access_request_id=' . (int) $detail['request_id']); ?>">Open Grant Ledger for this FAR</a>
+              <a class="underline text-sm font-semibold text-blue-600" href="<?php echo h(ereview_url('admin_commerce_grants') . '?free_access_request_id=' . (int) $detail['request_id']); ?>">Open Grant Ledger for this FAR</a>
             </div>
             <?php if ($detailGrant): ?>
               <?php
@@ -243,7 +258,7 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
                     && (string) ($detailGrant['source'] ?? '') === 'free_access'
                     && (string) ($detailGrant['status'] ?? '') === 'active');
               ?>
-              <div class="mt-4 border-t border-white/10 pt-4 space-y-2">
+              <div class="mt-4 border-t border-slate-100 pt-4 space-y-2">
                 <div class="text-xs uppercase opacity-60 font-semibold">Access / Grant</div>
                 <div>Source: <strong><?php echo h((string) $detailGrant['source']); ?></strong></div>
                 <div>Status: <strong><?php echo h((string) $detailGrant['status']); ?></strong></div>
@@ -256,7 +271,7 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
                     <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                     <input type="hidden" name="request_id" value="<?php echo (int) $detail['request_id']; ?>">
                     <div>
-                      <label class="block text-xs uppercase opacity-60 font-semibold mb-1" for="revoke_reason">Revoke reason <span class="text-rose-300">required</span></label>
+                      <label class="block text-xs uppercase text-slate-500 font-semibold mb-1" for="revoke_reason">Revoke reason <span class="text-rose-600">required</span></label>
                       <textarea name="revoke_reason" id="revoke_reason" rows="2" maxlength="255" required
                                 class="admin-input w-full px-3 py-2 rounded-xl"
                                 placeholder="Why is Free Access being revoked?"></textarea>
@@ -275,11 +290,11 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
             <?php endif; ?>
           </div>
         <?php else: ?>
-          <form method="post" class="border-t border-white/10 pt-4 space-y-3 max-w-xl">
+          <form method="post" class="border-t border-slate-100 pt-4 space-y-3 max-w-xl">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="request_id" value="<?php echo (int) $detail['request_id']; ?>">
             <div>
-              <label class="block text-xs uppercase opacity-60 font-semibold mb-1" for="duration_months">Duration (months) <span class="text-rose-300">required</span></label>
+              <label class="block text-xs uppercase text-slate-500 font-semibold mb-1" for="duration_months">Duration (months) <span class="text-rose-600">required</span></label>
               <div class="flex items-center gap-2">
                 <input type="number" min="1" max="120" step="1" required name="duration_months" id="duration_months"
                        class="admin-input w-28 px-3 py-2 rounded-xl" placeholder="6" value="">
@@ -288,12 +303,12 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
               <p class="text-xs opacity-60 mt-1">Grant starts now and ends after the selected calendar months. Full LMS access only.</p>
             </div>
             <div>
-              <label class="block text-xs uppercase opacity-60 font-semibold mb-1" for="admin_note">Admin Note</label>
+              <label class="block text-xs uppercase text-slate-500 font-semibold mb-1" for="admin_note">Admin Note</label>
               <textarea name="admin_note" id="admin_note" rows="2" class="admin-input w-full px-3 py-2 rounded-xl" placeholder="Optional"></textarea>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button type="submit" name="action" value="approve" class="admin-primary-btn px-4 py-2 rounded-xl text-sm font-semibold">Approve</button>
-              <button type="submit" name="action" value="reject" class="admin-outline-btn px-4 py-2 rounded-xl text-sm font-semibold"
+              <button type="submit" name="action" value="approve" class="admin-btn admin-btn--primary px-4 py-2 rounded-xl text-sm font-semibold">Approve</button>
+              <button type="submit" name="action" value="reject" class="admin-btn far-reject-btn px-4 py-2 rounded-xl text-sm font-semibold"
                       formnovalidate
                       onclick="return confirm('Reject this Free Access request? No access will be granted.');">Reject</button>
             </div>
@@ -302,60 +317,77 @@ $adminHeroSubtitle = 'Approve or reject Free Access requests. Approval grants fu
       </div>
     <?php endif; ?>
 
-    <div class="quiz-admin-table-shell rounded-2xl overflow-hidden">
+    <div class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="text-left text-xs uppercase opacity-60 border-b border-white/10">
-              <th class="px-4 py-3">Request</th>
-              <th class="px-4 py-3">Student</th>
-              <th class="px-4 py-3">Email</th>
-              <th class="px-4 py-3">Student note</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Submitted</th>
-              <th class="px-4 py-3">Reviewed</th>
-              <th class="px-4 py-3">Reviewer</th>
-              <th class="px-4 py-3"></th>
+            <tr class="text-left text-xs uppercase tracking-wide bg-slate-100 text-slate-700 border-b border-slate-200">
+              <th class="px-3 py-2.5 font-bold">Request</th>
+              <th class="px-3 py-2.5 font-bold">Student</th>
+              <th class="px-3 py-2.5 font-bold">Email</th>
+              <th class="px-3 py-2.5 font-bold">Student note</th>
+              <th class="px-3 py-2.5 font-bold">Status</th>
+              <th class="px-3 py-2.5 font-bold">Submitted</th>
+              <th class="px-3 py-2.5 font-bold">Reviewed</th>
+              <th class="px-3 py-2.5 font-bold">Reviewer</th>
+              <th class="px-3 py-2.5 font-bold"></th>
             </tr>
           </thead>
           <tbody>
             <?php if ($rows === []): ?>
-              <tr><td colspan="9" class="px-4 py-6 opacity-70">No Free Access requests in this filter.</td></tr>
+              <tr>
+                <td colspan="9" class="px-3 py-5">
+                  <div class="far-empty text-center">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 mb-2"><i class="bi bi-inbox"></i></span>
+                    <p class="m-0 text-sm font-semibold text-slate-800">No Free Access requests in this filter</p>
+                    <p class="m-0 mt-1 text-xs text-slate-500">Switch filters or wait for a new student request.</p>
+                  </div>
+                </td>
+              </tr>
             <?php else: ?>
               <?php foreach ($rows as $row): ?>
-                <tr class="border-b border-white/5 align-top">
-                  <td class="px-4 py-3 font-semibold"><?php echo h((string) $row['request_ref']); ?></td>
-                  <td class="px-4 py-3"><?php echo h((string) $row['full_name']); ?></td>
-                  <td class="px-4 py-3 opacity-80"><?php echo h((string) $row['email']); ?></td>
-                  <td class="px-4 py-3 max-w-xs">
-                    <div class="line-clamp-2 opacity-80"><?php echo h((string) ($row['student_note'] ?? '')); ?></div>
+                <?php
+                  $rowFarSt = (string) $row['status'];
+                  $rowFarBadge = match ($rowFarSt) {
+                    'approved' => 'admin-badge--success',
+                    'pending' => 'admin-badge--warning',
+                    'rejected', 'cancelled' => 'admin-badge--danger',
+                    default => 'admin-badge--neutral',
+                  };
+                ?>
+                <tr class="border-b border-slate-100 align-top">
+                  <td class="px-3 py-2.5 font-semibold text-slate-900"><?php echo h((string) $row['request_ref']); ?></td>
+                  <td class="px-3 py-2.5 text-slate-800"><?php echo h((string) $row['full_name']); ?></td>
+                  <td class="px-3 py-2.5 text-slate-600"><?php echo h((string) $row['email']); ?></td>
+                  <td class="px-3 py-2.5 max-w-xs">
+                    <div class="line-clamp-2 text-slate-600"><?php echo h((string) ($row['student_note'] ?? '')); ?></div>
                   </td>
-                  <td class="px-4 py-3"><?php echo h((string) $row['status']); ?></td>
-                  <td class="px-4 py-3 whitespace-nowrap opacity-80"><?php echo h((string) $row['created_at']); ?></td>
-                  <td class="px-4 py-3 whitespace-nowrap opacity-80"><?php echo h((string) ($row['reviewed_at'] ?? '-')); ?></td>
-                  <td class="px-4 py-3 opacity-80"><?php echo h((string) ($row['reviewer_name'] ?? '-')); ?></td>
-                  <td class="px-4 py-3">
-                    <a class="text-sky-300 underline"
+                  <td class="px-3 py-2.5"><span class="admin-badge <?php echo $rowFarBadge; ?>"><?php echo h($rowFarSt); ?></span></td>
+                  <td class="px-3 py-2.5 whitespace-nowrap text-slate-600"><?php echo h((string) $row['created_at']); ?></td>
+                  <td class="px-3 py-2.5 whitespace-nowrap text-slate-600"><?php echo h((string) ($row['reviewed_at'] ?? '-')); ?></td>
+                  <td class="px-3 py-2.5 text-slate-600"><?php echo h((string) ($row['reviewer_name'] ?? '-')); ?></td>
+                  <td class="px-3 py-2.5">
+                    <a class="font-semibold text-blue-600 hover:underline"
                        href="<?php echo h(ereview_url('admin_commerce_free_access') . '?id=' . (int) $row['request_id'] . ($filter === 'pending' ? '' : '&v=' . rawurlencode($filter))); ?>">Open</a>
                   </td>
                 </tr>
                 <?php if ((string) $row['status'] === 'pending'): ?>
-                <tr class="border-b border-white/5 bg-white/[0.02]">
-                  <td colspan="9" class="px-4 py-3">
-                    <form method="post" class="flex flex-wrap items-end gap-3">
+                <tr class="border-b border-slate-100 far-request-actions-row">
+                  <td colspan="9" class="px-3 py-2.5">
+                    <form method="post" class="far-request-actions flex flex-wrap items-end gap-3">
                       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
                       <input type="hidden" name="request_id" value="<?php echo (int) $row['request_id']; ?>">
                       <div>
-                        <label class="block text-xs opacity-60 mb-1">Duration (months)</label>
+                        <label class="block text-xs text-slate-500 mb-1">Duration (months)</label>
                         <input type="number" min="1" max="120" step="1" required name="duration_months"
                                class="admin-input w-24 px-2 py-1.5 rounded-lg" placeholder="6">
                       </div>
                       <div class="flex-1 min-w-[12rem]">
-                        <label class="block text-xs opacity-60 mb-1">Admin Note</label>
+                        <label class="block text-xs text-slate-500 mb-1">Admin Note</label>
                         <input type="text" name="admin_note" class="admin-input w-full px-2 py-1.5 rounded-lg" placeholder="Optional">
                       </div>
-                      <button type="submit" name="action" value="approve" class="admin-primary-btn px-3 py-1.5 rounded-lg text-sm font-semibold">Approve</button>
-                      <button type="submit" name="action" value="reject" class="admin-outline-btn px-3 py-1.5 rounded-lg text-sm font-semibold"
+                      <button type="submit" name="action" value="approve" class="admin-btn admin-btn--primary px-3 py-1.5 rounded-lg text-sm font-semibold">Approve</button>
+                      <button type="submit" name="action" value="reject" class="admin-btn far-reject-btn px-3 py-1.5 rounded-lg text-sm font-semibold"
                               formnovalidate
                               onclick="return confirm('Reject this Free Access request?');">Reject</button>
                     </form>

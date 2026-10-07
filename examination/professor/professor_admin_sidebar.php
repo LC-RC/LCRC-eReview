@@ -7,6 +7,7 @@ $appShellCurrentScript = ereview_page_basename();
 $appShellTheme = 'admin';
 $appShellSidebarHeader = 'brand';
 $appShellBrandHref = 'professor_admin_dashboard';
+$appShellHideEmpowerPromo = true;
 
 $appShellNavConfig = [
     [

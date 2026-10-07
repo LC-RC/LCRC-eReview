@@ -567,6 +567,24 @@ body.exam-protected [contenteditable] {
   color: #b91c1c;
   line-height: 1.45;
 }
+.exam-question-panel.is-saving .exam-answered-pill,
+.exam-question-panel.is-save-retrying .exam-answered-pill,
+.exam-question-panel.is-save-failed .exam-answered-pill { display: inline; }
+.exam-save-hint {
+  display: none;
+  margin-left: .35rem;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #64748b;
+}
+.exam-question-panel.is-saving .exam-save-hint,
+.exam-question-panel.is-save-retrying .exam-save-hint,
+.exam-question-panel.is-save-failed .exam-save-hint { display: inline; }
+.exam-question-panel.is-save-failed .exam-save-hint { color: #b91c1c; }
+.exam-question-panel.is-saving .exam-save-hint,
+.exam-question-panel.is-save-retrying .exam-save-hint { color: #b45309; }
+
 .exam-answered-pill {
   display: none;
   margin-left: .4rem;

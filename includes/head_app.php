@@ -25,8 +25,7 @@ $loadStudentTheme = !empty($loadStudentTheme)
 <?php if ($useBuiltCss && !$forceTailwindCdn): ?>
 <link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind.css?v=<?php echo filemtime($tailwindFile); ?>">
 <?php if (is_file($arbitraryFile)): ?>
-<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>"></noscript>
+<link rel="stylesheet" href="<?php echo h($base); ?>/assets/css/tailwind-arbitrary.css?v=<?php echo filemtime($arbitraryFile); ?>">
 <?php endif; ?>
 <?php else: ?>
 <script>

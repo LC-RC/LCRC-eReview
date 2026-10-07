@@ -1,0 +1,1563 @@
+/**
+ * College Student portal — luminous visual system.
+ * Scoped to body.college-student-app. Loaded last via examination_head_app.php.
+ * Does not restyle LMS student, Professor, or Main Admin.
+ */
+
+body.college-student-app {
+  --cs-canvas: #eef3fb;
+  --cs-surface: #ffffff;
+  --cs-navy: #0f1f3d;
+  --cs-blue: #2563eb;
+  --cs-indigo: #4f46e5;
+  --cs-cyan: #38bdf8;
+  --cs-muted: #5b6b86;
+  --cs-border: rgba(147, 180, 230, 0.32);
+  --cs-radius: 18px;
+  --cs-radius-sm: 12px;
+  --cs-control-h: 2.5rem;
+  --cs-shadow: 0 12px 30px -18px rgba(37, 76, 150, 0.28);
+  --cs-shadow-lg: 0 18px 42px -18px rgba(37, 76, 150, 0.4), 0 0 40px -16px rgba(59, 130, 246, 0.28);
+  --cs-glow: 0 0 22px rgba(59, 130, 246, 0.28);
+  --cs-z-content: 1;
+  --cs-z-sticky: 20;
+  --cs-z-sidebar: 30;
+  --cs-z-topbar: 45;
+  --cs-z-nav-backdrop: 50;
+  --cs-z-sidebar-overlay: 55;
+  --cs-z-dropdown: 70;
+  --cs-z-modal: 200;
+
+  --app-shell-sidebar-expanded: 220px;
+  --app-shell-sidebar-collapsed: 72px;
+  --app-shell-mobile-sidebar-width: 270px;
+
+  --cp-primary: #2563eb;
+  --cp-primary-mid: #4f46e5;
+  --cp-primary-deep: #0f1f3d;
+  --cp-primary-soft: #eff6ff;
+  --cp-primary-border: rgba(147, 197, 253, 0.55);
+  --cp-text: #0f1f3d;
+  --cp-text-body: #334155;
+  --cp-muted: #5b6b86;
+  --cp-surface: #ffffff;
+  --cp-bg: #eef3fb;
+  --cp-border: rgba(147, 180, 230, 0.32);
+  --cp-shadow: 0 12px 30px -18px rgba(37, 76, 150, 0.28);
+  --cp-shadow-hover: 0 16px 34px -16px rgba(37, 76, 150, 0.36);
+  --cp-radius: 16px;
+  --cp-radius-sm: 12px;
+  --cp-radius-lg: 18px;
+
+  --student-bg: #eef3fb;
+  --student-surface-solid: #ffffff;
+  --student-border: rgba(147, 180, 230, 0.32);
+  --student-text: #0f1f3d;
+  --student-text-secondary: #334155;
+  --student-text-muted: #5b6b86;
+  --student-primary: #2563eb;
+  --student-primary-hover: #1d4ed8;
+  --student-primary-2: #4f46e5;
+  --student-primary-soft: rgba(37, 99, 235, 0.12);
+  --student-sidebar-bg:
+    linear-gradient(90deg, rgba(59, 130, 246, 0.16) 0%, transparent 18%),
+    radial-gradient(120% 70% at 20% 42%, rgba(99, 102, 241, 0.14), transparent 62%),
+    linear-gradient(180deg, rgba(147, 197, 253, 0.24) 0%, rgba(244, 248, 255, 0.5) 32%, #f7faff 100%);
+  --student-sidebar-border: rgba(147, 180, 230, 0.45);
+  --student-sidebar-text: #1e3a5f;
+  --student-sidebar-muted: #64748b;
+  --student-sidebar-active-bg: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%);
+  --student-sidebar-active-text: #ffffff;
+  --student-sidebar-hover-bg: rgba(59, 130, 246, 0.08);
+  --cp-sidebar-bg: #f4f8ff;
+  --cp-gold: #2563eb;
+  --cp-sidebar-active: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%);
+  --cp-sidebar-active-border: #ffffff;
+}
+
+body.college-student-app,
+body.college-student-app #main,
+body.college-student-app #main.app-shell-main--student,
+body.college-student-app .cp-page-shell,
+body.college-student-app .cp-data-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+html[data-student-theme="light"] body.college-student-app,
+body.college-student-app {
+  background: var(--cs-canvas) !important;
+  color: var(--cs-navy);
+}
+
+html[data-student-theme="light"] body.college-student-app #main.app-shell-main--student,
+body.college-student-app #main.app-shell-main--student {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background-color: var(--cs-canvas) !important;
+  background-image:
+    radial-gradient(980px 640px at -10% -16%, rgba(56, 189, 248, 0.32), transparent 62%),
+    radial-gradient(820px 520px at 48% -18%, rgba(125, 211, 252, 0.16), transparent 58%),
+    radial-gradient(900px 600px at 110% -8%, rgba(99, 102, 241, 0.28), transparent 56%) !important;
+}
+
+body.college-student-app.exam-taking-mode #main.app-shell-main--student {
+  background-image:
+    radial-gradient(720px 420px at 8% -12%, rgba(56, 189, 248, 0.12), transparent 64%),
+    radial-gradient(640px 380px at 100% 0%, rgba(99, 102, 241, 0.1), transparent 62%) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar — luminous ice family (same DNA as Professor, student nav)
+   -------------------------------------------------------------------------- */
+html[data-student-theme] body.college-student-app.college-examination-portal.app-shell--student #app-sidebar.app-shell-sidebar--student,
+body.college-student-app.college-examination-portal #app-sidebar.app-shell-sidebar--student,
+body.college-student-app #app-sidebar.app-shell-sidebar--student {
+  top: 0 !important;
+  left: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  border-radius: 0 !important;
+  background-color: #f4f8ff !important;
+  background-image:
+    linear-gradient(90deg, rgba(59, 130, 246, 0.16) 0%, transparent 18%),
+    radial-gradient(120% 70% at 20% 42%, rgba(99, 102, 241, 0.14), transparent 62%),
+    linear-gradient(180deg, rgba(147, 197, 253, 0.24) 0%, rgba(244, 248, 255, 0.5) 32%, #f7faff 100%) !important;
+  border-right: 1px solid rgba(147, 180, 230, 0.45) !important;
+  box-shadow: 18px 0 40px -28px rgba(37, 76, 150, 0.42) !important;
+  border-bottom-right-radius: 0;
+  color: var(--cs-navy);
+  z-index: var(--cs-z-sidebar);
+}
+
+body.college-student-app #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(147, 180, 230, 0.28) !important;
+}
+
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-brand-link,
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-brand-text,
+body.college-student-app #app-sidebar .app-shell-sidebar-brand-link {
+  color: var(--cs-navy) !important;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-brand-logo {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+  object-fit: contain;
+  background: #fff;
+  box-shadow: 0 8px 18px -12px rgba(37, 99, 235, 0.55);
+}
+
+body.college-student-app.sidebar-expanded #app-sidebar .app-shell-sidebar-brand-text {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-brand-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--cs-navy);
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-brand-sub {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 650;
+  color: #5b74a3;
+}
+
+body.college-student-app #app-sidebar .admin-sidebar-section-label,
+body.college-student-app #app-sidebar .app-shell-section-label {
+  color: #64748b !important;
+}
+
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-nav-link--student,
+body.college-student-app #app-sidebar .app-shell-nav-link--student {
+  color: #1e3a5f !important;
+  border-radius: 0.8rem;
+  border-left-color: transparent;
+}
+
+body.college-student-app #app-sidebar .app-shell-nav-link--student::before {
+  display: none;
+}
+
+body.college-student-app #app-sidebar .app-shell-nav-link--student .student-nav-icon {
+  color: #2563eb !important;
+  background: rgba(239, 246, 255, 0.9);
+  border-radius: 0.65rem;
+}
+
+body.college-student-app #app-sidebar .app-shell-nav-link--student:not(.student-nav-item--active):hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: var(--cs-navy) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-nav-link--student.student-nav-item--active,
+body.college-student-app.college-examination-portal #app-sidebar .student-nav-item--active,
+body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active {
+  position: relative;
+  background: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%) !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.7) !important;
+}
+
+body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 99px;
+  background: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active .student-nav-icon {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-footer {
+  border-top: 1px solid rgba(147, 180, 230, 0.28) !important;
+  background: transparent;
+}
+
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-time,
+body.college-student-app #app-sidebar .app-shell-sidebar-time {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(147, 197, 253, 0.5) !important;
+  border-radius: 0.85rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 0 18px rgba(59, 130, 246, 0.12);
+  padding: 0.65rem 0.7rem;
+}
+
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-time-label,
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-time-date,
+html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-time-digital,
+body.college-student-app #app-sidebar .app-shell-sidebar-time-label,
+body.college-student-app #app-sidebar .app-shell-sidebar-time-date,
+body.college-student-app #app-sidebar .app-shell-sidebar-time-digital,
+body.college-student-app #app-sidebar .app-shell-sidebar-time-meta {
+  color: var(--cs-navy) !important;
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-time-label {
+  color: #64748b !important;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+body.college-student-app #app-sidebar .app-shell-sidebar-close-btn {
+  border-color: rgba(147, 180, 230, 0.45);
+  background: #fff;
+  color: var(--cs-navy);
+}
+
+/* --------------------------------------------------------------------------
+   Topbar
+   -------------------------------------------------------------------------- */
+body.college-student-app .student-topbar-modern {
+  --topbar-bg: transparent;
+  --topbar-border: rgba(147, 180, 230, 0.35);
+  --topbar-shadow: none;
+  --brand: #2563eb;
+  --text: #0f1f3d;
+  --text-muted: #5b6b86;
+  --surface: #ffffff;
+  --search-placeholder: #94a3b8;
+  margin-left: 0;
+  margin-right: 0;
+  z-index: var(--cs-z-topbar);
+  overflow: visible;
+}
+
+body.college-student-app .student-topbar-inner {
+  min-height: 3.6rem;
+  margin: 0.55rem 0.75rem 0;
+  padding: 0.45rem 0.75rem;
+  width: auto;
+  max-width: none;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(147, 197, 253, 0.5);
+  border-radius: 1.1rem;
+  box-shadow: 0 12px 28px -16px rgba(37, 76, 150, 0.34), 0 0 40px -16px rgba(59, 130, 246, 0.24);
+  overflow: visible;
+}
+
+body.college-student-app .student-topbar-search-wrap {
+  background: #f8fbff;
+  border: 1px solid rgba(147, 180, 230, 0.38);
+  border-radius: 14px;
+  min-height: var(--cs-control-h);
+}
+
+body.college-student-app .student-topbar-search {
+  color: var(--cs-navy);
+}
+
+body.college-student-app .student-topbar-search-wrap:focus-within,
+body.college-student-app .student-topbar-search-wrap.is-focused {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+body.college-student-app .student-topbar-menu-btn,
+body.college-student-app .student-theme-toggle,
+body.college-student-app .student-topbar-action,
+body.college-student-app .student-topbar-profile-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(186, 210, 245, 0.7);
+  border-radius: 0.8rem;
+}
+
+body.college-student-app .student-topbar-name,
+body.college-student-app .student-topbar-mobile-brand,
+body.college-student-app .student-topbar-mobile-brand__text {
+  color: var(--cs-navy) !important;
+}
+
+body.college-student-app .student-topbar-avatar {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff;
+}
+
+body.college-student-app .student-topbar-profile-wrap {
+  position: relative;
+  z-index: var(--cs-z-dropdown);
+  overflow: visible;
+}
+
+body.college-student-app .student-topbar-dropdown.ereview-profile-menu {
+  position: absolute !important;
+  top: calc(100% + 0.4rem) !important;
+  right: 0 !important;
+  width: 21.25rem !important;
+  max-width: min(21.25rem, calc(100vw - 1.25rem)) !important;
+  height: auto !important;
+  max-height: calc(100dvh - 5.75rem) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 0.15rem 0 0.35rem !important;
+  z-index: var(--cs-z-dropdown) !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  color: var(--cs-navy) !important;
+  border: 1px solid rgba(147, 197, 253, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 18px 42px -20px rgba(37, 76, 150, 0.48),
+    0 0 38px -14px rgba(59, 130, 246, 0.34) !important;
+  backdrop-filter: none;
+}
+
+body.college-student-app .ereview-profile-menu__hero {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4.75rem;
+  padding: 0.85rem 1rem 0.8rem !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 48%, transparent 100%) !important;
+  border-bottom: 1px solid rgba(186, 210, 245, 0.55) !important;
+}
+
+body.college-student-app .ereview-profile-menu__title {
+  color: var(--cs-navy) !important;
+  font-size: 0.95rem;
+}
+
+body.college-student-app .ereview-profile-menu__link--nav {
+  min-height: 3.1rem;
+  padding: 0.45rem 0.6rem !important;
+  border-radius: 0.7rem !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--cs-navy) !important;
+}
+
+body.college-student-app .ereview-profile-menu__link--nav:hover {
+  background: rgba(239, 246, 255, 0.95) !important;
+  transform: none !important;
+  color: var(--cs-blue) !important;
+}
+
+body.college-student-app .ereview-profile-menu__link-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  background: rgba(239, 246, 255, 0.95) !important;
+  color: #2563eb !important;
+}
+
+body.college-student-app .ereview-profile-menu__link--danger {
+  margin: 0 0.45rem 0.15rem !important;
+  min-height: 3.1rem;
+  color: #9f1239 !important;
+  background: rgba(255, 241, 242, 0.85) !important;
+  border: 1px solid rgba(254, 205, 211, 0.9) !important;
+  border-radius: 0.7rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard / workspaces
+   -------------------------------------------------------------------------- */
+body.college-student-app .cp-welcome-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 1.2rem 1.4rem 1.25rem !important;
+  background-color: #fff !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent 42%),
+    radial-gradient(420px 180px at 92% 18%, rgba(129, 140, 248, 0.26), transparent 58%),
+    radial-gradient(320px 150px at 8% 0%, rgba(56, 189, 248, 0.18), transparent 64%),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eef2ff 100%) !important;
+  border: 1px solid rgba(186, 210, 245, 0.38) !important;
+  border-radius: var(--cs-radius) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 16px 36px -18px rgba(37, 76, 150, 0.3) !important;
+}
+
+body.college-student-app .cp-welcome-compact__date {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #64748b;
+}
+
+body.college-student-app .cp-welcome-compact__title {
+  color: var(--cs-navy) !important;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+body.college-student-app .cp-welcome-compact__sub {
+  color: #52637c !important;
+}
+
+body.college-student-app .cp-content--dashboard {
+  gap: 0.9rem !important;
+}
+
+body.college-student-app .cs-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+body.college-student-app .cs-kpi {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 0.95rem 0.8rem;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.35);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 #fff, 0 12px 28px -18px rgba(37, 76, 150, 0.32), 0 0 22px -14px rgba(59, 130, 246, 0.22);
+}
+
+body.college-student-app a.cs-kpi:hover {
+  transform: translateY(-1px);
+  border-color: rgba(147, 197, 253, 0.55);
+}
+
+body.college-student-app .cs-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(110px 80px at 14% 38%, rgba(59, 130, 246, 0.22), transparent 70%);
+}
+
+body.college-student-app .cs-kpi--amber::before {
+  background: radial-gradient(110px 80px at 14% 38%, rgba(245, 158, 11, 0.22), transparent 70%);
+}
+
+body.college-student-app .cs-kpi--green::before {
+  background: radial-gradient(110px 80px at 14% 38%, rgba(16, 185, 129, 0.22), transparent 70%);
+}
+
+body.college-student-app .cs-kpi--violet::before {
+  background: radial-gradient(110px 80px at 14% 38%, rgba(124, 58, 237, 0.22), transparent 70%);
+}
+
+body.college-student-app .cs-kpi__tile,
+body.college-student-app .cs-kpi__body {
+  position: relative;
+  z-index: 1;
+}
+
+body.college-student-app .cs-kpi__tile {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: linear-gradient(160deg, #eff6ff, #dbeafe);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #1d4ed8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 16px -10px rgba(37, 99, 235, 0.55), 0 0 16px rgba(59, 130, 246, 0.28);
+  font-size: 1rem;
+}
+
+body.college-student-app .cs-kpi--amber .cs-kpi__tile {
+  background: linear-gradient(160deg, #fffbeb, #fde68a);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #b45309;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 16px -10px rgba(245, 158, 11, 0.5), 0 0 16px rgba(245, 158, 11, 0.22);
+}
+
+body.college-student-app .cs-kpi--green .cs-kpi__tile {
+  background: linear-gradient(160deg, #ecfdf5, #a7f3d0);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #047857;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 16px -10px rgba(16, 185, 129, 0.5), 0 0 16px rgba(16, 185, 129, 0.22);
+}
+
+body.college-student-app .cs-kpi--violet .cs-kpi__tile {
+  background: linear-gradient(160deg, #f5f3ff, #ddd6fe);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #6d28d9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 16px -10px rgba(124, 58, 237, 0.5), 0 0 16px rgba(124, 58, 237, 0.22);
+}
+
+body.college-student-app .cs-kpi__label {
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.college-student-app .cs-kpi__value {
+  margin-top: 0.1rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--cs-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-student-app .cs-kpi__hint {
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+body.college-student-app .cs-dash-primary,
+body.college-student-app .cs-dash-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+body.college-student-app .cs-dash-secondary--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.college-student-app .cs-dash-attention {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+body.college-student-app .cs-dash-more {
+  margin: 0.55rem 0 0;
+}
+
+body.college-student-app .cs-deadline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+body.college-student-app .cs-deadline-list__item {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.55rem 0.15rem;
+  border-bottom: 1px solid rgba(186, 210, 245, 0.35);
+}
+
+body.college-student-app .cs-deadline-list__item:last-child {
+  border-bottom: 0;
+}
+
+body.college-student-app .cs-deadline-list__ico {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.22);
+}
+
+body.college-student-app .cs-deadline-list__item--soon .cs-deadline-list__ico,
+body.college-student-app .cs-deadline-list__item--today .cs-deadline-list__ico {
+  background: #fffbeb;
+  color: #b45309;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.22);
+}
+
+body.college-student-app .cs-deadline-list__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+body.college-student-app .cs-deadline-list__title {
+  font-weight: 750;
+  color: var(--cs-navy);
+  text-decoration: none;
+  line-height: 1.25;
+}
+
+body.college-student-app a.cs-deadline-list__title:hover {
+  color: #2563eb;
+}
+
+body.college-student-app .cs-deadline-list__when {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #64748b;
+}
+
+body.college-student-app .cs-deadline-list__item--soon .cs-deadline-list__when,
+body.college-student-app .cs-deadline-list__item--today .cs-deadline-list__when {
+  color: #b45309;
+}
+
+body.college-student-app .cs-dash-trend .cp-dash-panel__desc {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+body.college-student-app .cp-chart-wrap--compact {
+  height: 7.25rem !important;
+}
+
+body.college-student-app .cp-dash-panel,
+body.college-student-app .cp-empty-surface,
+body.college-student-app .cp-exams-browser {
+  background: #fff !important;
+  border: 1px solid rgba(186, 210, 245, 0.32) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--cs-shadow) !important;
+}
+
+body.college-student-app .cp-dash-panel__head {
+  background: transparent !important;
+  border-bottom-color: rgba(186, 210, 245, 0.4) !important;
+}
+
+body.college-student-app .cp-dash-panel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--cs-navy);
+  font-weight: 750;
+}
+
+body.college-student-app .cp-dash-panel__ico {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  background: linear-gradient(160deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.28);
+  font-size: 0.95rem;
+}
+
+body.college-student-app .cp-dash-empty-state {
+  padding: 1.15rem 1rem 1.2rem;
+  border: 0;
+  background: transparent;
+}
+
+body.college-student-app .cp-dash-empty-state--compact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.35rem 0.1rem 0.2rem;
+}
+
+body.college-student-app .cp-dash-empty-state--compact .cp-dash-empty-state__icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  margin-bottom: 0.15rem;
+}
+
+body.college-student-app .cp-dash-empty-state__icon,
+body.college-student-app .cp-empty-surface__icon,
+body.college-student-app .cp-page-header__icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.85rem;
+  background: linear-gradient(160deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(147, 197, 253, 0.45);
+}
+
+body.college-student-app .cp-dash-empty-state__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--cs-navy);
+}
+
+body.college-student-app .cp-dash-empty-state__text,
+body.college-student-app .cp-empty-surface__text {
+  color: var(--cs-muted);
+}
+
+body.college-student-app .cp-text-link {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+body.college-student-app .cp-result-link::after {
+  content: " →";
+  font-weight: 700;
+}
+
+body.college-student-app .cp-data-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.college-student-app .cp-data-table thead th {
+  background: #f4f8ff;
+  color: #475569;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body.college-student-app .cp-data-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.7);
+}
+
+body.college-student-app .cp-data-table__num {
+  font-weight: 800;
+  color: var(--cs-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-student-app .cp-btn--primary,
+body.college-student-app .action-btn.action-start,
+body.college-student-app .diag-start-btn,
+body.college-student-app .start-btn {
+  background: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px -12px rgba(59, 130, 246, 0.7);
+}
+
+body.college-student-app .cp-btn--secondary,
+body.college-student-app .cp-btn:not(.cp-btn--primary) {
+  background: #fff !important;
+  color: var(--cs-navy) !important;
+  border-color: rgba(147, 180, 230, 0.45) !important;
+  backdrop-filter: none;
+}
+
+body.college-student-app .filter-pill.is-active {
+  background: linear-gradient(90deg, #3b82f6, #4f46e5) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+
+body.college-student-app .status-pill.status-open,
+body.college-student-app .status-open,
+body.college-student-app .cp-status--open {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+body.college-student-app .status-pill.status-progress,
+body.college-student-app .status-in-progress {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+body.college-student-app .status-pill.status-done,
+body.college-student-app .status-submitted {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+body.college-student-app .status-upcoming {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+body.college-student-app .cp-page-header__title,
+body.college-student-app .exam-title {
+  color: var(--cs-navy);
+}
+
+/* --------------------------------------------------------------------------
+   Examinations workspace
+   -------------------------------------------------------------------------- */
+body.college-student-app .cp-content--catalog {
+  gap: 1.15rem !important;
+}
+
+body.college-student-app .cs-exams-hero.cp-page-header--editorial {
+  padding: 1rem 1.25rem 0.85rem !important;
+}
+
+body.college-student-app .cs-exams-hero .cp-page-header__title {
+  font-size: clamp(1.35rem, 2.4vw, 1.65rem) !important;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  gap: 0.6rem;
+}
+
+body.college-student-app .cs-exams-hero .cp-page-header__icon {
+  width: 2.15rem !important;
+  height: 2.15rem !important;
+  font-size: 0.95rem;
+}
+
+body.college-student-app .cs-exams-hero .cp-page-header__subtitle,
+body.college-student-app .cs-exams-hero .cp-lead {
+  margin: 0.28rem 0 0;
+  font-size: 0.9rem;
+  color: #52637c !important;
+}
+
+body.college-student-app .cs-exams-hero .cp-page-header__stats,
+body.college-student-app .cs-exams-hero .cp-summary-inline {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  margin-top: 0.7rem !important;
+  padding: 0.55rem 0 0.05rem !important;
+  border-top: 1px solid rgba(186, 210, 245, 0.45);
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__sep {
+  display: none;
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  padding: 0.1rem 0.9rem;
+  border-left: 1px solid rgba(186, 210, 245, 0.45);
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__item:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__k {
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__v {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--cs-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-student-app .cs-exams-hero .cp-summary-inline__item--blue .cp-summary-inline__v { color: #1d4ed8; }
+body.college-student-app .cs-exams-hero .cp-summary-inline__item--green .cp-summary-inline__v { color: #047857; }
+body.college-student-app .cs-exams-hero .cp-summary-inline__item--amber .cp-summary-inline__v { color: #b45309; }
+body.college-student-app .cs-exams-hero .cp-summary-inline__item--violet .cp-summary-inline__v { color: #4f46e5; }
+
+body.college-student-app .cp-exams-browser {
+  gap: 0 !important;
+  overflow: hidden;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exams-browser__toolbar.cp-glass-surface,
+body.college-student-app .cp-exams-catalog .cp-glass-surface {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(186, 210, 245, 0.42) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0.85rem 0.95rem 0.8rem !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exams-browser__search.search-sort-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-search-bar__field,
+body.college-student-app .cp-exams-catalog .cp-search-bar__field--wide {
+  position: relative;
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
+  height: 2.45rem;
+  max-height: 2.45rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-search-bar__field i {
+  position: absolute !important;
+  left: 0.75rem;
+  top: 50% !important;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  line-height: 1;
+  z-index: 1;
+}
+
+body.college-student-app .cp-exams-catalog .cp-search-bar__field .search-input {
+  width: 100%;
+  height: 2.45rem;
+  flex: none;
+}
+
+body.college-student-app .cp-exams-catalog .cp-search-bar__field .search-input,
+body.college-student-app .cp-exams-catalog .cp-exams-browser__search .sort-select {
+  min-height: 2.45rem;
+  border: 1px solid rgba(147, 180, 230, 0.45) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  color: var(--cs-navy);
+}
+
+body.college-student-app .cp-exams-catalog .cp-search-bar__field .search-input:focus,
+body.college-student-app .cp-exams-catalog .cp-exams-browser__search .sort-select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+  background: #fff !important;
+}
+
+body.college-student-app .cp-exams-catalog .filter-pill {
+  min-height: 1.85rem;
+  padding: 0.28rem 0.7rem;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--cs-navy) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.college-student-app .cp-exams-catalog .filter-pill:hover {
+  background: rgba(239, 246, 255, 0.9) !important;
+}
+
+body.college-student-app .cp-exams-catalog .filter-pill.is-active,
+body.college-student-app .cp-exams-catalog .filter-pill.filter-finished.is-active {
+  background: linear-gradient(90deg, #3b82f6, #4f46e5) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 8px 16px -10px rgba(59, 130, 246, 0.7) !important;
+}
+
+body.college-student-app .cp-exams-catalog .filter-pill.is-active .filter-pill__count,
+body.college-student-app .cp-exams-catalog .filter-pill.filter-finished.is-active .filter-pill__count {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+body.college-student-app .cp-exams-catalog .filter-pill__count {
+  font-weight: 650;
+  opacity: 0.7;
+}
+
+body.college-student-app .cp-exams-catalog .cp-view-toggle {
+  background: #f8fbff !important;
+  border: 1px solid rgba(147, 180, 230, 0.4) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-radius: 10px;
+  padding: 0.15rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-view-toggle__btn {
+  min-height: 1.85rem;
+  color: #475569;
+}
+
+body.college-student-app .cp-exams-catalog .cp-view-toggle__btn.is-active {
+  background: linear-gradient(90deg, #3b82f6, #4f46e5) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 6px 14px -8px rgba(59, 130, 246, 0.65) !important;
+}
+
+body.college-student-app .cp-exams-browser__body {
+  padding: 0.9rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-grid--catalog {
+  gap: 0.8rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-grid--catalog > .cp-exam-card--catalog,
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog {
+  padding: 0.9rem 0.95rem 0.8rem !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(165, 196, 235, 0.55) !important;
+  background: #fff !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 10px 24px -16px rgba(37, 76, 150, 0.28) !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog.cp-exam-card--regular {
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 3px 0 0 rgba(37, 99, 235, 0.45),
+    0 10px 24px -16px rgba(37, 76, 150, 0.28) !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog.cp-exam-card--diagnostic {
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 3px 0 0 rgba(99, 102, 241, 0.5),
+    0 10px 24px -16px rgba(37, 76, 150, 0.28) !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent 46%);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog.cp-exam-card--regular::after {
+  background: radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 68%);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog.cp-exam-card--diagnostic::after {
+  background: radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 68%);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog:hover {
+  transform: translateY(-2px);
+  border-color: rgba(125, 180, 240, 0.75) !important;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 16px 32px -16px rgba(37, 76, 150, 0.38),
+    0 0 0 1px rgba(59, 130, 246, 0.08) !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--cs-navy);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__meta {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #475569;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .type-pill {
+  font-size: 0.6rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+  color: #64748b;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .type-regular {
+  color: #2563eb;
+  background: transparent;
+  border-color: transparent;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .type-diagnostic {
+  color: #6366f1;
+  background: transparent;
+  border-color: transparent;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-badge--new {
+  padding: 0.08rem 0.32rem;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c2410c;
+  background: transparent;
+  border: 1px solid rgba(253, 186, 116, 0.7);
+  box-shadow: none;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__status-subtle {
+  font-size: 0.62rem;
+  font-weight: 700;
+  opacity: 1;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__schedule {
+  gap: 0.22rem;
+  margin-top: 0.15rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__schedule-row {
+  display: grid;
+  grid-template-columns: 3.6rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__schedule-k {
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-right: 0;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__schedule-v {
+  font-weight: 650;
+  color: #334155;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score {
+  margin-top: 0.65rem;
+  padding: 0.55rem 0;
+  border: 0;
+  border-top: 1px solid rgba(186, 210, 245, 0.45);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score--empty .cp-exam-card__score-fraction--placeholder,
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score--empty .cp-exam-card__score-pct--placeholder {
+  visibility: visible;
+  color: #94a3b8;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score-pct {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--cs-navy);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score-fraction {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #334155;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score-bar {
+  height: 0.28rem;
+  background: #e8eef8;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card--catalog .cp-exam-card__score-bar-fill {
+  background: linear-gradient(90deg, #3b82f6, #4f46e5);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn {
+  min-height: 2.4rem;
+  border-radius: 11px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: #fff;
+  color: #1d4ed8;
+  font-weight: 750;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn:hover {
+  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn--action::after {
+  content: " →";
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn--start {
+  background: linear-gradient(90deg, #3b82f6, #4f46e5) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 10px 18px -12px rgba(59, 130, 246, 0.75);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn--start:hover {
+  filter: brightness(1.04);
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn--closed,
+body.college-student-app .cp-exams-catalog .cp-exam-card__btn--muted {
+  background: #f8fafc !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  color: #64748b !important;
+}
+
+body.college-student-app .cp-exams-catalog .cp-empty-surface--catalog {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 1.4rem 0.6rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-lms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+body.college-student-app .cp-exams-catalog .cp-exam-lms-item {
+  background: #fff !important;
+  border: 1px solid rgba(165, 196, 235, 0.55) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 8px 20px -16px rgba(37, 76, 150, 0.28) !important;
+  backdrop-filter: none !important;
+}
+
+/* Exam taking: identity without decorative noise */
+body.college-student-app.exam-taking-mode .exam-question-card,
+body.college-student-app .exam-question-card {
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px -18px rgba(37, 76, 150, 0.28);
+}
+
+body.college-student-app .exam-choice.selected,
+body.college-student-app .choice-row.is-selected {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+body.college-student-app .exam-hero {
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.38);
+  border-radius: 16px;
+  box-shadow: var(--cs-shadow);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive shell
+   -------------------------------------------------------------------------- */
+@media (max-width: 1099.98px) {
+  body.college-student-app .cs-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 991.98px) {
+  body.college-student-app .cs-dash-primary,
+  body.college-student-app .cs-dash-secondary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 419.98px) {
+  body.college-student-app .cs-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 992px) {
+  body.college-student-app #app-sidebar.app-shell-sidebar--student {
+    transform: none !important;
+    z-index: var(--cs-z-sidebar) !important;
+    width: var(--app-shell-sidebar-collapsed) !important;
+    background: #f4f8ff !important;
+  }
+
+  body.college-student-app.sidebar-expanded #app-sidebar.app-shell-sidebar--student {
+    width: var(--app-shell-sidebar-expanded) !important;
+  }
+
+  body.college-student-app #main.app-shell-main--student,
+  body.college-student-app.sidebar-expanded #main.app-shell-main--student {
+    margin-left: var(--app-shell-sidebar-collapsed);
+  }
+
+  body.college-student-app.sidebar-expanded #main.app-shell-main--student {
+    margin-left: var(--app-shell-sidebar-expanded);
+  }
+
+  body.college-student-app #sidebar-backdrop,
+  body.college-student-app.sidebar-expanded #sidebar-backdrop {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    background: transparent !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  body.college-student-app {
+    --app-shell-sidebar-expanded: 220px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  body.college-student-app {
+    --app-shell-sidebar-expanded: 214px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  body.college-student-app #app-sidebar.app-shell-sidebar--student {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 270px !important;
+    max-width: min(86vw, 300px) !important;
+    height: 100dvh !important;
+    transform: translateX(-100%) !important;
+    z-index: var(--cs-z-sidebar-overlay) !important;
+    border-bottom-right-radius: 0;
+  }
+
+  body.college-student-app.sidebar-expanded #app-sidebar.app-shell-sidebar--student {
+    transform: translateX(0) !important;
+    width: min(86vw, 300px) !important;
+  }
+
+  body.college-student-app #main.app-shell-main--student,
+  body.college-student-app.sidebar-expanded #main.app-shell-main--student {
+    margin-left: 0 !important;
+    width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  body.college-student-app #sidebar-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: var(--cs-z-nav-backdrop) !important;
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body.college-student-app.sidebar-expanded #sidebar-backdrop {
+    background: rgba(15, 31, 61, 0.34) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body.college-student-app.sidebar-expanded {
+    overflow: hidden;
+  }
+
+  body.college-student-app .student-topbar-menu-btn.app-shell-menu-btn .burger-icon,
+  body.college-student-app .student-topbar-menu-btn.app-shell-menu-btn[aria-expanded="false"] .burger-icon,
+  body.college-student-app .student-topbar-menu-btn.app-shell-menu-btn[aria-expanded="true"] .burger-icon {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+  }
+
+  body.college-student-app .student-topbar-menu-btn.app-shell-menu-btn .app-shell-arrow-icon,
+  body.college-student-app .student-topbar-menu-btn.app-shell-menu-btn[aria-expanded="false"] .app-shell-arrow-icon {
+    display: none !important;
+  }
+
+  body.college-student-app #app-sidebar .app-shell-nav-link--student {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  body.college-student-app .cp-exams-catalog .cp-exams-browser__search.search-sort-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.college-student-app .cp-exams-catalog .cp-search-bar__field,
+  body.college-student-app .cp-exams-catalog .cp-search-bar__field--wide {
+    flex: 0 0 auto !important;
+    width: 100%;
+    max-width: 100%;
+    height: 2.45rem;
+    max-height: 2.45rem;
+  }
+
+  body.college-student-app .cp-exams-catalog .cp-exams-browser__search .sort-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.college-student-app .student-topbar-name {
+    display: none;
+  }
+
+  body.college-student-app .cs-kpi__label {
+    letter-spacing: 0.04em;
+    font-size: 0.62rem;
+  }
+
+  body.college-student-app .cs-kpi__value {
+    font-size: 1.35rem;
+  }
+
+  body.college-student-app .cp-page-header__row,
+  body.college-student-app .cp-exams-browser__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.college-student-app .cp-content--dashboard .cp-dash-panel__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  body.college-student-app .cs-exams-hero .cp-summary-inline,
+  body.college-student-app .cs-exams-hero .cp-page-header__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.college-student-app .cs-exams-hero .cp-summary-inline__item {
+    padding: 0.35rem 0.55rem 0.2rem;
+    border-left: 1px solid rgba(186, 210, 245, 0.45);
+  }
+
+  body.college-student-app .cs-exams-hero .cp-summary-inline__item:nth-of-type(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  body.college-student-app .cp-data-table tbody tr {
+    scroll-margin-inline: 0;
+  }
+}
+
+/* Dark equivalent — same structure */
+html[data-student-theme="dark"] body.college-student-app {
+  --cs-canvas: #0b1220;
+  --cs-surface: #141b2d;
+  --cs-navy: #e8eef8;
+  --cs-muted: #94a3b8;
+  --cs-border: rgba(148, 163, 184, 0.18);
+  --cp-bg: #0b1220;
+  --cp-surface: #141b2d;
+  --cp-text: #e8eef8;
+  --cp-text-body: #cbd5e1;
+  --cp-muted: #94a3b8;
+  --cp-border: rgba(148, 163, 184, 0.18);
+  --student-bg: #0b1220;
+  --student-text: #e8eef8;
+}
+
+html[data-student-theme="dark"] body.college-student-app #main.app-shell-main--student {
+  background-color: #0b1220 !important;
+  background-image:
+    radial-gradient(900px 560px at -8% -12%, rgba(37, 99, 235, 0.22), transparent 60%),
+    radial-gradient(820px 520px at 110% 0%, rgba(79, 70, 229, 0.18), transparent 58%) !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar.app-shell-sidebar--student {
+  background-color: #10182a !important;
+  background-image:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.18) 0%, transparent 22%),
+    linear-gradient(180deg, #152038 0%, #10182a 100%) !important;
+  border-right-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-brand-link,
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-brand-title,
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-nav-link--student,
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time-digital,
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time-date {
+  color: #e8eef8 !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app .student-topbar-inner,
+html[data-student-theme="dark"] body.college-student-app .cp-welcome-surface,
+html[data-student-theme="dark"] body.college-student-app .cp-dash-panel,
+html[data-student-theme="dark"] body.college-student-app .student-topbar-dropdown.ereview-profile-menu,
+html[data-student-theme="dark"] body.college-student-app .exam-question-card {
+  background: #141b2d !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  color: #e8eef8 !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app .cp-welcome-compact__title,
+html[data-student-theme="dark"] body.college-student-app .cp-dash-panel__title,
+html[data-student-theme="dark"] body.college-student-app .ereview-profile-menu__title {
+  color: #f8fafc !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app .cp-exams-browser,
+html[data-student-theme="dark"] body.college-student-app .cp-exams-catalog .cp-exam-card--catalog {
+  background: #141b2d !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}

@@ -120,6 +120,7 @@ $qrSrc = !empty($settings['gcash_qr_path']) ? ereview_url($settings['gcash_qr_pa
 
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['GCash Settings']];
 $adminHeroIcon = 'qr-code';
+$adminHeroEyebrow = 'Commerce';
 $adminHeroTitle = 'GCash Settings';
 $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later verifies receipts only - not a GCash API.';
 ?>
@@ -128,9 +129,9 @@ $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later ve
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-commerce-gcash-page">
   <?php include 'admin_sidebar.php'; ?>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full">
+  <div class="w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
     <?php if (!empty($_SESSION['message'])): ?>
@@ -140,62 +141,72 @@ $adminHeroSubtitle = 'Static QR and account details for enrollment. OCR later ve
       <div class="admin-alert admin-alert--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <form method="post" enctype="multipart/form-data" class="quiz-admin-table-shell rounded-2xl p-5 sm:p-6 space-y-5">
+    <form method="post" enctype="multipart/form-data" class="gcash-settings space-y-3">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
 
-      <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+      <div class="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
         OCR confidence threshold, receipt max age, and Vision fallback apply to Phase 6 receipt verification.
         Auto-verify sets the payment to <strong>paid</strong> only - it does <strong>not</strong> grant LMS access, sync SCA, or activate the student (Phase 7). Uncertain matches go to needs_review. This is not direct GCash settlement confirmation.
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">GCash account name</label>
-          <input class="input-custom w-full" name="gcash_account_name" value="<?php echo h($settings['gcash_account_name'] ?? ''); ?>" required>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">GCash number</label>
-          <input class="input-custom w-full" name="gcash_number" value="<?php echo h($settings['gcash_number'] ?? ''); ?>" required>
+      <div class="gcash-settings__card quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_10px_30px_rgba(15,23,42,.07)] backdrop-blur-xl">
+        <h2 class="m-0 mb-3 text-sm font-bold text-slate-900">Account</h2>
+        <div class="gcash-settings__account">
+          <div>
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">GCash account name</label>
+            <input class="input-custom w-full" name="gcash_account_name" value="<?php echo h($settings['gcash_account_name'] ?? ''); ?>" required>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">GCash number</label>
+            <input class="input-custom w-full" name="gcash_number" value="<?php echo h($settings['gcash_number'] ?? ''); ?>" required>
+          </div>
         </div>
       </div>
 
-      <div>
+      <div class="gcash-settings__card quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_10px_30px_rgba(15,23,42,.07)] backdrop-blur-xl">
+        <h2 class="m-0 mb-3 text-sm font-bold text-slate-900">QR code</h2>
+        <div class="gcash-settings__qr">
+          <div class="min-w-0">
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">QR image</label>
+            <input class="input-custom w-full" type="file" name="gcash_qr" accept="image/jpeg,image/png,image/webp">
+            <?php if ($qrSrc): ?>
+              <label class="inline-flex items-center gap-2 text-sm mt-2 cursor-pointer">
+                <input type="checkbox" name="remove_qr" value="1"> Remove current QR
+              </label>
+            <?php endif; ?>
+          </div>
+          <div class="gcash-settings__preview">
+            <?php if ($qrSrc): ?>
+              <img src="<?php echo h($qrSrc); ?>" alt="GCash QR" class="gcash-settings__qr-img">
+            <?php else: ?>
+              <p class="text-sm text-slate-500 m-0">No QR uploaded yet.</p>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="gcash-settings__card quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_10px_30px_rgba(15,23,42,.07)] backdrop-blur-xl">
+        <h2 class="m-0 mb-3 text-sm font-bold text-slate-900">Checkout copy</h2>
         <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Payment instructions</label>
         <textarea class="input-custom w-full" name="payment_instructions" rows="4" placeholder="Shown on the payment step..."><?php echo h($settings['payment_instructions'] ?? ''); ?></textarea>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-        <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">QR image</label>
-          <input class="input-custom w-full" type="file" name="gcash_qr" accept="image/jpeg,image/png,image/webp">
-          <?php if ($qrSrc): ?>
-            <label class="inline-flex items-center gap-2 text-sm mt-2 cursor-pointer">
-              <input type="checkbox" name="remove_qr" value="1"> Remove current QR
+      <div class="gcash-settings__card quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/75 p-4 shadow-[0_10px_30px_rgba(15,23,42,.07)] backdrop-blur-xl">
+        <h2 class="m-0 mb-3 text-sm font-bold text-slate-900">Receipt verification</h2>
+        <div class="gcash-settings__ocr">
+          <div>
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">OCR confidence threshold</label>
+            <input class="input-custom w-full" type="number" min="50" max="100" step="0.01" name="ocr_confidence_threshold" value="<?php echo h((string)($settings['ocr_confidence_threshold'] ?? 85)); ?>">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Receipt max age (days)</label>
+            <input class="input-custom w-full" type="number" min="1" name="receipt_max_age_days" value="<?php echo (int)($settings['receipt_max_age_days'] ?? 7); ?>">
+          </div>
+          <div class="gcash-settings__ocr-check">
+            <label class="inline-flex items-center gap-2 text-sm font-semibold cursor-pointer">
+              <input type="checkbox" name="vision_fallback_enabled" value="1" <?php echo !empty($settings['vision_fallback_enabled']) ? 'checked' : ''; ?>> Vision AI fallback (optional)
             </label>
-          <?php endif; ?>
-        </div>
-        <div>
-          <?php if ($qrSrc): ?>
-            <img src="<?php echo h($qrSrc); ?>" alt="GCash QR" class="max-w-[180px] rounded-xl border border-white/10 bg-white p-2">
-          <?php else: ?>
-            <p class="text-sm opacity-60">No QR uploaded yet.</p>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">OCR confidence threshold</label>
-          <input class="input-custom w-full" type="number" min="50" max="100" step="0.01" name="ocr_confidence_threshold" value="<?php echo h((string)($settings['ocr_confidence_threshold'] ?? 85)); ?>">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Receipt max age (days)</label>
-          <input class="input-custom w-full" type="number" min="1" name="receipt_max_age_days" value="<?php echo (int)($settings['receipt_max_age_days'] ?? 7); ?>">
-        </div>
-        <div class="flex items-end pb-2">
-          <label class="inline-flex items-center gap-2 text-sm font-semibold cursor-pointer">
-            <input type="checkbox" name="vision_fallback_enabled" value="1" <?php echo !empty($settings['vision_fallback_enabled']) ? 'checked' : ''; ?>> Vision AI fallback (optional)
-          </label>
+          </div>
         </div>
       </div>
 

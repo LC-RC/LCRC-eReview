@@ -30,11 +30,11 @@
   --cp-font: 0.9375rem;
 }
 
-body.app-shell--student {
+body.college-examination-portal.app-shell--student {
   background: var(--cp-bg);
 }
 
-body.app-shell--student #main.app-shell-main--student {
+body.college-examination-portal.app-shell--student #main.app-shell-main--student {
   background: var(--cp-bg);
 }
 

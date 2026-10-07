@@ -342,32 +342,24 @@ $allKeys = admin_acl_all_keys();
 $pageTitle = 'Admins';
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Admins']];
 $adminHeroIcon = 'shield-lock';
-$adminHeroTitle = 'Admins';
-$adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and review the users activity log.';
+$adminHeroEyebrow = 'Administration';
+$adminHeroTitle = 'Team & Access Management';
+$adminHeroSubtitle = 'Team & Access Management — staff accounts, unlocked admin areas, and activity review.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
   <style>
-    /* Beat admin-saas .admin-content { max-width: 1400px } - use full main column */
+    /* Use the shared page-content container (max-width 1600px). */
     html body.admin-app.admin-admins-page #main.admin-main-shell > .admin-content,
     html body.admin-app.admin-admins-page #main > .admin-content,
     html body.admin-app.admin-admins-page #main .admin-content {
-      max-width: none !important;
       width: 100% !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      padding-left: 1.25rem !important;
-      padding-right: 1.25rem !important;
+      max-width: 1600px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
       box-sizing: border-box !important;
-      align-self: stretch !important;
-    }
-    @media (min-width: 768px) {
-      html body.admin-app.admin-admins-page #main > .admin-content {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-      }
     }
     html body.admin-app.admin-admins-page #main .quiz-admin-hero,
     html body.admin-app.admin-admins-page #main .page-hero,
@@ -384,7 +376,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 
     .acl-tabs {
       display: inline-flex; gap: 0.2rem; padding: 0.22rem; margin-bottom: 1rem;
-      border-radius: 0.85rem; border: 1px solid var(--admin-border); background: var(--admin-glass);
+      border-radius: 0.85rem; border: 1px solid var(--admin-border); background: var(--glass-surface-inner);
     }
     .acl-tab {
       padding: 0.48rem 1rem; border-radius: 0.65rem; text-decoration: none;
@@ -399,19 +391,35 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 
     .acl-section-label {
       margin: 0 0 0.55rem;
-      font-size: 0.7rem; letter-spacing: .1em; text-transform: uppercase;
-      font-weight: 800; color: #93c5fd;
+      font-size: 0.68rem; letter-spacing: .08em; text-transform: uppercase;
+      font-weight: 800; color: var(--text-muted);
     }
-    html[data-admin-theme="light"] .acl-section-label { color: #1d4ed8; }
+    html[data-admin-theme="light"] .acl-section-label { color: #4338ca; }
     .acl-hint {
-      margin: 0.2rem 0 0; font-size: 0.72rem; color: var(--admin-text-muted);
+      margin: 0.2rem 0 0; font-size: 0.72rem; color: var(--text-secondary);
+    }
+
+    .acl-form-section {
+      border: 1px solid var(--glass-border);
+      border-radius: 0.9rem;
+      background: var(--glass-surface-inner);
+      padding: 0.85rem 0.95rem;
+      box-shadow: inset 0 1px 0 var(--glass-highlight);
+    }
+    .acl-form-section + .acl-form-section { margin-top: 0.15rem; }
+    .acl-form-section__title {
+      margin: 0 0 0.7rem;
+      font-size: 0.68rem; letter-spacing: .08em; text-transform: uppercase;
+      font-weight: 800; color: var(--text-muted);
     }
 
     .acl-card {
-      border: 1px solid var(--admin-border-strong, var(--admin-border));
+      border: 1px solid var(--glass-border);
       border-radius: 1rem;
-      background: var(--admin-glass-strong, var(--admin-glass));
-      box-shadow: var(--admin-shadow);
+      background: var(--hero-surface, var(--glass-surface));
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       overflow: hidden;
     }
     .acl-card__head {
@@ -431,52 +439,58 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     }
 
     .acl-avatar {
-      width: 2.35rem; height: 2.35rem; border-radius: 0.7rem; flex-shrink: 0;
+      width: 2.4rem; height: 2.4rem; border-radius: 0.75rem; flex-shrink: 0;
       display: grid; place-items: center;
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(135deg, #2563eb, #6366f1);
       color: #fff; font-weight: 800; font-size: 0.85rem;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.22);
     }
     .acl-admin-cell {
       display: flex; align-items: center; gap: 0.7rem; min-width: 0;
     }
+    .acl-admin-text { min-width: 0; }
     .acl-admin-name {
-      font-size: 0.9rem; font-weight: 700; color: var(--admin-text);
+      font-size: 0.9rem; font-weight: 750; color: var(--text-primary);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      letter-spacing: -0.01em;
     }
     .acl-admin-email {
-      font-size: 0.8rem; color: var(--admin-text-muted);
+      font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 18rem;
+      max-width: 22rem;
     }
     .acl-pill {
       display: inline-flex; align-items: center; gap: 0.25rem;
       padding: 0.2rem 0.55rem; border-radius: 999px;
       font-size: 0.72rem; font-weight: 750; line-height: 1.2;
-      border: 1px solid var(--admin-border); color: var(--admin-text-secondary);
-      background: rgba(255,255,255,.04);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      background: var(--glass-surface-inner);
       white-space: nowrap;
     }
     .acl-pill--full {
-      color: #86efac; border-color: rgba(34,197,94,.4);
-      background: rgba(22,163,74,.16);
+      color: var(--admin-success-text);
+      border-color: color-mix(in srgb, var(--accent-lime) 28%, transparent);
+      background: var(--admin-success-soft);
     }
     html[data-admin-theme="light"] .acl-pill--full {
       color: #15803d; border-color: rgba(22,163,74,.35);
       background: rgba(22,163,74,.1);
     }
     .acl-pill--status {
-      color: #86efac; border-color: rgba(34,197,94,.35);
-      background: rgba(22,163,74,.12);
+      color: var(--admin-success-text);
+      border-color: color-mix(in srgb, var(--accent-lime) 28%, transparent);
+      background: var(--admin-success-soft);
     }
     html[data-admin-theme="light"] .acl-pill--status {
       color: #15803d; background: rgba(22,163,74,.1);
     }
     .acl-pill--muted {
-      color: var(--admin-text-muted);
+      color: var(--text-muted);
     }
     .acl-access-detail {
       display: block; margin-top: 0.2rem;
-      font-size: 0.7rem; color: var(--admin-text-muted);
+      font-size: 0.7rem; color: var(--text-muted);
       max-width: 16rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .acl-empty {
@@ -491,34 +505,34 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     }
     .acl-staff-table {
       width: 100%;
-      min-width: 52rem;
+      min-width: 42rem;
       border-collapse: collapse;
       font-size: 0.86rem;
     }
     .acl-staff-table th,
     .acl-staff-table td {
-      padding: 0.85rem 1rem;
-      border-bottom: 1px solid var(--admin-border);
+      padding: 0.7rem 0.95rem;
+      border-bottom: 1px solid var(--glass-border);
       text-align: left;
       vertical-align: middle;
     }
     .acl-staff-table th {
-      color: var(--admin-text-muted);
-      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: .06em;
       font-weight: 800;
-      background: rgba(0,0,0,.08);
+      background: var(--glass-surface-soft);
       white-space: nowrap;
     }
     html[data-admin-theme="light"] .acl-staff-table th {
-      background: rgba(15,23,42,.03);
+      background: var(--glass-surface-inner);
     }
     .acl-staff-table tbody tr {
       transition: background .15s ease;
     }
     .acl-staff-table tbody tr:hover td {
-      background: rgba(59,130,246,.06);
+      background: var(--table-hover);
     }
     .acl-staff-table td:last-child {
       white-space: nowrap;
@@ -534,13 +548,13 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     .acl-field { margin: 0; }
     .acl-field label {
       display: block; font-size: 0.76rem; font-weight: 700;
-      margin-bottom: 0.28rem; color: var(--admin-text-secondary);
+      margin-bottom: 0.28rem; color: var(--text-secondary);
     }
     .acl-field input[type="text"], .acl-field input[type="email"], .acl-field input[type="password"],
     .acl-field input[type="date"], .acl-field input[type="search"], .acl-field select {
       width: 100%; min-height: 2.45rem; border-radius: 0.7rem;
-      border: 1px solid var(--admin-border-strong, var(--admin-border));
-      background: rgba(15,23,42,.35); color: var(--admin-text);
+      border: 1px solid var(--admin-input-border);
+      background: var(--input-surface); color: var(--text-primary);
       padding: 0.45rem 0.75rem; font-size: 0.88rem;
       box-sizing: border-box;
     }
@@ -550,7 +564,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     html[data-admin-theme="light"] .acl-field input[type="date"],
     html[data-admin-theme="light"] .acl-field input[type="search"],
     html[data-admin-theme="light"] .acl-field select {
-      background: rgba(255,255,255,.92);
+      background: rgba(255,255,255,.96);
     }
     .acl-field input:focus {
       outline: none; border-color: rgba(59,130,246,.65);
@@ -565,7 +579,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     .acl-pass-toggle {
       position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
       width: 2.1rem; height: 2.1rem; border: 0; border-radius: 0.55rem;
-      background: transparent; color: var(--admin-text-muted); cursor: pointer;
+      background: transparent; color: var(--text-secondary); cursor: pointer;
       display: grid; place-items: center; padding: 0;
       transition: color .15s ease, background .15s ease;
     }
@@ -581,105 +595,177 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
     .acl-full-toggle {
       display: flex; align-items: flex-start; gap: 0.65rem;
       margin: 0.15rem 0; padding: 0.75rem 0.85rem;
-      border-radius: 0.8rem; border: 1px solid rgba(59,130,246,.28);
-      background: rgba(59,130,246,.08); cursor: pointer;
+      border-radius: 0.8rem;
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      background: var(--glass-surface-inner);
+      cursor: pointer;
+    }
+    .acl-full-toggle:hover {
+      background: var(--glass-surface-soft);
+    }
+    .acl-full-toggle:has(input:checked) {
+      background: rgba(59, 130, 246, 0.16);
+      border-color: rgba(129, 140, 248, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.28);
+    }
+    html[data-admin-theme="light"] .acl-full-toggle {
+      background: linear-gradient(135deg, rgba(239,246,255,.95), rgba(238,242,255,.9));
+      border-color: rgba(99,102,241,.28);
+    }
+    html[data-admin-theme="light"] .acl-full-toggle:has(input:checked) {
+      background: linear-gradient(135deg, rgba(219,234,254,.95), rgba(224,231,255,.9));
     }
     .acl-full-toggle input { margin-top: 0.15rem; width: 1.1rem; height: 1.1rem; accent-color: #2563eb; }
-    .acl-full-toggle strong { display: block; color: var(--admin-text); font-size: 0.88rem; }
-    .acl-full-toggle span { display: block; margin-top: 0.15rem; font-size: 0.75rem; color: var(--admin-text-muted); }
+    .acl-full-toggle strong { display: block; color: var(--text-primary); font-size: 0.88rem; }
+    .acl-full-toggle span { display: block; margin-top: 0.15rem; font-size: 0.75rem; color: var(--text-secondary); }
 
     .acl-keys-panel {
-      border: 1px solid var(--admin-border);
+      border: 1px solid var(--glass-border);
       border-radius: 0.85rem;
-      background: rgba(0,0,0,.12);
-      max-height: min(18rem, 40vh);
-      overflow: auto;
+      background: var(--glass-surface-soft);
+      overflow: visible;
       padding: 0.65rem 0.75rem 0.85rem;
     }
-    html[data-admin-theme="light"] .acl-keys-panel { background: rgba(15,23,42,.03); }
+    html[data-admin-theme="light"] .acl-keys-panel {
+      background: rgba(248, 250, 252, 0.9);
+      border-color: #e2e8f0;
+    }
     .acl-group {
       margin: 0.85rem 0 0.4rem; padding-bottom: 0.25rem;
-      font-size: 0.7rem; letter-spacing: .1em; text-transform: uppercase;
-      font-weight: 800; color: #93c5fd;
-      border-bottom: 1px solid rgba(147,197,253,.18);
+      font-size: 0.68rem; letter-spacing: .08em; text-transform: uppercase;
+      font-weight: 800; color: var(--text-muted);
+      border-bottom: 1px solid var(--glass-border);
     }
     .acl-group:first-child { margin-top: 0.15rem; }
-    html[data-admin-theme="light"] .acl-group { color: #1d4ed8; border-bottom-color: rgba(37,99,235,.15); }
+    html[data-admin-theme="light"] .acl-group { color: #4338ca; border-bottom-color: rgba(99,102,241,.15); }
     .acl-key-grid {
-      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 0.55rem;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem;
     }
     @media (max-width: 640px) { .acl-key-grid { grid-template-columns: 1fr; } }
     .acl-check {
-      display: flex; align-items: center; gap: 0.45rem;
-      padding: 0.38rem 0.35rem; border-radius: 0.45rem;
-      font-size: 0.82rem; color: var(--admin-text); cursor: pointer;
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.55rem 0.65rem; border-radius: 0.7rem;
+      font-size: 0.82rem; color: var(--text-primary); cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface-inner);
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
-    .acl-check:hover { background: rgba(59,130,246,.08); }
+    .acl-check:hover {
+      background: var(--glass-surface-soft);
+      border-color: rgba(147, 197, 253, 0.45);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+    }
+    .acl-check:has(input:checked) {
+      border-color: rgba(129, 140, 248, 0.55);
+      background: rgba(59, 130, 246, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(99,102,241,.22);
+    }
+    .acl-check:focus-within {
+      box-shadow: 0 0 0 3px rgba(59,130,246,.22);
+    }
+    html[data-admin-theme="light"] .acl-check {
+      border-color: #e2e8f0;
+      background: rgba(255,255,255,0.92);
+    }
+    html[data-admin-theme="light"] .acl-check:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    html[data-admin-theme="light"] .acl-check:has(input:checked) {
+      border-color: #93c5fd;
+      background: linear-gradient(135deg, #eff6ff, #eef2ff);
+    }
     .acl-check input { width: 1rem; height: 1rem; accent-color: #2563eb; flex-shrink: 0; }
 
     .acl-modal {
-      position: fixed; inset: 0; z-index: 80;
+      position: fixed; inset: 0; z-index: 910;
       display: none; align-items: center; justify-content: center;
-      padding: 1rem;
-      background: rgba(2, 6, 23, 0.55);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-    }
-    .acl-modal.is-open { display: flex; }
-    .acl-modal__panel {
-      width: min(36rem, 100%);
-      max-height: min(92vh, 52rem);
-      display: flex; flex-direction: column;
-      border-radius: 1rem;
-      border: 1px solid var(--admin-border-strong, var(--admin-border));
-      background: var(--admin-glass-strong, var(--admin-surface, #0f172a));
-      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      padding: 24px;
       overflow: hidden;
+      background: rgba(2, 6, 15, 0.62);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    html[data-admin-theme="light"] .acl-modal {
+      background: rgba(30, 45, 75, 0.22);
+    }
+    .acl-modal.is-open { display: grid; place-items: center; }
+    .acl-modal__panel {
+      width: min(38rem, 100%);
+      max-height: calc(100dvh - 48px);
+      display: flex; flex-direction: column;
+      border-radius: 1.25rem;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface-strong);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 var(--glass-highlight);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      overflow: hidden;
+      color: var(--text-primary);
     }
     html[data-admin-theme="light"] .acl-modal__panel {
-      background: #fff;
-      box-shadow: 0 24px 60px rgba(15,23,42,.18);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow-floating);
     }
     .acl-modal__head {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
       padding: 1rem 1.15rem;
-      border-bottom: 1px solid var(--admin-border);
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--glass-surface-inner);
       flex-shrink: 0;
     }
     .acl-modal__head h2 {
-      margin: 0; font-size: 1.05rem; font-weight: 780; color: var(--admin-text);
+      margin: 0; font-size: 1.05rem; font-weight: 780; color: var(--text-primary);
       letter-spacing: -0.02em;
     }
     .acl-modal__sub {
-      margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--admin-text-muted);
+      margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--text-secondary);
     }
     .acl-modal__close {
       width: 2.2rem; height: 2.2rem; border-radius: 0.65rem;
-      border: 1px solid var(--admin-border); background: rgba(255,255,255,.04);
-      color: var(--admin-text-secondary); cursor: pointer;
+      border: 1px solid var(--glass-border); background: var(--glass-surface-inner);
+      color: var(--text-muted); cursor: pointer;
       display: grid; place-items: center; flex-shrink: 0;
       transition: background .15s ease, color .15s ease, border-color .15s ease;
     }
     .acl-modal__close:hover {
-      color: var(--admin-text);
+      color: var(--text-primary);
       border-color: rgba(59,130,246,.4);
       background: rgba(59,130,246,.1);
     }
+    .acl-modal__panel > form {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
     .acl-modal__body {
       padding: 1.05rem 1.15rem;
+      overflow-x: hidden;
       overflow-y: auto;
       flex: 1 1 auto;
       min-height: 0;
+      background: transparent;
+    }
+    html[data-admin-theme="light"] .acl-modal__body {
+      background: rgba(248, 250, 252, 0.35);
     }
     .acl-modal__foot {
       display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem;
       padding: 0.9rem 1.15rem;
-      border-top: 1px solid var(--admin-border);
-      flex-shrink: 0;
-      background: rgba(0,0,0,.08);
+      border-top: 1px solid var(--glass-border);
+      flex: 0 0 auto;
+      position: static;
+      background: var(--glass-surface-inner);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     html[data-admin-theme="light"] .acl-modal__foot {
-      background: rgba(15,23,42,.02);
+      background: rgba(255, 255, 255, 0.88);
+    }
+    html[data-admin-theme="light"] .acl-modal__foot {
+      background: rgba(255, 255, 255, 0.94);
     }
 
     .acl-log-shell { width: 100%; }
@@ -720,7 +806,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
 <?php include 'admin_sidebar.php'; ?>
     <?php
       $adminHeroActions = ($view === 'admins')
-        ? '<button type="button" class="admin-btn admin-btn--primary" id="aclOpenAddBtn"><i class="bi bi-plus-lg"></i> Add Admin</button>'
+        ? '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow-[0_8px_22px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 active:scale-[0.98]" id="aclOpenAddBtn"><i class="bi bi-plus-lg"></i> Add Admin</button>'
         : '';
       include __DIR__ . '/includes/components/admin_page_hero.php';
     ?>
@@ -732,33 +818,73 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl"><?php echo h($flashErr); ?></div>
     <?php endif; ?>
 
-    <nav class="acl-tabs" aria-label="Admins views">
-      <a class="acl-tab <?php echo $view === 'admins' ? 'is-active' : ''; ?>" href="admin_admins?view=admins">Admins</a>
-      <a class="acl-tab <?php echo $view === 'log' ? 'is-active' : ''; ?>" href="admin_admins?view=log">Users Log</a>
+    <nav class="acl-tabs mb-3 flex flex-wrap items-center gap-1 rounded-2xl border border-white/80 bg-white/75 p-1.5 shadow-[0_10px_30px_rgba(15,23,42,.07),0_2px_10px_rgba(37,99,235,.05)] backdrop-blur-xl" aria-label="Admins views">
+      <a class="acl-tab inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 <?php echo $view === 'admins' ? 'is-active bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_6px_16px_rgba(37,99,235,0.25)] hover:text-white' : ''; ?>" href="admin_admins?view=admins">Admins</a>
+      <a class="acl-tab inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 <?php echo $view === 'log' ? 'is-active bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_6px_16px_rgba(37,99,235,0.25)] hover:text-white' : ''; ?>" href="admin_admins?view=log">Users Log</a>
     </nav>
 
     <?php if ($view === 'admins'): ?>
-      <section class="acl-card acl-staff-shell">
-        <div class="acl-card__head">
-          <div>
-            <h2>Staff Admins</h2>
-            <p class="acl-card__sub">Accounts with admin role - edit access areas and credentials</p>
+      <?php
+        $adminTotal = count($admins);
+        $adminActive = 0;
+        $adminFull = 0;
+        foreach ($admins as $_a) {
+            if (strtolower((string) ($_a['status'] ?? '')) === 'approved') {
+                $adminActive++;
+            }
+            if (!empty($_a['acl_full'])) {
+                $adminFull++;
+            }
+        }
+      ?>
+      <section class="acl-card acl-staff-shell overflow-hidden rounded-2xl border border-white/80 bg-white/80 shadow-[0_14px_36px_rgba(15,23,42,.08),0_4px_14px_rgba(37,99,235,.06)] backdrop-blur-xl ring-1 ring-white/70">
+        <div class="acl-staff-kpis">
+          <div class="acl-staff-kpi">
+            <span class="acl-staff-kpi__icon"><i class="bi bi-shield-lock"></i></span>
+            <div class="min-w-0">
+              <p class="acl-staff-kpi__label">Total Admins</p>
+              <p class="acl-staff-kpi__value"><?php echo (int) $adminTotal; ?></p>
+            </div>
           </div>
-          <span class="acl-count"><?php echo count($admins); ?></span>
+          <div class="acl-staff-kpi">
+            <span class="acl-staff-kpi__icon acl-staff-kpi__icon--emerald"><i class="bi bi-check2-circle"></i></span>
+            <div class="min-w-0">
+              <p class="acl-staff-kpi__label">Active</p>
+              <p class="acl-staff-kpi__value"><?php echo (int) $adminActive; ?></p>
+            </div>
+          </div>
+          <div class="acl-staff-kpi">
+            <span class="acl-staff-kpi__icon acl-staff-kpi__icon--violet"><i class="bi bi-key"></i></span>
+            <div class="min-w-0">
+              <p class="acl-staff-kpi__label">Full Access</p>
+              <p class="acl-staff-kpi__value"><?php echo (int) $adminFull; ?></p>
+            </div>
+          </div>
         </div>
-        <div class="acl-card__body">
+        <div class="acl-card__head flex flex-wrap items-start justify-between gap-3 border-b border-slate-200/70 bg-white/70 px-4 py-3 sm:px-5">
+          <div>
+            <h2 class="m-0 text-base font-semibold text-slate-900">Staff directory</h2>
+            <p class="acl-card__sub mt-0.5 mb-0 text-sm text-slate-600">Role, unlocked areas, and credentials for each admin</p>
+          </div>
+          <span class="acl-count inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700"><?php echo count($admins); ?></span>
+        </div>
+        <div class="acl-card__body p-0">
           <?php if ($admins === []): ?>
-            <p class="acl-empty">No admin accounts found. Use <strong>Add Admin</strong> to create one.</p>
+            <div class="acl-empty flex flex-col items-center px-6 py-12 text-center">
+              <span class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm ring-1 ring-white"><i class="bi bi-people"></i></span>
+              <p class="m-0 text-sm font-semibold text-slate-800">No admin accounts yet</p>
+              <p class="mt-1 mb-0 max-w-sm text-sm text-slate-500">Use <strong>Add Admin</strong> to create a staff login and unlock only the areas they need.</p>
+            </div>
           <?php else: ?>
-            <div class="acl-table-wrap">
-              <table class="acl-staff-table">
-                <thead>
+            <div class="acl-table-wrap overflow-x-auto">
+              <table class="acl-staff-table w-full text-left text-sm">
+                <thead class="bg-slate-50/90">
                   <tr>
-                    <th>Admin</th>
-                    <th>Email</th>
-                    <th>Access / Areas</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Admin</th>
+                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Role</th>
+                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Access</th>
+                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Status</th>
+                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -778,17 +904,20 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                     $statusRaw = strtolower((string) ($a['status'] ?? 'approved'));
                     $statusLabel = $statusRaw === 'approved' ? 'Active' : ucfirst($statusRaw);
                   ?>
-                    <tr>
-                      <td>
-                        <div class="acl-admin-cell">
-                          <div class="acl-avatar" aria-hidden="true"><?php echo h($initial); ?></div>
-                          <div class="acl-admin-name"><?php echo h($a['full_name']); ?></div>
+                    <tr class="transition-colors hover:bg-blue-50/35">
+                      <td class="px-4 py-3.5">
+                        <div class="acl-admin-cell flex items-center gap-3">
+                          <div class="acl-avatar inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 text-xs font-bold text-white shadow-sm shadow-blue-500/20 ring-2 ring-white" aria-hidden="true"><?php echo h($initial); ?></div>
+                          <div class="acl-admin-text min-w-0">
+                            <div class="acl-admin-name truncate text-sm font-semibold text-slate-900"><?php echo h($a['full_name']); ?></div>
+                            <div class="acl-admin-email truncate text-xs text-slate-500" title="<?php echo h($a['email']); ?>"><?php echo h($a['email']); ?></div>
+                          </div>
                         </div>
                       </td>
-                      <td>
-                        <div class="acl-admin-email" title="<?php echo h($a['email']); ?>"><?php echo h($a['email']); ?></div>
+                      <td class="px-4 py-3.5">
+                        <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 ring-1 ring-white/70">Staff admin</span>
                       </td>
-                      <td>
+                      <td class="px-4 py-3.5">
                         <?php if ($isFull): ?>
                           <span class="acl-pill acl-pill--full">Full access</span>
                           <span class="acl-access-detail">All admin areas</span>
@@ -801,15 +930,15 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
                           <?php endif; ?>
                         <?php endif; ?>
                       </td>
-                      <td>
+                      <td class="px-4 py-3.5">
                         <span class="acl-pill <?php echo $statusRaw === 'approved' ? 'acl-pill--status' : 'acl-pill--muted'; ?>">
                           <?php echo h($statusLabel); ?>
                         </span>
                       </td>
-                      <td>
+                      <td class="px-4 py-3.5">
                         <button
                           type="button"
-                          class="admin-btn admin-btn--secondary admin-btn--sm acl-edit-btn"
+                          class="admin-btn admin-btn--secondary admin-btn--sm acl-edit-btn inline-flex h-9 items-center gap-1.5 rounded-lg"
                           data-acl-edit="<?php echo (int) $a['user_id']; ?>"
                         >
                           <i class="bi bi-pencil-square"></i> Edit
@@ -841,46 +970,55 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
             <input type="hidden" name="action" value="create_admin">
             <div class="acl-modal__body">
               <div class="acl-form-stack">
-                <div class="acl-field">
-                  <label for="full_name">Full Name</label>
-                  <input type="text" id="full_name" name="full_name" required maxlength="150" placeholder="e.g. Ana Reyes">
-                </div>
-                <div class="acl-field">
-                  <label for="email">Email</label>
-                  <input type="email" id="email" name="email" required maxlength="120" placeholder="staff@example.com">
-                </div>
-                <div class="acl-field">
-                  <label for="password">Temporary Password</label>
-                  <div class="acl-pass-wrap">
-                    <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Min. 8 characters">
-                    <button type="button" class="acl-pass-toggle" data-acl-pass="password" aria-label="Show password" title="Show password">
-                      <i class="bi bi-eye-slash" aria-hidden="true"></i>
-                    </button>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Personal Details</p>
+                  <div class="acl-field">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" required maxlength="150" placeholder="e.g. Ana Reyes">
                   </div>
-                  <p class="acl-hint">Share this once - it cannot be retrieved later (stored hashed).</p>
                 </div>
-                <label class="acl-full-toggle" for="createFullAccess">
-                  <input type="checkbox" name="full_access" value="1" id="createFullAccess">
-                  <span>
-                    <strong>Full access</strong>
-                    <span>Grant every admin area (skip picking below)</span>
-                  </span>
-                </label>
-                <div>
-                  <p class="acl-section-label">Admin Areas</p>
-                  <div id="createKeysWrap" class="acl-keys-panel">
-                    <?php foreach ($catalog as $group): ?>
-                      <div class="acl-group"><?php echo h($group['group']); ?></div>
-                      <div class="acl-key-grid">
-                        <?php foreach ($group['keys'] as $item): ?>
-                          <label class="acl-check">
-                            <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>"
-                              <?php echo $item['key'] === 'dashboard' ? 'checked' : ''; ?>>
-                            <span><?php echo h($item['label']); ?></span>
-                          </label>
-                        <?php endforeach; ?>
-                      </div>
-                    <?php endforeach; ?>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Account</p>
+                  <div class="acl-field" style="margin-bottom:0.75rem;">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required maxlength="120" placeholder="staff@example.com">
+                  </div>
+                  <div class="acl-field">
+                    <label for="password">Temporary Password</label>
+                    <div class="acl-pass-wrap">
+                      <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Min. 8 characters">
+                      <button type="button" class="acl-pass-toggle" data-acl-pass="password" aria-label="Show password" title="Show password">
+                        <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                    <p class="acl-hint">Share this once - it cannot be retrieved later (stored hashed).</p>
+                  </div>
+                </div>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Role &amp; Permissions</p>
+                  <label class="acl-full-toggle" for="createFullAccess">
+                    <input type="checkbox" name="full_access" value="1" id="createFullAccess">
+                    <span>
+                      <strong>Full access</strong>
+                      <span>Grant every admin area (skip picking below)</span>
+                    </span>
+                  </label>
+                  <div style="margin-top:0.75rem;">
+                    <p class="acl-section-label">Admin Areas</p>
+                    <div id="createKeysWrap" class="acl-keys-panel">
+                      <?php foreach ($catalog as $group): ?>
+                        <div class="acl-group"><?php echo h($group['group']); ?></div>
+                        <div class="acl-key-grid">
+                          <?php foreach ($group['keys'] as $item): ?>
+                            <label class="acl-check">
+                              <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>"
+                                <?php echo $item['key'] === 'dashboard' ? 'checked' : ''; ?>>
+                              <span><?php echo h($item['label']); ?></span>
+                            </label>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -913,47 +1051,56 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
             <input type="hidden" name="user_id" id="edit_user_id" value="">
             <div class="acl-modal__body">
               <div class="acl-form-stack">
-                <div class="acl-field">
-                  <label for="edit_full_name">Full Name</label>
-                  <input type="text" id="edit_full_name" name="full_name" required maxlength="150" value="">
-                </div>
-                <div class="acl-field">
-                  <label for="edit_email">Email</label>
-                  <input type="email" id="edit_email" name="email" required maxlength="120" value="">
-                </div>
-                <div class="acl-field">
-                  <label for="edit_password">New Password <span style="font-weight:600;color:var(--admin-text-muted);">(optional)</span></label>
-                  <div class="acl-pass-wrap">
-                    <input type="password" id="edit_password" name="password" minlength="8" autocomplete="new-password"
-                           placeholder="Leave blank to keep current">
-                    <button type="button" class="acl-pass-toggle" data-acl-pass="edit_password" aria-label="Show password" title="Show password">
-                      <i class="bi bi-eye-slash" aria-hidden="true"></i>
-                    </button>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Personal Details</p>
+                  <div class="acl-field">
+                    <label for="edit_full_name">Full Name</label>
+                    <input type="text" id="edit_full_name" name="full_name" required maxlength="150" value="">
                   </div>
-                  <p class="acl-hint">Existing passwords are hashed and cannot be shown. Enter a new one only to change it.</p>
                 </div>
-                <p class="acl-card__sub" style="margin:0;">Unchecked areas stay visible in the sidebar but locked (not clickable) and blocked by URL.</p>
-                <label class="acl-full-toggle" for="editFullAccess">
-                  <input type="checkbox" name="full_access" value="1" id="editFullAccess">
-                  <span>
-                    <strong>Full access</strong>
-                    <span>Unlock every admin area for this account</span>
-                  </span>
-                </label>
-                <div>
-                  <p class="acl-section-label">Admin Areas</p>
-                  <div id="editKeysWrap" class="acl-keys-panel">
-                    <?php foreach ($catalog as $group): ?>
-                      <div class="acl-group"><?php echo h($group['group']); ?></div>
-                      <div class="acl-key-grid">
-                        <?php foreach ($group['keys'] as $item): ?>
-                          <label class="acl-check">
-                            <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>" data-acl-key="<?php echo h($item['key']); ?>">
-                            <span><?php echo h($item['label']); ?></span>
-                          </label>
-                        <?php endforeach; ?>
-                      </div>
-                    <?php endforeach; ?>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Account</p>
+                  <div class="acl-field" style="margin-bottom:0.75rem;">
+                    <label for="edit_email">Email</label>
+                    <input type="email" id="edit_email" name="email" required maxlength="120" value="">
+                  </div>
+                  <div class="acl-field">
+                    <label for="edit_password">New Password <span style="font-weight:600;color:#64748b;">(optional)</span></label>
+                    <div class="acl-pass-wrap">
+                      <input type="password" id="edit_password" name="password" minlength="8" autocomplete="new-password"
+                             placeholder="Leave blank to keep current">
+                      <button type="button" class="acl-pass-toggle" data-acl-pass="edit_password" aria-label="Show password" title="Show password">
+                        <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                    <p class="acl-hint">Existing passwords are hashed and cannot be shown. Enter a new one only to change it.</p>
+                  </div>
+                </div>
+                <div class="acl-form-section">
+                  <p class="acl-form-section__title">Role &amp; Permissions</p>
+                  <p class="acl-hint" style="margin:0 0 0.65rem;">Unchecked areas stay visible in the sidebar but locked (not clickable) and blocked by URL.</p>
+                  <label class="acl-full-toggle" for="editFullAccess">
+                    <input type="checkbox" name="full_access" value="1" id="editFullAccess">
+                    <span>
+                      <strong>Full access</strong>
+                      <span>Unlock every admin area for this account</span>
+                    </span>
+                  </label>
+                  <div style="margin-top:0.75rem;">
+                    <p class="acl-section-label">Admin Areas</p>
+                    <div id="editKeysWrap" class="acl-keys-panel">
+                      <?php foreach ($catalog as $group): ?>
+                        <div class="acl-group"><?php echo h($group['group']); ?></div>
+                        <div class="acl-key-grid">
+                          <?php foreach ($group['keys'] as $item): ?>
+                            <label class="acl-check">
+                              <input type="checkbox" name="page_keys[]" value="<?php echo h($item['key']); ?>" data-acl-key="<?php echo h($item['key']); ?>">
+                              <span><?php echo h($item['label']); ?></span>
+                            </label>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -969,7 +1116,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
       <script type="application/json" id="aclAdminsData"><?php echo json_encode($adminsJs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
     <?php else: ?>
       <?php $logActionLabels = users_activity_log_action_labels(); ?>
-      <section class="acl-card acl-log-shell">
+      <section class="acl-card acl-log-shell overflow-hidden rounded-2xl border border-white/80 bg-white/80 shadow-[0_10px_30px_rgba(15,23,42,.07),0_2px_10px_rgba(37,99,235,.05)] backdrop-blur-xl">
         <div class="acl-card__head">
           <div>
             <h2>Users activity log</h2>
@@ -978,7 +1125,7 @@ $adminHeroSubtitle = 'Create staff accounts, choose unlocked admin areas, and re
           <span class="acl-count"><?php echo (int) $logTotal; ?></span>
         </div>
         <div class="acl-card__body acl-card__body--pad">
-          <form method="GET" class="acl-filters">
+          <form method="GET" class="acl-filters mb-3 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/70 bg-white/80 p-3 shadow-sm">
             <input type="hidden" name="view" value="log">
             <div class="acl-field acl-field--grow">
               <label for="q">Search</label>

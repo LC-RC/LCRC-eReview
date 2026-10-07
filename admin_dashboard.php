@@ -188,184 +188,345 @@ if (!$useDashCache) {
 </head>
 <body class="font-sans antialiased admin-app admin-dashboard-page">
   <?php include 'admin_sidebar.php'; ?>
+  <?php
+    $adminBreadcrumbs = [['Dashboard']];
+    include __DIR__ . '/includes/admin_breadcrumb.php';
+  ?>
 
   <?php
+    require_once __DIR__ . '/includes/format_display_name.php';
     $hour = (int) date('G');
     $dashGreeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
-    $dashFirst = trim(explode(' ', (string)($_SESSION['full_name'] ?? 'Admin'))[0]);
-    if ($dashFirst === '') $dashFirst = 'Admin';
+    $dashFirst = ereview_greeting_display_name($_SESSION['full_name'] ?? '');
+    $canStudents = admin_can('students');
+    $canSubjects = admin_can('subjects');
+    $canQuizzes = admin_can('quizzes');
+    $subjectsHref = $canSubjects ? 'admin_subjects' : ($canQuizzes ? 'admin_quizzes' : '#');
+    $subjectsLocked = !$canSubjects && !$canQuizzes;
+    // Sparkline from real last-6-month enrollment counts only (decorative, no invented stats).
+    $sparkVals = array_values(array_map('intval', $enrollmentByMonth));
+    $sparkMax = max(1, ...($sparkVals ?: [1]));
+    $sparkPts = [];
+    $sparkN = count($sparkVals);
+    for ($si = 0; $si < $sparkN; $si++) {
+      $sx = $sparkN <= 1 ? 0 : ($si / ($sparkN - 1)) * 64;
+      $sy = 22 - (($sparkVals[$si] / $sparkMax) * 18);
+      $sparkPts[] = round($sx, 1) . ',' . round($sy, 1);
+    }
+    $sparkPoly = $sparkPts ? implode(' ', $sparkPts) : '0,22 64,22';
+    $enrollPrev = $sparkN >= 2 ? (int) $sparkVals[$sparkN - 2] : 0;
+    $enrollLast = $sparkN >= 1 ? (int) $sparkVals[$sparkN - 1] : 0;
+    $enrollTrendPct = null;
+    if ($enrollPrev > 0) {
+      $enrollTrendPct = (int) round((($enrollLast - $enrollPrev) / $enrollPrev) * 100);
+    }
+    $totalStudents = (int) $enrolledCount + (int) $pendingCount + (int) $expiredCount;
+    $activeSharePct = $totalStudents > 0 ? round(((int) $enrolledCount / $totalStudents) * 100, 1) : 0;
+    $calMonth = new DateTime('first day of this month');
+    $calDaysInMonth = (int) $calMonth->format('t');
+    $calStartPad = (int) $calMonth->format('w');
+    $calTitle = $calMonth->format('F Y');
+    $calToday = (int) date('j');
+    $calMarkDays = [];
+    foreach ($expiringSoon as $esCal) {
+      $tsCal = strtotime((string) ($esCal['access_end'] ?? ''));
+      if ($tsCal && date('Y-m', $tsCal) === $calMonth->format('Y-m')) {
+        $calMarkDays[(int) date('j', $tsCal)] = true;
+      }
+    }
+    $actionPendingN = (int) $pendingCount + (int) $expiringIn7;
   ?>
-  <section class="quiz-admin-hero page-hero admin-glass-hero admin-dashboard-hero" aria-labelledby="admin-dash-greeting">
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <p class="admin-breadcrumb mb-2" style="margin:0 0 0.45rem;color:var(--admin-text-muted);font-size:0.78rem;">LCRC eReview &middot; Admin</p>
-        <h1 id="admin-dash-greeting" class="admin-dash-greeting"><span><?php echo h($dashGreeting); ?>, <?php echo h($dashFirst); ?></span></h1>
-        <p class="admin-page-header__subtitle">Here's what's happening across enrollments, access, and content.</p>
-        <?php if ($lastLoginAt): ?>
-          <p class="text-sm mt-2 mb-0" style="color:var(--admin-text-muted)"><i class="bi bi-clock-history mr-1"></i>Last login <?php echo date('M j, Y', strtotime($lastLoginAt)); ?> &middot; <?php echo date('g:i A', strtotime($lastLoginAt)); ?></p>
-        <?php endif; ?>
-      </div>
-      <div class="admin-page-header__actions">
-        <?php if (admin_can('students')): ?>
-          <a href="admin_students?tab=pending" class="admin-btn admin-btn--primary"><i class="bi bi-hourglass-split"></i> Review pending<?php echo $pendingCount > 0 ? ' (' . (int)$pendingCount . ')' : ''; ?></a>
-        <?php endif; ?>
-        <?php if (admin_can('subjects')): ?>
-          <a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-book"></i> Content Hub</a>
-        <?php elseif (admin_can('quizzes')): ?>
-          <a href="admin_quizzes" class="admin-btn admin-btn--secondary"><i class="bi bi-ui-checks-grid"></i> Quizzes</a>
-        <?php endif; ?>
-      </div>
-    </div>
-  </section>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--success mb-4 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-emerald-700">
       <i class="bi bi-check-circle-fill"></i>
       <span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-flash admin-flash--error mb-5 p-4 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--error mb-4 flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 p-3 text-rose-700">
       <i class="bi bi-exclamation-triangle-fill"></i>
       <span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
     </div>
   <?php endif; ?>
 
-  <?php if ($pendingCount > 0 && admin_can('students')): ?>
-    <div class="admin-dashboard-alert mb-5 p-4 rounded-xl flex items-center gap-4 flex-wrap">
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="admin-alert-icon w-10 h-10 rounded-full flex items-center justify-center"><i class="bi bi-exclamation-circle text-xl"></i></span>
-        <div>
-          <div class="font-semibold text-gray-800">Needs attention</div>
-          <div class="text-gray-500 text-sm"><?php echo (int)$pendingCount; ?> registration<?php echo $pendingCount === 1 ? '' : 's'; ?> awaiting approval</div>
+  <section class="edupro-dash" aria-label="Dashboard">
+    <article class="edupro-hero">
+      <svg class="edupro-hero__ribbon" viewBox="0 0 720 132" preserveAspectRatio="xMaxYMid slice" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="eduproHeroRibbonA" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.08"/>
+            <stop offset="35%" stop-color="#67e8f9" stop-opacity="0.22"/>
+            <stop offset="68%" stop-color="#c4b5fd" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.16"/>
+          </linearGradient>
+          <linearGradient id="eduproHeroRibbonB" x1="0.1" y1="0" x2="1" y2="0.8">
+            <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.06"/>
+            <stop offset="50%" stop-color="#a5b4fc" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.14"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#eduproHeroRibbonA)" d="M250,86 C360,18 470,22 720,38 L720,132 C560,108 430,118 250,86Z"/>
+        <path fill="url(#eduproHeroRibbonB)" d="M290,102 C410,42 530,50 720,62 L720,132 C580,116 440,124 290,102Z"/>
+      </svg>
+      <div class="edupro-hero__left">
+        <p class="edupro-greeting__date"><?php echo h(date('l, M j, Y')); ?></p>
+        <h1 id="admin-dash-greeting" class="admin-dash-greeting edupro-greeting__title">
+          <?php echo h($dashGreeting); ?>, <?php echo h($dashFirst); ?> <span class="edupro-hero__wave" aria-hidden="true">👋</span>
+        </h1>
+        <p class="edupro-greeting__sub">Here's what's happening across your LMS today.</p>
+        <?php if ($lastLoginAt): ?>
+          <p class="edupro-greeting__meta"><i class="bi bi-clock-history mr-1"></i>Last login <?php echo date('M j, Y', strtotime($lastLoginAt)); ?> · <?php echo date('g:i A', strtotime($lastLoginAt)); ?></p>
+        <?php endif; ?>
+      </div>
+      <div class="edupro-hero__right">
+        <span class="edupro-quote__icon"><i class="bi bi-book"></i></span>
+        <div class="edupro-quote__copy">
+          <p class="edupro-quote__text">“Education today.<br>Greater tomorrows.”</p>
+          <p class="edupro-quote__cite">— Learn. Practice. Achieve.</p>
+        </div>
+        <span class="edupro-quote__rule" aria-hidden="true"></span>
+        <p class="edupro-quote__aside-text">A better version of you is in progress.</p>
+        <span class="edupro-quote__go" aria-hidden="true">→</span>
+      </div>
+    </article>
+
+    <a href="<?php echo $canStudents ? 'admin_students?tab=all' : '#'; ?>" class="edupro-kpi edupro-kpi--blue group relative flex min-h-0 overflow-hidden no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
+      <span class="edupro-icon-tile edupro-icon-tile--blue"><i class="bi bi-people-fill"></i></span>
+      <div class="edupro-kpi__body">
+        <div class="edupro-kpi__label">Total Students</div>
+        <div class="edupro-kpi__value"><?php echo (int)$totalStudents; ?></div>
+        <div class="edupro-kpi__hint <?php echo ($enrollTrendPct !== null && $enrollTrendPct >= 0) ? 'is-up' : ''; ?>">
+          <?php if ($enrollTrendPct !== null): ?><?php echo $enrollTrendPct >= 0 ? '+' : ''; ?><?php echo (int) $enrollTrendPct; ?>% this month<?php else: ?><?php echo (int)$newThisWeek; ?> new this week<?php endif; ?>
         </div>
       </div>
-      <a href="admin_students?tab=pending" class="admin-btn admin-btn--primary ml-auto"><i class="bi bi-hourglass-split"></i> Review now</a>
-    </div>
-  <?php endif; ?>
-
-  <?php
-    $canStudents = admin_can('students');
-    $canSubjects = admin_can('subjects');
-    $canQuizzes = admin_can('quizzes');
-    $subjectsHref = $canSubjects ? 'admin_subjects' : ($canQuizzes ? 'admin_quizzes' : '#');
-    $subjectsLocked = !$canSubjects && !$canQuizzes;
-  ?>
-  <section class="admin-dash-kpis" aria-label="Key metrics">
-    <a href="<?php echo $canStudents ? 'admin_students?tab=enrolled' : '#'; ?>" class="dashboard-card dashboard-card--featured dashboard-card--enrolled page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
-      <div class="dashboard-card__title"><i class="bi bi-people-fill"></i> Active Students</div>
-      <div class="admin-kpi-value"><?php echo (int)$enrolledCount; ?></div>
-      <div class="text-sm" style="color:var(--admin-text-secondary)"><?php echo (int)$newThisWeek; ?> new this week · <?php echo (int)$quizAttemptsLast30; ?> quiz answers (30d)</div>
-      <span class="dashboard-card__btn mt-auto mt-4 w-full py-2.5 rounded-lg font-semibold border-2 transition flex items-center justify-center gap-2"><i class="bi bi-arrow-right"></i> View enrolled</span>
+      <svg class="edupro-kpi__spark" viewBox="0 0 64 28" fill="none" aria-hidden="true">
+        <polyline class="edupro-kpi__spark-fill" points="<?php echo h($sparkPoly); ?> 64,28 0,28" />
+        <polyline class="edupro-kpi__spark-line" points="<?php echo h($sparkPoly); ?>" />
+      </svg>
     </a>
-    <a href="<?php echo $canStudents ? 'admin_students?tab=pending' : '#'; ?>" class="dashboard-card dashboard-card--pending page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
-      <div class="dashboard-card__title"><i class="bi bi-hourglass-split"></i> Pending</div>
-      <div class="admin-kpi-value"><?php echo (int)$pendingCount; ?></div>
-      <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Review</span>
-    </a>
-    <a href="<?php echo $canStudents ? 'admin_students?tab=expired' : '#'; ?>" class="dashboard-card dashboard-card--expired page-card p-5 flex flex-col no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
-      <div class="dashboard-card__title"><i class="bi bi-calendar-x"></i> Expiring / Expired</div>
-      <div class="admin-kpi-value"><?php echo (int)$expiredCount; ?></div>
-      <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$expiringIn7; ?> end within 7 days</div>
-      <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2">Open</span>
-    </a>
-    <a href="<?php echo h($subjectsHref); ?>" class="dashboard-card dashboard-card--subjects page-card p-5 flex flex-col no-underline<?php echo $subjectsLocked ? ' opacity-50 cursor-not-allowed' : ''; ?>" style="color:inherit"<?php echo $subjectsLocked ? ' aria-disabled="true" onclick="return false;" title="Locked - no access to content"' : ''; ?>>
-      <div class="dashboard-card__title"><i class="bi bi-book"></i> Courses / Subjects</div>
-      <div class="admin-kpi-value"><?php echo (int)$subjectsRow['cnt']; ?></div>
-      <div class="text-xs" style="color:var(--admin-text-muted)"><?php echo (int)$lessonsRow['cnt']; ?> lessons &middot; <?php echo (int)$quizzesRow['cnt']; ?> quizzes</div>
-      <span class="dashboard-card__btn mt-auto w-full py-2.5 rounded-lg font-semibold border-2 flex items-center justify-center gap-2"><?php echo $canQuizzes && !$canSubjects ? 'Quizzes' : 'Manage'; ?></span>
-    </a>
-  </section>
-
-  <div class="admin-dash-main">
-    <div class="page-card p-5">
-      <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
-        <div>
-          <h2 class="page-section-title text-lg m-0">Enrollment / Registration Overview</h2>
-          <p class="text-sm mt-1 mb-0" style="color:var(--admin-text-muted)">New student registrations &middot; last 6 months</p>
-        </div>
-        <p class="text-sm font-semibold m-0" style="color:var(--admin-text)">Total <span class="admin-kpi-number"><?php echo (int)array_sum($enrollmentByMonth); ?></span></p>
+    <a href="<?php echo $canStudents ? 'admin_students?tab=enrolled' : '#'; ?>" class="edupro-kpi edupro-kpi--green group relative flex min-h-0 overflow-hidden no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
+      <span class="edupro-icon-tile edupro-icon-tile--green"><i class="bi bi-lock-fill"></i></span>
+      <div class="edupro-kpi__body">
+        <div class="edupro-kpi__label">Active Access</div>
+        <div class="edupro-kpi__value"><?php echo (int)$enrolledCount; ?></div>
+        <div class="edupro-kpi__hint"><?php echo h((string)$activeSharePct); ?>% of total</div>
       </div>
-      <div class="h-72">
+      <svg class="edupro-kpi__spark" viewBox="0 0 64 28" fill="none" aria-hidden="true">
+        <polyline class="edupro-kpi__spark-fill" points="<?php echo h($sparkPoly); ?> 64,28 0,28" />
+        <polyline class="edupro-kpi__spark-line" points="<?php echo h($sparkPoly); ?>" />
+      </svg>
+    </a>
+    <a href="<?php echo $canStudents ? 'admin_students?tab=pending' : '#'; ?>" class="edupro-kpi edupro-kpi--coral group relative flex min-h-0 overflow-hidden no-underline<?php echo $canStudents ? '' : ' opacity-50 cursor-not-allowed'; ?>" style="color:inherit"<?php echo $canStudents ? '' : ' aria-disabled="true" onclick="return false;" title="Locked - no access to Students"'; ?>>
+      <span class="edupro-icon-tile edupro-icon-tile--coral"><i class="bi bi-exclamation-triangle-fill"></i></span>
+      <div class="edupro-kpi__body">
+        <div class="edupro-kpi__label">Needs Review</div>
+        <div class="edupro-kpi__value"><?php echo (int)$pendingCount; ?></div>
+        <div class="edupro-kpi__hint">Review now →</div>
+      </div>
+      <svg class="edupro-kpi__spark" viewBox="0 0 64 28" fill="none" aria-hidden="true">
+        <polyline class="edupro-kpi__spark-fill" points="<?php echo h($sparkPoly); ?> 64,28 0,28" />
+        <polyline class="edupro-kpi__spark-line" points="<?php echo h($sparkPoly); ?>" />
+      </svg>
+    </a>
+    <a href="<?php echo h($subjectsHref); ?>" class="edupro-kpi edupro-kpi--violet group relative flex min-h-0 overflow-hidden no-underline<?php echo $subjectsLocked ? ' opacity-50 cursor-not-allowed' : ''; ?>" style="color:inherit"<?php echo $subjectsLocked ? ' aria-disabled="true" onclick="return false;" title="Locked - no access to content"' : ''; ?>>
+      <span class="edupro-icon-tile edupro-icon-tile--violet"><i class="bi bi-book"></i></span>
+      <div class="edupro-kpi__body">
+        <div class="edupro-kpi__label">Course Subjects</div>
+        <div class="edupro-kpi__value"><?php echo (int)$subjectsRow['cnt']; ?></div>
+        <div class="edupro-kpi__hint"><?php echo (int)$lessonsRow['cnt']; ?> lessons · <?php echo (int)$quizzesRow['cnt']; ?> quizzes</div>
+      </div>
+      <svg class="edupro-kpi__spark" viewBox="0 0 64 28" fill="none" aria-hidden="true">
+        <polyline class="edupro-kpi__spark-fill" points="<?php echo h($sparkPoly); ?> 64,28 0,28" />
+        <polyline class="edupro-kpi__spark-line" points="<?php echo h($sparkPoly); ?>" />
+      </svg>
+    </a>
+    <div class="edupro-chart-main page-card admin-dash-chart-card relative flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5">
+      <div class="admin-dash-chart-card__head relative z-[1] mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div class="flex min-w-0 items-start gap-3">
+          <span class="edupro-icon-tile edupro-icon-tile--blue"><i class="bi bi-bar-chart-fill"></i></span>
+          <div>
+            <h2 class="page-section-title m-0">Enrollment Overview</h2>
+            <p class="edupro-section-sub">New students over the last 6 months</p>
+          </div>
+        </div>
+        <span class="edupro-range-pill">Last 6 months</span>
+      </div>
+      <div class="admin-dash-chart-wrap relative z-[1] h-52">
         <canvas id="enrollmentChart" aria-label="Enrollment by month"></canvas>
       </div>
     </div>
 
-    <div class="admin-dash-side">
-      <div class="page-card p-5">
-        <h2 class="page-section-title text-lg m-0 mb-1">Recent Registrations</h2>
-        <p class="text-sm mb-3" style="color:var(--admin-text-muted)">Latest sign-ups</p>
-        <?php if (empty($recentStudents)): ?>
-          <div class="text-sm py-4" style="color:var(--admin-text-muted)"><i class="bi bi-inbox"></i> No registrations yet.</div>
-        <?php else: ?>
-          <?php foreach ($recentStudents as $rs):
-            $st = strtolower((string)$rs['status']);
-            $pill = $st === 'approved' ? 'approved' : ($st === 'rejected' ? 'rejected' : 'pending');
-          ?>
-            <div class="admin-dash-recent-item">
-              <div class="min-w-0">
-                <a href="admin_student_view?id=<?php echo (int)$rs['user_id']; ?>" class="admin-link font-medium truncate block"><?php echo h($rs['full_name']); ?></a>
-                <span class="text-xs" style="color:var(--admin-text-muted)"><?php echo date('M j, Y', strtotime($rs['created_at'])); ?></span>
-              </div>
-              <span class="admin-status-pill admin-status-pill--<?php echo h($pill); ?>"><?php echo h($rs['status']); ?></span>
-            </div>
-          <?php endforeach; ?>
-          <a href="admin_students" class="mt-3 inline-flex text-sm font-medium admin-link">View all students &rarr;</a>
-        <?php endif; ?>
+    <div class="edupro-activity page-card admin-dash-panel admin-dash-panel--recent relative flex h-full min-h-0 flex-col overflow-hidden p-4">
+      <div class="edupro-panel-head">
+        <span class="edupro-icon-tile edupro-icon-tile--blue"><i class="bi bi-activity"></i></span>
+        <h2 class="page-section-title m-0">Recent Activity</h2>
+        <a href="admin_students" class="edupro-text-action">View all</a>
       </div>
-
-      <div class="page-card p-5">
-        <h2 class="page-section-title text-lg m-0 mb-1">Pending Actions</h2>
-        <p class="text-sm mb-3" style="color:var(--admin-text-muted)">What to do next</p>
-        <ul class="admin-dash-actions-list">
-          <?php if ($canStudents): ?>
-          <li>
-            <a class="admin-dash-action" href="admin_students?tab=pending">
-              <span class="admin-dash-action__icon"><i class="bi bi-hourglass-split"></i></span>
-              <span class="min-w-0">
-                <span class="font-semibold block">Approve registrations</span>
-                <span class="admin-dash-action__meta"><?php echo (int)$pendingCount; ?> pending</span>
-              </span>
-            </a>
-          </li>
-          <li>
-            <a class="admin-dash-action" href="admin_students?tab=enrolled">
-              <span class="admin-dash-action__icon"><i class="bi bi-calendar-event"></i></span>
-              <span class="min-w-0">
-                <span class="font-semibold block">Review expiring access</span>
-                <span class="admin-dash-action__meta"><?php echo count($expiringSoon); ?> in next 30 days</span>
-              </span>
-            </a>
-          </li>
-          <?php endif; ?>
-          <?php if ($canSubjects || $canQuizzes): ?>
-          <li>
-            <a class="admin-dash-action" href="<?php echo h($subjectsHref); ?>">
-              <span class="admin-dash-action__icon"><i class="bi bi-journal-richtext"></i></span>
-              <span class="min-w-0">
-                <span class="font-semibold block"><?php echo $canSubjects ? 'Update course content' : 'Manage quizzes'; ?></span>
-                <span class="admin-dash-action__meta"><?php echo (int)$subjectsRow['cnt']; ?> subjects</span>
-              </span>
-            </a>
-          </li>
-          <?php endif; ?>
-        </ul>
-        <?php if (!empty($expiringSoon)): ?>
-          <div class="mt-4 pt-3" style="border-top:1px solid var(--admin-border)">
-            <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--admin-text-muted)">Ending soon</p>
-            <?php foreach (array_slice($expiringSoon, 0, 3) as $es): ?>
-              <div class="admin-dash-recent-item py-2">
-                <a href="admin_student_view?id=<?php echo (int)$es['user_id']; ?>" class="admin-link text-sm truncate"><?php echo h($es['full_name']); ?></a>
-                <span class="text-xs" style="color:var(--admin-text-muted)"><?php echo date('M j', strtotime($es['access_end'])); ?></span>
-              </div>
-            <?php endforeach; ?>
+      <?php if (empty($recentStudents)): ?>
+        <div class="rounded-xl border border-dashed border-slate-200 py-8 text-center text-xs text-slate-500">No registrations yet.</div>
+      <?php else: ?>
+        <?php foreach ($recentStudents as $rs):
+          $st = strtolower((string)$rs['status']);
+          $tileTone = $st === 'approved' ? 'green' : ($st === 'rejected' ? 'coral' : 'orange');
+          $initial = function_exists('mb_substr') ? strtoupper(mb_substr(trim((string)$rs['full_name']), 0, 1)) : strtoupper(substr(trim((string)$rs['full_name']), 0, 1));
+        ?>
+          <div class="admin-dash-recent-item">
+            <span class="edupro-icon-tile edupro-icon-tile--<?php echo h($tileTone); ?>"><?php echo h($initial); ?></span>
+            <div class="min-w-0 flex-1">
+              <a href="admin_student_view?id=<?php echo (int)$rs['user_id']; ?>" class="admin-link edupro-activity-title"><?php echo h($rs['full_name']); ?></a>
+              <span class="edupro-activity-meta">New student registered</span>
+            </div>
+            <time class="admin-dash-recent-time"><?php echo date('g:i A', strtotime($rs['created_at'])); ?></time>
           </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+
+    <div class="edupro-action page-card admin-dash-panel admin-dash-panel--actions relative flex h-full min-h-0 flex-col overflow-hidden p-4">
+      <div class="edupro-panel-head">
+        <span class="edupro-icon-tile edupro-icon-tile--coral"><i class="bi bi-bell"></i></span>
+        <h2 class="page-section-title m-0">Action Center</h2>
+        <span class="edupro-pending-badge"><?php echo (int)$actionPendingN; ?> pending</span>
+      </div>
+      <ul class="admin-dash-actions-list m-0 list-none space-y-2 p-0">
+        <?php if ($canStudents): ?>
+        <li>
+          <a class="admin-dash-action admin-dash-action--amber" href="admin_students?tab=pending">
+            <span class="edupro-icon-tile edupro-icon-tile--orange"><i class="bi bi-hourglass-split"></i></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-slate-900">Access requires review</span>
+              <span class="text-[11px] text-slate-500">Registrations awaiting approval</span>
+            </span>
+            <span class="admin-dash-action__count"><?php echo (int)$pendingCount; ?></span>
+          </a>
+        </li>
+        <li>
+          <a class="admin-dash-action admin-dash-action--violet" href="admin_students?tab=enrolled">
+            <span class="edupro-icon-tile edupro-icon-tile--violet"><i class="bi bi-calendar-event"></i></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-slate-900">Review expiring access</span>
+              <span class="text-[11px] text-slate-500">Next 30 days</span>
+            </span>
+            <span class="admin-dash-action__count"><?php echo count($expiringSoon); ?></span>
+          </a>
+        </li>
         <?php endif; ?>
+        <?php if ($canSubjects || $canQuizzes): ?>
+        <li>
+          <a class="admin-dash-action admin-dash-action--blue" href="<?php echo h($subjectsHref); ?>">
+            <span class="edupro-icon-tile edupro-icon-tile--blue"><i class="bi bi-journal-richtext"></i></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-slate-900"><?php echo $canSubjects ? 'Update course content' : 'Manage quizzes'; ?></span>
+              <span class="text-[11px] text-slate-500"><?php echo (int)$subjectsRow['cnt']; ?> subjects</span>
+            </span>
+            <i class="bi bi-chevron-right text-slate-400 text-xs"></i>
+          </a>
+        </li>
+        <?php endif; ?>
+        <?php if ($canQuizzes): ?>
+        <li>
+          <a class="admin-dash-action admin-dash-action--coral" href="admin_quiz_monitor">
+            <span class="edupro-icon-tile edupro-icon-tile--coral"><i class="bi bi-exclamation-circle"></i></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-slate-900">Quiz activity</span>
+              <span class="text-[11px] text-slate-500"><?php echo (int)$quizAttemptsLast30; ?> answers in 30d</span>
+            </span>
+            <span class="admin-dash-action__count"><?php echo (int)$quizAttemptsLast30; ?></span>
+          </a>
+        </li>
+        <?php endif; ?>
+      </ul>
+    </div>
+    <div class="edupro-bottom-card page-card p-4">
+      <div class="edupro-panel-head">
+        <span class="edupro-icon-tile edupro-icon-tile--blue"><i class="bi bi-journal-bookmark"></i></span>
+        <h2 class="page-section-title m-0">Content snapshot</h2>
+        <a href="<?php echo h($subjectsHref); ?>" class="edupro-text-action">View all</a>
+      </div>
+      <?php
+        $snapRows = [
+          ['label' => 'Subjects', 'meta' => (int)$subjectsRow['cnt'] . ' courses', 'n' => (int)$subjectsRow['cnt'], 'tone' => 'blue', 'icon' => 'bi-book'],
+          ['label' => 'Lessons', 'meta' => (int)$lessonsRow['cnt'] . ' lessons', 'n' => (int)$lessonsRow['cnt'], 'tone' => 'violet', 'icon' => 'bi-journal-text'],
+          ['label' => 'Quizzes', 'meta' => (int)$quizzesRow['cnt'] . ' quizzes', 'n' => (int)$quizzesRow['cnt'], 'tone' => 'green', 'icon' => 'bi-ui-checks-grid'],
+          ['label' => 'Quiz answers (30d)', 'meta' => (int)$quizAttemptsLast30 . ' attempts', 'n' => (int)$quizAttemptsLast30, 'tone' => 'orange', 'icon' => 'bi-graph-up'],
+        ];
+        $snapBarMax = max(1, (int)$subjectsRow['cnt'], (int)$lessonsRow['cnt'], (int)$quizzesRow['cnt'], (int)$quizAttemptsLast30);
+      ?>
+      <div class="space-y-3">
+        <?php foreach ($snapRows as $sr): ?>
+          <div class="edupro-subject-row">
+            <span class="edupro-icon-tile edupro-icon-tile--<?php echo h($sr['tone']); ?>"><i class="bi <?php echo h($sr['icon']); ?>"></i></span>
+            <div class="edupro-subject-row__body">
+              <div class="edupro-subject-row__meta">
+                <span class="edupro-subject-row__name"><?php echo h($sr['label']); ?></span>
+                <span class="edupro-subject-row__pct"><?php echo (int) round(($sr['n'] / $snapBarMax) * 100); ?>%</span>
+              </div>
+              <div class="edupro-progress">
+                <div class="edupro-progress__bar edupro-progress__bar--<?php echo h($sr['tone']); ?>" style="width: <?php echo (int) round(($sr['n'] / $snapBarMax) * 100); ?>%"></div>
+              </div>
+              <span class="edupro-subject-row__hint"><?php echo h($sr['meta']); ?></span>
+            </div>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
-  </div>
+
+    <div class="edupro-bottom-card page-card p-4">
+      <div class="edupro-panel-head">
+        <span class="edupro-icon-tile edupro-icon-tile--coral"><i class="bi bi-calendar2-week"></i></span>
+        <h2 class="page-section-title m-0">Upcoming Deadlines</h2>
+        <?php if ($canStudents): ?><a href="admin_students?tab=enrolled" class="edupro-text-action">View all</a><?php endif; ?>
+      </div>
+      <?php if (empty($expiringSoon)): ?>
+        <p class="m-0 text-xs text-slate-500">No access windows ending in the next 30 days.</p>
+      <?php else: ?>
+        <div class="space-y-2">
+          <?php foreach ($expiringSoon as $es):
+            $endTs = strtotime((string)$es['access_end']);
+            $daysLeft = $endTs ? (int) ceil(($endTs - time()) / 86400) : 0;
+          ?>
+            <div class="edupro-deadline-row">
+              <span class="edupro-date-tile">
+                <span class="edupro-date-tile__mo"><?php echo $endTs ? date('M', $endTs) : ''; ?></span>
+                <span class="edupro-date-tile__day"><?php echo $endTs ? date('j', $endTs) : ''; ?></span>
+              </span>
+              <div class="min-w-0 flex-1">
+                <a href="admin_student_view?id=<?php echo (int)$es['user_id']; ?>" class="admin-link edupro-activity-title"><?php echo h($es['full_name']); ?></a>
+                <span class="edupro-activity-meta">Access request deadline</span>
+              </div>
+              <span class="edupro-days-badge"><?php echo $daysLeft; ?> days</span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+
+    <div class="edupro-bottom-card page-card p-4">
+      <div class="edupro-panel-head">
+        <span class="edupro-icon-tile edupro-icon-tile--violet"><i class="bi bi-calendar3"></i></span>
+        <h2 class="page-section-title m-0"><?php echo h($calTitle); ?></h2>
+        <span class="edupro-text-action">Today</span>
+      </div>
+      <div class="edupro-cal" aria-label="Calendar">
+        <?php foreach (['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dow): ?>
+          <div class="edupro-cal__dow"><?php echo h($dow); ?></div>
+        <?php endforeach; ?>
+        <?php for ($p = 0; $p < $calStartPad; $p++): ?>
+          <div class="edupro-cal__day"></div>
+        <?php endfor; ?>
+        <?php for ($d = 1; $d <= $calDaysInMonth; $d++):
+          $cls = 'edupro-cal__day';
+          if ($d === $calToday) $cls .= ' is-today';
+          elseif (!empty($calMarkDays[$d])) $cls .= ' is-mark';
+        ?>
+          <div class="<?php echo h($cls); ?>"><?php echo (int)$d; ?></div>
+        <?php endfor; ?>
+      </div>
+    </div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
@@ -379,15 +540,20 @@ if (!$useDashCache) {
     function themeColors() {
       var styles = getComputedStyle(document.documentElement);
       return {
-        primary: (styles.getPropertyValue('--admin-chart-bar') || styles.getPropertyValue('--admin-primary') || '#2563eb').trim(),
-        muted: (styles.getPropertyValue('--admin-chart-tick') || styles.getPropertyValue('--admin-text-muted') || '#64748b').trim(),
-        border: (styles.getPropertyValue('--admin-chart-grid') || styles.getPropertyValue('--admin-border') || 'rgba(30,58,110,0.1)').trim()
+        primary: (styles.getPropertyValue('--admin-chart-bar') || styles.getPropertyValue('--accent-blue') || '#2563eb').trim(),
+        primary2: (styles.getPropertyValue('--admin-chart-bar-2') || styles.getPropertyValue('--accent-violet') || '#7657f6').trim(),
+        muted: (styles.getPropertyValue('--admin-chart-tick') || styles.getPropertyValue('--text-muted') || '#64748b').trim(),
+        border: (styles.getPropertyValue('--admin-chart-grid') || styles.getPropertyValue('--glass-border') || 'rgba(30,58,110,0.1)').trim()
       };
     }
 
     function renderChart() {
       var c = themeColors();
       if (chartInstance) chartInstance.destroy();
+      var ctx = canvas.getContext('2d');
+      var grad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 208);
+      grad.addColorStop(0, c.primary2);
+      grad.addColorStop(1, c.primary);
       chartInstance = new Chart(canvas, {
         type: 'bar',
         data: {
@@ -395,26 +561,40 @@ if (!$useDashCache) {
           datasets: [{
             label: 'Registrations',
             data: data,
-            backgroundColor: c.primary,
-            borderColor: c.primary,
+            backgroundColor: grad,
+            borderColor: 'transparent',
             borderWidth: 0,
-            borderRadius: 6,
+            borderRadius: 10,
+            borderSkipped: false,
             maxBarThickness: 36
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          layout: { padding: { top: 8, right: 4, left: 0, bottom: 2 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: c.primary,
+              titleColor: '#f4f7fb',
+              bodyColor: '#e8eef4',
+              padding: 10,
+              cornerRadius: 10,
+              displayColors: false
+            }
+          },
           scales: {
             y: {
               beginAtZero: true,
-              grid: { color: c.border },
-              ticks: { color: c.muted, stepSize: 1 }
+              grid: { color: c.border, drawBorder: false },
+              ticks: { color: c.muted, stepSize: 1, font: { size: 11, weight: '500' } },
+              border: { display: false }
             },
             x: {
               grid: { display: false },
-              ticks: { color: c.muted, maxRotation: 45 }
+              ticks: { color: c.muted, maxRotation: 0, font: { size: 11, weight: '500' } },
+              border: { display: false }
             }
           }
         }

@@ -20,11 +20,19 @@ $monitorSectionOptions = college_sections_active_names($conn);
 $pageTitle = 'Examination Monitoring';
 
 $adminLoadStudentsCss = true;
+$professorFeatureHero = true;
 $adminHeroIcon = 'graph-up';
-
+$adminHeroEyebrow = 'Live operations';
 $adminHeroTitle = 'Examination Monitoring';
-
-$adminHeroSubtitle = 'Monitor examination attempts and student progress across regular and diagnostic assessments.';
+$adminHeroSubtitle = 'Live console for attempts, progress, and submission status.';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Monitoring']];
+$monitorLiveTaking = 0;
+foreach ($assessments as $__aLive) {
+    $monitorLiveTaking += (int) ($__aLive['taking_count'] ?? $__aLive['in_progress_count'] ?? 0);
+}
+if ($monitorLiveTaking > 0) {
+    $adminHeroMeta = '<span class="prof-hero-stat prof-hero-stat--live"><span class="prof-live-dot" aria-hidden="true"></span> Live</span>';
+}
 
 ?>
 
@@ -38,7 +46,7 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
 </head>
 
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--monitor">
 
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 
@@ -60,7 +68,51 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
 
 
-<div class="examination-page-shell">
+<div class="examination-page-shell gap-3">
+
+  <section class="prof-summary-rail" aria-label="Monitoring snapshot">
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
+      <span class="prof-summary-rail__label">Assessments</span>
+      <span class="prof-summary-rail__value"><?php echo (int) count($assessments); ?></span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-people"></i></span>
+      <span class="prof-summary-rail__label">Roster</span>
+      <span class="prof-summary-rail__value"><?php
+          $__monRoster = 0;
+          foreach ($assessments as $__a) { $__monRoster += (int)($__a['roster_count'] ?? $__a['total_students'] ?? 0); }
+          echo (int) $__monRoster;
+        ?></span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-broadcast"></i></span>
+      <span class="prof-summary-rail__label">Taking</span>
+      <span class="prof-summary-rail__value"><?php
+          $__monTaking = 0;
+          foreach ($assessments as $__a) { $__monTaking += (int)($__a['taking_count'] ?? $__a['in_progress_count'] ?? 0); }
+          echo (int) $__monTaking;
+        ?></span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
+      <span class="prof-summary-rail__label">Submitted</span>
+      <span class="prof-summary-rail__value"><?php
+          $__monSubmitted = 0;
+          foreach ($assessments as $__a) { $__monSubmitted += (int)($__a['submitted_count'] ?? 0); }
+          echo (int) $__monSubmitted;
+        ?></span>
+    </div>
+  </section>
+
+  <section class="prof-workspace">
+  <div class="prof-workspace__head">
+    <div>
+      <h2 class="prof-workspace__title">Monitoring</h2>
+      <p class="prof-workspace__sub">Track live attempts, roster progress, and submission status.</p>
+    </div>
+    <span class="prof-count"><?php echo count($assessments); ?> assessment<?php echo count($assessments) === 1 ? '' : 's'; ?></span>
+  </div>
 
   <div class="students-toolbar page-filter">
 
@@ -123,13 +175,11 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
     </form>
 
-    <span class="students-toolbar__meta"><?php echo count($assessments); ?> assessment<?php echo count($assessments) === 1 ? '' : 's'; ?></span>
-
   </div>
 
 
 
-  <div class="rounded-xl page-table students-table-shell">
+  <div class="rounded-2xl page-table students-table-shell bg-white/90 border border-white/80 shadow-sm overflow-hidden">
 
     <div class="students-table-scroll">
 
@@ -194,15 +244,15 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
 
             <td class="pcs-meta-cell" data-label="Window"><span class="student-meta capitalize"><?php echo h((string)($a['window_state'] ?? '')); ?></span></td>
 
-            <td class="text-right" data-label="Roster"><?php echo (int)($a['roster_count'] ?? 0); ?></td>
+            <td class="text-right prof-num" data-label="Roster"><?php echo (int)($a['roster_count'] ?? 0); ?></td>
 
-            <td class="text-right" data-label="Taking"><?php echo (int)($a['taking_count'] ?? 0); ?></td>
+            <td class="text-right prof-num" data-label="Taking"><?php echo (int)($a['taking_count'] ?? 0); ?></td>
 
-            <td class="text-right" data-label="Submitted"><?php echo (int)($a['submitted_count'] ?? 0); ?></td>
+            <td class="text-right prof-num" data-label="Submitted"><?php echo (int)($a['submitted_count'] ?? 0); ?></td>
 
-            <td class="text-right" data-label="Avg"><?php echo ($a['avg_score'] ?? null) !== null ? h(number_format((float)$a['avg_score'], 1)) . '%' : '—'; ?></td>
+            <td class="text-right prof-num" data-label="Avg"><?php echo ($a['avg_score'] ?? null) !== null ? h(number_format((float)$a['avg_score'], 1)) . '%' : '—'; ?></td>
 
-            <td class="student-action-cell" data-label="Actions"><a href="<?php echo h((string)$a['scope']); ?>" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a></td>
+            <td class="student-action-cell" data-label="Actions"><a href="<?php echo h((string)$a['scope']); ?>" class="admin-btn admin-btn--primary admin-btn--sm admin-btn--view"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a></td>
 
           </tr>
 
@@ -215,6 +265,8 @@ $adminHeroSubtitle = 'Monitor examination attempts and student progress across r
     </div>
 
   </div>
+
+  </section>
 
 </div>
 

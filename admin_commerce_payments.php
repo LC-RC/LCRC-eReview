@@ -307,8 +307,13 @@ function commerce_admin_vstatus_label(string $v): string
 
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['Payment Verification']];
 $adminHeroIcon = 'receipt';
+$adminHeroEyebrow = 'Commerce';
 $adminHeroTitle = 'Payment Verification';
 $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review payments with proof - same fulfillment path as auto-verified.';
+if ($detail) {
+    $adminBackHref = ereview_url('admin_commerce_payments') . ($filter === 'all' ? '' : '?v=' . rawurlencode($filter));
+    $adminBackLabel = 'Back to list';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -327,7 +332,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
       <div class="admin-flash admin-flash--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <div class="admin-filter-chips flex flex-wrap gap-2 text-sm mb-4" role="tablist" aria-label="Payment filters">
+    <div class="admin-filter-chips flex flex-wrap gap-1.5 text-xs mb-3" role="tablist" aria-label="Payment filters">
       <?php
         $tabs = [
           'all' => 'All',
@@ -344,7 +349,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           $active = $filter === $key;
           $href = ereview_url('admin_commerce_payments') . ($key === 'all' ? '' : '?v=' . rawurlencode($key));
       ?>
-        <a class="admin-filter-chip <?php echo $active ? 'is-active' : ''; ?>"
+        <a class="admin-filter-chip px-2.5 py-1 <?php echo $active ? 'is-active' : ''; ?>"
            href="<?php echo h($href); ?>"><?php echo h($label); ?></a>
       <?php endforeach; ?>
     </div>
@@ -354,23 +359,31 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
         $vLab = commerce_admin_vstatus_label((string) $detail['verification_status']);
         $canReview = commerce_payment_is_manual_reviewable($detail);
       ?>
-      <div class="quiz-admin-table-shell rounded-2xl p-5 sm:p-6 mb-5 space-y-4">
+      <div class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl p-4 sm:p-5 mb-4 space-y-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-lg font-bold"><?php echo h((string) $detail['payment_ref']); ?></h2>
-            <p class="text-sm opacity-70">#<?php echo (int) $detail['payment_id']; ?> · payment status: <strong><?php echo h((string) $detail['status']); ?></strong></p>
-            <p class="text-sm mt-1"><span class="font-semibold"><?php echo h($vLab); ?></span>
+            <h2 class="text-lg font-bold text-slate-900"><?php echo h((string) $detail['payment_ref']); ?></h2>
+            <p class="text-sm text-slate-500">#<?php echo (int) $detail['payment_id']; ?> · payment status: <strong class="text-slate-800"><?php echo h((string) $detail['status']); ?></strong></p>
+            <p class="text-sm mt-1.5 flex flex-wrap items-center gap-2">
+              <?php
+                $detailVBadge = match ((string) $detail['verification_status']) {
+                  'auto_verified', 'manually_approved' => 'admin-badge--success',
+                  'needs_review', 'processing', 'not_started' => 'admin-badge--warning',
+                  'manually_rejected', 'failed' => 'admin-badge--danger',
+                  default => 'admin-badge--neutral',
+                };
+              ?>
+              <span class="admin-badge <?php echo $detailVBadge; ?>"><?php echo h($vLab); ?></span>
               <?php if ($detail['verification_confidence'] !== null && $detail['verification_confidence'] !== ''): ?>
-                · conf <?php echo h((string) $detail['verification_confidence']); ?>
+                <span class="text-slate-500">conf <?php echo h((string) $detail['verification_confidence']); ?></span>
               <?php endif; ?>
             </p>
           </div>
-          <a class="admin-btn admin-btn--secondary px-3 py-2 text-sm font-semibold" href="<?php echo h(ereview_url('admin_commerce_payments') . ($filter === 'all' ? '' : '?v=' . rawurlencode($filter))); ?>">Back to list</a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Student</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Student</div>
             <?php
               $u = null;
               $uq = mysqli_prepare(
@@ -431,7 +444,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <?php endif; ?>
           </div>
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Purchase</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Purchase</div>
             <div><?php echo h((string) $detail['purchase_type']); ?> · ₱<?php echo h(commerce_centavos_to_pesos_display((int) $detail['expected_amount_centavos'])); ?></div>
             <div class="opacity-70">Payment: <strong><?php echo h($payUiLabel); ?></strong></div>
             <div class="opacity-70">Verification: <strong><?php echo h($vStatusUi); ?></strong></div>
@@ -441,7 +454,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <div class="opacity-70">Fulfillment: <strong><?php echo !empty($detail['fulfilled_at']) ? 'Fulfilled' : 'Pending'; ?></strong></div>
           </div>
           <div class="md:col-span-2">
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Enrollment</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Enrollment</div>
             <div>Path: <strong><?php echo h($enrollPathLabel); ?></strong></div>
             <?php if ($enrollPath === 'package'): ?>
               <div class="opacity-70">Package: <?php echo h($pkgLabel !== '' ? $pkgLabel : '-'); ?></div>
@@ -450,8 +463,8 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                 <div class="opacity-70 mb-1">Topics by subject:</div>
                 <div class="space-y-2">
                   <?php foreach ($topicGroupsDetail as $tg): ?>
-                    <div class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                      <div class="text-xs font-bold uppercase opacity-60"><?php echo h((string) $tg['subject_name']); ?></div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div class="text-xs font-bold uppercase text-slate-500"><?php echo h((string) $tg['subject_name']); ?></div>
                       <div class="text-sm mt-0.5"><?php echo h(implode(', ', $tg['topics'])); ?></div>
                     </div>
                   <?php endforeach; ?>
@@ -475,44 +488,44 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           }
         ?>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <div class="rounded-xl border border-white/10 px-3 py-2">
-            <div class="text-xs uppercase opacity-60 font-semibold">Payment</div>
+          <div class="rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
+            <div class="text-xs uppercase text-slate-500 font-semibold">Payment</div>
             <div class="font-semibold mt-0.5"><?php echo h($verifiedPaid ? 'Verified' : $payUiLabel); ?></div>
           </div>
-          <div class="rounded-xl border border-white/10 px-3 py-2">
-            <div class="text-xs uppercase opacity-60 font-semibold">Fulfillment</div>
+          <div class="rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
+            <div class="text-xs uppercase text-slate-500 font-semibold">Fulfillment</div>
             <div class="font-semibold mt-0.5"><?php echo $fulfilled ? 'Fulfilled' : 'Pending'; ?></div>
           </div>
-          <div class="rounded-xl border border-white/10 px-3 py-2">
-            <div class="text-xs uppercase opacity-60 font-semibold">Access</div>
+          <div class="rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
+            <div class="text-xs uppercase text-slate-500 font-semibold">Access</div>
             <div class="font-semibold mt-0.5"><?php echo h($grantTonePay === 'active' ? 'Granted' : ($grantTonePay === 'none' ? 'None' : ucfirst($grantTonePay))); ?></div>
           </div>
-          <div class="rounded-xl border border-white/10 px-3 py-2">
-            <div class="text-xs uppercase opacity-60 font-semibold">Account</div>
+          <div class="rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
+            <div class="text-xs uppercase text-slate-500 font-semibold">Account</div>
             <div class="font-semibold mt-0.5"><?php echo h($acctUi); ?></div>
           </div>
         </div>
         <?php if ($fulfilled && $acctSt === 'pending'): ?>
-          <div class="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
             Payment fulfilled - account activation requires repair. Use student <strong>Repair Activation</strong> (exception only; normal paid flow auto-activates).
             <?php if (!empty($detail['user_id'])): ?>
               <div class="mt-2">
-                <a class="font-semibold underline text-amber-50" href="<?php echo h(ereview_url('admin_student_view') . '?id=' . (int) $detail['user_id']); ?>">Open student Repair Activation</a>
+                <a class="font-semibold underline text-indigo-700" href="<?php echo h(ereview_url('admin_student_view') . '?id=' . (int) $detail['user_id']); ?>">Open student Repair Activation</a>
               </div>
             <?php endif; ?>
           </div>
         <?php elseif ($acctSt === 'approved' && $fulfilled && $verifiedPaid): ?>
-          <div class="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
             Payment verified, fulfilled, access granted, and account is Active. Manual activation is not part of the normal paid flow.
           </div>
         <?php elseif ($acctSt === 'approved' && (!$fulfilled || $paySt !== 'paid')): ?>
-          <div class="rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
             Account is Active, but commerce payment/access is not fulfilled.
           </div>
         <?php endif; ?>
 
         <div>
-          <div class="text-xs uppercase opacity-60 font-semibold mb-2">Line items</div>
+          <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Line items</div>
           <ul class="text-sm space-y-1">
             <?php foreach ($detailItems as $it): ?>
               <li><?php echo h((string) $it['item_name']); ?>
@@ -528,7 +541,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">OCR / detected</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">OCR / detected</div>
             <div>Amount: <?php echo $detail['detected_amount_centavos'] !== null ? '₱' . h(commerce_centavos_to_pesos_display((int) $detail['detected_amount_centavos'])) : '-'; ?></div>
             <div>Reference: <?php echo h((string) ($detail['detected_reference'] ?? '-')); ?></div>
             <div>Recipient: <?php echo h((string) ($detail['detected_recipient'] ?? '-')); ?></div>
@@ -542,7 +555,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <div class="mt-1"><?php echo h((string) ($detail['verification_summary'] ?? '')); ?></div>
           </div>
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-1">Proof</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-1">Proof</div>
             <?php if (!empty($detail['proof_path'])): ?>
               <a class="text-sky-300 underline" data-admin-proof
                  data-proof-title="Proof · <?php echo h((string) $detail['payment_ref']); ?>"
@@ -555,18 +568,18 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
 
         <?php if ($detailAttempts !== []): ?>
           <div>
-            <div class="text-xs uppercase opacity-60 font-semibold mb-2">Verification attempts</div>
+            <div class="text-xs uppercase text-slate-500 font-semibold mb-2">Verification attempts</div>
             <div class="overflow-x-auto">
               <table class="w-full text-xs">
-                <thead><tr class="opacity-60 text-left"><th class="py-1 pr-2">#</th><th class="py-1 pr-2">Engine</th><th class="py-1 pr-2">Conf</th><th class="py-1 pr-2">Decision</th><th class="py-1">When</th></tr></thead>
+                <thead><tr class="text-left bg-slate-100 text-slate-700 border-b border-slate-200"><th class="py-2 px-2 font-bold uppercase tracking-wide">#</th><th class="py-2 px-2 font-bold uppercase tracking-wide">Engine</th><th class="py-2 px-2 font-bold uppercase tracking-wide">Conf</th><th class="py-2 px-2 font-bold uppercase tracking-wide">Decision</th><th class="py-2 px-2 font-bold uppercase tracking-wide">When</th></tr></thead>
                 <tbody>
                   <?php foreach ($detailAttempts as $a): ?>
-                    <tr class="border-t border-white/5">
-                      <td class="py-1 pr-2"><?php echo (int) $a['attempt_id']; ?></td>
-                      <td class="py-1 pr-2"><?php echo h((string) $a['engine']); ?></td>
-                      <td class="py-1 pr-2"><?php echo h((string) ($a['confidence'] ?? '')); ?></td>
-                      <td class="py-1 pr-2"><?php echo h((string) $a['decision']); ?></td>
-                      <td class="py-1"><?php echo h((string) $a['created_at']); ?></td>
+                    <tr class="border-t border-slate-100">
+                      <td class="py-1.5 px-2"><?php echo (int) $a['attempt_id']; ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) $a['engine']); ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) ($a['confidence'] ?? '')); ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) $a['decision']); ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) $a['created_at']); ?></td>
                     </tr>
                   <?php endforeach; ?>
                 </tbody>
@@ -575,8 +588,8 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           </div>
         <?php endif; ?>
 
-        <div class="border-t border-white/10 pt-4 space-y-3">
-          <div class="text-xs uppercase opacity-60 font-semibold">Grants / Access</div>
+        <div class="border-t border-slate-100 pt-4 space-y-3">
+          <div class="text-xs uppercase text-slate-500 font-semibold">Grants / Access</div>
           <div class="text-sm">
             <a class="underline font-semibold" href="<?php echo h(ereview_url('admin_commerce_grants') . '?payment_id=' . (int) $detail['payment_id']); ?>">Open Grant Ledger for this payment</a>
             <?php if (!empty($detail['user_id'])): ?>
@@ -584,33 +597,39 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
             <?php endif; ?>
           </div>
           <?php if ($detailGrants === []): ?>
-            <p class="text-sm opacity-70">No purchase access grants linked to this payment.</p>
+            <p class="text-sm text-slate-500">No purchase access grants linked to this payment.</p>
           <?php else: ?>
             <div class="overflow-x-auto">
               <table class="w-full text-xs">
                 <thead>
-                  <tr class="opacity-60 text-left">
-                    <th class="py-1 pr-2">Grant</th>
-                    <th class="py-1 pr-2">Content</th>
-                    <th class="py-1 pr-2">Source</th>
-                    <th class="py-1 pr-2">Status</th>
-                    <th class="py-1 pr-2">Starts</th>
-                    <th class="py-1 pr-2">Ends</th>
-                    <th class="py-1 pr-2">Revoked</th>
-                    <th class="py-1">Reason</th>
+                  <tr class="text-left bg-slate-100 text-slate-700 border-b border-slate-200">
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Grant</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Content</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Source</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Status</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Starts</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Ends</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Revoked</th>
+                    <th class="py-2 px-2 font-bold uppercase tracking-wide">Reason</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php foreach ($detailGrants as $g): ?>
-                    <tr class="border-t border-white/5 align-top">
-                      <td class="py-1 pr-2">#<?php echo (int) $g['grant_id']; ?></td>
-                      <td class="py-1 pr-2"><?php echo h((string) ($g['content_label'] ?: ($g['content_type'] . ':' . $g['content_id']))); ?></td>
-                      <td class="py-1 pr-2"><?php echo h((string) $g['source']); ?></td>
-                      <td class="py-1 pr-2 font-semibold"><?php echo h((string) $g['status']); ?></td>
-                      <td class="py-1 pr-2 whitespace-nowrap"><?php echo h((string) $g['starts_at']); ?></td>
-                      <td class="py-1 pr-2 whitespace-nowrap"><?php echo h((string) $g['ends_at']); ?></td>
-                      <td class="py-1 pr-2 whitespace-nowrap"><?php echo h((string) ($g['revoked_at'] ?? '-')); ?></td>
-                      <td class="py-1 max-w-xs"><?php echo h((string) ($g['revoke_reason'] ?? '-')); ?></td>
+                    <tr class="border-t border-slate-100 align-top">
+                      <td class="py-1.5 px-2">#<?php echo (int) $g['grant_id']; ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) ($g['content_label'] ?: ($g['content_type'] . ':' . $g['content_id']))); ?></td>
+                      <td class="py-1.5 px-2"><?php echo h((string) $g['source']); ?></td>
+                      <td class="py-1.5 px-2">
+                        <?php
+                          $gSt = (string) $g['status'];
+                          $gBadge = $gSt === 'active' ? 'admin-badge--success' : ($gSt === 'revoked' ? 'admin-badge--danger' : 'admin-badge--neutral');
+                        ?>
+                        <span class="admin-badge <?php echo $gBadge; ?>"><?php echo h($gSt); ?></span>
+                      </td>
+                      <td class="py-1.5 px-2 whitespace-nowrap"><?php echo h((string) $g['starts_at']); ?></td>
+                      <td class="py-1.5 px-2 whitespace-nowrap"><?php echo h((string) $g['ends_at']); ?></td>
+                      <td class="py-1.5 px-2 whitespace-nowrap"><?php echo h((string) ($g['revoked_at'] ?? '-')); ?></td>
+                      <td class="py-1.5 px-2 max-w-xs"><?php echo h((string) ($g['revoke_reason'] ?? '-')); ?></td>
                     </tr>
                   <?php endforeach; ?>
                 </tbody>
@@ -629,15 +648,15 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                       onclick="return confirm('Revoke paid LMS access for this payment? Payment history will be kept; Free Access grants are not affected.');">
                 Revoke Access
               </button>
-              <p class="text-xs opacity-60">Revokes active purchase grants for this payment only. Payment stays paid. SCA is reconciled so overlapping purchase or Free Access coverage is preserved.</p>
+              <p class="text-xs text-slate-500">Revokes active purchase grants for this payment only. Payment stays paid. SCA is reconciled so overlapping purchase or Free Access coverage is preserved.</p>
             </form>
           <?php elseif ($detailGrants !== []): ?>
-            <p class="text-sm opacity-70">No active purchase grants remain to revoke.</p>
+            <p class="text-sm text-slate-500">No active purchase grants remain to revoke.</p>
           <?php endif; ?>
         </div>
 
         <?php if ($canReview): ?>
-          <form method="post" class="border-t border-white/10 pt-4 space-y-3">
+          <form method="post" class="border-t border-slate-100 pt-4 space-y-3">
             <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
             <input type="hidden" name="payment_id" value="<?php echo (int) $detail['payment_id']; ?>">
             <label class="block text-xs font-semibold uppercase opacity-70">Review note (optional)</label>
@@ -646,12 +665,12 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
               <button type="submit" name="action" value="approve" class="admin-btn admin-btn--primary px-4 py-2.5">Approve</button>
               <button type="submit" name="action" value="reject" class="admin-btn admin-btn--secondary px-4 py-2.5" onclick="return confirm('Reject this payment? No LMS access will be granted.');">Reject</button>
             </div>
-            <p class="text-xs opacity-60">Approve sets manually_approved + paid, then runs the same fulfillment as auto_verified (grants, SCA, auto login activation). Use this when OCR failed but the receipt is valid. Reject sets manually_rejected + rejected with no grants/SCA.</p>
+            <p class="text-xs text-slate-500">Approve sets manually_approved + paid, then runs the same fulfillment as auto_verified (grants, SCA, auto login activation). Use this when OCR failed but the receipt is valid. Reject sets manually_rejected + rejected with no grants/SCA.</p>
           </form>
         <?php elseif ((string) ($detail['status'] ?? '') === 'pending_verification' && empty($detail['proof_path'])): ?>
-          <p class="text-sm opacity-70 border-t border-white/10 pt-4">Manual Approve is unavailable until proof is uploaded.</p>
+          <p class="text-sm text-slate-500 border-t border-slate-100 pt-4">Manual Approve is unavailable until proof is uploaded.</p>
         <?php elseif (in_array((string) ($detail['verification_status'] ?? ''), ['manually_rejected'], true)): ?>
-          <p class="text-sm opacity-70 border-t border-white/10 pt-4">This payment was manually rejected. Create a new checkout if the student needs to pay again.</p>
+          <p class="text-sm text-slate-500 border-t border-slate-100 pt-4">This payment was manually rejected. Create a new checkout if the student needs to pay again.</p>
         <?php endif; ?>
       </div>
     <?php endif; ?>
@@ -664,14 +683,14 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           }
       }
     ?>
-    <form method="post" id="paymentsBulkForm" class="quiz-admin-table-shell rounded-2xl overflow-hidden">
+    <form method="post" id="paymentsBulkForm" class="quiz-admin-table-shell admin-data-surface rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl overflow-hidden">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <input type="hidden" name="return_filter" value="<?php echo h($filter); ?>">
       <input type="hidden" name="action" id="paymentsBulkAction" value="bulk_approve">
       <?php if ($reviewableCount > 0): ?>
-        <div class="payments-bulk-toolbar flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
-          <span class="text-sm font-semibold">Bulk review</span>
-          <span class="text-xs opacity-70" id="paymentsSelectedCount"><?php echo (int) $reviewableCount; ?> reviewable on page · max 50</span>
+        <div class="payments-bulk-toolbar flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-slate-200 bg-slate-50">
+          <span class="text-sm font-semibold text-slate-800">Bulk review</span>
+          <span class="text-xs text-slate-500" id="paymentsSelectedCount"><?php echo (int) $reviewableCount; ?> reviewable on page · max 50</span>
           <div class="flex-1 min-w-[8rem]"></div>
           <input type="text" name="review_note" class="input-custom text-sm w-full sm:w-64" maxlength="2000" placeholder="Optional shared note">
           <button type="submit" class="admin-btn admin-btn--primary px-3 py-2 text-sm"
@@ -684,54 +703,63 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
           </button>
         </div>
       <?php else: ?>
-        <div class="px-4 py-3 border-b border-white/10 text-xs opacity-70">
+        <div class="px-3 py-2.5 border-b border-slate-200 text-xs text-slate-500 bg-slate-50">
           No reviewable payments on this filter. Checkboxes appear only for Needs Review / OCR Failed (with proof) while still pending verification.
         </div>
       <?php endif; ?>
       <div class="overflow-x-auto">
         <table class="w-full text-sm admin-bulk-table">
           <thead>
-            <tr class="text-left text-xs uppercase opacity-60 border-b border-white/10">
-              <th class="px-3 py-3 w-12">
+            <tr class="text-left text-xs uppercase tracking-wide bg-slate-100 text-slate-700 border-b border-slate-200">
+              <th class="px-3 py-2.5 w-12 font-bold">
                 <?php if ($reviewableCount > 0): ?>
                   <input type="checkbox" id="paymentsSelectAll" class="admin-bulk-check"
                          title="Select all reviewable on this page"
                          aria-label="Select all reviewable payments on this page">
                 <?php endif; ?>
               </th>
-              <th class="px-3 py-3">Payment</th>
-              <th class="px-3 py-3">User</th>
-              <th class="px-3 py-3">Type</th>
-              <th class="px-3 py-3">Amount</th>
-              <th class="px-3 py-3">Verification</th>
-              <th class="px-3 py-3">Summary</th>
-              <th class="px-3 py-3">Action</th>
+              <th class="px-3 py-2.5 font-bold">Payment</th>
+              <th class="px-3 py-2.5 font-bold">User</th>
+              <th class="px-3 py-2.5 font-bold">Type</th>
+              <th class="px-3 py-2.5 font-bold">Amount</th>
+              <th class="px-3 py-2.5 font-bold">Verification</th>
+              <th class="px-3 py-2.5 font-bold">Summary</th>
+              <th class="px-3 py-2.5 font-bold">Action</th>
             </tr>
           </thead>
           <tbody>
             <?php if ($rows === []): ?>
-              <tr><td colspan="8" class="px-3 py-8 text-center opacity-60">No payments match this filter.</td></tr>
+              <tr><td colspan="8" class="px-3 py-8 text-center text-slate-500">No payments match this filter.</td></tr>
             <?php else: ?>
               <?php foreach ($rows as $r): ?>
-                <?php $rowReviewable = commerce_payment_is_manual_reviewable($r); ?>
-                <tr class="border-b border-white/5 align-top<?php echo $rowReviewable ? ' is-selectable' : ''; ?>">
-                  <td class="px-3 py-3">
+                <?php
+                  $rowReviewable = commerce_payment_is_manual_reviewable($r);
+                  $rowVSt = (string) ($r['verification_status'] ?? '');
+                  $rowVBadge = match ($rowVSt) {
+                    'auto_verified', 'manually_approved' => 'admin-badge--success',
+                    'needs_review', 'processing', 'not_started' => 'admin-badge--warning',
+                    'manually_rejected', 'failed' => 'admin-badge--danger',
+                    default => 'admin-badge--neutral',
+                  };
+                ?>
+                <tr class="border-b border-slate-100 align-top<?php echo $rowReviewable ? ' is-selectable' : ''; ?>">
+                  <td class="px-3 py-2.5">
                     <?php if ($rowReviewable): ?>
                       <input type="checkbox" class="js-payment-select admin-bulk-check" name="payment_ids[]" value="<?php echo (int) $r['payment_id']; ?>" aria-label="Select payment <?php echo (int) $r['payment_id']; ?>">
                     <?php else: ?>
                       <span class="admin-bulk-check-na" title="Not reviewable">-</span>
                     <?php endif; ?>
                   </td>
-                  <td class="px-3 py-3">
-                    <div class="font-semibold"><?php echo h((string) $r['payment_ref']); ?></div>
-                    <div class="text-xs opacity-60"><?php echo h((string) $r['status']); ?>
+                  <td class="px-3 py-2.5">
+                    <div class="font-semibold text-slate-900"><?php echo h((string) $r['payment_ref']); ?></div>
+                    <div class="text-xs text-slate-500"><?php echo h((string) $r['status']); ?>
                       · fulfilled <?php echo !empty($r['fulfilled_at']) ? h((string) $r['fulfilled_at']) : 'NULL'; ?></div>
                   </td>
-                  <td class="px-3 py-3">
-                    <div><?php echo h((string) ($r['full_name'] ?? '')); ?></div>
-                    <div class="text-xs opacity-60"><?php echo h((string) ($r['email'] ?? '')); ?></div>
+                  <td class="px-3 py-2.5">
+                    <div class="text-slate-800"><?php echo h((string) ($r['full_name'] ?? '')); ?></div>
+                    <div class="text-xs text-slate-500"><?php echo h((string) ($r['email'] ?? '')); ?></div>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-3 py-2.5">
                     <?php
                       $ptype = (string) ($r['purchase_type'] ?? '');
                       $topicLabs = ($ptype === 'by_topic')
@@ -740,22 +768,22 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
                       $topicFull = $topicLabs !== [] ? implode(', ', $topicLabs) : '';
                       $topicShort = $topicLabs !== [] ? commerce_admin_format_topics_short($topicLabs, 2) : '';
                     ?>
-                    <div class="font-semibold"><?php echo h($ptype); ?></div>
+                    <div class="font-semibold text-slate-800"><?php echo h($ptype); ?></div>
                     <?php if ($topicShort !== ''): ?>
-                      <div class="text-xs opacity-70 mt-0.5 max-w-[14rem] leading-snug" title="<?php echo h($topicFull); ?>">
+                      <div class="text-xs text-slate-500 mt-0.5 max-w-[14rem] leading-snug" title="<?php echo h($topicFull); ?>">
                         <?php echo h($topicShort); ?>
                       </div>
                     <?php endif; ?>
                   </td>
-                  <td class="px-3 py-3">₱<?php echo h(commerce_centavos_to_pesos_display((int) $r['expected_amount_centavos'])); ?></td>
-                  <td class="px-3 py-3">
-                    <div class="font-semibold"><?php echo h(commerce_admin_vstatus_label((string) $r['verification_status'])); ?></div>
+                  <td class="px-3 py-2.5 font-semibold text-slate-900 tabular-nums">₱<?php echo h(commerce_centavos_to_pesos_display((int) $r['expected_amount_centavos'])); ?></td>
+                  <td class="px-3 py-2.5">
+                    <span class="admin-badge <?php echo $rowVBadge; ?>"><?php echo h(commerce_admin_vstatus_label($rowVSt)); ?></span>
                     <?php if ($r['verification_confidence'] !== null && $r['verification_confidence'] !== ''): ?>
-                      <div class="text-xs opacity-70">conf <?php echo h((string) $r['verification_confidence']); ?></div>
+                      <div class="text-xs text-slate-500 mt-1">conf <?php echo h((string) $r['verification_confidence']); ?></div>
                     <?php endif; ?>
                   </td>
-                  <td class="px-3 py-3 text-xs max-w-xs"><?php echo h((string) ($r['verification_summary'] ?? '')); ?></td>
-                  <td class="px-3 py-3 whitespace-nowrap">
+                  <td class="px-3 py-2.5 text-xs text-slate-600 max-w-xs"><?php echo h((string) ($r['verification_summary'] ?? '')); ?></td>
+                  <td class="px-3 py-2.5 whitespace-nowrap">
                     <div class="payments-row-actions">
                       <a class="payments-action-link" href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $r['payment_id'] . ($filter !== 'all' ? '&v=' . rawurlencode($filter) : '')); ?>">Open</a>
                       <?php if ($rowReviewable): ?>
@@ -779,7 +807,7 @@ $adminHeroSubtitle = 'OCR results and manual review. Approve failed/needs-review
         </table>
       </div>
     </form>
-    <p class="text-xs opacity-60 mt-3 mb-0">
+    <p class="text-xs text-slate-500 mt-3 mb-0">
       Happy path after Approve: paid → fulfill → access grant → SCA → auto login activation.
       Bulk Approve uses the same path per payment (not a shortcut). Check proof first when unsure.
     </p>

@@ -105,38 +105,32 @@ if (isset($_GET['edit'])) {
 $handouts = mysqli_query($conn, "SELECT * FROM lesson_handouts WHERE lesson_id=".$lessonId." ORDER BY handout_id DESC");
 $pageTitle = 'Handouts - ' . $lesson['title'];
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Handouts'] ];
+$adminHeroIcon = 'file-earmark-pdf';
+$adminHeroTitle = 'Handouts';
+$adminHeroSubtitle = $lesson['title'] . ' · ' . $lesson['subject_name'];
+$adminHeroEyebrow = 'Content Hub / ' . (string) $lesson['subject_name'];
+$adminHeroActions = '<a href="admin_handouts?lesson_id=' . (int)$lessonId . '&subject_id=' . (int)$subjectId . '" class="admin-btn admin-btn--primary">New Handout</a>';
+$adminBackHref = 'admin_lessons?subject_id=' . (int)$subjectId;
+$adminBackLabel = 'Back to Lessons';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-handouts-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
-      Handouts - <?php echo h($lesson['title']); ?> (<span class="text-gray-300"><?php echo h($lesson['subject_name']); ?></span>)
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0">Upload PDFs or documents and control download access per handout.</p>
-  </div>
-
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
-    <div></div>
-    <div class="flex gap-2">
-      <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Back to Lessons</a>
-      <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition">New Handout</a>
-    </div>
-  </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
     <div class="lg:col-span-5">
-      <div class="rounded-xl shadow-card border p-5 page-table">
-        <h2 class="text-lg font-bold text-gray-800 mb-4"><?php echo $edit ? 'Edit Handout' : 'Add Handout'; ?></h2>
+      <div class="rounded-2xl border border-violet-100/80 bg-white/85 p-5 shadow-[0_12px_32px_rgba(15,23,42,0.07),0_3px_14px_rgba(139,92,246,0.08)] backdrop-blur-xl ring-1 ring-white/70">
+        <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><span class="lms-icon-tile bg-violet-50 text-violet-600"><i class="bi bi-file-earmark-pdf"></i></span> <?php echo $edit ? 'Edit Handout' : 'Add Handout'; ?></h2>
+        <p class="mb-4 text-sm text-slate-500"><?php echo $edit ? 'Replace the file or update download access for this document.' : 'Upload a PDF or document and control student download access.'; ?></p>
         <form method="POST" enctype="multipart/form-data" class="space-y-4">
           <?php if ($edit): ?><input type="hidden" name="handout_id" value="<?php echo (int)$edit['handout_id']; ?>"><?php endif; ?>
+          <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
             <input type="text" name="handout_title" value="<?php echo h($edit['handout_title'] ?? ''); ?>" class="input-custom">
@@ -152,31 +146,44 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
             <input type="checkbox" id="allowDownload" name="allow_download" value="1" <?php echo (!$edit || (int)($edit['allow_download'] ?? 1) === 1) ? 'checked' : ''; ?> class="rounded border-gray-300 text-primary focus:ring-primary">
             <label for="allowDownload" class="text-sm font-medium text-gray-700">Allow students to download</label>
           </div>
+          </div>
           <div class="flex gap-2">
-            <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition"><?php echo $edit ? 'Update' : 'Upload'; ?></button>
-            <?php if ($edit): ?><a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</a><?php endif; ?>
+            <button type="submit" class="admin-btn admin-btn--primary"><?php echo $edit ? 'Update' : 'Upload'; ?></button>
+            <?php if ($edit): ?><a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Cancel</a><?php endif; ?>
           </div>
         </form>
       </div>
     </div>
     <div class="lg:col-span-7">
-      <div class="rounded-xl shadow-card border overflow-hidden page-table">
-        <div class="px-5 py-4 border-b border-gray-100 font-semibold text-gray-800">All Handouts</div>
+      <?php if ($edit && !empty($edit['file_path'])): ?>
+      <div class="mb-4 rounded-2xl border border-violet-100/80 bg-gradient-to-br from-violet-50/70 via-white to-white p-4 shadow-sm ring-1 ring-white/70">
+        <p class="m-0 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-600/80">Preview / status</p>
+        <p class="m-0 mt-1 text-sm font-semibold text-slate-900"><?php echo h($edit['handout_title'] ?? 'Untitled handout'); ?></p>
+        <a href="<?php echo h($edit['file_path']); ?>" target="_blank" class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:underline"><i class="bi bi-file-earmark-arrow-down"></i> Open current file</a>
+      </div>
+      <?php endif; ?>
+      <div class="rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl overflow-hidden page-table">
+        <div class="px-5 py-3 border-b border-slate-100 font-semibold text-slate-900">All Handouts</div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">
-            <thead class="bg-gray-50 border-b border-gray-200">
+            <thead class="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th class="px-5 py-3 font-semibold text-gray-700">Title</th>
-                <th class="px-5 py-3 font-semibold text-gray-700">File</th>
-                <th class="px-5 py-3 font-semibold text-gray-700">Size</th>
-                <th class="px-5 py-3 font-semibold text-gray-700">Downloads</th>
-                <th class="px-5 py-3 font-semibold text-gray-700 w-[220px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-slate-700">Title</th>
+                <th class="px-5 py-3 font-semibold text-slate-700">File</th>
+                <th class="px-5 py-3 font-semibold text-slate-700">Size</th>
+                <th class="px-5 py-3 font-semibold text-slate-700">Downloads</th>
+                <th class="px-5 py-3 font-semibold text-slate-700 w-[220px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
-                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-                  <td class="px-5 py-3"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></td>
+                <tr class="border-b border-slate-100 hover:bg-slate-50/50">
+                  <td class="px-5 py-3">
+                    <div class="inline-flex items-center gap-2 font-medium text-slate-900">
+                      <span class="lms-icon-tile bg-violet-50 text-violet-600" style="width:1.75rem;height:1.75rem;border-radius:0.5rem;font-size:0.8rem"><i class="bi bi-file-earmark-text"></i></span>
+                      <?php echo h($h['handout_title'] ?: 'Untitled'); ?>
+                    </div>
+                  </td>
                   <td class="px-5 py-3">
                     <?php if (!empty($h['file_path'])): ?>
                       <a href="<?php echo h($h['file_path']); ?>" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-primary text-primary hover:bg-primary hover:text-white transition"><i class="bi bi-download"></i> Download</a>
@@ -187,15 +194,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_s
                   <td class="px-5 py-3"><?php echo $h['file_size'] ? number_format($h['file_size'] / 1024, 2) . ' KB' : '-'; ?></td>
                   <td class="px-5 py-3">
                     <?php if (!empty($h['allow_download'])): ?>
-                      <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Allowed</span>
+                      <span class="admin-status-pill admin-status-pill--approved">Allowed</span>
                     <?php else: ?>
-                      <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">Locked</span>
+                      <span class="admin-status-pill admin-status-pill--inactive">Locked</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3">
-                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-gray-400 text-gray-600 hover:bg-gray-400 hover:text-white transition">Edit</a>
-                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&toggle_download=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white transition"><?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
-                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition">Delete</a>
+                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&edit=<?php echo (int)$h['handout_id']; ?>" class="admin-btn admin-btn--secondary text-sm px-3 py-1.5">Edit</a>
+                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&toggle_download=<?php echo (int)$h['handout_id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition"><?php echo !empty($h['allow_download']) ? 'Lock' : 'Unlock'; ?></a>
+                    <a href="admin_handouts?lesson_id=<?php echo (int)$lessonId; ?>&subject_id=<?php echo (int)$subjectId; ?>&delete=<?php echo (int)$h['handout_id']; ?>" onclick="return confirm('Delete this handout?');" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border border-rose-200 text-rose-700 hover:bg-rose-50 transition">Delete</a>
                   </td>
                 </tr>
               <?php endwhile; ?>

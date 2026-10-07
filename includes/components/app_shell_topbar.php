@@ -100,7 +100,7 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
 }
 ?>
 <?php if ($t === 'admin' || $t === 'professor'): ?>
-<header class="admin-topbar admin-topbar-modern sticky top-0 z-[999] mt-0 mb-4" x-data="{
+<header class="admin-topbar admin-topbar-modern sticky top-0 z-50 mt-0 mb-0 bg-transparent" x-data="{
     userMenuOpen: false,
     searchFocused: false,
     searchQuery: '',
@@ -111,11 +111,12 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
       if (!q) { window.location.href = 'admin_students'; return; }
       window.location.href = 'admin_students?tab=all&q=' + encodeURIComponent(q) + '&page=1';
     }
-  }" @keydown.escape.window="closeAll()">
-  <div class="admin-topbar-inner">
-    <div class="admin-topbar-left">
+  }" @keydown.escape.window="closeAll()" @professor-close-profile.window="closeAll()">
+  <div class="admin-topbar-wrap">
+  <div class="admin-topbar-inner flex items-center justify-between gap-2 rounded-2xl border border-white/70 bg-white/55 px-3 py-2 shadow-[0_8px_24px_rgba(15,23,42,.05)] backdrop-blur-2xl sm:px-4">
+    <div class="admin-topbar-left flex min-w-0 flex-1 items-center gap-2">
       <?php if ($t === 'admin' || $t === 'professor'): ?>
-        <button type="button" id="app-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="app-sidebar" class="admin-topbar-menu-btn app-shell-menu-btn" @click="toggleSidebar()">
+        <button type="button" id="app-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="app-sidebar" class="admin-topbar-menu-btn app-shell-menu-btn inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/55 text-slate-600 shadow-sm backdrop-blur transition hover:bg-white" @click="toggleSidebar()">
           <span class="burger-icon" aria-hidden="true">
             <span class="burger-line burger-line--1"></span>
             <span class="burger-line burger-line--2"></span>
@@ -126,34 +127,38 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
           </span>
         </button>
       <?php endif; ?>
-      <form class="admin-topbar-search-wrap" :class="{ 'is-focused': searchFocused }" @submit.prevent="goSearch()" role="search">
+      <form class="admin-topbar-search-wrap relative flex min-w-0 flex-1 items-center" :class="{ 'is-focused': searchFocused }" @submit.prevent="goSearch()" role="search">
         <i class="bi bi-search admin-topbar-search-icon" aria-hidden="true"></i>
-        <input type="search" placeholder="Search students, email..." aria-label="Search students" class="admin-topbar-search"
+        <input type="search" placeholder="Search students, quizzes, content, packages..." aria-label="Search students" class="admin-topbar-search"
                x-model="searchQuery"
                @focus="searchFocused = true" @blur="searchFocused = false">
+        <span class="admin-topbar-kbd" aria-hidden="true">⌘K</span>
       </form>
     </div>
 
     <div class="admin-topbar-right">
       <nav class="admin-topbar-actions" aria-label="Quick actions">
-        <button type="button" class="admin-theme-toggle" data-admin-theme-toggle aria-pressed="true" title="Switch theme" aria-label="Switch theme">
+        <button type="button" class="admin-theme-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/55 text-slate-600 shadow-sm" data-admin-theme-toggle aria-pressed="true" title="Switch theme" aria-label="Switch theme">
           <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
           <i class="bi bi-sun-fill" aria-hidden="true"></i>
         </button>
-        <button type="button" aria-label="Messages" class="admin-topbar-action admin-topbar-action--message relative" title="Messages" data-message-toggle>
+        <button type="button" aria-label="Messages" class="admin-topbar-action admin-topbar-action--message relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/55 text-slate-600 shadow-sm" title="Messages" data-message-toggle>
           <i class="bi bi-chat-left-text" aria-hidden="true"></i>
           <span class="ere-msg-topbar-badge" aria-hidden="true"></span>
         </button>
-        <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
+        <button type="button" aria-label="Notifications" class="admin-topbar-action admin-topbar-action--notif inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/80 bg-white/55 text-slate-600 shadow-sm" title="Notifications" data-notification-toggle aria-controls="ereviewNotificationPanel" aria-expanded="false">
           <i class="bi bi-bell" aria-hidden="true"></i>
           <span class="ere-notif__badge is-empty" data-notification-badge aria-hidden="true"></span>
         </button>
       </nav>
 
       <div class="admin-topbar-profile-wrap">
-        <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="admin-topbar-profile-btn">
+        <button type="button" @click="userMenuOpen = !userMenuOpen" aria-haspopup="true" :aria-expanded="userMenuOpen" class="admin-topbar-profile-btn inline-flex items-center gap-2 rounded-xl px-2 py-1">
           <span class="admin-topbar-avatar" aria-hidden="true"><?php echo function_exists('mb_substr') ? strtoupper(mb_substr(trim($displayNameFull ?: 'A'), 0, 1)) : strtoupper(substr(trim($displayNameFull ?: 'A'), 0, 1)); ?></span>
-          <span class="admin-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
+          <span class="admin-topbar-identity">
+            <span class="admin-topbar-name" title="<?php echo h($displayNameFull); ?>"><?php echo h($displayNameTopbar); ?></span>
+            <span class="admin-topbar-role"><?php echo h($ereviewStaffSubtitle); ?></span>
+          </span>
           <i class="bi bi-chevron-down admin-topbar-chevron" aria-hidden="true" :class="{ 'is-open': userMenuOpen }"></i>
         </button>
         <div x-show="userMenuOpen" x-cloak
@@ -207,6 +212,7 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
       </div>
     </div>
   </div>
+  </div>
 </header>
 <?php
 $notificationTheme = $t === 'professor' ? 'professor' : 'admin';
@@ -245,7 +251,7 @@ include __DIR__ . '/messaging_component.php';
       this.accessPop = false;
       this.mobileMenuOpen = false;
     }
-  }" @keydown.escape.window="closeAll()">
+  }" @keydown.escape.window="closeAll()" @ereview-close-profile.window="closeAll()">
   <div class="student-topbar-inner">
     <div class="student-topbar-left">
       <button type="button" id="app-sidebar-toggle-btn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="app-sidebar" class="student-topbar-menu-btn app-shell-menu-btn" @click="toggleSidebar()">

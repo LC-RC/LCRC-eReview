@@ -215,6 +215,30 @@ function examination_questions_validate_for_publish(mysqli $conn, string $examTy
         return ['ok' => true];
     }
 
+    require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
+    $topicSupply = college_exam_topic_supply($conn, $sourceId);
+    if (!empty($topicSupply['configured'])) {
+        if (empty($topicSupply['ok'])) {
+            $details = $topicSupply['errors'] ?? [];
+
+            return [
+                'ok' => false,
+                'error' => $details[0] ?? 'Question supply is insufficient for the configured breakdown.',
+                'details' => $details,
+            ];
+        }
+        if ((int)($topicSupply['total_required'] ?? 0) < 1) {
+            $mode = (string)($topicSupply['mode'] ?? 'overall');
+            if ($mode === 'overall') {
+                return ['ok' => false, 'error' => 'Set a total number of questions before publishing.'];
+            }
+
+            return ['ok' => false, 'error' => 'Configure at least one subject with a positive question count before publishing.'];
+        }
+
+        return ['ok' => true];
+    }
+
     $count = count(examination_questions_load_regular($conn, $sourceId));
     if ($count < 1) {
         return ['ok' => false, 'error' => 'Add at least one question before publishing.'];
@@ -322,24 +346,192 @@ function examination_questions_regular_save_one(mysqli $conn, int $examId, int $
     }
     $row = $norm['row'];
 
-    if ($questionId > 0) {
-        $upd = mysqli_prepare(
+    require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
+    $mode = college_exam_get_breakdown_mode($conn, $examId);
+    $topicId = max(0, (int)($data['exam_topic_id'] ?? 0));
+    $subjectId = max(0, (int)($data['exam_subject_id'] ?? 0));
+    $hasTopicCol = college_exam_questions_has_topic_column($conn);
+    $hasSubjCol = college_exam_questions_has_subject_column($conn);
+
+    if ($mode === 'subject' || $mode === 'subject_topic') {
+        if ($subjectId <= 0 && $topicId > 0 && $hasTopicCol) {
+            $chkMap = mysqli_prepare(
+                $conn,
+                'SELECT exam_subject_id FROM college_exam_topics WHERE exam_topic_id=? AND exam_id=? LIMIT 1'
+            );
+            mysqli_stmt_bind_param($chkMap, 'ii', $topicId, $examId);
+            mysqli_stmt_execute($chkMap);
+            $mapRow = mysqli_fetch_assoc(mysqli_stmt_get_result($chkMap));
+            mysqli_stmt_close($chkMap);
+            $subjectId = (int)($mapRow['exam_subject_id'] ?? 0);
+        }
+        if ($subjectId <= 0) {
+            return ['ok' => false, 'error' => 'Select a subject for this question.'];
+        }
+        $chkS = mysqli_prepare(
             $conn,
-            'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=? WHERE question_id=? AND exam_id=?'
+            'SELECT exam_subject_id FROM college_exam_subjects WHERE exam_subject_id=? AND exam_id=? LIMIT 1'
         );
-        mysqli_stmt_bind_param(
-            $upd,
-            'sssssssii',
-            $row['question_type'],
-            $row['question_text'],
-            $row['choice_a'],
-            $row['choice_b'],
-            $row['choice_c'],
-            $row['choice_d'],
-            $row['correct_answer'],
-            $questionId,
-            $examId
-        );
+        mysqli_stmt_bind_param($chkS, 'ii', $subjectId, $examId);
+        mysqli_stmt_execute($chkS);
+        $sOk = (bool)mysqli_fetch_assoc(mysqli_stmt_get_result($chkS));
+        mysqli_stmt_close($chkS);
+        if (!$sOk) {
+            return ['ok' => false, 'error' => 'Selected subject does not belong to this examination.'];
+        }
+        if ($mode === 'subject') {
+            $topicId = 0;
+        } elseif ($topicId > 0) {
+            $chkT = mysqli_prepare(
+                $conn,
+                'SELECT exam_topic_id FROM college_exam_topics WHERE exam_topic_id=? AND exam_id=? AND exam_subject_id=? LIMIT 1'
+            );
+            mysqli_stmt_bind_param($chkT, 'iii', $topicId, $examId, $subjectId);
+            mysqli_stmt_execute($chkT);
+            $tOk = (bool)mysqli_fetch_assoc(mysqli_stmt_get_result($chkT));
+            mysqli_stmt_close($chkT);
+            if (!$tOk) {
+                return ['ok' => false, 'error' => 'Selected topic does not belong to this subject.'];
+            }
+        } else {
+            // Topic required when this subject has configured topics.
+            $treeChk = college_exam_load_subjects_with_topics($conn, $examId);
+            foreach ($treeChk as $sNode) {
+                if ((int)$sNode['exam_subject_id'] === $subjectId && !empty($sNode['topics'])) {
+                    return ['ok' => false, 'error' => 'Select a topic for this subject.'];
+                }
+            }
+        }
+
+        $cap = college_exam_check_question_capacity($conn, $examId, $subjectId, $topicId, $questionId);
+        if (empty($cap['ok'])) {
+            return ['ok' => false, 'error' => (string)($cap['error'] ?? 'This subject/topic already has enough questions.')];
+        }
+    } else {
+        $topicId = 0;
+        $subjectId = 0;
+        if ($mode === 'overall') {
+            $cap = college_exam_check_question_capacity($conn, $examId, 0, 0, $questionId);
+            if (empty($cap['ok'])) {
+                return ['ok' => false, 'error' => (string)($cap['error'] ?? 'Overall question target is already complete.')];
+            }
+        }
+    }
+
+    if ($questionId > 0) {
+        if ($hasSubjCol && $hasTopicCol && $subjectId > 0 && $topicId > 0) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=?, exam_subject_id=?, exam_topic_id=? WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssiiii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $subjectId,
+                $topicId,
+                $questionId,
+                $examId
+            );
+        } elseif ($hasSubjCol && $subjectId > 0) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=?, exam_subject_id=?, exam_topic_id=NULL WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssiii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $subjectId,
+                $questionId,
+                $examId
+            );
+        } elseif ($hasSubjCol) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=?, exam_subject_id=NULL, exam_topic_id=NULL WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $questionId,
+                $examId
+            );
+        } elseif ($hasTopicCol && $topicId > 0) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=?, exam_topic_id=? WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssiii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $topicId,
+                $questionId,
+                $examId
+            );
+        } elseif ($hasTopicCol) {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=?, exam_topic_id=NULL WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $questionId,
+                $examId
+            );
+        } else {
+            $upd = mysqli_prepare(
+                $conn,
+                'UPDATE college_exam_questions SET question_type=?, question_text=?, choice_a=?, choice_b=?, choice_c=?, choice_d=?, correct_answer=? WHERE question_id=? AND exam_id=?'
+            );
+            mysqli_stmt_bind_param(
+                $upd,
+                'sssssssii',
+                $row['question_type'],
+                $row['question_text'],
+                $row['choice_a'],
+                $row['choice_b'],
+                $row['choice_c'],
+                $row['choice_d'],
+                $row['correct_answer'],
+                $questionId,
+                $examId
+            );
+        }
         mysqli_stmt_execute($upd);
         mysqli_stmt_close($upd);
 
@@ -352,23 +544,83 @@ function examination_questions_regular_save_one(mysqli $conn, int $examId, int $
         $sort = (int)($sm['m'] ?? -1) + 1;
         mysqli_free_result($sr);
     }
-    $ins = mysqli_prepare(
-        $conn,
-        'INSERT INTO college_exam_questions (exam_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?)'
-    );
-    mysqli_stmt_bind_param(
-        $ins,
-        'isssssssi',
-        $examId,
-        $row['question_type'],
-        $row['question_text'],
-        $row['choice_a'],
-        $row['choice_b'],
-        $row['choice_c'],
-        $row['choice_d'],
-        $row['correct_answer'],
-        $sort
-    );
+    if ($hasSubjCol && $hasTopicCol && $subjectId > 0 && $topicId > 0) {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, exam_subject_id, exam_topic_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param(
+            $ins,
+            'iiisssssssi',
+            $examId,
+            $subjectId,
+            $topicId,
+            $row['question_type'],
+            $row['question_text'],
+            $row['choice_a'],
+            $row['choice_b'],
+            $row['choice_c'],
+            $row['choice_d'],
+            $row['correct_answer'],
+            $sort
+        );
+    } elseif ($hasSubjCol && $subjectId > 0) {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, exam_subject_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param(
+            $ins,
+            'iisssssssi',
+            $examId,
+            $subjectId,
+            $row['question_type'],
+            $row['question_text'],
+            $row['choice_a'],
+            $row['choice_b'],
+            $row['choice_c'],
+            $row['choice_d'],
+            $row['correct_answer'],
+            $sort
+        );
+    } elseif ($hasTopicCol && $topicId > 0) {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, exam_topic_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param(
+            $ins,
+            'iisssssssi',
+            $examId,
+            $topicId,
+            $row['question_type'],
+            $row['question_text'],
+            $row['choice_a'],
+            $row['choice_b'],
+            $row['choice_c'],
+            $row['choice_d'],
+            $row['correct_answer'],
+            $sort
+        );
+    } else {
+        $ins = mysqli_prepare(
+            $conn,
+            'INSERT INTO college_exam_questions (exam_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?)'
+        );
+        mysqli_stmt_bind_param(
+            $ins,
+            'isssssssi',
+            $examId,
+            $row['question_type'],
+            $row['question_text'],
+            $row['choice_a'],
+            $row['choice_b'],
+            $row['choice_c'],
+            $row['choice_d'],
+            $row['correct_answer'],
+            $sort
+        );
+    }
     mysqli_stmt_execute($ins);
     $newId = (int)mysqli_insert_id($conn);
     mysqli_stmt_close($ins);
@@ -457,7 +709,25 @@ function examination_questions_validate_import_row(array $data, string $examType
         ];
     }
 
-    return examination_questions_normalize_regular_row($data, true);
+    return examination_questions_validate_import_row_regular_with_meta($data);
+}
+
+/**
+ * Preserve optional subject/topic names from import rows after normalize.
+ *
+ * @param array{question_text?:string,question_type?:string,choice_a?:string,choice_b?:string,choice_c?:string,choice_d?:string,correct_answer?:string,subject_name?:string,topic_name?:string} $data
+ * @return array{ok:bool,error?:string,row?:array}
+ */
+function examination_questions_validate_import_row_regular_with_meta(array $data): array
+{
+    $res = examination_questions_normalize_regular_row($data, true);
+    if (empty($res['ok']) || !isset($res['row']) || !is_array($res['row'])) {
+        return $res;
+    }
+    $res['row']['subject_name'] = trim((string)($data['subject_name'] ?? ''));
+    $res['row']['topic_name'] = trim((string)($data['topic_name'] ?? ''));
+
+    return $res;
 }
 
 /**
@@ -550,6 +820,159 @@ function examination_questions_regular_import_append(mysqli $conn, int $examId, 
         return $batch;
     }
 
+    require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
+    $mode = college_exam_get_breakdown_mode($conn, $examId);
+    $tree = college_exam_load_subjects_with_topics($conn, $examId);
+    $subjByName = [];
+    $topicBySubjName = [];
+    foreach ($tree as $s) {
+        $sk = mb_strtolower(trim((string)$s['subject_name']));
+        $subjByName[$sk] = $s;
+        $topicBySubjName[$sk] = [];
+        foreach ($s['topics'] as $t) {
+            $topicBySubjName[$sk][mb_strtolower(trim((string)$t['topic_name']))] = $t;
+        }
+    }
+
+    $resolved = [];
+    $errors = [];
+    $plannedSubject = [];
+    $plannedTopic = [];
+    $plannedOverall = 0;
+    $coveragePreview = [];
+
+    foreach ($batch['rows'] as $idx => $row) {
+        $sourceRow = $idx + 1;
+        $sid = 0;
+        $tid = 0;
+        if ($mode === 'subject' || $mode === 'subject_topic') {
+            $sName = trim((string)($row['subject_name'] ?? ''));
+            if ($sName === '') {
+                $errors[] = ['row' => $sourceRow, 'message' => 'Subject is required for this exam blueprint.'];
+                continue;
+            }
+            $sk = mb_strtolower($sName);
+            if (!isset($subjByName[$sk])) {
+                $errors[] = ['row' => $sourceRow, 'message' => 'Unknown subject "' . $sName . '". Use a subject configured for this exam.'];
+                continue;
+            }
+            $sid = (int)$subjByName[$sk]['exam_subject_id'];
+            $hasTopics = !empty($subjByName[$sk]['topics']);
+            $tName = trim((string)($row['topic_name'] ?? ''));
+            if ($mode === 'subject_topic' && $hasTopics) {
+                if ($tName === '') {
+                    $errors[] = ['row' => $sourceRow, 'message' => 'Topic is required for subject "' . $sName . '".'];
+                    continue;
+                }
+                $tk = mb_strtolower($tName);
+                if (!isset($topicBySubjName[$sk][$tk])) {
+                    $errors[] = ['row' => $sourceRow, 'message' => 'Unknown topic "' . $tName . '" under subject "' . $sName . '".'];
+                    continue;
+                }
+                $tid = (int)$topicBySubjName[$sk][$tk]['exam_topic_id'];
+            } elseif ($tName !== '' && $mode === 'subject_topic') {
+                $errors[] = ['row' => $sourceRow, 'message' => 'Subject "' . $sName . '" has no topics configured; leave Topic blank.'];
+                continue;
+            }
+        }
+
+        // Projected capacity including earlier rows in this batch.
+        if ($mode === 'overall') {
+            $req = college_exam_get_total_questions_required($conn, $examId);
+            $existing = 0;
+            $qr = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$examId);
+            if ($qr && ($r = mysqli_fetch_assoc($qr))) {
+                $existing = (int)($r['c'] ?? 0);
+            }
+            if ($qr) {
+                mysqli_free_result($qr);
+            }
+            if ($req > 0 && ($existing + $plannedOverall + 1) > $req) {
+                $errors[] = ['row' => $sourceRow, 'message' => sprintf('Overall target is %d; import would exceed capacity.', $req)];
+                continue;
+            }
+            $plannedOverall++;
+        } elseif ($tid > 0) {
+            $cap = college_exam_check_question_capacity($conn, $examId, $sid, $tid, 0);
+            $authored = (int)($cap['authored'] ?? 0);
+            $req = (int)($cap['required'] ?? 0);
+            $alreadyPlanned = (int)($plannedTopic[$tid] ?? 0);
+            if ($req > 0 && ($authored + $alreadyPlanned + 1) > $req) {
+                $errors[] = ['row' => $sourceRow, 'message' => sprintf(
+                    '%s capacity exceeded (%d / %d).',
+                    (string)($cap['label'] ?? 'Topic'),
+                    $authored + $alreadyPlanned,
+                    $req
+                )];
+                continue;
+            }
+            $plannedTopic[$tid] = $alreadyPlanned + 1;
+        } elseif ($sid > 0) {
+            $cap = college_exam_check_question_capacity($conn, $examId, $sid, 0, 0);
+            $authored = (int)($cap['authored'] ?? 0);
+            $req = (int)($cap['required'] ?? 0);
+            $alreadyPlanned = (int)($plannedSubject[$sid] ?? 0);
+            if ($req > 0 && ($authored + $alreadyPlanned + 1) > $req) {
+                $errors[] = ['row' => $sourceRow, 'message' => sprintf(
+                    '%s capacity exceeded (%d / %d).',
+                    (string)($cap['label'] ?? 'Subject'),
+                    $authored + $alreadyPlanned,
+                    $req
+                )];
+                continue;
+            }
+            $plannedSubject[$sid] = $alreadyPlanned + 1;
+        }
+
+        $row['exam_subject_id'] = $sid;
+        $row['exam_topic_id'] = $tid;
+        $resolved[] = $row;
+    }
+
+    if ($errors !== []) {
+        $previewLines = [];
+        $supply = college_exam_topic_supply($conn, $examId);
+        if (!empty($supply['configured'])) {
+            if (($supply['mode'] ?? '') === 'overall') {
+                $previewLines[] = sprintf(
+                    'Overall: %d required, %d already authored — %s',
+                    (int)$supply['total_required'],
+                    (int)($supply['total_authored'] ?? 0),
+                    !empty($supply['ok']) ? 'COMPLETE' : ((int)($supply['remaining'] ?? 0) . ' MISSING')
+                );
+            }
+            foreach (($supply['subjects'] ?? []) as $ss) {
+                $previewLines[] = sprintf(
+                    '%s: %d required, %d authored — %s',
+                    (string)$ss['subject_name'],
+                    (int)$ss['questions_required'],
+                    (int)$ss['authored'],
+                    !empty($ss['ok']) ? 'COMPLETE' : ((int)($ss['remaining'] ?? 0) . ' MISSING')
+                );
+                foreach (($ss['topics'] ?? []) as $tt) {
+                    $previewLines[] = sprintf(
+                        '  %s / %s: %d required, %d authored — %s',
+                        (string)$ss['subject_name'],
+                        (string)$tt['topic_name'],
+                        (int)$tt['required'],
+                        (int)$tt['authored'],
+                        !empty($tt['ok']) ? 'COMPLETE' : ((int)($tt['remaining'] ?? 0) . ' MISSING')
+                    );
+                }
+            }
+        }
+
+        return [
+            'ok' => false,
+            'detected' => (int)$batch['detected'],
+            'valid' => 0,
+            'invalid' => count($errors),
+            'errors' => $errors,
+            'coverage_preview' => $previewLines,
+            'error' => 'Import failed validation against the exam blueprint. No questions were imported.',
+        ];
+    }
+
     $sort = 0;
     $sr = @mysqli_query($conn, 'SELECT COALESCE(MAX(sort_order), -1) AS m FROM college_exam_questions WHERE exam_id=' . (int)$examId);
     if ($sr && ($sm = mysqli_fetch_assoc($sr))) {
@@ -562,15 +985,12 @@ function examination_questions_regular_import_append(mysqli $conn, int $examId, 
     }
 
     $imported = 0;
+    $hasSubjCol = college_exam_questions_has_subject_column($conn);
+    $hasTopicCol = college_exam_questions_has_topic_column($conn);
     try {
-        $ins = mysqli_prepare(
-            $conn,
-            'INSERT INTO college_exam_questions (exam_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?)'
-        );
-        if (!$ins) {
-            throw new RuntimeException('prepare_failed');
-        }
-        foreach ($batch['rows'] as $row) {
+        foreach ($resolved as $row) {
+            $sid = (int)($row['exam_subject_id'] ?? 0);
+            $tid = (int)($row['exam_topic_id'] ?? 0);
             $qtype = (string)$row['question_type'];
             $qtext = (string)$row['question_text'];
             $a = (string)$row['choice_a'];
@@ -578,15 +998,35 @@ function examination_questions_regular_import_append(mysqli $conn, int $examId, 
             $c = (string)$row['choice_c'];
             $d = (string)$row['choice_d'];
             $cor = (string)$row['correct_answer'];
-            mysqli_stmt_bind_param($ins, 'isssssssi', $examId, $qtype, $qtext, $a, $b, $c, $d, $cor, $sort);
-            if (!mysqli_stmt_execute($ins)) {
-                mysqli_stmt_close($ins);
+            if ($hasSubjCol && $hasTopicCol && $sid > 0 && $tid > 0) {
+                $ins = mysqli_prepare(
+                    $conn,
+                    'INSERT INTO college_exam_questions (exam_id, exam_subject_id, exam_topic_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
+                );
+                mysqli_stmt_bind_param($ins, 'iiisssssssi', $examId, $sid, $tid, $qtype, $qtext, $a, $b, $c, $d, $cor, $sort);
+            } elseif ($hasSubjCol && $sid > 0) {
+                $ins = mysqli_prepare(
+                    $conn,
+                    'INSERT INTO college_exam_questions (exam_id, exam_subject_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)'
+                );
+                mysqli_stmt_bind_param($ins, 'iisssssssi', $examId, $sid, $qtype, $qtext, $a, $b, $c, $d, $cor, $sort);
+            } else {
+                $ins = mysqli_prepare(
+                    $conn,
+                    'INSERT INTO college_exam_questions (exam_id, question_type, question_text, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order) VALUES (?,?,?,?,?,?,?,?,?)'
+                );
+                mysqli_stmt_bind_param($ins, 'isssssssi', $examId, $qtype, $qtext, $a, $b, $c, $d, $cor, $sort);
+            }
+            if (!$ins || !mysqli_stmt_execute($ins)) {
+                if ($ins) {
+                    mysqli_stmt_close($ins);
+                }
                 throw new RuntimeException('insert_failed');
             }
+            mysqli_stmt_close($ins);
             $sort++;
             $imported++;
         }
-        mysqli_stmt_close($ins);
         if (!mysqli_commit($conn)) {
             throw new RuntimeException('commit_failed');
         }
@@ -597,13 +1037,43 @@ function examination_questions_regular_import_append(mysqli $conn, int $examId, 
         return ['ok' => false, 'error' => 'Import failed and no questions were added. Please try again.'];
     }
 
+    $supplyAfter = college_exam_topic_supply($conn, $examId);
+    foreach (($supplyAfter['subjects'] ?? []) as $ss) {
+        $coveragePreview[] = sprintf(
+            '%s: %d required, %d supplied — %s',
+            (string)$ss['subject_name'],
+            (int)$ss['questions_required'],
+            (int)$ss['authored'],
+            !empty($ss['ok']) ? 'COMPLETE' : ((int)($ss['remaining'] ?? 0) . ' MISSING')
+        );
+        foreach (($ss['topics'] ?? []) as $tt) {
+            $coveragePreview[] = sprintf(
+                '%s / %s: %d required, %d supplied — %s',
+                (string)$ss['subject_name'],
+                (string)$tt['topic_name'],
+                (int)$tt['required'],
+                (int)$tt['authored'],
+                !empty($tt['ok']) ? 'COMPLETE' : ((int)($tt['remaining'] ?? 0) . ' MISSING')
+            );
+        }
+    }
+    if (($supplyAfter['mode'] ?? '') === 'overall' && !empty($supplyAfter['configured'])) {
+        $coveragePreview[] = sprintf(
+            'Overall: %d required, %d supplied — %s',
+            (int)$supplyAfter['total_required'],
+            (int)($supplyAfter['total_authored'] ?? 0),
+            !empty($supplyAfter['ok']) ? 'COMPLETE' : ((int)($supplyAfter['remaining'] ?? 0) . ' MISSING')
+        );
+    }
+
     return [
         'ok' => true,
         'imported' => $imported,
         'detected' => (int)$batch['detected'],
-        'valid' => (int)$batch['valid'],
+        'valid' => $imported,
         'invalid' => 0,
         'errors' => [],
+        'coverage_preview' => $coveragePreview,
     ];
 }
 
@@ -866,6 +1336,8 @@ function examination_questions_regular_duplicate_one(mysqli $conn, int $examId, 
         'choice_c' => (string)($src['choice_c'] ?? ''),
         'choice_d' => (string)($src['choice_d'] ?? ''),
         'correct_answer' => (string)($src['correct_answer'] ?? ''),
+        'exam_subject_id' => (int)($src['exam_subject_id'] ?? 0),
+        'exam_topic_id' => (int)($src['exam_topic_id'] ?? 0),
     ]);
 }
 

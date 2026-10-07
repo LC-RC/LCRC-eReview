@@ -252,6 +252,15 @@ if ($statusFilter === 'active' || $statusFilter === 'inactive') {
 }
 mysqli_stmt_execute($stmt);
 $subjects = mysqli_stmt_get_result($stmt);
+$hasUpdatedAt = false;
+if ($subjects) {
+    foreach (mysqli_fetch_fields($subjects) ?: [] as $field) {
+        if (($field->name ?? '') === 'updated_at') {
+            $hasUpdatedAt = true;
+            break;
+        }
+    }
+}
 
 $pageTitle = 'Content Hub';
 $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
@@ -260,16 +269,20 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
 <html lang="en">
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
+  <style>
+    body.admin-subjects-page .admin-modal-overlay { z-index: 1400; }
+  </style>
 </head>
 <body class="font-sans antialiased admin-app admin-subjects-page" x-data="adminSubjectsApp()" x-init="initEditFromServer()">
   <?php include 'admin_sidebar.php'; ?>
 
   <?php
     $adminHeroIcon = 'book';
+    $adminHeroEyebrow = 'Content management';
     $adminHeroTitle = 'Content Hub';
-    $adminHeroSubtitle = 'Manage subjects, lessons, materials, handouts, and quizzes.';
+    $adminHeroSubtitle = 'Manage subjects and their learning content.';
     $adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int) $total . ' subject' . ((int) $total === 1 ? '' : 's') . '</span>';
-    $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary" @click="openNewSubject()"><i class="bi bi-plus-lg"></i> New Subject</button>';
+    $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold" @click="openNewSubject()"><i class="bi bi-plus-lg"></i> New Subject</button>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
@@ -288,86 +301,121 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
     </div>
   <?php endif; ?>
 
-  <div class="rounded-xl shadow-card border overflow-hidden page-table">
-    <form method="GET" class="admin-sticky-toolbar page-filter px-4 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 items-end border-b">
-      <div class="lg:col-span-5">
-        <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 opacity-50"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search subject..." class="input-custom pl-10">
-        </div>
+  <section class="content-library">
+    <div class="content-library__head">
+      <div>
+        <h2 class="content-library__title">Subjects</h2>
+        <p class="content-library__sub">Each subject holds lessons, quizzes, and a test bank.</p>
       </div>
-      <div class="lg:col-span-3">
-        <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Status</label>
-        <select name="status" class="input-custom">
+      <span class="content-library__count"><?php echo (int) $total; ?> subject<?php echo (int) $total === 1 ? '' : 's'; ?></span>
+    </div>
+
+    <form method="GET" class="content-library__toolbar">
+      <div class="content-library__search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="text" name="q" value="<?php echo h($q); ?>" placeholder="Search subjects..." class="input-custom" aria-label="Search subjects">
+      </div>
+      <div class="content-library__status">
+        <label class="sr-only" for="content-library-status">Status</label>
+        <select id="content-library-status" name="status" class="input-custom">
           <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All status</option>
           <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
           <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
         </select>
       </div>
-      <div class="lg:col-span-4 flex flex-wrap gap-2 justify-end">
-        <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-funnel"></i> Apply</button>
-      </div>
-      <div class="lg:col-span-12 text-sm opacity-70">
-        Showing <?php echo $total ? ($offset + 1) : 0; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?> subjects
-      </div>
+      <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
+      <p class="content-library__meta">
+        Showing <?php echo $total ? ($offset + 1) : 0; ?>–<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?> subjects
+      </p>
     </form>
-    <div class="overflow-x-auto pl-3 pr-8">
-      <table class="w-full text-left admin-data-table">
-        <thead>
-          <tr>
-            <th class="px-5 py-3 font-semibold admin-col-primary">Subject</th>
-            <th class="px-5 py-3 font-semibold text-center">Status</th>
-            <th class="px-5 py-3 font-semibold text-center">Lessons</th>
-            <th class="px-5 py-3 font-semibold text-center">Quizzes</th>
-            <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if ($total === 0): ?>
+
+    <?php if ($total === 0): ?>
+      <div class="content-library-empty">
+        <i class="bi bi-book" aria-hidden="true"></i>
+        <h3><?php echo ($q !== '' || ($statusFilter !== 'all')) ? 'No subjects found' : 'No subjects yet'; ?></h3>
+        <p class="content-library__sub"><?php echo ($q !== '' || ($statusFilter !== 'all')) ? 'Try clearing filters or create a new subject.' : 'Create your first subject to begin adding lessons, materials and quizzes.'; ?></p>
+        <button type="button" @click="openNewSubject()" class="admin-btn admin-btn--primary mt-3">
+          <i class="bi bi-plus-lg"></i> New Subject
+        </button>
+      </div>
+    <?php else: ?>
+      <div class="content-library-table-scroll">
+        <table class="content-library-table">
+          <thead>
             <tr>
-              <td colspan="5" class="px-5 py-12 text-center text-gray-500">
-                <i class="bi bi-inbox text-4xl block mb-2"></i>
-                <div class="font-semibold">No subjects found</div>
-                <p class="text-sm mt-1">Try clearing filters or create a new subject.</p>
-                <button type="button" @click="openNewSubject()" class="admin-content-btn admin-content-btn--subject mt-3 px-4 py-2 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2">
-                  <i class="bi bi-plus-circle"></i> New Subject
-                </button>
-              </td>
+              <th scope="col">Subject</th>
+              <th class="col-desktop" scope="col">Lessons</th>
+              <th class="col-desktop" scope="col">Quizzes</th>
+              <th class="col-desktop" scope="col">Status</th>
+              <?php if ($hasUpdatedAt): ?><th class="col-desktop" scope="col">Last updated</th><?php endif; ?>
+              <th class="col-actions" scope="col">Actions</th>
             </tr>
-          <?php else: ?>
+          </thead>
+          <tbody>
             <?php while ($s = mysqli_fetch_assoc($subjects)): ?>
               <?php
                 $rowCoverSrc = '';
                 if ($hasSubjectCover && !empty($s['subject_cover'])) {
                     $rowCoverSrc = ereview_avatar_img_src((string)$s['subject_cover']);
                 }
+                $lessonsCnt = (int)($s['lessons_cnt'] ?? 0);
+                $quizzesCnt = (int)($s['quizzes_cnt'] ?? 0);
+                $manageUrl = 'admin_lessons?subject_id=' . (int)$s['subject_id'];
+                $stLower = strtolower((string)($s['status'] ?? ''));
+                $updatedLabel = '';
+                if ($hasUpdatedAt && !empty($s['updated_at'])) {
+                    $ts = strtotime((string)$s['updated_at']);
+                    $updatedLabel = $ts ? date('M j, Y', $ts) : (string)$s['updated_at'];
+                }
               ?>
               <tr>
-                <td class="px-5 py-3 admin-col-primary">
-                  <div class="font-semibold"><?php echo h($s['subject_name']); ?></div>
-                  <?php if (!empty($s['description'])): ?>
-                    <div class="text-sm opacity-70 mt-0.5"><?php echo h(mb_strimwidth($s['description'], 0, 80, '...')); ?></div>
-                  <?php endif; ?>
+                <td>
+                  <div class="content-library-subject">
+                    <?php if ($rowCoverSrc !== ''): ?>
+                      <img src="<?php echo h($rowCoverSrc); ?>" alt="" class="lms-icon-tile h-10 w-10 rounded-xl object-cover shrink-0" width="40" height="40">
+                    <?php else: ?>
+                      <span class="lms-icon-tile inline-flex h-10 w-10 items-center justify-center rounded-xl"><i class="bi bi-book"></i></span>
+                    <?php endif; ?>
+                    <span class="content-library-subject__text">
+                      <a href="<?php echo h($manageUrl); ?>" class="content-library-subject__name"><?php echo h($s['subject_name']); ?></a>
+                      <?php if (!empty($s['description'])): ?>
+                        <span class="content-library-subject__desc" title="<?php echo h($s['description']); ?>"><?php echo h(mb_strimwidth($s['description'], 0, 90, '...')); ?></span>
+                      <?php endif; ?>
+                      <span class="content-library-subject__mobile-meta">
+                        <?php echo $lessonsCnt; ?> lesson<?php echo $lessonsCnt === 1 ? '' : 's'; ?>
+                        · <?php echo $quizzesCnt; ?> quiz<?php echo $quizzesCnt === 1 ? '' : 'zes'; ?>
+                        · <?php echo h($s['status']); ?>
+                      </span>
+                    </span>
+                  </div>
                 </td>
-                <td class="px-5 py-3 text-center">
-                  <?php $st = strtolower((string)$s['status']); ?>
-                  <span class="admin-status-pill inline-block px-2.5 py-1 rounded-full text-xs font-medium"><?php echo h($s['status']); ?></span>
+                <td class="col-desktop">
+                  <span class="content-library-metric" title="<?php echo $lessonsCnt; ?> lesson(s)">
+                    <?php echo $lessonsCnt; ?>
+                    <span><?php echo $lessonsCnt === 1 ? 'lesson' : 'lessons'; ?></span>
+                  </span>
                 </td>
-                <td class="px-5 py-3 text-center" title="<?php echo (int)($s['lessons_cnt'] ?? 0); ?> lesson(s)">
-                  <span class="admin-count-pill admin-count-pill--lessons inline-block px-2.5 py-1 rounded-full text-sm font-medium tabular-nums"><?php echo (int)($s['lessons_cnt'] ?? 0); ?></span>
+                <td class="col-desktop">
+                  <span class="content-library-metric" title="<?php echo $quizzesCnt; ?> quiz(zes)">
+                    <?php echo $quizzesCnt; ?>
+                    <span><?php echo $quizzesCnt === 1 ? 'quiz' : 'quizzes'; ?></span>
+                  </span>
                 </td>
-                <td class="px-5 py-3 text-center" title="<?php echo (int)($s['quizzes_cnt'] ?? 0); ?> quiz(zes)">
-                  <span class="admin-count-pill admin-count-pill--quizzes inline-block px-2.5 py-1 rounded-full text-sm font-medium tabular-nums"><?php echo (int)($s['quizzes_cnt'] ?? 0); ?></span>
+                <td class="col-desktop">
+                  <span class="admin-status-pill admin-status-pill--<?php echo $stLower === 'active' ? 'active' : 'inactive'; ?>"><?php echo h($s['status']); ?></span>
                 </td>
-                <td class="px-5 py-3 text-center">
-                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_lessons?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--lessons" title="Lessons"><i class="bi bi-file-text"></i><span class="sr-only">Lessons</span></a>
-                    <a href="admin_quizzes?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--quizzes" title="Quizzes"><i class="bi bi-question-circle"></i><span class="sr-only">Quizzes</span></a>
-                    <a href="admin_test_bank?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-action admin-row-action--testbank" title="Test Bank"><i class="bi bi-folder2-open"></i><span class="sr-only">Test Bank</span></a>
+                <?php if ($hasUpdatedAt): ?>
+                  <td class="col-desktop"><?php echo $updatedLabel !== '' ? h($updatedLabel) : '—'; ?></td>
+                <?php endif; ?>
+                <td class="col-actions">
+                  <div class="admin-row-actions inline-flex items-center justify-end gap-1.5" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <a href="<?php echo h($manageUrl); ?>" class="hub-next-btn">Lessons <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                     <div class="admin-row-menu-wrap">
-                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                      <button type="button" class="admin-row-action admin-row-action--more inline-flex h-9 w-9 items-center justify-center rounded-lg" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" aria-label="More actions" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                        <a href="admin_quizzes?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-menu__item no-underline"><i class="bi bi-question-circle"></i> Quizzes</a>
+                        <a href="admin_test_bank?subject_id=<?php echo (int)$s['subject_id']; ?>" class="admin-row-menu__item no-underline"><i class="bi bi-folder2-open"></i> Test Bank</a>
+                        <div class="admin-row-menu__sep" role="separator"></div>
                         <button type="button"
                                 class="admin-row-menu__item"
                                 data-id="<?php echo (int)$s['subject_id']; ?>"
@@ -376,14 +424,15 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                                 data-status="<?php echo h($s['status'] ?? 'active'); ?>"
                                 data-cover-src="<?php echo h($rowCoverSrc); ?>"
                                 @click="menuOpen = false; openEditSubject($el.dataset.id, $el.dataset.name || '', $el.dataset.description || '', $el.dataset.status || 'active', $el.dataset.coverSrc || '')">
-                          <i class="bi bi-pencil"></i> Edit
+                          <i class="bi bi-pencil"></i> Edit Subject
                         </button>
+                        <div class="admin-row-menu__sep" role="separator"></div>
                         <button type="button"
                                 class="admin-row-menu__item admin-row-menu__item--danger"
                                 data-id="<?php echo (int)$s['subject_id']; ?>"
                                 data-name="<?php echo h($s['subject_name'] ?? ''); ?>"
                                 @click="menuOpen = false; openDeleteSubject($el.dataset.id, $el.dataset.name || '')">
-                          <i class="bi bi-trash"></i> Delete
+                          <i class="bi bi-trash"></i> Delete Subject
                         </button>
                       </div>
                     </div>
@@ -391,14 +440,14 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                 </td>
               </tr>
             <?php endwhile; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
     <?php mysqli_stmt_close($stmt); ?>
     <?php if ($totalPages > 1): ?>
-      <nav class="px-5 py-4 border-t border-gray-100 flex justify-center" aria-label="Subject pagination">
-        <ul class="flex flex-wrap items-center gap-1">
+      <nav class="content-library-pager" aria-label="Subject pagination">
+        <ul class="flex flex-wrap items-center justify-center gap-1">
           <?php
             $baseParams = ['q' => $q, 'status' => $statusFilter];
             $mk = function ($p) use ($baseParams) {
@@ -408,37 +457,35 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
             };
           ?>
           <?php if ($page > 1): ?>
-            <li><a href="<?php echo h($mk($page - 1)); ?>" class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Previous</a></li>
+            <li><a href="<?php echo h($mk($page - 1)); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Previous</a></li>
           <?php endif; ?>
           <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
             <li>
-              <a href="<?php echo h($mk($i)); ?>" class="px-3 py-2 rounded-lg border transition <?php echo $i === $page ? 'bg-primary border-primary text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-100'; ?>"><?php echo $i; ?></a>
+              <a href="<?php echo h($mk($i)); ?>" class="admin-btn admin-btn--sm <?php echo $i === $page ? 'admin-btn--primary' : 'admin-btn--secondary'; ?>"><?php echo $i; ?></a>
             </li>
           <?php endfor; ?>
           <?php if ($page < $totalPages): ?>
-            <li><a href="<?php echo h($mk($page + 1)); ?>" class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Next</a></li>
+            <li><a href="<?php echo h($mk($page + 1)); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Next</a></li>
           <?php endif; ?>
         </ul>
       </nav>
     <?php endif; ?>
-  </div>
+  </section>
 
-  <!-- Create / Edit Subject Modal (Alpine) -->
-  <div x-show="subjectModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @keydown.escape.window="subjectModalOpen = false">
-    <div class="absolute inset-0 bg-black/50" @click="subjectModalOpen = false"></div>
-    <div class="relative bg-white rounded-xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" @click.stop x-show="subjectModalOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-      <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-xl font-bold text-gray-800 m-0" x-text="isEdit ? 'Edit Subject' : 'New Subject'"><i class="bi bi-bookmark-plus mr-2"></i></h2>
-        <button type="button" @click="subjectModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
-      <form method="POST" action="admin_subjects" enctype="multipart/form-data" class="p-5">
+  <div class="admin-modal-overlay" :class="{ 'is-open': subjectModalOpen }" x-show="subjectModalOpen" x-cloak x-teleport="body" role="dialog" aria-modal="true" aria-labelledby="subjectModalTitle" @keydown.escape.window="subjectModalOpen = false" @click.self="subjectModalOpen = false">
+    <section class="quiz-modal-panel admin-modal" @click.stop>
+      <header class="quiz-modal-panel__head p-4 flex justify-between items-center">
+        <h2 id="subjectModalTitle" class="text-lg font-bold m-0 flex items-center gap-2"><i class="bi bi-bookmark-plus"></i><span x-text="isEdit ? 'Edit Subject' : 'New Subject'"></span></h2>
+        <button type="button" @click="subjectModalOpen = false" class="p-2 rounded-lg" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </header>
+      <form method="POST" action="admin_subjects" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="subject_id" :value="subject_id">
 
-        <div class="space-y-4">
+        <div class="admin-modal-form__body p-5 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+            <label class="block text-sm font-medium mb-1">Subject</label>
             <select name="subject_name" x-model="subject_name" required class="input-custom">
               <option value="" disabled>Select subject</option>
               <option value="FAR">FAR</option>
@@ -451,24 +498,22 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label class="block text-sm font-medium mb-1">Description</label>
             <textarea name="description" x-model="description" rows="4" placeholder="Optional notes for this subject" class="input-custom"></textarea>
           </div>
           <?php if ($hasSubjectCover): ?>
-          <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 p-4 space-y-3">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-0.5">Card cover image</label>
-                <p class="text-xs text-gray-500 m-0">Shown as the top banner on each subject card for students. JPG, PNG, WebP, or GIF · max 5 MB · about 1200×480 or wider works best.</p>
-              </div>
+          <div class="rounded-xl border border-dashed p-4 space-y-3" style="border-color: var(--glass-border); background: var(--glass-surface-inner);">
+            <div>
+              <label class="block text-sm font-semibold mb-0.5">Card cover image</label>
+              <p class="text-xs m-0" style="color: var(--text-secondary);">Shown as the top banner on each subject card for students. JPG, PNG, WebP, or GIF · max 5 MB · about 1200×480 or wider works best.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-              <div class="relative w-full max-w-[280px] aspect-[5/2] rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-[#1665A0] to-[#143D59] shadow-inner">
+              <div class="relative w-full max-w-[280px] aspect-[5/2] rounded-lg overflow-hidden border" style="border-color: var(--glass-border); background: linear-gradient(135deg, #2563eb, #4f46e5);">
                 <img x-show="coverPreview || existing_cover_src" :src="coverPreview || existing_cover_src" alt="" class="absolute inset-0 w-full h-full object-cover">
                 <div x-show="!coverPreview && !existing_cover_src" class="absolute inset-0 flex items-center justify-center text-white/90 text-xs font-semibold px-3 text-center">No cover yet - students see a default blue banner</div>
               </div>
               <div class="flex-1 min-w-[12rem] space-y-2">
-                <input type="file" name="subject_cover" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1665A0] file:text-white hover:file:bg-[#145a8f] cursor-pointer" x-ref="coverFileInput" @change="
+                <input type="file" name="subject_cover" accept="image/jpeg,image/png,image/webp,image/gif" class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" x-ref="coverFileInput" @change="
                   cover_remove = false;
                   const inp = $refs.coverFileInput;
                   const f = inp && inp.files && inp.files[0];
@@ -477,8 +522,8 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
                   r.onload = () => { coverPreview = r.result || ''; };
                   r.readAsDataURL(f);
                 ">
-                <label x-show="isEdit && (existing_cover_src || coverPreview)" class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-                  <input type="checkbox" name="subject_cover_remove" value="1" x-model="cover_remove" @change="if (cover_remove) { coverPreview = ''; if ($refs.coverFileInput) $refs.coverFileInput.value = ''; }" class="rounded border-gray-300 text-primary focus:ring-primary">
+                <label x-show="isEdit && (existing_cover_src || coverPreview)" class="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input type="checkbox" name="subject_cover_remove" value="1" x-model="cover_remove" @change="if (cover_remove) { coverPreview = ''; if ($refs.coverFileInput) $refs.coverFileInput.value = ''; }" class="rounded">
                   <span>Remove cover from this subject</span>
                 </label>
               </div>
@@ -486,47 +531,45 @@ $adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub'] ];
           </div>
           <?php endif; ?>
           <div x-show="isEdit">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label class="block text-sm font-medium mb-1">Status</label>
             <select name="status" x-model="status" class="input-custom">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
           </div>
           <input type="hidden" name="status" x-bind:value="status" x-show="!isEdit">
-          <div>
-            <p class="text-sm text-gray-500">Inactive subjects won't appear to students.</p>
-          </div>
+          <p class="text-sm m-0" style="color: var(--text-secondary);">Inactive subjects won't appear to students.</p>
         </div>
-        <div class="mt-6 flex justify-end gap-2">
-          <button type="button" @click="subjectModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition inline-flex items-center gap-2"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
+        <div class="admin-modal__actions p-4 flex justify-end gap-2">
+          <button type="button" @click="subjectModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> <span x-text="isEdit ? 'Update' : 'Create'"></span></button>
         </div>
       </form>
-    </div>
+    </section>
   </div>
 
-  <!-- Delete Subject Modal (Alpine) -->
-  <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @keydown.escape.window="deleteModalOpen = false">
-    <div class="absolute inset-0 bg-black/50" @click="deleteModalOpen = false"></div>
-    <div class="relative bg-white rounded-xl shadow-modal max-w-md w-full p-5" @click.stop x-show="deleteModalOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800 m-0"><i class="bi bi-trash text-red-500 mr-2"></i> Delete Subject</h2>
-        <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
-      </div>
+  <div class="admin-modal-overlay" :class="{ 'is-open': deleteModalOpen }" x-show="deleteModalOpen" x-cloak x-teleport="body" role="dialog" aria-modal="true" aria-labelledby="deleteSubjectTitle" @keydown.escape.window="deleteModalOpen = false" @click.self="deleteModalOpen = false">
+    <section class="quiz-modal-panel admin-modal" @click.stop>
+      <header class="quiz-modal-panel__head p-4 flex justify-between items-center">
+        <h2 id="deleteSubjectTitle" class="text-lg font-bold m-0"><i class="bi bi-trash mr-2"></i> Delete Subject</h2>
+        <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+      </header>
       <form method="POST" action="admin_subjects">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="subject_id" :value="delete_id">
-        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 mb-4">
-          <div class="font-semibold">This will delete the subject and related lessons/quizzes.</div>
-          <div class="text-sm mt-1 text-amber-700">Subject: <span class="font-semibold" x-text="delete_name"></span></div>
+        <div class="admin-modal-form__body p-5">
+          <div class="p-4 rounded-xl" style="background: color-mix(in srgb, #ef4444 12%, transparent); border: 1px solid color-mix(in srgb, #ef4444 35%, transparent); color: var(--text-primary);">
+            <div class="font-semibold">This will delete the subject and related lessons/quizzes.</div>
+            <div class="text-sm mt-1">Subject: <span class="font-semibold" x-text="delete_name"></span></div>
+          </div>
         </div>
-        <div class="flex justify-end gap-2">
-          <button type="button" @click="deleteModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition inline-flex items-center gap-2"><i class="bi bi-trash"></i> Delete</button>
+        <div class="admin-modal__actions p-4 flex justify-end gap-2">
+          <button type="button" @click="deleteModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+          <button type="submit" class="admin-btn admin-btn--primary" style="background:#e11d48;border-color:#e11d48;"><i class="bi bi-trash"></i> Delete</button>
         </div>
       </form>
-    </div>
+    </section>
   </div>
 
   <script>

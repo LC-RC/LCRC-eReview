@@ -48,7 +48,12 @@ if (!$isNew) {
 // Template download — Word (.docx) preferred; ?format=csv for CSV fallback.
 if ($step === 'questions' && !$isNew && isset($_GET['download_question_template'])) {
     $fmt = strtolower(trim((string)($_GET['format'] ?? 'docx')));
-    examination_question_import_send_template($examType, $fmt === 'csv' ? 'csv' : 'docx');
+    $tplMode = 'overall';
+    if ($examType === 'regular' && $sourceId > 0) {
+        require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+        $tplMode = college_exam_get_breakdown_mode($conn, $sourceId);
+    }
+    examination_question_import_send_template($examType, $fmt === 'csv' ? 'csv' : 'docx', $tplMode);
 }
 
 /**

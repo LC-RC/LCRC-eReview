@@ -3,6 +3,7 @@ require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_exam_helpers.php';
+require_once dirname(__DIR__) . '/includes/college_exam_attempt_paper.php';
 require_once dirname(__DIR__, 2) . '/includes/quiz_helpers.php';
 
 $pageTitle = 'Exam review';
@@ -55,16 +56,24 @@ $attemptSubmitted = college_exam_attempt_is_effectively_submitted($attempt);
 $attemptStatus = college_exam_attempt_status_normalized($attempt);
 
 $questions = [];
-$qr = mysqli_query($conn, 'SELECT * FROM college_exam_questions WHERE exam_id=' . (int)$examId . ' ORDER BY sort_order ASC, question_id ASC');
-if ($qr) {
-    while ($q = mysqli_fetch_assoc($qr)) {
-        $questions[] = $q;
-    }
-    mysqli_free_result($qr);
+if ($attempt && ($attemptStatus === 'in_progress' || $attemptSubmitted)) {
+    $questions = college_exam_questions_for_student_attempt($conn, $exam, $attempt);
 }
 
-if ($attempt && ($attemptStatus === 'in_progress' || $attemptSubmitted)) {
-    $questions = college_exam_prepare_questions_for_attempt($questions, $exam, (int)$attempt['attempt_id']);
+$masterByQid = [];
+$authored = [];
+$aq = mysqli_query($conn, 'SELECT * FROM college_exam_questions WHERE exam_id=' . (int)$examId . ' ORDER BY sort_order ASC, question_id ASC');
+if ($aq) {
+    while ($q = mysqli_fetch_assoc($aq)) {
+        $authored[] = $q;
+    }
+    mysqli_free_result($aq);
+}
+foreach (college_exam_canonical_authoring_rows($conn, $examId, $authored) as $cq) {
+    $cqid = (int)($cq['question_id'] ?? 0);
+    if ($cqid > 0) {
+        $masterByQid[$cqid] = (int)($cq['display_number'] ?? 0);
+    }
 }
 
 $answersMap = [];
@@ -78,12 +87,9 @@ if ($attempt) {
     }
 }
 
-$examQuestionCount = 0;
-$qc = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$examId);
-if ($qc) {
-    $qrow = mysqli_fetch_assoc($qc);
-    $examQuestionCount = (int)($qrow['c'] ?? 0);
-    mysqli_free_result($qc);
+$examQuestionCount = count($questions);
+if ($examQuestionCount <= 0) {
+    $examQuestionCount = college_exam_configured_attempt_length($conn, $examId);
 }
 
 $timeUsedSec = null;
@@ -116,20 +122,27 @@ if ($attempt && $attemptSubmitted) {
 }
 
 $navPills = [];
+$reviewCorrectN = 0;
+$reviewIncorrectN = 0;
+$reviewUnansweredN = 0;
 if ($attemptSubmitted && $questions !== []) {
     $qi = 0;
     foreach ($questions as $q) {
         $qi++;
+        $studentN = (int)($q['_display_position'] ?? $qi);
         $qid = (int)$q['question_id'];
         $sel = strtoupper(trim((string)($answersMap[$qid]['selected_answer'] ?? '')));
         $hasAns = $sel !== '';
         $cor = strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
         if (!$hasAns) {
-            $navPills[] = ['n' => $qi, 'kind' => 'empty'];
+            $navPills[] = ['n' => $studentN, 'kind' => 'empty'];
+            $reviewUnansweredN++;
         } elseif ($hasAns && $sel === $cor) {
-            $navPills[] = ['n' => $qi, 'kind' => 'ok'];
+            $navPills[] = ['n' => $studentN, 'kind' => 'ok'];
+            $reviewCorrectN++;
         } else {
-            $navPills[] = ['n' => $qi, 'kind' => 'bad'];
+            $navPills[] = ['n' => $studentN, 'kind' => 'bad'];
+            $reviewIncorrectN++;
         }
     }
 }
@@ -137,10 +150,15 @@ if ($attemptSubmitted && $questions !== []) {
 $backHref = 'professor_exam_monitor?exam_id=' . (int)$examId;
 
 $pageTitle = 'Exam review';
+$professorFeatureHero = true;
 $adminHeroIcon = 'layout-text-window-reverse';
+$adminHeroEyebrow = 'Examination review';
 $adminHeroTitle = (string)$studentUser['full_name'];
 $adminHeroSubtitle = (string)$exam['title'] . ' — full question-by-question review for instructors.';
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="' . h($backHref) . '"><i class="bi bi-arrow-left"></i> Back to monitor</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Monitoring', 'professor_examination_monitor'], ['Review']];
+$adminBackHref = $backHref;
+$adminBackLabel = 'Back to Monitoring';
+$adminHeroActions = '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -200,9 +218,22 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       border-radius: 1rem; border: 1px solid #e2e8f0; background: #fff;
       box-shadow: 0 14px 32px -26px rgba(15,23,42,.2); padding: 2.5rem 1.5rem; text-align: center;
     }
+    .perm-review-summary {
+      display: flex; flex-wrap: wrap; gap: .55rem 1.1rem; margin: 0 0 .75rem;
+      font-size: .82rem; color: #475569;
+    }
+    .perm-review-filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; }
+    .perm-filter {
+      border: 1px solid rgba(147,180,230,.55); background: #fff; color: #1e3a5f;
+      border-radius: 999px; padding: .28rem .75rem; font-size: .78rem; font-weight: 750; cursor: pointer;
+    }
+    .perm-filter.is-active { background: linear-gradient(90deg,#3b82f6,#4f46e5); color: #fff; border-color: transparent; }
+    .perm-q-student-num { margin: 0 0 .15rem; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+    .perm-q-meta { margin: 0 0 .45rem; font-size: .78rem; color: #475569; }
+    .perm-answer-line { margin: .75rem 0 0; font-size: .86rem; font-weight: 650; color: #0f2744; }
   </style>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -242,30 +273,55 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       <?php else: ?>
         <div class="perm-layout">
           <div>
-            <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
               <h2 class="text-lg font-black text-emerald-950 m-0 flex items-center gap-2">
                 <i class="bi bi-journal-richtext text-emerald-600"></i> Examination sheet
               </h2>
-              <span class="text-xs font-bold text-slate-500"><?php echo count($questions); ?> item(s)</span>
+              <span class="text-xs font-bold text-slate-500"><?php echo count($questions); ?> student question<?php echo count($questions) === 1 ? '' : 's'; ?></span>
+            </div>
+            <div class="perm-review-summary" id="permReviewSummary">
+              <span>Score <strong><?php echo h($scoreLine); ?></strong></span>
+              <span>Correct <strong><?php echo (int)$reviewCorrectN; ?></strong></span>
+              <span>Incorrect <strong><?php echo (int)$reviewIncorrectN; ?></strong></span>
+              <span>Unanswered <strong><?php echo (int)$reviewUnansweredN; ?></strong></span>
+            </div>
+            <div class="perm-review-filters" role="tablist" aria-label="Filter answers">
+              <button type="button" class="perm-filter is-active" data-perm-filter="all">All</button>
+              <button type="button" class="perm-filter" data-perm-filter="bad">Incorrect</button>
+              <button type="button" class="perm-filter" data-perm-filter="ok">Correct</button>
+              <button type="button" class="perm-filter" data-perm-filter="empty">Unanswered</button>
             </div>
             <?php
             $i = 0;
             foreach ($questions as $q):
                 $i++;
+                $studentN = (int)($q['_display_position'] ?? $i);
+                $qid = (int)$q['question_id'];
                 $letters = ['A' => $q['choice_a'], 'B' => $q['choice_b'], 'C' => $q['choice_c'], 'D' => $q['choice_d']];
-                $sel = strtoupper(trim((string)($answersMap[(int)$q['question_id']]['selected_answer'] ?? '')));
+                $sel = strtoupper(trim((string)($answersMap[$qid]['selected_answer'] ?? '')));
                 $hasAns = $sel !== '';
                 $cor = strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
                 $isCorrect = $hasAns && $sel === $cor;
                 $barKind = !$hasAns ? 'empty' : ($isCorrect ? 'ok' : 'bad');
+                $subjLabel = trim((string)($q['_subject_name'] ?? ''));
+                $topicLabel = trim((string)($q['_topic_name'] ?? ''));
+                $masterN = (int)($masterByQid[$qid] ?? 0);
                 ?>
-              <article class="perm-q-card mb-5 overflow-hidden" id="perm-q<?php echo (int)$i; ?>">
+              <article class="perm-q-card mb-5 overflow-hidden" id="perm-q<?php echo (int)$studentN; ?>" data-perm-kind="<?php echo h($barKind); ?>">
                 <div class="perm-q-bar <?php echo h($barKind); ?>"></div>
                 <div class="p-5 md:p-6">
                   <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div class="flex items-start gap-3 min-w-0">
-                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-lg shadow-sm"><?php echo (int)$i; ?></span>
+                      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-lg shadow-sm"><?php echo (int)$studentN; ?></span>
                       <div class="min-w-0">
+                        <p class="perm-q-student-num">Question <?php echo (int)$studentN; ?></p>
+                        <?php if ($subjLabel !== '' || $topicLabel !== '' || $masterN > 0): ?>
+                          <p class="perm-q-meta">
+                            <?php if ($subjLabel !== ''): ?>Subject: <?php echo h($subjLabel); ?><?php endif; ?>
+                            <?php if ($topicLabel !== ''): ?><?php echo $subjLabel !== '' ? ' · ' : ''; ?>Topic: <?php echo h($topicLabel); ?><?php endif; ?>
+                            <?php if ($masterN > 0): ?><?php echo ($subjLabel !== '' || $topicLabel !== '') ? ' · ' : ''; ?>Master #<?php echo (int)$masterN; ?><?php endif; ?>
+                          </p>
+                        <?php endif; ?>
                         <div class="question-text text-slate-900 font-semibold leading-relaxed"><?php echo renderQuizRichText($q['question_text']); ?></div>
                       </div>
                     </div>
@@ -313,6 +369,9 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
                     </div>
                     <?php endforeach; ?>
                   </div>
+                  <p class="perm-answer-line">Student answer: <strong><?php echo $hasAns ? h($sel) : '—'; ?></strong>
+                    · Correct answer: <strong><?php echo h($cor); ?></strong>
+                    · <?php echo !$hasAns ? 'Unanswered' : ($isCorrect ? 'Correct' : 'Incorrect'); ?></p>
                   <?php
                     $explanation = '';
                     if (!empty($q['explanation'])) {
@@ -334,7 +393,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
             <p class="perm-toc-title">Jump</p>
             <div class="perm-toc-grid">
               <?php foreach ($navPills as $p): ?>
-                <a class="perm-toc-btn perm-toc-<?php echo h($p['kind']); ?>" href="#perm-q<?php echo (int)$p['n']; ?>"><?php echo (int)$p['n']; ?></a>
+                <a class="perm-toc-btn perm-toc-<?php echo h($p['kind']); ?>" data-perm-kind="<?php echo h($p['kind']); ?>" href="#perm-q<?php echo (int)$p['n']; ?>"><?php echo (int)$p['n']; ?></a>
               <?php endforeach; ?>
             </div>
             <p class="text-[0.65rem] text-slate-500 mt-3 m-0 leading-snug">Green = correct · red = wrong · gray = blank</p>
@@ -346,12 +405,32 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
           <p class="text-xs font-black text-emerald-900 uppercase tracking-wide m-0 mb-2">Jump to question</p>
           <div class="flex flex-wrap gap-2">
             <?php foreach ($navPills as $p): ?>
-              <a class="perm-toc-btn perm-toc-<?php echo h($p['kind']); ?>" href="#perm-q<?php echo (int)$p['n']; ?>"><?php echo (int)$p['n']; ?></a>
+              <a class="perm-toc-btn perm-toc-<?php echo h($p['kind']); ?>" data-perm-kind="<?php echo h($p['kind']); ?>" href="#perm-q<?php echo (int)$p['n']; ?>"><?php echo (int)$p['n']; ?></a>
             <?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
     </div>
   </div>
+  <script>
+  (function () {
+    var filters = document.querySelectorAll('[data-perm-filter]');
+    if (!filters.length) return;
+    function apply(kind) {
+      document.querySelectorAll('.perm-q-card[data-perm-kind]').forEach(function (el) {
+        el.style.display = (kind === 'all' || el.getAttribute('data-perm-kind') === kind) ? '' : 'none';
+      });
+      document.querySelectorAll('.perm-toc-btn[data-perm-kind]').forEach(function (el) {
+        el.style.display = (kind === 'all' || el.getAttribute('data-perm-kind') === kind) ? '' : 'none';
+      });
+    }
+    filters.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filters.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        apply(btn.getAttribute('data-perm-filter') || 'all');
+      });
+    });
+  })();
+  </script>
 </body>
 </html>

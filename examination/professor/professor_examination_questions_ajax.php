@@ -72,7 +72,7 @@ $clientRev = (int)($src['client_rev'] ?? 0);
 if ($action === 'list_questions') {
     $subjectId = (int)($src['subject_id'] ?? 0);
     $rows = examination_questions_ajax_list_rows($conn, $examType, $sourceId, $subjectId);
-    examination_questions_ajax_json([
+    $payload = [
         'ok' => true,
         'exam_type' => $examType,
         'source_id' => $sourceId,
@@ -81,7 +81,13 @@ if ($action === 'list_questions') {
         'next_number' => count($rows) + 1,
         'questions' => $rows,
         'client_rev' => $clientRev,
-    ]);
+    ];
+    if ($examType === 'regular') {
+        require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+        $payload['blueprint'] = college_exam_topic_supply($conn, $sourceId);
+        $payload['breakdown_mode'] = college_exam_get_breakdown_mode($conn, $sourceId);
+    }
+    examination_questions_ajax_json($payload);
 }
 
 if ($action === 'save_question') {
@@ -95,6 +101,8 @@ if ($action === 'save_question') {
         'choice_d' => (string)($src['choice_d'] ?? ''),
         'correct_answer' => (string)($src['correct_answer'] ?? ''),
         'extra_choices' => $src['extra_choices'] ?? null,
+        'exam_topic_id' => (int)($src['exam_topic_id'] ?? 0),
+        'exam_subject_id' => (int)($src['exam_subject_id'] ?? 0),
     ];
 
     if ($examType === 'regular') {
@@ -129,6 +137,12 @@ if ($action === 'save_question') {
         }
     }
 
+    $blueprintOut = null;
+    if ($examType === 'regular') {
+        require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+        $blueprintOut = college_exam_topic_supply($conn, $sourceId);
+    }
+
     examination_questions_ajax_json([
         'ok' => true,
         'question_id' => $newId,
@@ -138,6 +152,7 @@ if ($action === 'save_question') {
         'next_number' => count($rows) + 1,
         'client_rev' => $clientRev,
         'created' => $qid <= 0,
+        'blueprint' => $blueprintOut,
     ]);
 }
 
@@ -167,6 +182,7 @@ if ($action === 'delete_question') {
         'next_number' => count($rows) + 1,
         'questions' => $rows,
         'client_rev' => $clientRev,
+        'blueprint' => $examType === 'regular' ? (function_exists('college_exam_topic_supply') ? college_exam_topic_supply($conn, $sourceId) : null) : null,
     ]);
 }
 
@@ -179,13 +195,31 @@ function examination_questions_ajax_list_rows(mysqli $conn, string $examType, in
 {
     $raw = [];
     if ($examType === 'regular') {
-        $raw = examination_questions_load_regular($conn, $sourceId);
+        require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+        require_once dirname(__DIR__) . '/includes/college_exam_attempt_paper.php';
+        $raw = college_exam_canonical_authoring_rows(
+            $conn,
+            $sourceId,
+            examination_questions_load_regular($conn, $sourceId)
+        );
     } elseif ($subjectId > 0) {
         $supply = examination_questions_diagnostic_supply($conn, $sourceId);
         foreach (($supply['subjects'] ?? []) as $sub) {
             if ((int)($sub['subject_id'] ?? 0) === $subjectId) {
                 $raw = $sub['questions'] ?? [];
                 break;
+            }
+        }
+    }
+
+    $subjNames = [];
+    $topicNames = [];
+    if ($examType === 'regular' && function_exists('college_exam_load_subjects_with_topics')) {
+        require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+        foreach (college_exam_load_subjects_with_topics($conn, $sourceId) as $s) {
+            $subjNames[(int)$s['exam_subject_id']] = (string)$s['subject_name'];
+            foreach ($s['topics'] as $t) {
+                $topicNames[(int)$t['exam_topic_id']] = (string)$t['topic_name'];
             }
         }
     }
@@ -211,6 +245,8 @@ function examination_questions_ajax_list_rows(mysqli $conn, string $examType, in
         $extra = examination_questions_diagnostic_extra_choices_decode(
             isset($q['extra_choices_json']) ? (string)$q['extra_choices_json'] : null
         );
+        $sid = (int)($q['exam_subject_id'] ?? 0);
+        $tid = (int)($q['exam_topic_id'] ?? 0);
         $out[] = [
             'question_id' => (int)($q['question_id'] ?? 0),
             'question_type' => $type,
@@ -222,9 +258,16 @@ function examination_questions_ajax_list_rows(mysqli $conn, string $examType, in
             'choice_d' => (string)($q['choice_d'] ?? ''),
             'extra_choices' => $extra,
             'correct_answer' => $ans,
-            'type_label' => $type === 'tf' ? 'True/False' : 'Multiple',
+            'exam_topic_id' => $tid,
+            'exam_subject_id' => $sid,
+            'subject_name' => (string)($subjNames[$sid] ?? ''),
+            'topic_name' => (string)($topicNames[$tid] ?? ''),
+            'type_label' => $type === 'tf' ? 'True / False' : 'Multiple Choice',
             'answer_label' => $ansLabel,
-            'display_number' => $i + 1,
+            'display_number' => (int)($q['display_number'] ?? ($i + 1)),
+            'group_key' => (string)($q['_group_key'] ?? ''),
+            'group_label' => (string)($q['_group_label'] ?? ''),
+            'group_parent' => (string)($q['_group_parent'] ?? ''),
         ];
     }
 

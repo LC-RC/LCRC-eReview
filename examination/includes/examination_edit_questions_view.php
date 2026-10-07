@@ -24,6 +24,8 @@ $focusSubjectId = (int)($_GET['subject_id'] ?? 0);
 
 $pageTitle = 'Examination Questions';
 $adminHeroIcon = 'question-circle';
+$professorFeatureHero = true;
+$adminHeroEyebrow = 'Examination management';
 if ($examType === 'diagnostic') {
     $adminHeroTitle = 'Diagnostic Exam';
     $adminHeroSubtitle = (string)($rec['title'] ?? 'CPA Diagnostic Assessment');
@@ -31,11 +33,55 @@ if ($examType === 'diagnostic') {
     $adminHeroTitle = 'Questions';
     $adminHeroSubtitle = ($rec['exam_type_label'] ?? '') . ' · ' . ($rec['title'] ?? '');
 }
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-arrow-left"></i> Back to Examinations</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], ['Questions']];
+$adminBackHref = 'professor_examinations';
+$adminBackLabel = 'Back to Examinations';
+$adminHeroActions = '';
 $activeStep = 'questions';
 
 $regularQuestions = $examType === 'regular' ? examination_questions_load_regular($conn, $sourceId) : [];
 $diagnosticSupply = $examType === 'diagnostic' ? examination_questions_diagnostic_supply($conn, $sourceId) : null;
+$regularTopicOptions = [];
+$regularSubjectOptions = [];
+$regularBreakdownMode = 'overall';
+$regularBlueprint = [
+    'ok' => true,
+    'configured' => false,
+    'mode' => 'overall',
+    'total_required' => 0,
+    'total_authored' => 0,
+    'remaining' => 0,
+    'status' => 'idle',
+    'subjects' => [],
+    'errors' => [],
+];
+$regularSubjectNameById = [];
+$regularTopicNameById = [];
+if ($examType === 'regular') {
+    require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
+    require_once __DIR__ . '/college_exam_attempt_paper.php';
+    $regularBreakdownMode = college_exam_get_breakdown_mode($conn, $sourceId);
+    $regularBlueprint = college_exam_topic_supply($conn, $sourceId);
+    foreach (college_exam_load_subjects_with_topics($conn, $sourceId) as $subj) {
+        $regularSubjectNameById[(int)$subj['exam_subject_id']] = (string)$subj['subject_name'];
+        $regularSubjectOptions[] = [
+            'exam_subject_id' => (int)$subj['exam_subject_id'],
+            'subject_name' => (string)$subj['subject_name'],
+            'questions_required' => (int)($subj['questions_required'] ?? 0),
+            'topic_count' => count($subj['topics'] ?? []),
+        ];
+        foreach ($subj['topics'] as $topic) {
+            $regularTopicNameById[(int)$topic['exam_topic_id']] = (string)$topic['topic_name'];
+            $regularTopicOptions[] = [
+                'exam_topic_id' => (int)$topic['exam_topic_id'],
+                'exam_subject_id' => (int)$subj['exam_subject_id'],
+                'subject_name' => (string)$subj['subject_name'],
+                'topic_name' => (string)$topic['topic_name'],
+                'questions_required' => (int)$topic['questions_required'],
+            ];
+        }
+    }
+}
 
 $questionsBaseUrl = examination_domain_edit_url($examType, $sourceId, 'questions');
 $importTemplateUrl = $questionsBaseUrl . (str_contains($questionsBaseUrl, '?') ? '&' : '?') . 'download_question_template=1';
@@ -47,7 +93,7 @@ $ajaxQuestionsUrl = 'professor_examination_questions_ajax';
  * @param list<array> $rows
  * @return list<array<string,mixed>>
  */
-$eqbMapClientRows = static function (array $rows): array {
+$eqbMapClientRows = function (array $rows) use ($regularSubjectNameById, $regularTopicNameById): array {
     $out = [];
     foreach ($rows as $i => $q) {
         if (!is_array($q)) {
@@ -66,6 +112,8 @@ $eqbMapClientRows = static function (array $rows): array {
         if ($type === 'tf') {
             $ansLabel = $ans === 'A' ? 'True' : ($ans === 'B' ? 'False' : $ansLabel);
         }
+        $sid = (int)($q['exam_subject_id'] ?? 0);
+        $tid = (int)($q['exam_topic_id'] ?? 0);
         $out[] = [
             'question_id' => (int)($q['question_id'] ?? 0),
             'question_type' => $type,
@@ -79,14 +127,24 @@ $eqbMapClientRows = static function (array $rows): array {
                 ? examination_questions_diagnostic_extra_choices_decode(isset($q['extra_choices_json']) ? (string)$q['extra_choices_json'] : null)
                 : [],
             'correct_answer' => $ans,
-            'type_label' => $type === 'tf' ? 'True/False' : 'Multiple',
+            'exam_topic_id' => $tid,
+            'exam_subject_id' => $sid,
+            'subject_name' => (string)($regularSubjectNameById[$sid] ?? ''),
+            'topic_name' => (string)($regularTopicNameById[$tid] ?? ''),
+            'type_label' => $type === 'tf' ? 'True / False' : 'Multiple Choice',
             'answer_label' => $ansLabel,
-            'display_number' => $i + 1,
+            'display_number' => (int)($q['display_number'] ?? ($i + 1)),
+            'group_key' => (string)($q['_group_key'] ?? ''),
+            'group_label' => (string)($q['_group_label'] ?? ''),
+            'group_parent' => (string)($q['_group_parent'] ?? ''),
         ];
     }
 
     return $out;
 };
+if ($examType === 'regular' && function_exists('college_exam_canonical_authoring_rows')) {
+    $regularQuestions = college_exam_canonical_authoring_rows($conn, $sourceId, $regularQuestions);
+}
 $regularClientRows = $examType === 'regular' ? $eqbMapClientRows($regularQuestions) : [];
 $diagClientRows = [];
 $diagSubjectCode = '';
@@ -98,7 +156,7 @@ $diagRequired = 0;
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
@@ -135,11 +193,35 @@ $diagRequired = 0;
 <?php endif; ?>
 
 <?php if ($examType === 'regular'): ?>
-  <section class="eqb-panel page-table mb-4">
+  <?php
+    $showSubjectCols = ($regularBreakdownMode === 'subject' || $regularBreakdownMode === 'subject_topic');
+    $showTopicCols = ($regularBreakdownMode === 'subject_topic');
+    $bpConfigured = !empty($regularBlueprint['configured']);
+    $bpAuth = (int)($regularBlueprint['total_authored'] ?? count($regularQuestions));
+    $bpReq = (int)($regularBlueprint['total_required'] ?? 0);
+    $bpRemain = (int)($regularBlueprint['remaining'] ?? max(0, $bpReq - $bpAuth));
+    $colspan = 5 + ($showSubjectCols ? 1 : 0) + ($showTopicCols ? 1 : 0);
+    $eqbCorrectChoiceText = static function (array $row): string {
+        $ans = strtoupper(trim((string)($row['correct_answer'] ?? '')));
+        $type = strtolower((string)($row['question_type'] ?? 'mcq'));
+        if ($type === 'tf') {
+            return $ans === 'A' ? 'True' : ($ans === 'B' ? 'False' : '');
+        }
+        $map = [
+            'A' => (string)($row['choice_a'] ?? ''),
+            'B' => (string)($row['choice_b'] ?? ''),
+            'C' => (string)($row['choice_c'] ?? ''),
+            'D' => (string)($row['choice_d'] ?? ''),
+        ];
+
+        return trim((string)($map[$ans] ?? ''));
+    };
+  ?>
+  <section class="eqb-panel page-table mb-4 eqb-panel--regular-manager">
     <div class="eqb-panel__head">
       <div>
         <h2 class="eqb-panel__title">Questions</h2>
-        <p class="eqb-panel__sub" id="eqbQuestionCount"><strong><?php echo count($regularQuestions); ?></strong> Question<?php echo count($regularQuestions) === 1 ? '' : 's'; ?></p>
+        <p class="eqb-panel__sub" id="eqbQuestionCount"><strong><?php echo count($regularQuestions); ?></strong> question<?php echo count($regularQuestions) === 1 ? '' : 's'; ?></p>
       </div>
       <?php if (!$locked): ?>
         <div class="eqb-panel__actions">
@@ -149,8 +231,86 @@ $diagRequired = 0;
       <?php endif; ?>
     </div>
 
-    <div class="eqb-toolbar eqb-toolbar--filters">
+    <?php if ($bpConfigured): ?>
+    <div class="eqb-coverage" id="eqbCoverage" data-mode="<?php echo h($regularBreakdownMode); ?>">
+      <div class="eqb-coverage__head">
+        <h3 class="eqb-coverage__title">Question Coverage</h3>
+        <p class="eqb-coverage__total" id="eqbCoverageTotal">
+          <strong><?php echo (int)$bpAuth; ?></strong> / <strong><?php echo (int)$bpReq; ?></strong>
+          <?php if ($bpRemain > 0): ?>
+            <span class="eqb-coverage__remain"><?php echo (int)$bpRemain; ?> remaining</span>
+          <?php elseif ((int)$bpReq > 0 && (int)$bpAuth > (int)$bpReq): ?>
+            <span class="eqb-coverage__badge eqb-coverage__badge--over">Over</span>
+          <?php else: ?>
+            <span class="eqb-coverage__badge eqb-coverage__badge--complete">Complete</span>
+          <?php endif; ?>
+        </p>
+      </div>
+      <div class="eqb-coverage__list" id="eqbCoverageList">
+        <?php if ($regularBreakdownMode === 'overall'): ?>
+          <?php
+            $st = (string)($regularBlueprint['status'] ?? 'missing');
+            $badge = $st === 'complete' ? 'Complete' : ($st === 'progress' ? 'In progress' : 'Missing');
+          ?>
+          <div class="eqb-coverage__row eqb-coverage__row--<?php echo h($st); ?>">
+            <span class="eqb-coverage__name">Overall</span>
+            <span class="eqb-coverage__frac"><?php echo (int)$bpAuth; ?> / <?php echo (int)$bpReq; ?></span>
+            <span class="eqb-coverage__badge eqb-coverage__badge--<?php echo h($st); ?>"><?php echo h($badge); ?></span>
+          </div>
+        <?php else: ?>
+          <?php foreach (($regularBlueprint['subjects'] ?? []) as $ss): ?>
+            <?php
+              $st = (string)($ss['status'] ?? 'missing');
+              $badge = $st === 'complete' ? 'Complete' : ($st === 'progress' ? 'In progress' : ((int)($ss['remaining'] ?? 0) . ' remaining'));
+            ?>
+            <div class="eqb-coverage__row eqb-coverage__row--<?php echo h($st); ?>" data-subject-id="<?php echo (int)$ss['exam_subject_id']; ?>">
+              <span class="eqb-coverage__name"><?php echo h((string)$ss['subject_name']); ?></span>
+              <span class="eqb-coverage__frac"><?php echo (int)$ss['authored']; ?> / <?php echo (int)$ss['questions_required']; ?></span>
+              <span class="eqb-coverage__badge eqb-coverage__badge--<?php echo h($st); ?>"><?php echo h($badge); ?></span>
+            </div>
+            <?php if ($showTopicCols && !empty($ss['topics'])): ?>
+              <?php foreach ($ss['topics'] as $tt): ?>
+                <?php
+                  $tst = (string)($tt['status'] ?? 'missing');
+                  $tbadge = $tst === 'complete' ? 'Complete' : ($tst === 'progress' ? 'In progress' : ((int)($tt['remaining'] ?? 0) . ' remaining'));
+                ?>
+                <div class="eqb-coverage__row eqb-coverage__row--topic eqb-coverage__row--<?php echo h($tst); ?>" data-topic-id="<?php echo (int)$tt['exam_topic_id']; ?>">
+                  <span class="eqb-coverage__name"><?php echo h((string)$tt['topic_name']); ?></span>
+                  <span class="eqb-coverage__frac"><?php echo (int)$tt['authored']; ?> / <?php echo (int)$tt['required']; ?></span>
+                  <span class="eqb-coverage__badge eqb-coverage__badge--<?php echo h($tst); ?>"><?php echo h($tbadge); ?></span>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="eqb-toolbar eqb-toolbar--filters eqb-toolbar--manager">
       <input type="search" id="eqbSearch" class="eqb-search" placeholder="Search questions…" autocomplete="off">
+      <?php if ($showSubjectCols): ?>
+      <label class="eqb-filter">
+        <span class="sr-only">Subject</span>
+        <select id="eqbSubjectFilter" class="eqb-select eqb-filter-select" aria-label="Filter by subject">
+          <option value="all">Subject: All</option>
+          <?php foreach ($regularSubjectOptions as $opt): ?>
+            <option value="<?php echo (int)$opt['exam_subject_id']; ?>"><?php echo h((string)$opt['subject_name']); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <?php endif; ?>
+      <?php if ($showTopicCols && $regularTopicOptions !== []): ?>
+      <label class="eqb-filter">
+        <span class="sr-only">Topic</span>
+        <select id="eqbTopicFilter" class="eqb-select eqb-filter-select" aria-label="Filter by topic">
+          <option value="all">Topic: All</option>
+          <?php foreach ($regularTopicOptions as $opt): ?>
+            <option value="<?php echo (int)$opt['exam_topic_id']; ?>" data-subject-id="<?php echo (int)$opt['exam_subject_id']; ?>"><?php echo h((string)$opt['subject_name'] . ' — ' . (string)$opt['topic_name']); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+      <?php endif; ?>
       <label class="eqb-filter">
         <span class="sr-only">Type</span>
         <select id="eqbTypeFilter" class="eqb-select eqb-filter-select" aria-label="Filter by type">
@@ -159,32 +319,95 @@ $diagRequired = 0;
           <option value="tf">True or False</option>
         </select>
       </label>
+      <label class="eqb-filter">
+        <span class="sr-only">Correct Answer</span>
+        <select id="eqbAnswerFilter" class="eqb-select eqb-filter-select" aria-label="Filter by correct answer">
+          <option value="all">Correct Answer: All</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="True">True</option>
+          <option value="False">False</option>
+        </select>
+      </label>
+      <?php if ($bpConfigured && $showSubjectCols): ?>
+      <label class="eqb-filter">
+        <span class="sr-only">Coverage</span>
+        <select id="eqbCoverageFilter" class="eqb-select eqb-filter-select" aria-label="Filter by coverage status">
+          <option value="all">Coverage: All</option>
+          <option value="complete">Complete</option>
+          <option value="missing">Missing</option>
+          <option value="over">Over capacity</option>
+        </select>
+      </label>
+      <?php endif; ?>
     </div>
 
-    <div class="students-table-scroll eqb-table-wrap">
-      <table class="w-full text-left admin-students-table students-table--compact eqb-table">
+    <div class="students-table-scroll eqb-table-wrap eqb-table-wrap--compact">
+      <table class="w-full text-left admin-students-table eqb-table eqb-table--compact eqb-table--manager" id="eqbQuestionsTable">
         <thead>
           <tr>
-            <th scope="col">#</th>
-            <th scope="col">Question Preview</th>
-            <th scope="col">Type</th>
-            <th scope="col" class="student-actions-head">Actions</th>
+            <th scope="col" class="eqb-th-sort" data-eqb-sort="num">Master # <span class="eqb-sort-ind" aria-hidden="true">↑</span></th>
+            <th scope="col" class="eqb-th-sort" data-eqb-sort="question">Question <span class="eqb-sort-ind" aria-hidden="true"></span></th>
+            <?php if ($showSubjectCols): ?><th scope="col" class="eqb-th-sort" data-eqb-sort="subject">Subject <span class="eqb-sort-ind" aria-hidden="true"></span></th><?php endif; ?>
+            <?php if ($showTopicCols): ?><th scope="col" class="eqb-th-sort" data-eqb-sort="topic">Topic <span class="eqb-sort-ind" aria-hidden="true"></span></th><?php endif; ?>
+            <th scope="col" class="eqb-th-sort" data-eqb-sort="type">Type <span class="eqb-sort-ind" aria-hidden="true"></span></th>
+            <th scope="col" class="eqb-th-sort" data-eqb-sort="answer">Correct <span class="eqb-sort-ind" aria-hidden="true"></span></th>
+            <th scope="col" class="student-actions-head">Status / Actions</th>
           </tr>
         </thead>
         <tbody id="eqbQuestionRows">
           <?php if ($regularClientRows === []): ?>
-            <tr><td colspan="4" class="students-empty-cell">No questions yet. Use Add Questions or Import Questions.</td></tr>
+            <tr><td colspan="<?php echo (int)$colspan; ?>" class="students-empty-cell">No questions yet. Use Add Questions or Import Questions.</td></tr>
           <?php else: ?>
-            <?php foreach ($regularClientRows as $row): ?>
-              <?php
+            <?php
+              $eqbPrevGroup = null;
+              foreach ($regularClientRows as $row):
+                $ansLetter = strtoupper(trim((string)($row['correct_answer'] ?? '')));
+                $ansText = $eqbCorrectChoiceText($row);
+                $ansFilter = strtolower((string)($row['question_type'] ?? '')) === 'tf'
+                  ? ($ansLetter === 'A' ? 'True' : ($ansLetter === 'B' ? 'False' : $ansLetter))
+                  : $ansLetter;
                 $hay = function_exists('mb_strtolower')
-                  ? mb_strtolower($row['preview'] . ' ' . $row['question_text'] . ' ' . $row['correct_answer'])
-                  : strtolower($row['preview'] . ' ' . $row['question_text'] . ' ' . $row['correct_answer']);
-              ?>
-              <tr data-eqb-row data-eqb-id="<?php echo (int)$row['question_id']; ?>" data-eqb-type="<?php echo h($row['question_type']); ?>" data-eqb-search="<?php echo h($hay); ?>">
-                <td><?php echo (int)$row['display_number']; ?></td>
-                <td><?php echo h($row['preview']); ?></td>
-                <td><span class="eqb-type"><?php echo h($row['type_label']); ?></span></td>
+                  ? mb_strtolower($row['preview'] . ' ' . $row['question_text'] . ' ' . $row['correct_answer'] . ' ' . ($row['subject_name'] ?? '') . ' ' . ($row['topic_name'] ?? '') . ' ' . $ansText)
+                  : strtolower($row['preview'] . ' ' . $row['question_text'] . ' ' . $row['correct_answer'] . ' ' . ($row['subject_name'] ?? '') . ' ' . ($row['topic_name'] ?? '') . ' ' . $ansText);
+                $previewOne = (string)$row['preview'];
+                if (function_exists('mb_strlen') && mb_strlen($previewOne) > 72) {
+                    $previewOne = mb_substr($previewOne, 0, 69) . '…';
+                } elseif (strlen($previewOne) > 72) {
+                    $previewOne = substr($previewOne, 0, 69) . '…';
+                }
+                $gKey = (string)($row['group_key'] ?? '');
+                if ($showSubjectCols && $gKey !== '' && $gKey !== 'overall' && $gKey !== $eqbPrevGroup) {
+                    $eqbPrevGroup = $gKey;
+                    $gParent = trim((string)($row['group_parent'] ?? ''));
+                    $gLabel = trim((string)($row['group_label'] ?? ''));
+                    $gTitle = $gParent !== '' ? ($gParent . ' · ' . $gLabel) : $gLabel;
+                    if ($gTitle !== '') {
+            ?>
+              <tr class="eqb-group-row" data-eqb-group="<?php echo h($gKey); ?>"><td colspan="<?php echo (int)$colspan; ?>"><?php echo h($gTitle); ?></td></tr>
+            <?php
+                    }
+                }
+            ?>
+              <tr data-eqb-row
+                  data-eqb-id="<?php echo (int)$row['question_id']; ?>"
+                  data-eqb-type="<?php echo h($row['question_type']); ?>"
+                  data-eqb-subject="<?php echo (int)($row['exam_subject_id'] ?? 0); ?>"
+                  data-eqb-topic="<?php echo (int)($row['exam_topic_id'] ?? 0); ?>"
+                  data-eqb-answer="<?php echo h($ansFilter); ?>"
+                  data-eqb-search="<?php echo h($hay); ?>">
+                <td class="eqb-td-num"><?php echo (int)$row['display_number']; ?></td>
+                <td class="eqb-td-question"><span class="eqb-q-preview" title="<?php echo h((string)$row['preview']); ?>"><?php echo h($previewOne); ?></span></td>
+                <?php if ($showSubjectCols): ?><td class="eqb-td-subject"><?php echo h((string)($row['subject_name'] !== '' ? $row['subject_name'] : '—')); ?></td><?php endif; ?>
+                <?php if ($showTopicCols): ?><td class="eqb-td-topic"><?php echo h((string)($row['topic_name'] !== '' ? $row['topic_name'] : '—')); ?></td><?php endif; ?>
+                <td class="eqb-td-type"><span class="eqb-type"><?php echo h($row['type_label']); ?></span></td>
+                <td class="eqb-td-answer">
+                  <span class="eqb-ans-compact" title="<?php echo h($ansText); ?>">
+                    <span class="eqb-ans-compact__key"><?php echo h(strtolower((string)$row['question_type']) === 'tf' ? ($ansText !== '' ? $ansText : ($ansLetter ?: '—')) : ($ansLetter !== '' ? $ansLetter : '—')); ?></span>
+                  </span>
+                </td>
                 <td class="eqb-row-actions">
                   <?php if (!$locked): ?>
                     <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" data-eqb-edit="<?php echo (int)$row['question_id']; ?>">Edit</button>
@@ -211,7 +434,7 @@ $diagRequired = 0;
                       </div>
                     </div>
                   <?php else: ?>
-                    <span class="opacity-60 text-sm">Locked</span>
+                    <span class="eqb-locked" title="Question editing is locked because this examination already has student attempts."><i class="bi bi-lock-fill" aria-hidden="true"></i> Locked</span>
                   <?php endif; ?>
                 </td>
               </tr>
@@ -447,7 +670,10 @@ $diagRequired = 0;
         </div>
       <?php else: ?>
         <button type="button" class="admin-btn admin-btn--secondary" id="eqbAddAnotherBtn"><i class="bi bi-plus-lg"></i> Add Another Question</button>
-        <button type="button" class="admin-btn admin-btn--primary" id="eqbRapidCloseFooter">Close</button>
+        <div class="eqb-rapid-modal__footer-right">
+          <button type="button" class="admin-btn admin-btn--ghost" id="eqbRapidCancel">Cancel</button>
+          <button type="button" class="admin-btn admin-btn--primary" id="eqbRapidCloseFooter">Done</button>
+        </div>
       <?php endif; ?>
     </div>
   </div>
@@ -819,6 +1045,10 @@ $diagRequired = 0;
     'searchId' => 'eqbSearch',
     'filterId' => 'eqbTypeFilter',
     'slotListId' => 'diagSlotList',
+    'topicOptions' => $regularTopicOptions,
+    'subjectOptions' => $regularSubjectOptions,
+    'breakdownMode' => $regularBreakdownMode,
+    'blueprint' => $regularBlueprint,
   ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
   window.__eqbRapid = window.EreviewQuestionRapidEntry.create(bootstrap);
 })();

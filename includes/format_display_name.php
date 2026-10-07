@@ -56,3 +56,27 @@ if (!function_exists('ereview_format_topbar_display_name')) {
         return implode(' ', $parts) . ' ' . $last;
     }
 }
+
+if (!function_exists('ereview_greeting_display_name')) {
+    /**
+     * Friendly first name for greetings, from the same session full_name as the topbar.
+     * Skips generic role tokens (System, Admin, …) so "System Administrator" is not "System".
+     */
+    function ereview_greeting_display_name(?string $fullName): string
+    {
+        $fullName = trim((string) $fullName);
+        if ($fullName === '') {
+            return ereview_format_topbar_display_name('');
+        }
+
+        $words = preg_split('/\s+/u', $fullName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $generic = ['system', 'admin', 'administrator', 'superadmin', 'super', 'root', 'user', 'staff', 'professor'];
+        foreach ($words as $w) {
+            if (!in_array(mb_strtolower($w), $generic, true)) {
+                return $w;
+            }
+        }
+
+        return $fullName !== '' ? $fullName : 'User';
+    }
+}

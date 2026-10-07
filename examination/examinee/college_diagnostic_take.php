@@ -128,6 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_diagnostic'])) 
     exit;
 }
 
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
+
 if ($attempt && $attemptSubmitted && !$reviewMode) {
     header('Location: college_diagnostic_take?batch_id=' . $batchId . '&review=1');
     exit;
@@ -648,8 +652,12 @@ if ($reviewMode && $attemptSubmitted) {
         var examPageReadyAt = Date.now();
         var warned5 = false, warned1 = false, warned30 = false;
         var saveRetryTimers = {};
+        var saveDebounceTimers = {};
+        var saveSeqByQid = {};
+        var pendingSaveByQid = {};
         var inflightSaves = {};
         var answersLocked = false;
+        var SAVE_DEBOUNCE_MS = 400;
         var scrollSyncFromClick = false;
         var scrollSyncTimer = null;
 
@@ -753,7 +761,12 @@ if ($reviewMode && $attemptSubmitted) {
         function localAnswersPayload() {
           var map = getLocalAnswersMap();
           return Object.keys(map).map(function (qid) {
-            return { question_id: parseInt(qid, 10), selected_answer: map[qid] };
+            var id = parseInt(qid, 10);
+            return {
+              question_id: id,
+              selected_answer: map[qid],
+              save_seq: saveSeqByQid[id] || 1
+            };
           });
         }
         function isQuestionAnsweredLocal(qid) {
@@ -1120,6 +1133,15 @@ if ($reviewMode && $attemptSubmitted) {
 
         function awaitInflightSaves(maxWaitMs) {
           maxWaitMs = typeof maxWaitMs === 'number' ? maxWaitMs : 2500;
+          Object.keys(saveDebounceTimers).forEach(function (qid) {
+            clearTimeout(saveDebounceTimers[qid]);
+            delete saveDebounceTimers[qid];
+            var pending = pendingSaveByQid[qid];
+            if (pending) {
+              delete pendingSaveByQid[qid];
+              flushSaveAnswer(parseInt(qid, 10), pending.value, pending.fromIndex, 1);
+            }
+          });
           var pending = Object.keys(inflightSaves).map(function (k) { return inflightSaves[k]; }).filter(Boolean);
           if (!pending.length) return Promise.resolve();
           return Promise.race([
@@ -1128,9 +1150,28 @@ if ($reviewMode && $attemptSubmitted) {
           ]);
         }
 
-        function saveAnswer(qid, value, fromIndex, attempt) {
+        function queueSaveAnswer(qid, value, fromIndex) {
+          if (answersLocked || state.submitting) return;
+          saveSeqByQid[qid] = (saveSeqByQid[qid] || 0) + 1;
+          pendingSaveByQid[qid] = { value: value, fromIndex: fromIndex, seq: saveSeqByQid[qid] };
+          clearTimeout(saveDebounceTimers[qid]);
+          clearTimeout(saveRetryTimers[qid]);
+          saveDebounceTimers[qid] = setTimeout(function () {
+            delete saveDebounceTimers[qid];
+            var pending = pendingSaveByQid[qid];
+            if (!pending) return;
+            delete pendingSaveByQid[qid];
+            flushSaveAnswer(qid, pending.value, pending.fromIndex, 1, pending.seq);
+          }, SAVE_DEBOUNCE_MS);
+        }
+
+        function flushSaveAnswer(qid, value, fromIndex, attempt, seq) {
           attempt = attempt || 1;
+          seq = typeof seq === 'number' ? seq : (saveSeqByQid[qid] || 1);
           if (answersLocked || state.submitting) {
+            return Promise.resolve(null);
+          }
+          if ((saveSeqByQid[qid] || 0) > seq) {
             return Promise.resolve(null);
           }
           if (attempt > 1) showWarnToast('Unable to save — retrying...', 'warning');
@@ -1139,9 +1180,11 @@ if ($reviewMode && $attemptSubmitted) {
             csrf_token: csrf,
             attempt_id: attemptId,
             question_id: qid,
-            selected_answer: value
+            selected_answer: value,
+            save_seq: seq
           }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Save failed');
+            if (data.ignored) return data;
             setConn(true, attempt > 1);
             showSavedToast('Answer saved');
             var wasAnswered = state.answered.has(qid);
@@ -1149,7 +1192,6 @@ if ($reviewMode && $attemptSubmitted) {
             syncChoiceStyles();
             updateCounts();
             renderNavigator();
-            // Auto-advance only after first successful answer (changing an answer does not yank the page).
             if (!wasAnswered && typeof fromIndex === 'number' && fromIndex >= 0) {
               var nextIdx = findNextUnansweredAfter(fromIndex);
               if (nextIdx >= 0 && nextIdx !== fromIndex) {
@@ -1163,9 +1205,12 @@ if ($reviewMode && $attemptSubmitted) {
           }).catch(function () {
             setConn(false);
             if (answersLocked || state.submitting) return null;
-            if (attempt < 4) {
+            if ((saveSeqByQid[qid] || 0) > seq) return null;
+            if (attempt < 3) {
               clearTimeout(saveRetryTimers[qid]);
-              saveRetryTimers[qid] = setTimeout(function () { saveAnswer(qid, value, fromIndex, attempt + 1); }, 450 * attempt);
+              saveRetryTimers[qid] = setTimeout(function () {
+                flushSaveAnswer(qid, value, fromIndex, attempt + 1, seq);
+              }, Math.min(4000, 600 * attempt));
               showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
             } else {
               showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
@@ -1178,9 +1223,15 @@ if ($reviewMode && $attemptSubmitted) {
           return p;
         }
 
+        function saveAnswer(qid, value, fromIndex) {
+          queueSaveAnswer(qid, value, fromIndex);
+          return Promise.resolve(null);
+        }
+
         function flushAllLocalAnswers() {
-          // Prefer one submit payload over N round-trips (faster + survives flaky saves).
-          return Promise.resolve({ ok: true, answers: localAnswersPayload() });
+          return awaitInflightSaves(2500).then(function () {
+            return { ok: true, answers: localAnswersPayload() };
+          });
         }
 
         function openTimeUpModal() {
@@ -1602,7 +1653,7 @@ if ($reviewMode && $attemptSubmitted) {
         }
 
         var timeSyncTimer = null;
-        var timeSyncMs = 15000;
+        var timeSyncMs = 30000;
         function runTimeSyncTick() {
           if (state.submitting) return;
           request('get_time', { attempt_id: attemptId }).then(function (data) {
@@ -1648,9 +1699,9 @@ if ($reviewMode && $attemptSubmitted) {
               autoSubmitOnTimeUp('timeout');
             } else {
               timerTick();
-              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 15000);
+              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 30000);
             }
-            setInterval(function () { if (!state.submitting) queueStateSync(); }, 15000);
+            setInterval(function () { if (!state.submitting) queueStateSync(); }, 30000);
           });
       })();
       </script>

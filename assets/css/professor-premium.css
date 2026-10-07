@@ -1,0 +1,2283 @@
+﻿/**
+ * Professor Admin — visual system (UI only).
+ * Scoped to body.professor-admin. Loaded last via examination_head_admin.php.
+ * Do not use unscoped .page-hero / .table / .btn selectors here.
+ */
+
+body.professor-admin {
+  --prof-canvas: #eef3fb;
+  --prof-surface: #ffffff;
+  --prof-navy: #0f1f3d;
+  --prof-blue: #2563eb;
+  --prof-indigo: #4f46e5;
+  --prof-muted: #5b6b86;
+  --prof-border: rgba(147, 180, 230, 0.28);
+  --prof-radius: 18px;
+  --prof-radius-ws: 16px;
+  --prof-radius-kpi: 16px;
+  --prof-radius-ctrl: 10px;
+  --prof-radius-btn: 9px;
+  --prof-control-h: 2.35rem;
+  --prof-shadow-hero: 0 18px 44px -16px rgba(37, 76, 150, 0.34), 0 0 64px -18px rgba(99, 102, 241, 0.38);
+  --prof-shadow-ws: 0 12px 30px -18px rgba(37, 76, 150, 0.28);
+  --prof-shadow-kpi: inset 0 1px 0 rgba(255, 255, 255, 0.98), 0 12px 30px -16px rgba(37, 76, 150, 0.32), 0 0 28px -14px rgba(59, 130, 246, 0.28);
+  --prof-z-content: 1;
+  --prof-z-sticky: 20;
+  --prof-z-sidebar: 30;
+  --prof-z-topbar: 45;
+  --prof-z-nav-backdrop: 50;
+  --prof-z-sidebar-overlay: 55;
+  --prof-z-dropdown: 70;
+  --prof-z-modal: 200;
+  --prof-z-modal-ui: 210;
+}
+
+/* Contain overflow without body { overflow-x: hidden } */
+body.professor-admin,
+body.professor-admin #main,
+body.admin-app.professor-admin .admin-content,
+body.admin-app.professor-admin .examination-page-shell,
+body.admin-app.professor-admin .students-page-shell,
+body.admin-app.professor-admin .prof-dash-shell,
+body.admin-app.professor-admin .students-toolbar,
+body.admin-app.professor-admin .students-table-shell,
+body.admin-app.professor-admin .page-table,
+body.admin-app.professor-admin .prof-workspace,
+body.admin-app.professor-admin .prof-panel {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.admin-app.professor-admin .students-table-scroll,
+body.admin-app.professor-admin .page-table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.admin-app.professor-admin .pem-roster-shell .students-table-scroll {
+  max-height: calc(100vh - 11rem);
+  overflow: auto;
+}
+
+/* Canvas — cooler base; lighting lives on #main + ::before so Admin !important fill cannot hide it */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin,
+html[data-admin-theme="light"] body.admin-app.professor-admin,
+body.admin-app.professor-admin {
+  background: #eef3fb !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main.admin-main-shell,
+html[data-admin-theme="light"] body.admin-app.professor-admin #main,
+html[data-admin-theme="light"] body.admin-app.professor-admin #main.admin-main-shell,
+body.admin-app.professor-admin #main {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  background-color: #eef3fb !important;
+  background-image:
+    radial-gradient(1100px 720px at -12% -18%, rgba(56, 189, 248, 0.42), transparent 62%),
+    radial-gradient(900px 560px at 48% -22%, rgba(125, 211, 252, 0.22), transparent 58%),
+    radial-gradient(980px 680px at 112% -10%, rgba(99, 102, 241, 0.36), transparent 56%),
+    radial-gradient(820px 520px at 50% 118%, rgba(59, 130, 246, 0.16), transparent 60%) !important;
+  background-attachment: fixed !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main::before,
+body.admin-app.professor-admin #main::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(70% 48% at 8% 0%, rgba(59, 130, 246, 0.34), transparent 58%),
+    radial-gradient(55% 42% at 52% 4%, rgba(103, 232, 249, 0.16), transparent 62%),
+    radial-gradient(62% 50% at 96% 2%, rgba(129, 140, 248, 0.32), transparent 60%),
+    radial-gradient(50% 40% at 50% 92%, rgba(37, 99, 235, 0.12), transparent 70%) !important;
+  filter: blur(2px);
+  opacity: 1 !important;
+}
+
+body.admin-app.professor-admin #main::after {
+  display: none !important;
+}
+
+body.admin-app.professor-admin #main > * {
+  position: relative;
+  z-index: var(--prof-z-content);
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main > .admin-topbar,
+html[data-admin-theme="light"] body.admin-app.professor-admin #main > .admin-topbar,
+body.admin-app.professor-admin #main > .admin-topbar,
+body.admin-app.professor-admin #main > .admin-topbar-modern {
+  z-index: var(--prof-z-topbar) !important;
+  overflow: visible !important;
+}
+
+/* Sidebar — sibling of LCRC Admin, with luminous active item */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #app-sidebar.app-shell-sidebar--admin,
+html[data-admin-theme="light"] body.admin-app.professor-admin #app-sidebar.app-shell-sidebar--admin,
+body.admin-app.professor-admin #app-sidebar.app-shell-sidebar--admin {
+  background-color: #f4f8ff !important;
+  background-image:
+    linear-gradient(90deg, rgba(59, 130, 246, 0.18) 0%, transparent 18%),
+    radial-gradient(120% 70% at 20% 42%, rgba(99, 102, 241, 0.16), transparent 62%),
+    linear-gradient(180deg, rgba(147, 197, 253, 0.28) 0%, rgba(244, 248, 255, 0.4) 32%, #f7faff 100%) !important;
+  border-right: 1px solid rgba(147, 180, 230, 0.45) !important;
+  box-shadow: 18px 0 40px -28px rgba(37, 76, 150, 0.45) !important;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link,
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-section-label {
+  color: #1e3a5f;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link:not(.is-active):hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link.is-active,
+body.admin-app.professor-admin #app-sidebar .admin-nav-active {
+  position: relative;
+  background: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%) !important;
+  color: #fff !important;
+  box-shadow:
+    0 12px 24px -10px rgba(59, 130, 246, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset !important;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link.is-active::before,
+body.admin-app.professor-admin #app-sidebar .admin-nav-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: #bfdbfe;
+  box-shadow: 0 0 10px rgba(191, 219, 254, 0.9);
+  pointer-events: none;
+}
+
+/* Topbar — floating luminous bar */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-modern .admin-topbar-inner,
+html[data-admin-theme="light"] body.admin-app.professor-admin .admin-topbar-modern .admin-topbar-inner,
+body.admin-app.professor-admin .admin-topbar-modern .admin-topbar-inner {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(186, 210, 245, 0.55) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 12px 28px -16px rgba(37, 76, 150, 0.34),
+    0 0 40px -16px rgba(59, 130, 246, 0.28) !important;
+}
+
+body.admin-app.professor-admin .admin-topbar-search-wrap {
+  background: rgba(241, 247, 255, 0.96) !important;
+  border: 1px solid rgba(147, 197, 253, 0.72) !important;
+  box-shadow: 0 0 24px -8px rgba(59, 130, 246, 0.45) !important;
+}
+
+body.admin-app.professor-admin .examination-page-shell,
+body.admin-app.professor-admin .students-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Compact luminous management hero (Dashboard language, quieter)
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero.page-hero,
+body.admin-app.professor-admin:not(.professor-dashboard-page) .admin-glass-hero {
+  margin-bottom: 0.85rem;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero > .relative.admin-hero-wash {
+  position: relative;
+  isolation: isolate;
+  min-height: 8.15rem;
+  max-height: 9.7rem;
+  padding: 1.05rem 1.3rem !important;
+  overflow: hidden;
+  border-radius: var(--prof-radius);
+  border: 1px solid rgba(186, 210, 245, 0.38) !important;
+  background-color: #ffffff !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 46%),
+    radial-gradient(420px 180px at 92% 12%, rgba(129, 140, 248, 0.28), transparent 62%),
+    radial-gradient(320px 140px at 8% 0%, rgba(56, 189, 248, 0.16), transparent 64%),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eef2ff 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 16px 36px -18px rgba(37, 76, 150, 0.3),
+    0 0 40px -16px rgba(99, 102, 241, 0.22) !important;
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash::before,
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash::before {
+  right: -8%;
+  top: -46%;
+  width: 48%;
+  height: 180%;
+  background:
+    radial-gradient(closest-side at 40% 50%, rgba(56, 189, 248, 0.28), transparent 72%),
+    radial-gradient(closest-side at 78% 40%, rgba(59, 130, 246, 0.26), transparent 70%),
+    radial-gradient(closest-side at 90% 70%, rgba(124, 58, 237, 0.16), transparent 68%);
+  filter: blur(12px);
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash::after {
+  inset: auto -4% -30% auto;
+  width: 42%;
+  height: 70%;
+  background: radial-gradient(50% 80% at 50% 0%, rgba(99, 102, 241, 0.2), transparent 72%);
+  filter: blur(14px);
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-page-header {
+  position: relative;
+  z-index: 1;
+  min-height: 6.2rem;
+  align-items: center;
+}
+
+body.admin-app.professor-admin .admin-breadcrumb {
+  margin: 0 0 0.45rem;
+  padding: 0 0.15rem;
+}
+
+body.admin-app.professor-admin .admin-breadcrumb__link,
+body.admin-app.professor-admin .admin-breadcrumb {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+body.admin-app.professor-admin .admin-breadcrumb__link:hover {
+  color: var(--prof-blue);
+}
+
+body.admin-app.professor-admin .admin-breadcrumb-current {
+  color: var(--prof-navy);
+  font-weight: 700;
+}
+
+body.admin-app.professor-admin .admin-page-header__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.admin-app.professor-admin .admin-page-header__title,
+body.admin-app.professor-admin .admin-page-header__title-text {
+  color: var(--prof-navy);
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
+}
+
+body.admin-app.professor-admin .admin-page-header__subtitle {
+  margin-top: 0.2rem;
+  max-width: 38rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--prof-muted);
+  padding-left: 3.4rem;
+}
+
+body.admin-app.professor-admin .quiz-admin-hero-icon,
+body.admin-app.professor-admin .admin-hero-icon-tile {
+  width: 2.7rem !important;
+  height: 2.7rem !important;
+  border-radius: 0.8rem !important;
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.96), rgba(147, 197, 253, 0.72)) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(37, 99, 235, 0.55),
+    0 0 18px rgba(59, 130, 246, 0.28);
+}
+
+body.admin-app.professor-admin .prof-hero-statwrap {
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--prof-muted);
+}
+
+body.admin-app.professor-admin .prof-hero-stat {
+  letter-spacing: 0.02em;
+}
+
+body.admin-app.professor-admin .admin-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem 0.1rem;
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: #3d5278;
+  text-decoration: none;
+}
+
+body.admin-app.professor-admin .admin-back-link:hover {
+  color: var(--prof-blue);
+}
+
+body.admin-app.professor-admin .admin-btn--primary {
+  border-radius: var(--prof-radius-btn);
+  background-image: linear-gradient(90deg, #3b82f6, #4f46e5);
+  box-shadow: 0 10px 18px -10px rgba(59, 130, 246, 0.7);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+body.admin-app.professor-admin .admin-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 22px -10px rgba(59, 130, 246, 0.78), 0 0 16px rgba(59, 130, 246, 0.22);
+}
+
+body.admin-app.professor-admin .admin-btn--secondary,
+body.admin-app.professor-admin .admin-btn--ghost {
+  border-radius: var(--prof-radius-btn);
+  background: #ffffff;
+  border: 1px solid rgba(147, 180, 230, 0.45);
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .admin-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+body.admin-app.professor-admin .admin-btn--danger {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+}
+
+/* Forms + controls */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="text"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="search"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="email"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="password"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="number"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="date"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input[type="datetime-local"],
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main select,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main textarea,
+body.admin-app.professor-admin .students-search input,
+body.admin-app.professor-admin .prof-form-section input,
+body.admin-app.professor-admin .prof-form-section select,
+body.admin-app.professor-admin .prof-form-section textarea {
+  min-height: 2.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(147, 180, 230, 0.42);
+  background: #ffffff;
+  color: var(--prof-navy);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main input:focus,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main select:focus,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main textarea:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), 0 0 16px rgba(59, 130, 246, 0.16) !important;
+  outline: none;
+}
+
+body.admin-app.professor-admin .prof-form-section {
+  padding: 1.15rem 0 1.05rem;
+  border-top: 1px solid rgba(147, 180, 230, 0.22);
+}
+
+body.admin-app.professor-admin .prof-form-section:first-of-type,
+body.admin-app.professor-admin .prof-workspace--form > form > .prof-form-section:first-child {
+  border-top: 0;
+  padding-top: 0.15rem;
+}
+
+body.admin-app.professor-admin .prof-form-section__title,
+body.admin-app.professor-admin .diag-portal-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.admin-app.professor-admin .diag-portal-section {
+  padding: 1.15rem 0;
+  border-top: 1px solid rgba(147, 180, 230, 0.22);
+  background: transparent;
+  box-shadow: none;
+}
+
+body.admin-app.professor-admin .prof-choice-card {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3.1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(147, 180, 230, 0.4);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+body.admin-app.professor-admin .prof-choice-card.is-selected,
+body.admin-app.professor-admin .prof-choice-card:has(input:checked) {
+  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 8px 16px -10px rgba(37, 99, 235, 0.35);
+}
+
+body.admin-app.professor-admin .prof-workspace--form {
+  padding: 1.15rem 1.2rem 1.4rem;
+}
+
+body.admin-app.professor-admin:not(.professor-dashboard-page) .page-table,
+body.admin-app.professor-admin .examination-info-grid,
+body.admin-app.professor-admin .examination-kpi-card {
+  background: #ffffff;
+  border: 1px solid rgba(186, 210, 245, 0.32);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .students-empty-cell,
+body.admin-app.professor-admin .examination-empty,
+body.admin-app.professor-admin .prof-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.4rem 1.4rem;
+}
+
+body.admin-app.professor-admin .students-empty-cell::before {
+  content: "";
+}
+
+body.admin-app.professor-admin .students-search {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+body.admin-app.professor-admin .students-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1rem;
+}
+
+body.admin-app.professor-admin .admin-students-table tbody tr {
+  height: 4.05rem;
+}
+
+body.admin-app.professor-admin .admin-students-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.72);
+}
+
+body.admin-app.professor-admin .student-avatar-media,
+body.admin-app.professor-admin .examination-profile-avatar-fallback {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 0 12px rgba(59, 130, 246, 0.22);
+}
+
+body.admin-app.professor-admin .admin-modal {
+  background: #ffffff;
+  border: 1px solid rgba(186, 210, 245, 0.4);
+  border-radius: 1.05rem;
+  box-shadow: 0 24px 48px -18px rgba(37, 76, 150, 0.42), 0 0 40px -16px rgba(99, 102, 241, 0.22);
+}
+
+/* --------------------------------------------------------------------------
+   Workspace
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin .prof-workspace {
+  overflow: hidden;
+  background: var(--prof-surface);
+  border: 1px solid var(--prof-border);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .prof-workspace__head,
+body.admin-app.professor-admin .prof-workspace .pem-progress-head,
+body.admin-app.professor-admin .prof-workspace .prof-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.9rem 1.1rem 0.75rem;
+  background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%);
+  border-bottom: 1px solid rgba(108, 137, 180, 0.14);
+}
+
+body.admin-app.professor-admin .prof-workspace__title,
+body.admin-app.professor-admin .prof-workspace .examination-section-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 750;
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .prof-workspace__sub,
+body.admin-app.professor-admin .prof-workspace .prof-panel__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--prof-muted);
+}
+
+body.admin-app.professor-admin .prof-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--prof-border);
+  background: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334e7a;
+}
+
+body.admin-app.professor-admin .prof-workspace > .students-view-tabs {
+  margin: 0;
+  padding: 0.55rem 1rem 0.2rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.admin-app.professor-admin .prof-workspace > .students-toolbar,
+body.admin-app.professor-admin .prof-workspace > .pem-roster-filters,
+body.admin-app.professor-admin .prof-workspace form.students-toolbar {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgba(108, 137, 180, 0.12);
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.admin-app.professor-admin .prof-workspace .students-table-shell,
+body.admin-app.professor-admin .prof-workspace .page-table,
+body.admin-app.professor-admin .prof-workspace .rounded-2xl.page-table {
+  margin: 0;
+  border: 0 !important;
+  border-top: 1px solid rgba(108, 137, 180, 0.12) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+body.admin-app.professor-admin .prof-workspace .students-table-meta,
+body.admin-app.professor-admin .prof-workspace .students-pagination {
+  box-shadow: none;
+  background: #fff;
+}
+
+body.admin-app.professor-admin .prof-workspace select.admin-btn,
+body.admin-app.professor-admin .students-toolbar select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: var(--prof-control-h);
+  background-color: #fff;
+  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  border: 1px solid var(--prof-border);
+  border-radius: var(--prof-radius-ctrl);
+  color: #1e3a5f;
+  padding-right: 1.6rem;
+}
+
+/* --------------------------------------------------------------------------
+   Summary rail
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin .prof-summary-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--prof-border);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .prof-summary-rail__cell {
+  min-width: 0;
+  padding: 0.9rem 1rem 1rem;
+  border-right: 1px solid rgba(108, 137, 180, 0.14);
+}
+
+body.admin-app.professor-admin .prof-summary-rail__cell:last-child {
+  border-right: 0;
+}
+
+body.admin-app.professor-admin .prof-summary-rail__ico {
+  display: inline-flex;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin-bottom: 0.45rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  font-size: 0.9rem;
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.96), rgba(147, 197, 253, 0.7));
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 14px -8px rgba(37, 99, 235, 0.45),
+    0 0 14px rgba(59, 130, 246, 0.22);
+}
+
+body.admin-app.professor-admin .prof-summary-rail__cell:nth-child(2) .prof-summary-rail__ico {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+body.admin-app.professor-admin .prof-summary-rail__cell:nth-child(3) .prof-summary-rail__ico {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+body.admin-app.professor-admin .prof-summary-rail__cell:nth-child(4) .prof-summary-rail__ico {
+  background: #eef2ff;
+  color: var(--prof-indigo);
+}
+
+body.admin-app.professor-admin .prof-summary-rail__label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.admin-app.professor-admin .prof-summary-rail__value {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--prof-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.professor-admin .prof-summary-rail__hint {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.68rem;
+  color: var(--prof-muted);
+}
+
+@media (max-width: 767px) {
+  body.admin-app.professor-admin .prof-summary-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body.admin-app.professor-admin .prof-summary-rail__cell:nth-child(odd) {
+    border-right: 1px solid rgba(108, 137, 180, 0.14);
+  }
+  body.admin-app.professor-admin .prof-summary-rail__cell:nth-child(-n+2) {
+    border-bottom: 1px solid rgba(108, 137, 180, 0.14);
+  }
+  body.admin-app.professor-admin .quiz-admin-hero .admin-hero-wash {
+    max-height: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin .admin-students-table thead th,
+body.professor-admin table.admin-students-table thead th {
+  background: #fbfcfe !important;
+  color: #64748b !important;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  box-shadow: none !important;
+  border-bottom: 1px solid rgba(108, 137, 180, 0.16) !important;
+  height: 2.35rem;
+}
+
+body.admin-app.professor-admin .admin-students-table tbody td {
+  padding-top: 0.72rem !important;
+  padding-bottom: 0.72rem !important;
+  border-color: rgba(148, 163, 184, 0.18);
+  vertical-align: middle;
+}
+
+body.admin-app.professor-admin .admin-students-table tbody tr {
+  box-shadow: none;
+}
+
+body.admin-app.professor-admin .admin-students-table tbody tr:hover {
+  background: rgba(239, 246, 255, 0.72);
+}
+
+body.admin-app.professor-admin .student-name {
+  font-weight: 650;
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .pcs-account-email {
+  color: var(--prof-blue);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.admin-app.professor-admin .college-student-account__id {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+body.admin-app.professor-admin .student-avatar-media {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+body.admin-app.professor-admin .admin-badge--success,
+body.admin-app.professor-admin .commerce-pill--verified {
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+body.admin-app.professor-admin .admin-badge--warning,
+body.admin-app.professor-admin .commerce-pill--awaiting {
+  background: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+  color: #b45309 !important;
+}
+
+body.admin-app.professor-admin .admin-badge--danger {
+  background: #fff1f2 !important;
+  border: 1px solid #fecdd3 !important;
+  color: #be123c !important;
+}
+
+body.admin-app.professor-admin .prof-section-id {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+body.admin-app.professor-admin .prof-section-id__glyph {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  background: #eef4ff;
+  color: var(--prof-blue);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  font-size: 0.95rem;
+}
+
+body.admin-app.professor-admin .prof-section-id__name {
+  font-weight: 650;
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .prof-section-count {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+body.admin-app.professor-admin .prof-section-count__n {
+  font-weight: 700;
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .prof-section-count__meta {
+  font-size: 0.72rem;
+  color: var(--prof-muted);
+}
+
+body.admin-app.professor-admin .prof-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .examination-title-cell {
+  font-weight: 650;
+  color: var(--prof-navy);
+}
+
+/* --------------------------------------------------------------------------
+   Control strip / status deck / monitor split
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin .prof-control-strip {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.32);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .prof-control-strip .examination-module-setting__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1rem 1.15rem;
+}
+
+body.admin-app.professor-admin .prof-control-strip .examination-module-setting__copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+body.admin-app.professor-admin .prof-control-strip .examination-module-setting__title {
+  color: var(--prof-navy);
+}
+
+body.admin-app.professor-admin .prof-control-strip .examination-module-setting__desc {
+  color: var(--prof-muted);
+}
+
+body.admin-app.professor-admin .prof-status-deck {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--prof-border);
+  border-top: 2px solid var(--prof-blue);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .prof-status-deck .prof-workspace__head {
+  background: linear-gradient(180deg, #f7faff, #fff);
+}
+
+body.admin-app.professor-admin .prof-status-deck__body {
+  padding: 0.1rem 0 0.3rem;
+}
+
+body.admin-app.professor-admin .prof-status-deck__row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.admin-app.professor-admin .prof-status-deck__row:last-of-type {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid rgba(108, 137, 180, 0.14);
+}
+
+body.admin-app.professor-admin .prof-status-deck__cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.75rem 1rem 0.9rem;
+  border-right: 1px solid rgba(108, 137, 180, 0.12);
+}
+
+body.admin-app.professor-admin .prof-status-deck__cell:last-child {
+  border-right: 0;
+}
+
+body.admin-app.professor-admin .prof-live-dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background: #10b981;
+  vertical-align: 0.08rem;
+}
+
+body.admin-app.professor-admin .prof-monitor-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  body.admin-app.professor-admin .prof-monitor-split {
+    grid-template-columns: 1fr 1fr;
+  }
+  body.admin-app.professor-admin .prof-monitor-split > :only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+body.admin-app.professor-admin .prof-workspace--review {
+  border-top: 2px solid rgba(37, 99, 235, 0.35);
+}
+
+body.admin-app.professor-admin .prof-workspace--security {
+  border-top: 2px solid rgba(217, 119, 6, 0.4);
+}
+
+body.admin-app.professor-admin .pem-progress-head__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: auto;
+}
+
+body.admin-app.professor-admin .review-sched-grid input[type="datetime-local"] {
+  min-height: var(--prof-control-h);
+  width: 100%;
+  border-radius: var(--prof-radius-ctrl);
+  border: 1px solid var(--prof-border);
+  padding: 0 0.65rem;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard — luminous light system (reference match)
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .prof-dash-hero-wrap {
+  grid-column: 1 / -1;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  padding: 0.35rem 0 0.55rem;
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .prof-dash-hero-wrap::before,
+body.admin-app.professor-admin.professor-dashboard-page .prof-dash-hero-wrap::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .prof-dash-hero-wrap::before {
+  left: -10%;
+  right: -10%;
+  top: -55%;
+  height: 210%;
+  background:
+    radial-gradient(46% 62% at 50% 48%, rgba(59, 130, 246, 0.38), transparent 70%),
+    radial-gradient(38% 55% at 78% 40%, rgba(129, 140, 248, 0.34), transparent 68%),
+    radial-gradient(32% 48% at 18% 42%, rgba(56, 189, 248, 0.22), transparent 70%);
+  filter: blur(22px);
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .prof-dash-hero-wrap::after {
+  left: 8%;
+  right: 8%;
+  bottom: -18%;
+  height: 48%;
+  background: radial-gradient(50% 80% at 50% 0%, rgba(37, 99, 235, 0.22), transparent 72%);
+  filter: blur(16px);
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.professor-dashboard-page .edupro-hero,
+html[data-admin-theme="light"] body.admin-app.professor-admin.professor-dashboard-page .edupro-hero,
+body.admin-app.professor-admin.professor-dashboard-page .edupro-hero {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 10.25rem;
+  padding: 1.2rem 1.5rem 1.25rem 1.55rem;
+  overflow: hidden;
+  border-radius: var(--prof-radius);
+  border: 1px solid rgba(186, 210, 245, 0.38);
+  background-color: #ffffff !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent 42%),
+    radial-gradient(520px 220px at 92% 18%, rgba(129, 140, 248, 0.28), transparent 58%),
+    radial-gradient(380px 180px at 8% 0%, rgba(96, 165, 250, 0.14), transparent 62%),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eef2ff 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 18px 44px -16px rgba(37, 76, 150, 0.36),
+    0 0 56px -14px rgba(99, 102, 241, 0.32) !important;
+}
+
+html[data-admin-theme="light"] body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__ribbon,
+body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__ribbon {
+  display: block !important;
+  position: absolute;
+  right: -2%;
+  top: -8%;
+  width: 48%;
+  height: 120%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1 !important;
+  mix-blend-mode: normal;
+  filter: saturate(1.2) contrast(1.05);
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .edupro-hero::before {
+  content: "";
+  position: absolute;
+  right: -6%;
+  top: -40%;
+  width: 52%;
+  height: 180%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(closest-side at 42% 48%, rgba(56, 189, 248, 0.42), transparent 72%),
+    radial-gradient(closest-side at 78% 38%, rgba(59, 130, 246, 0.4), transparent 70%),
+    radial-gradient(closest-side at 88% 72%, rgba(124, 58, 237, 0.28), transparent 68%);
+  filter: blur(10px);
+  opacity: 1;
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .edupro-hero::after {
+  content: "";
+  position: absolute;
+  right: 4%;
+  top: 8%;
+  width: 40%;
+  height: 86%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 30% 40%, rgba(103, 232, 249, 0.28), transparent 62%),
+    radial-gradient(90% 70% at 80% 60%, rgba(165, 180, 252, 0.36), transparent 64%);
+  filter: blur(14px);
+}
+
+body.admin-app.professor-admin .edupro-hero__left,
+body.admin-app.professor-admin .edupro-hero__right {
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__left {
+  flex: 1 1 60%;
+  max-width: 62%;
+}
+
+body.admin-app.professor-admin .edupro-hero__right {
+  flex: 0 1 40%;
+  max-width: 40%;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+body.admin-app.professor-admin .edupro-greeting__kicker {
+  display: none;
+}
+
+body.admin-app.professor-admin .edupro-greeting__date {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #64748b;
+}
+
+body.admin-app.professor-admin .prof-hero-dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16), 0 0 12px rgba(59, 130, 246, 0.75);
+}
+
+body.admin-app.professor-admin .edupro-greeting__title {
+  margin: 0;
+  color: var(--prof-navy) !important;
+  font-size: 2.05rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  white-space: normal;
+}
+
+body.admin-app.professor-admin .prof-greet-line,
+body.admin-app.professor-admin .prof-greet-name {
+  display: block;
+}
+
+body.admin-app.professor-admin .edupro-greeting__sub {
+  margin: 0.5rem 0 0;
+  max-width: 34rem;
+  font-size: 0.92rem;
+  color: #52637c;
+}
+
+body.admin-app.professor-admin .edupro-quote__icon {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--prof-blue);
+  box-shadow: 0 10px 22px -10px rgba(59, 130, 246, 0.7), 0 0 18px rgba(99, 102, 241, 0.28);
+}
+
+body.admin-app.professor-admin .edupro-quote__text {
+  color: var(--prof-navy);
+  font-style: italic;
+  font-weight: 650;
+}
+
+body.admin-app.professor-admin .prof-signal {
+  display: none;
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin .edupro-kpi,
+html[data-admin-theme="light"] body.admin-app.professor-admin .edupro-kpi,
+body.admin-app.professor-admin .edupro-kpi {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.05rem 1.1rem 1rem;
+  background: #ffffff !important;
+  border: 1px solid rgba(186, 210, 245, 0.32) !important;
+  border-radius: var(--prof-radius-kpi) !important;
+  box-shadow: var(--prof-shadow-kpi) !important;
+  backdrop-filter: none !important;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin a.edupro-kpi:hover,
+body.admin-app.professor-admin a.edupro-kpi:hover {
+  transform: translateY(-2px);
+  border-color: rgba(147, 197, 253, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 16px 34px -16px rgba(37, 76, 150, 0.4),
+    0 0 32px -10px rgba(59, 130, 246, 0.35) !important;
+}
+
+body.admin-app.professor-admin .edupro-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: auto;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(120px 96px at 18% 36%, rgba(59, 130, 246, 0.42), transparent 70%);
+}
+
+body.admin-app.professor-admin .edupro-kpi--blue {
+  background: #ffffff !important;
+}
+body.admin-app.professor-admin .edupro-kpi--blue::before {
+  background: radial-gradient(130px 100px at 16% 34%, rgba(59, 130, 246, 0.5), transparent 68%);
+}
+body.admin-app.professor-admin .edupro-kpi--coral {
+  background: #ffffff !important;
+}
+body.admin-app.professor-admin .edupro-kpi--coral::before {
+  background: radial-gradient(130px 100px at 16% 34%, rgba(244, 63, 94, 0.42), transparent 68%);
+}
+body.admin-app.professor-admin .edupro-kpi--green {
+  background: #ffffff !important;
+}
+body.admin-app.professor-admin .edupro-kpi--green::before {
+  background: radial-gradient(130px 100px at 16% 34%, rgba(16, 185, 129, 0.42), transparent 68%);
+}
+body.admin-app.professor-admin .edupro-kpi--violet {
+  background: #ffffff !important;
+}
+body.admin-app.professor-admin .edupro-kpi--violet::before {
+  background: radial-gradient(130px 100px at 16% 34%, rgba(124, 58, 237, 0.42), transparent 68%);
+}
+
+body.admin-app.professor-admin .edupro-kpi::after {
+  content: "";
+  display: block !important;
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 0;
+  height: 2px;
+  border-radius: 0 0 99px 99px;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), rgba(147, 197, 253, 0.7), transparent);
+}
+
+body.admin-app.professor-admin .edupro-kpi__meter,
+body.admin-app.professor-admin .edupro-kpi__status,
+body.admin-app.professor-admin .edupro-kpi__spark {
+  display: none !important;
+}
+
+body.admin-app.professor-admin .edupro-icon-tile {
+  position: relative;
+  z-index: 1;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 0.8rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 10px 18px -8px rgba(37, 99, 235, 0.45);
+}
+
+body.admin-app.professor-admin .edupro-icon-tile--blue {
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.95), rgba(147, 197, 253, 0.72));
+  border: 1px solid rgba(59, 130, 246, 0.42);
+  color: #1d4ed8;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(37, 99, 235, 0.58),
+    0 0 22px rgba(59, 130, 246, 0.32);
+}
+
+body.admin-app.professor-admin .edupro-icon-tile--coral {
+  background: linear-gradient(160deg, rgba(255, 241, 242, 0.96), rgba(254, 205, 211, 0.78));
+  border: 1px solid rgba(225, 29, 72, 0.38);
+  color: #e11d48;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(225, 29, 72, 0.48),
+    0 0 22px rgba(244, 63, 94, 0.28);
+}
+
+body.admin-app.professor-admin .edupro-icon-tile--green {
+  background: linear-gradient(160deg, rgba(236, 253, 245, 0.96), rgba(167, 243, 208, 0.72));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #059669;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(16, 185, 129, 0.48),
+    0 0 22px rgba(16, 185, 129, 0.28);
+}
+
+body.admin-app.professor-admin .edupro-icon-tile--violet {
+  background: linear-gradient(160deg, rgba(245, 243, 255, 0.96), rgba(221, 214, 254, 0.78));
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  color: #6d28d9;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(124, 58, 237, 0.48),
+    0 0 22px rgba(139, 92, 246, 0.3);
+}
+
+body.admin-app.professor-admin .edupro-kpi__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+body.admin-app.professor-admin .edupro-kpi__label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.admin-app.professor-admin .edupro-kpi__value {
+  color: var(--prof-navy);
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.professor-admin .edupro-kpi__hint {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+body.admin-app.professor-admin .edupro-kpi > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-app.professor-admin .edupro-kpi__bar {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 6px;
+  margin-top: 0.7rem;
+  border-radius: 99px;
+  background: #e8eef8;
+}
+
+body.admin-app.professor-admin .edupro-kpi__bar i {
+  display: block;
+  height: 100%;
+  width: calc(var(--pct, 0) * 1%);
+  max-width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #60a5fa, #2563eb);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.45);
+}
+
+body.admin-app.professor-admin .edupro-kpi__frac {
+  position: absolute;
+  right: 0;
+  top: -1.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1024px) {
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-chart-main { grid-column: span 6; }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-activity { grid-column: span 3; }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-action { grid-column: span 3; }
+}
+
+@media (min-width: 1280px) {
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-chart-main { grid-column: 1 / span 6; }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-activity { grid-column: 7 / span 3; }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-action { grid-column: 10 / span 3; }
+}
+
+body.admin-app.professor-admin .edupro-chart-main,
+body.admin-app.professor-admin .edupro-activity,
+body.admin-app.professor-admin .edupro-action,
+body.admin-app.professor-admin .edupro-bottom-card {
+  background: #ffffff;
+  border: 1px solid rgba(186, 210, 245, 0.32);
+  border-radius: var(--prof-radius-ws);
+  box-shadow: var(--prof-shadow-ws);
+}
+
+body.admin-app.professor-admin .edupro-chart-main {
+  min-height: 22rem;
+  box-shadow:
+    0 14px 34px -18px rgba(37, 76, 150, 0.3),
+    0 0 40px -22px rgba(59, 130, 246, 0.18);
+}
+
+body.admin-app.professor-admin .edupro-activity,
+body.admin-app.professor-admin .edupro-action {
+  box-shadow: 0 10px 24px -18px rgba(37, 76, 150, 0.22);
+}
+
+body.admin-app.professor-admin .edupro-action {
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
+}
+
+body.admin-app.professor-admin .examination-chart-range-btn {
+  transition: background 180ms ease, box-shadow 180ms ease, color 180ms ease;
+}
+
+body.admin-app.professor-admin .examination-chart-range-btn.is-active {
+  background: linear-gradient(180deg, #ffffff, #eef4ff);
+  color: #1d4ed8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 0 0 1px rgba(59, 130, 246, 0.28), 0 6px 12px -8px rgba(37, 99, 235, 0.45);
+}
+
+body.admin-app.professor-admin .prof-dash-chart-wrap {
+  overflow: hidden;
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 28%),
+    repeating-linear-gradient(180deg, transparent 0 31px, rgba(147, 180, 230, 0.22) 31px 32px),
+    linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  box-shadow: inset 0 -18px 28px -22px rgba(37, 99, 235, 0.28);
+}
+
+body.admin-app.professor-admin .prof-dash-chart-empty__icon {
+  display: inline-flex;
+  width: 2.85rem;
+  height: 2.85rem;
+  margin-bottom: 0.55rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  background: linear-gradient(160deg, #f4f8ff, #93c5fd);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px -8px rgba(37, 99, 235, 0.5),
+    0 0 20px rgba(59, 130, 246, 0.28);
+}
+
+body.admin-app.professor-admin .prof-dash-chart-empty strong {
+  display: block;
+  color: var(--prof-navy);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+body.admin-app.professor-admin .prof-dash-chart-empty p {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+body.admin-app.professor-admin .prof-timeline {
+  position: relative;
+}
+
+body.admin-app.professor-admin .prof-timeline::before {
+  display: none;
+}
+
+body.admin-app.professor-admin .prof-timeline__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.62rem 0.15rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  transition: background 180ms ease;
+}
+
+body.admin-app.professor-admin .prof-timeline__item:last-child {
+  border-bottom: 0;
+}
+
+body.admin-app.professor-admin .prof-timeline__item:hover {
+  background: rgba(239, 246, 255, 0.72);
+}
+
+body.admin-app.professor-admin .prof-activity-avatar {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #dbeafe, #93c5fd);
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 0 12px rgba(59, 130, 246, 0.28);
+}
+
+body.admin-app.professor-admin .prof-timeline__mark {
+  display: none;
+}
+
+body.admin-app.professor-admin .prof-timeline__score {
+  margin-left: auto;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--prof-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.admin-app.professor-admin .prof-action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.45rem;
+  border-radius: 0.7rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 180ms ease;
+}
+
+body.admin-app.professor-admin .prof-action-row:hover {
+  background: rgba(239, 246, 255, 0.9);
+}
+
+body.admin-app.professor-admin .prof-action-ico {
+  display: inline-flex;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+}
+
+body.admin-app.professor-admin .prof-action-ico--amber {
+  background: linear-gradient(160deg, #fff7ed, #fed7aa);
+  color: #c2410c;
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.28);
+}
+
+body.admin-app.professor-admin .prof-action-ico--emerald {
+  background: linear-gradient(160deg, #ecfdf5, #a7f3d0);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+}
+
+body.admin-app.professor-admin .prof-action-ico--violet {
+  background: linear-gradient(160deg, #f5f3ff, #ddd6fe);
+  color: #6d28d9;
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
+}
+
+body.admin-app.professor-admin .prof-action-ico--cyan {
+  background: linear-gradient(160deg, #ecfeff, #a5f3fc);
+  color: #0e7490;
+  border-color: rgba(6, 182, 212, 0.35);
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.25);
+}
+
+body.admin-app.professor-admin .prof-action-row__go {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+body.admin-app.professor-admin .edupro-bottom-card--snapshot {
+  background:
+    linear-gradient(180deg, #fbfdff, #ffffff);
+}
+
+body.admin-app.professor-admin .edupro-bottom-card--deadlines {
+  background:
+    linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+body.admin-app.professor-admin .edupro-bottom-card--calendar {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+}
+
+body.admin-app.professor-admin .edupro-cal__day.is-today {
+  background: linear-gradient(180deg, #3b82f6, #4f46e5);
+  box-shadow: 0 8px 14px -8px rgba(59, 130, 246, 0.7);
+}
+
+body.admin-app.professor-admin .exam-lms-switch__track {
+  background: #cbd5e1;
+  border: 1px solid #94a3b8;
+}
+
+body.admin-app.professor-admin .exam-lms-switch__input:checked + .exam-lms-switch__track {
+  background: #4f46e5;
+  border-color: #4338ca;
+}
+
+body.admin-app.professor-admin .admin-btn--primary {
+  box-shadow: 0 8px 18px -10px rgba(37, 99, 235, 0.55);
+  transition: box-shadow 180ms ease, filter 180ms ease;
+}
+
+body.admin-app.professor-admin .admin-btn--primary:hover {
+  box-shadow: 0 10px 22px -8px rgba(37, 99, 235, 0.7), 0 0 18px rgba(59, 130, 246, 0.28);
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link {
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-nav-link.is-active,
+body.admin-app.professor-admin #app-sidebar .admin-nav-active {
+  box-shadow:
+    0 12px 26px -8px rgba(59, 130, 246, 0.78),
+    0 0 18px rgba(99, 102, 241, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset !important;
+}
+
+/* --------------------------------------------------------------------------
+   Modals — keep above topbar after JS hoist
+   -------------------------------------------------------------------------- */
+body.admin-app.professor-admin .admin-modal-overlay,
+body.admin-app.professor-admin .admin-ui-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--prof-z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(1.5rem, env(safe-area-inset-top, 0px))
+    1.5rem
+    max(1.5rem, env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+}
+
+body.admin-app.professor-admin .admin-modal-overlay.is-open,
+body.admin-app.professor-admin .admin-ui-dialog-overlay.is-open {
+  display: flex;
+}
+
+body.admin-app.professor-admin .admin-modal-overlay[hidden] {
+  display: none !important;
+}
+
+body.admin-app.professor-admin .admin-modal,
+body.admin-app.professor-admin .admin-ui-dialog {
+  position: relative;
+  z-index: var(--prof-z-modal-ui);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: min(32rem, 100%);
+  max-width: calc(100vw - 48px);
+  max-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+body.admin-app.professor-admin .admin-modal.admin-modal--examination-edit,
+body.admin-app.professor-admin .examination-edit-modal-mount,
+body.admin-app.professor-admin .examination-edit-modal-mount .admin-modal--examination-edit,
+body.admin-app.professor-admin .examination-edit-modal-loading {
+  width: min(1080px, 100%);
+  max-width: min(1080px, calc(100vw - 48px));
+  max-height: 100%;
+  height: auto;
+}
+
+body.admin-app.professor-admin .admin-modal.eqb-rapid-modal {
+  width: min(920px, 100%) !important;
+  max-width: min(920px, calc(100vw - 48px)) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+}
+
+body.admin-app.professor-admin .admin-modal > form,
+body.admin-app.professor-admin .admin-modal .admin-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.admin-app.professor-admin .admin-modal-form__body,
+body.admin-app.professor-admin .eqb-rapid-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body.admin-app.professor-admin .admin-modal__actions,
+body.admin-app.professor-admin .eqb-rapid-modal__footer {
+  flex: 0 0 auto;
+}
+
+body.admin-app.professor-admin .admin-modal__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--prof-border);
+  border-radius: 0.7rem;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+@media (max-width: 768px) {
+  body.admin-app.professor-admin .edupro-hero__left,
+  body.admin-app.professor-admin .edupro-hero__right {
+    max-width: none;
+    flex: 1 1 auto;
+  }
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-hero {
+    flex-direction: column;
+    min-height: 0;
+  }
+  body.admin-app.professor-admin .admin-modal-overlay,
+  body.admin-app.professor-admin .admin-ui-dialog-overlay {
+    padding:
+      max(0.75rem, env(safe-area-inset-top, 0px))
+      0.75rem
+      max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.professor-admin .admin-btn--primary,
+  body.admin-app.professor-admin .prof-action-row,
+  body.admin-app.professor-admin a.edupro-kpi {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Cascade lock — must beat html[data-admin-theme] Admin !important
+   -------------------------------------------------------------------------- */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin #main.admin-main-shell {
+  background-color: #eef3fb !important;
+  background-image:
+    radial-gradient(1100px 720px at -12% -18%, rgba(56, 189, 248, 0.42), transparent 62%),
+    radial-gradient(900px 560px at 48% -22%, rgba(125, 211, 252, 0.22), transparent 58%),
+    radial-gradient(980px 680px at 112% -10%, rgba(99, 102, 241, 0.36), transparent 56%),
+    radial-gradient(820px 520px at 50% 118%, rgba(59, 130, 246, 0.16), transparent 60%) !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.professor-dashboard-page .edupro-hero {
+  background-color: #ffffff !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .edupro-kpi,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .edupro-chart-main,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .edupro-activity,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .edupro-action,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .edupro-bottom-card,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .page-card {
+  background-color: #ffffff !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-modern .admin-topbar-inner,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar .admin-topbar-inner {
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 12px 28px -16px rgba(37, 76, 150, 0.34),
+    0 0 40px -16px rgba(59, 130, 246, 0.28) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Professor shell — z-index, compact profile popover, responsive sidebar
+   content < sticky < desktop sidebar < topbar < nav backdrop < overlay
+   sidebar < profile dropdown < modal backdrop < modal
+   -------------------------------------------------------------------------- */
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-modal-overlay,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-ui-dialog-overlay,
+body.admin-app.professor-admin .admin-modal-overlay,
+body.admin-app.professor-admin .admin-ui-dialog-overlay {
+  z-index: var(--prof-z-modal) !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-modal,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-ui-dialog,
+body.admin-app.professor-admin .admin-modal,
+body.admin-app.professor-admin .admin-ui-dialog {
+  z-index: var(--prof-z-modal-ui) !important;
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-inner,
+body.admin-app.professor-admin .admin-topbar-inner,
+body.admin-app.professor-admin .admin-topbar-wrap,
+body.admin-app.professor-admin .admin-topbar-profile-wrap {
+  overflow: visible !important;
+}
+
+body.admin-app.professor-admin .admin-topbar-left {
+  position: relative;
+}
+
+body.admin-app.professor-admin .admin-topbar-menu-btn,
+body.admin-app.professor-admin .admin-topbar-action,
+body.admin-app.professor-admin .admin-theme-toggle,
+body.admin-app.professor-admin .admin-topbar-profile-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+body.admin-app.professor-admin .admin-topbar-profile-wrap {
+  position: relative;
+  z-index: var(--prof-z-dropdown);
+}
+
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-dropdown,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-dropdown.ereview-profile-menu,
+html[data-admin-theme="light"] body.admin-app.professor-admin .admin-topbar-dropdown.ereview-profile-menu,
+body.admin-app.professor-admin .admin-topbar-dropdown,
+body.admin-app.professor-admin .admin-topbar-dropdown.ereview-profile-menu {
+  position: absolute !important;
+  top: calc(100% + 0.4rem) !important;
+  right: 0 !important;
+  left: auto !important;
+  width: 21.25rem !important;
+  max-width: min(21.25rem, calc(100vw - 1.25rem)) !important;
+  height: auto !important;
+  max-height: calc(100dvh - 5.75rem) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 0.15rem 0 0.35rem !important;
+  z-index: var(--prof-z-dropdown) !important;
+  border-radius: 17px !important;
+  background: #ffffff !important;
+  color: var(--prof-navy) !important;
+  border: 1px solid rgba(147, 197, 253, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 18px 42px -20px rgba(37, 76, 150, 0.48),
+    0 0 38px -14px rgba(59, 130, 246, 0.34) !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__hero,
+body.admin-app.professor-admin .ereview-profile-menu__hero--dark,
+body.admin-app.professor-admin .ereview-profile-menu__hero--light {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4.75rem;
+  max-height: 5.35rem;
+  padding: 0.85rem 1rem 0.8rem !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 48%, rgba(255, 255, 255, 0) 100%) !important;
+  border-bottom: 1px solid rgba(186, 210, 245, 0.55) !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__avatar-ring {
+  padding: 2px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.45), rgba(99, 102, 241, 0.12));
+  box-shadow: 0 6px 14px -8px rgba(37, 99, 235, 0.55);
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__avatar {
+  width: 2.85rem !important;
+  height: 2.85rem !important;
+  border-radius: 12px !important;
+  font-size: 1.02rem;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__eyebrow {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: #64748b !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__title {
+  margin: 0.12rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--prof-navy) !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__subtitle {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__section {
+  padding: 0.25rem 0.45rem 0.2rem;
+  gap: 0.1rem;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__section-label {
+  padding: 0.35rem 0.65rem 0.2rem;
+  color: #94a3b8 !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link,
+body.admin-app.professor-admin .ereview-profile-menu__link--nav,
+body.admin-app.professor-admin .ereview-profile-menu__link--danger {
+  min-height: 3.1rem;
+  padding: 0.45rem 0.6rem !important;
+  gap: 0.7rem;
+  border-radius: 0.7rem !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--nav {
+  color: var(--prof-navy) !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--nav:hover {
+  background: rgba(239, 246, 255, 0.95) !important;
+  border-color: transparent !important;
+  color: var(--prof-blue) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  background: rgba(239, 246, 255, 0.95) !important;
+  color: #2563eb !important;
+  font-size: 0.95rem;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--nav:hover .ereview-profile-menu__link-icon {
+  background: rgba(219, 234, 254, 0.95) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.28);
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__chev {
+  color: #cbd5e1 !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--nav:hover .ereview-profile-menu__chev {
+  color: #2563eb !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__divider {
+  margin: 0.2rem 0.85rem 0.25rem;
+  background: linear-gradient(90deg, transparent, rgba(147, 197, 253, 0.7), transparent);
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--danger {
+  margin: 0 0.45rem 0.15rem !important;
+  color: #9f1239 !important;
+  background: rgba(255, 241, 242, 0.85) !important;
+  border-color: rgba(254, 205, 211, 0.9) !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--danger:hover {
+  background: rgba(255, 228, 230, 0.95) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+body.admin-app.professor-admin .ereview-profile-menu__link--danger .ereview-profile-menu__link-icon {
+  background: rgba(255, 228, 230, 0.9) !important;
+  color: #be123c !important;
+}
+
+@media (min-width: 992px) {
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin,
+  body.admin-app.professor-admin {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start;
+    --edupro-sidebar-expanded: 216px;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin,
+  body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin {
+    position: sticky !important;
+    top: 0 !important;
+    left: auto !important;
+    transform: none !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    z-index: var(--prof-z-sidebar) !important;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #main,
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #main.admin-main-shell,
+  body.admin-app.professor-admin > #main,
+  body.admin-app.professor-admin > #main.admin-main-shell,
+  body.admin-app.professor-admin.sidebar-expanded > #main {
+    margin-left: 0 !important;
+    width: auto !important;
+    max-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.admin-app.professor-admin #sidebar-backdrop,
+  body.admin-app.professor-admin.sidebar-expanded #sidebar-backdrop {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    background: transparent !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin,
+  body.admin-app.professor-admin {
+    --edupro-sidebar-expanded: 220px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin,
+  body.admin-app.professor-admin {
+    --edupro-sidebar-expanded: 214px;
+  }
+
+  body.admin-app.professor-admin.sidebar-expanded #app-sidebar nav a {
+    padding-left: 0.85rem;
+    padding-right: 0.7rem;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-nav-section {
+    margin-left: 0.35rem;
+    margin-right: 0.35rem;
+  }
+}
+
+@media (max-width: 991.98px) {
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin,
+  body.admin-app.professor-admin {
+    display: block !important;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin,
+  body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    flex-basis: auto !important;
+    width: 270px !important;
+    max-width: min(86vw, 300px) !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    transform: translateX(-100%) !important;
+    z-index: var(--prof-z-sidebar-overlay) !important;
+    overflow: hidden !important;
+    transition: transform 220ms ease;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.sidebar-expanded > #app-sidebar.app-shell-sidebar--admin,
+  body.admin-app.professor-admin.sidebar-expanded > #app-sidebar.app-shell-sidebar--admin {
+    transform: translateX(0) !important;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-nav {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #main,
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #main.admin-main-shell,
+  body.admin-app.professor-admin > #main,
+  body.admin-app.professor-admin > #main.admin-main-shell,
+  body.admin-app.professor-admin.sidebar-expanded > #main {
+    margin-left: 0 !important;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.admin-app.professor-admin #sidebar-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: var(--prof-z-nav-backdrop) !important;
+    background: transparent !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 180ms ease, background 180ms ease;
+  }
+
+  body.admin-app.professor-admin.sidebar-expanded #sidebar-backdrop {
+    background: rgba(15, 31, 61, 0.34) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body.admin-app.professor-admin.sidebar-expanded {
+    overflow: hidden;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-nav-link {
+    min-height: 2.75rem;
+  }
+
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn .burger-icon,
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn .burger-icon,
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn[aria-expanded="false"] .burger-icon,
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn[aria-expanded="true"] .burger-icon {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn .app-shell-arrow-icon,
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn[aria-expanded="false"] .app-shell-arrow-icon,
+  body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn[aria-expanded="true"] .app-shell-arrow-icon {
+    display: none !important;
+    opacity: 0 !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin,
+  body.admin-app.professor-admin > #app-sidebar.app-shell-sidebar--admin {
+    width: min(86vw, 300px) !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-inner {
+    gap: 0.45rem !important;
+    min-height: 3.35rem;
+    padding: 0.4rem 0.5rem !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-identity,
+  body.admin-app.professor-admin .admin-topbar-chevron,
+  body.admin-app.professor-admin .admin-topbar-kbd {
+    display: none !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-search-wrap {
+    flex: 0 0 2.75rem;
+    max-width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem !important;
+    padding: 0;
+    justify-content: center;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-search-icon {
+    position: static;
+    margin: 0;
+    opacity: 1;
+  }
+
+  body.admin-app.professor-admin .admin-theme-toggle {
+    display: none !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-search-wrap .admin-topbar-search {
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-search-wrap:focus-within {
+    position: absolute;
+    left: 3.35rem;
+    right: 0.35rem;
+    z-index: 3;
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    width: auto;
+    padding: 0 0.75rem;
+    background: #fff !important;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-search-wrap:focus-within .admin-topbar-search {
+    width: 100%;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.admin-app.professor-admin .admin-topbar-dropdown.ereview-profile-menu {
+    width: min(21.25rem, calc(100vw - 1rem)) !important;
+  }
+
+  body.admin-app.professor-admin:not(.professor-dashboard-page) .quiz-admin-hero .admin-page-header,
+  body.admin-app.professor-admin .admin-page-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  body.admin-app.professor-admin .admin-page-header__actions,
+  body.admin-app.professor-admin .page-hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  body.admin-app.professor-admin .students-toolbar,
+  body.admin-app.professor-admin .admin-toolbar,
+  body.admin-app.professor-admin .examination-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 0;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__left,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__right {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-hero__ribbon {
+    width: 42%;
+    opacity: 0.85;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-chart-main,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-activity,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-action {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .prof-dash-hero-wrap,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-hero {
+    grid-column: 1 / -1 !important;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-kpi {
+    grid-column: auto !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-kpi,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-chart-main,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-activity,
+  body.admin-app.professor-admin.professor-dashboard-page .edupro-dash > .edupro-action {
+    grid-column: 1 / -1 !important;
+  }
+}
+

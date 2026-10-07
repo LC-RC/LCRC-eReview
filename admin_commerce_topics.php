@@ -237,6 +237,7 @@ if ($editId > 0) {
 
 $adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Commerce'], ['By Topic Pricing']];
 $adminHeroIcon = 'list-check';
+$adminHeroEyebrow = 'Commerce';
 $adminHeroTitle = 'By Topic Pricing';
 $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS lessons. New lessons appear here automatically.';
 ?>
@@ -245,9 +246,9 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
 <head>
   <?php require_once __DIR__ . '/includes/head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-commerce-topics-page">
   <?php include 'admin_sidebar.php'; ?>
-  <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+  <div class="w-full">
     <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
     <?php if (!empty($_SESSION['message'])): ?>
@@ -257,29 +258,29 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
       <div class="admin-alert admin-alert--error mb-4"><?php echo h($_SESSION['error']); unset($_SESSION['error']); ?></div>
     <?php endif; ?>
 
-    <form method="get" class="quiz-admin-table-shell rounded-2xl p-4 mb-5 flex flex-wrap gap-3 items-end">
-      <div class="flex-1 min-w-[180px]">
-        <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Search</label>
-        <input class="input-custom w-full" type="search" name="q" value="<?php echo h($q); ?>" placeholder="Subject or topic">
+    <form method="get" class="content-library__toolbar">
+      <div class="content-library__search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input class="input-custom" type="search" name="q" value="<?php echo h($q); ?>" placeholder="Subject or topic" aria-label="Search subjects or topics">
       </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Subject</label>
-        <select class="input-custom" name="subject_id">
+      <div class="content-library__status">
+        <label class="sr-only" for="topics-subject">Subject</label>
+        <select id="topics-subject" class="input-custom" name="subject_id">
           <option value="0">All subjects</option>
           <?php foreach ($subjects as $s): ?>
             <option value="<?php echo (int) $s['subject_id']; ?>" <?php echo $subjectId === (int) $s['subject_id'] ? 'selected' : ''; ?>><?php echo h((string) $s['subject_name']); ?></option>
           <?php endforeach; ?>
         </select>
       </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Purchasable</label>
-        <select class="input-custom" name="filter">
+      <div class="content-library__status">
+        <label class="sr-only" for="topics-filter">Purchasable</label>
+        <select id="topics-filter" class="input-custom" name="filter">
           <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All</option>
           <option value="purchasable" <?php echo $filter === 'purchasable' ? 'selected' : ''; ?>>Purchasable</option>
           <option value="not" <?php echo $filter === 'not' ? 'selected' : ''; ?>>Not purchasable</option>
         </select>
       </div>
-      <button class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold" type="submit">Apply</button>
+      <button class="admin-btn admin-btn--secondary admin-btn--sm" type="submit"><i class="bi bi-funnel"></i> Apply</button>
     </form>
 
     <form method="post" id="bulk-topics-form" class="space-y-4">
@@ -289,58 +290,63 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
       <input type="hidden" name="return_filter" value="<?php echo h($filter); ?>">
       <input type="hidden" name="return_subject_id" value="<?php echo (int) $subjectId; ?>">
 
-      <div class="quiz-admin-table-shell rounded-2xl p-4 flex flex-wrap gap-3 items-end">
+      <div class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl p-2.5 flex flex-wrap gap-2.5 items-end">
         <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Bulk price (₱)</label>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Bulk price (₱)</label>
           <input class="input-custom w-36" type="number" min="0.01" step="0.01" name="price_pesos" placeholder="200.00">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Duration</label>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Duration</label>
           <input class="input-custom w-24" type="number" min="1" name="access_duration_value" value="30">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Unit</label>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Unit</label>
           <select class="input-custom" name="access_duration_unit">
             <option value="day">Days</option>
             <option value="month" selected>Months</option>
           </select>
         </div>
         <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-xl font-semibold" onclick="return confirm('Apply price/duration to selected existing lessons?');">Apply to Selected</button>
-        <p class="text-xs opacity-60 w-full">Updates existing <code>lessons</code> only (sets purchasable). Does not create products or packages.</p>
+        <p class="text-xs text-slate-500 w-full">Updates existing <code>lessons</code> only (sets purchasable). Does not create products or packages.</p>
       </div>
 
-      <div class="grid grid-cols-1 <?php echo $editRow ? 'xl:grid-cols-12 gap-5' : ''; ?>">
-        <div class="<?php echo $editRow ? 'xl:col-span-7' : ''; ?>">
-          <div class="quiz-admin-table-shell rounded-2xl overflow-hidden">
+      <div class="grid grid-cols-1">
+        <div>
+          <div class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="text-left text-xs uppercase tracking-wide opacity-70">
-                    <th class="px-3 py-3"><input type="checkbox" id="select-all-lessons" class="admin-bulk-check" title="Select all topics on this page" aria-label="Select all topics on this page"></th>
-                    <th class="px-3 py-3">Topic</th>
-                    <th class="px-3 py-3 whitespace-nowrap">Price</th>
-                    <th class="px-3 py-3">Duration</th>
-                    <th class="px-3 py-3">Buy</th>
-                    <th class="px-3 py-3"></th>
+                  <tr class="text-left text-xs uppercase tracking-wide bg-slate-100 text-slate-700 border-b border-slate-200">
+                    <th class="px-3 py-2.5 font-bold"><input type="checkbox" id="select-all-lessons" class="admin-bulk-check" title="Select all topics on this page" aria-label="Select all topics on this page"></th>
+                    <th class="px-3 py-2.5 font-bold">Topic</th>
+                    <th class="px-3 py-2.5 font-bold whitespace-nowrap">Price</th>
+                    <th class="px-3 py-2.5 font-bold">Duration</th>
+                    <th class="px-3 py-2.5 font-bold">Buy</th>
+                    <th class="px-3 py-2.5 font-bold"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if ($rows === []): ?>
-                    <tr><td colspan="6" class="px-4 py-8 text-center opacity-60">No lessons found.</td></tr>
+                    <tr><td colspan="6" class="px-3 py-8 text-center text-slate-500">No lessons found.</td></tr>
                   <?php else: ?>
                     <?php foreach ($rows as $r): ?>
-                      <tr class="border-t border-white/5">
-                        <td class="px-3 py-3">
+                      <tr class="border-t border-slate-100">
+                        <td class="px-3 py-2.5">
                           <input type="checkbox" class="lesson-check admin-bulk-check" name="lesson_ids[]" value="<?php echo (int) $r['lesson_id']; ?>">
                         </td>
-                        <td class="px-3 py-3 min-w-0">
-                          <div class="font-semibold truncate"><?php echo h($r['title']); ?></div>
-                          <div class="text-xs opacity-60 truncate"><?php echo h($r['subject_name']); ?></div>
+                        <td class="px-3 py-2.5 min-w-0">
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="lms-icon-tile bg-sky-50 text-sky-600" style="width:2rem;height:2rem;border-radius:0.55rem;font-size:0.8rem"><i class="bi bi-bookmark"></i></span>
+                            <div class="min-w-0">
+                              <div class="font-semibold text-slate-900 truncate"><?php echo h($r['title']); ?></div>
+                              <div class="text-xs text-slate-500 truncate"><?php echo h($r['subject_name']); ?></div>
+                            </div>
+                          </div>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap">
+                        <td class="px-3 py-2.5 whitespace-nowrap font-semibold tabular-nums text-slate-900">
                           <?php echo $r['price_centavos'] !== null ? '₱' . h(commerce_centavos_to_pesos_display((int)$r['price_centavos'])) : '-'; ?>
                         </td>
-                        <td class="px-3 py-3 whitespace-nowrap text-xs">
+                        <td class="px-3 py-2.5 whitespace-nowrap text-xs text-slate-600">
                           <?php
                             if (!empty($r['access_duration_value'])) {
                                 echo (int)$r['access_duration_value'] . ' ' . h($r['access_duration_unit'] ?? 'day') . '(s)';
@@ -349,13 +355,13 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
                             }
                           ?>
                         </td>
-                        <td class="px-3 py-3">
+                        <td class="px-3 py-2.5">
                           <span class="admin-badge <?php echo !empty($r['is_purchasable']) ? 'admin-badge--success' : 'admin-badge--neutral'; ?>">
                             <?php echo !empty($r['is_purchasable']) ? 'Yes' : 'No'; ?>
                           </span>
                         </td>
-                        <td class="px-3 py-3 text-right">
-                          <a class="font-semibold text-sm hover:underline" href="admin_commerce_topics?edit=<?php echo (int)$r['lesson_id']; ?>&q=<?php echo urlencode($q); ?>&filter=<?php echo urlencode($filter); ?>&subject_id=<?php echo (int)$subjectId; ?>&page=<?php echo (int)$page; ?>">Edit</a>
+                        <td class="px-3 py-2.5 text-right">
+                          <a class="font-semibold text-sm text-blue-600 hover:underline" href="admin_commerce_topics?edit=<?php echo (int)$r['lesson_id']; ?>&q=<?php echo urlencode($q); ?>&filter=<?php echo urlencode($filter); ?>&subject_id=<?php echo (int)$subjectId; ?>&page=<?php echo (int)$page; ?>">Edit</a>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -364,9 +370,9 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
               </table>
             </div>
             <?php if ($totalPages > 1): ?>
-              <div class="px-4 py-3 flex gap-2 text-sm border-t border-white/5">
+              <div class="px-3 py-2.5 flex gap-2 text-sm border-t border-slate-100">
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                  <a class="px-2 py-1 rounded <?php echo $i === $page ? 'bg-white/10 font-bold' : 'opacity-70'; ?>" href="admin_commerce_topics?page=<?php echo $i; ?>&q=<?php echo urlencode($q); ?>&filter=<?php echo urlencode($filter); ?>&subject_id=<?php echo (int)$subjectId; ?>"><?php echo $i; ?></a>
+                  <a class="px-2 py-1 rounded-lg <?php echo $i === $page ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'; ?>" href="admin_commerce_topics?page=<?php echo $i; ?>&q=<?php echo urlencode($q); ?>&filter=<?php echo urlencode($filter); ?>&subject_id=<?php echo (int)$subjectId; ?>"><?php echo $i; ?></a>
                 <?php endfor; ?>
               </div>
             <?php endif; ?>
@@ -376,28 +382,28 @@ $adminHeroSubtitle = 'Configure purchasable / price / duration on existing LMS l
     </form>
 
     <?php if ($editRow): ?>
-      <div class="mt-5 max-w-xl">
-        <form method="post" class="quiz-admin-table-shell rounded-2xl p-5 space-y-4">
+      <div class="mt-4 max-w-xl">
+        <form method="post" class="quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/80 shadow-[0_8px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl p-4 space-y-4">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="action" value="save_one">
           <input type="hidden" name="lesson_id" value="<?php echo (int)$editRow['lesson_id']; ?>">
           <input type="hidden" name="return_q" value="<?php echo h($q); ?>">
           <h2 class="font-bold text-lg"><?php echo h($editRow['title']); ?></h2>
-          <p class="text-sm opacity-60"><?php echo h($editRow['subject_name']); ?></p>
+          <p class="text-sm text-slate-500"><?php echo h($editRow['subject_name']); ?></p>
           <label class="inline-flex items-center gap-2 text-sm font-semibold">
             <input type="checkbox" name="is_purchasable" value="1" <?php echo !empty($editRow['is_purchasable']) ? 'checked' : ''; ?>> Purchasable in By Topic catalog
           </label>
           <div>
-            <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Price (₱)</label>
+            <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Price (₱)</label>
             <input class="input-custom w-full" type="number" min="0" step="0.01" name="price_pesos" value="<?php echo h($editRow['price_centavos'] !== null ? number_format(((int)$editRow['price_centavos']) / 100, 2, '.', '') : '0'); ?>">
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Duration</label>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Duration</label>
               <input class="input-custom w-full" type="number" min="1" name="access_duration_value" value="<?php echo (int)($editRow['access_duration_value'] ?: 30); ?>">
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase opacity-70 mb-1">Unit</label>
+              <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Unit</label>
               <select class="input-custom w-full" name="access_duration_unit">
                 <option value="day" <?php echo ($editRow['access_duration_unit'] ?? 'day') === 'day' ? 'selected' : ''; ?>>Days</option>
                 <option value="month" <?php echo ($editRow['access_duration_unit'] ?? '') === 'month' ? 'selected' : ''; ?>>Months</option>

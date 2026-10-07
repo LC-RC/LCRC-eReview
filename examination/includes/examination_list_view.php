@@ -136,13 +136,13 @@ if (!function_exists('examination_list_questions_url')) {
 $pageTitle = 'Examinations';
 
 $adminLoadStudentsCss = true;
+$professorFeatureHero = true;
 $adminHeroIcon = 'journal-text';
-
+$adminHeroEyebrow = 'Examination management';
 $adminHeroTitle = 'Examinations';
-
-$adminHeroSubtitle = 'Create, configure, and manage regular and diagnostic examinations.';
-
-$adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm js-open-examination-edit" data-edit-url="professor_examination_edit?modal=1"><i class="bi bi-plus-lg"></i> New Examination</button>';
+$adminHeroSubtitle = 'Create, configure, and monitor regular and diagnostic assessments.';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations']];
+$adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm rounded-xl js-open-examination-edit" data-edit-url="professor_examination_edit?modal=1"><i class="bi bi-plus-lg"></i> New Examination</button>';
 
 
 
@@ -160,7 +160,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
 </head>
 
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--exams">
 
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 
@@ -179,8 +179,43 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
   </div>
 <?php endif; ?>
 
-<div class="examination-page-shell">
+<div class="examination-page-shell gap-3">
 
+  <section class="prof-summary-rail" aria-label="Examination summary">
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-grid"></i></span>
+      <span class="prof-summary-rail__label">All</span>
+      <span class="prof-summary-rail__value"><?php echo (int)($counts['all'] ?? 0); ?></span>
+      <span class="prof-summary-rail__hint">Total</span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-pencil"></i></span>
+      <span class="prof-summary-rail__label">Draft</span>
+      <span class="prof-summary-rail__value"><?php echo (int)($counts['draft'] ?? 0); ?></span>
+      <span class="prof-summary-rail__hint">Needs setup</span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-broadcast"></i></span>
+      <span class="prof-summary-rail__label">Published</span>
+      <span class="prof-summary-rail__value"><?php echo (int)($counts['published'] ?? 0); ?></span>
+      <span class="prof-summary-rail__hint">Released</span>
+    </div>
+    <div class="prof-summary-rail__cell">
+      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
+      <span class="prof-summary-rail__label">Finished</span>
+      <span class="prof-summary-rail__value"><?php echo (int)($counts['finished'] ?? 0); ?></span>
+      <span class="prof-summary-rail__hint">Completed</span>
+    </div>
+  </section>
+
+  <section class="prof-workspace">
+  <div class="prof-workspace__head">
+    <div>
+      <h2 class="prof-workspace__title">Examinations</h2>
+      <p class="prof-workspace__sub">Create, configure and monitor assessments.</p>
+    </div>
+    <span class="prof-count"><?php echo count($examinations); ?> examination<?php echo count($examinations) === 1 ? '' : 's'; ?></span>
+  </div>
   <nav class="students-view-tabs" aria-label="Examination status">
 
     <?php foreach ($statusTabs as $key => $label):
@@ -208,8 +243,6 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
     <?php endforeach; ?>
 
   </nav>
-
-
 
   <div class="students-toolbar page-filter">
 
@@ -261,8 +294,6 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
     </form>
 
-    <span class="students-toolbar__meta"><?php echo count($examinations); ?> shown</span>
-
   </div>
 
   <div id="examBulkBar" class="students-bulk-bar" aria-live="polite">
@@ -273,13 +304,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
     </div>
   </div>
 
-  <div class="rounded-xl page-table students-table-shell">
-
-    <div class="students-table-meta">
-
-      <span><?php echo count($examinations); ?> examination<?php echo count($examinations) === 1 ? '' : 's'; ?></span>
-
-    </div>
+  <div class="rounded-2xl page-table students-table-shell bg-white/90 border border-white/80 shadow-sm overflow-hidden">
 
     <div class="students-table-scroll">
 
@@ -465,6 +490,8 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
   </div>
 
+  </section>
+
 </div>
 
 <form method="post" action="professor_examinations" id="deleteExamForm" class="hidden" aria-hidden="true">
@@ -592,7 +619,7 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
   if (overlay) {
     overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) closeExamEditModal();
+      if (e.target === overlay || e.target === mount) closeExamEditModal();
     });
   }
 

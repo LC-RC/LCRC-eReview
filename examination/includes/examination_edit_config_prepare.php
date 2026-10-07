@@ -83,8 +83,8 @@ $assignmentLocked = (!$isNew && $sourceId > 0 && function_exists('examination_as
 
 $subjectCatalog = is_array($extras['subjects'] ?? null) ? $extras['subjects'] : [];
 
-$editSectionClass = $isModalRender ? 'examination-form-section' : 'rounded-xl overflow-hidden page-table p-6';
-$editSectionHeadingClass = $isModalRender ? 'examination-form-section__title' : 'text-base font-bold mb-3';
+$editSectionClass = $isModalRender ? 'examination-form-section' : 'prof-form-section';
+$editSectionHeadingClass = $isModalRender ? 'examination-form-section__title' : 'prof-form-section__title';
 
 if ($examType === 'diagnostic' && !$isModalRender) {
     $editSectionClass = 'diag-portal-section';

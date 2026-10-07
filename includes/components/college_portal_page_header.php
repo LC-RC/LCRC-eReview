@@ -70,9 +70,12 @@ $titleClass = $isCompact ? 'cp-page-header__title' : 'cp-page-header__title cp-t
       </div>
     <?php else: ?>
       <div class="cp-page-header__stats cp-summary-inline" aria-label="Summary">
-        <?php foreach ($cpPageStats as $i => $stat): ?>
+        <?php foreach ($cpPageStats as $i => $stat):
+          $statTone = trim((string)($stat['tone'] ?? ''));
+          $itemClass = 'cp-summary-inline__item' . ($statTone !== '' ? ' cp-summary-inline__item--' . preg_replace('/[^a-z0-9_-]/', '', strtolower($statTone)) : '');
+        ?>
           <?php if ($i > 0): ?><span class="cp-summary-inline__sep" aria-hidden="true"></span><?php endif; ?>
-          <div class="cp-summary-inline__item">
+          <div class="<?php echo h($itemClass); ?>">
             <span class="cp-summary-inline__k"><?php echo h((string)($stat['label'] ?? '')); ?></span>
             <span class="cp-summary-inline__v"><?php echo h((string)($stat['value'] ?? '')); ?></span>
           </div>

@@ -12,16 +12,21 @@ $GLOBALS['admin_ui_dialogs_included'] = true;
   .admin-ui-dialog-overlay {
     position: fixed; inset: 0; z-index: 12000;
     display: none; align-items: center; justify-content: center;
-    padding: 1rem; background: rgba(15, 23, 42, 0.55);
+    padding: 1rem; overflow: hidden;
+    background: rgba(15, 23, 42, 0.55);
   }
   .admin-ui-dialog-overlay.is-open { display: flex; }
   .admin-ui-dialog {
     width: min(100%, 26rem);
+    max-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-radius: 1rem;
     padding: 1.15rem 1.2rem 1rem;
-    background: #0f172a;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    color: #f8fafc;
+    background: var(--glass-surface-strong, #0f172a);
+    border: 1px solid var(--glass-border, rgba(148, 163, 184, 0.35));
+    color: var(--text-primary, #f8fafc);
     box-shadow: 0 20px 50px rgba(2, 6, 23, 0.45);
   }
   .admin-ui-dialog__hero { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.85rem; }
@@ -32,15 +37,15 @@ $GLOBALS['admin_ui_dialogs_included'] = true;
   }
   .admin-ui-dialog__icon--success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
   .admin-ui-dialog__icon--error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-  .admin-ui-dialog__title { margin: 0; font-size: 1.05rem; font-weight: 700; color: #f8fafc; }
-  .admin-ui-dialog__desc { margin: 0.35rem 0 0; font-size: 0.875rem; line-height: 1.45; color: rgba(226, 232, 240, 0.88); }
-  .admin-ui-dialog__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .admin-ui-dialog__title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary, #f8fafc); }
+  .admin-ui-dialog__desc { margin: 0.35rem 0 0; font-size: 0.875rem; line-height: 1.45; color: var(--text-secondary, rgba(226, 232, 240, 0.88)); }
+  .admin-ui-dialog__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; flex: 0 0 auto; }
   .admin-ui-dialog__btn {
     border-radius: 0.65rem; border: 1px solid transparent; padding: 0.45rem 0.9rem;
     font-size: 0.875rem; font-weight: 600; cursor: pointer;
   }
   .admin-ui-dialog__btn--ghost {
-    background: rgba(30, 41, 59, 0.9); border-color: rgba(148, 163, 184, 0.35); color: #e2e8f0;
+    background: var(--glass-surface-inner, rgba(30, 41, 59, 0.9)); border-color: var(--glass-border, rgba(148, 163, 184, 0.35)); color: var(--text-primary, #e2e8f0);
   }
   .admin-ui-dialog__btn--ok {
     background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);

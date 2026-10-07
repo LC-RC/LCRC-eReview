@@ -426,67 +426,58 @@ if (!empty($user['last_seen_at'])) {
     html[data-admin-theme="light"] .view-approve-access .sca-full-lms-card__sub { color: #047857; }
   </style>
 </head>
-<body class="font-sans antialiased admin-app">
+<body class="font-sans antialiased admin-app admin-student-view-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero admin-glass-hero">
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
-          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
-          <span><?php echo h($user['full_name'] ?? 'Student Details'); ?></span>
-        </h1>
-        <p class="admin-page-header__subtitle">Registration, commerce, and account activation · ID <?php echo (int)$user['user_id']; ?></p>
-      </div>
-      <div class="admin-page-header__actions">
-        <a href="admin_students" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Back to list</a>
-        <?php if ($commerceProofUrl !== ''): ?>
-          <a href="<?php echo h($commerceProofUrl); ?>" data-admin-proof
-             data-proof-title="Proof · <?php echo h($user['full_name'] ?? 'Student'); ?>"
-             class="admin-btn admin-btn--primary"><i class="bi bi-receipt"></i> View Proof</a>
-        <?php endif; ?>
-        <?php if ($latestPayment): ?>
-          <a href="<?php echo h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']); ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-credit-card"></i> View Payment</a>
-        <?php endif; ?>
-        <?php
-          $heroAccessTone = (string) ($commerce['commerce_access']['tone'] ?? 'none');
-          $heroPay = is_array($latestPayment ?? null) ? $latestPayment : [];
-          $heroNeedsRemind = $heroAccessTone !== 'active'
-              && (int) ($heroPay['payment_id'] ?? 0) > 0
-              && (string) ($heroPay['status'] ?? '') === 'awaiting_proof'
-              && trim((string) ($heroPay['proof_path'] ?? '')) === '';
-          if ($heroNeedsRemind):
-        ?>
-          <form method="post" action="<?php echo h(ereview_url('admin_remind_upload_proof')); ?>" class="inline"
-                data-admin-confirm-title="Remind to upload proof"
-                data-admin-confirm="Email this student a secure link to upload GCash proof? The link is valid for 7 days."
-                data-admin-confirm-ok="Send reminder"
-                data-admin-confirm-icon="<i class=&quot;bi bi-envelope&quot;></i>">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="user_id" value="<?php echo (int) $user['user_id']; ?>">
-            <input type="hidden" name="payment_id" value="<?php echo (int) ($heroPay['payment_id'] ?? 0); ?>">
-            <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) $user['user_id']; ?>">
-            <button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-envelope"></i> Remind to upload</button>
-          </form>
-        <?php endif; ?>
-        <?php if (!$heroNeedsRemind && $heroAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected'): ?>
-          <form method="post" action="<?php echo h(ereview_url('admin_grant_access')); ?>" class="inline"
-                data-admin-confirm-title="Grant Access"
-                data-admin-confirm="Grant Full LMS access for 6 months? Open payment reviews with proof will also be marked approved."
-                data-admin-confirm-ok="Confirm grant"
-                data-admin-confirm-icon="<i class=&quot;bi bi-key&quot;></i>">
-            <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-            <input type="hidden" name="user_id" value="<?php echo (int) $user['user_id']; ?>">
-            <input type="hidden" name="months" value="6">
-            <input type="hidden" name="activate_login" value="1">
-            <input type="hidden" name="return_to" value="admin_student_view?id=<?php echo (int) $user['user_id']; ?>">
-            <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-key"></i> Grant Access</button>
-          </form>
-        <?php endif; ?>
-      </div>
-    </div>
-  </div>
+  <?php
+    $adminHeroIcon = 'person-badge';
+    $adminHeroTitle = (string) ($user['full_name'] ?? 'Student Details');
+    $adminHeroSubtitle = 'Registration, commerce, and account activation · ID ' . (int) $user['user_id'];
+    $adminHeroEyebrow = 'Students';
+    $adminHeroActions = '';
+    $adminBackHref = 'admin_students';
+    $adminBackLabel = 'Back to Students';
+    if ($commerceProofUrl !== '') {
+      $adminHeroActions .= '<a href="' . h($commerceProofUrl) . '" data-admin-proof data-proof-title="Proof · ' . h($user['full_name'] ?? 'Student') . '" class="admin-btn admin-btn--primary"><i class="bi bi-receipt"></i> View Proof</a>';
+    }
+    if ($latestPayment) {
+      $adminHeroActions .= '<a href="' . h(ereview_url('admin_commerce_payments') . '?id=' . (int) $latestPayment['payment_id']) . '" class="admin-btn admin-btn--secondary"><i class="bi bi-credit-card"></i> View Payment</a>';
+    }
+    $heroAccessTone = (string) ($commerce['commerce_access']['tone'] ?? 'none');
+    $heroPay = is_array($latestPayment ?? null) ? $latestPayment : [];
+    $heroNeedsRemind = $heroAccessTone !== 'active'
+        && (int) ($heroPay['payment_id'] ?? 0) > 0
+        && (string) ($heroPay['status'] ?? '') === 'awaiting_proof'
+        && trim((string) ($heroPay['proof_path'] ?? '')) === '';
+    if ($heroNeedsRemind) {
+      $adminHeroActions .= '<form method="post" action="' . h(ereview_url('admin_remind_upload_proof')) . '" class="inline"'
+        . ' data-admin-confirm-title="Remind to upload proof"'
+        . ' data-admin-confirm="Email this student a secure link to upload GCash proof? The link is valid for 7 days."'
+        . ' data-admin-confirm-ok="Send reminder"'
+        . ' data-admin-confirm-icon="<i class=&quot;bi bi-envelope&quot;></i>">'
+        . '<input type="hidden" name="csrf_token" value="' . h($csrf) . '">'
+        . '<input type="hidden" name="user_id" value="' . (int) $user['user_id'] . '">'
+        . '<input type="hidden" name="payment_id" value="' . (int) ($heroPay['payment_id'] ?? 0) . '">'
+        . '<input type="hidden" name="return_to" value="admin_student_view?id=' . (int) $user['user_id'] . '">'
+        . '<button type="submit" class="admin-btn admin-btn--secondary"><i class="bi bi-envelope"></i> Remind to upload</button>'
+        . '</form>';
+    }
+    if (!$heroNeedsRemind && $heroAccessTone !== 'active' && strtolower((string) ($user['status'] ?? '')) !== 'rejected') {
+      $adminHeroActions .= '<form method="post" action="' . h(ereview_url('admin_grant_access')) . '" class="inline"'
+        . ' data-admin-confirm-title="Grant Access"'
+        . ' data-admin-confirm="Grant Full LMS access for 6 months? Open payment reviews with proof will also be marked approved."'
+        . ' data-admin-confirm-ok="Confirm grant"'
+        . ' data-admin-confirm-icon="<i class=&quot;bi bi-key&quot;></i>">'
+        . '<input type="hidden" name="csrf_token" value="' . h($csrf) . '">'
+        . '<input type="hidden" name="user_id" value="' . (int) $user['user_id'] . '">'
+        . '<input type="hidden" name="months" value="6">'
+        . '<input type="hidden" name="activate_login" value="1">'
+        . '<input type="hidden" name="return_to" value="admin_student_view?id=' . (int) $user['user_id'] . '">'
+        . '<button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-key"></i> Grant Access</button>'
+        . '</form>';
+    }
+    include __DIR__ . '/includes/components/admin_page_hero.php';
+  ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="admin-flash admin-flash--success mb-5 p-4 rounded-xl flex items-center gap-2">

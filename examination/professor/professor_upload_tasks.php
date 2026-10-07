@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/examination_admin_bootstrap.php';
@@ -212,29 +212,35 @@ foreach ($list as $row) {
 }
 
 $pageTitle = 'Upload Tasks';
+$professorFeatureHero = true;
 $adminHeroIcon = 'cloud-arrow-up';
+$adminHeroEyebrow = 'Task management';
 $adminHeroTitle = 'Upload Tasks';
-$adminHeroSubtitle = 'Manage file-upload assignments separate from examinations. Target students by section and control open/lock schedules.';
-$adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="putNewTaskBtn"><i class="bi bi-plus-lg"></i> New task</button>';
+$adminHeroSubtitle = 'Assign file uploads, track deadlines, and review submissions.';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Upload Tasks']];
+$adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" id="putNewTaskBtn"><i class="bi bi-plus-lg"></i> New task</button>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--uploads">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-  <div class="examination-page-shell">
-    <section class="examination-module-setting mb-4" aria-labelledby="put-student-uploads-setting">
+  <div class="examination-page-shell gap-3">
+    <section class="prof-control-strip" aria-labelledby="put-student-uploads-setting">
       <form method="post" class="examination-module-setting__form" id="putUploadsModuleForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save_uploads_module">
         <div class="examination-module-setting__copy">
+          <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-cloud-arrow-up"></i></span>
+          <div>
           <h2 class="examination-module-setting__title" id="put-student-uploads-setting">Student Uploads</h2>
           <p class="examination-module-setting__desc">Allow students to submit files for upload tasks in the College portal. Individual tasks still require publishing and section targeting.</p>
+          </div>
         </div>
         <div class="examination-module-setting__control">
           <label class="exam-lms-switch" title="<?php echo $studentUploadsEnabled ? 'Student uploads enabled' : 'Student uploads disabled'; ?>">
@@ -253,17 +259,41 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
             </span>
             <span class="sr-only">Allow student uploads</span>
           </label>
-          <p class="examination-module-setting__state"><?php echo $studentUploadsEnabled ? 'Currently ON — students can access upload tasks.' : 'Currently OFF — upload navigation and pages are hidden from students.'; ?></p>
+          <p class="examination-module-setting__state">
+            <?php if ($studentUploadsEnabled): ?>
+              <strong>Currently on</strong>
+              <span>Students can access upload tasks.</span>
+            <?php else: ?>
+              <strong>Currently off</strong>
+              <span>Upload navigation and pages are hidden from students.</span>
+            <?php endif; ?>
+          </p>
         </div>
       </form>
     </section>
 
-    <div class="examination-kpi-grid mb-4">
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Total tasks</div><div class="examination-kpi-card__value"><?php echo (int) $totalTasks; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Open tasks</div><div class="examination-kpi-card__value"><?php echo (int) $openTasks; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Submissions</div><div class="examination-kpi-card__value"><?php echo (int) $totalSubs; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Upcoming deadlines</div><div class="examination-kpi-card__value"><?php echo (int) $upcomingDeadlines; ?></div></div>
-    </div>
+    <section class="prof-summary-rail" aria-label="Upload task summary">
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-collection"></i></span>
+        <span class="prof-summary-rail__label">Total tasks</span>
+        <span class="prof-summary-rail__value"><?php echo (int) $totalTasks; ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-unlock"></i></span>
+        <span class="prof-summary-rail__label">Open tasks</span>
+        <span class="prof-summary-rail__value"><?php echo (int) $openTasks; ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-inboxes"></i></span>
+        <span class="prof-summary-rail__label">Submissions</span>
+        <span class="prof-summary-rail__value"><?php echo (int) $totalSubs; ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-calendar-event"></i></span>
+        <span class="prof-summary-rail__label">Upcoming deadlines</span>
+        <span class="prof-summary-rail__value"><?php echo (int) $upcomingDeadlines; ?></span>
+      </div>
+    </section>
 
     <?php if ($msg): ?>
       <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($msg); ?></span></div>
@@ -272,13 +302,16 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
       <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($err); ?></span></div>
     <?php endif; ?>
 
-    <div class="rounded-xl overflow-hidden page-table students-table-shell">
-      <div class="examination-table-card-head flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-base font-bold m-0 flex items-center gap-2"><i class="bi bi-kanban"></i> Upload tasks</h2>
-        <span class="text-xs font-bold uppercase tracking-wider opacity-60"><?php echo (int) $totalTasks; ?> listed</span>
+    <section class="prof-workspace">
+      <div class="prof-workspace__head">
+        <div>
+          <h2 class="prof-workspace__title">Upload tasks</h2>
+          <p class="prof-workspace__sub">Manage file upload assignments and submissions.</p>
+        </div>
+        <span class="prof-count"><?php echo (int) $totalTasks; ?> listed</span>
       </div>
 
-      <form method="get" class="students-toolbar page-filter px-4 py-3 border-b border-[var(--admin-border)]">
+      <form method="get" class="students-toolbar page-filter">
         <div class="students-toolbar__search flex-1">
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
@@ -348,7 +381,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                   <div class="font-bold examination-title-cell" title="<?php echo h($t['title']); ?>"><?php echo h($t['title']); ?></div>
                   <div class="put-task-mobile-meta">
                     <span><?php echo h($sectionSummary); ?></span>
-                    <span><?php echo h($opensLabel); ?> → <?php echo h($closesLabel); ?></span>
+                    <span><?php echo h($opensLabel); ?> ? <?php echo h($closesLabel); ?></span>
                   </div>
                 </td>
                 <td class="text-sm pcs-meta-cell put-col-audience" data-label="Audience / Section">
@@ -383,7 +416,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
           </table>
         <?php endif; ?>
       </div>
-    </div>
+    </section>
   </div>
 
   <div id="putTaskFormModalOverlay" class="admin-modal-overlay" aria-hidden="true">

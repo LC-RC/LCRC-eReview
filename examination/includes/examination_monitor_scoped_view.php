@@ -1,19 +1,29 @@
-﻿<?php
+<?php
 /** Scoped examination monitor view. Expects $ctx, $scope, $metrics, $students, $isRunning, $isFinished, etc. */
 $examQuestionCount = (int)($ctx['question_count'] ?? 0);
 $isCollege = ($ctx['exam_type'] ?? '') === 'college_exam';
 
 $pageTitle = 'Examination Monitor';
+$professorFeatureHero = true;
 $adminHeroIcon = 'graph-up';
+$adminHeroEyebrow = 'Exam command';
 $adminHeroTitle = (string)($ctx['title'] ?? 'Examination Monitor');
-$adminHeroSubtitle = (string)($ctx['subtitle'] ?? '');
+$adminHeroSubtitle = (string)($ctx['subtitle'] ?? '') !== ''
+    ? (string) $ctx['subtitle']
+    : 'Live monitoring for this examination.';
+$adminBreadcrumbs = [
+    ['Dashboard', 'professor_admin_dashboard'],
+    ['Monitoring', 'professor_examination_monitor'],
+    [(string)($ctx['title'] ?? 'Exam')],
+];
+$adminBackHref = (string) ($ctx['back_url'] ?? 'professor_examinations');
+$adminBackLabel = (string) ($ctx['back_label'] ?? 'Back to Examinations');
 $statusPill = $isFinished
     ? '<span class="admin-badge admin-badge--neutral"><i class="bi bi-flag"></i> Finished</span>'
     : ($isRunning
         ? '<span class="admin-badge admin-badge--success"><i class="bi bi-broadcast"></i> Running</span>'
         : '<span class="admin-badge admin-badge--warning"><i class="bi bi-clock"></i> Waiting</span>');
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="' . h($ctx['back_url']) . '"><i class="bi bi-arrow-left"></i> ' . h($ctx['back_label']) . '</a>'
-    . '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="professor_examinations"><i class="bi bi-grid"></i> All examinations</a>'
+$adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="professor_examinations"><i class="bi bi-grid"></i> All examinations</a>'
     . '<span class="admin-badge admin-badge--info">' . h(examination_monitor_exam_type_label($ctx['exam_type'])) . '</span>'
     . $statusPill;
 ?>
@@ -22,7 +32,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--monitor-detail">
   <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -31,10 +41,14 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($monitorFlash); ?></span></div>
     <?php endif; ?>
 
-    <h2 class="examination-section-title"><i class="bi bi-broadcast-pin"></i> Live Examination</h2>
-    <div class="rounded-xl overflow-hidden page-table p-4 mb-4">
-      <p class="text-sm font-bold text-slate-600 m-0 mb-3">Total examinees: <span id="kpiRosterTotal"><?php echo (int)$totalStudents; ?></span> · Polling every 8 seconds</p>
-      <div class="examination-monitor-kpi-grid examination-monitor-kpi-grid--live">
+    <section class="prof-status-deck mb-4">
+    <div class="prof-workspace__head">
+      <div>
+        <h2 class="prof-workspace__title"><?php if ($isRunning): ?><span class="prof-live-dot" aria-hidden="true"></span><?php endif; ?><i class="bi bi-broadcast-pin"></i> Live Examination</h2>
+        <p class="prof-workspace__sub">Total examinees: <span id="kpiRosterTotal"><?php echo (int)$totalStudents; ?></span> &middot; Polling every 8 seconds</p>
+      </div>
+    </div>
+    <div class="prof-status-deck__body">
         <?php
           $liveActive = 0;
           $liveIdle = 0;
@@ -51,13 +65,16 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
               }
           }
         ?>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Active</div><div class="examination-kpi-card__value" id="kpiActiveCount"><?php echo (int)$liveActive; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Not Started</div><div class="examination-kpi-card__value" id="kpiNotStartedCount"><?php echo (int)$liveNotStarted; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Submitted</div><div class="examination-kpi-card__value" id="kpiSubmittedCount"><?php echo (int)$liveSubmitted; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Idle / Away</div><div class="examination-kpi-card__value" id="kpiIdleCount"><?php echo (int)$liveIdle; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Still taking</div><div class="examination-kpi-card__value" id="kpiTakingCount"><?php echo (int)$metrics['taking_count']; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Avg score</div><div class="examination-kpi-card__value" id="kpiAvgScore"><?php echo $metrics['avg_score'] !== null ? h(number_format((float)$metrics['avg_score'], 1)) . '%' : '-'; ?></div></div>
-        <div class="examination-kpi-card"><div class="examination-kpi-card__label">Tab leaves</div><div class="examination-kpi-card__value" id="kpiTabLeavesTotal"><?php echo (int)$totalTabLeaves; ?></div></div>
+      <div class="prof-status-deck__row">
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-lightning-charge"></i></span><span class="prof-summary-rail__label">Active</span><span class="prof-summary-rail__value" id="kpiActiveCount"><?php echo (int)$liveActive; ?></span></div>
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-pause-circle"></i></span><span class="prof-summary-rail__label">Not Started</span><span class="prof-summary-rail__value" id="kpiNotStartedCount"><?php echo (int)$liveNotStarted; ?></span></div>
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-check2-circle"></i></span><span class="prof-summary-rail__label">Submitted</span><span class="prof-summary-rail__value" id="kpiSubmittedCount"><?php echo (int)$liveSubmitted; ?></span></div>
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-moon"></i></span><span class="prof-summary-rail__label">Idle / Away</span><span class="prof-summary-rail__value" id="kpiIdleCount"><?php echo (int)$liveIdle; ?></span></div>
+      </div>
+      <div class="prof-status-deck__row">
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span><span class="prof-summary-rail__label">Still taking</span><span class="prof-summary-rail__value" id="kpiTakingCount"><?php echo (int)$metrics['taking_count']; ?></span></div>
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-clipboard-data"></i></span><span class="prof-summary-rail__label">Avg score</span><span class="prof-summary-rail__value" id="kpiAvgScore"><?php echo $metrics['avg_score'] !== null ? h(number_format((float)$metrics['avg_score'], 1)) . '%' : '-'; ?></span></div>
+        <div class="prof-status-deck__cell"><span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-box-arrow-up-right"></i></span><span class="prof-summary-rail__label">Tab leaves</span><span class="prof-summary-rail__value" id="kpiTabLeavesTotal"><?php echo (int)$totalTabLeaves; ?></span></div>
       </div>
       <?php if ($allFinishedOpenExam): ?>
         <div class="mt-3 text-sm font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
@@ -65,12 +82,18 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         </div>
       <?php endif; ?>
     </div>
+    </section>
 
+    <div class="prof-monitor-split mb-4">
     <?php if ($ctx['supports_review_sheet'] && $reviewScheduleEligible): ?>
-    <h2 class="examination-section-title"><i class="bi bi-calendar2-check"></i> Review sheet access (students)</h2>
-    <div class="rounded-xl overflow-hidden page-table p-4 mb-4">
-      <p class="text-base font-bold m-0 mb-2 flex items-center gap-2"><i class="bi bi-lock-fill"></i> Set schedule for review access</p>
-      <p class="text-sm text-slate-600 m-0 mb-3">After the exam, students always see a <strong>results summary</strong>. The <strong>full question-by-question review</strong> stays locked until you choose when it opens (and optionally when it closes).</p>
+    <section class="prof-workspace prof-workspace--review">
+    <div class="prof-panel__head">
+      <div>
+        <h2 class="examination-section-title"><i class="bi bi-calendar2-check"></i> Review Sheet Access</h2>
+        <p class="prof-panel__sub">Set schedule for review access. After the exam, students always see a results summary. The full question-by-question review stays locked until you choose when it opens.</p>
+      </div>
+    </div>
+    <div class="p-4">
       <p class="m-0 mb-3">
         <?php if ($reviewAccessStatus === 'no_schedule'): ?>
           <span class="admin-badge admin-badge--neutral"><i class="bi bi-dash-circle"></i> No schedule set - review sheet is locked</span>
@@ -103,14 +126,18 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         </div>
       </form>
     </div>
+    </section>
     <?php endif; ?>
 
-    <h2 class="examination-section-title"><i class="bi bi-shield-exclamation"></i> Security - tab visibility</h2>
-    <div class="rounded-xl overflow-hidden page-table p-4 mb-4 sec-alert-card" id="examSecurityAlerts">
-      <div class="flex items-center justify-between gap-3 mb-2">
-        <span class="text-sm font-extrabold text-amber-900">Live alerts when students leave the exam tab</span>
-        <span class="text-xs text-amber-800/80" id="examSecurityPollStatus">Updating...</span>
+    <section class="prof-workspace prof-workspace--security" id="examSecurityAlertsWrap">
+    <div class="prof-panel__head">
+      <div>
+        <h2 class="examination-section-title"><i class="bi bi-shield-exclamation"></i> Security &amp; Tab Visibility</h2>
+        <p class="prof-panel__sub">Live alerts when students leave the exam tab</p>
       </div>
+      <span class="text-xs text-slate-500" id="examSecurityPollStatus">Updating...</span>
+    </div>
+    <div class="p-4 sec-alert-card" id="examSecurityAlerts">
       <div id="examSecurityFeed" class="text-amber-950">
         <?php
         $hasTabAlerts = false;
@@ -139,6 +166,8 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         <?php endif; ?>
       </div>
     </div>
+    </section>
+    </div>
 
     <?php if (!$isCollege && ($sectionRows !== [] || $subjectAvgs !== [])): ?>
     <h2 class="examination-section-title"><i class="bi bi-pie-chart"></i> Diagnostic breakdown</h2>
@@ -160,7 +189,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         <thead><tr><th class="px-4 py-3 text-left">Subject</th><th class="px-4 py-3 text-right">Average</th><th class="px-4 py-3 text-right">Attempts</th></tr></thead>
         <tbody>
         <?php foreach ($subjectAvgs as $sub): ?>
-          <tr class="border-t border-[var(--admin-border)]"><td class="px-4 py-3 font-semibold"><?php echo h((string)$sub['subject_code']); ?></td><td class="px-4 py-3 text-right"><?php echo $sub['average_score'] !== null ? h((string)$sub['average_score']) . '%' : '—'; ?></td><td class="px-4 py-3 text-right"><?php echo (int)$sub['attempt_count']; ?></td></tr>
+          <tr class="border-t border-[var(--admin-border)]"><td class="px-4 py-3 font-semibold"><?php echo h((string)$sub['subject_code']); ?></td><td class="px-4 py-3 text-right"><?php echo $sub['average_score'] !== null ? h((string)$sub['average_score']) . '%' : '�'; ?></td><td class="px-4 py-3 text-right"><?php echo (int)$sub['attempt_count']; ?></td></tr>
         <?php endforeach; ?>
         </tbody>
       </table>
@@ -187,22 +216,26 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
           }
       }
     ?>
+    <section class="prof-workspace prof-workspace--progress mb-4">
     <div class="pem-progress-head">
-      <h2 class="examination-section-title"><i class="bi bi-people"></i> Examinee Progress</h2>
+      <h2 class="prof-workspace__title"><i class="bi bi-people"></i> Examinee Progress</h2>
+      <div class="pem-progress-head__end">
+      <span class="prof-count"><?php echo (int)$totalStudents; ?> examinee<?php echo (int)$totalStudents === 1 ? '' : 's'; ?></span>
       <?php if ($isFinished): ?>
         <div class="pem-export-btns">
           <a href="<?php echo h($pdfUrl); ?>" class="admin-btn admin-btn--primary admin-btn--sm" title="Download PDF (finished assessments only)">
-            <i class="bi bi-file-earmark-pdf"></i> Download PDF report
+            <i class="bi bi-file-earmark-pdf"></i> PDF
           </a>
           <a href="<?php echo h($xlsxUrl); ?>" class="admin-btn admin-btn--secondary admin-btn--sm" title="Download Excel (finished assessments only)">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Download Excel report
+            <i class="bi bi-file-earmark-spreadsheet"></i> Excel
           </a>
         </div>
       <?php endif; ?>
+      </div>
     </div>
 
     <?php if ($students !== []): ?>
-    <div class="students-toolbar page-filter pem-roster-filters" id="pemRosterFilters">
+    <div class="students-toolbar page-filter pem-roster-filters rounded-xl bg-white/80 border border-white/80 shadow-sm p-3" id="pemRosterFilters">
       <div class="students-toolbar__search flex-1">
         <div class="students-search">
           <i class="bi bi-search" aria-hidden="true"></i>
@@ -235,7 +268,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
     <?php endif; ?>
 
-    <div class="rounded-xl page-table students-table-shell pem-roster-shell mb-4">
+    <div class="rounded-2xl page-table students-table-shell pem-roster-shell mb-4 bg-white/90 border border-white/80 shadow-sm overflow-hidden">
       <div class="students-table-scroll">
       <table class="w-full text-left admin-students-table students-table--compact pex-monitor-detail-table pex-list-table" id="pemRosterTable">
         <colgroup>
@@ -447,6 +480,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       </table>
       </div>
     </div>
+    </section>
 
     <div id="pemTabEventsModal" class="admin-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pemTabEventsTitle" aria-hidden="true">
       <div class="admin-modal admin-modal--form" style="max-width:32rem;width:100%;padding:1rem 1.1rem">
@@ -478,7 +512,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
     </div>
 
   <style>
-    /* Dense Examinee Progress table — scoped to this monitor page only */
+    /* Dense Examinee Progress table � scoped to this monitor page only */
     .pem-progress-head { margin-bottom: 0.45rem; }
     .pem-roster-filters {
       margin: 0 0 0.55rem;
@@ -783,14 +817,14 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       if (ans <= 0 && s.attempt_status !== 'submitted' && s.attempt_status !== 'expired') return '0 / 0';
       if (ans <= 0) return '-';
       var pct = s.score_pct_answered != null ? Math.round(s.score_pct_answered) : Math.round(100 * cor / ans);
-      return cor + ' / ' + ans + ' · ' + pct + '%';
+      return cor + ' / ' + ans + ' � ' + pct + '%';
     }
     function openTabModal(attemptId, name) {
       var modal = document.getElementById('pemTabEventsModal');
       var body = document.getElementById('pemTabEventsBody');
       var sub = document.getElementById('pemTabEventsSub');
       if (!modal || !body) return;
-      if (sub) sub.textContent = (name || 'Student') + ' — tab leave / return timeline';
+      if (sub) sub.textContent = (name || 'Student') + ' � tab leave / return timeline';
       body.textContent = 'Loading...';
       modal.classList.add('is-open');
       modal.setAttribute('aria-hidden', 'false');
@@ -872,7 +906,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
               box.innerHTML = '<h4 class="font-bold m-0 mb-2 text-[#143D59]">Activity Timeline</h4><ul class="m-0 pl-4 space-y-1">' +
                 rows.map(function (ev) {
                   var extra = ev.detail ? (' <span class="opacity-70">(' + esc(ev.detail) + ')</span>') : '';
-                  return '<li><strong>' + esc(ev.occurred_fmt || '') + '</strong> — ' + esc(ev.label || '') + extra + '</li>';
+                  return '<li><strong>' + esc(ev.occurred_fmt || '') + '</strong> � ' + esc(ev.label || '') + extra + '</li>';
                 }).join('') + '</ul>';
             }).catch(function () {});
           }

@@ -680,8 +680,9 @@ function admin_acl_filter_nav(array $navConfig): array
                 unset($item['badge']);
             }
 
-            // Full-access: treat Subjects as the Content Hub entry.
-            if ($fullAccess && $key === 'subjects') {
+            // Full-access: Subjects is the Content Hub entry (not Modules, which shares acl_key).
+            $hrefScript = preg_replace('/\.php$/i', '', basename((string) ($item['href'] ?? '')));
+            if ($fullAccess && $key === 'subjects' && $hrefScript === 'admin_subjects') {
                 $item['label'] = 'Content Hub';
                 $item['title'] = 'Subjects, lessons, videos, handouts, materials, quizzes & test bank';
                 $item['active'] = [

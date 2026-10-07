@@ -15,7 +15,9 @@ require __DIR__ . '/examination_edit_config_prepare.php';
 
 $pageTitle = $isNew ? 'New Examination' : 'Edit Examination';
 $adminLoadStudentsCss = true;
+$professorFeatureHero = true;
 $adminHeroIcon = 'journal-text';
+$adminHeroEyebrow = 'Examination management';
 if ($examType === 'diagnostic') {
     $adminHeroTitle = $isNew ? 'New Diagnostic Exam' : 'Diagnostic Exam';
     $adminHeroSubtitle = $isNew
@@ -25,7 +27,10 @@ if ($examType === 'diagnostic') {
     $adminHeroTitle = $modalTitle;
     $adminHeroSubtitle = $modalSubtitle;
 }
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-arrow-left"></i> Back to Examinations</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], [$isNew ? 'New' : 'Edit']];
+$adminBackHref = 'professor_examinations';
+$adminBackLabel = 'Back to Examinations';
+$adminHeroActions = '';
 
 ?>
 <!DOCTYPE html>
@@ -33,13 +38,9 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
-<?php if ($examType === 'diagnostic'): ?>
-  <!-- workspace bar provides Back + actions -->
-<?php else: ?>
-  <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
-<?php endif; ?>
+<?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
 <?php if ($flashMessage): ?>
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">
@@ -57,7 +58,11 @@ $activeStep = 'config';
 require dirname(__DIR__) . '/includes/examination_edit_steps.php';
 ?>
 
+<div class="examination-page-shell">
+<section class="prof-workspace prof-workspace--form">
 <?php require __DIR__ . '/examination_edit_config_form.php'; ?>
+</section>
+</div>
 
 </body>
 </html>

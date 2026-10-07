@@ -152,6 +152,19 @@ $pageTitle = 'Pre-week lectures - ' . $unitTitle;
 $preweekNavStep = 'lectures';
 $preweekNavUnitId = $unitId;
 $preweekNavUnitTitle = $unitTitle;
+$adminBreadcrumbs = [
+    ['Dashboard', 'admin_dashboard'],
+    ['Pre-week', 'admin_preweek'],
+    [$unitTitle, 'admin_preweek_topics?preweek_unit_id=' . (int)$unitId],
+    ['Lectures'],
+];
+$adminHeroIcon = 'folder2-open';
+$adminHeroTint = 'violet';
+$adminHeroEyebrow = 'Pre-week / ' . $unitTitle;
+$adminHeroTitle = 'Lectures';
+$adminHeroSubtitle = 'Manage lectures and learning materials for ' . $unitTitle . '.';
+$adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int)$rowTotal . ' lecture' . ((int)$rowTotal === 1 ? '' : 's') . '</span>';
+$adminHeroActions = '<button type="button" id="openAddLectureModal" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> New Lecture</button>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -162,18 +175,22 @@ $preweekNavUnitTitle = $unitTitle;
     .admin-preweek-lectures-page .preweek-lecture-modal-overlay {
       position: fixed;
       inset: 0;
-      z-index: 2000;
+      z-index: 910;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(6px);
+      padding: 24px;
+      overflow: hidden;
+      background: rgba(2, 6, 15, 0.62);
+      backdrop-filter: blur(8px);
     }
     .admin-preweek-lectures-page .preweek-lecture-modal-overlay[hidden] { display: none !important; }
     .admin-preweek-lectures-page .preweek-lecture-modal-panel {
       width: 100%;
       max-width: 28rem;
+      max-height: calc(100dvh - 48px);
+      display: flex;
+      flex-direction: column;
       border-radius: 0.75rem;
       background: var(--admin-glass-strong, var(--admin-surface, #fff));
       border: 1px solid var(--admin-border-strong, rgba(30, 58, 110, 0.16));
@@ -188,49 +205,21 @@ $preweekNavUnitTitle = $unitTitle;
       gap: 0.75rem;
       padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--admin-border, rgba(30, 58, 110, 0.1));
-      background: rgba(15, 23, 42, 0.03);
+      background: var(--glass-surface-inner);
+      flex: 0 0 auto;
     }
-    .admin-preweek-lectures-page .preweek-lecture-modal-body { padding: 1.25rem; }
+    .admin-preweek-lectures-page .preweek-lecture-modal-body {
+      padding: 1.25rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body class="font-sans antialiased admin-app admin-preweek-lectures-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <?php require __DIR__ . '/includes/admin_preweek_context_nav.php'; ?>
-
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-folder2-open"></i></span>
-      Lectures <span class="text-gray-500 font-semibold">-</span> <span class="text-amber-200 font-semibold"><?php echo h($unitTitle); ?></span>
-    </h1>
-    <p class="text-gray-400 mt-3 mb-0 max-w-3xl text-sm sm:text-base">Add or edit lectures for this pre-week. Use <strong class="text-gray-300 font-semibold">Materials</strong> on each row to attach videos and handouts.</p>
-  </div>
-
-  <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-    <a href="admin_preweek" class="text-sm font-medium text-gray-400 hover:text-amber-200/90 inline-flex items-center gap-2 no-underline transition-colors">
-      <i class="bi bi-arrow-left" aria-hidden="true"></i> Pre-week home
-    </a>
-    <?php if ($filterQ !== ''): ?>
-      <span class="text-xs font-medium uppercase tracking-wide text-amber-200/70 bg-amber-500/10 border border-amber-500/25 rounded-full px-2.5 py-1">Search active</span>
-    <?php endif; ?>
-  </div>
-
-  <form method="get" action="admin_preweek_topics" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
-    <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$unitId; ?>">
-    <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
-      <label for="lecture-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" name="q" id="lecture-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Title or description..." autocomplete="off" class="input-custom w-full pl-10">
-      </div>
-    </div>
-    <div class="flex flex-wrap gap-2 shrink-0">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search" aria-hidden="true"></i> Apply</button>
-      <?php if ($filterQ !== ''): ?>
-        <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
-      <?php endif; ?>
-    </div>
-  </form>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="quiz-admin-alert quiz-admin-alert--success mb-5 flex items-center gap-2">
@@ -245,57 +234,81 @@ $preweekNavUnitTitle = $unitTitle;
     </div>
   <?php endif; ?>
 
-  <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <div class="quiz-admin-table-head px-5 py-3 flex flex-wrap justify-between items-center gap-3">
-      <div class="flex items-center gap-2 min-w-0">
-        <span class="font-semibold text-gray-100">Lectures</span>
-        <span class="quiz-admin-count-pill quiz-admin-count-pill--preweek"><?php echo (int)$rowTotal; ?></span>
+  <section class="content-library" aria-labelledby="preweek-lectures-heading">
+    <div class="content-library__head">
+      <div>
+        <h2 id="preweek-lectures-heading" class="content-library__title">Lectures</h2>
+        <p class="content-library__sub">Manage lectures and their attached materials.</p>
       </div>
-      <button type="button" id="openAddLectureModal" class="admin-content-btn admin-content-btn--subject px-4 py-2 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2 shrink-0">
-        <i class="bi bi-plus-circle" aria-hidden="true"></i> Add lecture
-      </button>
+      <span class="content-library__count"><?php echo (int)$rowTotal; ?> lecture<?php echo (int)$rowTotal === 1 ? '' : 's'; ?></span>
     </div>
-    <div class="overflow-x-auto pl-3 pr-8">
-      <table class="quiz-admin-data-table w-full text-left">
+    <form method="get" action="admin_preweek_topics" class="content-library__toolbar">
+      <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$unitId; ?>">
+      <div class="content-library__search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" id="lecture-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Search title or description..." autocomplete="off" class="input-custom" aria-label="Search lectures">
+      </div>
+      <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Apply</button>
+      <?php if ($filterQ !== ''): ?>
+        <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$unitId; ?>" class="admin-btn admin-btn--ghost admin-btn--sm">Clear</a>
+      <?php endif; ?>
+    </form>
+    <?php if ($rowTotal === 0): ?>
+      <div class="content-library-empty">
+        <i class="bi bi-journal-plus" aria-hidden="true"></i>
+        <h3><?php echo $filterQ !== '' ? 'No lectures match your search' : 'No lectures yet'; ?></h3>
+        <p class="content-library__sub"><?php echo $filterQ !== '' ? 'Try Clear search or use New Lecture in the header.' : 'Use New Lecture, then open Materials on a row.'; ?></p>
+      </div>
+    <?php else: ?>
+    <div class="content-library-table-scroll">
+      <table class="content-library-table">
         <thead>
           <tr>
-            <th class="px-5 py-3 font-semibold">Title</th>
-            <th class="px-5 py-3 font-semibold">Contents</th>
-            <th class="px-5 py-3 font-semibold text-center w-[240px]">Actions</th>
+            <th class="col-desktop" scope="col">#</th>
+            <th scope="col">Lecture</th>
+            <th class="col-desktop" scope="col">Videos</th>
+            <th class="col-desktop" scope="col">Handouts</th>
+            <th class="col-actions" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <?php if ($rowTotal === 0): ?>
-            <tr>
-              <td colspan="3" class="px-5 py-14 text-center quiz-admin-empty">
-                <i class="bi bi-journal-plus text-4xl block mb-3 quiz-admin-empty-icon"></i>
-                <div class="font-semibold text-gray-200">No lectures yet</div>
-                <p class="text-sm mt-1 text-gray-500 m-0 max-w-md mx-auto"><?php echo $filterQ !== '' ? 'Try Clear search or use Add lecture in the header.' : 'Use <strong class="text-gray-400">Add lecture</strong> above, then open <strong class="text-gray-400">Materials</strong> on a row.'; ?></p>
-              </td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($topicRows as $row): ?>
+            <?php $rowIndex = 0; foreach ($topicRows as $row): $rowIndex++; ?>
               <?php
                 $tid = (int)$row['preweek_topic_id'];
                 $tt = trim((string)($row['title'] ?? '')) ?: 'Untitled';
                 $vc = (int)($row['videos_cnt'] ?? 0);
                 $hc = (int)($row['handouts_cnt'] ?? 0);
+                $materialsUrl = 'admin_preweek_materials?preweek_topic_id=' . (int)$tid;
+                $vClass = $vc === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
+                $hClass = $hc === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
               ?>
-              <tr class="quiz-admin-row">
-                <td class="px-5 py-3 align-top">
-                  <div class="font-semibold text-gray-100"><?php echo h($tt); ?></div>
-                  <?php if (trim((string)($row['description'] ?? '')) !== ''): ?>
-                    <div class="text-gray-500 text-xs mt-1"><?php echo h((string)$row['description']); ?></div>
-                  <?php endif; ?>
+              <tr>
+                <td class="col-desktop"><span class="content-reorder-ord"><?php echo (int)$rowIndex; ?></span></td>
+                <td>
+                  <div class="content-library-subject">
+                    <span class="lms-icon-tile inline-flex h-10 w-10 items-center justify-center rounded-xl" aria-hidden="true"><i class="bi bi-file-text"></i></span>
+                    <span class="content-library-subject__text">
+                      <a href="<?php echo h($materialsUrl); ?>" class="content-library-subject__name"><?php echo h($tt); ?></a>
+                      <?php if (trim((string)($row['description'] ?? '')) !== ''): ?>
+                        <span class="content-library-subject__desc"><?php echo h(mb_strimwidth((string)$row['description'], 0, 90, '...')); ?></span>
+                      <?php endif; ?>
+                      <span class="content-library-subject__mobile-meta"><?php echo (int)$vc; ?> video<?php echo $vc === 1 ? '' : 's'; ?> · <?php echo (int)$hc; ?> handout<?php echo $hc === 1 ? '' : 's'; ?></span>
+                    </span>
+                  </div>
                 </td>
-                <td class="px-5 py-3 align-top text-sm text-gray-400">
-                  <span class="tabular-nums"><?php echo (int)$vc; ?></span> video<?php echo $vc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">·</span>
-                  <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
+                <td class="col-desktop">
+                  <span class="inline-flex items-center gap-1.5 rounded-xl border border-sky-100 bg-sky-50/80 px-2.5 py-1.5 text-xs font-bold tabular-nums <?php echo $vClass; ?>">
+                    <i class="bi bi-play-circle"></i> <?php echo (int)$vc; ?>
+                  </span>
                 </td>
-                <td class="px-5 py-3 align-middle text-center">
-                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_preweek_materials?preweek_topic_id=<?php echo (int)$tid; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-collection-play"></i><span class="sr-only">Materials</span></a>
+                <td class="col-desktop">
+                  <span class="inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-violet-50/80 px-2.5 py-1.5 text-xs font-bold tabular-nums <?php echo $hClass; ?>">
+                    <i class="bi bi-file-earmark-pdf"></i> <?php echo (int)$hc; ?>
+                  </span>
+                </td>
+                <td class="col-actions">
+                  <div class="admin-row-actions inline-flex items-center justify-end gap-1.5" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <a href="<?php echo h($materialsUrl); ?>" class="hub-next-btn">Materials <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                     <div class="admin-row-menu-wrap">
                       <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
                       <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
@@ -307,11 +320,11 @@ $preweekNavUnitTitle = $unitTitle;
                 </td>
               </tr>
             <?php endforeach; ?>
-          <?php endif; ?>
         </tbody>
       </table>
     </div>
-  </div>
+    <?php endif; ?>
+  </section>
 
   <div id="lectureModal" class="preweek-lecture-modal-overlay" <?php echo $lectureModalOpenEdit ? '' : 'hidden'; ?> role="dialog" aria-modal="true" aria-labelledby="lectureModalTitle">
     <div class="preweek-lecture-modal-panel">

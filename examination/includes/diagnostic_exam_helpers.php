@@ -497,11 +497,36 @@ function diagnostic_exam_batch_stats_for_student(mysqli $conn, int $batchId): ar
 function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId): array
 {
     $st = mysqli_prepare($conn, 'SELECT * FROM diagnostic_attempts WHERE attempt_id=? AND user_id=? LIMIT 1');
+    if (!$st) {
+        return ['ok' => false, 'error' => 'Lookup failed', 'db_error' => (string)mysqli_error($conn)];
+    }
     mysqli_stmt_bind_param($st, 'ii', $attemptId, $userId);
     mysqli_stmt_execute($st);
     $att = mysqli_fetch_assoc(mysqli_stmt_get_result($st));
     mysqli_stmt_close($st);
-    if (!$att || ($att['status'] ?? '') !== 'in_progress') {
+    if (!$att) {
+        return ['ok' => false, 'error' => 'Invalid attempt'];
+    }
+    $status = diagnostic_exam_attempt_status_normalized($att);
+    if ($status === 'submitted') {
+        $breakdown = [];
+        if (!empty($att['subject_breakdown_json'])) {
+            $decoded = json_decode((string)$att['subject_breakdown_json'], true);
+            if (is_array($decoded)) {
+                $breakdown = $decoded;
+            }
+        }
+
+        return [
+            'ok' => true,
+            'already_submitted' => true,
+            'score' => (float)($att['score'] ?? 0),
+            'correct' => (int)($att['correct_count'] ?? 0),
+            'total' => (int)($att['total_count'] ?? 0),
+            'breakdown' => $breakdown,
+        ];
+    }
+    if ($status !== 'in_progress') {
         return ['ok' => false, 'error' => 'Invalid attempt'];
     }
     $batchId = (int)($att['batch_id'] ?? 0);
@@ -512,11 +537,11 @@ function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $use
     $batchSubjects = diagnostic_exam_load_batch_subjects($conn, $batchId);
     $questions = diagnostic_exam_build_flat_questions($conn, $batchId, $batchSubjects, $attemptId);
 
-    $ansRes = mysqli_query($conn, 'SELECT question_id, selected_answer FROM diagnostic_answers WHERE attempt_id=' . (int)$attemptId);
+    $ansRes = mysqli_query($conn, 'SELECT answer_id, question_id, selected_answer FROM diagnostic_answers WHERE attempt_id=' . (int)$attemptId);
     $byQ = [];
     if ($ansRes) {
         while ($r = mysqli_fetch_assoc($ansRes)) {
-            $byQ[(int)$r['question_id']] = strtoupper(trim((string)($r['selected_answer'] ?? '')));
+            $byQ[(int)$r['question_id']] = $r;
         }
         mysqli_free_result($ansRes);
     }
@@ -524,6 +549,7 @@ function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $use
     $correct = 0;
     $total = count($questions);
     $bySubject = [];
+    $correctByAid = [];
     foreach ($questions as $q) {
         $qid = (int)($q['question_id'] ?? 0);
         $sid = (int)($q['subject_id'] ?? 0);
@@ -532,18 +558,26 @@ function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $use
         }
         $bySubject[$sid]['total']++;
         $exp = strtoupper(trim((string)($q['correct_answer'] ?? 'A')));
-        $sel = $byQ[$qid] ?? '';
+        $sel = isset($byQ[$qid]) ? strtoupper(trim((string)($byQ[$qid]['selected_answer'] ?? ''))) : '';
         $isCorrect = ($sel !== '' && $sel === $exp) ? 1 : 0;
         if ($isCorrect) {
             $correct++;
             $bySubject[$sid]['correct']++;
         }
-        $upd = mysqli_prepare($conn, 'UPDATE diagnostic_answers SET is_correct=? WHERE attempt_id=? AND question_id=?');
-        if ($upd) {
-            mysqli_stmt_bind_param($upd, 'iii', $isCorrect, $attemptId, $qid);
-            mysqli_stmt_execute($upd);
-            mysqli_stmt_close($upd);
+        if (isset($byQ[$qid])) {
+            $correctByAid[(int)$byQ[$qid]['answer_id']] = $isCorrect;
         }
+    }
+    if ($correctByAid !== []) {
+        $caseSql = 'UPDATE diagnostic_answers SET is_correct = CASE answer_id';
+        $ids = [];
+        foreach ($correctByAid as $aid => $flag) {
+            $caseSql .= ' WHEN ' . (int)$aid . ' THEN ' . (int)$flag;
+            $ids[] = (int)$aid;
+        }
+        $caseSql .= ' END WHERE attempt_id=' . (int)$attemptId
+            . ' AND answer_id IN (' . implode(',', $ids) . ')';
+        @mysqli_query($conn, $caseSql);
     }
 
     $breakdown = [];
@@ -563,12 +597,67 @@ function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $use
     $score = diagnostic_exam_compute_score_percentage($correct, $total);
     $json = json_encode($breakdown, JSON_UNESCAPED_UNICODE);
     $submitted = date('Y-m-d H:i:s');
-    $upd = mysqli_prepare($conn, "UPDATE diagnostic_attempts SET status='submitted', score=?, correct_count=?, total_count=?, subject_breakdown_json=?, submitted_at=? WHERE attempt_id=? AND user_id=?");
+    $upd = mysqli_prepare(
+        $conn,
+        "UPDATE diagnostic_attempts SET status='submitted', score=?, correct_count=?, total_count=?, subject_breakdown_json=?, submitted_at=?
+         WHERE attempt_id=? AND user_id=? AND status='in_progress'"
+    );
+    if (!$upd) {
+        return ['ok' => false, 'error' => 'Finalize prepare failed', 'db_error' => (string)mysqli_error($conn)];
+    }
     mysqli_stmt_bind_param($upd, 'diissii', $score, $correct, $total, $json, $submitted, $attemptId, $userId);
-    mysqli_stmt_execute($upd);
+    if (!mysqli_stmt_execute($upd)) {
+        $err = (string)mysqli_stmt_error($upd);
+        mysqli_stmt_close($upd);
+
+        return ['ok' => false, 'error' => 'Finalize execute failed', 'db_error' => $err];
+    }
+    $affected = mysqli_stmt_affected_rows($upd);
     mysqli_stmt_close($upd);
 
+    if ($affected < 1) {
+        $re = mysqli_prepare(
+            $conn,
+            'SELECT status, score, correct_count, total_count, subject_breakdown_json FROM diagnostic_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
+        );
+        if ($re) {
+            mysqli_stmt_bind_param($re, 'ii', $attemptId, $userId);
+            mysqli_stmt_execute($re);
+            $again = mysqli_fetch_assoc(mysqli_stmt_get_result($re));
+            mysqli_stmt_close($re);
+            if ($again && diagnostic_exam_attempt_status_normalized($again) === 'submitted') {
+                $breakdownAgain = [];
+                if (!empty($again['subject_breakdown_json'])) {
+                    $decodedAgain = json_decode((string)$again['subject_breakdown_json'], true);
+                    if (is_array($decodedAgain)) {
+                        $breakdownAgain = $decodedAgain;
+                    }
+                }
+
+                return [
+                    'ok' => true,
+                    'already_submitted' => true,
+                    'score' => (float)($again['score'] ?? 0),
+                    'correct' => (int)($again['correct_count'] ?? 0),
+                    'total' => (int)($again['total_count'] ?? 0),
+                    'breakdown' => $breakdownAgain,
+                ];
+            }
+        }
+
+        return ['ok' => false, 'error' => 'Invalid attempt'];
+    }
+
     return ['ok' => true, 'score' => $score, 'correct' => $correct, 'total' => $total, 'breakdown' => $breakdown];
+}
+
+/**
+ * Seconds after official expires_at before server may auto-finalize.
+ * Does NOT extend answering time — only protects in-flight timeout flush.
+ */
+function diagnostic_exam_finalize_expired_grace_seconds(): int
+{
+    return 60;
 }
 
 function diagnostic_exam_finalize_expired_in_progress(mysqli $conn, int $batchId = 0, int $userId = 0): int
@@ -583,8 +672,9 @@ function diagnostic_exam_finalize_expired_in_progress(mysqli $conn, int $batchId
     if ($batchId <= 0 && $userId <= 0) {
         return 0;
     }
-    $now = date('Y-m-d H:i:s');
-    $where[] = "(expires_at IS NOT NULL AND expires_at <= '{$now}')";
+    $grace = max(0, diagnostic_exam_finalize_expired_grace_seconds());
+    $cutoffSql = date('Y-m-d H:i:s', time() - $grace);
+    $where[] = "(expires_at IS NOT NULL AND TRIM(COALESCE(expires_at, '')) <> '' AND expires_at NOT LIKE '0000-00-00%' AND expires_at <= '{$cutoffSql}')";
     $sql = 'SELECT attempt_id, user_id FROM diagnostic_attempts WHERE ' . implode(' AND ', $where);
     $count = 0;
     $res = @mysqli_query($conn, $sql);

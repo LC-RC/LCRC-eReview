@@ -12,6 +12,11 @@ function college_sections_ensure_schema(mysqli $conn): void
     if ($done) {
         return;
     }
+    $done = true;
+    require_once __DIR__ . '/examination_schema_gate.php';
+    if (!ereview_schema_ensure_enabled()) {
+        return;
+    }
     @mysqli_query(
         $conn,
         "CREATE TABLE IF NOT EXISTS `college_sections` (
@@ -27,7 +32,6 @@ function college_sections_ensure_schema(mysqli $conn): void
           KEY `idx_college_sections_status` (`status`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
-    $done = true;
 }
 
 function college_sections_normalize_name(string $name): string

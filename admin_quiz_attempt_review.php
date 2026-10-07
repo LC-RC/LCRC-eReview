@@ -32,8 +32,12 @@ $adminBreadcrumbs = [
     ['Attempt review'],
 ];
 $adminHeroIcon = 'journal-text';
-$adminHeroTitle = 'Quiz attempt review';
-$adminHeroSubtitle = ($attempt['full_name'] ?? '') . ' - ' . ($attempt['quiz_title'] ?? '');
+$adminHeroEyebrow = 'Quiz Monitor';
+$adminHeroTitle = 'Attempt review';
+$adminHeroSubtitle = ($attempt['full_name'] ?? '') . ' · ' . ($attempt['quiz_title'] ?? '');
+$adminBackHref = $monitorUrl;
+$adminBackLabel = 'Back to Quiz Monitor';
+$adminHeroActions = '<a href="admin_student_view?id=' . (int)$userId . '" class="admin-btn admin-btn--secondary">Student profile</a>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,11 +53,6 @@ $adminHeroSubtitle = ($attempt['full_name'] ?? '') . ' - ' . ($attempt['quiz_tit
 <body class="font-sans antialiased admin-app">
   <?php include 'admin_sidebar.php'; ?>
   <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
-
-  <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-    <a href="<?php echo h($monitorUrl); ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Back to monitor</a>
-    <a href="admin_student_view?id=<?php echo $userId; ?>" class="admin-btn admin-btn--ghost">Student profile</a>
-  </div>
 
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
     <div class="rounded-xl border p-4 page-table"><div class="text-xs uppercase opacity-60">Status</div><div class="font-bold"><?php echo h((string) ($attempt['status'] ?? '')); ?></div></div>

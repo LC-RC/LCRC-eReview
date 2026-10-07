@@ -172,18 +172,22 @@ $statusBadgeClass = match ($statusLower) {
 };
 
 $pageTitle = 'Examinee profile';
+$professorFeatureHero = true;
 $adminHeroIcon = 'person-circle';
 $adminHeroTitle = (string)$u['full_name'];
 $adminHeroSubtitle = $examineeTypeLabel . ' · ID ' . (int)$u['user_id'];
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_college_students"><i class="bi bi-arrow-left"></i> Back to directory</a>'
-    . '<span class="admin-badge ' . $statusBadgeClass . '">' . h((string)$u['status']) . '</span>';
+$adminHeroEyebrow = 'Student management';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students', 'professor_college_students'], ['Profile']];
+$adminBackHref = 'professor_college_students';
+$adminBackLabel = 'Back to Students';
+$adminHeroActions = '<span class="admin-badge ' . $statusBadgeClass . '">' . h((string)$u['status']) . '</span>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -192,7 +196,8 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
   <?php if ($editErr): ?><div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($editErr); ?></span></div><?php endif; ?>
 
   <div class="examination-page-shell">
-    <div class="rounded-xl overflow-hidden page-table p-5 mb-4">
+    <section class="prof-workspace">
+    <div class="rounded-xl overflow-hidden p-5 mb-0">
       <div class="flex flex-col sm:flex-row sm:items-center gap-5">
         <div class="examination-avatar-box shrink-0" id="viewAvatarBox">
           <?php if ($avatarSrc !== '' && !$useDefault): ?>
@@ -297,6 +302,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
       <p class="examination-form-hint">Used on exam monitor and Excel exports. Leave blank to clear.</p>
       <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm mt-3"><i class="bi bi-check2-circle"></i> Save</button>
     </form>
+    </section>
   </div>
 </body>
 </html>

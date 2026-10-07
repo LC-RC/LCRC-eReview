@@ -267,6 +267,26 @@ if ($qsortHasResults) {
     $deploySubjectsJson = json_encode($deploySubjects, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
 }
 
+$adminHeroIcon = 'diagram-3';
+$adminHeroEyebrow = 'Question Bank';
+$adminHeroTitle = 'Question Bank';
+$adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Question Bank']];
+$adminHeroSubtitle = 'Upload a Word .docx with numbered MCQs, group by topic, and export JSON / HTML / Word.';
+$adminHeroMeta = '';
+if ($uiPayload && !empty($uiPayload['meta'])) {
+    $adminHeroMeta =
+        '<span class="preweek-stat-pill" title="Questions parsed"><i class="bi bi-list-ol text-sky-400"></i> ' . (int)($uiPayload['meta']['question_count'] ?? 0) . ' questions</span>'
+        . '<span class="preweek-stat-pill" title="Topic groups"><i class="bi bi-folder2-open text-amber-300"></i> ' . (int)($uiPayload['meta']['topic_count'] ?? 0) . ' topics</span>'
+        . '<span class="preweek-stat-pill" title="Paragraphs read"><i class="bi bi-text-paragraph text-violet-300"></i> ' . (int)($uiPayload['meta']['paragraph_count'] ?? 0) . ' paragraphs</span>';
+    $__gpHero = (int)($uiPayload['meta']['general_problem_count'] ?? 0);
+    if ($__gpHero === 0 && !empty($uiPayload['general_problems'])) {
+        $__gpHero = count($uiPayload['general_problems']);
+    }
+    if ($__gpHero > 0) {
+        $adminHeroMeta .= '<span class="preweek-stat-pill" title="Shared case text (not counted as questions)"><i class="bi bi-journal-text text-sky-300"></i> ' . $__gpHero . ' general problems</span>';
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -623,34 +643,8 @@ if ($qsortHasResults) {
 <body class="font-sans antialiased admin-app admin-question-sort-page">
   <?php include __DIR__ . '/admin_sidebar.php'; ?>
 
-  <div class="px-5 max-w-[1600px] mx-auto w-full">
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4 page-hero admin-glass-hero">
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
-          <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-diagram-3"></i></span>
-          <span>Question Bank</span>
-        </h1>
-        <p class="admin-page-header__subtitle">Upload a Word .docx with numbered MCQs, group by topic, and export JSON / HTML / Word.</p>
-      </div>
-    </div>
-    <?php if ($uiPayload && !empty($uiPayload['meta'])): ?>
-    <div class="flex flex-wrap items-center gap-2 mt-4">
-      <span class="preweek-stat-pill" title="Questions parsed"><i class="bi bi-list-ol text-sky-400"></i> <?php echo (int)($uiPayload['meta']['question_count'] ?? 0); ?> questions</span>
-      <span class="preweek-stat-pill" title="Topic groups"><i class="bi bi-folder2-open text-amber-300"></i> <?php echo (int)($uiPayload['meta']['topic_count'] ?? 0); ?> topics</span>
-      <span class="preweek-stat-pill" title="Paragraphs read"><i class="bi bi-text-paragraph text-violet-300"></i> <?php echo (int)($uiPayload['meta']['paragraph_count'] ?? 0); ?> paragraphs</span>
-      <?php
-      $__gpHero = (int)($uiPayload['meta']['general_problem_count'] ?? 0);
-      if ($__gpHero === 0 && !empty($uiPayload['general_problems'])) {
-          $__gpHero = count($uiPayload['general_problems']);
-      }
-      ?>
-      <?php if ($__gpHero > 0): ?>
-      <span class="preweek-stat-pill" title="Shared case text (not counted as questions)"><i class="bi bi-journal-text text-sky-300"></i> <?php echo $__gpHero; ?> general problems</span>
-      <?php endif; ?>
-    </div>
-    <?php endif; ?>
-  </div>
+  <div class="w-full">
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if ($parseError): ?>
     <div class="quiz-admin-alert quiz-admin-alert--error mb-4 flex items-center gap-2" role="alert">

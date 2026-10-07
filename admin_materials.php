@@ -465,10 +465,24 @@ if ($searchQ === '') {
     );
 }
 $pageTitle = 'Materials - ' . $lesson['title'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($lesson['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], [ h($lesson['title']), 'admin_lessons?subject_id=' . $subjectId ], ['Materials'] ];
+$lessonsListUrl = 'admin_lessons?subject_id=' . (int) $subjectId;
+$adminBreadcrumbs = [
+    ['Content Hub', 'admin_subjects'],
+    [(string) $lesson['subject_name'], $lessonsListUrl],
+    ['Lessons', $lessonsListUrl],
+    [(string) $lesson['title']],
+    ['Materials'],
+];
 $materialsUploadMaxLabel = ini_get('upload_max_filesize') ?: '-';
 $materialsPostMaxLabel = ini_get('post_max_size') ?: '-';
 $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUploadMaxLabel);
+$adminHeroIcon = 'folder-plus';
+$adminHeroEyebrow = 'Content Hub / ' . (string) $lesson['subject_name'] . ' / Lesson';
+$adminHeroTitle = 'Materials';
+$adminHeroSubtitle = (string) $lesson['title'];
+$adminHeroActions = '';
+$adminBackHref = $lessonsListUrl;
+$adminBackLabel = 'Back to Lessons';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -484,23 +498,23 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
       border-radius: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.01em;
-      border: 1px solid rgba(16, 185, 129, 0.45);
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
       color: #ffffff;
-      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.26), inset 0 1px 0 rgba(255,255,255,0.2);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28), inset 0 1px 0 rgba(255,255,255,0.2);
       transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     }
     .admin-materials-submit-btn:hover {
       transform: translateY(-1px);
       filter: brightness(1.04);
-      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.32), inset 0 1px 0 rgba(255,255,255,0.25);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32), inset 0 1px 0 rgba(255,255,255,0.25);
     }
     .admin-materials-submit-btn:active {
       transform: translateY(0);
     }
     .admin-materials-submit-btn:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25), 0 8px 20px rgba(16, 185, 129, 0.28);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 8px 20px rgba(37, 99, 235, 0.28);
     }
 
     .admin-upload-input {
@@ -538,51 +552,37 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
 <body class="font-sans antialiased admin-app admin-materials-page" x-data="{ uploadType: 'url' }">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5 page-hero admin-glass-hero">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <?php if (!empty($materialsFlash['errors'])): ?>
-      <div class="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-red-100">
-        <p class="font-semibold mb-1"><i class="bi bi-exclamation-triangle mr-1"></i>Upload failed</p>
-        <ul class="list-disc pl-5 space-y-1 text-sm">
-          <?php foreach ($materialsFlash['errors'] as $err): ?>
-            <li><?php echo h((string)$err); ?></li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
-    <?php endif; ?>
-    <?php if (!empty($materialsFlash['successes'])): ?>
-      <div class="mb-4 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-4 py-3 text-emerald-100">
-        <p class="font-semibold mb-1"><i class="bi bi-check-circle mr-1"></i>Success</p>
-        <ul class="list-disc pl-5 space-y-1 text-sm">
-          <?php foreach ($materialsFlash['successes'] as $ok): ?>
-            <li><?php echo h((string)$ok); ?></li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
-    <?php endif; ?>
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
-          <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-folder-plus"></i></span>
-          <span>Materials - <?php echo h($lesson['title']); ?></span>
-        </h1>
-        <p class="admin-page-header__subtitle"><?php echo h($lesson['subject_name']); ?> · Videos and handouts for this lesson</p>
-      </div>
-      <div class="admin-page-header__actions">
-        <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Lessons</a>
-      </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
+  <?php if (!empty($materialsFlash['errors'])): ?>
+    <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-800">
+      <p class="font-semibold mb-1"><i class="bi bi-exclamation-triangle mr-1"></i>Upload failed</p>
+      <ul class="list-disc pl-5 space-y-1 text-sm">
+        <?php foreach ($materialsFlash['errors'] as $err): ?>
+          <li><?php echo h((string)$err); ?></li>
+        <?php endforeach; ?>
+      </ul>
     </div>
-  </div>
+  <?php endif; ?>
+  <?php if (!empty($materialsFlash['successes'])): ?>
+    <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+      <p class="font-semibold mb-1"><i class="bi bi-check-circle mr-1"></i>Success</p>
+      <ul class="list-disc pl-5 space-y-1 text-sm">
+        <?php foreach ($materialsFlash['successes'] as $ok): ?>
+          <li><?php echo h((string)$ok); ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  <?php endif; ?>
 
-  <form method="get" action="admin_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-2xl border border-white/80 bg-white/90 shadow-[0_10px_30px_rgba(15,23,42,0.07),0_2px_10px_rgba(37,99,235,0.05)] backdrop-blur-lg px-4 py-2.5 mb-4 flex flex-wrap items-end gap-2">
     <input type="hidden" name="lesson_id" value="<?php echo (int)$lessonId; ?>">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-    <div class="flex-1 min-w-[200px]">
-      <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
+    <div class="flex-1 min-w-[180px]">
+      <label for="mat-search-q" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Search</label>
       <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search video or handout titles..." class="input-custom w-full" autocomplete="off">
     </div>
-    <div class="w-full sm:w-44">
-      <label for="mat-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Show</label>
+    <div class="w-full sm:w-40">
+      <label for="mat-search-type" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Show</label>
       <select id="mat-search-type" name="type" class="input-custom w-full">
         <option value=""<?php echo $matType === '' ? ' selected' : ''; ?>>Videos &amp; handouts</option>
         <option value="videos"<?php echo $matType === 'videos' ? ' selected' : ''; ?>>Videos only</option>
@@ -599,34 +599,33 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
 
   <div class="<?php echo ($showVideos && $showHandouts) ? 'grid grid-cols-1 lg:grid-cols-2 gap-5' : 'grid grid-cols-1 gap-5'; ?>">
     <?php if ($showVideos): ?>
-    <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-      <div class="quiz-admin-table-head px-5 py-4 flex flex-wrap justify-between items-center gap-2">
-        <span class="font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-play-circle text-sky-400"></i> Videos</span>
+    <div class="quiz-admin-table-shell overflow-hidden rounded-2xl border border-blue-100/80 bg-white/95 p-0 shadow-[0_10px_30px_rgba(15,23,42,0.07),0_2px_10px_rgba(37,99,235,0.08)] backdrop-blur-xl ring-1 ring-white/60">
+      <div class="quiz-admin-table-head px-5 py-3.5 flex flex-wrap justify-between items-center gap-2 border-b border-blue-100/80 bg-gradient-to-r from-blue-50 via-white to-white">
+        <span class="font-semibold text-slate-900 flex items-center gap-2"><span class="lms-icon-tile inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 shadow-sm ring-1 ring-white"><i class="bi bi-play-circle"></i></span> Videos <span class="text-[10px] font-bold uppercase tracking-wide text-blue-600/70">Media</span></span>
         <div class="flex flex-wrap items-center gap-2">
-          <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_all_thumbs=1" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-sky-400/45 text-sky-200 hover:bg-sky-500/20 hover:text-white transition"><i class="bi bi-arrow-repeat mr-1"></i> Refresh Thumbnails</a>
-          <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="text-sm px-3 py-1.5 rounded-lg font-medium border border-white/18 text-gray-300 hover:bg-white/10 hover:text-white transition">Back to Lessons</a>
+          <a href="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>&refresh_all_thumbs=1" class="admin-btn admin-btn--secondary text-sm px-3 py-1.5"><i class="bi bi-arrow-repeat mr-1"></i> Refresh Thumbnails</a>
         </div>
       </div>
       <div class="p-5 materials-panel-inner">
-        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4">
+        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4 rounded-xl border border-blue-100/80 bg-gradient-to-br from-blue-50/50 to-white p-4">
           <input type="hidden" name="type" value="video">
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Title</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
             <input type="text" name="video_title" id="videoTitleInput" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Upload Type</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Upload Type</label>
             <select name="upload_type" x-model="uploadType" class="input-custom">
               <option value="url">URL (YouTube/Vimeo/Link)</option>
               <option value="file">Upload Video File</option>
             </select>
           </div>
           <div x-show="uploadType === 'url'" x-cloak>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Video URL</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Video URL</label>
             <input type="url" name="video_url" class="input-custom" placeholder="https://...">
           </div>
           <div x-show="uploadType === 'file'" x-cloak>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Upload Video File</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Upload Video File</label>
             <input type="file" name="video_file" id="videoFileInput" class="input-custom admin-upload-input" accept="video/*">
           </div>
           <button type="submit" class="admin-materials-submit-btn"><i class="bi bi-plus-circle"></i><span>Add Video</span></button>
@@ -635,10 +634,10 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
           <table class="materials-data-table w-full text-left">
             <thead>
               <tr>
-                <th class="px-5 py-3 font-semibold text-center">Title</th>
-                <th class="px-5 py-3 font-semibold text-center">URL</th>
-                <th class="px-5 py-3 font-semibold text-center">Thumbnail</th>
-                <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">URL</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">Thumbnail</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center w-[120px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -650,16 +649,19 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                 <?php mysqli_data_seek($videos, 0); while ($v = mysqli_fetch_assoc($videos)): ?>
                 <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
-                    <div class="font-semibold text-gray-100"><?php echo h($v['video_title']); ?></div>
+                    <div class="inline-flex items-center gap-2 font-semibold text-slate-900">
+                      <span class="lms-icon-tile bg-sky-50 text-sky-600" style="width:1.75rem;height:1.75rem;border-radius:0.5rem;font-size:0.8rem"><i class="bi bi-play-btn"></i></span>
+                      <?php echo h($v['video_title']); ?>
+                    </div>
                   </td>
                   <td class="px-5 py-3 text-center max-w-[260px] truncate">
                     <a href="<?php echo h($v['video_url']); ?>" target="_blank" class="mat-link-open inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold border transition"><i class="bi bi-box-arrow-up-right"></i> Open</a>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <?php if (!empty($v['thumbnail_url'])): ?>
-                      <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/35">Ready</span>
+                      <span class="admin-status-pill admin-status-pill--approved">Ready</span>
                     <?php else: ?>
-                      <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-200 border border-amber-500/35">Fallback</span>
+                      <span class="admin-status-pill admin-status-pill--pending">Fallback</span>
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
@@ -676,9 +678,12 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                 </tr>
                 <?php endwhile; ?>
               <?php elseif ($videosOk): ?>
-                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500">
+                  <span class="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600"><i class="bi bi-play-circle"></i></span>
+                  <div class="text-sm font-semibold text-slate-700"><?php echo $searchQ !== '' ? 'No videos match your search.' : 'No videos yet.'; ?></div>
+                </td></tr>
               <?php else: ?>
-                <tr><td colspan="4" class="px-5 py-14 text-center text-red-300">Could not load videos (database error). Check that the <code class="text-xs">lesson_videos</code> table exists.</td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-rose-600">Could not load videos (database error). Check that the <code class="text-xs">lesson_videos</code> table exists.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -688,24 +693,24 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
     <?php endif; ?>
 
     <?php if ($showHandouts): ?>
-    <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-      <div class="quiz-admin-table-head px-5 py-4 font-semibold text-gray-100 flex items-center gap-2"><i class="bi bi-file-earmark-pdf text-amber-300"></i> Handouts</div>
+    <div class="quiz-admin-table-shell overflow-hidden rounded-2xl border border-violet-100/80 bg-white/95 p-0 shadow-[0_10px_30px_rgba(15,23,42,0.07),0_2px_10px_rgba(139,92,246,0.08)] backdrop-blur-xl ring-1 ring-white/60">
+      <div class="quiz-admin-table-head px-5 py-3.5 font-semibold text-slate-900 flex items-center gap-2 border-b border-violet-100/80 bg-gradient-to-r from-violet-50 via-white to-white"><span class="lms-icon-tile inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-violet-50 text-violet-600 shadow-sm ring-1 ring-white"><i class="bi bi-file-earmark-pdf"></i></span> Handouts <span class="ml-auto text-[10px] font-bold uppercase tracking-wide text-violet-600/70">Documents</span></div>
       <div class="p-5 materials-panel-inner">
-        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4">
+        <form method="POST" action="<?php echo h(admin_materials_list_url($lessonId, $subjectId)); ?>" enctype="multipart/form-data" class="space-y-3 mb-4 rounded-xl border border-violet-100/80 bg-gradient-to-br from-violet-50/50 to-white p-4">
           <input type="hidden" name="type" value="handout">
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Title</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
             <input type="text" name="handout_title" id="handoutTitleInput" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Upload File (PDF, DOC, PPT, etc.)</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Upload File (PDF, DOC, PPT, etc.)</label>
             <input type="file" name="handout_file" id="handoutFileInput" class="input-custom admin-upload-input" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" required data-max-bytes="<?php echo (int)$materialsUploadMaxBytes; ?>" data-max-label="<?php echo h($materialsUploadMaxLabel); ?>">
-            <p class="text-xs text-gray-500 mt-1.5 mb-0">Max file size on this server: <span class="text-gray-300 font-medium"><?php echo h($materialsUploadMaxLabel); ?></span> (post limit <?php echo h($materialsPostMaxLabel); ?>). Larger files will be rejected by PHP before upload finishes.</p>
-            <p id="handoutUploadHint" class="text-xs text-amber-400 mt-1 mb-0 hidden" role="alert"></p>
+            <p class="text-xs text-slate-500 mt-1.5 mb-0">Max file size on this server: <span class="text-slate-700 font-medium"><?php echo h($materialsUploadMaxLabel); ?></span> (post limit <?php echo h($materialsPostMaxLabel); ?>). Larger files will be rejected by PHP before upload finishes.</p>
+            <p id="handoutUploadHint" class="text-xs text-rose-600 mt-1 mb-0 hidden" role="alert"></p>
           </div>
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="rounded border-white/20 text-emerald-500 focus:ring-emerald-500 bg-[#1a1a1a]">
-            <label for="allowDownloadHandout" class="text-sm font-medium text-gray-300">Allow students to download</label>
+            <input type="checkbox" id="allowDownloadHandout" name="allow_download" value="1" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 bg-white">
+            <label for="allowDownloadHandout" class="text-sm font-medium text-slate-700">Allow students to download</label>
           </div>
           <button type="submit" class="admin-materials-submit-btn"><i class="bi bi-cloud-upload"></i><span>Upload Handout</span></button>
         </form>
@@ -713,10 +718,10 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
           <table class="materials-data-table w-full text-left">
             <thead>
               <tr>
-                <th class="px-5 py-3 font-semibold text-center">Title</th>
-                <th class="px-5 py-3 font-semibold text-center">File</th>
-                <th class="px-5 py-3 font-semibold text-center">Downloads</th>
-                <th class="px-5 py-3 font-semibold text-center w-[120px]">Actions</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">Title</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">File</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center">Downloads</th>
+                <th class="px-5 py-3 font-semibold text-slate-900 text-center w-[120px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -728,7 +733,10 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                 <?php mysqli_data_seek($handouts, 0); while ($h = mysqli_fetch_assoc($handouts)): ?>
                 <tr class="materials-data-row">
                   <td class="px-5 py-3 text-center">
-                    <div class="font-semibold text-gray-100"><?php echo h($h['handout_title'] ?: 'Untitled'); ?></div>
+                    <div class="inline-flex items-center gap-2 font-semibold text-slate-900">
+                      <span class="lms-icon-tile bg-violet-50 text-violet-600" style="width:1.75rem;height:1.75rem;border-radius:0.5rem;font-size:0.8rem"><i class="bi bi-file-earmark-text"></i></span>
+                      <?php echo h($h['handout_title'] ?: 'Untitled'); ?>
+                    </div>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <?php if (!empty($h['file_path'])): ?>
@@ -738,8 +746,8 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                     <?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
-                    <?php if (!empty($h['allow_download'])): ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/35">Allowed</span>
-                    <?php else: ?><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-gray-400 border border-white/15">Locked</span><?php endif; ?>
+                    <?php if (!empty($h['allow_download'])): ?><span class="admin-status-pill admin-status-pill--approved">Allowed</span>
+                    <?php else: ?><span class="admin-status-pill admin-status-pill--inactive">Locked</span><?php endif; ?>
                   </td>
                   <td class="px-5 py-3 text-center">
                     <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
@@ -755,9 +763,12 @@ $materialsUploadMaxBytes = adminMaterialsParseSizeToBytes((string)$materialsUplo
                 </tr>
                 <?php endwhile; ?>
               <?php elseif ($handoutsOk): ?>
-                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500"><?php echo $searchQ !== '' ? 'No handouts match your search.' : 'No handouts yet.'; ?></td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-gray-500">
+                  <span class="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><i class="bi bi-file-earmark-pdf"></i></span>
+                  <div class="text-sm font-semibold text-slate-700"><?php echo $searchQ !== '' ? 'No handouts match your search.' : 'No handouts yet.'; ?></div>
+                </td></tr>
               <?php else: ?>
-                <tr><td colspan="4" class="px-5 py-14 text-center text-red-300">Could not load handouts (database error). Check that the <code class="text-xs">lesson_handouts</code> table exists.</td></tr>
+                <tr><td colspan="4" class="px-5 py-14 text-center text-rose-600">Could not load handouts (database error). Check that the <code class="text-xs">lesson_handouts</code> table exists.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>

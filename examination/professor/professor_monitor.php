@@ -39,17 +39,22 @@ if ($s) {
 }
 
 $pageTitle = 'Monitor';
+$professorFeatureHero = true;
 $adminHeroIcon = 'graph-up';
+$adminHeroEyebrow = 'Live operations';
 $adminHeroTitle = 'Activity monitor';
 $adminHeroSubtitle = 'Recent exam participation and file submissions across your account.';
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examination_monitor"><i class="bi bi-speedometer2"></i> Examination monitor</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Monitoring', 'professor_examination_monitor'], ['Activity']];
+$adminBackHref = 'professor_examination_monitor';
+$adminBackLabel = 'Back to Monitoring';
+$adminHeroActions = '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>

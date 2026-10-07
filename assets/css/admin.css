@@ -9,21 +9,20 @@
 
 /* --- Base: true black, high contrast --- */
 html:not([data-admin-theme="light"]) body.admin-app {
-  background: #0d0d0d;
-  color: #a1a1aa;
+  background: var(--app-canvas, #0B1118);
+  color: var(--text-secondary, #9aa8b8);
   font-weight: 400;
-  overflow-x: hidden;
 }
 
 html:not([data-admin-theme="light"]) body.admin-app #main {
-  background: #0d0d0d !important;
-  color: #a1a1aa !important;
+  background: transparent !important;
+  color: var(--text-secondary, #9aa8b8) !important;
 }
 
 /* --- Sidebar: Grok-like elevation, crisp --- */
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar {
-  background: #0a0a0a !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--sidebar-surface, #161c22) !important;
+  border-right: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10)) !important;
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.5);
   transition: box-shadow 0.2s ease;
   /* Breathing room above OS / browser edge (h-screen is flush to 100vh otherwise) */
@@ -34,16 +33,10 @@ html:not([data-admin-theme="light"]) body.admin-app #app-sidebar {
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .p-5.bg-white\/10 {
   background: transparent !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  padding-top: 1.25rem !important;
-  padding-bottom: 1.25rem !important;
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
 }
 
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .p-5.bg-white\/10 h3 {
   font-weight: 600 !important;
-  letter-spacing: 0.025em;
-  font-size: 1rem;
   color: #fff !important;
 }
 
@@ -54,14 +47,7 @@ body.admin-app #app-sidebar nav {
 
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a {
   color: rgba(255, 255, 255, 0.65);
-  border-left: 3px solid transparent;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a:hover {
@@ -73,12 +59,7 @@ html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a:hover {
 /* Grok-style active: thin white left bar + subtle tint, text stays white */
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a.bg-white\/15,
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar nav a[class*="border-l-white"] {
-  background: rgba(255, 255, 255, 0.06) !important;
   color: #ffffff !important;
-  border-left-width: 2px !important;
-  border-left-style: solid !important;
-  border-left-color: #ffffff !important;
-  font-weight: 600;
 }
 
 body.admin-app #app-sidebar nav a.bg-white\/15 .bi,
@@ -90,8 +71,8 @@ body.admin-app #app-sidebar nav a[class*="border-l-white"] span {
 
 /* --- Topbar: aligned with sidebar, same design language --- */
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar {
-  background: #0a0a0a !important;
-  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  background: transparent !important;
+  border-bottom-color: var(--glass-border, rgba(255, 255, 255, 0.10)) !important;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar .text-white\/90 {
   color: rgba(255, 255, 255, 0.9) !important;
@@ -108,20 +89,7 @@ body.admin-app .admin-topbar-modern {
   margin-right: 0;
 }
 /* Dark topbar uses the same floating glass layout as light (see admin-saas.css). */
-html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-modern .admin-topbar-inner {
-  min-height: 3.6rem;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: nowrap;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
+/* Dark topbar inner geometry is owned by shared saas/premium rules. */
 body.admin-app .admin-topbar-left {
   display: flex;
   align-items: center;
@@ -145,23 +113,16 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-brand:hover {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   color: rgba(255, 255, 255, 0.7);
   background: transparent;
   border: 1px solid transparent;
-  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  transform: scale(1.04);
 }
 body.admin-app .admin-topbar-menu-btn:active { transform: scale(0.96); }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-menu-btn:focus-visible {
@@ -187,10 +148,6 @@ body.admin-app .admin-topbar-menu-btn .burger-line--2 { top: 50%; transform: tra
 body.admin-app .admin-topbar-menu-btn .burger-line--3 { top: 100%; transform: translateY(-100%); }
 
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -202,24 +159,14 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap.is
   box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255,255,255,0.5);
-  font-size: 1.1rem;
-  pointer-events: none;
+  color: rgba(255, 255, 255, 0.5);
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search {
-  width: 100%;
-  padding: 12px 16px 12px 44px;
   border: none;
-  border-radius: 12px;
   background: transparent;
-  color: rgba(255,255,255,0.9);
-  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.9);
 }
-html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search::placeholder { color: rgba(255,255,255,0.45); }
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search::placeholder { color: var(--text-disabled); }
 body.admin-app .admin-topbar-search:focus { outline: none; }
 
 body.admin-app .admin-topbar-right {
@@ -231,24 +178,11 @@ body.admin-app .admin-topbar-right {
   justify-content: flex-end;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.10);
   color: rgba(255,255,255,0.85);
-  font-size: 0.8125rem;
-  white-space: nowrap;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-time-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   background: rgba(255,255,255,0.10);
   color: rgba(255,255,255,0.9);
 }
@@ -317,35 +251,28 @@ html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-side
   fill: rgba(255, 255, 255, 0.95);
 }
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-label {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--text-muted);
 }
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-digital {
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-primary);
 }
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-date {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text-secondary);
 }
 html:not([data-admin-theme="light"]) body.admin-app #app-sidebar .app-shell-sidebar-time-meta {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
 
 body.admin-app .admin-topbar-actions { display: flex; align-items: center; gap: 4px; }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-action {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   color: rgba(255,255,255,0.65);
   background: transparent;
-  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-action:hover {
   color: #ffffff;
   background: rgba(255,255,255,0.08);
   box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-  transform: translateY(-2px);
 }
 body.admin-app .admin-topbar-action i { font-size: 1.25rem; }
 
@@ -369,20 +296,10 @@ body.admin-app .admin-topbar-profile-btn {
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-profile-btn:hover {
   background: rgba(255,255,255,0.06);
   box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-  transform: scale(1.01);
 }
 html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 800;
-  color: #0a0a0a;
-  background: #ffffff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  background: linear-gradient(135deg, var(--accent-nav-from, #246bfd), var(--accent-nav-to, #7657f6));
+  color: #fff;
 }
 body.admin-app .admin-topbar-name {
   font-size: 0.875rem;
@@ -473,7 +390,7 @@ html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-dropdown.erevi
   padding: 0;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(165deg, #141414 0%, #0a0a0a 55%, #050505 100%);
+  background: var(--glass-surface-fill, linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.035))), var(--glass-surface-strong, #161c22);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.65),
     0 0 0 1px rgba(255, 255, 255, 0.06) inset;
@@ -601,7 +518,7 @@ body.admin-app #app-sidebar .admin-sidebar-footer span {
 }
 /* Expanded overlay */
 body.admin-app.sidebar-expanded #app-sidebar {
-  width: 240px;
+  width: 232px;
 }
 body.admin-app.sidebar-expanded #app-sidebar .admin-sidebar-brand {
   display: flex;
@@ -634,41 +551,35 @@ body.admin-app #sidebar-backdrop {
   opacity: 0;
   pointer-events: none;
   transition: none;
-  z-index: 900;
+  z-index: 25;
 }
 body.admin-app.sidebar-expanded #sidebar-backdrop {
   opacity: 0;
   pointer-events: none;
 }
 
-/* Admin content: add left/right margin and center */
+/* Admin content width is owned by .page-content (see admin-premium layout block). */
 body.admin-app #main .admin-content {
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
   max-width: none;
   margin-left: 0;
   margin-right: 0;
 }
 
-/* Main layout: leave room for collapsed rail so content isn't covered */
-body.admin-app #main {
-  margin-left: 64px;
-}
-
-/* When expanded, shift content (no overlap) - matches student rail widths */
+/* In-flow sticky sidebar: main no longer needs a left offset. */
+body.admin-app #main,
 body.admin-app.sidebar-expanded #main {
-  margin-left: 240px;
+  margin-left: 0;
 }
 
 body.admin-app #main {
-  transition: margin-left 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* --- Cards: Grok-style, border-only, no shadow --- */
 html:not([data-admin-theme="light"]) body.admin-app #main .bg-white {
-  background: #141414 !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  box-shadow: none;
+  background: var(--glass-surface, #161c22) !important;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10)) !important;
+  box-shadow: var(--shadow-card, none);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -678,7 +589,7 @@ body.admin-app #main .shadow-card {
 
 /* Some pages use light gradient wrappers; force dark in admin mode for contrast */
 html:not([data-admin-theme="light"]) body.admin-app #main .bg-gradient-to-b {
-  background: #141414 !important;
+  background: var(--glass-surface, #161c22) !important;
 }
 
 body.admin-app #main .to-white,
@@ -689,15 +600,15 @@ body.admin-app #main .bg-\[\#e8f2fa\]\/70 {
 
 /* Dashboard stat cards: subtle hover (reference "slight brightening / faint border glow") */
 html:not([data-admin-theme="light"]) body.admin-app #main .grid .bg-white.rounded-xl.shadow-card:hover {
-  background: #1a1a1a !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: var(--glass-surface-strong, #1a2228) !important;
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.12)) !important;
 }
 
 /* --- Dashboard cards: neutral default, semantic hover (outline + accent) --- */
 /* Modern palette: green #22c55e, amber #f59e0b, red #ef4444, Subjects=blue #0ea5e9, Lessons=yellow #FBEC52, violet #8b5cf6 */
 html:not([data-admin-theme="light"]) body.admin-app #main .dashboard-card {
-  background: #141414 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--glass-surface, #161c22) !important;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.10)) !important;
   border-left-width: 1px !important;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }

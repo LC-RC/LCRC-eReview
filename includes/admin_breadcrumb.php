@@ -8,8 +8,8 @@ if (empty($adminBreadcrumbs) || !is_array($adminBreadcrumbs)) {
   return;
 }
 ?>
-<nav class="admin-breadcrumb mb-3" aria-label="Breadcrumb">
-  <ol class="flex flex-wrap items-center gap-1.5 text-sm">
+<nav class="admin-breadcrumb" aria-label="Breadcrumb">
+  <ol class="flex flex-wrap items-center gap-1">
     <?php
     $last = count($adminBreadcrumbs) - 1;
     foreach ($adminBreadcrumbs as $i => $item) {
@@ -21,9 +21,9 @@ if (empty($adminBreadcrumbs) || !is_array($adminBreadcrumbs)) {
       }
       echo '<li>';
       if ($url && !$current) {
-        echo '<a href="' . h($url) . '" class="text-primary hover:underline">' . h($label) . '</a>';
+        echo '<a href="' . h($url) . '" class="admin-breadcrumb__link">' . h($label) . '</a>';
       } else {
-        echo '<span class="' . ($current ? 'admin-breadcrumb-current text-gray-400' : '') . '">' . h($label) . '</span>';
+        echo '<span class="' . ($current ? 'admin-breadcrumb-current' : '') . '">' . h($label) . '</span>';
       }
       echo '</li>';
     }

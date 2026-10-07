@@ -87,14 +87,10 @@ $appShellNavConfig = [
     [
         'label' => 'Content',
         'items' => [
-            ['label' => 'Subjects', 'href' => 'admin_subjects', 'icon' => 'bi-book', 'title' => 'Subjects', 'active' => ['admin_subjects'], 'acl_key' => 'subjects'],
-            ['label' => 'Modules', 'href' => 'admin_modules', 'icon' => 'bi-toggles', 'title' => 'Enable or disable student modules (e.g. CPA Playground)', 'active' => ['admin_modules'], 'acl_key' => 'subjects'],
-            ['label' => 'Lessons', 'href' => 'admin_lessons', 'icon' => 'bi-journal-text', 'title' => 'Lessons / topics', 'active' => ['admin_lessons'], 'acl_key' => 'lessons'],
-            ['label' => 'Videos', 'href' => 'admin_videos', 'icon' => 'bi-camera-video', 'title' => 'Lesson videos', 'active' => ['admin_videos'], 'acl_key' => 'videos'],
-            ['label' => 'Handouts', 'href' => 'admin_handouts', 'icon' => 'bi-file-earmark-text', 'title' => 'Lesson handouts', 'active' => ['admin_handouts'], 'acl_key' => 'handouts'],
-            ['label' => 'Materials', 'href' => 'admin_materials', 'icon' => 'bi-folder2-open', 'title' => 'Course materials uploads', 'active' => ['admin_materials'], 'acl_key' => 'materials'],
+            ['label' => 'Content Hub', 'href' => 'admin_subjects', 'icon' => 'bi-book', 'title' => 'Subjects, lessons, and lesson materials', 'active' => ['admin_subjects', 'admin_lessons', 'admin_materials', 'admin_videos', 'admin_handouts'], 'acl_key' => 'subjects'],
             ['label' => 'Quizzes', 'href' => 'admin_quizzes', 'icon' => 'bi-ui-checks-grid', 'title' => 'Quizzes and questions', 'active' => ['admin_quizzes', 'admin_quiz_questions', 'admin_quiz_monitor', 'admin_quiz_attempt_review'], 'acl_key' => 'quizzes'],
-            ['label' => 'Test Bank', 'href' => 'admin_test_bank', 'icon' => 'bi-collection', 'title' => 'Test bank', 'active' => ['admin_test_bank'], 'acl_key' => 'test_bank'],
+            ['label' => 'Test Bank', 'href' => 'admin_test_bank', 'icon' => 'bi-collection', 'title' => 'Subject review files (open a subject from Content Hub)', 'active' => ['admin_test_bank'], 'acl_key' => 'test_bank'],
+            ['label' => 'Modules', 'href' => 'admin_modules', 'icon' => 'bi-toggles', 'title' => 'Student feature flags (not curriculum). Example: CPA Playground.', 'active' => ['admin_modules'], 'acl_key' => 'subjects'],
         ],
     ],
     [

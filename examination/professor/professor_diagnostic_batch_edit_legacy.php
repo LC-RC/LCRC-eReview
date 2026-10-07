@@ -180,9 +180,13 @@ foreach ($suggestedSections as $sg) {
     $sectionSelectOptionsHtml .= '<option value="' . h($sg) . '">' . h($sg) . '</option>';
 }
 $adminHeroIcon = 'clipboard2-pulse';
+$professorFeatureHero = true;
 $adminHeroTitle = $batch ? 'Edit diagnostic batch' : 'New diagnostic batch';
 $adminHeroSubtitle = 'Configure subjects, sections, and questions for one multi-subject diagnostic.';
-$adminHeroActions = '<a href="professor_diagnostic_batches" class="admin-btn admin-btn--ghost"><i class="bi bi-arrow-left"></i> Back to list</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], ['Diagnostic']];
+$adminBackHref = 'professor_examinations';
+$adminBackLabel = 'Back to Examinations';
+$adminHeroActions = '';
 if ($batchId > 0) {
     $adminHeroActions .= ' <a href="professor_diagnostic_monitor?batch_id=' . (int) $batchId . '" class="admin-btn admin-btn--primary"><i class="bi bi-eye"></i> Monitor</a>';
 }
@@ -200,7 +204,7 @@ if ($batchId > 0) {
     .section-row select { flex: 1; }
   </style>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
 <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 

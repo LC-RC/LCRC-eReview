@@ -138,14 +138,17 @@ function examination_monitor_load_context(mysqli $conn, int $professorId, string
         if (!$row) {
             return null;
         }
-        $qCount = 0;
+        $authoredCount = 0;
         $qc = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$assessmentId);
         if ($qc && ($qr = mysqli_fetch_assoc($qc))) {
-            $qCount = (int)($qr['c'] ?? 0);
+            $authoredCount = (int)($qr['c'] ?? 0);
         }
         if ($qc) {
             mysqli_free_result($qc);
         }
+        require_once __DIR__ . '/college_exam_attempt_paper.php';
+        $attemptLen = college_exam_configured_attempt_length($conn, (int)$assessmentId);
+        $qCount = $attemptLen > 0 ? $attemptLen : $authoredCount;
 
         return [
             'exam_type' => 'college_exam',
@@ -153,12 +156,13 @@ function examination_monitor_load_context(mysqli $conn, int $professorId, string
             'title' => (string)($row['title'] ?? ''),
             'row' => $row,
             'question_count' => $qCount,
+            'authored_question_count' => $authoredCount,
             'supports_live' => true,
             'supports_review_sheet' => true,
             'supports_pass_fail' => true,
             'supports_tab_tracking' => true,
-            'back_url' => 'professor_examinations',
-            'back_label' => 'Back to Examinations',
+            'back_url' => 'professor_examination_monitor',
+            'back_label' => 'Back to Monitoring',
             'subtitle' => 'Live monitoring for this examination.',
         ];
     }
@@ -179,8 +183,8 @@ function examination_monitor_load_context(mysqli $conn, int $professorId, string
         'supports_review_sheet' => false,
         'supports_pass_fail' => true,
         'supports_tab_tracking' => true,
-        'back_url' => 'professor_examinations',
-        'back_label' => 'Back to Examinations',
+        'back_url' => 'professor_examination_monitor',
+        'back_label' => 'Back to Monitoring',
         'subtitle' => diagnostic_exam_examinee_scope_label((string)($row['examinee_scope'] ?? 'college_student'))
             . ' · ' . diagnostic_exam_assignment_mode_label((string)($row['assignment_mode'] ?? 'sections')),
     ];

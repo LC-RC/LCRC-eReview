@@ -104,9 +104,12 @@ $deleteError = $_SESSION['section_delete_error'] ?? null;
 unset($_SESSION['section_delete_error']);
 
 $adminLoadStudentsCss = true;
+$professorFeatureHero = true;
 $adminHeroIcon = 'collection';
+$adminHeroEyebrow = 'Examination management';
 $adminHeroTitle = 'Sections';
-$adminHeroSubtitle = 'Manage the sections used for College Examination student profiles and exam audience assignments.';
+$adminHeroSubtitle = 'Manage examination sections and audience assignments.';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Sections']];
 $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="openAddSectionBtn"><i class="bi bi-plus-lg"></i> Add Section</button>';
 ?>
 <!DOCTYPE html>
@@ -114,7 +117,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--sections">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -131,6 +134,14 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
   <?php endif; ?>
 
   <div class="students-page-shell">
+    <div class="prof-workspace prof-workspace--registry">
+    <div class="prof-workspace__head">
+      <div>
+        <h2 class="prof-workspace__title">Section directory</h2>
+        <p class="prof-workspace__sub">Organize examination groups and audience assignments.</p>
+      </div>
+      <span class="prof-count"><?php echo count($rows); ?> section<?php echo count($rows) === 1 ? '' : 's'; ?></span>
+    </div>
     <div class="students-toolbar page-filter">
       <form method="get" class="students-toolbar__search">
         <div class="students-search">
@@ -147,14 +158,9 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
           <a href="professor_college_sections" class="students-clear-link">Clear</a>
         <?php endif; ?>
       </form>
-      <span class="students-toolbar__meta"><?php echo count($rows); ?> section<?php echo count($rows) === 1 ? '' : 's'; ?></span>
     </div>
 
-    <div class="rounded-xl page-table students-table-shell">
-      <div class="students-table-meta">
-        <span><?php echo count($rows); ?> section<?php echo count($rows) === 1 ? '' : 's'; ?></span>
-      </div>
-      <?php if ($rows === []): ?>
+    <?php if ($rows === []): ?>
         <div class="students-empty-cell" style="padding:3rem 1.5rem;">
           <div class="font-semibold text-lg mb-1">No sections found</div>
           <p class="text-sm mt-1 mb-3 opacity-80">Create a section to use it when enabling College Examination access or assigning exam audiences.</p>
@@ -186,19 +192,25 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                   $studentCount = (int) ($row['student_count'] ?? 0);
                   $examCount = (int) ($row['exam_count'] ?? 0);
                   $diagCount = (int) ($row['diag_count'] ?? 0);
+                  $secName = (string) $row['section_name'];
                 ?>
                 <tr>
-                  <td class="pcs-primary-cell font-semibold" data-label="Section"><?php echo h((string) $row['section_name']); ?></td>
+                  <td class="pcs-primary-cell" data-label="Section">
+                    <div class="prof-section-id">
+                      <span class="prof-section-id__glyph" aria-hidden="true"><i class="bi bi-folder2"></i></span>
+                      <span class="prof-section-id__name"><?php echo h($secName); ?></span>
+                    </div>
+                  </td>
                   <td class="pcs-badge-cell" data-label="Status">
                     <span class="commerce-pill <?php echo $isActive ? 'commerce-pill--verified' : 'commerce-pill--awaiting'; ?>">
                       <?php echo $isActive ? 'Active' : 'Inactive'; ?>
                     </span>
                   </td>
                   <td class="pcs-meta-cell" data-label="Students">
-                    <span class="font-semibold"><?php echo $studentCount; ?></span>
-                    <?php if ($examCount > 0 || $diagCount > 0): ?>
-                      <span class="section-count-meta"><?php echo $examCount; ?> exam<?php echo $examCount === 1 ? '' : 's'; ?> | <?php echo $diagCount; ?> diagnostic<?php echo $diagCount === 1 ? '' : 's'; ?></span>
-                    <?php endif; ?>
+                    <div class="prof-section-count">
+                      <span class="prof-section-count__n"><?php echo $studentCount; ?> student<?php echo $studentCount === 1 ? '' : 's'; ?></span>
+                      <span class="prof-section-count__meta"><?php echo $examCount; ?> exam<?php echo $examCount === 1 ? '' : 's'; ?> &middot; <?php echo $diagCount; ?> diagnostic<?php echo $diagCount === 1 ? '' : 's'; ?></span>
+                    </div>
                   </td>
                   <td class="student-action-cell" data-label="Actions">
                     <div class="student-action-cluster">

@@ -18,10 +18,13 @@ header('Content-Type: text/html; charset=UTF-8');
 <div class="admin-modal admin-modal--approve admin-modal--form admin-modal--examination-edit" role="dialog" aria-modal="true" aria-labelledby="examinationEditModalTitle">
   <div class="admin-modal__hero examination-edit-modal__hero">
     <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-journal-text"></i></span>
-    <div>
+    <div class="min-w-0 flex-1">
       <h3 id="examinationEditModalTitle" class="admin-modal__title"><?php echo h($modalTitle); ?></h3>
       <p class="admin-modal__desc"><?php echo h($modalSubtitle); ?></p>
     </div>
+    <button type="button" class="admin-modal__close" data-exam-edit-cancel aria-label="Close">
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
   </div>
   <?php require __DIR__ . '/examination_edit_config_form.php'; ?>
 </div>

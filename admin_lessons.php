@@ -213,7 +213,12 @@ if ($reorderStmt) {
 $totalLessonsAll = count($reorderRows);
 
 $pageTitle = 'Lessons - ' . $subject['subject_name'];
-$adminBreadcrumbs = [ ['Dashboard', 'admin_dashboard'], ['Content Hub', 'admin_subjects'], [ h($subject['subject_name']), 'admin_lessons?subject_id=' . $subjectId ], ['Lessons'] ];
+$lessonsListUrl = 'admin_lessons?subject_id=' . (int) $subjectId;
+$adminBreadcrumbs = [
+    ['Content Hub', 'admin_subjects'],
+    [(string) $subject['subject_name'], $lessonsListUrl],
+    ['Lessons'],
+];
 $listViewLabels = [
     'student' => 'Student order',
     'newest' => 'Newest → oldest',
@@ -232,12 +237,11 @@ $listViewLabels = [
 
   <?php
     $adminHeroIcon = 'file-text';
-    $adminHeroTitle = 'Lessons - ' . (string) $subject['subject_name'];
-    $adminHeroSubtitle = 'Create lessons, then open Materials to add videos and handouts.';
+    $adminHeroEyebrow = 'Content Hub / ' . (string) $subject['subject_name'];
+    $adminHeroTitle = 'Lessons';
+    $adminHeroSubtitle = 'Manage lessons for ' . (string) $subject['subject_name'] . '.';
     $adminHeroMeta = '<span class="quiz-admin-count-pill quiz-admin-count-pill--lessons">' . (int) $totalLessonsAll . ' lesson' . ((int) $totalLessonsAll === 1 ? '' : 's') . '</span>';
-    $adminHeroActions =
-      '<a href="admin_subjects" class="admin-btn admin-btn--secondary"><i class="bi bi-arrow-left"></i> Content Hub</a>'
-      . '<a href="admin_quizzes?subject_id=' . (int) $subjectId . '" class="admin-btn admin-btn--secondary"><i class="bi bi-question-circle"></i> Quizzes</a>';
+    $adminHeroActions = '';
     if ($totalLessonsAll > 1) {
         $adminHeroActions .= '<button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>';
     }
@@ -258,23 +262,23 @@ $listViewLabels = [
     </div>
   <?php endif; ?>
 
-  <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <form method="get" action="admin_lessons" class="admin-sticky-toolbar quiz-admin-filter px-4 py-3 flex flex-wrap items-end gap-3">
+  <div class="quiz-admin-table-shell overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_10px_30px_rgba(15,23,42,0.07),0_2px_10px_rgba(37,99,235,0.05)] backdrop-blur-lg">
+    <form method="get" action="admin_lessons" class="admin-sticky-toolbar quiz-admin-filter px-4 py-2.5 flex flex-wrap items-end gap-2 border-b border-slate-100/80 bg-white/60">
       <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
-      <div class="flex-1 min-w-[180px]">
-        <label for="lessons-search-q" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Search</label>
+      <div class="flex-1 min-w-[160px]">
+        <label for="lessons-search-q" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Search</label>
         <input type="search" id="lessons-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Search title or description..." class="input-custom w-full" autocomplete="off">
       </div>
-      <div class="min-w-[150px]">
-        <label for="lessons-view" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Sort list</label>
+      <div class="min-w-[140px]">
+        <label for="lessons-view" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Sort list</label>
         <select id="lessons-view" name="view" class="input-custom w-full">
           <?php foreach ($listViewLabels as $vk => $vl): ?>
             <option value="<?php echo h($vk); ?>" <?php echo $listView === $vk ? 'selected' : ''; ?>><?php echo h($vl); ?></option>
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="min-w-[150px]">
-        <label for="lessons-materials" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Materials</label>
+      <div class="min-w-[140px]">
+        <label for="lessons-materials" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Materials</label>
         <select id="lessons-materials" name="materials" class="input-custom w-full">
           <option value="all" <?php echo $materialsFilter === 'all' ? 'selected' : ''; ?>>All lessons</option>
           <option value="complete" <?php echo $materialsFilter === 'complete' ? 'selected' : ''; ?>>Has video + handout</option>
@@ -286,21 +290,18 @@ $listViewLabels = [
         <?php if ($searchQ !== '' || $listView !== 'student' || $materialsFilter !== 'all'): ?>
           <a href="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="admin-btn admin-btn--secondary">Clear</a>
         <?php endif; ?>
-        <?php if ($totalLessonsAll > 1): ?>
-          <button type="button" @click="openReorder()" class="admin-btn admin-btn--secondary"><i class="bi bi-arrows-move"></i> Reorder</button>
-        <?php endif; ?>
       </div>
-      <div class="w-full text-sm opacity-70">
+      <div class="w-full text-xs text-slate-500">
         <?php if ($totalLessons > 0): ?>
           Showing <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $totalLessons); ?> of <?php echo $totalLessons; ?>
           <span class="mx-1">·</span>
         <?php endif; ?>
-        Subject: <strong><?php echo h($subject['subject_name']); ?></strong>
+        Subject: <strong class="text-slate-900"><?php echo h($subject['subject_name']); ?></strong>
         <span class="mx-1">·</span>
-        List: <strong><?php echo h($listViewLabels[$listView] ?? 'Student order'); ?></strong>
+        List: <strong class="text-slate-900"><?php echo h($listViewLabels[$listView] ?? 'Student order'); ?></strong>
         <?php if ($listView !== 'student'): ?>
           <span class="mx-1">·</span>
-          <span class="text-amber-200/90">Browsing only — student order is unchanged until you use Reorder.</span>
+          <span class="text-amber-700">Browsing only — student order is unchanged until you use Reorder.</span>
         <?php endif; ?>
       </div>
     </form>
@@ -308,11 +309,11 @@ $listViewLabels = [
       <table class="quiz-admin-data-table admin-data-table w-full text-left">
         <thead>
           <tr>
-            <th class="px-3 py-3 font-semibold text-center w-[4.5rem]">#</th>
-            <th class="px-5 py-3 font-semibold admin-col-primary">Lesson</th>
-            <th class="px-5 py-3 font-semibold text-center">Videos</th>
-            <th class="px-5 py-3 font-semibold text-center">Handouts</th>
-            <th class="px-5 py-3 font-semibold text-center w-[220px]">Actions</th>
+            <th class="px-3 py-3 font-semibold text-slate-900 text-center w-[4.5rem] col-desktop">#</th>
+            <th class="px-5 py-3 font-semibold text-slate-900 admin-col-primary">Lesson</th>
+            <th class="px-5 py-3 font-semibold text-slate-900 text-center col-desktop">Videos</th>
+            <th class="px-5 py-3 font-semibold text-slate-900 text-center col-desktop">Handouts</th>
+            <th class="px-5 py-3 font-semibold text-slate-900 col-actions w-[220px]">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -323,35 +324,47 @@ $listViewLabels = [
             $hClass = $hCnt === 0 ? 'lesson-count-pill lesson-count-pill--warn' : 'lesson-count-pill lesson-count-pill--ok';
             $vTitle = $vCnt === 0 ? 'No videos yet - add via Materials' : $vCnt . ' video(s)';
             $hTitle = $hCnt === 0 ? 'No handouts yet - add via Materials' : $hCnt . ' handout(s)';
+            $materialsUrl = 'admin_materials?lesson_id=' . (int)$l['lesson_id'] . '&subject_id=' . (int)$subjectId;
             $displayOrd = (int)($l['sort_order'] ?? 0);
             if ($displayOrd <= 0) {
                 $displayOrd = $rowIndex;
             }
           ?>
             <tr class="quiz-admin-row">
-              <td class="px-3 py-3 text-center">
+              <td class="px-3 py-3 text-center col-desktop">
                 <span class="content-reorder-ord"><?php echo $displayOrd; ?></span>
               </td>
               <td class="px-5 py-3 admin-col-primary">
-                <div class="font-semibold"><?php echo h($l['title']); ?></div>
-                <?php if (!empty($l['description'])): ?>
-                  <div class="text-gray-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
-                <?php endif; ?>
+                <div class="flex items-start gap-3">
+                  <span class="lms-icon-tile bg-sky-50 text-sky-600" style="width:2.25rem;height:2.25rem;border-radius:0.65rem"><i class="bi bi-file-text"></i></span>
+                  <div class="min-w-0">
+                    <a href="<?php echo h($materialsUrl); ?>" class="lesson-title-link"><?php echo h($l['title']); ?></a>
+                    <?php if (!empty($l['description'])): ?>
+                      <div class="text-slate-500 text-sm mt-0.5"><?php echo h(mb_strimwidth($l['description'], 0, 90, '...')); ?></div>
+                    <?php endif; ?>
+                    <span class="lesson-row-mobile-meta"><?php echo $vCnt; ?> video<?php echo $vCnt === 1 ? '' : 's'; ?> · <?php echo $hCnt; ?> handout<?php echo $hCnt === 1 ? '' : 's'; ?></span>
+                  </div>
+                </div>
               </td>
-              <td class="px-5 py-3 text-center" title="<?php echo h($vTitle); ?>">
-                <span class="inline-flex min-w-[2.25rem] justify-center px-2.5 py-1 rounded-md text-sm font-bold tabular-nums <?php echo $vClass; ?>"><?php echo $vCnt; ?></span>
+              <td class="px-5 py-3 text-center col-desktop" title="<?php echo h($vTitle); ?>">
+                <span class="inline-flex items-center gap-1.5 rounded-xl border border-sky-100 bg-sky-50/80 px-2.5 py-1.5 text-xs font-bold tabular-nums text-slate-800 <?php echo $vClass; ?>">
+                  <i class="bi bi-play-circle text-sky-600"></i> <?php echo $vCnt; ?>
+                </span>
               </td>
-              <td class="px-5 py-3 text-center" title="<?php echo h($hTitle); ?>">
-                <span class="inline-flex min-w-[2.25rem] justify-center px-2.5 py-1 rounded-md text-sm font-bold tabular-nums <?php echo $hClass; ?>"><?php echo $hCnt; ?></span>
+              <td class="px-5 py-3 text-center col-desktop" title="<?php echo h($hTitle); ?>">
+                <span class="inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-violet-50/80 px-2.5 py-1.5 text-xs font-bold tabular-nums text-slate-800 <?php echo $hClass; ?>">
+                  <i class="bi bi-file-earmark-pdf text-violet-600"></i> <?php echo $hCnt; ?>
+                </span>
               </td>
-              <td class="px-5 py-3 text-center">
-                <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                  <a href="admin_materials?lesson_id=<?php echo (int)$l['lesson_id']; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="admin-row-action admin-row-action--materials" title="Materials"><i class="bi bi-grid"></i><span class="sr-only">Materials</span></a>
+              <td class="px-5 py-3 col-actions">
+                <div class="admin-row-actions inline-flex items-center justify-end gap-1.5" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                  <a href="<?php echo h($materialsUrl); ?>" class="hub-next-btn">Materials <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                   <div class="admin-row-menu-wrap">
-                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" aria-label="More actions" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i></button>
                     <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
-                      <button type="button" class="admin-row-menu__item" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" data-description="<?php echo h($l['description'] ?? ''); ?>" @click="menuOpen = false; openEditLesson($el.dataset.id, $el.dataset.title || '', $el.dataset.description || '')"><i class="bi bi-pencil"></i> Edit</button>
-                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" @click="menuOpen = false; openDeleteLesson($el.dataset.id, $el.dataset.title || '')"><i class="bi bi-trash"></i> Delete</button>
+                      <button type="button" class="admin-row-menu__item" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" data-description="<?php echo h($l['description'] ?? ''); ?>" @click="menuOpen = false; openEditLesson($el.dataset.id, $el.dataset.title || '', $el.dataset.description || '')"><i class="bi bi-pencil"></i> Edit Lesson</button>
+                      <div class="admin-row-menu__sep" role="separator"></div>
+                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$l['lesson_id']; ?>" data-title="<?php echo h($l['title'] ?? ''); ?>" @click="menuOpen = false; openDeleteLesson($el.dataset.id, $el.dataset.title || '')"><i class="bi bi-trash"></i> Delete Lesson</button>
                     </div>
                   </div>
                 </div>
@@ -362,8 +375,8 @@ $listViewLabels = [
             <tr>
               <td colspan="5" class="px-5 py-14 text-center quiz-admin-empty">
                 <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
-                <div class="font-semibold text-gray-200"><?php echo $searchQ !== '' ? 'No lessons match your search' : 'No lessons yet'; ?></div>
-                <p class="text-sm mt-1 text-gray-500"><?php echo $searchQ !== '' ? 'Try different keywords or clear the filter.' : 'Create your first lesson to start uploading videos and handouts.'; ?></p>
+                <div class="font-semibold text-slate-900"><?php echo $searchQ !== '' ? 'No lessons match your search' : 'No lessons yet'; ?></div>
+                <p class="text-sm mt-1 text-slate-500"><?php echo $searchQ !== '' ? 'Try different keywords or clear the filter.' : 'Create your first lesson to start uploading videos and handouts.'; ?></p>
                 <?php if ($searchQ === ''): ?>
                   <button type="button" @click="openNewLesson()" class="mt-4 px-4 py-2.5 rounded-lg font-semibold admin-content-btn admin-content-btn--lessons border-2 transition inline-flex items-center gap-2"><i class="bi bi-plus-circle"></i> New Lesson</button>
                 <?php endif; ?>
@@ -409,30 +422,30 @@ $listViewLabels = [
 
   <!-- Reorder Lessons Modal -->
   <div x-show="reorderModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-stretch justify-center p-3 sm:p-5" @keydown.escape.window="reorderModalOpen = false">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
-    <div class="relative quiz-modal-panel content-reorder-modal rounded-xl shadow-modal w-full max-w-6xl" @click.stop>
-      <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head shrink-0">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" @click="reorderModalOpen = false"></div>
+    <div class="relative quiz-modal-panel content-reorder-modal rounded-2xl shadow-modal w-full max-w-6xl border border-white/80 bg-white/95 backdrop-blur-xl" @click.stop>
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center quiz-modal-panel__head shrink-0">
         <div>
-          <h2 class="text-xl font-bold text-gray-100 m-0">Reorder Lessons</h2>
-          <p class="text-sm text-gray-400 mt-1 mb-0">Type a position number or drag. Students see this order after you save.</p>
+          <h2 class="text-lg font-bold text-slate-900 m-0">Reorder Lessons</h2>
+          <p class="text-sm text-slate-500 mt-1 mb-0">Type a position number or drag. Students see this order after you save.</p>
         </div>
-        <button type="button" @click="reorderModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        <button type="button" @click="reorderModalOpen = false" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <?php if ($reorderRows === []): ?>
-        <div class="p-8 text-center text-gray-400">No lessons to reorder yet.</div>
+        <div class="p-8 text-center text-slate-500">No lessons to reorder yet.</div>
       <?php else: ?>
         <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" id="content-reorder-form" class="flex flex-col min-h-0 flex-1">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <input type="hidden" name="action" value="reorder">
-          <div class="px-5 py-3 border-b border-white/10 shrink-0 flex flex-wrap gap-3 items-end">
+          <div class="px-5 py-3 border-b border-slate-100 shrink-0 flex flex-wrap gap-3 items-end">
             <div class="flex-1 min-w-[220px]">
-              <label for="lessons-reorder-filter" class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Find in list</label>
+              <label for="lessons-reorder-filter" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Find in list</label>
               <input type="search" id="lessons-reorder-filter" data-reorder-filter placeholder="Filter by title…" class="input-custom w-full" autocomplete="off">
             </div>
-            <p class="content-reorder-hint m-0 text-sm opacity-80"><i class="bi bi-123"></i> Type # to jump · <i class="bi bi-grip-vertical"></i> drag optional</p>
+            <p class="content-reorder-hint m-0 text-sm text-slate-500"><i class="bi bi-123"></i> Type # to jump · <i class="bi bi-grip-vertical"></i> drag optional</p>
           </div>
           <div class="content-reorder-scroll px-3 py-2">
-            <p data-reorder-filter-empty hidden class="text-center text-sm text-gray-400 py-6">No lessons match this filter.</p>
+            <p data-reorder-filter-empty hidden class="text-center text-sm text-slate-500 py-6">No lessons match this filter.</p>
             <table class="quiz-admin-data-table admin-data-table content-reorder-table w-full text-left">
               <thead>
                 <tr>
@@ -478,8 +491,8 @@ $listViewLabels = [
               </tbody>
             </table>
           </div>
-          <div class="p-4 border-t border-white/10 flex justify-between items-center gap-2 shrink-0">
-            <p class="text-sm opacity-70 m-0"><?php echo count($reorderRows); ?> lesson<?php echo count($reorderRows) === 1 ? '' : 's'; ?> · scroll the list · Enter after typing a #</p>
+          <div class="p-4 border-t border-slate-100 flex justify-between items-center gap-2 shrink-0">
+            <p class="text-sm text-slate-500 m-0"><?php echo count($reorderRows); ?> lesson<?php echo count($reorderRows) === 1 ? '' : 's'; ?> · scroll the list · Enter after typing a #</p>
             <div class="flex gap-2">
               <button type="button" @click="reorderModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
               <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Order</button>
@@ -492,11 +505,11 @@ $listViewLabels = [
 
   <!-- Create/Edit Lesson Modal -->
   <div x-show="lessonModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="if (!reorderModalOpen) lessonModalOpen = false">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="lessonModalOpen = false"></div>
-    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" @click.stop>
-      <div class="p-5 border-b border-white/10 flex justify-between items-center quiz-modal-panel__head">
-        <h2 class="text-xl font-bold text-gray-100 m-0" x-text="isEdit ? 'Edit Lesson' : 'New Lesson'"></h2>
-        <button type="button" @click="lessonModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" @click="lessonModalOpen = false"></div>
+    <div class="relative quiz-modal-panel rounded-2xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/80 bg-white/95 backdrop-blur-xl" @click.stop>
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center quiz-modal-panel__head">
+        <h2 class="text-lg font-bold text-slate-900 m-0" x-text="isEdit ? 'Edit Lesson' : 'New Lesson'"></h2>
+        <button type="button" @click="lessonModalOpen = false" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>" class="p-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -504,11 +517,11 @@ $listViewLabels = [
         <input type="hidden" name="lesson_id" :value="lesson_id">
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Title</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
             <input type="text" name="title" x-model="title" required placeholder="e.g., Lesson 1: Introduction" class="input-custom">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
             <textarea name="description" x-model="description" rows="4" placeholder="Optional summary, outline, or notes" class="input-custom"></textarea>
           </div>
         </div>
@@ -522,23 +535,23 @@ $listViewLabels = [
 
   <!-- Delete Lesson Modal -->
   <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 z-[1100] flex items-center justify-center p-4" @keydown.escape.window="deleteModalOpen = false">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="deleteModalOpen = false"></div>
-    <div class="relative quiz-modal-panel rounded-xl shadow-modal max-w-md w-full p-5" @click.stop>
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" @click="deleteModalOpen = false"></div>
+    <div class="relative quiz-modal-panel rounded-2xl shadow-modal max-w-md w-full p-5 border border-white/80 bg-white/95 backdrop-blur-xl" @click.stop>
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-100 m-0"><i class="bi bi-trash text-red-400 mr-2"></i> Delete Lesson</h2>
-        <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        <h2 class="text-lg font-bold text-slate-900 m-0"><i class="bi bi-trash text-rose-500 mr-2"></i> Delete Lesson</h2>
+        <button type="button" @click="deleteModalOpen = false" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label="Close"><i class="bi bi-x-lg"></i></button>
       </div>
       <form method="POST" action="admin_lessons?subject_id=<?php echo (int)$subjectId; ?>">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="lesson_id" :value="delete_lesson_id">
-        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/35 text-amber-100 mb-4">
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 mb-4">
           <div class="font-semibold">This will delete the lesson and related materials.</div>
-          <div class="text-sm mt-1 text-amber-200/90">Lesson: <span class="font-semibold" x-text="delete_lesson_title"></span></div>
+          <div class="text-sm mt-1 text-rose-700">Lesson: <span class="font-semibold" x-text="delete_lesson_title"></span></div>
         </div>
         <div class="flex justify-end gap-2">
-          <button type="button" @click="deleteModalOpen = false" class="px-4 py-2.5 rounded-lg font-semibold border border-white/20 text-gray-200 hover:bg-white/10 transition">Cancel</button>
-          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-500 transition inline-flex items-center gap-2"><i class="bi bi-trash"></i> Delete</button>
+          <button type="button" @click="deleteModalOpen = false" class="admin-btn admin-btn--secondary">Cancel</button>
+          <button type="submit" class="px-4 py-2.5 rounded-lg font-semibold bg-rose-600 text-white hover:bg-rose-700 transition inline-flex items-center gap-2"><i class="bi bi-trash"></i> Delete</button>
         </div>
       </form>
     </div>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
@@ -217,13 +217,17 @@ $statusBadgeHtml = match ($windowState) {
     default => '<span class="admin-badge admin-badge--success"><i class="bi bi-unlock"></i> Open</span>',
 };
 $pageTitle = 'Task submissions';
+$professorFeatureHero = true;
 $adminHeroIcon = 'inboxes';
+$adminHeroEyebrow = 'Task management';
 $adminHeroTitle = (string)$task['title'];
 $adminHeroSubtitle = 'Submissions for this assignment. Open files in the browser or a new tab.';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Upload Tasks', 'professor_upload_tasks'], ['Submissions']];
+$adminBackHref = 'professor_upload_tasks';
+$adminBackLabel = 'Back to Upload Tasks';
 $adminHeroMeta = '<span class="text-sm opacity-80">Opens: <strong>' . h($openLabel !== '-' ? $openLabel : 'Immediately') . '</strong></span>'
     . '<span class="text-sm opacity-80">Closes: <strong>' . h($deadlineLabel) . '</strong></span>';
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_upload_tasks"><i class="bi bi-arrow-left"></i> Back to tasks</a>'
-    . '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="professor_upload_tasks?edit=' . (int)$task['task_id'] . '"><i class="bi bi-pencil-square"></i> Edit task</a>'
+$adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="professor_upload_tasks?edit=' . (int)$task['task_id'] . '"><i class="bi bi-pencil-square"></i> Edit task</a>'
     . $statusBadgeHtml;
 ?>
 <!DOCTYPE html>
@@ -231,7 +235,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -244,14 +248,31 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
   <?php endif; ?>
 
   <div class="examination-page-shell">
-    <div class="examination-kpi-grid mb-4">
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Submissions</div><div class="examination-kpi-card__value"><?php echo (int)$subCount; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Eligible students</div><div class="examination-kpi-card__value"><?php echo (int)$rosterCount; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Pending</div><div class="examination-kpi-card__value"><?php echo (int)max(0, $rosterCount - $subCount); ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Showing</div><div class="examination-kpi-card__value"><?php echo (int)$shownCount; ?></div></div>
-    </div>
+    <section class="prof-summary-rail" aria-label="Submission snapshot">
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-inboxes"></i></span>
+        <span class="prof-summary-rail__label">Submissions</span>
+        <span class="prof-summary-rail__value"><?php echo (int)$subCount; ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-people"></i></span>
+        <span class="prof-summary-rail__label">Eligible students</span>
+        <span class="prof-summary-rail__value"><?php echo (int)$rosterCount; ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+        <span class="prof-summary-rail__label">Pending</span>
+        <span class="prof-summary-rail__value"><?php echo (int)max(0, $rosterCount - $subCount); ?></span>
+      </div>
+      <div class="prof-summary-rail__cell">
+        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-funnel"></i></span>
+        <span class="prof-summary-rail__label">Showing</span>
+        <span class="prof-summary-rail__value"><?php echo (int)$shownCount; ?></span>
+      </div>
+    </section>
 
-    <div class="rounded-xl overflow-hidden page-table students-table-shell">
+    <section class="prof-workspace">
+    <div class="rounded-xl overflow-hidden students-table-shell">
       <div class="examination-table-card-head flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-base font-bold m-0 flex items-center gap-2"><i class="bi bi-inboxes"></i> Student files</h2>
         <span class="text-xs font-bold uppercase tracking-wider opacity-60"><?php echo (int)$countImages; ?> images · <?php echo (int)$countPdfs; ?> PDFs</span>
@@ -284,7 +305,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
               <i class="bi bi-inbox"></i>
             </div>
             <p class="text-slate-600 font-semibold m-0">No submissions yet</p>
-            <p class="text-sm text-slate-500 mt-1 mb-0">Files appear here when students upload from College → Uploads.</p>
+            <p class="text-sm text-slate-500 mt-1 mb-0">Files appear here when students upload from College ? Uploads.</p>
           </div>
         <?php elseif (empty($subsFiltered)): ?>
           <div class="p-10 text-center">
@@ -441,6 +462,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         <?php endif; ?>
       </div>
     </div>
+    </section>
   </div>
 
   <div id="ufl-overlay" class="ufl-overlay" aria-hidden="true">

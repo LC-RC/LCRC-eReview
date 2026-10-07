@@ -35,6 +35,16 @@ $adminBreadcrumbs = [
     ['Monitoring', $monitorUrl],
     ['Attempt review'],
 ];
+$adminHeroIcon = 'journal-text';
+$adminHeroTint = 'indigo';
+$adminHeroEyebrow = 'Preboards / ' . ($attempt['subject_name'] ?? '') . ' / Set ' . ($attempt['set_label'] ?? '');
+$adminHeroTitle = 'Attempt review';
+$adminHeroSubtitle = ($attempt['full_name'] ?? '') . ($isSubmitted ? '' : ' · In progress');
+if (!empty($attempt['set_title'])) {
+    $adminHeroSubtitle .= ' · ' . $attempt['set_title'];
+}
+$adminBackHref = $monitorUrl;
+$adminBackLabel = 'Back to Monitoring';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -86,36 +96,23 @@ $adminBreadcrumbs = [
       gap: 0.75rem;
     }
     .pb-review-summary-item {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(148, 163, 184, 0.15);
+      background: #fff;
+      border: 1px solid #e2e8f0;
       border-radius: 0.75rem;
       padding: 0.85rem 1rem;
     }
-    .pb-review-summary-item strong { display: block; font-size: 1.25rem; color: #f8fafc; }
-    .pb-review-summary-item span { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+    .pb-review-summary-item strong { display: block; font-size: 1.25rem; color: #0f172a; }
+    .pb-review-summary-item span { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
   </style>
 </head>
 <body class="font-sans antialiased admin-app admin-preboards-review-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-5">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
-      Full attempt review
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base">
-      <?php echo h($attempt['full_name'] ?? ''); ?> - <?php echo h($attempt['subject_name'] ?? ''); ?>, Set <?php echo h($attempt['set_label'] ?? ''); ?>
-      <?php if (!empty($attempt['set_title'])): ?> · <?php echo h($attempt['set_title']); ?><?php endif; ?>
-    </p>
-  </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
-  <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
-    <a href="<?php echo h($monitorUrl); ?>" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2"><i class="bi bi-arrow-left"></i> Back to monitoring</a>
-    <?php if (!$isSubmitted): ?>
-      <span class="px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">In progress - answers may be incomplete</span>
-    <?php endif; ?>
-  </div>
+  <?php if (!$isSubmitted): ?>
+    <p class="preboards-report__lede mb-4">In progress — answers may be incomplete.</p>
+  <?php endif; ?>
 
   <div class="pb-review-summary mb-5">
     <div class="pb-review-summary-item"><strong><?php echo $isSubmitted ? preboards_format_score($score) : '-'; ?></strong><span>Score</span></div>
@@ -125,11 +122,9 @@ $adminBreadcrumbs = [
   </div>
 
   <?php if (count($history) > 1): ?>
-  <div class="quiz-admin-table-shell rounded-xl overflow-hidden mb-5">
-    <div class="quiz-admin-table-head px-5 py-3">
-      <span class="font-semibold text-gray-100 text-sm">Other attempts for this set</span>
-    </div>
-    <div class="overflow-x-auto">
+  <section class="preboards-report mb-5" aria-labelledby="preboards-history-heading">
+    <h2 id="preboards-history-heading" class="preboards-report__title">Other attempts for this set</h2>
+    <div class="preboards-report__table-wrap">
       <table class="quiz-admin-data-table w-full text-left text-sm">
         <thead>
           <tr>
@@ -160,12 +155,12 @@ $adminBreadcrumbs = [
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
   <?php endif; ?>
 
-  <div class="quiz-admin-table-shell rounded-xl px-5 py-4 mb-5">
-    <div class="font-semibold text-gray-100 mb-1">Questions &amp; answers</div>
-    <p class="text-sm text-gray-500 mb-4"><?php echo count($questions); ?> question<?php echo count($questions) === 1 ? '' : 's'; ?> in this set.</p>
+  <section class="preboards-report mb-5" aria-labelledby="preboards-review-qa-heading">
+    <h2 id="preboards-review-qa-heading" class="preboards-report__title">Questions &amp; answers</h2>
+    <p class="preboards-report__lede"><?php echo count($questions); ?> question<?php echo count($questions) === 1 ? '' : 's'; ?> in this set.</p>
 
     <?php if (empty($questions)): ?>
       <p class="text-gray-500 mb-0">No questions found for this set.</p>
@@ -207,6 +202,6 @@ $adminBreadcrumbs = [
         </div>
       <?php endforeach; ?>
     <?php endif; ?>
-  </div>
+  </section>
 </body>
 </html>

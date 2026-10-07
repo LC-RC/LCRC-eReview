@@ -36,18 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Add college student';
+$professorFeatureHero = true;
 $adminHeroIcon = 'person-plus';
 $adminHeroTitle = 'Create college student';
 $adminHeroSubtitle = 'Creates an approved account with review_type=undergrad (College Student).';
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_college_students"><i class="bi bi-arrow-left"></i> Back to students</a>'
-    . ' <a class="admin-btn admin-btn--ghost admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Registration form</a>';
+$adminHeroEyebrow = 'Student management';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students', 'professor_college_students'], ['Create']];
+$adminBackHref = 'professor_college_students';
+$adminBackLabel = 'Back to Students';
+$adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Registration form</a>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -56,6 +60,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
   <?php if ($success): ?><div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($success); ?></span></div><?php endif; ?>
 
   <div class="examination-page-shell">
+    <section class="prof-workspace prof-workspace--form">
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <form method="post" enctype="multipart/form-data" class="rounded-xl overflow-hidden page-table xl:col-span-2 p-6 space-y-5">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
@@ -130,6 +135,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" hre
         <a href="professor_college_students" class="admin-btn admin-btn--ghost admin-btn--sm mt-4"><i class="bi bi-arrow-right"></i> Open student directory</a>
       </aside>
     </div>
+    </section>
   </div>
   <script>
     (function () {

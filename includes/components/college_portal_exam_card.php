@@ -49,7 +49,7 @@ if (!function_exists('cp_portal_exam_status_pill_class')) {
             return $fallback;
         }
 
-        return date('M j, Y g:i A', $ts);
+        return date('M j, Y · g:i A', $ts);
     }
 }
 
@@ -278,8 +278,14 @@ if ($cpExamLayout === 'lms'): ?>
         <span class="cp-exam-card__meta-item"><i class="bi bi-stopwatch" aria-hidden="true"></i> <?php echo h($duration); ?></span>
       </div>
       <div class="cp-exam-card__schedule">
-        <span class="cp-exam-card__schedule-line"><i class="bi bi-calendar-event" aria-hidden="true"></i> <?php echo h($opens); ?></span>
-        <span class="cp-exam-card__schedule-line"><i class="bi bi-arrow-right" aria-hidden="true"></i> <?php echo h($closes); ?></span>
+        <div class="cp-exam-card__schedule-row">
+          <span class="cp-exam-card__schedule-k">Opens</span>
+          <span class="cp-exam-card__schedule-v"><?php echo h($opens); ?></span>
+        </div>
+        <div class="cp-exam-card__schedule-row">
+          <span class="cp-exam-card__schedule-k">Closes</span>
+          <span class="cp-exam-card__schedule-v"><?php echo h($closes); ?></span>
+        </div>
       </div>
     </div>
     <div class="cp-exam-card__score<?php echo $scoreText === '' ? ' cp-exam-card__score--empty' : ''; ?>">

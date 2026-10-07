@@ -1,14 +1,21 @@
 <?php
 /**
  * Ensures Diagnostic Exam tables exist. Idempotent — isolated from college_schema.
+ *
+ * HOT PATH SAFETY: student take/AJAX must NOT run this DDL.
+ * Run via scripts/migrate_examination_schema.php (or EREVIEW_ENSURE_SCHEMA=1) at deploy.
  */
 if (!isset($conn) || !($conn instanceof mysqli)) {
     return;
 }
+require_once __DIR__ . '/examination_schema_gate.php';
 if (!empty($GLOBALS['__ereview_diagnostic_schema_ensured'])) {
     return;
 }
 $GLOBALS['__ereview_diagnostic_schema_ensured'] = true;
+if (!ereview_schema_ensure_enabled()) {
+    return;
+}
 
 $stmts = [
     "CREATE TABLE IF NOT EXISTS `diagnostic_subjects` (
@@ -104,6 +111,7 @@ $stmts = [
       `selected_answer` varchar(1) DEFAULT NULL,
       `is_correct` tinyint(1) DEFAULT NULL,
       `answered_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      `save_seq` int(11) NOT NULL DEFAULT 0,
       PRIMARY KEY (`answer_id`),
       UNIQUE KEY `uq_diagnostic_answer_attempt_q` (`attempt_id`,`question_id`),
       KEY `idx_dans_q` (`question_id`)
@@ -170,4 +178,13 @@ if ($chkExtra && mysqli_num_rows($chkExtra) === 0) {
 }
 if ($chkExtra) {
     mysqli_free_result($chkExtra);
+}
+
+$chkDiagSaveSeq = @mysqli_query($conn, "SHOW COLUMNS FROM `diagnostic_answers` LIKE 'save_seq'");
+if ($chkDiagSaveSeq) {
+    $rowDss = mysqli_fetch_assoc($chkDiagSaveSeq);
+    mysqli_free_result($chkDiagSaveSeq);
+    if (!$rowDss) {
+        @mysqli_query($conn, "ALTER TABLE `diagnostic_answers` ADD COLUMN `save_seq` int(11) NOT NULL DEFAULT 0 COMMENT 'Monotonic client save sequence; stale autosaves must not overwrite' AFTER `answered_at`");
+    }
 }

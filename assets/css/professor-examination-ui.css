@@ -22,7 +22,6 @@ body.admin-app.examination-admin-page {
 body.admin-app.examination-admin-page #main {
   min-width: 0;
   max-width: 100%;
-  overflow-x: clip;
 }
 body.admin-app.examination-admin-page .students-page-shell,
 body.admin-app.examination-admin-page .examination-page-shell,
@@ -133,8 +132,7 @@ body.admin-app.examination-admin-page .page-table.students-table-shell {
   border-radius: var(--pex-radius);
   background: var(--admin-surface);
   box-shadow: var(--admin-shadow-sm);
-  /* overflow:hidden / Tailwind overflow-hidden prevent sticky thead — clip corners on the scroll pane instead */
-  overflow: visible !important;
+  overflow: hidden;
 }
 body.admin-app.examination-admin-page .students-table-meta,
 body.admin-app.examination-admin-page .examination-table-card-head {
@@ -152,11 +150,16 @@ body.admin-app.admin-students-page.examination-admin-page .students-table-scroll
 body.admin-app.examination-admin-page .students-table-scroll {
   width: 100%;
   max-width: 100%;
-  max-height: calc(100vh - 12.5rem);
-  overflow: auto;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
   border-radius: 0 0 var(--pex-radius) var(--pex-radius);
+}
+body.admin-app.examination-admin-page .pem-roster-shell .students-table-scroll {
+  max-height: calc(100vh - 11rem);
+  overflow: auto;
 }
 
 /* ========== UNIFIED TABLE DESIGN SYSTEM ==========
@@ -180,7 +183,7 @@ body.admin-app.examination-admin-page table.admin-students-table tbody td {
   padding: 1.05rem 1.25rem !important;
   vertical-align: middle;
   box-sizing: border-box;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 body.admin-app.admin-students-page.examination-admin-page table.admin-students-table.students-table--compact thead th,
@@ -481,41 +484,44 @@ body.admin-app.examination-admin-page .students-bulk-bar__actions {
 
 /* Modals */
 body.admin-app.examination-admin-page .admin-modal-overlay {
-  padding: 0.85rem;
-  align-items: flex-start;
-  overflow-y: auto;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 body.admin-app.examination-admin-page .admin-modal {
   width: min(100%, 32rem);
-  max-height: calc(100vh - 1.7rem);
-  overflow: auto;
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   margin: auto;
   border-radius: 0.95rem;
 }
 
-/* Add/Edit Questions rapid-entry: large desktop workspace (not the 32rem popup). */
+/* Add/Edit Questions rapid-entry: compact desktop workspace (not the 32rem popup). */
 body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal {
-  width: min(1100px, calc(100vw - 80px)) !important;
-  max-width: 1100px !important;
-  min-width: min(900px, calc(100vw - 48px));
-  height: min(90vh, 56rem) !important;
-  max-height: 90vh !important;
-  margin: 1.25rem auto !important;
+  width: min(920px, calc(100vw - 64px)) !important;
+  max-width: 920px !important;
+  min-width: min(720px, calc(100vw - 40px));
+  height: min(88vh, 44rem) !important;
+  max-height: 88vh !important;
+  margin: 1rem auto !important;
   padding: 0 !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: 1rem !important;
+  border-radius: 0.75rem !important;
 }
 body.admin-app.examination-admin-page #eqbRapidOverlay.admin-modal-overlay,
 body.admin-app.examination-admin-page #eqbEditOverlay.admin-modal-overlay {
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
+  padding: 1rem;
 }
 @media (max-width: 1100px) {
   body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal {
-    width: min(1000px, calc(100vw - 48px)) !important;
+    width: min(900px, calc(100vw - 48px)) !important;
     min-width: 0;
   }
 }
@@ -524,7 +530,7 @@ body.admin-app.examination-admin-page #eqbEditOverlay.admin-modal-overlay {
     width: min(96vw, calc(100vw - 24px)) !important;
     max-width: 96vw !important;
     min-width: 0 !important;
-    height: min(92vh, 56rem) !important;
+    height: min(92vh, 48rem) !important;
     max-height: 92vh !important;
     margin: 0.65rem auto !important;
   }
@@ -544,9 +550,11 @@ body.admin-app.examination-admin-page #app-sidebar nav a.app-shell-nav-link--adm
   box-shadow: inset 3px 0 0 #60a5fa;
 }
 body.admin-app.examination-admin-page .app-shell-sidebar-time {
-  border-radius: 0.85rem;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
   padding: 0.65rem 0.7rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
 /* ========== Tablet ========== */
@@ -887,13 +895,14 @@ body.admin-app.admin-students-page.examination-admin-page .upload-tasks-table td
   }
 }
 
-@media (max-width: 900px) and (min-width: 768px) {
+@media (max-width: 1100px) {
   body.admin-app.examination-admin-page .pcs-students-table,
   body.admin-app.examination-admin-page .examinations-list-table,
   body.admin-app.examination-admin-page .pex-monitor-table,
   body.admin-app.examination-admin-page .upload-tasks-table,
   body.admin-app.examination-admin-page .pex-monitor-detail-table,
-  body.admin-app.examination-admin-page .upload-monitor-table {
+  body.admin-app.examination-admin-page .upload-monitor-table,
+  body.admin-app.examination-admin-page .sections-table {
     min-width: 720px !important;
   }
 }

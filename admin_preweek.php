@@ -178,6 +178,14 @@ if ($listQ) {
 $rowTotal = count($preweekRows);
 $pageTitle = 'Pre-week';
 $preweekNavStep = 'list';
+$adminBreadcrumbs = [['Dashboard', 'admin_dashboard'], ['Pre-week']];
+$adminHeroIcon = 'lightning-charge-fill';
+$adminHeroTint = 'violet';
+$adminHeroEyebrow = 'Pre-week management';
+$adminHeroTitle = 'Pre-week';
+$adminHeroSubtitle = 'Add and manage pre-weeks, then open each for lectures and materials.';
+$adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int)$rowTotal . ' ' . ((int)$rowTotal === 1 ? 'entry' : 'entries') . '</span>';
+$adminHeroActions = '<button type="button" id="preweekOpenAddModal" class="admin-btn admin-btn--primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add Pre-week</button>';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -193,6 +201,7 @@ $preweekNavStep = 'list';
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      overflow: hidden;
       background: rgba(0, 0, 0, 0.65);
       backdrop-filter: blur(6px);
     }
@@ -200,6 +209,9 @@ $preweekNavStep = 'list';
     .admin-preweek-page .preweek-modal-panel {
       width: 100%;
       max-width: 26rem;
+      max-height: calc(100dvh - 48px);
+      display: flex;
+      flex-direction: column;
       border-radius: 0.75rem;
       background: var(--admin-glass-strong, var(--admin-surface, #fff));
       border: 1px solid var(--admin-border-strong, rgba(30, 58, 110, 0.16));
@@ -214,27 +226,21 @@ $preweekNavStep = 'list';
       gap: 0.75rem;
       padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--admin-border, rgba(30, 58, 110, 0.1));
-      background: rgba(15, 23, 42, 0.03);
+      background: var(--glass-surface-inner);
+      flex: 0 0 auto;
     }
-    .admin-preweek-page .preweek-modal-body { padding: 1.25rem; }
+    .admin-preweek-page .preweek-modal-body {
+      padding: 1.25rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body class="font-sans antialiased admin-app admin-preweek-page admin-preweek-list-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <?php require __DIR__ . '/includes/admin_preweek_context_nav.php'; ?>
-
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4 page-hero admin-glass-hero">
-    <div class="admin-page-header">
-      <div class="min-w-0">
-        <h1 class="admin-page-header__title flex flex-wrap items-center gap-3 m-0">
-          <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-lightning-charge-fill"></i></span>
-          <span>Pre-week</span>
-        </h1>
-        <p class="admin-page-header__subtitle">Add and manage pre-weeks, then open each for lectures and materials.</p>
-      </div>
-    </div>
-  </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if (!empty($flashErr)): ?>
     <div class="quiz-admin-alert quiz-admin-alert--error mb-4 flex items-center gap-2" role="alert">
@@ -252,116 +258,107 @@ $preweekNavStep = 'list';
   <?php
     $preweekFiltersActive = ($filterQ !== '' || $sort !== 'newest');
   ?>
-  <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-    <?php if ($preweekFiltersActive): ?>
-      <span class="text-xs font-medium uppercase tracking-wide text-amber-200/70 bg-amber-500/10 border border-amber-500/25 rounded-full px-2.5 py-1">Filters active</span>
-    <?php endif; ?>
-  </div>
 
-  <form method="get" action="admin_preweek" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
-    <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
-      <label for="preweek-filter-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search entries</label>
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" name="q" id="preweek-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Name..." autocomplete="off" class="input-custom w-full pl-10">
+  <section class="content-library" aria-labelledby="preweek-entries-heading">
+    <div class="content-library__head">
+      <div>
+        <h2 id="preweek-entries-heading" class="content-library__title">Pre-week entries</h2>
+        <p class="content-library__sub">Manage pre-week units, lectures and materials.</p>
       </div>
+      <span class="content-library__count"><?php echo (int)$rowTotal; ?> <?php echo (int)$rowTotal === 1 ? 'entry' : 'entries'; ?></span>
     </div>
-    <div class="w-full sm:w-44">
-      <label for="preweek-filter-sort" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Sort</label>
-      <select name="sort" id="preweek-filter-sort" class="input-custom w-full">
-        <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Newest first</option>
-        <option value="name_asc" <?php echo $sort === 'name_asc' ? 'selected' : ''; ?>>Name A-Z</option>
-      </select>
-    </div>
-    <div class="flex flex-wrap gap-2 shrink-0">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search" aria-hidden="true"></i> Apply</button>
+    <form method="get" action="admin_preweek" class="content-library__toolbar">
+      <div class="content-library__search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" id="preweek-filter-q" value="<?php echo h($filterQ); ?>" placeholder="Search pre-weeks..." autocomplete="off" class="input-custom" aria-label="Search pre-weeks">
+      </div>
+      <div class="content-library__sort">
+        <label class="sr-only" for="preweek-filter-sort">Sort</label>
+        <select name="sort" id="preweek-filter-sort" class="input-custom">
+          <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Newest first</option>
+          <option value="name_asc" <?php echo $sort === 'name_asc' ? 'selected' : ''; ?>>Name A-Z</option>
+        </select>
+      </div>
+      <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
       <?php if ($preweekFiltersActive): ?>
-        <a href="admin_preweek" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_preweek" class="admin-btn admin-btn--ghost admin-btn--sm">Clear</a>
       <?php endif; ?>
-    </div>
-  </form>
-
-  <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <div class="quiz-admin-table-head px-5 py-3 flex flex-wrap justify-between items-center gap-3">
-      <div class="flex items-center gap-2 min-w-0">
-        <span class="font-semibold text-gray-100">Entries</span>
-        <span class="quiz-admin-count-pill quiz-admin-count-pill--preweek"><?php echo (int)$rowTotal; ?></span>
-      </div>
-      <button type="button" id="preweekOpenAddModal" class="admin-content-btn admin-content-btn--subject px-4 py-2 rounded-lg font-semibold border-2 transition inline-flex items-center gap-2 shrink-0">
-        <i class="bi bi-plus-circle" aria-hidden="true"></i> Add pre-week
-      </button>
-    </div>
-    <div class="overflow-x-auto pl-3 pr-8">
-      <table class="quiz-admin-data-table w-full text-left">
-        <thead>
-          <tr>
-            <th class="px-5 py-3 font-semibold">Name</th>
-            <th class="px-5 py-3 font-semibold">Contents</th>
-            <th class="px-5 py-3 font-semibold text-right min-w-[17rem]">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if ($rowTotal === 0): ?>
+    </form>
+      <?php if ($rowTotal === 0): ?>
+        <div class="content-library-empty">
+          <i class="bi bi-inbox" aria-hidden="true"></i>
+          <h3><?php echo ($filterQ !== '' || $sort !== 'newest') ? 'No matching entries' : 'No entries yet'; ?></h3>
+          <p class="content-library__sub"><?php echo ($filterQ !== '' || $sort !== 'newest') ? 'Try Clear or change search.' : 'Use Add Pre-week in the page header.'; ?></p>
+        </div>
+      <?php else: ?>
+        <div class="content-library-table-scroll">
+          <table class="content-library-table">
+            <thead>
+              <tr>
+                <th scope="col">Pre-week</th>
+                <th class="col-desktop" scope="col">Lectures</th>
+                <th class="col-desktop" scope="col">Videos</th>
+                <th class="col-desktop" scope="col">Handouts</th>
+                <th class="col-desktop" scope="col">Added</th>
+                <th class="col-actions" scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+          <?php foreach ($preweekRows as $row): ?>
+            <?php
+              $pid = (int)$row['preweek_unit_id'];
+              $ptitle = trim((string)($row['title'] ?? '')) ?: 'Preweek';
+              $tc = (int)($row['topics_cnt'] ?? 0);
+              $vc = (int)($row['videos_cnt'] ?? 0);
+              $hc = (int)($row['handouts_cnt'] ?? 0);
+              $hasPreweekContent = ($tc + $vc + $hc) > 0;
+              $createdRaw = $row['created_at'] ?? '';
+              $createdLabel = $createdRaw ? date('M j, Y', strtotime($createdRaw)) : '-';
+              $lecturesUrl = 'admin_preweek_topics?preweek_unit_id=' . (int)$pid;
+            ?>
             <tr>
-              <td colspan="3" class="px-5 py-14 text-center quiz-admin-empty">
-                <i class="bi bi-inbox text-4xl block mb-3 quiz-admin-empty-icon"></i>
-                <div class="font-semibold text-gray-200"><?php echo ($filterQ !== '' || $sort !== 'newest') ? 'No matching entries' : 'No entries yet'; ?></div>
-                <p class="text-sm mt-1 text-gray-500 m-0"><?php echo ($filterQ !== '' || $sort !== 'newest') ? 'Try Clear or change search.' : 'Use <strong class="text-gray-400">Add pre-week</strong> in the bar above.'; ?></p>
+              <td>
+                <div class="content-library-subject">
+                  <span class="lms-icon-tile inline-flex h-10 w-10 items-center justify-center rounded-xl" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
+                  <span class="content-library-subject__text">
+                    <a href="<?php echo h($lecturesUrl); ?>" class="content-library-subject__name"><?php echo h($ptitle); ?></a>
+                    <span class="content-library-subject__mobile-meta"><?php echo (int)$tc; ?> lecture<?php echo $tc === 1 ? '' : 's'; ?> · <?php echo (int)$vc; ?> video<?php echo $vc === 1 ? '' : 's'; ?> · <?php echo (int)$hc; ?> handout<?php echo $hc === 1 ? '' : 's'; ?></span>
+                  </span>
+                </div>
               </td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($preweekRows as $row): ?>
-              <?php
-                $pid = (int)$row['preweek_unit_id'];
-                $ptitle = trim((string)($row['title'] ?? '')) ?: 'Preweek';
-                $tc = (int)($row['topics_cnt'] ?? 0);
-                $vc = (int)($row['videos_cnt'] ?? 0);
-                $hc = (int)($row['handouts_cnt'] ?? 0);
-                $hasPreweekContent = ($tc + $vc + $hc) > 0;
-                $createdRaw = $row['created_at'] ?? '';
-                $createdLabel = $createdRaw ? date('M j, Y', strtotime($createdRaw)) : '-';
-              ?>
-              <tr class="quiz-admin-row">
-                <td class="px-5 py-3 align-top">
-                  <div class="font-semibold text-gray-100"><?php echo h($ptitle); ?></div>
-                  <div class="text-gray-500 text-xs mt-1">Added <?php echo h($createdLabel); ?></div>
-                </td>
-                <td class="px-5 py-3 align-top text-sm text-gray-400">
-                  <span class="tabular-nums"><?php echo (int)$tc; ?></span> lecture<?php echo $tc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">·</span>
-                  <span class="tabular-nums"><?php echo (int)$vc; ?></span> video<?php echo $vc === 1 ? '' : 's'; ?>
-                  <span class="text-gray-600 mx-1">·</span>
-                  <span class="tabular-nums"><?php echo (int)$hc; ?></span> handout<?php echo $hc === 1 ? '' : 's'; ?>
-                </td>
-                <td class="px-5 py-3 align-top">
-                  <div class="admin-row-actions" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
-                    <a href="admin_preweek_topics?preweek_unit_id=<?php echo (int)$pid; ?>" class="admin-row-action admin-row-action--materials" title="Open lectures"><i class="bi bi-folder2-open"></i><span class="sr-only">Open lectures</span></a>
-                    <div class="admin-row-menu-wrap">
-                      <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
-                      <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
-                        <button type="button" class="admin-row-menu__item preweek-edit-open" data-id="<?php echo (int)$pid; ?>" data-title="<?php echo h($ptitle); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
-                        <?php if ($hasPreweekContent): ?>
-                        <button type="button" class="admin-row-menu__item admin-row-menu__item--danger preweek-delete-blocked-btn" data-tc="<?php echo (int)$tc; ?>" data-vc="<?php echo (int)$vc; ?>" data-hc="<?php echo (int)$hc; ?>" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
-                        <?php else: ?>
-                        <form method="post" action="admin_preweek" class="m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
-                          <input type="hidden" name="delete_preweek" value="1">
-                          <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$pid; ?>">
-                          <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">
-                          <input type="hidden" name="return_sort" value="<?php echo h($sort); ?>">
-                          <button type="submit" class="admin-row-menu__item admin-row-menu__item--danger w-full" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
-                        </form>
-                        <?php endif; ?>
-                      </div>
+              <td class="col-desktop"><span class="content-library-metric"><i class="bi bi-journal-text" aria-hidden="true"></i> <?php echo (int)$tc; ?></span></td>
+              <td class="col-desktop"><span class="content-library-metric"><i class="bi bi-play-circle" aria-hidden="true"></i> <?php echo (int)$vc; ?></span></td>
+              <td class="col-desktop"><span class="content-library-metric"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> <?php echo (int)$hc; ?></span></td>
+              <td class="col-desktop"><?php echo h($createdLabel); ?></td>
+              <td class="col-actions">
+                <div class="admin-row-actions inline-flex items-center justify-end gap-1.5" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                  <a href="<?php echo h($lecturesUrl); ?>" class="hub-next-btn">Lectures <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                  <div class="admin-row-menu-wrap">
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" title="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i><span class="sr-only">More actions</span></button>
+                    <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                      <button type="button" class="admin-row-menu__item preweek-edit-open" data-id="<?php echo (int)$pid; ?>" data-title="<?php echo h($ptitle); ?>" @click="menuOpen = false"><i class="bi bi-pencil"></i> Edit</button>
+                      <?php if ($hasPreweekContent): ?>
+                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger preweek-delete-blocked-btn" data-tc="<?php echo (int)$tc; ?>" data-vc="<?php echo (int)$vc; ?>" data-hc="<?php echo (int)$hc; ?>" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
+                      <?php else: ?>
+                      <form method="post" action="admin_preweek" class="m-0" onsubmit="return confirm('Delete this pre-week? This cannot be undone.');">
+                        <input type="hidden" name="delete_preweek" value="1">
+                        <input type="hidden" name="preweek_unit_id" value="<?php echo (int)$pid; ?>">
+                        <input type="hidden" name="return_q" value="<?php echo h($filterQ); ?>">
+                        <input type="hidden" name="return_sort" value="<?php echo h($sort); ?>">
+                        <button type="submit" class="admin-row-menu__item admin-row-menu__item--danger w-full" @click="menuOpen = false"><i class="bi bi-trash"></i> Delete</button>
+                      </form>
+                      <?php endif; ?>
                     </div>
                   </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+  </section>
 
   <div id="addPreweekModal" class="preweek-modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="addPreweekModalTitle">
     <div class="preweek-modal-panel">
@@ -379,9 +376,9 @@ $preweekNavStep = 'list';
               <p class="text-xs text-gray-500 mt-2 mb-0">Shown to students. Not tied to a subject.</p>
             </div>
           </div>
-          <div class="flex flex-wrap gap-2 justify-end mt-6 pt-2 border-t border-white/10">
+          <div class="flex flex-wrap gap-2 justify-end mt-6 pt-2 border-t border-slate-100">
             <button type="button" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2" id="preweekCancelAddModal">Cancel</button>
-            <button type="submit" class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2 inline-flex items-center gap-2">
+            <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">
               <i class="bi bi-arrow-right-circle" aria-hidden="true"></i> Continue to lectures
             </button>
           </div>
@@ -408,9 +405,9 @@ $preweekNavStep = 'list';
               <input type="text" name="preweek_name" id="edit_preweek_name_input" required maxlength="255" class="input-custom w-full" placeholder="Pre-week name" autocomplete="off">
             </div>
           </div>
-          <div class="flex flex-wrap gap-2 justify-end mt-6 pt-2 border-t border-white/10">
+          <div class="flex flex-wrap gap-2 justify-end mt-6 pt-2 border-t border-slate-100">
             <button type="button" class="admin-outline-btn px-4 py-2.5 rounded-lg font-semibold border-2" id="preweekCancelEditModal">Cancel</button>
-            <button type="submit" class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2 inline-flex items-center gap-2">
+            <button type="submit" class="admin-btn admin-btn--primary px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">
               <i class="bi bi-check2" aria-hidden="true"></i> Save
             </button>
           </div>
@@ -429,7 +426,7 @@ $preweekNavStep = 'list';
       </div>
       <div class="preweek-modal-body">
         <p class="text-gray-300 text-sm leading-relaxed m-0" id="preweekDeleteBlockedMsg"></p>
-        <div class="flex justify-end mt-6 pt-2 border-t border-white/10">
+        <div class="flex justify-end mt-6 pt-2 border-t border-slate-100">
           <button type="button" class="admin-content-btn admin-content-btn--subject px-4 py-2.5 rounded-lg font-semibold border-2" id="preweekDeleteBlockedOk">OK</button>
         </div>
       </div>

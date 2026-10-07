@@ -20,12 +20,22 @@ require_once dirname(__DIR__) . '/includes/examination_questions.php';
 
 $publishCheck = examination_questions_validate_for_publish($conn, $examType, $sourceId);
 $diagSupply = $examType === 'diagnostic' ? examination_questions_diagnostic_supply($conn, $sourceId) : null;
+$regularSupply = null;
+if ($examType === 'regular') {
+    require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
+    $regularSupply = college_exam_topic_supply($conn, $sourceId);
+}
 
 $pageTitle = 'Review & Publish';
 $adminHeroIcon = 'check2-circle';
+$professorFeatureHero = true;
+$adminHeroEyebrow = 'Examination management';
 $adminHeroTitle = 'Review & Publish';
 $adminHeroSubtitle = (string)($rec['title'] ?? '');
-$adminHeroActions = '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_examinations"><i class="bi bi-arrow-left"></i> Back to Examinations</a>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], ['Review']];
+$adminBackHref = 'professor_examinations';
+$adminBackLabel = 'Back to Examinations';
+$adminHeroActions = '';
 $activeStep = 'review';
 ?>
 <!DOCTYPE html>
@@ -33,7 +43,7 @@ $activeStep = 'review';
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
@@ -49,18 +59,19 @@ $activeStep = 'review';
 
 <?php require dirname(__DIR__) . '/includes/examination_edit_steps.php'; ?>
 
-<section class="rounded-xl overflow-hidden page-table p-6 mb-4">
-  <h2 class="text-base font-bold mb-3">Examination</h2>
+<section class="prof-workspace prof-workspace--form mb-4">
+  <div class="prof-form-section">
+  <h2 class="prof-form-section__title">Examination</h2>
   <div class="examination-summary-row"><span class="examination-summary-label">Title</span><span class="examination-summary-value"><?php echo h($rec['title']); ?></span></div>
   <div class="examination-summary-row"><span class="examination-summary-label">Type</span><span class="examination-summary-value"><?php echo h($rec['exam_type_label']); ?></span></div>
   <div class="examination-summary-row"><span class="examination-summary-label">Audience</span><span class="examination-summary-value"><?php echo h($rec['assignment_summary']); ?></span></div>
   <div class="examination-summary-row"><span class="examination-summary-label">Schedule</span><span class="examination-summary-value"><?php echo h($rec['schedule_line']); ?></span></div>
   <div class="examination-summary-row"><span class="examination-summary-label">Time limit</span><span class="examination-summary-value"><?php echo h(examination_format_time_limit_display((int)$rec['time_limit_seconds'])); ?></span></div>
   <div class="examination-summary-row"><span class="examination-summary-label">Status</span><span class="examination-summary-value"><?php echo h($rec['status_label']); ?></span></div>
-</section>
+  </div>
 
-<section class="rounded-xl overflow-hidden page-table p-6 mb-4">
-  <h2 class="text-base font-bold mb-3">Questions</h2>
+  <div class="prof-form-section">
+  <h2 class="prof-form-section__title">Questions</h2>
   <div class="examination-summary-row"><span class="examination-summary-label">Total questions</span><span class="examination-summary-value"><?php echo (int)$rec['question_count']; ?></span></div>
 
   <?php if ($examType === 'diagnostic' && $diagSupply): ?>
@@ -74,6 +85,41 @@ $activeStep = 'review';
           </span>
         </div>
       <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($examType === 'regular' && $regularSupply && !empty($regularSupply['configured'])): ?>
+    <div class="mt-4">
+      <h3 class="text-sm font-bold mb-2">Exam Coverage</h3>
+      <?php if (($regularSupply['mode'] ?? '') === 'overall'): ?>
+        <div class="examination-summary-row">
+          <span class="examination-summary-label">Overall</span>
+          <span class="examination-summary-value">
+            <?php echo !empty($regularSupply['ok']) ? '✓' : '✗'; ?>
+            <?php echo (int)($regularSupply['total_authored'] ?? 0); ?> / <?php echo (int)$regularSupply['total_required']; ?>
+          </span>
+        </div>
+      <?php else: ?>
+        <div class="space-y-2">
+          <?php foreach (($regularSupply['subjects'] ?? []) as $ss): ?>
+            <div class="examination-summary-row">
+              <span class="examination-summary-label"><?php echo !empty($ss['ok']) ? '✓' : '✗'; ?> <?php echo h((string)$ss['subject_name']); ?></span>
+              <span class="examination-summary-value"><?php echo (int)$ss['authored']; ?> / <?php echo (int)$ss['questions_required']; ?></span>
+            </div>
+            <?php if (($regularSupply['mode'] ?? '') === 'subject_topic'): ?>
+              <?php foreach (($ss['topics'] ?? []) as $tt): ?>
+                <div class="examination-summary-row pl-4">
+                  <span class="examination-summary-label opacity-80"><?php echo !empty($tt['ok']) ? '✓' : '✗'; ?> <?php echo h((string)$tt['topic_name']); ?></span>
+                  <span class="examination-summary-value"><?php echo (int)$tt['authored']; ?> / <?php echo (int)$tt['required']; ?></span>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      <?php if ((int)($regularSupply['remaining'] ?? 0) > 0): ?>
+        <p class="text-sm mt-2 mb-0 opacity-80"><?php echo (int)$regularSupply['remaining']; ?> question(s) remaining.</p>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
 
@@ -93,9 +139,9 @@ $activeStep = 'review';
   <?php else: ?>
     <p class="text-sm mt-3 mb-0 opacity-80"><i class="bi bi-check-circle text-emerald-600"></i> Question requirements are satisfied.</p>
   <?php endif; ?>
-</section>
+  </div>
 
-<form method="post" class="flex flex-wrap gap-3 items-center mb-4">
+<form method="post" class="flex flex-wrap gap-3 items-center pt-4">
   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
   <input type="hidden" name="action" value="save_config">
   <input type="hidden" name="exam_type" value="<?php echo h($examType); ?>">
@@ -111,6 +157,7 @@ $activeStep = 'review';
   <a href="<?php echo h(examination_domain_monitor_url($examType, $sourceId)); ?>" class="admin-btn admin-btn--ghost"><i class="bi bi-graph-up"></i> Monitor</a>
 </form>
 
-<p class="text-sm opacity-70 mb-6">Drafts may be incomplete. Publishing requires valid configuration, assignment, and complete questions.</p>
+<p class="text-sm opacity-70 mt-3 mb-0">Drafts may be incomplete. Publishing requires valid configuration, assignment, and complete questions.</p>
+</section>
 </body>
 </html>

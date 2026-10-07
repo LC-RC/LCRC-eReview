@@ -43,10 +43,31 @@ $appShellSidebarDateLine = $appShellSidebarNow->format('D, M j');
 $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:i A') . ' · ' . $appShellSidebarDateLine . ' · Philippines · ' . $appShellSidebarOffsetLabel;
 ?>
 <aside id="app-sidebar"
-       class="app-shell-sidebar app-shell-sidebar--<?php echo h($appShellTheme); ?> fixed top-0 left-0 h-screen z-[1000] flex flex-col overflow-x-hidden overflow-y-auto"
+       class="app-shell-sidebar app-shell-sidebar--<?php echo h($appShellTheme); ?> z-[1000] flex flex-col<?php echo $appShellTheme === 'admin'
+         ? ' sticky top-0 h-screen shrink-0 overflow-hidden bg-gradient-to-b from-white/70 via-blue-50/35 to-violet-50/40 backdrop-blur-2xl border-r border-white/70'
+         : ' fixed top-0 left-0 h-screen overflow-x-hidden overflow-y-auto'; ?>"
        data-app-theme="<?php echo h($appShellTheme); ?>"
        data-storage-key="<?php echo h($storageKey); ?>"
        aria-label="<?php echo $appShellTheme === 'admin' ? 'Staff' : ($appShellTheme === 'professor' ? 'Professor' : 'Student'); ?> navigation">
+  <?php if ($appShellTheme === 'admin'): ?>
+  <div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+    <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"></div>
+    <div class="absolute -left-8 -top-10 h-36 w-36 rounded-full bg-blue-400/15 blur-3xl"></div>
+    <div class="absolute right-0 top-1/3 h-32 w-32 rounded-full bg-indigo-400/12 blur-3xl"></div>
+    <div class="absolute -right-10 bottom-16 h-40 w-40 rounded-full bg-violet-400/15 blur-3xl"></div>
+  </div>
+  <?php endif; ?>
+  <?php if ($appShellTheme === 'admin'): ?>
+  <div class="app-shell-sidebar-header app-shell-sidebar-header--brand shrink-0">
+    <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link" aria-label="LCRC eReview System, open Dashboard">
+      <img src="<?php echo h(ereview_url('assets/branding/lcrc-logo.png')); ?>" alt="" class="app-shell-sidebar-brand-logo" width="42" height="42">
+      <span class="app-shell-sidebar-brand-text">
+        <span class="app-shell-sidebar-brand-title">LCRC</span>
+        <span class="app-shell-sidebar-brand-sub">eReview System</span>
+      </span>
+    </a>
+  </div>
+  <?php endif; ?>
   <?php if ($appShellSidebarHeader === 'profile'): ?>
   <div class="app-shell-sidebar-header app-shell-sidebar-header--profile px-4 py-2.5 border-b border-white/15 flex items-center shrink-0 transition-all duration-300 app-shell-hide-when-collapsed-center">
     <a href="<?php echo h(ereview_url($appShellProfileHref ?? 'student_dashboard')); ?>" class="student-sidebar-brand flex items-center gap-3 min-w-0 overflow-hidden rounded-xl px-2 py-1.5 -mx-2 transition-all duration-300 w-full app-shell-brand-link">
@@ -61,18 +82,19 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     </a>
   </div>
   <?php else: ?>
-  <?php if ($appShellTheme === 'professor'): ?>
-    <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-transparent border-b border-white/10 shrink-0 flex items-center">
-      <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
-        <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon text-green-200/90" aria-hidden="true"></i>
-        <span class="app-shell-sidebar-brand-text text-white">LCRC eReview</span>
-      </a>
-    </div>
-  <?php else: ?>
+  <?php if ($appShellTheme === 'student'): ?>
     <div class="app-shell-sidebar-header app-shell-sidebar-header--brand p-5 bg-white/10 border-b border-white/10 shrink-0 flex items-center">
       <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link text-white text-xl font-bold m-0 flex items-center gap-2">
-        <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon" aria-hidden="true"></i>
-        <span class="app-shell-sidebar-brand-text">LCRC eReview</span>
+        <?php if (!empty($appShellCollegeChrome)): ?>
+          <img src="<?php echo h(ereview_url('assets/branding/lcrc-logo.png')); ?>" alt="" class="app-shell-sidebar-brand-logo" width="42" height="42">
+          <span class="app-shell-sidebar-brand-text">
+            <span class="app-shell-sidebar-brand-title">LCRC</span>
+            <span class="app-shell-sidebar-brand-sub">eReview</span>
+          </span>
+        <?php else: ?>
+          <i class="bi bi-mortarboard-fill app-shell-sidebar-brand-icon" aria-hidden="true"></i>
+          <span class="app-shell-sidebar-brand-text">LCRC eReview</span>
+        <?php endif; ?>
       </a>
       <?php if ($appShellTheme === 'student'): ?>
       <button type="button" id="app-sidebar-close-btn" class="app-shell-sidebar-close-btn" aria-label="Close menu">
@@ -83,10 +105,10 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   <?php endif; ?>
   <?php endif; ?>
 
-  <nav class="app-shell-nav flex-1 overflow-y-auto min-h-0 <?php echo ($appShellTheme === 'admin' || $appShellTheme === 'professor') ? 'py-5' : 'py-3 px-2'; ?>" aria-label="Main navigation">
+  <nav class="app-shell-nav flex-1 overflow-y-auto min-h-0 <?php echo ($appShellTheme === 'admin' || $appShellTheme === 'professor') ? 'py-3' : 'py-3 px-2'; ?>" aria-label="Main navigation">
     <ul class="flex flex-col gap-0 <?php echo $appShellTheme === 'student' ? 'flex-1 min-h-0 gap-1' : ''; ?>">
       <?php foreach ($appShellNavConfig as $section): ?>
-      <li class="admin-sidebar-section app-shell-nav-section">
+      <li class="admin-sidebar-section app-shell-nav-section<?php echo $appShellTheme === 'admin' ? ' mx-2 mt-2 mb-0.5 px-2 py-0.5' : ''; ?>">
         <span class="admin-sidebar-section-label app-shell-section-label" aria-hidden="true"><?php echo h($section['label'] ?? ''); ?></span>
       </li>
       <?php foreach ($section['items'] ?? [] as $item):
@@ -95,9 +117,11 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
         $isLocked = !empty($item['acl_locked']);
 
         if ($appShellTheme === 'admin') {
-          $classes = 'app-shell-nav-link app-shell-nav-link--admin flex items-center gap-3 px-5 py-3 text-white/80 hover:bg-white/10 hover:text-white border-l-4 border-transparent hover:border-white transition';
+          $classes = 'app-shell-nav-link app-shell-nav-link--admin flex items-center gap-3 rounded-[14px] px-3 py-2 text-sm font-medium transition-all duration-150';
           if ($isActive) {
-            $classes .= ' bg-white/15 text-white border-l-white font-semibold';
+            $classes .= ' admin-nav-active is-active bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-md shadow-blue-500/20';
+          } else {
+            $classes .= ' hover:bg-white/60 hover:text-slate-900';
           }
           if ($isLocked) {
             $classes .= ' app-shell-nav-link--locked is-locked';
@@ -148,15 +172,29 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     </ul>
   </nav>
 
-  <footer class="app-shell-sidebar-footer shrink-0 border-t border-white/10 px-3 py-3.5 mt-auto">
+  <footer class="app-shell-sidebar-footer shrink-0 border-t border-white/50 px-2.5 py-2.5 mt-auto">
+    <?php if ($appShellTheme === 'admin' && empty($appShellHideEmpowerPromo)): ?>
+    <a href="<?php echo h(ereview_url('admin_students')); ?>" class="admin-sidebar-empower app-shell-hide-when-collapsed no-underline mb-2.5 relative overflow-hidden flex items-center gap-2.5">
+      <span class="admin-sidebar-empower__icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+      <span class="min-w-0 flex-1">
+        <span class="admin-sidebar-empower__title">Empower more learners</span>
+        <span class="admin-sidebar-empower__sub">Quality review. Brighter futures.</span>
+      </span>
+      <span class="admin-sidebar-empower__go"><i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+    </a>
+    <?php endif; ?>
     <div
-      class="app-shell-sidebar-time app-shell-sidebar-time--<?php echo h($appShellTheme); ?>"
+      class="app-shell-sidebar-time app-shell-sidebar-time--<?php echo h($appShellTheme); ?><?php echo $appShellTheme === 'admin' ? ' relative overflow-hidden bg-white/55 backdrop-blur-xl border border-white/70 rounded-xl shadow-sm px-2.5 py-2.5 ring-1 ring-white/80' : ''; ?>"
       id="appShellSidebarTimeBlock"
       role="group"
       aria-label="Program time, Philippines, Manila"
       title="<?php echo htmlspecialchars($appShellSidebarTimeTooltip, ENT_QUOTES, 'UTF-8'); ?>"
     >
-      <div class="app-shell-sidebar-time-icon" aria-hidden="true">
+      <?php if ($appShellTheme === 'admin'): ?>
+      <div class="pointer-events-none absolute -left-3 -top-3 h-14 w-14 rounded-full bg-blue-400/20 blur-2xl" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -right-4 -bottom-4 h-16 w-16 rounded-full bg-emerald-400/20 blur-2xl" aria-hidden="true"></div>
+      <?php endif; ?>
+      <div class="app-shell-sidebar-time-icon<?php echo $appShellTheme === 'admin' ? ' scale-110' : ''; ?>" aria-hidden="true">
         <span class="app-shell-sidebar-time-ring"></span>
         <svg class="app-shell-sidebar-clock-svg" viewBox="0 0 36 36" width="36" height="36" focusable="false">
           <circle class="app-shell-sidebar-clock-face" cx="18" cy="18" r="15.25" />
@@ -183,8 +221,8 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
         <div class="app-shell-sidebar-time-hero" id="appSidebarLocalTimeHero">
           <time class="app-shell-sidebar-time-digital" id="appSidebarLocalTimeTime" datetime="<?php echo htmlspecialchars($appShellSidebarNow->format('c'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($appShellSidebarTimeDigital, ENT_QUOTES, 'UTF-8'); ?></time>
         </div>
-        <div class="app-shell-sidebar-time-date" id="appSidebarLocalTimeDate"><?php echo htmlspecialchars($appShellSidebarDateLine, ENT_QUOTES, 'UTF-8'); ?></div>
-        <div class="app-shell-sidebar-time-meta" id="appSidebarLocalTimeMeta">Philippines · <?php echo htmlspecialchars($appShellSidebarOffsetLabel, ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="app-shell-sidebar-time-date text-xs text-slate-500" id="appSidebarLocalTimeDate"><?php echo htmlspecialchars($appShellSidebarDateLine, ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="app-shell-sidebar-time-meta sr-only" id="appSidebarLocalTimeMeta">Philippines · <?php echo htmlspecialchars($appShellSidebarOffsetLabel, ENT_QUOTES, 'UTF-8'); ?></div>
       </div>
       <span id="appSidebarLocalTimeLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
     </div>
@@ -234,20 +272,48 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     return body.classList.contains('pg-game-mode');
   }
 
+  function isProfessorAdmin() {
+    return body.classList.contains('professor-admin');
+  }
+
+  function isCollegeStudentApp() {
+    return body.classList.contains('college-student-app')
+      || body.classList.contains('college-examination-portal');
+  }
+
+  function usesLuminousOverlayNav() {
+    return isProfessorAdmin() || isCollegeStudentApp();
+  }
+
+  function isOverlayNav() {
+    var q = usesLuminousOverlayNav() ? '(max-width: 991.98px)' : '(max-width: 1024px)';
+    return window.matchMedia ? window.matchMedia(q).matches : false;
+  }
+
+  function isDesktopNav() {
+    var q = usesLuminousOverlayNav() ? '(min-width: 992px)' : '(min-width: 1024px)';
+    return window.matchMedia ? window.matchMedia(q).matches : true;
+  }
+
+  function persistSidebarPref(val) {
+    if (isGameMode()) return;
+    if (usesLuminousOverlayNav() && isOverlayNav()) return;
+    try { localStorage.setItem(STORAGE_KEY, val); } catch (e) {}
+  }
+
   function openSidebar() {
     body.classList.add('sidebar-expanded');
-    // Play/result pages are overlay-only; do not overwrite the normal-page preference.
-    if (!isGameMode()) {
-      try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
-    }
+    persistSidebarPref('1');
     syncToggleAria();
+    if (usesLuminousOverlayNav() && isOverlayNav()) {
+      try { window.dispatchEvent(new CustomEvent('professor-close-profile')); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('ereview-close-profile')); } catch (e) {}
+    }
   }
 
   function closeSidebar() {
     body.classList.remove('sidebar-expanded');
-    if (!isGameMode()) {
-      try { localStorage.setItem(STORAGE_KEY, '0'); } catch (e) {}
-    }
+    persistSidebarPref('0');
     syncToggleAria();
   }
 
@@ -272,9 +338,9 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   window.closeAppShellSidebar = closeSidebar;
 
   document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape' && body.classList.contains('sidebar-expanded')) {
-      closeSidebar();
-    }
+    if (ev.key !== 'Escape' || !body.classList.contains('sidebar-expanded')) return;
+    if (usesLuminousOverlayNav() && !isOverlayNav()) return;
+    closeSidebar();
   });
 
   var backdrop = document.getElementById('sidebar-backdrop');
@@ -301,8 +367,7 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
     if (!target || !target.closest) return;
     var navLink = target.closest('.app-shell-nav-link');
     if (!navLink) return;
-    var isMobile = window.matchMedia ? window.matchMedia('(max-width: 1024px)').matches : false;
-    if (isMobile || isGameMode()) closeSidebar();
+    if (isOverlayNav() || isGameMode()) closeSidebar();
   });
 
   (function init() {
@@ -312,7 +377,12 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
       syncToggleAria();
       return;
     }
-    var isDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)').matches : true;
+    if (usesLuminousOverlayNav() && isOverlayNav()) {
+      body.classList.remove('sidebar-expanded');
+      syncToggleAria();
+      return;
+    }
+    var isDesktop = isDesktopNav();
     var saved = null;
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
     if (saved === '1') openSidebar();
@@ -544,12 +614,12 @@ include __DIR__ . '/../logout_confirm_modal.php';
 ?>
 
 <?php if ($appShellTheme === 'admin'): ?>
-<main id="main" class="min-h-screen flex flex-col admin-main-shell font-sans">
+<main id="main" class="admin-main-shell min-w-0 flex-1 flex flex-col font-sans">
 <?php
 $appShellTopbarTheme = 'admin';
 include __DIR__ . '/app_shell_topbar.php';
 ?>
-<div class="admin-content flex-1 pt-5 pb-5">
+<div class="admin-content page-content mx-auto w-full px-4 py-4">
 <?php elseif ($appShellTheme === 'professor'): ?>
 <main id="main" class="min-h-screen flex flex-col bg-white text-gray-700 font-sans">
 <?php

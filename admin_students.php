@@ -300,6 +300,16 @@ $studentsViewUrl = 'admin_students?' . http_build_query(array_filter([
 $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => 'deleted', 'dq' => $dq], static function ($v) {
   return $v !== '' && $v !== null;
 }));
+$showFrom = $total === 0 ? 0 : ($offset + 1);
+$showTo = $total === 0 ? 0 : min($offset + $perPage, $total);
+$statusSummary = [
+  'enrolled' => ['Enrolled', 'enrolled'],
+  'pending' => ['Needs review', 'review'],
+  'expired' => ['Expired', 'expired'],
+  'rejected' => ['Rejected', 'rejected'],
+  'archived' => ['Archived', 'archived'],
+  'all' => ['All', 'all'],
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -368,7 +378,8 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       transition: background-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
     }
     .admin-students-table tbody tr:hover {
-      box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.75);
+      background: rgba(239, 246, 255, 0.45);
+      box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.55);
       transform: none;
     }
     .admin-students-table tbody tr.student-row-priority-moved {
@@ -387,17 +398,30 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       }
     }
     .student-name {
-      font-weight: 650;
-      color: var(--admin-text, #ffffff);
-      font-size: 0.86rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
       line-height: 1.25;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       text-align: left;
     }
+    .admin-students-table .col-email,
+    .admin-students-table .col-created {
+      font-size: 0.8125rem;
+      color: #64748b;
+    }
+    .admin-students-table thead th {
+      background: rgb(248 250 252 / 0.8);
+    }
+    .admin-students-table tbody tr:hover {
+      background: rgb(239 246 255 / 0.4);
+      box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.55);
+      transform: none;
+    }
     .student-email {
-      color: var(--admin-text, #ffffff);
+      color: #64748b;
       font-weight: 500;
       font-size: 0.8rem;
       white-space: nowrap;
@@ -856,22 +880,28 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
     .admin-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(2, 6, 23, 0.52);
+      background: rgba(2, 6, 15, 0.62);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 1200;
-      backdrop-filter: blur(2px);
-      padding: 1rem;
+      z-index: 910;
+      backdrop-filter: blur(8px);
+      padding: 24px;
+      overflow: hidden;
     }
-    .admin-modal-overlay.is-open { display: flex; }
+    .admin-modal-overlay.is-open { display: grid; place-items: center; }
     .admin-modal {
       width: min(100%, 30rem);
-      border-radius: 0.95rem;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      border: 1px solid rgba(148, 163, 184, 0.32);
-      box-shadow: 0 26px 60px rgba(15, 23, 42, 0.38);
+      max-height: calc(100dvh - 48px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 1.25rem;
+      background: var(--glass-surface-strong, #161c22);
+      border: 1px solid var(--glass-border, rgba(255,255,255,.1));
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,.06);
       padding: 1rem 1rem 1.15rem;
+      color: var(--text-primary);
       animation: adminModalIn 0.2s ease forwards;
     }
     .admin-modal--danger {
@@ -1032,23 +1062,30 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
       white-space: nowrap;
       font-size: 0.78rem;
     }
-    /* Modal refresh v2 - above messaging/notification shells (1200-1400) */
+    /* Modal refresh v2 */
     .admin-modal-overlay {
-      background: radial-gradient(circle at 20% 10%, rgba(30, 64, 175, 0.22) 0%, rgba(2, 6, 23, 0.78) 42%, rgba(2, 6, 23, 0.9) 100%);
-      backdrop-filter: blur(6px);
-      z-index: 1600;
+      background: rgba(2, 6, 15, 0.62);
+      backdrop-filter: blur(8px);
+      z-index: 910;
+    }
+    html[data-admin-theme="light"] .admin-modal-overlay {
+      background: rgba(30, 45, 75, 0.22);
     }
     .admin-modal {
       width: min(100%, 32rem);
-      border-radius: 1rem;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(10, 15, 30, 0.97) 100%);
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      box-shadow: 0 26px 70px rgba(2, 6, 23, 0.68);
-      color: #e2e8f0;
+      max-height: calc(100dvh - 48px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 1.25rem;
+      background: var(--glass-surface-strong);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 var(--glass-highlight);
+      color: var(--text-primary);
       padding: 1.05rem 1.05rem 1.15rem;
     }
-    .admin-modal__title { color: #f8fafc; font-size: 1.12rem; }
-    .admin-modal__desc { color: rgba(226, 232, 240, 0.86); }
+    .admin-modal__title { color: var(--text-primary); font-size: 1.12rem; }
+    .admin-modal__desc { color: var(--text-secondary); }
     .admin-modal__hero-icon { box-shadow: inset 0 1px 0 rgba(255,255,255,0.14); }
     .admin-modal__hero-icon--approve {
       background: rgba(16, 185, 129, 0.16);
@@ -1376,21 +1413,26 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
 
   <?php
     $adminHeroIcon = 'people';
+    $adminHeroEyebrow = 'Student management';
     $adminHeroTitle = 'Students';
-    $adminHeroSubtitle = 'Manage registered and enrolled reviewees.';
-    $adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="admin_student_access"><i class="bi bi-plus-lg"></i> New Student</a>';
+    $adminHeroSubtitle = $view === 'deleted'
+      ? 'Legacy hard-deletion snapshots'
+      : 'Enrollment roster — identity, access, and review workflows in one premium table.';
+    $adminHeroMeta = '';
+    $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold' . ($view === 'deleted' ? ' is-active' : '') . '" href="' . h($deletedViewUrl) . '"><i class="bi bi-clock-history" aria-hidden="true"></i> Deletion Log</a>'
+      . '<a class="admin-btn admin-btn--primary admin-btn--sm inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold" href="admin_student_access"><i class="bi bi-plus-lg" aria-hidden="true"></i> New Student</a>';
     include __DIR__ . '/includes/components/admin_page_hero.php';
   ?>
 
   <?php if (isset($_SESSION['message'])): ?>
-    <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--success mb-3 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-emerald-700">
       <i class="bi bi-check-circle-fill"></i>
       <span><?php echo h($_SESSION['message']); ?></span>
       <?php unset($_SESSION['message']); ?>
     </div>
   <?php endif; ?>
   <?php if (isset($_SESSION['error'])): ?>
-    <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2">
+    <div class="admin-flash admin-flash--error mb-3 flex items-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 p-3 text-rose-700">
       <i class="bi bi-exclamation-triangle-fill"></i>
       <span><?php echo h($_SESSION['error']); ?></span>
       <?php unset($_SESSION['error']); ?>
@@ -1398,33 +1440,51 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
   <?php endif; ?>
 
   <div class="students-page-shell">
-    <nav class="students-view-tabs" aria-label="Students sections">
-      <a href="<?php echo h($studentsViewUrl); ?>" class="students-view-tab <?php echo $view === 'students' ? 'is-active' : ''; ?>">Students</a>
-      <a href="<?php echo h($deletedViewUrl); ?>" class="students-view-tab <?php echo $view === 'deleted' ? 'is-active' : ''; ?>">Historical Deletion Log</a>
-    </nav>
-
     <?php if ($view === 'deleted'): ?>
       <div class="admin-flash admin-flash--info mb-3 p-3 rounded-xl text-sm">
         This log keeps snapshots of past hard deletions (legacy). Active archiving uses the <strong>Archived</strong> status tab — student rows and exam history are preserved there.
       </div>
-      <div class="students-toolbar page-filter">
-        <form method="GET" class="students-toolbar__search">
-          <input type="hidden" name="view" value="deleted">
-          <div class="students-search">
-            <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="dq" value="<?php echo h($dq); ?>" placeholder="Search deleted users..." aria-label="Search deleted users">
+      <form method="GET" class="admin-data-toolbar students-toolbar__search">
+        <input type="hidden" name="view" value="deleted">
+        <div class="admin-data-toolbar__row">
+          <div class="admin-filter-field admin-filter-search">
+            <label for="adminStudentsDeletedSearch">Search</label>
+            <div class="admin-filter-search__control">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <input type="search" id="adminStudentsDeletedSearch" name="dq" value="<?php echo h($dq); ?>" placeholder="Search deleted users..." aria-label="Search deleted users">
+            </div>
           </div>
-          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm">Filter</button>
-          <?php if ($dq !== ''): ?>
-            <a href="admin_students?view=deleted" class="students-clear-link">Clear</a>
-          <?php endif; ?>
-        </form>
-        <span class="students-toolbar__meta"><?php echo count($deletedLogs); ?> record<?php echo count($deletedLogs) === 1 ? '' : 's'; ?></span>
-      </div>
+          <div class="admin-filter-field admin-filter-field--actions">
+            <span class="admin-filter-field__spacer" aria-hidden="true"></span>
+            <div class="admin-filter-actions">
+              <button type="submit" class="admin-btn admin-btn--primary">Filter</button>
+              <?php if ($dq !== ''): ?>
+                <a href="admin_students?view=deleted" class="admin-btn admin-btn--ghost">Reset</a>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      </form>
 
-      <div class="rounded-xl overflow-hidden page-table students-table-shell">
+      <div class="students-table-shell admin-data-surface">
+        <div class="admin-data-header">
+          <div>
+            <div class="admin-data-header__title">Deletion log</div>
+            <div class="admin-data-header__meta"><?php echo count($deletedLogs); ?> result<?php echo count($deletedLogs) === 1 ? '' : 's'; ?></div>
+          </div>
+        </div>
+        <?php if (empty($deletedLogs)): ?>
+          <div class="admin-empty-state">
+            <span class="admin-empty-state__icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <h3 class="admin-empty-state__title"><?php echo $hasDeletedLogTable ? 'No deleted users logged yet.' : 'Deleted users log is not available.'; ?></h3>
+            <p class="admin-empty-state__desc">Try adjusting your search or filters.</p>
+            <?php if ($dq !== ''): ?>
+              <a class="admin-btn admin-btn--ghost" href="admin_students?view=deleted">Clear filters</a>
+            <?php endif; ?>
+          </div>
+        <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left deleted-log-table students-table--compact">
+          <table class="w-full text-left deleted-log-table students-table--compact admin-data-table">
             <thead>
               <tr>
                 <th>User ID</th>
@@ -1439,13 +1499,6 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
               </tr>
             </thead>
             <tbody>
-              <?php if (empty($deletedLogs)): ?>
-                <tr>
-                  <td colspan="9" class="students-empty-cell">
-                    <?php echo $hasDeletedLogTable ? 'No deleted users logged yet.' : 'Deleted users log is not available.'; ?>
-                  </td>
-                </tr>
-              <?php else: ?>
                 <?php foreach ($deletedLogs as $dl): ?>
                   <?php
                     $deletedAccessLabel = (string)($dl['deleted_access_range'] ?? '-');
@@ -1471,59 +1524,58 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     <td class="whitespace-nowrap"><?php echo !empty($dl['deleted_at']) ? h(date('M j, Y g:i A', strtotime((string)$dl['deleted_at']))) : '-'; ?></td>
                   </tr>
                 <?php endforeach; ?>
-              <?php endif; ?>
             </tbody>
           </table>
         </div>
+        <?php endif; ?>
       </div>
 
     <?php else: ?>
 
-      <div class="students-toolbar page-filter">
-        <nav class="students-status-chips" aria-label="Filter by status">
-          <?php
-            $statusChips = [
-              'enrolled' => ['Enrolled', 'bi-check2-circle'],
-              'pending' => ['Needs review', 'bi-hourglass-split'],
-              'expired' => ['Expired', 'bi-calendar-x'],
-              'rejected' => ['Rejected', 'bi-x-circle'],
-              'archived' => ['Archived', 'bi-archive'],
-              'all' => ['All', 'bi-collection'],
-            ];
-            foreach ($statusChips as $key => $meta):
-          ?>
-            <a href="<?php echo h($mk($key, 1)); ?>" class="students-status-chip <?php echo $tab === $key ? 'is-active' : ''; ?>">
-              <i class="bi <?php echo h($meta[1]); ?>" aria-hidden="true"></i>
-              <span><?php echo h($meta[0]); ?></span>
-              <span class="students-status-chip__count"><?php echo (int)$counts[$key]; ?></span>
-            </a>
-          <?php endforeach; ?>
-        </nav>
-        <form method="GET" class="students-toolbar__search" id="adminStudentsFilterForm">
-          <input type="hidden" name="view" value="students">
-          <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
-          <input type="hidden" name="page" value="1" id="adminStudentsPageField">
-          <?php if ($perPageParam !== '10'): ?>
-            <input type="hidden" name="per_page" value="<?php echo h($perPageParam); ?>">
-          <?php endif; ?>
-          <div class="students-search">
-            <i class="bi bi-search" aria-hidden="true"></i>
-            <input type="search" name="q" id="adminStudentsSearchInput" value="<?php echo h($q); ?>" placeholder="Search name or email..." aria-label="Search students" autocomplete="off">
+      <nav class="admin-status-strip" aria-label="Filter by status">
+        <?php foreach ($statusSummary as $key => $meta): ?>
+          <a href="<?php echo h($mk($key, 1)); ?>" class="admin-status-strip__item admin-status-strip__item--<?php echo h($meta[1]); ?><?php echo $tab === $key ? ' is-active' : ''; ?>">
+            <span class="admin-status-strip__label"><?php echo h($meta[0]); ?></span>
+            <span class="admin-status-strip__value"><?php echo (int) $counts[$key]; ?></span>
+          </a>
+        <?php endforeach; ?>
+      </nav>
+
+      <form method="GET" class="admin-data-toolbar" id="adminStudentsFilterForm">
+        <input type="hidden" name="view" value="students">
+        <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
+        <input type="hidden" name="page" value="1" id="adminStudentsPageField">
+        <?php if ($perPageParam !== '10'): ?>
+          <input type="hidden" name="per_page" value="<?php echo h($perPageParam); ?>">
+        <?php endif; ?>
+        <div class="admin-data-toolbar__row">
+          <div class="admin-filter-field admin-filter-search">
+            <label for="adminStudentsSearchInput">Search students</label>
+            <div class="admin-filter-search__control">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <input type="search" name="q" id="adminStudentsSearchInput" value="<?php echo h($q); ?>" placeholder="Search name or email..." aria-label="Search students" autocomplete="off">
+            </div>
           </div>
           <?php if (ereview_platform_access_columns_ready($conn)): ?>
-          <select name="coll_ex" id="adminStudentsCollExFilter" aria-label="College Examination filter" class="admin-btn admin-btn--secondary admin-btn--sm students-filter-select">
-            <option value="all" <?php echo $collExFilter === 'all' ? 'selected' : ''; ?>>All College Exam</option>
-            <option value="enabled" <?php echo $collExFilter === 'enabled' ? 'selected' : ''; ?>>Exam enabled</option>
-            <option value="not_enabled" <?php echo $collExFilter === 'not_enabled' ? 'selected' : ''; ?>>Exam not enabled</option>
-            <option value="suspended" <?php echo $collExFilter === 'suspended' ? 'selected' : ''; ?>>Exam suspended</option>
-          </select>
+          <div class="admin-filter-field">
+            <label for="adminStudentsCollExFilter">College Exam</label>
+            <select name="coll_ex" id="adminStudentsCollExFilter" class="input-custom">
+              <option value="all" <?php echo $collExFilter === 'all' ? 'selected' : ''; ?>>All College Exam</option>
+              <option value="enabled" <?php echo $collExFilter === 'enabled' ? 'selected' : ''; ?>>Exam enabled</option>
+              <option value="not_enabled" <?php echo $collExFilter === 'not_enabled' ? 'selected' : ''; ?>>Exam not enabled</option>
+              <option value="suspended" <?php echo $collExFilter === 'suspended' ? 'selected' : ''; ?>>Exam suspended</option>
+            </select>
+          </div>
           <?php endif; ?>
-          <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm students-filter-submit-fallback" title="Apply filters"><i class="bi bi-funnel"></i><span class="students-filter-submit-label"> Filter</span></button>
-          <?php if ($q !== '' || $collExFilter !== 'all'): ?>
-            <a href="<?php echo h($studentsClearUrl); ?>" class="students-clear-link">Clear</a>
-          <?php endif; ?>
-        </form>
-      </div>
+          <div class="admin-filter-field admin-filter-field--actions">
+            <span class="admin-filter-field__spacer" aria-hidden="true"></span>
+            <div class="admin-filter-actions">
+              <button type="submit" class="admin-btn admin-btn--primary students-filter-submit-fallback" title="Apply filters"><i class="bi bi-funnel" aria-hidden="true"></i><span class="students-filter-submit-label"> Filter</span></button>
+              <a href="<?php echo h($studentsClearUrl); ?>" class="admin-btn admin-btn--ghost">Reset</a>
+            </div>
+          </div>
+        </div>
+      </form>
 
       <div id="studentsBulkBar" class="students-bulk-bar" aria-live="polite">
         <span class="students-bulk-bar__count" id="studentsBulkCountLabel">No students selected</span>
@@ -1539,18 +1591,12 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
         </div>
       </div>
 
-      <div class="rounded-xl overflow-hidden page-table students-table-shell">
-        <div class="students-table-meta">
-          <span>
-            <?php if ($total > 0): ?>
-              <?php echo $offset + 1; ?>-<?php echo min($offset + $perPage, $total); ?> of <?php echo (int)$total; ?>
-              <?php if ($perPageIsAll && $total > $perPage): ?>
-                <span class="student-meta">(showing first <?php echo (int) $perPage; ?>)</span>
-              <?php endif; ?>
-            <?php else: ?>
-              0 students
-            <?php endif; ?>
-          </span>
+      <div class="students-table-shell admin-data-surface">
+        <div class="admin-data-header students-table-meta">
+          <div>
+            <div class="admin-data-header__title">Students</div>
+            <div class="admin-data-header__meta"><?php echo (int) $total; ?> result<?php echo (int) $total === 1 ? '' : 's'; ?></div>
+          </div>
           <form method="GET" class="students-per-page" id="adminStudentsPerPageForm" aria-label="Rows per page">
             <input type="hidden" name="view" value="students">
             <input type="hidden" name="tab" value="<?php echo h($tab); ?>">
@@ -1558,18 +1604,33 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
             <input type="hidden" name="page" value="1">
             <?php if ($collExFilter !== 'all'): ?><input type="hidden" name="coll_ex" value="<?php echo h($collExFilter); ?>"><?php endif; ?>
             <label for="adminStudentsPerPage">Show</label>
-            <select id="adminStudentsPerPage" name="per_page" class="admin-btn admin-btn--secondary admin-btn--sm">
+            <select id="adminStudentsPerPage" name="per_page" class="input-custom">
               <?php foreach ([10, 25, 50, 100] as $opt): ?>
                 <option value="<?php echo $opt; ?>" <?php echo !$perPageIsAll && $perPage === $opt ? 'selected' : ''; ?>><?php echo $opt; ?></option>
               <?php endforeach; ?>
               <option value="all" <?php echo $perPageIsAll ? 'selected' : ''; ?>>All</option>
             </select>
-            <span>students</span>
+            <span>per page</span>
           </form>
-          <span class="students-table-meta__hint hidden md:inline">Enrollment, payment, proof, access, and account at a glance · Review opens payment/FAR when needed</span>
         </div>
+        <?php if ($total === 0): ?>
+          <?php
+            $emptyHint = 'Try changing the filter or clearing search.';
+            if ($tab === 'pending') $emptyHint = 'Students requiring review or still awaiting payment/verification will appear here.';
+            elseif ($tab === 'enrolled') $emptyHint = 'Active students with an approved login account will appear here.';
+            elseif ($tab === 'expired') $emptyHint = 'Students whose account window has ended will appear here.';
+            elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
+            elseif ($tab === 'archived') $emptyHint = 'Archived students are preserved here and can be restored.';
+          ?>
+          <div class="admin-empty-state">
+            <span class="admin-empty-state__icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <h3 class="admin-empty-state__title">No students found</h3>
+            <p class="admin-empty-state__desc"><?php echo h($emptyHint); ?></p>
+            <a class="admin-btn admin-btn--ghost" href="<?php echo h($studentsClearUrl); ?>">Clear filters</a>
+          </div>
+        <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left admin-students-table students-table--compact students-table--aligned students-table--commerce">
+          <table class="w-full text-left admin-students-table students-table--compact students-table--aligned students-table--commerce admin-data-table">
             <colgroup>
               <col class="col-check">
               <col class="col-student">
@@ -1592,29 +1653,13 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                 <th class="col-email col-hide-tablet" scope="col">Email</th>
                 <th class="col-proof" scope="col">Proof</th>
                 <th class="col-commerce-access" scope="col">eReview Access</th>
-                <th class="col-coll-exam" scope="col">College Examination</th>
+                <th class="col-coll-exam" scope="col">College Exam</th>
                 <th class="col-account-status" scope="col">Account</th>
                 <th class="col-created col-hide-tablet" scope="col">Created</th>
                 <th class="col-actions student-actions-head" scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <?php if ($total === 0): ?>
-                <?php
-                  $emptyHint = 'Try changing the filter or clearing search.';
-                  if ($tab === 'pending') $emptyHint = 'Students requiring review or still awaiting payment/verification will appear here.';
-                  elseif ($tab === 'enrolled') $emptyHint = 'Active students with an approved login account will appear here.';
-                  elseif ($tab === 'expired') $emptyHint = 'Students whose account window has ended will appear here.';
-                  elseif ($tab === 'rejected') $emptyHint = 'Rejected registrations will appear here.';
-                  elseif ($tab === 'archived') $emptyHint = 'Archived students are preserved here and can be restored.';
-                ?>
-                <tr>
-                  <td colspan="9" class="students-empty-cell">
-                    <div class="font-semibold">No students found</div>
-                    <p class="text-sm mt-1 mb-0"><?php echo h($emptyHint); ?></p>
-                  </td>
-                </tr>
-              <?php else: ?>
                 <?php foreach ($studentRows as $row): ?>
                   <?php
                     $schoolLabel = $row['school'] === 'Other' && !empty($row['school_other']) ? $row['school_other'] : $row['school'];
@@ -1761,7 +1806,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     $accessFull = $hasAccessRange ? ($accessStartShort . ' - ' . $accessEndShort) : 'No access set';
                     $createdLabel = !empty($row['created_at']) ? date('M j, Y', strtotime((string)$row['created_at'])) : '-';
                   ?>
-                  <tr
+                  <tr class="transition-colors hover:bg-blue-50/40"
                     data-user-id="<?php echo (int)$row['user_id']; ?>"
                     data-student-name="<?php echo h($row['full_name']); ?>"
                     data-approvable="<?php echo ((!$isCommerceRow && $row['status'] !== 'approved') || $showRepairActivation) ? '1' : '0'; ?>"
@@ -1804,9 +1849,9 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       <?php endif; ?>
                     </td>
                     <td class="col-student">
-                      <div class="student-cell">
+                      <div class="student-cell admin-data-person">
                         <span class="student-avatar-cell" aria-hidden="true">
-                          <span class="student-avatar-media">
+                          <span class="student-avatar-media admin-data-avatar">
                             <?php if ($avatarPath !== '' && !$useDefaultAvatar): ?>
                               <img src="<?php echo h($avatarPath); ?>" alt="" loading="lazy">
                             <?php else: ?>
@@ -1815,14 +1860,14 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                           </span>
                           <span data-status-dot class="student-avatar-status-dot <?php echo $isSessionActive ? 'student-avatar-status-dot--active' : 'student-avatar-status-dot--inactive'; ?>"></span>
                         </span>
-                        <div class="student-cell__text">
-                          <div class="student-name" title="<?php echo h($row['full_name']); ?>"><?php echo h($row['full_name']); ?></div>
-                          <div class="student-meta">User #<?php echo (int) $row['user_id']; ?></div>
+                        <div class="student-cell__text admin-data-person__meta min-w-0">
+                          <div class="student-name admin-data-person__name" title="<?php echo h($row['full_name']); ?>"><?php echo h($row['full_name']); ?></div>
+                          <div class="student-meta admin-data-person__email" title="<?php echo h((string)$schoolLabel); ?>"><?php echo h((string)$schoolLabel !== '' ? $schoolLabel : 'School not set'); ?></div>
                         </div>
                       </div>
                     </td>
-                    <td class="col-email col-hide-tablet">
-                      <a href="mailto:<?php echo h($row['email']); ?>" class="commerce-proof-link" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></a>
+                    <td class="col-email col-hide-tablet student-email-cell">
+                      <a href="mailto:<?php echo h($row['email']); ?>" class="student-email-link" title="<?php echo h($row['email']); ?>"><?php echo h($row['email']); ?></a>
                     </td>
                     <td class="col-proof">
                       <?php if (!empty($dash['is_free_access']) || $proofUi === 'N/A'): ?>
@@ -1833,7 +1878,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                            data-proof-title="Proof · <?php echo h($row['full_name']); ?>"
                            href="<?php echo h($commerceProofUrl !== '' ? $commerceProofUrl : (ereview_url('payment_proof_file') . '?payment_id=' . (int) $dash['payment_id'])); ?>"
                            title="View payment proof">
-                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
+                          <i class="bi bi-eye" aria-hidden="true"></i> View proof
                         </a>
                       <?php elseif (!$isCommerceRow && $hasProof): ?>
                         <a class="commerce-proof-link"
@@ -1841,10 +1886,10 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                            target="_blank"
                            rel="noopener"
                            title="View legacy payment proof">
-                          <i class="bi bi-eye" aria-hidden="true"></i> View Proof
+                          <i class="bi bi-eye" aria-hidden="true"></i> View proof
                         </a>
                       <?php else: ?>
-                        <span class="student-meta">Not Uploaded</span>
+                        <span class="student-meta student-proof-empty">Not uploaded</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-commerce-access">
@@ -1862,7 +1907,7 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                       <?php elseif ($collExAccessVal === 'suspended'): ?>
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspended</span>
                       <?php else: ?>
-                        <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
+                        <span class="commerce-pill commerce-pill--neutral"><i class="bi bi-dash-circle" aria-hidden="true"></i> Not enabled</span>
                       <?php endif; ?>
                     </td>
                     <td class="col-account-status">
@@ -1875,20 +1920,10 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                         <?php echo h($accountUi); ?>
                       </span>
                     </td>
-                    <td class="col-created col-hide-tablet"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
+                    <td class="col-created col-hide-tablet"><span class="student-meta text-[0.7rem] text-slate-500"><?php echo h($createdFmt); ?></span></td>
                     <td class="student-action-cell col-actions">
                       <div class="student-action-cluster">
-                        <?php if ($accessTone !== 'granted' && $row['status'] !== 'rejected'): ?>
-                          <button type="button"
-                                  class="admin-btn admin-btn--ghost admin-btn--sm js-grant-access-btn hidden md:inline-flex"
-                                  data-user-id="<?php echo (int) $row['user_id']; ?>"
-                                  data-student-name="<?php echo h($row['full_name']); ?>"
-                                  data-needs-proof="<?php echo $needsProofRemind ? '1' : '0'; ?>"
-                                  title="Grant LMS access">
-                            Grant Access
-                          </button>
-                        <?php endif; ?>
-                        <a class="admin-btn admin-btn--secondary admin-btn--sm"
+                        <a class="admin-data-action"
                            href="<?php echo h($primaryActionHref); ?>">
                           <?php echo h($primaryActionLabel); ?>
                         </a>
@@ -1984,25 +2019,34 @@ $deletedViewUrl = 'admin_students?' . http_build_query(array_filter(['view' => '
                     </td>
                   </tr>
                 <?php endforeach; ?>
-              <?php endif; ?>
             </tbody>
           </table>
         </div>
-
-        <?php if ($totalPages > 1): ?>
-          <nav class="students-pagination" aria-label="Student pagination">
-            <ul>
+        <div class="admin-pagination" aria-label="Student pagination">
+          <div class="admin-pagination__meta">
+            Showing <?php echo number_format($showFrom); ?>–<?php echo number_format($showTo); ?> of <?php echo number_format((int) $total); ?>
+            <?php if ($perPageIsAll && $total > $perPage): ?>
+              <span class="student-meta"> (showing first <?php echo (int) $perPage; ?>)</span>
+            <?php endif; ?>
+          </div>
+          <?php if ($totalPages > 1): ?>
+            <nav class="admin-pagination__nav" aria-label="Pages">
               <?php if ($page > 1): ?>
-                <li><a href="<?php echo h($mk($tab, $page - 1)); ?>">Previous</a></li>
+                <a class="admin-pagination__btn" href="<?php echo h($mk($tab, $page - 1)); ?>">‹ Previous</a>
+              <?php else: ?>
+                <span class="admin-pagination__btn is-disabled" aria-disabled="true">‹ Previous</span>
               <?php endif; ?>
               <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
-                <li><a href="<?php echo h($mk($tab, $i)); ?>" class="<?php echo $i === $page ? 'is-active' : ''; ?>"><?php echo $i; ?></a></li>
+                <a class="admin-pagination__btn<?php echo $i === $page ? ' is-current' : ''; ?>" href="<?php echo h($mk($tab, $i)); ?>"<?php echo $i === $page ? ' aria-current="page"' : ''; ?>><?php echo $i; ?></a>
               <?php endfor; ?>
               <?php if ($page < $totalPages): ?>
-                <li><a href="<?php echo h($mk($tab, $page + 1)); ?>">Next</a></li>
+                <a class="admin-pagination__btn" href="<?php echo h($mk($tab, $page + 1)); ?>">Next ›</a>
+              <?php else: ?>
+                <span class="admin-pagination__btn is-disabled" aria-disabled="true">Next ›</span>
               <?php endif; ?>
-            </ul>
-          </nav>
+            </nav>
+          <?php endif; ?>
+        </div>
         <?php endif; ?>
       </div>
     <?php endif; ?>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
@@ -539,7 +539,7 @@ $prefillSecs = $_rest % 60;
     .validation-modal-body { padding: 1rem 1.15rem 1.15rem; }
   </style>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <main class="dashboard-shell w-full max-w-none flex-1 min-w-0">
@@ -767,7 +767,7 @@ $prefillSecs = $_rest % 60;
                   <th class="p-2 border-b border-green-100">B</th>
                   <th class="p-2 border-b border-green-100">C</th>
                   <th class="p-2 border-b border-green-100">D</th>
-                  <th class="p-2 border-b border-green-100">Γ£ô</th>
+                  <th class="p-2 border-b border-green-100">G��</th>
                 </tr></thead>
                 <tbody id="import-preview-body"></tbody>
               </table>
@@ -967,7 +967,7 @@ $prefillSecs = $_rest % 60;
       if (m) bits.push(m + (m === 1 ? ' min' : ' min'));
       if (s) bits.push(s + (s === 1 ? ' sec' : ' sec'));
       if (!bits.length) return 'No per-exam timer';
-      return 'Γëê ' + bits.join(' ');
+      return 'G�� ' + bits.join(' ');
     }
 
     function countFilledQuestions() {
@@ -1235,14 +1235,14 @@ $prefillSecs = $_rest % 60;
       var timeStr = formatDuration(sec);
 
       if (timeReadout) {
-        timeReadout.textContent = sec > 0 ? (timeStr.replace(/^Γëê /, '') + ' ┬╖ ' + sec.toLocaleString() + ' s') : 'No countdown';
+        timeReadout.textContent = sec > 0 ? (timeStr.replace(/^G�� /, '') + ' -+ ' + sec.toLocaleString() + ' s') : 'No countdown';
       }
 
       var bar = document.getElementById('hero-status-bar');
       if (bar) {
         var qPill = '<span class="hero-pill' + (n === 0 ? ' is-warn' : '') + '">' + (n === 0 ? '0 Q' : n + ' Q') + '</span>';
-        var catPill = '<span class="hero-pill">MCQ ' + mcqCount + ' ┬╖ T/F ' + tfCount + '</span>';
-        var tPill = '<span class="hero-pill">' + (sec <= 0 ? 'No timer' : timeStr.replace(/^Γëê /, '')) + '</span>';
+        var catPill = '<span class="hero-pill">MCQ ' + mcqCount + ' -+ T/F ' + tfCount + '</span>';
+        var tPill = '<span class="hero-pill">' + (sec <= 0 ? 'No timer' : timeStr.replace(/^G�� /, '')) + '</span>';
         var pPill = '<span class="hero-pill">' + (published ? 'Live' : 'Draft') + '</span>';
         var wPill = '<span class="hero-pill">' + windowSummaryShort() + '</span>';
         bar.innerHTML = qPill + catPill + tPill + pPill + wPill;

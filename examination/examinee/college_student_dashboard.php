@@ -21,27 +21,54 @@ if ($uidDash > 0) {
 
 $diagnosticCards = [];
 $assignedExams = examination_student_load_assigned_exams($conn, $uidDash, $now);
-$activeExams = 0;
-$completedExams = 0;
+$openNowCount = 0;
+$inProgressCount = 0;
+$upcomingCount = 0;
+$submittedCount = 0;
 $dueSoonExams = 0;
 $upcoming = [];
+$scorePercents = [];
 $soonTs = strtotime('+3 days', strtotime($now));
+$nowTs = strtotime($now) ?: time();
 
 foreach ($assignedExams as $examItem) {
     $bucket = (string)($examItem['_bucket'] ?? '');
     $st = (string)($examItem['attempt_status'] ?? '');
-    if ($bucket === 'open' || ($st === 'in_progress')) {
-        $activeExams++;
+    if ($bucket === 'open') {
+        $openNowCount++;
+        if ($st === 'in_progress') {
+            $inProgressCount++;
+        }
     }
-    if ($bucket === 'finished' || $st === 'submitted' || ($st === 'expired' && !empty($examItem['submitted_at']))) {
-        $completedExams++;
+    if ($bucket === 'upcoming') {
+        $upcomingCount++;
+    }
+    $isSubmitted = function_exists('examination_student_attempt_is_submitted')
+        ? examination_student_attempt_is_submitted($examItem)
+        : ($st === 'submitted' || ($st === 'expired' && !empty($examItem['submitted_at'])));
+    if ($isSubmitted) {
+        $submittedCount++;
+        $storedTotal = isset($examItem['total_count']) ? (int)$examItem['total_count'] : 0;
+        if ($storedTotal > 0) {
+            $scoreDisplay = college_exam_score_display_from_counts(
+                isset($examItem['correct_count']) ? (int)$examItem['correct_count'] : null,
+                $storedTotal,
+                0
+            );
+            if (is_array($scoreDisplay) && isset($scoreDisplay['percent'])) {
+                $scorePercents[] = (float)$scoreDisplay['percent'];
+            }
+        }
     }
     $deadline = trim((string)($examItem['deadline'] ?? ''));
     if ($deadline !== '' && $deadline > $now) {
+        $actionMode = (string)($examItem['_action_mode'] ?? '');
+        $actionUrl = (string)($examItem['_action_url'] ?? '');
         $upcoming[] = [
             'title' => (string)($examItem['title'] ?? ''),
             'deadline' => $deadline,
             'exam_type' => (string)($examItem['exam_type'] ?? 'regular'),
+            'href' => in_array($actionMode, ['start', 'continue', 'review'], true) ? $actionUrl : '',
         ];
         $dTs = strtotime($deadline);
         if ($dTs !== false && $dTs <= $soonTs) {
@@ -49,6 +76,19 @@ foreach ($assignedExams as $examItem) {
         }
     }
 }
+
+$avgScoreHasData = $scorePercents !== [];
+$avgScoreLabel = $avgScoreHasData
+    ? (string)(int)round(array_sum($scorePercents) / count($scorePercents)) . '%'
+    : '—';
+$avgScoreHint = $avgScoreHasData ? 'From submitted exams' : 'No scored exams';
+$openNowHint = $openNowCount === 0
+    ? 'None open'
+    : ($inProgressCount > 0
+        ? ($inProgressCount === 1 ? '1 in progress' : $inProgressCount . ' in progress')
+        : 'Ready to take');
+$upcomingHint = $upcomingCount === 0 ? 'None scheduled' : 'Not open yet';
+$submittedHint = $submittedCount === 0 ? 'None yet' : ($submittedCount === 1 ? 'Result available' : 'Results available');
 
 usort($upcoming, static function ($a, $b) {
     return strcmp((string)($a['deadline'] ?? ''), (string)($b['deadline'] ?? ''));
@@ -103,9 +143,6 @@ if ($uploadsModuleEnabled) {
     }
 }
 
-$examEngagementPct = ($completedExams + $activeExams) > 0 ? (int)round(($completedExams / ($completedExams + $activeExams)) * 100) : 0;
-$uploadCompletionPct = $openUploadTasksTotal > 0 ? (int)round((($openUploadTasksTotal - $pendingUploads) / $openUploadTasksTotal) * 100) : 0;
-
 $weeklyActivity = [];
 $weeklyLabels = [];
 for ($i = 7; $i >= 0; $i--) {
@@ -149,23 +186,24 @@ if ($r8) {
     mysqli_free_result($r8);
 }
 
-$featuredExam = null;
+$attentionExams = [];
 foreach ($assignedExams as $examPick) {
     if ((string)($examPick['_action_mode'] ?? '') === 'continue') {
-        $featuredExam = $examPick;
-        break;
+        $attentionExams[] = $examPick;
     }
 }
-if ($featuredExam === null) {
-    foreach ($assignedExams as $examPick) {
-        $pickBucket = (string)($examPick['_bucket'] ?? '');
-        $pickAction = (string)($examPick['_action_mode'] ?? '');
-        if (($pickBucket === 'open' || $pickAction === 'start') && in_array($pickAction, ['start', 'continue'], true)) {
-            $featuredExam = $examPick;
-            break;
-        }
+foreach ($assignedExams as $examPick) {
+    $pickBucket = (string)($examPick['_bucket'] ?? '');
+    $pickAction = (string)($examPick['_action_mode'] ?? '');
+    if ($pickAction === 'continue') {
+        continue;
+    }
+    if (($pickBucket === 'open' || $pickAction === 'start') && in_array($pickAction, ['start', 'continue'], true)) {
+        $attentionExams[] = $examPick;
     }
 }
+$attentionExamTotal = count($attentionExams);
+$attentionExamsShown = array_slice($attentionExams, 0, 3);
 
 $recentExams = [];
 foreach ($assignedExams as $examPick) {
@@ -196,36 +234,144 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
       $firstName = trim(explode(' ', trim((string)($_SESSION['full_name'] ?? 'Student')))[0] ?? 'Student');
     ?>
     <header class="cp-welcome-compact cp-welcome-surface cp-anim delay-1" aria-label="Welcome">
+      <p class="cp-welcome-compact__date"><?php echo h(date('l, M j, Y')); ?></p>
       <h1 class="cp-welcome-compact__title"><?php echo h($greeting); ?>, <?php echo h($firstName); ?></h1>
       <p class="cp-welcome-compact__sub">Stay on top of your examinations and academic progress.</p>
     </header>
 
+    <section class="cs-kpi-row cp-anim delay-2" aria-label="Student overview">
+      <a class="cs-kpi cs-kpi--blue" href="college_exams?view=open">
+        <span class="cs-kpi__tile" aria-hidden="true"><i class="bi bi-unlock"></i></span>
+        <div class="cs-kpi__body">
+          <div class="cs-kpi__label">Open now</div>
+          <div class="cs-kpi__value"><?php echo (int)$openNowCount; ?></div>
+          <div class="cs-kpi__hint"><?php echo h($openNowHint); ?></div>
+        </div>
+      </a>
+      <a class="cs-kpi cs-kpi--amber" href="college_exams?view=upcoming">
+        <span class="cs-kpi__tile" aria-hidden="true"><i class="bi bi-calendar-event"></i></span>
+        <div class="cs-kpi__body">
+          <div class="cs-kpi__label">Upcoming</div>
+          <div class="cs-kpi__value"><?php echo (int)$upcomingCount; ?></div>
+          <div class="cs-kpi__hint"><?php echo h($upcomingHint); ?></div>
+        </div>
+      </a>
+      <a class="cs-kpi cs-kpi--green" href="college_exams?view=finished">
+        <span class="cs-kpi__tile" aria-hidden="true"><i class="bi bi-check-circle"></i></span>
+        <div class="cs-kpi__body">
+          <div class="cs-kpi__label">Submitted</div>
+          <div class="cs-kpi__value"><?php echo (int)$submittedCount; ?></div>
+          <div class="cs-kpi__hint"><?php echo h($submittedHint); ?></div>
+        </div>
+      </a>
+      <div class="cs-kpi cs-kpi--violet">
+        <span class="cs-kpi__tile" aria-hidden="true"><i class="bi bi-graph-up"></i></span>
+        <div class="cs-kpi__body">
+          <div class="cs-kpi__label">Average score</div>
+          <div class="cs-kpi__value"><?php echo h($avgScoreLabel); ?></div>
+          <div class="cs-kpi__hint"><?php echo h($avgScoreHint); ?></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="cs-dash-primary">
     <section class="cp-dash-panel cp-anim delay-2" aria-labelledby="dash-your-exams">
       <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title" id="dash-your-exams">Your examinations</h2>
+        <h2 class="cp-dash-panel__title" id="dash-your-exams"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span> Your examinations</h2>
         <a href="college_exams" class="cp-text-link">View all</a>
       </div>
       <div class="cp-dash-panel__body">
-      <?php if ($featuredExam !== null): ?>
-        <?php
-          $cpExam = $featuredExam;
-          $cpExamFeatured = true;
-          $cpExamLayout = 'featured';
-          require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
-        ?>
+      <?php if (!empty($attentionExamsShown)): ?>
+        <div class="cs-dash-attention">
+          <?php foreach ($attentionExamsShown as $examPick):
+            $cpExam = $examPick;
+            $cpExamFeatured = false;
+            $cpExamLayout = 'feed';
+            require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
+          endforeach; ?>
+        </div>
+        <?php if ($attentionExamTotal > count($attentionExamsShown)): ?>
+          <p class="cs-dash-more"><a href="college_exams?view=open" class="cp-text-link">View all open exams</a></p>
+        <?php endif; ?>
       <?php else: ?>
-        <div class="cp-dash-empty-state">
+        <div class="cp-dash-empty-state cp-dash-empty-state--compact">
           <div class="cp-dash-empty-state__icon" aria-hidden="true"><i class="bi bi-journal-check"></i></div>
-          <p class="cp-dash-empty-state__text">No examinations need your attention right now. Check back when an exam opens or you have one in progress.</p>
+          <p class="cp-dash-empty-state__title">No examinations need your attention right now.</p>
+          <p class="cp-dash-empty-state__text">Check back when an examination opens or when you have one in progress.</p>
         </div>
       <?php endif; ?>
       </div>
     </section>
 
+    <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-deadlines">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title" id="dash-deadlines"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-alarm"></i></span> Upcoming deadlines</h2>
+        <a href="college_exams" class="cp-text-link">View all</a>
+      </div>
+      <div class="cp-dash-panel__body">
+          <?php if (empty($upcoming) && (!$uploadsModuleEnabled || empty($uploadDue))): ?>
+            <p class="cp-dash-empty cp-dash-empty--inline">No upcoming deadlines.</p>
+          <?php else: ?>
+            <ul class="cs-deadline-list">
+              <?php foreach ($upcoming as $u):
+                $typeLabel = examination_exam_type_label((string)($u['exam_type'] ?? 'regular'));
+                $dTs = strtotime((string)$u['deadline']);
+                $urgency = 'future';
+                if ($dTs !== false) {
+                    if (date('Y-m-d', $dTs) === date('Y-m-d', $nowTs)) {
+                        $urgency = 'today';
+                    } elseif ($dTs <= $soonTs) {
+                        $urgency = 'soon';
+                    }
+                }
+                $itemHref = trim((string)($u['href'] ?? ''));
+              ?>
+              <li class="cs-deadline-list__item cs-deadline-list__item--<?php echo h($urgency); ?>">
+                <span class="cs-deadline-list__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
+                <div class="cs-deadline-list__main">
+                  <?php if ($itemHref !== ''): ?>
+                    <a class="cs-deadline-list__title" href="<?php echo h($itemHref); ?>"><?php echo h($u['title']); ?></a>
+                  <?php else: ?>
+                    <span class="cs-deadline-list__title"><?php echo h($u['title']); ?></span>
+                  <?php endif; ?>
+                  <span class="type-pill <?php echo ($u['exam_type'] ?? '') === 'diagnostic' ? 'type-diagnostic' : 'type-regular'; ?>"><?php echo h($typeLabel); ?></span>
+                  <time class="cs-deadline-list__when"><?php echo h(date('M j · g:i A', strtotime($u['deadline']))); ?></time>
+                </div>
+              </li>
+              <?php endforeach; ?>
+              <?php if ($uploadsModuleEnabled): foreach ($uploadDue as $u):
+                $dTs = strtotime((string)$u['deadline']);
+                $urgency = 'future';
+                if ($dTs !== false) {
+                    if (date('Y-m-d', $dTs) === date('Y-m-d', $nowTs)) {
+                        $urgency = 'today';
+                    } elseif ($dTs <= $soonTs) {
+                        $urgency = 'soon';
+                    }
+                }
+              ?>
+              <li class="cs-deadline-list__item cs-deadline-list__item--<?php echo h($urgency); ?>">
+                <span class="cs-deadline-list__ico" aria-hidden="true"><i class="bi bi-upload"></i></span>
+                <div class="cs-deadline-list__main">
+                  <span class="cs-deadline-list__title"><?php echo h($u['title']); ?></span>
+                  <span class="type-pill type-regular">Upload</span>
+                  <time class="cs-deadline-list__when"><?php echo h(date('M j · g:i A', strtotime($u['deadline']))); ?></time>
+                </div>
+              </li>
+              <?php endforeach; endif; ?>
+            </ul>
+          <?php endif; ?>
+      </div>
+    </section>
+    </div>
+
+    <?php if (!empty($recentExams) || $hasWeeklyActivity): ?>
+    <div class="cs-dash-secondary<?php echo empty($recentExams) || !$hasWeeklyActivity ? ' cs-dash-secondary--single' : ''; ?>">
     <?php if (!empty($recentExams)): ?>
     <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-recent-exams">
       <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title" id="dash-recent-exams">Recent activity</h2>
+        <h2 class="cp-dash-panel__title" id="dash-recent-exams"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-clock-history"></i></span> Recent activity</h2>
+        <a href="college_exams?view=finished" class="cp-text-link">View all</a>
       </div>
       <div class="cp-dash-panel__body cp-dash-panel__body--flush">
       <div class="cp-data-table-wrap">
@@ -245,7 +391,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
               $rtype = (string)($recent['exam_type'] ?? 'regular');
               $rtypeLabel = examination_exam_type_label($rtype);
               $rStatus = (string)($recent['_status_label'] ?? 'Finished');
-              $rScore = '-';
+              $rScore = '—';
               $rst = (string)($recent['attempt_status'] ?? '');
               if ($rst === 'submitted' || ($rst === 'expired' && !empty($recent['submitted_at']))) {
                   $rScore = college_exam_format_score_total_line_traditional(
@@ -266,7 +412,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
               <td class="cp-data-table__muted"><?php echo h($rSubmitted); ?></td>
               <td class="cp-data-table__action">
                 <?php if ($rAction !== ''): ?>
-                  <a href="<?php echo h($rAction); ?>" class="cp-text-link"><?php echo h($rActionLabel); ?></a>
+                  <a href="<?php echo h($rAction); ?>" class="cp-text-link cp-result-link"><?php echo h($rActionLabel); ?></a>
                 <?php else: ?>
                   <span class="cp-data-table__muted">—</span>
                 <?php endif; ?>
@@ -281,71 +427,21 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
     <?php endif; ?>
 
     <?php if ($hasWeeklyActivity): ?>
-    <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-activity">
+    <section class="cp-dash-panel cs-dash-trend cp-anim delay-4" aria-labelledby="dash-activity">
       <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title" id="dash-activity">Activity trend</h2>
+        <h2 class="cp-dash-panel__title" id="dash-activity"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-activity"></i></span> Activity trend</h2>
       </div>
       <div class="cp-dash-panel__body">
       <p class="cp-dash-panel__desc"><?php echo $uploadsModuleEnabled
-          ? 'Exam submissions and uploads over the last 8 weeks · Engagement ' . (int)$examEngagementPct . '% · Upload completion ' . (int)$uploadCompletionPct . '%'
-          : 'Exam submissions over the last 8 weeks · Engagement ' . (int)$examEngagementPct . '%'; ?></p>
+          ? 'Exam submissions and uploads over the last 8 weeks'
+          : 'Exam submissions over the last 8 weeks'; ?></p>
       <div class="cp-chart-wrap cp-chart-wrap--compact">
         <canvas id="collegeActivityChart" aria-label="Weekly activity trend"></canvas>
       </div>
       </div>
     </section>
     <?php endif; ?>
-
-    <?php if (!empty($upcoming) || ($uploadsModuleEnabled && !empty($uploadDue))): ?>
-    <section class="cp-dash-panel cp-anim delay-4" aria-labelledby="dash-deadlines">
-      <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title" id="dash-deadlines">Upcoming deadlines</h2>
-      </div>
-      <div class="cp-dash-panel__body">
-      <div class="cp-split-panels">
-        <div class="cp-split-panels__col">
-          <h3 class="cp-split-panels__label"><i class="bi bi-alarm"></i> Exam deadlines</h3>
-          <?php if (empty($upcoming)): ?>
-            <p class="cp-dash-empty cp-dash-empty--inline">No upcoming exam deadlines.</p>
-          <?php else: ?>
-            <ul class="cp-timeline-list">
-              <?php foreach ($upcoming as $u):
-                $typeLabel = examination_exam_type_label((string)($u['exam_type'] ?? 'regular'));
-              ?>
-              <li class="cp-timeline-list__item">
-                <div class="cp-timeline-list__main">
-                  <span class="cp-timeline-list__title"><?php echo h($u['title']); ?></span>
-                  <span class="type-pill <?php echo ($u['exam_type'] ?? '') === 'diagnostic' ? 'type-diagnostic' : 'type-regular'; ?>"><?php echo h($typeLabel); ?></span>
-                </div>
-                <time class="cp-timeline-list__when"><?php echo h(date('M j, g:i A', strtotime($u['deadline']))); ?></time>
-              </li>
-              <?php endforeach; ?>
-            </ul>
-          <?php endif; ?>
-        </div>
-
-        <?php if ($uploadsModuleEnabled): ?>
-        <div class="cp-split-panels__col">
-          <h3 class="cp-split-panels__label"><i class="bi bi-upload"></i> Upload due</h3>
-          <?php if (empty($uploadDue)): ?>
-            <p class="cp-dash-empty cp-dash-empty--inline">No pending uploads.</p>
-          <?php else: ?>
-            <ul class="cp-timeline-list">
-              <?php foreach ($uploadDue as $u): ?>
-              <li class="cp-timeline-list__item">
-                <div class="cp-timeline-list__main">
-                  <span class="cp-timeline-list__title"><?php echo h($u['title']); ?></span>
-                </div>
-                <time class="cp-timeline-list__when"><?php echo h(date('M j, g:i A', strtotime($u['deadline']))); ?></time>
-              </li>
-              <?php endforeach; ?>
-            </ul>
-          <?php endif; ?>
-        </div>
-        <?php endif; ?>
-      </div>
-      </div>
-    </section>
+    </div>
     <?php endif; ?>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -361,13 +457,13 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
         datasets: [{
           label: 'Activity',
           data: <?php echo json_encode(array_values($weeklyActivity)); ?>,
-          borderColor: '#1665A0',
-          backgroundColor: 'rgba(22, 101, 160, 0.12)',
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
           fill: true,
           tension: 0.35,
           pointRadius: 3.6,
           pointHoverRadius: 5.6,
-          pointBackgroundColor: '#1665A0'
+          pointBackgroundColor: '#2563eb'
         }]
       },
       options: {

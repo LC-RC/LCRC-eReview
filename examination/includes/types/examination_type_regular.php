@@ -6,6 +6,7 @@ declare(strict_types=1);
  */
 
 require_once dirname(__DIR__) . '/college_exam_helpers.php';
+require_once dirname(__DIR__) . '/college_exam_subject_topic_helpers.php';
 require_once dirname(__DIR__) . '/examination_assignment.php';
 require_once dirname(__DIR__) . '/examination_eligibility.php';
 
@@ -53,19 +54,27 @@ function examination_type_regular_question_count(mysqli $conn, int $examId): int
     if (isset($GLOBALS['__ereview_exam_qcount'][$cacheKey])) {
         return (int)$GLOBALS['__ereview_exam_qcount'][$cacheKey];
     }
-    $q = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . $examId);
-    if ($q && ($r = mysqli_fetch_assoc($q))) {
-        mysqli_free_result($q);
-        $n = (int)($r['c'] ?? 0);
+    require_once dirname(__DIR__) . '/college_exam_subject_topic_helpers.php';
+    $supply = college_exam_topic_supply($conn, $examId);
+    if (!empty($supply['configured']) && (int)($supply['total_required'] ?? 0) > 0) {
+        $n = (int)($supply['total_required'] ?? 0);
         $GLOBALS['__ereview_exam_qcount'][$cacheKey] = $n;
 
         return $n;
     }
-    if ($q) {
+    $q = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . $examId);
+    if ($q && ($r = mysqli_fetch_assoc($q))) {
         mysqli_free_result($q);
+        $n = (int)($r['c'] ?? 0);
+    } else {
+        if ($q) {
+            mysqli_free_result($q);
+        }
+        $n = 0;
     }
+    $GLOBALS['__ereview_exam_qcount'][$cacheKey] = $n;
 
-    return 0;
+    return $n;
 }
 
 function examination_type_regular_normalize(mysqli $conn, array $rawRow, string $nowSql): array
@@ -145,6 +154,18 @@ function examination_type_regular_config_extras(mysqli $conn, int $professorId, 
     $scope = examination_normalize_examinee_scope((string)($raw['examinee_scope'] ?? 'college_student'));
     $sections = $sourceId > 0 ? examination_load_assigned_sections($conn, 'regular', $sourceId) : [];
     $users = $sourceId > 0 ? examination_load_assigned_user_ids($conn, 'regular', $sourceId) : [];
+    require_once dirname(__DIR__) . '/college_exam_subject_topic_helpers.php';
+    $subjectTree = $sourceId > 0 ? college_exam_load_subjects_with_topics($conn, $sourceId) : [];
+    $breakdownMode = $sourceId > 0 ? college_exam_get_breakdown_mode($conn, $sourceId) : 'overall';
+    $totalQuestionsRequired = $sourceId > 0 ? college_exam_get_total_questions_required($conn, $sourceId) : 0;
+    $topicSupply = $sourceId > 0 ? college_exam_topic_supply($conn, $sourceId) : [
+        'ok' => true,
+        'configured' => false,
+        'mode' => 'overall',
+        'total_required' => 0,
+        'subjects' => [],
+        'errors' => [],
+    ];
 
     return [
         'sections' => $sections !== [] ? $sections : [''],
@@ -152,6 +173,10 @@ function examination_type_regular_config_extras(mysqli $conn, int $professorId, 
         'batch_subjects' => [],
         'questions_required' => [],
         'subjects' => [],
+        'regular_breakdown_mode' => $breakdownMode,
+        'regular_total_questions_required' => $totalQuestionsRequired,
+        'regular_subject_tree' => $subjectTree,
+        'regular_topic_supply' => $topicSupply,
         'suggested_sections' => diagnostic_exam_suggest_sections($conn, $scope),
         'shuffle_questions' => !empty($raw['shuffle_questions']),
         'shuffle_choices' => !empty($raw['shuffle_choices']),
@@ -183,10 +208,20 @@ function examination_type_regular_save_config(mysqli $conn, int $professorId, ar
     $availSql = college_exam_parse_datetime_local(trim((string)($post['available_from'] ?? '')));
     $deadSql = college_exam_parse_datetime_local(trim((string)($post['deadline'] ?? '')));
     $isPublished = $isDraft ? 0 : 1;
+    $paperLocked = $sourceId > 0 && examination_questions_mutations_locked($conn, 'regular', $sourceId);
     $shuffleQuestions = !empty($post['shuffle_questions']) ? 1 : 0;
     $shuffleChoices = !empty($post['shuffle_choices']) ? 1 : 0;
     $shuffleMcq = !empty($post['shuffle_mcq_questions']) ? 1 : ($shuffleQuestions ? 1 : 0);
     $shuffleTf = !empty($post['shuffle_tf_questions']) ? 1 : ($shuffleQuestions ? 1 : 0);
+    if ($paperLocked) {
+        $existingPaper = examination_type_regular_load_raw($conn, $sourceId, $professorId);
+        if ($existingPaper) {
+            $shuffleQuestions = !empty($existingPaper['shuffle_questions']) ? 1 : 0;
+            $shuffleChoices = !empty($existingPaper['shuffle_choices']) ? 1 : 0;
+            $shuffleMcq = !empty($existingPaper['shuffle_mcq_questions'] ?? $existingPaper['shuffle_questions'] ?? 0) ? 1 : 0;
+            $shuffleTf = !empty($existingPaper['shuffle_tf_questions'] ?? $existingPaper['shuffle_questions'] ?? 0) ? 1 : 0;
+        }
+    }
     $descriptionMarkdown = !empty($post['description_markdown']) ? 1 : 0;
     $reviewFrom = college_exam_parse_datetime_local(trim((string)($post['review_sheet_available_from'] ?? '')));
     $reviewUntil = college_exam_parse_datetime_local(trim((string)($post['review_sheet_available_until'] ?? '')));
@@ -209,6 +244,24 @@ function examination_type_regular_save_config(mysqli $conn, int $professorId, ar
         $assignErr = examination_validate_assignment_for_publish($assignmentMode, $sections, $userIds);
         if ($assignErr !== null) {
             return ['ok' => false, 'error' => $assignErr];
+        }
+    }
+
+    require_once dirname(__DIR__) . '/college_exam_subject_topic_helpers.php';
+    $parsedSubjects = college_exam_parse_subjects_topics_from_post($post);
+    if (empty($parsedSubjects['ok'])) {
+        return ['ok' => false, 'error' => (string)($parsedSubjects['error'] ?? 'Invalid subjects/topics configuration.')];
+    }
+    $breakdownModeSave = college_exam_normalize_breakdown_mode((string)($parsedSubjects['mode'] ?? 'overall'));
+    $totalQuestionsSave = max(0, (int)($parsedSubjects['total_questions_required'] ?? 0));
+    /** @var list<array{name:string,questions:int,topics:list<array{name:string,questions:int}>}> $subjectTreeSave */
+    $subjectTreeSave = $parsedSubjects['subjects'] ?? [];
+    if (!$isDraft && !$paperLocked) {
+        if ($breakdownModeSave === 'overall' && $totalQuestionsSave < 1 && !empty($post['reg_subjects_present'])) {
+            return ['ok' => false, 'error' => 'Enter a total number of questions for Overall mode.'];
+        }
+        if (($breakdownModeSave === 'subject' || $breakdownModeSave === 'subject_topic') && $subjectTreeSave === []) {
+            return ['ok' => false, 'error' => 'Add at least one subject with a question count before publishing.'];
         }
     }
 
@@ -301,6 +354,40 @@ function examination_type_regular_save_config(mysqli $conn, int $professorId, ar
             }
         }
 
+        // Persist breakdown mode + subject/topic quotas when the config form posted them.
+        if (!$paperLocked && !empty($post['reg_subjects_present'])) {
+            $modeSave = college_exam_save_breakdown_mode($conn, $sourceId, $breakdownModeSave, $totalQuestionsSave);
+            if (empty($modeSave['ok'])) {
+                mysqli_rollback($conn);
+
+                return ['ok' => false, 'error' => (string)($modeSave['error'] ?? 'Could not save question breakdown mode.')];
+            }
+
+            $rawSubjectsPost = is_array($post['reg_subjects'] ?? null) ? $post['reg_subjects'] : [];
+            $postedAnyName = false;
+            foreach ($rawSubjectsPost as $rs) {
+                if (!is_array($rs)) {
+                    continue;
+                }
+                if (trim((string)($rs['name'] ?? '')) !== '') {
+                    $postedAnyName = true;
+                    break;
+                }
+            }
+            // Overall always clears the tree. Subject modes: blank placeholder-only posts must not wipe.
+            $shouldSaveTree = ($breakdownModeSave === 'overall')
+                || $postedAnyName
+                || $rawSubjectsPost === [];
+            if ($shouldSaveTree) {
+                $stSave = college_exam_save_subjects_topics($conn, $sourceId, $subjectTreeSave, $breakdownModeSave);
+                if (empty($stSave['ok'])) {
+                    mysqli_rollback($conn);
+
+                    return ['ok' => false, 'error' => (string)($stSave['error'] ?? 'Could not save subjects/topics.')];
+                }
+            }
+        }
+
         mysqli_commit($conn);
 
         return [
@@ -350,6 +437,8 @@ function examination_type_regular_delete(mysqli $conn, int $sourceId, int $profe
         @mysqli_query($conn, 'DELETE FROM college_exam_attempt_events WHERE exam_id=' . (int)$examId);
         @mysqli_query($conn, 'DELETE FROM college_exam_attempts WHERE exam_id=' . (int)$examId);
         @mysqli_query($conn, 'DELETE FROM college_exam_questions WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_topics WHERE exam_id=' . (int)$examId);
+        @mysqli_query($conn, 'DELETE FROM college_exam_subjects WHERE exam_id=' . (int)$examId);
         @mysqli_query($conn, 'DELETE FROM college_exam_users WHERE exam_id=' . (int)$examId);
         @mysqli_query($conn, 'DELETE FROM college_exam_sections WHERE exam_id=' . (int)$examId);
 

@@ -545,6 +545,21 @@ $preweekVideoCount = ($videos && is_object($videos)) ? mysqli_num_rows($videos) 
 $preweekHandoutCount = ($handouts && is_object($handouts)) ? mysqli_num_rows($handouts) : 0;
 $preweekUploadMax = ini_get('upload_max_filesize') ?: '-';
 $preweekPostMax = ini_get('post_max_size') ?: '-';
+$adminHeroIcon = 'collection-play';
+$adminHeroTint = 'violet';
+$adminHeroEyebrow = 'Pre-week / ' . $unitTitle;
+$adminHeroTitle = 'Materials';
+$adminHeroSubtitle = 'Manage videos and handouts for ' . $topicTitle . '.';
+$adminBreadcrumbs = [
+    ['Dashboard', 'admin_dashboard'],
+    ['Pre-week', 'admin_preweek'],
+    [$unitTitle, 'admin_preweek_topics?preweek_unit_id=' . (int)$unitId],
+    [$topicTitle],
+];
+$adminHeroMeta = '<span class="quiz-admin-count-pill">' . (int)$preweekVideoCount . ' video' . ((int)$preweekVideoCount === 1 ? '' : 's') . '</span>'
+    . '<span class="quiz-admin-count-pill">' . (int)$preweekHandoutCount . ' handout' . ((int)$preweekHandoutCount === 1 ? '' : 's') . '</span>';
+$adminBackHref = $topicsListUrl;
+$adminBackLabel = 'Back to Lectures';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -707,6 +722,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '-';
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      overflow: hidden;
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(4px);
     }
@@ -717,11 +733,14 @@ $preweekPostMax = ini_get('post_max_size') ?: '-';
     .preweek-modal-panel {
       width: 100%;
       max-width: 28rem;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-height: calc(100dvh - 48px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       border-radius: 0.875rem;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid var(--glass-border);
+      background: var(--glass-surface-strong);
+      color: var(--text-primary);
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
     }
     .preweek-modal-head {
@@ -730,9 +749,16 @@ $preweekPostMax = ini_get('post_max_size') ?: '-';
       justify-content: space-between;
       gap: 0.75rem;
       padding: 1rem 1.125rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid var(--glass-border);
+      flex: 0 0 auto;
+      background: var(--glass-surface-inner);
     }
-    .preweek-modal-body { padding: 1rem 1.125rem 1.125rem; }
+    .preweek-modal-body {
+      padding: 1rem 1.125rem 1.125rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+    }
     .preweek-btn-edit {
       display: inline-flex;
       align-items: center;
@@ -768,23 +794,7 @@ $preweekPostMax = ini_get('post_max_size') ?: '-';
 <body class="font-sans antialiased admin-app admin-materials-page admin-preweek-materials-page">
   <?php include 'admin_sidebar.php'; ?>
 
-  <?php require __DIR__ . '/includes/admin_preweek_context_nav.php'; ?>
-
-  <div class="quiz-admin-hero rounded-xl px-5 py-5 mb-4">
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon quiz-admin-hero-icon--preweek" aria-hidden="true"><i class="bi bi-collection-play"></i></span>
-      Materials <span class="text-gray-500 font-semibold">-</span> <span class="text-amber-200 font-semibold"><?php echo h($topicTitle); ?></span>
-    </h1>
-    <p class="text-gray-400 mt-3 mb-0 text-sm sm:text-base max-w-3xl">
-      <span class="text-gray-500">Pre-week:</span> <?php echo h($unitTitle); ?>
-      <span class="text-gray-600 mx-1">·</span>
-      <span class="text-gray-400">Videos &amp; handouts for this lecture only.</span>
-    </p>
-    <div class="flex flex-wrap items-center gap-2 mt-4">
-      <span class="preweek-stat-pill" title="Videos"><i class="bi bi-play-btn text-sky-400"></i> <?php echo (int)$preweekVideoCount; ?> video<?php echo $preweekVideoCount === 1 ? '' : 's'; ?></span>
-      <span class="preweek-stat-pill" title="Handouts"><i class="bi bi-file-earmark-text text-amber-300"></i> <?php echo (int)$preweekHandoutCount; ?> handout<?php echo $preweekHandoutCount === 1 ? '' : 's'; ?></span>
-    </div>
-  </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if (!empty($materialsFlash['errors'])): ?>
     <div class="quiz-admin-alert quiz-admin-alert--error mb-4 flex flex-col gap-1" role="alert">
@@ -810,38 +820,25 @@ $preweekPostMax = ini_get('post_max_size') ?: '-';
   <?php
     $matFiltersActive = ($searchQ !== '' || $matTypeExplicit);
   ?>
-  <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-    <a href="<?php echo h($topicsListUrl); ?>" class="text-sm font-medium text-gray-400 hover:text-amber-200/90 inline-flex items-center gap-2 no-underline transition-colors">
-      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to lectures
-    </a>
-    <?php if ($matFiltersActive): ?>
-      <span class="text-xs font-medium uppercase tracking-wide text-amber-200/70 bg-amber-500/10 border border-amber-500/25 rounded-full px-2.5 py-1">Search active</span>
-    <?php endif; ?>
-  </div>
 
-  <form method="get" action="admin_preweek_materials" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-3 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_preweek_materials" class="content-library__toolbar">
     <input type="hidden" name="preweek_topic_id" value="<?php echo (int)$topicId; ?>">
-    <div class="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-lg">
-      <label for="mat-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Search</label>
-      <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Title or filename..." class="input-custom w-full pl-10" autocomplete="off">
-      </div>
+    <div class="content-library__search">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input type="search" id="mat-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Title or filename..." class="input-custom" autocomplete="off" aria-label="Search materials">
     </div>
-    <div class="w-full sm:w-48">
-      <label for="mat-search-type" class="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Show</label>
-      <select id="mat-search-type" name="type" class="input-custom w-full">
+    <div class="content-library__status">
+      <label class="sr-only" for="mat-search-type">Show</label>
+      <select id="mat-search-type" name="type" class="input-custom">
         <option value=""<?php echo $matTypeExplicit && $matType === '' ? ' selected' : ''; ?>>Videos &amp; handouts</option>
         <option value="videos"<?php echo $matType === 'videos' ? ' selected' : ''; ?>>Videos only</option>
         <option value="handouts"<?php echo $matType === 'handouts' ? ' selected' : ''; ?>>Handouts only</option>
       </select>
     </div>
-    <div class="flex flex-wrap gap-2 shrink-0">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search" aria-hidden="true"></i> Apply</button>
-      <?php if ($matFiltersActive): ?>
-        <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
-      <?php endif; ?>
-    </div>
+    <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Apply</button>
+    <?php if ($matFiltersActive): ?>
+      <a href="<?php echo h(admin_preweek_materials_list_url($topicId)); ?>" class="admin-btn admin-btn--ghost admin-btn--sm">Clear</a>
+    <?php endif; ?>
   </form>
 
   <p class="text-xs text-gray-500 mb-4 leading-relaxed" role="note">

@@ -120,11 +120,12 @@ $listContainerClass = $display === 'card' ? 'cp-exam-grid cp-exam-grid--catalog'
       $cpPageTitle = 'Examinations';
       $cpPageSubtitle = 'Manage your available college examinations.';
       $cpPageStatsVariant = 'inline';
+      $cpPageClass = 'cp-anim delay-1 cs-exams-hero';
       $cpPageStats = [
-          ['label' => 'Total', 'value' => (int)$countMap['all']],
-          ['label' => 'Open now', 'value' => (int)$countMap['open']],
-          ['label' => 'Upcoming', 'value' => (int)$countMap['upcoming']],
-          ['label' => 'Finished', 'value' => (int)$countMap['finished']],
+          ['label' => 'Total', 'value' => (int)$countMap['all'], 'tone' => 'blue'],
+          ['label' => 'Open now', 'value' => (int)$countMap['open'], 'tone' => 'green'],
+          ['label' => 'Upcoming', 'value' => (int)$countMap['upcoming'], 'tone' => 'amber'],
+          ['label' => 'Finished', 'value' => (int)$countMap['finished'], 'tone' => 'violet'],
       ];
       require dirname(__DIR__, 2) . '/includes/components/college_portal_page_header.php';
     ?>
@@ -181,6 +182,7 @@ $listContainerClass = $display === 'card' ? 'cp-exam-grid cp-exam-grid--catalog'
         </div>
       </div>
 
+      <div class="cp-exams-browser__body">
       <div class="<?php echo h($listContainerClass); ?>" data-ereview-exam-count="<?php echo (int)count($list); ?>">
         <?php if (count($list) === 0): ?>
           <div class="cp-empty-surface cp-empty-surface--catalog">
@@ -200,6 +202,7 @@ $listContainerClass = $display === 'card' ? 'cp-exam-grid cp-exam-grid--catalog'
             ?>
           <?php endforeach; ?>
         <?php endif; ?>
+      </div>
       </div>
     </section>
   </div>

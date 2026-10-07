@@ -336,6 +336,13 @@ $adminBreadcrumbs[] = [(string) $quiz['title'], 'admin_quizzes?subject_id=' . $s
 $adminBreadcrumbs[] = ['Questions'];
 $clearBatchDraftAfterSave = !empty($_SESSION['clear_batch_draft']);
 unset($_SESSION['clear_batch_draft']);
+$adminHeroIcon = 'question-circle';
+$adminHeroEyebrow = 'Quizzes / ' . (string) $quiz['subject_name'];
+$adminHeroTitle = 'Questions';
+$adminHeroSubtitle = 'Add and manage questions for ' . (string) $quiz['title'] . '.';
+$adminHeroActions = '<button type="button" @click="batchOpen = !batchOpen; batchError = \'\'" class="admin-btn admin-btn--primary"><i class="bi bi-collection-plus"></i> Add Multiple</button>';
+$adminBackHref = 'admin_quizzes?subject_id=' . (int)$subjectId;
+$adminBackLabel = 'Back to Quizzes';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -345,23 +352,7 @@ unset($_SESSION['clear_batch_draft']);
 <body class="font-sans antialiased admin-app admin-quiz-questions-page" x-data="quizQuestionsApp()" x-init="initEditFromServer(); initBatchAutosave()">
   <?php include 'admin_sidebar.php'; ?>
 
-  <div class="quiz-admin-hero rounded-xl px-6 py-5 mb-5">
-    <?php include __DIR__ . '/includes/admin_breadcrumb.php'; ?>
-    <h1 class="text-2xl font-bold text-gray-100 m-0 flex flex-wrap items-center gap-2">
-      <span class="quiz-admin-hero-icon" aria-hidden="true"><i class="bi bi-question-circle"></i></span>
-      <span>Quiz Questions - <?php echo h($quiz['title']); ?></span>
-      <span class="text-gray-500 font-medium text-lg">(<?php echo h($quiz['subject_name']); ?>)</span>
-    </h1>
-    <p class="text-gray-400 mt-2 mb-0 max-w-3xl text-sm sm:text-base"><?php echo h($quiz['subject_name']); ?> - Add and manage questions in one go.</p>
-  </div>
-
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-5 quiz-admin-toolbar">
-    <div></div>
-    <div class="flex flex-wrap gap-2">
-      <a href="admin_quizzes?subject_id=<?php echo (int)$subjectId; ?>" class="admin-quiz-btn admin-quiz-btn-outline"><i class="bi bi-arrow-left-circle"></i> Back to Quizzes</a>
-      <button type="button" @click="batchOpen = !batchOpen; batchError = ''" class="admin-quiz-btn admin-quiz-btn-primary"><i class="bi bi-collection-plus"></i> Add multiple questions</button>
-    </div>
-  </div>
+  <?php include __DIR__ . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if (isset($_SESSION['message'])): ?>
     <div class="quiz-admin-alert quiz-admin-alert--success admin-quiz-alert">
@@ -376,17 +367,17 @@ unset($_SESSION['clear_batch_draft']);
     </div>
   <?php endif; ?>
 
-  <form method="get" action="admin_quiz_questions" class="quiz-admin-filter quiz-admin-table-shell rounded-xl px-4 py-3 mb-4 flex flex-wrap items-end gap-3">
+  <form method="get" action="admin_quiz_questions" class="quiz-admin-filter quiz-admin-table-shell rounded-2xl border border-white bg-white shadow-[0_4px_20px_rgba(15,23,42,0.05)] px-4 py-2.5 mb-4 flex flex-wrap items-end gap-2">
     <input type="hidden" name="quiz_id" value="<?php echo (int)$quizId; ?>">
     <input type="hidden" name="subject_id" value="<?php echo (int)$subjectId; ?>">
     <div class="flex-1 min-w-[220px]">
-      <label for="qq-search-q" class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Search questions</label>
+      <label for="qq-search-q" class="block text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Search questions</label>
       <input type="search" id="qq-search-q" name="q" value="<?php echo h($searchQ); ?>" placeholder="Filter by question text..." class="input-custom w-full" autocomplete="off">
     </div>
     <div class="flex flex-wrap gap-2">
-      <button type="submit" class="quiz-admin-filter-btn px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
+      <button type="submit" class="quiz-admin-filter-btn px-3 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2"><i class="bi bi-search"></i> Apply</button>
       <?php if ($searchQ !== ''): ?>
-        <a href="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-4 py-2.5 rounded-lg font-semibold inline-flex items-center gap-2">Clear</a>
+        <a href="admin_quiz_questions?quiz_id=<?php echo (int)$quizId; ?>&subject_id=<?php echo (int)$subjectId; ?>" class="quiz-admin-filter-clear px-3 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2">Clear</a>
       <?php endif; ?>
     </div>
   </form>
@@ -462,10 +453,10 @@ unset($_SESSION['clear_batch_draft']);
     </div>
   </div>
 
-  <div class="admin-quiz-card quiz-admin-questions-card">
-    <div class="admin-quiz-card-header quiz-admin-card-head">
-      <span class="font-semibold flex items-center gap-2"><i class="bi bi-list-ol"></i> Questions list</span>
-      <span class="text-gray-500 text-sm"><?php echo h($quiz['title']); ?></span>
+  <div class="admin-quiz-card quiz-admin-questions-card rounded-2xl border border-white bg-white shadow-[0_4px_20px_rgba(15,23,42,0.05)] overflow-hidden">
+    <div class="admin-quiz-card-header quiz-admin-card-head px-4 sm:px-5 py-3 border-b border-slate-100 bg-white/70 flex flex-wrap items-center justify-between gap-2">
+      <span class="font-semibold text-slate-900 flex items-center gap-2"><span class="lms-icon-tile bg-violet-50 text-violet-600" style="width:1.85rem;height:1.85rem;border-radius:0.55rem;font-size:0.85rem"><i class="bi bi-list-ol"></i></span> Questions list</span>
+      <span class="text-slate-500 text-sm"><?php echo h($quiz['title']); ?></span>
     </div>
     <div class="overflow-x-auto">
       <table class="admin-quiz-table">
@@ -484,9 +475,21 @@ unset($_SESSION['clear_batch_draft']);
               $plainQt = trim(preg_replace('/\s+/u', ' ', $rawQt));
             }
             $qPreview = mb_substr($plainQt, 0, 120) . (mb_strlen($plainQt) > 120 ? '...' : '');
+            $choiceFilled = 0;
+            foreach ($choiceCols as $col) {
+              if (trim((string)($qq[$col] ?? '')) !== '') $choiceFilled++;
+            }
           ?>
             <tr class="quiz-admin-q-row">
-              <td class="font-medium quiz-admin-q-preview"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></td>
+              <td class="font-medium quiz-admin-q-preview py-2.5">
+                <div class="flex items-start gap-2.5">
+                  <span class="lms-icon-tile bg-indigo-50 text-indigo-600 shrink-0" style="width:1.75rem;height:1.75rem;border-radius:0.5rem;font-size:0.8rem" title="Multiple choice"><i class="bi bi-ui-radios-grid"></i></span>
+                  <div class="min-w-0">
+                    <div class="text-slate-900"><?php echo $plainQt !== '' ? h($qPreview) : '<span class="quiz-admin-q-empty">No text preview</span>'; ?></div>
+                    <div class="text-xs text-slate-500 mt-0.5 tabular-nums">MCQ · <?php echo (int)$choiceFilled; ?> choice<?php echo $choiceFilled === 1 ? '' : 's'; ?></div>
+                  </div>
+                </div>
+              </td>
               <td><span class="admin-quiz-badge admin-quiz-badge-success"><?php echo h($qq['correct_answer']); ?></span></td>
               <td>
                 <div class="flex flex-wrap gap-2">
@@ -502,8 +505,13 @@ unset($_SESSION['clear_batch_draft']);
                     data-correct="<?php echo h($qq['correct_answer'] ?? 'A'); ?>"
                     data-explanation="<?php echo h($qq['explanation'] ?? ''); ?>"
                     @click="openEditFromEl($el)"
-                    class="admin-quiz-btn admin-quiz-btn-sm admin-quiz-btn-outline"><i class="bi bi-pencil"></i> Edit</button>
-                  <button type="button" data-id="<?php echo (int)$qq['question_id']; ?>" data-text="<?php echo h($qPreview); ?>" @click="openDeleteQuestion($el.dataset.id, $el.dataset.text || '')" class="admin-quiz-btn admin-quiz-btn-sm admin-quiz-btn-danger"><i class="bi bi-trash"></i> Delete</button>
+                    class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-pencil"></i> Edit</button>
+                  <div class="admin-row-menu-wrap" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
+                    <button type="button" class="admin-row-action admin-row-action--more" :class="menuOpen ? 'is-open' : ''" :aria-expanded="menuOpen" aria-label="More actions" @click.stop="menuOpen = !menuOpen"><i class="bi bi-three-dots"></i></button>
+                    <div x-show="menuOpen" x-cloak @click.outside="menuOpen = false" class="admin-row-menu">
+                      <button type="button" class="admin-row-menu__item admin-row-menu__item--danger" data-id="<?php echo (int)$qq['question_id']; ?>" data-text="<?php echo h($qPreview); ?>" @click="menuOpen = false; openDeleteQuestion($el.dataset.id, $el.dataset.text || '')"><i class="bi bi-trash"></i> Delete</button>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>

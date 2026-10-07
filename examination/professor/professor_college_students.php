@@ -215,11 +215,15 @@ $flashMessage = $_SESSION['message'] ?? null;
 unset($_SESSION['message']);
 
 $adminLoadStudentsCss = true;
+$professorFeatureHero = true;
 $adminHeroIcon = 'people';
+$adminHeroEyebrow = 'Student management';
 $adminHeroTitle = 'Students';
-$adminHeroSubtitle = 'Examination roster only: native college accounts and eReview students with exam access. Enable new access from LMS Admin → Students.';
-$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Register Student</a>'
-    . '<a class="admin-btn admin-btn--secondary admin-btn--sm" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
+$adminHeroSubtitle = 'Manage examination students and reviewees.';
+$adminHeroMeta = '<span class="prof-hero-stat">' . (int) $statsStudents['total'] . ' student' . ((int) $statsStudents['total'] === 1 ? '' : 's') . '</span>';
+$adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students']];
+$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" href="student_registration"><i class="bi bi-person-plus"></i> Register Student</a>'
+    . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
 
 $statusChipMeta = [
     'all' => ['All', 'bi-collection', (int) $activeStats['total']],
@@ -238,7 +242,7 @@ $apiUrl = ereview_url('professor_college_students_api');
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--students">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
@@ -251,7 +255,15 @@ $apiUrl = ereview_url('professor_college_students_api');
 
   <div id="pcsFlash" class="admin-flash mb-3 p-3 rounded-xl flex items-center gap-2" role="status" hidden></div>
 
-  <div class="students-page-shell">
+  <div class="students-page-shell gap-3">
+    <section class="prof-workspace prof-workspace--roster">
+    <div class="prof-workspace__head">
+      <div>
+        <h2 class="prof-workspace__title"><?php echo $isStudentTab ? 'Students' : 'Reviewees'; ?></h2>
+        <p class="prof-workspace__sub"><?php echo $isStudentTab ? 'College Examination roster, sections, and account status.' : 'Reviewee accounts and access status.'; ?></p>
+      </div>
+      <span class="prof-count"><?php echo (int) $total; ?> <?php echo $isStudentTab ? 'student' : 'reviewee'; ?><?php echo (int) $total === 1 ? '' : 's'; ?></span>
+    </div>
     <nav class="students-view-tabs" aria-label="Examinee groups">
       <a href="<?php echo h(students_page_query(['type' => 'college_student', 'section' => null, 'page' => null])); ?>" class="students-view-tab <?php echo $isStudentTab ? 'is-active' : ''; ?>">
         <i class="bi bi-mortarboard" aria-hidden="true"></i> Students <span class="students-status-chip__count"><?php echo (int) $statsStudents['total']; ?></span>
@@ -260,7 +272,6 @@ $apiUrl = ereview_url('professor_college_students_api');
         <i class="bi bi-person-badge" aria-hidden="true"></i> Reviewees <span class="students-status-chip__count"><?php echo (int) $statsReviewees['total']; ?></span>
       </a>
     </nav>
-
     <div class="students-toolbar page-filter">
       <nav class="students-status-chips" aria-label="Filter by status">
         <?php foreach ($statusChipMeta as $key => $meta): ?>
@@ -317,7 +328,7 @@ $apiUrl = ereview_url('professor_college_students_api');
       </div>
     </div>
 
-    <div class="rounded-xl page-table students-table-shell">
+    <div class="rounded-2xl page-table students-table-shell bg-white/90 border border-white/80 shadow-sm overflow-hidden">
       <div class="students-table-meta">
         <span>
           <?php if ($total > 0): ?>
@@ -577,6 +588,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         <?php endif; ?>
       <?php endif; ?>
     </div>
+    </section>
   </div>
 
   <?php if ($isStudentTab): ?>

@@ -16,9 +16,21 @@ const EXAMINATION_QUESTION_IMPORT_MAX_BYTES = 2097152;
 /**
  * @return list<string>
  */
-function examination_question_import_headers(): array
+function examination_question_import_headers(string $examType = 'regular', string $breakdownMode = 'overall'): array
 {
-    return ['question', 'type', 'choice_a', 'choice_b', 'choice_c', 'choice_d', 'correct'];
+    $examType = examination_normalize_exam_type($examType) ?: 'regular';
+    $headers = ['question', 'type', 'choice_a', 'choice_b', 'choice_c', 'choice_d', 'correct'];
+    if ($examType === 'regular') {
+        $mode = strtolower(trim($breakdownMode));
+        if ($mode === 'subject' || $mode === 'subject_topic' || $mode === 'by_subject' || $mode === 'by_subject_topic') {
+            $headers[] = 'subject';
+        }
+        if ($mode === 'subject_topic' || $mode === 'by_subject_topic' || $mode === 'subject_and_topic') {
+            $headers[] = 'topic';
+        }
+    }
+
+    return $headers;
 }
 
 /**
@@ -69,16 +81,16 @@ function examination_question_import_csv_escape(string $value): string
 /**
  * Build CSV body matching the import parser column order.
  */
-function examination_question_import_build_csv(string $examType = 'regular'): string
+function examination_question_import_build_csv(string $examType = 'regular', string $breakdownMode = 'overall'): string
 {
     $examType = examination_normalize_exam_type($examType) ?: 'regular';
-    $headers = examination_question_import_headers();
+    $headers = examination_question_import_headers($examType, $breakdownMode);
     $lines = [implode(',', $headers)];
     foreach (examination_question_import_example_rows() as $row) {
         if ($examType === 'diagnostic' && strtolower($row['type']) === 'tf') {
             continue;
         }
-        $lines[] = implode(',', [
+        $cols = [
             examination_question_import_csv_escape($row['question']),
             examination_question_import_csv_escape($row['type']),
             examination_question_import_csv_escape($row['choice_a']),
@@ -86,7 +98,14 @@ function examination_question_import_build_csv(string $examType = 'regular'): st
             examination_question_import_csv_escape($row['choice_c']),
             examination_question_import_csv_escape($row['choice_d']),
             examination_question_import_csv_escape($row['correct']),
-        ]);
+        ];
+        if (in_array('subject', $headers, true)) {
+            $cols[] = examination_question_import_csv_escape('Tax');
+        }
+        if (in_array('topic', $headers, true)) {
+            $cols[] = examination_question_import_csv_escape('Income Tax');
+        }
+        $lines[] = implode(',', $cols);
     }
 
     return implode("\r\n", $lines) . "\r\n";
@@ -95,13 +114,13 @@ function examination_question_import_build_csv(string $examType = 'regular'): st
 /**
  * Stream CSV template download (Excel-compatible; no Composer dependency).
  */
-function examination_question_import_send_csv_template(string $examType = 'regular'): never
+function examination_question_import_send_csv_template(string $examType = 'regular', string $breakdownMode = 'overall'): never
 {
     $examType = examination_normalize_exam_type($examType) ?: 'regular';
     $name = $examType === 'diagnostic'
         ? 'ereview_diagnostic_questions_template.csv'
         : 'ereview_exam_questions_template.csv';
-    $csv = examination_question_import_build_csv($examType);
+    $csv = examination_question_import_build_csv($examType, $breakdownMode);
     $body = "\xEF\xBB\xBF" . $csv;
 
     header('Content-Type: text/csv; charset=UTF-8');
@@ -140,7 +159,7 @@ function examination_question_import_split_csv_line(string $line): array
 }
 
 /**
- * @return list<array{question_text:string,question_type:string,choice_a:string,choice_b:string,choice_c:string,choice_d:string,correct_answer:string,_source_row:int}>
+ * @return list<array{question_text:string,question_type:string,choice_a:string,choice_b:string,choice_c:string,choice_d:string,correct_answer:string,subject_name?:string,topic_name?:string,_source_row:int}>
  */
 function examination_question_import_parse_csv(string $text): array
 {
@@ -155,30 +174,74 @@ function examination_question_import_parse_csv(string $text): array
     if ($trimmed === []) {
         return [];
     }
+
+    $map = [
+        'question' => 0,
+        'type' => 1,
+        'choice_a' => 2,
+        'choice_b' => 3,
+        'choice_c' => 4,
+        'choice_d' => 5,
+        'correct' => 6,
+        'subject' => -1,
+        'topic' => -1,
+    ];
     $start = 0;
     if (preg_match('/question/i', $trimmed[0]) && preg_match('/correct/i', $trimmed[0])) {
         $start = 1;
+        $hdrParts = examination_question_import_split_csv_line($trimmed[0]);
+        foreach ($hdrParts as $hi => $hRaw) {
+            $h = strtolower(trim((string)$hRaw));
+            $h = str_replace([' ', '-'], '_', $h);
+            if ($h === 'question' || $h === 'question_text') {
+                $map['question'] = $hi;
+            } elseif ($h === 'type' || $h === 'question_type') {
+                $map['type'] = $hi;
+            } elseif ($h === 'choice_a' || $h === 'a') {
+                $map['choice_a'] = $hi;
+            } elseif ($h === 'choice_b' || $h === 'b') {
+                $map['choice_b'] = $hi;
+            } elseif ($h === 'choice_c' || $h === 'c') {
+                $map['choice_c'] = $hi;
+            } elseif ($h === 'choice_d' || $h === 'd') {
+                $map['choice_d'] = $hi;
+            } elseif ($h === 'correct' || $h === 'correct_answer' || $h === 'answer') {
+                $map['correct'] = $hi;
+            } elseif ($h === 'subject' || $h === 'subject_name') {
+                $map['subject'] = $hi;
+            } elseif ($h === 'topic' || $h === 'topic_name') {
+                $map['topic'] = $hi;
+            }
+        }
     }
+
     $rows = [];
     for ($i = $start; $i < count($trimmed); $i++) {
         $parts = examination_question_import_split_csv_line($trimmed[$i]);
         if (count($parts) < 2) {
             continue;
         }
-        $type = strtolower(trim((string)($parts[1] ?? 'mcq')));
+        $type = strtolower(trim((string)($parts[$map['type']] ?? 'mcq')));
         if ($type !== 'tf') {
             $type = 'mcq';
         }
-        $rows[] = [
-            'question_text' => trim((string)($parts[0] ?? '')),
+        $row = [
+            'question_text' => trim((string)($parts[$map['question']] ?? '')),
             'question_type' => $type,
-            'choice_a' => trim((string)($parts[2] ?? '')),
-            'choice_b' => trim((string)($parts[3] ?? '')),
-            'choice_c' => trim((string)($parts[4] ?? '')),
-            'choice_d' => trim((string)($parts[5] ?? '')),
-            'correct_answer' => strtoupper(trim((string)($parts[6] ?? ''))),
+            'choice_a' => trim((string)($parts[$map['choice_a']] ?? '')),
+            'choice_b' => trim((string)($parts[$map['choice_b']] ?? '')),
+            'choice_c' => trim((string)($parts[$map['choice_c']] ?? '')),
+            'choice_d' => trim((string)($parts[$map['choice_d']] ?? '')),
+            'correct_answer' => strtoupper(trim((string)($parts[$map['correct']] ?? ''))),
             '_source_row' => $i + 1,
         ];
+        if ($map['subject'] >= 0) {
+            $row['subject_name'] = trim((string)($parts[$map['subject']] ?? ''));
+        }
+        if ($map['topic'] >= 0) {
+            $row['topic_name'] = trim((string)($parts[$map['topic']] ?? ''));
+        }
+        $rows[] = $row;
     }
 
     return $rows;
@@ -500,12 +563,12 @@ function examination_question_import_build_docx_bytes(string $examType = 'regula
 /**
  * Stream preferred Word template (.docx). Falls back to CSV if ZipArchive fails.
  */
-function examination_question_import_send_template(string $examType = 'regular', string $format = 'docx'): never
+function examination_question_import_send_template(string $examType = 'regular', string $format = 'docx', string $breakdownMode = 'overall'): never
 {
     $examType = examination_normalize_exam_type($examType) ?: 'regular';
     $format = strtolower(trim($format));
     if ($format === 'csv') {
-        examination_question_import_send_csv_template($examType);
+        examination_question_import_send_csv_template($examType, $breakdownMode);
     }
 
     try {
@@ -524,7 +587,7 @@ function examination_question_import_send_template(string $examType = 'regular',
         exit;
     } catch (Throwable $e) {
         error_log('[examination_question_import] docx template failed: ' . $e->getMessage());
-        examination_question_import_send_csv_template($examType);
+        examination_question_import_send_csv_template($examType, $breakdownMode);
     }
 }
 

@@ -123,7 +123,7 @@ if ($examType === 'diagnostic') {
     <h2 class="<?php echo h($editSectionHeadingClass); ?>">Exam type</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <?php foreach (['regular' => 'Regular Exam', 'diagnostic' => 'Diagnostic Exam'] as $typeKey => $typeLabel): ?>
-        <label class="rounded-xl border p-3 cursor-pointer <?php echo $examType === $typeKey ? 'ring-2 ring-blue-500/40' : ''; ?>">
+        <label class="prof-choice-card rounded-xl border p-3 cursor-pointer <?php echo $examType === $typeKey ? 'is-selected' : ''; ?>">
           <input type="radio" name="exam_type_choice" value="<?php echo h($typeKey); ?>" <?php echo $examType === $typeKey ? 'checked' : ''; ?> class="mr-2">
           <span class="font-semibold"><?php echo h($typeLabel); ?></span>
         </label>
@@ -185,6 +185,10 @@ if ($examType === 'diagnostic') {
       <p class="diag-subject-selection__total">Total Questions: <strong id="diagSubjectSelectionTotal"><?php echo (int)$diagSummaryQuestionTotal; ?></strong></p>
     </div>
   </section>
+  <?php endif; ?>
+
+  <?php if ($examType === 'regular'): ?>
+    <?php require __DIR__ . '/examination_edit_config_regular_subjects.php'; ?>
   <?php endif; ?>
 
   <section class="<?php echo h($editSectionClass); ?>" id="examineePanel">
@@ -331,12 +335,15 @@ if ($examType === 'diagnostic') {
 
   <section class="<?php echo h($editSectionClass); ?>">
     <h2 class="<?php echo h($editSectionHeadingClass); ?>">Advanced Options</h2>
+    <?php if (!empty($assignmentLocked) && $examType === 'regular'): ?>
+      <p class="examination-form-hint examination-form-hint--secondary">Randomization settings are locked because this examination already has student attempts.</p>
+    <?php endif; ?>
     <div class="flex flex-col gap-2">
-      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_questions" id="cfgShuffleQ" value="1" <?php echo $shuffleQ ? 'checked' : ''; ?>> Shuffle questions</label>
-      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_choices" id="cfgShuffleC" value="1" <?php echo $shuffleC ? 'checked' : ''; ?>> Shuffle choices</label>
+      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_questions" id="cfgShuffleQ" value="1" <?php echo $shuffleQ ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle questions</label>
+      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_choices" id="cfgShuffleC" value="1" <?php echo $shuffleC ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle choices</label>
       <?php if ($examType === 'regular'): ?>
-      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_mcq_questions" id="cfgShuffleMcq" value="1" <?php echo $shuffleMcq ? 'checked' : ''; ?>> Shuffle MCQ questions</label>
-      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_tf_questions" id="cfgShuffleTf" value="1" <?php echo $shuffleTf ? 'checked' : ''; ?>> Shuffle True/False questions</label>
+      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_mcq_questions" id="cfgShuffleMcq" value="1" <?php echo $shuffleMcq ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle MCQ questions</label>
+      <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_tf_questions" id="cfgShuffleTf" value="1" <?php echo $shuffleTf ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle True/False questions</label>
       <label class="font-semibold text-sm"><input type="checkbox" name="description_markdown" id="cfgDescMarkdown" value="1" <?php echo $descMarkdown ? 'checked' : ''; ?>> Description supports Markdown</label>
       <?php endif; ?>
     </div>
@@ -369,11 +376,13 @@ if ($examType === 'diagnostic') {
   <?php if ($isModalRender): ?>
   </div>
   <div class="admin-modal__actions">
+    <p class="reg-bd-foot-status" id="regBreakdownFooterStatus" aria-live="polite" hidden></p>
     <button type="button" class="admin-modal__btn admin-modal__btn--ghost" data-exam-edit-cancel>Cancel</button>
     <button type="submit" name="save_action" value="draft" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2"></i> Save Changes</button>
   </div>
   <?php else: ?>
   <div class="flex flex-wrap gap-3 items-center">
+    <p class="reg-bd-foot-status" id="regBreakdownFooterStatus" aria-live="polite" hidden></p>
     <button type="submit" name="save_action" value="draft" class="admin-btn admin-btn--secondary"><i class="bi bi-save"></i> Save Draft</button>
     <?php if (!$isNew): ?>
       <a href="<?php echo h(examination_domain_edit_url($examType, $sourceId, 'questions')); ?>" class="admin-btn admin-btn--ghost">Continue to Questions</a>

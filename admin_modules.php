@@ -46,8 +46,9 @@ $adminBreadcrumbs = [
 
   <?php
     $adminHeroIcon = 'toggles';
+    $adminHeroEyebrow = 'Student modules';
     $adminHeroTitle = 'Student Modules';
-    $adminHeroSubtitle = 'Turn student-facing modules on or off without removing content.';
+    $adminHeroSubtitle = 'Student-facing feature flags (for example CPA Playground). This is not curriculum content — manage lessons in Content Hub.';
     $adminHeroMeta = '';
     $adminHeroActions = '';
     include __DIR__ . '/includes/components/admin_page_hero.php';
@@ -64,36 +65,30 @@ $adminBreadcrumbs = [
     </div>
   <?php endif; ?>
 
-  <div class="quiz-admin-table-shell rounded-xl overflow-hidden">
-    <div class="px-5 py-4 border-b border-white/10">
-      <h2 class="text-lg font-bold text-gray-100 m-0">CPA Playground</h2>
-      <p class="text-sm text-gray-400 mt-1 mb-0">
-        Includes Solo Playground and CPA Battle. When disabled, the sidebar link is hidden and students cannot open Playground pages.
-      </p>
+  <section class="content-library" aria-labelledby="modules-playground-heading">
+    <div class="content-library__head">
+      <div>
+        <h2 id="modules-playground-heading" class="content-library__title">CPA Playground</h2>
+        <p class="content-library__sub">Includes Solo Playground and CPA Battle. When disabled, the sidebar link is hidden and students cannot open Playground pages.</p>
+      </div>
+      <span class="content-library__count"><?php echo $playgroundEnabled ? 'Enabled' : 'Disabled'; ?></span>
     </div>
-    <form method="POST" action="admin_modules" class="px-5 py-5 flex flex-wrap items-center justify-between gap-4">
+    <form method="POST" action="admin_modules" class="content-library__toolbar modules-playground-form">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <input type="hidden" name="action" value="save_playground">
-      <label class="inline-flex items-start gap-3 cursor-pointer max-w-xl">
+      <label class="inline-flex items-center gap-2.5 cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2">
         <input
           type="checkbox"
           name="playground_enabled"
           value="1"
-          class="mt-1 accent-violet-500"
+          class="accent-violet-500"
           <?php echo $playgroundEnabled ? 'checked' : ''; ?>
         >
-        <span>
-          <span class="block font-semibold text-gray-100">Enable CPA Playground for students</span>
-          <span class="block text-sm text-gray-400 mt-0.5">
-            <?php echo $playgroundEnabled
-              ? 'Currently ON — students can access Playground and Battle.'
-              : 'Currently OFF — students cannot access Playground or Battle.'; ?>
-          </span>
-        </span>
+        <span class="text-sm font-semibold text-slate-900">Enable CPA Playground for students</span>
       </label>
       <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save</button>
     </form>
-  </div>
+  </section>
 </div>
 </main>
 </body>
