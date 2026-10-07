@@ -608,6 +608,37 @@ body.exam-protected [contenteditable] {
    Breakpoints: 767 mobile | 768–1099 tablet | 1100+ desktop
    ============================================================================= */
 
+body.college-examination-portal.exam-taking-mode {
+  /* Chrome pad 1.3–1.7rem + title row ~2.2rem + progress ~1.6rem ≈ 5.1–5.5rem (mobile, stats hidden). */
+  --exam-sticky-offset: 5.5rem;
+}
+
+@media (min-width: 768px) {
+  body.college-examination-portal.exam-taking-mode {
+    /* Stacked chrome + compact timer, no 4.5rem circle. */
+    --exam-sticky-offset: 6.5rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  body.college-examination-portal.exam-taking-mode {
+    /* Desktop chrome includes 4.5rem timer circle + label + vertical padding ≈ 7rem. */
+    --exam-sticky-offset: 7.25rem;
+  }
+}
+
+/*
+ * Beat student-saas `#main > .student-topbar-modern { position: sticky !important; z-index: 1100 }`.
+ * relative (not static) so the existing lock overlay ::after still clips to the topbar box.
+ */
+body.college-examination-portal.exam-taking-mode.app-shell--student #main.app-shell-main--student > #studentTopbarRoot.student-topbar,
+body.college-examination-portal.exam-taking-mode.app-shell--student #main.app-shell-main--student > #studentTopbarRoot.student-topbar-modern,
+body.college-examination-portal.exam-taking-mode #studentTopbarRoot.student-topbar-modern {
+  position: relative !important;
+  top: auto !important;
+  z-index: 2 !important;
+}
+
 body.college-examination-portal.exam-taking-mode .exam-page-container,
 body.college-examination-portal.exam-taking-mode .exam-take-wrap {
   width: 100%;
@@ -631,7 +662,7 @@ body.college-examination-portal.exam-taking-mode .exam-conn-banner {
 body.college-examination-portal.exam-taking-mode .exam-mode-chrome {
   position: sticky;
   top: 0;
-  z-index: 90;
+  z-index: 80;
   margin-bottom: 0.65rem;
   padding: clamp(0.65rem, 2vw, 0.85rem) clamp(0.75rem, 3.5vw, 1rem);
   border-radius: 0 0 14px 14px;
@@ -831,8 +862,13 @@ body.college-examination-portal.exam-taking-mode .exam-workspace-main {
 
 body.college-examination-portal.exam-taking-mode .exam-workspace-sidebar {
   position: sticky;
-  top: 6.5rem;
+  top: var(--exam-sticky-offset);
   min-width: 0;
+  z-index: 20;
+}
+
+body.college-examination-portal.exam-taking-mode [data-question-panel] {
+  scroll-margin-top: var(--exam-sticky-offset);
 }
 
 body.college-examination-portal.exam-taking-mode .exam-question-card {
@@ -1453,17 +1489,17 @@ body.college-examination-portal.exam-taking-mode .exam-q-context {
 
 body.college-examination-portal.exam-taking-mode .exam-q-context__subject {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #0b2a4e;
   line-height: 1.25;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-q-context__topic {
-  margin: 0.15rem 0 0;
-  font-size: 0.8125rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #3d5270;
   line-height: 1.3;

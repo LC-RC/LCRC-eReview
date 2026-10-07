@@ -2965,7 +2965,9 @@ body.app-shell--professor .ereview-scroll-top:hover {
   }
 
   body.college-examination-portal.exam-taking-mode #studentTopbarRoot {
-    position: relative;
+    position: relative !important;
+    top: auto !important;
+    z-index: 2 !important;
   }
 
   body.college-examination-portal.exam-taking-mode #app-sidebar.app-shell-sidebar {
