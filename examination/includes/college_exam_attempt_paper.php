@@ -680,10 +680,18 @@ function college_exam_load_attempt_snapshot_questions(mysqli $conn, int $attempt
     while ($r && ($row = mysqli_fetch_assoc($r))) {
         $perm = (string)($row['choice_perm'] ?? '');
         $q = college_exam_apply_choice_perm($row, $perm);
-        $q['_exam_subject_id'] = (int)($row['snap_subject_id'] ?? 0);
-        $q['_exam_topic_id'] = (int)($row['snap_topic_id'] ?? 0);
-        $q['_subject_name'] = (string)($row['snap_subject_name'] ?? '');
-        $q['_topic_name'] = (string)($row['snap_topic_name'] ?? '');
+        $sid = (int)($row['snap_subject_id'] ?? 0);
+        if ($sid <= 0) {
+            $sid = (int)($row['exam_subject_id'] ?? 0);
+        }
+        $tid = (int)($row['snap_topic_id'] ?? 0);
+        if ($tid <= 0) {
+            $tid = (int)($row['exam_topic_id'] ?? 0);
+        }
+        $q['_exam_subject_id'] = $sid;
+        $q['_exam_topic_id'] = $tid;
+        $q['_subject_name'] = trim((string)($row['snap_subject_name'] ?? ''));
+        $q['_topic_name'] = trim((string)($row['snap_topic_name'] ?? ''));
         $q['_display_position'] = (int)($row['display_position'] ?? 0);
         $q['_choice_perm'] = $perm;
         $out[] = $q;
@@ -693,6 +701,94 @@ function college_exam_load_attempt_snapshot_questions(mysqli $conn, int $attempt
     }
 
     return $out;
+}
+
+/**
+ * Fill empty _subject_name/_topic_name from subject/topic IDs. Display-only; does not write snapshot rows.
+ *
+ * @param list<array<string,mixed>> $paper
+ * @return list<array<string,mixed>>
+ */
+function college_exam_hydrate_attempt_paper_labels(mysqli $conn, array $paper): array
+{
+    if ($paper === []) {
+        return $paper;
+    }
+    $examId = 0;
+    $need = false;
+    foreach ($paper as $q) {
+        if (!is_array($q)) {
+            continue;
+        }
+        if ($examId <= 0) {
+            $examId = (int)($q['exam_id'] ?? 0);
+        }
+        $sid = (int)($q['_exam_subject_id'] ?? 0);
+        if ($sid <= 0) {
+            $sid = (int)($q['exam_subject_id'] ?? 0);
+        }
+        $tid = (int)($q['_exam_topic_id'] ?? 0);
+        if ($tid <= 0) {
+            $tid = (int)($q['exam_topic_id'] ?? 0);
+        }
+        $sName = trim((string)($q['_subject_name'] ?? ''));
+        $tName = trim((string)($q['_topic_name'] ?? ''));
+        if (($sid > 0 && $sName === '') || ($tid > 0 && $tName === '')) {
+            $need = true;
+        }
+    }
+    if (!$need || $examId <= 0) {
+        return $paper;
+    }
+
+    $subjectNameById = [];
+    $topicNameById = [];
+    foreach (college_exam_load_subjects_with_topics($conn, $examId) as $s) {
+        $sid = (int)($s['exam_subject_id'] ?? 0);
+        if ($sid > 0) {
+            $subjectNameById[$sid] = trim((string)($s['subject_name'] ?? ''));
+        }
+        foreach ($s['topics'] ?? [] as $t) {
+            if (!is_array($t)) {
+                continue;
+            }
+            $tid = (int)($t['exam_topic_id'] ?? 0);
+            if ($tid > 0) {
+                $topicNameById[$tid] = trim((string)($t['topic_name'] ?? ''));
+            }
+        }
+    }
+    if ($subjectNameById === [] && $topicNameById === []) {
+        return $paper;
+    }
+
+    foreach ($paper as $i => $q) {
+        if (!is_array($q)) {
+            continue;
+        }
+        $sid = (int)($q['_exam_subject_id'] ?? 0);
+        if ($sid <= 0) {
+            $sid = (int)($q['exam_subject_id'] ?? 0);
+        }
+        $tid = (int)($q['_exam_topic_id'] ?? 0);
+        if ($tid <= 0) {
+            $tid = (int)($q['exam_topic_id'] ?? 0);
+        }
+        $sName = trim((string)($q['_subject_name'] ?? ''));
+        $tName = trim((string)($q['_topic_name'] ?? ''));
+        if ($sName === '' && $sid > 0) {
+            $sName = (string)($subjectNameById[$sid] ?? '');
+        }
+        if ($tName === '' && $tid > 0) {
+            $tName = (string)($topicNameById[$tid] ?? '');
+        }
+        $paper[$i]['_exam_subject_id'] = $sid;
+        $paper[$i]['_exam_topic_id'] = $tid;
+        $paper[$i]['_subject_name'] = $sName;
+        $paper[$i]['_topic_name'] = $tName;
+    }
+
+    return $paper;
 }
 
 /**
@@ -707,11 +803,15 @@ function college_exam_questions_for_student_attempt(mysqli $conn, array $exam, a
     $attemptId = (int)($attempt['attempt_id'] ?? 0);
     $examId = (int)($exam['exam_id'] ?? $attempt['exam_id'] ?? 0);
     if ($attemptId > 0 && college_exam_attempt_has_snapshot($conn, $attemptId)) {
-        return college_exam_load_attempt_snapshot_questions($conn, $attemptId);
+        return college_exam_hydrate_attempt_paper_labels(
+            $conn,
+            college_exam_load_attempt_snapshot_questions($conn, $attemptId)
+        );
     }
     $questions = college_exam_select_questions_for_attempt($conn, $examId);
+    $questions = college_exam_prepare_questions_for_attempt($questions, $exam, $attemptId);
 
-    return college_exam_prepare_questions_for_attempt($questions, $exam, $attemptId);
+    return college_exam_hydrate_attempt_paper_labels($conn, $questions);
 }
 
 function college_exam_configured_attempt_length(mysqli $conn, int $examId): int

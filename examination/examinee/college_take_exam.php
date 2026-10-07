@@ -547,10 +547,22 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             if (!is_array($qRow)) {
                 continue;
             }
-            $sid = (int)($qRow['_exam_subject_id'] ?? $qRow['exam_subject_id'] ?? 0);
-            $tid = (int)($qRow['_exam_topic_id'] ?? $qRow['exam_topic_id'] ?? 0);
-            $sName = trim((string)($qRow['_subject_name'] ?? $qRow['subject_name'] ?? ''));
-            $tName = trim((string)($qRow['_topic_name'] ?? $qRow['topic_name'] ?? ''));
+            $sid = (int)($qRow['_exam_subject_id'] ?? 0);
+            if ($sid <= 0) {
+                $sid = (int)($qRow['exam_subject_id'] ?? 0);
+            }
+            $tid = (int)($qRow['_exam_topic_id'] ?? 0);
+            if ($tid <= 0) {
+                $tid = (int)($qRow['exam_topic_id'] ?? 0);
+            }
+            $sName = trim((string)($qRow['_subject_name'] ?? ''));
+            if ($sName === '') {
+                $sName = trim((string)($qRow['subject_name'] ?? ''));
+            }
+            $tName = trim((string)($qRow['_topic_name'] ?? ''));
+            if ($tName === '') {
+                $tName = trim((string)($qRow['topic_name'] ?? ''));
+            }
             $secKey = $sid . ':' . $tid . ':' . strtolower($sName) . ':' . strtolower($tName);
             if (!isset($sectionTotals[$secKey])) {
                 $sectionTotals[$secKey] = 0;
