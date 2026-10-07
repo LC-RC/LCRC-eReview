@@ -5,14 +5,14 @@
  */
 
 body.college-student-app {
-  --cs-canvas: #eef3fb;
+  --cs-canvas: #d7e6f8;
   --cs-surface: #ffffff;
-  --cs-navy: #0f1f3d;
-  --cs-blue: #2563eb;
-  --cs-indigo: #4f46e5;
-  --cs-cyan: #38bdf8;
-  --cs-muted: #5b6b86;
-  --cs-border: rgba(147, 180, 230, 0.32);
+  --cs-navy: #071427;
+  --cs-blue: #1d4ed8;
+  --cs-indigo: #3730a3;
+  --cs-cyan: #0284c7;
+  --cs-muted: #3d5270;
+  --cs-border: rgba(30, 80, 150, 0.28);
   --cs-radius: 18px;
   --cs-radius-sm: 12px;
   --cs-control-h: 2.5rem;
@@ -32,46 +32,44 @@ body.college-student-app {
   --app-shell-sidebar-collapsed: 72px;
   --app-shell-mobile-sidebar-width: 270px;
 
-  --cp-primary: #2563eb;
-  --cp-primary-mid: #4f46e5;
-  --cp-primary-deep: #0f1f3d;
-  --cp-primary-soft: #eff6ff;
-  --cp-primary-border: rgba(147, 197, 253, 0.55);
-  --cp-text: #0f1f3d;
-  --cp-text-body: #334155;
-  --cp-muted: #5b6b86;
+  --cp-primary: #1d4ed8;
+  --cp-primary-mid: #3730a3;
+  --cp-primary-deep: #071427;
+  --cp-primary-soft: #dbeafe;
+  --cp-primary-border: rgba(29, 78, 216, 0.35);
+  --cp-text: #071427;
+  --cp-text-body: #1e3a5f;
+  --cp-muted: #3d5270;
   --cp-surface: #ffffff;
-  --cp-bg: #eef3fb;
-  --cp-border: rgba(147, 180, 230, 0.32);
+  --cp-bg: #d7e6f8;
+  --cp-border: rgba(30, 80, 150, 0.28);
   --cp-shadow: 0 12px 30px -18px rgba(37, 76, 150, 0.28);
   --cp-shadow-hover: 0 16px 34px -16px rgba(37, 76, 150, 0.36);
   --cp-radius: 16px;
   --cp-radius-sm: 12px;
   --cp-radius-lg: 18px;
 
-  --student-bg: #eef3fb;
+  --student-bg: #d7e6f8;
   --student-surface-solid: #ffffff;
-  --student-border: rgba(147, 180, 230, 0.32);
-  --student-text: #0f1f3d;
-  --student-text-secondary: #334155;
-  --student-text-muted: #5b6b86;
-  --student-primary: #2563eb;
-  --student-primary-hover: #1d4ed8;
-  --student-primary-2: #4f46e5;
-  --student-primary-soft: rgba(37, 99, 235, 0.12);
+  --student-border: rgba(30, 80, 150, 0.28);
+  --student-text: #071427;
+  --student-text-secondary: #1e3a5f;
+  --student-text-muted: #3d5270;
+  --student-primary: #1d4ed8;
+  --student-primary-hover: #1e40af;
+  --student-primary-2: #3730a3;
+  --student-primary-soft: rgba(29, 78, 216, 0.16);
   --student-sidebar-bg:
-    linear-gradient(90deg, rgba(59, 130, 246, 0.16) 0%, transparent 18%),
-    radial-gradient(120% 70% at 20% 42%, rgba(99, 102, 241, 0.14), transparent 62%),
-    linear-gradient(180deg, rgba(147, 197, 253, 0.24) 0%, rgba(244, 248, 255, 0.5) 32%, #f7faff 100%);
-  --student-sidebar-border: rgba(147, 180, 230, 0.45);
-  --student-sidebar-text: #1e3a5f;
-  --student-sidebar-muted: #64748b;
-  --student-sidebar-active-bg: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%);
+    linear-gradient(180deg, #c5daf5 0%, #d4e3f6 52%, #cddff4 100%);
+  --student-sidebar-border: rgba(30, 80, 150, 0.28);
+  --student-sidebar-text: #0b2a4e;
+  --student-sidebar-muted: #3d5270;
+  --student-sidebar-active-bg: #1d4ed8;
   --student-sidebar-active-text: #ffffff;
-  --student-sidebar-hover-bg: rgba(59, 130, 246, 0.08);
-  --cp-sidebar-bg: #f4f8ff;
-  --cp-gold: #2563eb;
-  --cp-sidebar-active: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%);
+  --student-sidebar-hover-bg: rgba(29, 78, 216, 0.12);
+  --cp-sidebar-bg: #d4e3f6;
+  --cp-gold: #f2b01e;
+  --cp-sidebar-active: linear-gradient(90deg, #1d4ed8 0%, #3730a3 100%);
   --cp-sidebar-active-border: #ffffff;
 }
 
@@ -98,15 +96,14 @@ body.college-student-app #main.app-shell-main--student {
   overflow-x: clip;
   background-color: var(--cs-canvas) !important;
   background-image:
-    radial-gradient(980px 640px at -10% -16%, rgba(56, 189, 248, 0.32), transparent 62%),
-    radial-gradient(820px 520px at 48% -18%, rgba(125, 211, 252, 0.16), transparent 58%),
-    radial-gradient(900px 600px at 110% -8%, rgba(99, 102, 241, 0.28), transparent 56%) !important;
+    radial-gradient(980px 640px at -10% -16%, rgba(29, 78, 216, 0.28), transparent 62%),
+    radial-gradient(820px 520px at 48% -18%, rgba(14, 116, 144, 0.14), transparent 58%),
+    radial-gradient(900px 600px at 110% -8%, rgba(55, 48, 163, 0.22), transparent 56%) !important;
 }
 
 body.college-student-app.exam-taking-mode #main.app-shell-main--student {
-  background-image:
-    radial-gradient(720px 420px at 8% -12%, rgba(56, 189, 248, 0.12), transparent 64%),
-    radial-gradient(640px 380px at 100% 0%, rgba(99, 102, 241, 0.1), transparent 62%) !important;
+  background-color: #eef3f9 !important;
+  background-image: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -120,13 +117,10 @@ body.college-student-app #app-sidebar.app-shell-sidebar--student {
   height: 100dvh !important;
   max-height: 100dvh !important;
   border-radius: 0 !important;
-  background-color: #f4f8ff !important;
-  background-image:
-    linear-gradient(90deg, rgba(59, 130, 246, 0.16) 0%, transparent 18%),
-    radial-gradient(120% 70% at 20% 42%, rgba(99, 102, 241, 0.14), transparent 62%),
-    linear-gradient(180deg, rgba(147, 197, 253, 0.24) 0%, rgba(244, 248, 255, 0.5) 32%, #f7faff 100%) !important;
-  border-right: 1px solid rgba(147, 180, 230, 0.45) !important;
-  box-shadow: 18px 0 40px -28px rgba(37, 76, 150, 0.42) !important;
+  background-color: #d4e3f6 !important;
+  background-image: linear-gradient(180deg, #c5daf5 0%, #d4e3f6 52%, #cddff4 100%) !important;
+  border-right: 1px solid rgba(30, 80, 150, 0.28) !important;
+  box-shadow: 8px 0 24px -18px rgba(15, 50, 110, 0.32) !important;
   border-bottom-right-radius: 0;
   color: var(--cs-navy);
   z-index: var(--cs-z-sidebar);
@@ -135,57 +129,76 @@ body.college-student-app #app-sidebar.app-shell-sidebar--student {
 body.college-student-app #app-sidebar.app-shell-sidebar--student .app-shell-sidebar-header--brand {
   background: transparent !important;
   border-bottom: 1px solid rgba(147, 180, 230, 0.28) !important;
+  min-height: 3.5rem;
+  padding: 0.7rem 0.85rem !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-brand-link,
 html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-brand-text,
 body.college-student-app #app-sidebar .app-shell-sidebar-brand-link {
   color: var(--cs-navy) !important;
-  gap: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.2;
   text-decoration: none;
 }
 
 body.college-student-app #app-sidebar .app-shell-sidebar-brand-logo {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 0.7rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 2.15rem;
+  border-radius: 0.55rem;
   object-fit: contain;
   background: #fff;
-  box-shadow: 0 8px 18px -12px rgba(37, 99, 235, 0.55);
+  box-shadow: 0 1px 3px rgba(15, 40, 80, 0.08);
 }
 
 body.college-student-app.sidebar-expanded #app-sidebar .app-shell-sidebar-brand-text {
   display: flex !important;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.3rem;
   min-width: 0;
 }
 
 body.college-student-app #app-sidebar .app-shell-sidebar-brand-title {
-  display: block;
-  font-size: 0.95rem;
+  display: inline;
+  font-size: 0.92rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1.15;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
   color: var(--cs-navy);
+  white-space: nowrap;
 }
 
 body.college-student-app #app-sidebar .app-shell-sidebar-brand-sub {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 650;
-  color: #5b74a3;
+  display: inline;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1d4ed8;
+  white-space: nowrap;
 }
 
 body.college-student-app #app-sidebar .admin-sidebar-section-label,
 body.college-student-app #app-sidebar .app-shell-section-label {
-  color: #64748b !important;
+  color: #3d5270 !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-nav-link--student,
 body.college-student-app #app-sidebar .app-shell-nav-link--student {
-  color: #1e3a5f !important;
+  color: #0b2a4e !important;
   border-radius: 0.8rem;
   border-left-color: transparent;
 }
@@ -195,8 +208,9 @@ body.college-student-app #app-sidebar .app-shell-nav-link--student::before {
 }
 
 body.college-student-app #app-sidebar .app-shell-nav-link--student .student-nav-icon {
-  color: #2563eb !important;
-  background: rgba(239, 246, 255, 0.9);
+  color: #1d4ed8 !important;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 80, 150, 0.12);
   border-radius: 0.65rem;
 }
 
@@ -211,10 +225,10 @@ html[data-student-theme] body.college-student-app.college-examination-portal #ap
 body.college-student-app.college-examination-portal #app-sidebar .student-nav-item--active,
 body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active {
   position: relative;
-  background: linear-gradient(90deg, #3b82f6 0%, #4f46e5 100%) !important;
+  background: #1d4ed8 !important;
   color: #fff !important;
   font-weight: 700;
-  box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.7) !important;
+  box-shadow: 0 6px 14px -8px rgba(29, 78, 216, 0.45) !important;
 }
 
 body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active::after {
@@ -226,7 +240,6 @@ body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-i
   width: 3px;
   border-radius: 99px;
   background: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
 }
 
 body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active .student-nav-icon {
@@ -241,10 +254,10 @@ body.college-student-app #app-sidebar .app-shell-sidebar-footer {
 
 html[data-student-theme] body.college-student-app.college-examination-portal #app-sidebar .app-shell-sidebar-time,
 body.college-student-app #app-sidebar .app-shell-sidebar-time {
-  background: rgba(255, 255, 255, 0.88) !important;
-  border: 1px solid rgba(147, 197, 253, 0.5) !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(30, 80, 150, 0.16) !important;
   border-radius: 0.85rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 0 18px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 1px 3px rgba(15, 40, 80, 0.06);
   padding: 0.65rem 0.7rem;
 }
 
@@ -1334,7 +1347,6 @@ body.college-student-app .exam-hero {
     transform: none !important;
     z-index: var(--cs-z-sidebar) !important;
     width: var(--app-shell-sidebar-collapsed) !important;
-    background: #f4f8ff !important;
   }
 
   body.college-student-app.sidebar-expanded #app-sidebar.app-shell-sidebar--student {
@@ -1526,10 +1538,34 @@ html[data-student-theme="dark"] body.college-student-app #main.app-shell-main--s
 
 html[data-student-theme="dark"] body.college-student-app #app-sidebar.app-shell-sidebar--student {
   background-color: #10182a !important;
-  background-image:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.18) 0%, transparent 22%),
-    linear-gradient(180deg, #152038 0%, #10182a 100%) !important;
-  border-right-color: rgba(148, 163, 184, 0.16) !important;
+  background-image: linear-gradient(180deg, #152038 0%, #10182a 100%) !important;
+  border-right-color: rgba(148, 183, 255, 0.14) !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .admin-sidebar-section-label,
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-section-label {
+  color: #9aa8c0 !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-nav-link--student .student-nav-icon {
+  color: #93c5fd !important;
+  background: rgba(110, 168, 255, 0.12);
+  border-color: rgba(148, 183, 255, 0.14);
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-nav-link--student.student-nav-item--active {
+  background: #2563eb !important;
+  box-shadow: 0 6px 14px -8px rgba(37, 99, 235, 0.5) !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time {
+  background: #182234 !important;
+  border-color: rgba(148, 183, 255, 0.16) !important;
+  box-shadow: none;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time-label {
+  color: #9aa8c0 !important;
 }
 
 html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-brand-link,
@@ -1538,6 +1574,10 @@ html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell
 html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time-digital,
 html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-time-date {
   color: #e8eef8 !important;
+}
+
+html[data-student-theme="dark"] body.college-student-app #app-sidebar .app-shell-sidebar-brand-sub {
+  color: #93c5fd;
 }
 
 html[data-student-theme="dark"] body.college-student-app .student-topbar-inner,
@@ -1560,4 +1600,36 @@ html[data-student-theme="dark"] body.college-student-app .cp-exams-browser,
 html[data-student-theme="dark"] body.college-student-app .cp-exams-catalog .cp-exam-card--catalog {
   background: #141b2d !important;
   border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+body.college-student-app {
+  --exam-primary: #1d4ed8;
+  --exam-primary-light: #dbeafe;
+  --exam-bg: #eef3f9;
+  --exam-text: #0b1f38;
+  --exam-muted: #4b6078;
+  --exam-border: rgba(30, 80, 150, 0.18);
+  --exam-surface: #ffffff;
+}
+
+html[data-student-theme="dark"] body.college-student-app {
+  --exam-primary: #6ea8ff;
+  --exam-primary-light: rgba(96, 165, 250, 0.16);
+  --exam-bg: #0a101c;
+  --exam-text: #eef3fb;
+  --exam-muted: #9aa8c0;
+  --exam-border: rgba(148, 183, 255, 0.16);
+  --exam-surface: #141c2c;
+}
+
+html[data-student-theme="dark"] body.college-student-app.exam-taking-mode #main.app-shell-main--student {
+  background-color: #0a101c !important;
+  background-image: none !important;
+}
+
+@media (max-width: 640px) {
+  body.college-student-app #main.app-shell-main--student {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 }

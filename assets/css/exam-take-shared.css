@@ -1445,12 +1445,87 @@ body.college-examination-portal.exam-taking-mode .exam-workspace-brand__text {
   white-space: nowrap;
 }
 
+body.college-examination-portal.exam-taking-mode .exam-q-context {
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: 1px solid var(--exam-border);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__subject {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0b2a4e;
+  line-height: 1.25;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__topic {
+  margin: 0.15rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #3d5270;
+  line-height: 1.3;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__overall {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__section {
+  margin-top: 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  color: var(--exam-muted);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__bar {
+  margin-top: 0.28rem;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(29, 78, 216, 0.12);
+  overflow: hidden;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #1d4ed8;
+}
+
 body.college-examination-portal.exam-taking-mode .exam-question-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  body.college-examination-portal.exam-taking-mode .exam-q-context {
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.55rem;
+  }
+  body.college-examination-portal.exam-taking-mode .exam-q-context__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+  }
 }
 
 body.college-examination-portal.exam-taking-mode .exam-question-label {
@@ -1608,12 +1683,14 @@ body.college-examination-portal.exam-taking-mode .cp-qnav-legend__dot--flagged {
 body.college-examination-portal.exam-review-mode .cer-page {
   width: 100%;
   max-width: none;
+  min-width: 0;
   margin: 0;
-  padding: 1.25rem clamp(1rem, 2.5vw, 2rem) 0;
+  padding: 1.25rem clamp(0.75rem, 2.5vw, 2rem) 0;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   box-sizing: border-box;
+  overflow-x: clip;
 }
 
 /* ---- Hero: three-part official result header ---- */
@@ -1624,9 +1701,10 @@ body.college-examination-portal.exam-review-mode .cer-full-hero {
   gap: clamp(1rem, 3vw, 2.5rem);
   padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
   border-radius: var(--exam-radius);
-  border: 1px solid var(--exam-border);
-  background: var(--exam-surface);
-  box-shadow: var(--exam-shadow-lg);
+  border: 1px solid rgba(15, 60, 120, 0.14);
+  background:
+    linear-gradient(180deg, rgba(219, 234, 254, 0.55) 0%, #ffffff 42%);
+  box-shadow: 0 14px 36px -18px rgba(15, 60, 120, 0.35);
 }
 
 body.college-examination-portal.exam-review-mode .cer-full-hero__eyebrow {
@@ -1720,11 +1798,19 @@ body.college-examination-portal.exam-review-mode .cer-donut__center {
 }
 
 body.college-examination-portal.exam-review-mode .cer-donut__value {
-  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-size: clamp(1.5rem, 3vw, 2.35rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--exam-primary);
+  color: #0f2d5c;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-examination-portal.exam-review-mode .cer-donut__fraction {
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #334e72;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2266,7 +2352,7 @@ body.college-examination-portal.exam-review-mode .cer-page-foot__btn--ghost:hove
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
   body.college-examination-portal.exam-review-mode .cer-full-hero {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       "info info"
       "score status";
@@ -2286,7 +2372,7 @@ body.college-examination-portal.exam-review-mode .cer-page-foot__btn--ghost:hove
 
 @media (max-width: 768px) {
   body.college-examination-portal.exam-review-mode .cer-full-hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas: none;
     text-align: center;
   }
@@ -2995,4 +3081,480 @@ body.college-examination-portal.diag-review-mode .cdr-review {
   body.college-examination-portal.diag-review-mode .cdr-q-mini__status {
     grid-column: 2;
   }
+}
+
+/* =============================================================================
+   TAKING-MODE VISUAL SKIN — colors/type/states only. Do not change layout.
+   ============================================================================= */
+
+body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+  color: var(--exam-text);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(22, 101, 160, 0.14);
+  box-shadow: 0 4px 16px rgba(15, 40, 80, 0.05);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__title {
+  color: #0b1f38;
+  letter-spacing: -0.02em;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__subtitle,
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__counter,
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__stats {
+  color: #5b6f86;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__exit,
+body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__close {
+  background: #fff;
+  border-color: rgba(22, 101, 160, 0.16);
+  color: #143d59;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__exit:hover,
+body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__close:hover {
+  background: #eef6fc;
+  border-color: rgba(29, 78, 216, 0.32);
+  color: #1d4ed8;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__exit:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__close:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__questions-btn:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-flag-btn:focus-visible,
+body.college-examination-portal.exam-taking-mode .exam-q-grid a:focus-visible {
+  outline: 2px solid rgba(29, 78, 216, 0.55);
+  outline-offset: 2px;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact {
+  background: #fff;
+  border-color: rgba(22, 101, 160, 0.16);
+  box-shadow: 0 1px 2px rgba(15, 40, 80, 0.04);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact__value {
+  color: #0f766e;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.warning {
+  background: #fffbeb;
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.danger {
+  background: #fef2f2;
+  border-color: rgba(220, 38, 38, 0.38);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-progress-bar {
+  background: rgba(29, 78, 216, 0.12);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-progress-fill {
+  background: #1d4ed8;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-card,
+body.college-examination-portal.exam-taking-mode .exam-sidebar-card,
+body.college-examination-portal.exam-taking-mode .exam-navigator-card,
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom,
+body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__sheet {
+  background: #fff;
+  border-color: rgba(22, 101, 160, 0.14);
+  box-shadow: 0 1px 3px rgba(15, 40, 80, 0.05);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context {
+  border-bottom-color: rgba(22, 101, 160, 0.12);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-context__topic {
+  color: #4b6078;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-question-text {
+  color: #0b1f38;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice {
+  background: #f8fbff;
+  border-color: rgba(22, 101, 160, 0.18);
+  box-shadow: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice-letter {
+  background: #e8f0fb;
+  color: #143d59;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice-text {
+  color: #0b1f38;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice-radio {
+  border-color: #94a3b8;
+  background: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice:hover {
+  border-color: rgba(29, 78, 216, 0.42);
+  background: #eef4ff;
+  box-shadow: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-choice:focus-within {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18);
+}
+
+body.college-student-app.college-examination-portal.exam-taking-mode .exam-choice.selected,
+body.college-examination-portal.exam-taking-mode .exam-choice.selected {
+  border-color: #1d4ed8 !important;
+  background: #e8effc !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.16) !important;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-flag-btn {
+  background: #f8fbff;
+  border-color: rgba(22, 101, 160, 0.16);
+  color: #4b6078;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn {
+  background: #fff;
+  border-color: rgba(22, 101, 160, 0.18);
+  color: #143d59;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:hover:not(:disabled) {
+  background: #eef4ff;
+  border-color: rgba(29, 78, 216, 0.4);
+  color: #1d4ed8;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:active:not(:disabled) {
+  background: #dbe7fb;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:disabled {
+  opacity: 0.42;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-nav-bottom__center {
+  color: #5b6f86;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-submit-area__status {
+  color: #5b6f86;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-submit-area__btn,
+body.college-examination-portal.exam-taking-mode .exam-btn-submit {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.25);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:hover:not(:disabled),
+body.college-examination-portal.exam-taking-mode .exam-btn-submit:hover:not(:disabled) {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:active:not(:disabled) {
+  background: #1e3a8a;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:disabled,
+body.college-examination-portal.exam-taking-mode .exam-btn-submit.is-locked {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a {
+  background: #f8fbff;
+  border-color: rgba(22, 101, 160, 0.16);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a .q-num {
+  color: #143d59;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a.answered .q-num {
+  background: #2563eb;
+  color: #fff;
+}
+
+body.college-examination-portal.exam-taking-mode .exam-q-grid a.current .q-num {
+  background: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.22);
+}
+
+body.college-examination-portal.exam-taking-mode .exam-mode-chrome__questions-btn {
+  background: #e8effc;
+  border-color: rgba(29, 78, 216, 0.22);
+  color: #1d4ed8;
+}
+
+/* ---- Dark taking mode ---- */
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode #main.app-shell-main--student {
+  color: #eef3fb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome {
+  background: rgba(16, 24, 40, 0.96);
+  border-color: rgba(148, 183, 255, 0.14);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__title,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-brand__text,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__title {
+  color: #f4f7fb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__subtitle,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__counter,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__stats,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom__center,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-submit-area__status,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__meta,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__section,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact__label,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-timer-card__label,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-navigator-card .exam-sidebar-title {
+  color: #9aa8c0;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__exit,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__close,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-flag-btn {
+  background: #182234;
+  border-color: rgba(148, 183, 255, 0.18);
+  color: #e8eef8;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__exit:hover,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__close:hover,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(110, 168, 255, 0.45);
+  color: #bfdbfe;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom__btn:disabled {
+  background: #121a28;
+  color: #64748b;
+  border-color: rgba(148, 183, 255, 0.1);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact {
+  background: #182234;
+  border-color: rgba(148, 183, 255, 0.18);
+  box-shadow: none;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact__value {
+  color: #5eead4;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.warning .exam-workspace-timer-compact__value {
+  color: #fbbf24;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.danger {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-workspace-timer-compact.danger .exam-workspace-timer-compact__value {
+  color: #fca5a5;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-progress-bar,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__bar {
+  background: rgba(110, 168, 255, 0.16);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-progress-fill,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__bar span {
+  background: #6ea8ff;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-question-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-sidebar-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-navigator-card,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-nav-bottom,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-qnav-drawer__sheet {
+  background: #141c2c !important;
+  border-color: rgba(148, 183, 255, 0.14) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: #eef3fb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context {
+  border-bottom-color: rgba(148, 183, 255, 0.12);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__subject {
+  color: #f4f7fb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__topic {
+  color: #9aa8c0;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-context__overall,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-question-num {
+  color: #93c5fd;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-question-text {
+  color: #f4f7fb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice {
+  background: #182234;
+  border-color: rgba(148, 183, 255, 0.2);
+  box-shadow: none;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice-text {
+  color: #e8eef8;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice-letter {
+  background: rgba(110, 168, 255, 0.16);
+  color: #dbeafe;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice-radio {
+  border-color: #64748b;
+  background: #0f172a;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice:hover {
+  background: rgba(110, 168, 255, 0.1);
+  border-color: rgba(110, 168, 255, 0.42);
+  box-shadow: none;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice:focus-within {
+  border-color: #6ea8ff;
+  box-shadow: 0 0 0 3px rgba(110, 168, 255, 0.22);
+}
+
+html[data-student-theme="dark"] body.college-student-app.college-examination-portal.exam-taking-mode .exam-choice.selected,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice.selected {
+  background: rgba(96, 165, 250, 0.18) !important;
+  border-color: #6ea8ff !important;
+  box-shadow: 0 0 0 2px rgba(110, 168, 255, 0.22) !important;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-radio {
+  border-color: #6ea8ff;
+  background: #3b82f6;
+  box-shadow: inset 0 0 0 3px #141c2c;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-letter,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-choice.selected .exam-choice-check {
+  background: #3b82f6;
+  color: #fff;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-flag-btn.is-on,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-action-btn--mark.is-on {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-submit-area__status.is-complete {
+  color: #5eead4;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-submit-area__btn,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-btn-submit {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:hover:not(:disabled),
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-btn-submit:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-submit-area__btn:disabled,
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-btn-submit.is-locked {
+  background: #334155;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-grid a {
+  background: #182234;
+  border-color: rgba(148, 183, 255, 0.16);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-grid a .q-num {
+  color: #e8eef8;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-q-grid a.current .q-num {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(110, 168, 255, 0.35);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-mode-chrome__questions-btn {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(110, 168, 255, 0.32);
+  color: #bfdbfe;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-conn-banner {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-conn-banner.is-ok {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-answered-pill {
+  color: #93c5fd;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .exam-save-hint {
+  color: #9aa8c0;
+}
+
+html[data-student-theme="dark"] body.college-examination-portal.exam-taking-mode .cp-qnav-legend__item {
+  color: #9aa8c0;
 }

@@ -58,7 +58,7 @@ $assert('fallback total', college_exam_score_display_from_counts(1, null, 4), [
     'percent_label' => '25%',
 ]);
 
-// CEO curve still differs (grading storage) — ensure we did not break it.
-$assert('ceo 0/2', college_exam_compute_score_percentage(0, 2), 50.0);
+$assert('zero-based 0/2', college_exam_compute_score_percentage(0, 2), 0.0);
+$assert('zero-based 2/10', college_exam_compute_score_percentage(2, 10), 20.0);
 
 echo "All score display unit tests passed.\n";

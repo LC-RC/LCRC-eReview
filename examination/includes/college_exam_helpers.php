@@ -229,22 +229,16 @@ function college_exam_format_score_total_line_traditional(?int $correctCount, ?i
 }
 
 /**
- * CEO grading curve: stored percentage = 50 + 0.5 × (traditional %), where traditional = 100 × correct / total.
- * Example: 40/50 correct → 50 + 0.5×80 = 90.00.
+ * Zero-based score: 100 × correct / total (0% if none correct).
+ * Example: 2/10 → 20.00. Replaces the former CEO curve (50 + 0.5 × traditional).
  */
 function college_exam_compute_score_percentage(int $correct, int $total): float
 {
-    if ($total <= 0) {
-        return 0.0;
-    }
-
-    $traditional = 100.0 * (float)$correct / (float)$total;
-
-    return round(50.0 + 0.5 * $traditional, 2);
+    return college_exam_compute_traditional_score_percentage($correct, $total);
 }
 
 /**
- * Curved % for pass/fail and KPIs: prefer CEO formula from correct/total when available (fixes legacy rows where DB score is still the old 100×correct/total).
+ * Display % from correct/total when available (zero-based). Falls back to stored score.
  *
  * @param mixed $storedScore Raw value from college_exam_attempts.score
  */
@@ -298,7 +292,7 @@ function college_exam_format_score_percent($value, bool $includeSymbol = true): 
 
 /**
  * Display line: "correct/total | XX.XX%" for student list + monitor (total falls back to question count when missing).
- * Percentage is always the CEO curve when correct/total are known, not the stored score.
+ * Percentage is zero-based (100 × correct / total) when counts are known.
  *
  * @param mixed $score Percentage from DB (fallback when totals unknown)
  */

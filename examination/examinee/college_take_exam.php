@@ -541,6 +541,35 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
     <?php elseif ($attempt && $attemptStatusNorm === 'in_progress'): ?>
       <?php
         $qTotal = (int)count($questions);
+        $paperSectionMeta = [];
+        $sectionTotals = [];
+        foreach ($questions as $qi => $qRow) {
+            if (!is_array($qRow)) {
+                continue;
+            }
+            $sid = (int)($qRow['_exam_subject_id'] ?? $qRow['exam_subject_id'] ?? 0);
+            $tid = (int)($qRow['_exam_topic_id'] ?? $qRow['exam_topic_id'] ?? 0);
+            $sName = trim((string)($qRow['_subject_name'] ?? $qRow['subject_name'] ?? ''));
+            $tName = trim((string)($qRow['_topic_name'] ?? $qRow['topic_name'] ?? ''));
+            $secKey = $sid . ':' . $tid . ':' . strtolower($sName) . ':' . strtolower($tName);
+            if (!isset($sectionTotals[$secKey])) {
+                $sectionTotals[$secKey] = 0;
+            }
+            $sectionTotals[$secKey]++;
+            $paperSectionMeta[$qi] = [
+                'subject' => $sName,
+                'topic' => $tName,
+                'key' => $secKey,
+            ];
+        }
+        $sectionSeen = [];
+        foreach ($paperSectionMeta as $qi => $metaRow) {
+            $k = (string)($metaRow['key'] ?? '');
+            $sectionSeen[$k] = (int)($sectionSeen[$k] ?? 0) + 1;
+            $paperSectionMeta[$qi]['section_i'] = $sectionSeen[$k];
+            $paperSectionMeta[$qi]['section_n'] = (int)($sectionTotals[$k] ?? 0);
+        }
+        unset($sectionSeen, $sectionTotals);
         $timerInitial = $remainingSeconds !== null ? (int)$remainingSeconds : null;
         $timerCircumference = 2 * M_PI * 54;
         $wmStudentName = 'Student';
@@ -581,8 +610,35 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
                   $displayChoices = college_exam_question_display_choices($q);
                   $isTfQ = college_exam_question_type_is_tf((string)($q['question_type'] ?? ''));
                   $prev = strtoupper((string)($answersMap[$qid]['selected_answer'] ?? ''));
+                  $qCtx = is_array($paperSectionMeta[$index] ?? null) ? $paperSectionMeta[$index] : [];
+                  $qCtxSubject = trim((string)($qCtx['subject'] ?? ''));
+                  $qCtxTopic = trim((string)($qCtx['topic'] ?? ''));
+                  $qCtxSecI = (int)($qCtx['section_i'] ?? 0);
+                  $qCtxSecN = (int)($qCtx['section_n'] ?? 0);
+                  $qCtxShow = ($qCtxSubject !== '' || $qCtxTopic !== '');
+                  $qCtxSecPct = ($qCtxSecN > 0) ? max(0, min(100, (int)round(100 * $qCtxSecI / $qCtxSecN))) : 0;
                 ?>
                 <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" data-question-type="<?php echo $isTfQ ? 'tf' : 'mcq'; ?>" id="q<?php echo ($index + 1); ?>">
+                  <?php if ($qCtxShow): ?>
+                  <div class="exam-q-context" aria-label="Current subject and topic">
+                    <?php if ($qCtxSubject !== ''): ?>
+                      <p class="exam-q-context__subject"><?php echo h($qCtxSubject); ?></p>
+                    <?php endif; ?>
+                    <?php if ($qCtxTopic !== ''): ?>
+                      <p class="exam-q-context__topic"><?php echo h($qCtxTopic); ?></p>
+                    <?php endif; ?>
+                    <div class="exam-q-context__meta">
+                      <span>Question <?php echo ($index + 1); ?> of <?php echo (int)$qTotal; ?></span>
+                      <span class="exam-q-context__overall">Overall <?php echo ($index + 1); ?> / <?php echo (int)$qTotal; ?></span>
+                    </div>
+                    <?php if ($qCtxSecN > 1 && ($qCtxTopic !== '' || $qCtxSubject !== '')): ?>
+                      <div class="exam-q-context__section">
+                        <span><?php echo $qCtxTopic !== '' ? h($qCtxTopic) : h($qCtxSubject); ?> · <?php echo $qCtxSecI; ?> of <?php echo $qCtxSecN; ?></span>
+                        <div class="exam-q-context__bar" aria-hidden="true"><span style="width: <?php echo (int)$qCtxSecPct; ?>%;"></span></div>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+                  <?php endif; ?>
                   <div class="exam-question-head">
                     <div class="exam-question-label">Question <?php echo ($index + 1); ?> <span class="exam-answered-pill" aria-hidden="true">✓</span><span class="exam-save-hint" data-save-hint hidden></span></div>
                     <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Mark question <?php echo ($index + 1); ?> for review"><i class="bi bi-flag"></i> Mark for review</button>

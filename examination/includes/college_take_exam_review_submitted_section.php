@@ -15,10 +15,10 @@ $totalC = (int)($attempt['total_count'] ?? 0);
 if ($totalC <= 0) {
     $totalC = count($questions);
 }
-$rawPct = $totalC > 0 ? round((100.0 * $correctC) / $totalC, 1) : 0.0;
 $scoreF = $totalC > 0
     ? college_exam_compute_score_percentage($correctC, $totalC)
     : (is_numeric($attempt['score'] ?? null) ? (float)$attempt['score'] : 0.0);
+$rawPct = $scoreF;
 $markPass = college_exam_is_pass_half_correct(
     isset($attempt['correct_count']) ? (int)$attempt['correct_count'] : null,
     $totalC > 0 ? $totalC : null,
@@ -151,6 +151,7 @@ if (!function_exists('cer_review_choice_text')) {
         </svg>
         <div class="cer-donut__center">
           <span class="cer-donut__value"><?php echo h($scoreDisplay); ?></span>
+          <span class="cer-donut__fraction"><?php echo (int)$correctC; ?>/<?php echo (int)$totalC; ?></span>
           <span class="cer-donut__label"><i class="bi bi-trophy"></i> Final score</span>
         </div>
       </div>
