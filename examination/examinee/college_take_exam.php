@@ -4,6 +4,7 @@ require_once dirname(__DIR__, 2) . '/includes/platform_access.php';
 ereview_require_college_examination_portal();
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_exam_helpers.php';
+require_once dirname(__DIR__) . '/includes/college_exam_attempt_paper.php';
 require_once dirname(__DIR__, 2) . '/includes/quiz_helpers.php';
 
 if (!headers_sent()) {
@@ -37,12 +38,24 @@ if (!$exam) {
 }
 
 $now = date('Y-m-d H:i:s');
-college_exam_finalize_expired_in_progress($conn, (int)$examId, (int)$uid, 0);
+// Peek attempt before auto-finalize. If this student already has an expired in_progress
+// attempt on the take page, defer finalize so the client timeout bulk-submit can flush
+// local answers first. Abandoned attempts are still finalized from exams list / dashboard / monitor.
 $stmt = mysqli_prepare($conn, "SELECT * FROM college_exam_attempts WHERE user_id=? AND exam_id=? LIMIT 1");
 mysqli_stmt_bind_param($stmt, 'ii', $uid, $examId);
 mysqli_stmt_execute($stmt);
 $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
+
+$deferExpiredFinalizeForTakePage = college_exam_attempt_is_expired_in_progress($attempt ?: null);
+if (!$deferExpiredFinalizeForTakePage) {
+    college_exam_finalize_expired_in_progress($conn, (int)$examId, (int)$uid, 0);
+    $stmt = mysqli_prepare($conn, "SELECT * FROM college_exam_attempts WHERE user_id=? AND exam_id=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 'ii', $uid, $examId);
+    mysqli_stmt_execute($stmt);
+    $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+}
 
 if (!college_exam_user_can_view($conn, (int)$uid, $exam, $attempt ?: null)) {
     $_SESSION['error'] = 'You do not have access to this examination.';
@@ -112,31 +125,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_exam'])) {
     $started = date('Y-m-d H:i:s');
     $expiresAt = college_exam_compute_expires_at((int)$exam['time_limit_seconds'], $exam['deadline'] ?? null);
     $startedAttemptId = 0;
-    if (!$attempt) {
-        $ins = mysqli_prepare($conn, "INSERT INTO college_exam_attempts (exam_id, user_id, status, started_at, expires_at, last_seen_at) VALUES (?, ?, 'in_progress', ?, ?, ?)");
-        mysqli_stmt_bind_param($ins, 'iisss', $examId, $uid, $started, $expiresAt, $started);
-        mysqli_stmt_execute($ins);
-        $startedAttemptId = (int)mysqli_insert_id($conn);
-        mysqli_stmt_close($ins);
-    } elseif ($attemptStatusNorm === 'in_progress') {
+    if ($attempt && $attemptStatusNorm === 'in_progress') {
         header('Location: college_take_exam?exam_id=' . $examId);
         exit;
-    } elseif ($attemptStatusNorm === 'expired') {
-        $aid = (int)$attempt['attempt_id'];
-        $startedAttemptId = $aid;
-        mysqli_query($conn, "DELETE FROM college_exam_answers WHERE attempt_id={$aid}");
-        $emptyState = '{"current_index":0,"flags":[],"updated_at":0}';
-        $upd = mysqli_prepare($conn, "UPDATE college_exam_attempts SET status='in_progress', started_at=?, expires_at=?, submitted_at=NULL, score=NULL, correct_count=NULL, total_count=NULL, ui_state_json=?, last_seen_at=?, exam_session_lock=NULL, tab_switch_count=0, last_tab_switch_at=NULL WHERE attempt_id=? AND user_id=?");
-        mysqli_stmt_bind_param($upd, 'ssssii', $started, $expiresAt, $emptyState, $started, $aid, $uid);
-        mysqli_stmt_execute($upd);
-        mysqli_stmt_close($upd);
     }
-    if ($startedAttemptId > 0) {
+    $startedRow = college_exam_start_attempt_with_snapshot($conn, $exam, (int)$uid, $started, $expiresAt);
+    if (empty($startedRow['ok'])) {
+        $_SESSION['error'] = 'Could not prepare this examination. Please try again.';
+        header('Location: college_exams');
+        exit;
+    }
+    if (!empty($startedRow['already_submitted'])) {
+        header('Location: college_take_exam?exam_id=' . $examId . '&review=1');
+        exit;
+    }
+    $startedAttemptId = (int)($startedRow['attempt_id'] ?? 0);
+    if ($startedAttemptId > 0 && empty($startedRow['resumed'])) {
         require_once dirname(__DIR__) . '/includes/college_exam_attempt_events.php';
         college_exam_attempt_event_record($conn, $startedAttemptId, (int)$uid, (int)$examId, 'exam_started', null);
     }
     header('Location: college_take_exam?exam_id=' . $examId);
     exit;
+}
+
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
 }
 
 if ($examClosedAllSubmitted) {
@@ -148,20 +161,16 @@ if ($examClosedAllSubmitted) {
 }
 
 $questions = [];
-$qr = mysqli_query($conn, "SELECT * FROM college_exam_questions WHERE exam_id=" . (int)$examId . " ORDER BY sort_order ASC, question_id ASC");
-if ($qr) {
-    while ($q = mysqli_fetch_assoc($qr)) {
-        $questions[] = $q;
-    }
-    mysqli_free_result($qr);
-}
+require_once dirname(__DIR__) . '/includes/college_exam_subject_topic_helpers.php';
 if ($attempt && ($attemptStatusNorm === 'in_progress' || $attemptSubmitted)) {
-    $questions = college_exam_prepare_questions_for_attempt($questions, $exam, (int)$attempt['attempt_id']);
+    $questions = college_exam_questions_for_student_attempt($conn, $exam, $attempt);
+} else {
+    $questions = college_exam_select_questions_for_attempt($conn, (int)$examId);
 }
 
 $answersMap = [];
 if ($attempt) {
-    $ar = mysqli_query($conn, 'SELECT question_id, selected_answer FROM college_exam_answers WHERE attempt_id=' . (int)$attempt['attempt_id']);
+    $ar = mysqli_query($conn, 'SELECT question_id, selected_answer, save_seq FROM college_exam_answers WHERE attempt_id=' . (int)$attempt['attempt_id']);
     if ($ar) {
         while ($r = mysqli_fetch_assoc($ar)) {
             $answersMap[(int)$r['question_id']] = $r;
@@ -217,10 +226,19 @@ if ($attempt && $attemptStatusNorm === 'in_progress' && !empty($attempt['expires
 }
 
 $initialAnsweredIds = [];
+$jsServerAnswers = [];
 foreach ($questions as $q) {
     $qid = (int)$q['question_id'];
-    if (!empty($answersMap[$qid]['selected_answer'])) {
+    $sel = strtoupper(trim((string)($answersMap[$qid]['selected_answer'] ?? '')));
+    if ($sel !== '') {
         $initialAnsweredIds[] = $qid;
+    }
+    if (preg_match('/^[A-D]$/', $sel)) {
+        $jsServerAnswers[] = [
+            'question_id' => $qid,
+            'selected_answer' => $sel,
+            'save_seq' => max(0, (int)($answersMap[$qid]['save_seq'] ?? 0)),
+        ];
     }
 }
 $savedUiState = null;
@@ -566,7 +584,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
                 ?>
                 <section class="exam-question-card exam-question-panel<?php echo $prev !== '' ? ' is-answered' : ''; ?>" data-question-panel data-index="<?php echo $index; ?>" data-question-id="<?php echo $qid; ?>" data-question-type="<?php echo $isTfQ ? 'tf' : 'mcq'; ?>" id="q<?php echo ($index + 1); ?>">
                   <div class="exam-question-head">
-                    <div class="exam-question-label">Question <?php echo ($index + 1); ?> <span class="exam-answered-pill" aria-hidden="true">✓</span></div>
+                    <div class="exam-question-label">Question <?php echo ($index + 1); ?> <span class="exam-answered-pill" aria-hidden="true">✓</span><span class="exam-save-hint" data-save-hint hidden></span></div>
                     <button type="button" class="exam-flag-btn flagBtn focus-ring" data-question-id="<?php echo $qid; ?>" aria-label="Mark question <?php echo ($index + 1); ?> for review"><i class="bi bi-flag"></i> Mark for review</button>
                   </div>
                   <div class="exam-question-text exam-no-copy quiz-rich-text"><span class="exam-question-num"><?php echo ($index + 1); ?>.</span> <?php echo renderQuizRichText($q['question_text']); ?></div>
@@ -801,8 +819,15 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         var examPageReadyAt = Date.now();
         var warned5 = false, warned1 = false, warned30 = false;
         var saveRetryTimers = {};
+        var saveDebounceTimers = {};
+        var saveSeqByQid = {};
+        var pendingSaveByQid = {};
         var inflightSaves = {};
         var answersLocked = false;
+        var SAVE_DEBOUNCE_MS = 400;
+        var hideFlushSent = {};
+        var timeUpSubmitArmed = false;
+        var serverAnswersSeed = <?php echo json_encode($jsServerAnswers, JSON_UNESCAPED_UNICODE); ?>;
         var scrollSyncFromClick = false;
         var scrollSyncTimer = null;
 
@@ -836,7 +861,10 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             connBanner.classList.remove('is-on', 'is-ok');
           }
         }
-        window.addEventListener('online', function () { setConn(true, true); });
+        window.addEventListener('online', function () {
+          setConn(true, true);
+          if (typeof runTimeSyncTick === 'function') runTimeSyncTick();
+        });
         window.addEventListener('offline', function () { setConn(false); });
         setConn(navigator.onLine);
 
@@ -888,6 +916,48 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         function answerBackupKey() {
           return 'ereview_exam_answers_' + attemptId;
         }
+        function seqBackupKey() {
+          return 'ereview_exam_seq_' + attemptId;
+        }
+        function readSeqMap() {
+          var map = {};
+          try {
+            var raw = localStorage.getItem(seqBackupKey());
+            if (!raw) return map;
+            var parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              Object.keys(parsed).forEach(function (k) {
+                var n = parseInt(parsed[k], 10);
+                if (isFinite(n) && n > 0) map[parseInt(k, 10)] = n;
+              });
+            }
+          } catch (e) {}
+          return map;
+        }
+        function persistSeqMap() {
+          try {
+            var out = {};
+            Object.keys(saveSeqByQid).forEach(function (k) {
+              var n = parseInt(saveSeqByQid[k], 10);
+              if (isFinite(n) && n > 0) out[String(k)] = n;
+            });
+            localStorage.setItem(seqBackupKey(), JSON.stringify(out));
+          } catch (e) {}
+        }
+        function seedSeq(qid, seq) {
+          qid = parseInt(qid, 10);
+          seq = Math.max(0, parseInt(seq, 10) || 0);
+          saveSeqByQid[qid] = Math.max(saveSeqByQid[qid] || 0, seq);
+          persistSeqMap();
+        }
+        function nextSaveSeq(qid) {
+          qid = parseInt(qid, 10);
+          var localMap = readSeqMap();
+          var next = Math.max(saveSeqByQid[qid] || 0, localMap[qid] || 0) + 1;
+          saveSeqByQid[qid] = next;
+          persistSeqMap();
+          return next;
+        }
         function persistAnswerBackup(qid, value) {
           try {
             var map = {};
@@ -902,11 +972,18 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         }
         function clearAnswerBackup() {
           try { localStorage.removeItem(answerBackupKey()); } catch (e) {}
+          try { localStorage.removeItem(seqBackupKey()); } catch (e) {}
         }
         function localAnswersPayload() {
           var map = getLocalAnswersMap();
+          var seqMap = readSeqMap();
           return Object.keys(map).map(function (qid) {
-            return { question_id: parseInt(qid, 10), selected_answer: map[qid] };
+            var id = parseInt(qid, 10);
+            return {
+              question_id: id,
+              selected_answer: map[qid],
+              save_seq: Math.max(saveSeqByQid[id] || 0, seqMap[id] || 0, 1)
+            };
           });
         }
         function isQuestionAnsweredLocal(qid) {
@@ -988,9 +1065,11 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           if (document.visibilityState === 'hidden') {
             wasHidden = true;
             setPrivacyShield(true);
+            flushDebouncedSavesKeepalive();
             sendVisibility('hidden');
           } else {
             sendVisibility('visible');
+            if (typeof runTimeSyncTick === 'function') runTimeSyncTick();
             if (wasHidden) {
               wasHidden = false;
               showSecurityOverlay('visibility');
@@ -1264,6 +1343,31 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           }, 350);
         }
 
+        function setQuestionSaveState(qid, state) {
+          var panel = form.querySelector('[data-question-panel][data-question-id="' + qid + '"]');
+          if (!panel) return;
+          panel.classList.remove('is-saving', 'is-save-retrying', 'is-save-failed');
+          var hint = panel.querySelector('[data-save-hint]');
+          var label = '';
+          if (state === 'saving') {
+            panel.classList.add('is-saving');
+            label = 'Saving';
+          } else if (state === 'retrying') {
+            panel.classList.add('is-save-retrying');
+            label = 'Retrying';
+          } else if (state === 'failed') {
+            panel.classList.add('is-save-failed');
+            label = 'Not saved';
+          }
+          if (hint) {
+            hint.textContent = label;
+            if (label) hint.removeAttribute('hidden');
+            else hint.setAttribute('hidden', 'hidden');
+          }
+          if (label) panel.setAttribute('title', label);
+          else panel.removeAttribute('title');
+        }
+
         function lockAnswerInputs() {
           answersLocked = true;
           form.querySelectorAll('input[type=radio]').forEach(function (inp) {
@@ -1273,6 +1377,21 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
 
         function awaitInflightSaves(maxWaitMs) {
           maxWaitMs = typeof maxWaitMs === 'number' ? maxWaitMs : 2500;
+          // Never delete pending answers without preserving them. When submit/lock is
+          // already active, per-answer flushSaveAnswer no-ops — promote to local backup.
+          if (state.submitting || answersLocked) {
+            promotePendingSavesToLocalBackup();
+          } else {
+            Object.keys(saveDebounceTimers).forEach(function (qid) {
+              clearTimeout(saveDebounceTimers[qid]);
+              delete saveDebounceTimers[qid];
+              var pending = pendingSaveByQid[qid];
+              if (pending) {
+                delete pendingSaveByQid[qid];
+                flushSaveAnswer(parseInt(qid, 10), pending.value, pending.fromIndex, 1);
+              }
+            });
+          }
           var pending = Object.keys(inflightSaves).map(function (k) { return inflightSaves[k]; }).filter(Boolean);
           if (!pending.length) return Promise.resolve();
           return Promise.race([
@@ -1281,20 +1400,117 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           ]);
         }
 
-        function saveAnswer(qid, value, fromIndex, attempt) {
+        function flushDebouncedSavesKeepalive() {
+          var pending = [];
+          Object.keys(saveDebounceTimers).forEach(function (qid) {
+            clearTimeout(saveDebounceTimers[qid]);
+            delete saveDebounceTimers[qid];
+          });
+          Object.keys(pendingSaveByQid).forEach(function (qid) {
+            var row = pendingSaveByQid[qid];
+            delete pendingSaveByQid[qid];
+            if (!row || !row.value) return;
+            persistAnswerBackup(parseInt(qid, 10), row.value);
+            pending.push({
+              qid: parseInt(qid, 10),
+              value: row.value,
+              seq: row.seq || (saveSeqByQid[parseInt(qid, 10)] || 1)
+            });
+          });
+          if (answersLocked || state.submitting || !pending.length) return;
+          pending.forEach(function (item) {
+            var key = item.qid + ':' + item.seq;
+            if (hideFlushSent[key]) return;
+            hideFlushSent[key] = true;
+            var body = new URLSearchParams();
+            body.set('action', 'save_answer');
+            body.set('csrf_token', csrf);
+            body.set('attempt_id', String(attemptId));
+            body.set('question_id', String(item.qid));
+            body.set('selected_answer', String(item.value));
+            body.set('save_seq', String(item.seq));
+            try {
+              fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body,
+                credentials: 'same-origin',
+                keepalive: true
+              }).catch(function () {});
+            } catch (e) {}
+          });
+        }
+
+        function queueSaveAnswer(qid, value, fromIndex) {
+          if (answersLocked || state.submitting) return;
+          var seq = nextSaveSeq(qid);
+          pendingSaveByQid[qid] = { value: value, fromIndex: fromIndex, seq: seq };
+          clearTimeout(saveDebounceTimers[qid]);
+          clearTimeout(saveRetryTimers[qid]);
+          saveDebounceTimers[qid] = setTimeout(function () {
+            delete saveDebounceTimers[qid];
+            var pending = pendingSaveByQid[qid];
+            if (!pending) return;
+            delete pendingSaveByQid[qid];
+            flushSaveAnswer(qid, pending.value, pending.fromIndex, 1, pending.seq);
+          }, SAVE_DEBOUNCE_MS);
+        }
+
+        function flushSaveAnswer(qid, value, fromIndex, attempt, seq) {
           attempt = attempt || 1;
+          seq = typeof seq === 'number' ? seq : (saveSeqByQid[qid] || 1);
           if (answersLocked || state.submitting) {
             return Promise.resolve(null);
           }
-          if (attempt > 1) showWarnToast('Unable to save — retrying...', 'warning');
-          else if (warnToast) warnToast.classList.remove('show');
+          // Drop stale retries if a newer local selection exists.
+          if ((saveSeqByQid[qid] || 0) > seq) {
+            return Promise.resolve(null);
+          }
+          if (attempt > 1) {
+            setQuestionSaveState(qid, 'retrying');
+            showWarnToast('Unable to save — retrying...', 'warning');
+          } else {
+            setQuestionSaveState(qid, 'saving');
+            if (warnToast) warnToast.classList.remove('show');
+          }
           var p = request('save_answer', {
             csrf_token: csrf,
             attempt_id: attemptId,
             question_id: qid,
-            selected_answer: value
+            selected_answer: value,
+            save_seq: seq
           }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Save failed');
+            if (data.ignored) {
+              setQuestionSaveState(qid, 'saved');
+              return data;
+            }
+            var serverSeq = Math.max(0, parseInt(data.current_seq, 10) || parseInt(data.saved_seq, 10) || 0);
+            if (serverSeq > 0) seedSeq(qid, serverSeq);
+            if (data.stale) {
+              var live = '';
+              var liveInp = form.querySelector('input[type=radio][data-question-id="' + qid + '"]:checked');
+              if (liveInp) live = String(liveInp.value || '').toUpperCase();
+              var serverAns = String(data.current_answer || '').toUpperCase();
+              if (live && /^[A-D]$/.test(live) && live !== serverAns) {
+                setQuestionSaveState(qid, 'retrying');
+                var retrySeq = Math.max(saveSeqByQid[qid] || 0, serverSeq) + 1;
+                saveSeqByQid[qid] = retrySeq;
+                persistSeqMap();
+                if (attempt < 5) {
+                  clearTimeout(saveRetryTimers[qid]);
+                  saveRetryTimers[qid] = setTimeout(function () {
+                    flushSaveAnswer(qid, live, fromIndex, attempt + 1, retrySeq);
+                  }, 250);
+                } else {
+                  setQuestionSaveState(qid, 'failed');
+                }
+                return data;
+              }
+              setQuestionSaveState(qid, 'saved');
+              return data;
+            }
+            setQuestionSaveState(qid, 'saved');
             setConn(true, attempt > 1);
             showSavedToast('Answer saved');
             var wasAnswered = state.answered.has(qid);
@@ -1302,7 +1518,6 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             syncChoiceStyles();
             updateCounts();
             renderNavigator();
-            // Auto-advance only after first successful answer (changing an answer does not yank the page).
             if (!wasAnswered && typeof fromIndex === 'number' && fromIndex >= 0) {
               var nextIdx = findNextUnansweredAfter(fromIndex);
               if (nextIdx >= 0 && nextIdx !== fromIndex) {
@@ -1316,11 +1531,16 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           }).catch(function () {
             setConn(false);
             if (answersLocked || state.submitting) return null;
-            if (attempt < 4) {
+            if ((saveSeqByQid[qid] || 0) > seq) return null;
+            if (attempt < 3) {
+              setQuestionSaveState(qid, 'retrying');
               clearTimeout(saveRetryTimers[qid]);
-              saveRetryTimers[qid] = setTimeout(function () { saveAnswer(qid, value, fromIndex, attempt + 1); }, 450 * attempt);
+              saveRetryTimers[qid] = setTimeout(function () {
+                flushSaveAnswer(qid, value, fromIndex, attempt + 1, seq);
+              }, Math.min(4000, 600 * attempt));
               showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
             } else {
+              setQuestionSaveState(qid, 'failed');
               showWarnToast('Unable to save your answer. Please check your connection.', 'danger');
             }
             return null;
@@ -1331,9 +1551,15 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           return p;
         }
 
+        function saveAnswer(qid, value, fromIndex) {
+          queueSaveAnswer(qid, value, fromIndex);
+          return Promise.resolve(null);
+        }
+
         function flushAllLocalAnswers() {
-          // Prefer one submit payload over N round-trips (faster + survives flaky saves).
-          return Promise.resolve({ ok: true, answers: localAnswersPayload() });
+          return awaitInflightSaves(2500).then(function () {
+            return { ok: true, answers: localAnswersPayload() };
+          });
         }
 
         function openTimeUpModal() {
@@ -1347,6 +1573,90 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           var m = document.getElementById('timeUpModal');
           if (!m) return;
           m.classList.add('hidden'); m.classList.remove('flex');
+        }
+
+        function promotePendingSavesToLocalBackup() {
+          Object.keys(saveDebounceTimers).forEach(function (qid) {
+            clearTimeout(saveDebounceTimers[qid]);
+            delete saveDebounceTimers[qid];
+          });
+          Object.keys(pendingSaveByQid).forEach(function (qid) {
+            var pending = pendingSaveByQid[qid];
+            delete pendingSaveByQid[qid];
+            if (pending && pending.value) {
+              persistAnswerBackup(parseInt(qid, 10), pending.value);
+            }
+          });
+        }
+
+        function shouldClearAnswerBackup(data) {
+          // Fail closed: keep recoverable local answers unless THIS request proved persistence.
+          if (!data || !data.ok) return false;
+          if (data.answers_ignored) return false;
+          // Never clear merely because the server says already_submitted (immutable; no merge).
+          if (data.already_submitted) return false;
+          var payloadCount = parseInt(data.payload_count, 10);
+          if (!isFinite(payloadCount)) payloadCount = -1;
+          // Empty submit payload while local answers still exist → keep backup.
+          if (payloadCount === 0) {
+            try {
+              if (Object.keys(getLocalAnswersMap()).length > 0) return false;
+            } catch (e) {
+              return false;
+            }
+          }
+          if (payloadCount > 0) {
+            var persisted = parseInt(data.answers_persisted, 10);
+            if (!isFinite(persisted) || persisted <= 0) return false;
+          }
+          return true;
+        }
+
+        var submitFinalizedOk = false;
+        var timeoutKeepaliveSent = false;
+        var timeoutSubmitUnderway = false;
+        var KEEPALIVE_PAYLOAD_MAX = 60000;
+
+        function answersJsonHasAnswers(answersJson) {
+          if (typeof answersJson !== 'string' || answersJson === '') return false;
+          try {
+            var arr = JSON.parse(answersJson);
+            return Array.isArray(arr) && arr.length > 0;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function answersJsonWithinKeepaliveLimit(answersJson) {
+          return typeof answersJson === 'string'
+            && answersJson.length > 0
+            && answersJson.length <= KEEPALIVE_PAYLOAD_MAX
+            && answersJsonHasAnswers(answersJson);
+        }
+
+        /** Best-effort timeout flush that can survive tab close (at most once). */
+        function sendTimeoutKeepaliveOnce(reason, answersJson) {
+          if (submitFinalizedOk || timeoutKeepaliveSent) return false;
+          if (!answersJson) {
+            promotePendingSavesToLocalBackup();
+            answersJson = JSON.stringify(localAnswersPayload());
+          }
+          if (!answersJsonWithinKeepaliveLimit(answersJson)) return false;
+          timeoutKeepaliveSent = true;
+          try {
+            postSubmitPayload(reason || 'timeout', answersJson, true);
+          } catch (e) {}
+          return true;
+        }
+
+        function installTimeoutUnloadGuard() {
+          window.onbeforeunload = function () {
+            if (submitFinalizedOk) return;
+            // Timeout path only: emergency keepalive if local answers remain.
+            if (timeoutSubmitUnderway || (countdown !== null && countdown <= 0)) {
+              sendTimeoutKeepaliveOnce('timeout');
+            }
+          };
         }
 
         function postSubmitPayload(reason, answersJson, useKeepalive) {
@@ -1374,12 +1684,36 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           });
         }
 
-        /** Time expired: lock inputs, await in-flight autosaves briefly, then one atomic timeout submit. */
+        /**
+         * Time expired: collect full local payload FIRST, then lock UI and bulk-submit.
+         * Do not let state.submitting / answersLocked block pending answers from the payload.
+         */
         function autoSubmitOnTimeUp(reason, attempt) {
           reason = reason || 'timeout';
           attempt = attempt || 1;
+          if (attempt === 1) {
+            if (timeUpSubmitArmed) return;
+            timeUpSubmitArmed = true;
+          }
           if (state.submitting && attempt === 1) return;
+
+          // 1) Promote debounced/pending selections into durable local backup + build payload
+          //    BEFORE setting submitting/answersLocked (those flags block flushSaveAnswer).
+          promotePendingSavesToLocalBackup();
+          var answersJson = JSON.stringify(localAnswersPayload());
+          if (!answersJsonHasAnswers(answersJson) && Object.keys(getLocalAnswersMap()).length > 0) {
+            if (attempt < 8) {
+              setTimeout(function () { autoSubmitOnTimeUp(reason, attempt + 1); }, Math.min(8000, 900 * attempt));
+            } else {
+              showWarnToast('Time is up but answers could not be prepared. Retrying…', 'danger');
+              timeUpSubmitArmed = false;
+              setTimeout(function () { autoSubmitOnTimeUp(reason, 1); }, 5000);
+            }
+            return;
+          }
+
           state.submitting = true;
+          timeoutSubmitUnderway = true;
           countdown = 0;
           lockAnswerInputs();
           Object.keys(saveRetryTimers).forEach(function (k) {
@@ -1387,17 +1721,34 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             delete saveRetryTimers[k];
           });
           openTimeUpModal();
-          window.onbeforeunload = null;
+          // Keep unload guard for best-effort keepalive if the tab dies mid-submit.
+          installTimeoutUnloadGuard();
 
-          awaitInflightSaves(2500).then(function () {
-            var answersJson = JSON.stringify(localAnswersPayload());
-            // Prefer waiting for server confirmation over keepalive fire-and-forget.
-            return postSubmitPayload(reason, answersJson, false);
+          // Brief wait for any already-in-flight autosaves (best-effort); authoritative
+          // answers are already in answersJson from DOM + localStorage.
+          awaitInflightSaves(1500).then(function () {
+            // Rebuild once more in case inflight saves updated nothing material;
+            // pending map was already promoted — DOM/localStorage remain source of truth.
+            promotePendingSavesToLocalBackup();
+            answersJson = JSON.stringify(localAnswersPayload());
+            if (!answersJsonHasAnswers(answersJson) && Object.keys(getLocalAnswersMap()).length > 0) {
+              throw new Error('Timeout payload empty');
+            }
+            // Claim the single keepalive slot for this awaited submit (avoids duplicate beacons).
+            timeoutKeepaliveSent = true;
+            return postSubmitPayload(reason, answersJson, true);
           }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
-            clearAnswerBackup();
+            if (shouldClearAnswerBackup(data)) {
+              clearAnswerBackup();
+              submitFinalizedOk = true;
+              timeoutSubmitUnderway = false;
+              window.onbeforeunload = null;
+            }
             window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason);
           }).catch(function () {
+            // Allow one more keepalive on unload if this awaited attempt failed.
+            timeoutKeepaliveSent = false;
             if (attempt < 8) {
               setTimeout(function () {
                 state.submitting = false;
@@ -1405,6 +1756,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               }, Math.min(8000, 900 * attempt));
             } else {
               state.submitting = false;
+              timeUpSubmitArmed = false;
               showWarnToast('Time is up but submit failed. Retrying… check your connection.', 'danger');
               setTimeout(function () {
                 autoSubmitOnTimeUp(reason, 1);
@@ -1439,19 +1791,31 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             scrollToQuestion(firstMiss, true);
             return;
           }
+          // Promote pending debounced answers BEFORE submitting lock so a debounce
+          // timer cannot drop pendingSaveByQid into a no-op flushSaveAnswer.
+          promotePendingSavesToLocalBackup();
           state.submitting = true;
+          lockAnswerInputs();
           var overlay = document.getElementById('quizSubmitOverlay');
           if (overlay) overlay.classList.add('show');
           flushAllLocalAnswers().then(function () {
+            promotePendingSavesToLocalBackup();
             var answersJson = JSON.stringify(localAnswersPayload());
             return postSubmitPayload(reason || 'manual', answersJson, false);
           }).then(function (data) {
             if (!data || !data.ok) throw new Error((data && data.error) || 'Submit failed');
-            clearAnswerBackup();
+            if (shouldClearAnswerBackup(data)) {
+              clearAnswerBackup();
+              submitFinalizedOk = true;
+            }
             window.onbeforeunload = null;
             window.location.href = 'college_take_exam?exam_id=' + examId + '&review=1&reason=' + encodeURIComponent(reason || 'submit');
           }).catch(function (err) {
             state.submitting = false;
+            answersLocked = false;
+            form.querySelectorAll('input[type=radio]').forEach(function (inp) {
+              inp.disabled = false;
+            });
             if (overlay) overlay.classList.remove('show');
             var msg = (err && err.message) ? err.message : 'Submit failed';
             if (submitIncompleteHint) {
@@ -1479,29 +1843,68 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
           });
         });
 
-        // Restore selections from local backup when autosave previously failed.
-        (function restoreAnswerBackup() {
-          var map = {};
+        function applyRadio(qid, val) {
+          if (!qid || !/^[A-D]$/.test(val)) return;
+          var inp = form.querySelector('input[type=radio][data-question-id="' + qid + '"][value="' + val + '"]');
+          if (inp && !inp.checked) inp.checked = true;
+        }
+        function reconcileAnswers(serverList, requeue) {
+          var localMap = {};
           try {
             var raw = localStorage.getItem(answerBackupKey());
             if (raw) {
               var parsed = JSON.parse(raw);
-              if (parsed && typeof parsed === 'object') map = parsed;
+              if (parsed && typeof parsed === 'object') {
+                Object.keys(parsed).forEach(function (k) {
+                  var v = String(parsed[k] || '').toUpperCase();
+                  if (/^[A-D]$/.test(v)) localMap[parseInt(k, 10)] = v;
+                });
+              }
             }
-          } catch (e) { return; }
-          Object.keys(map).forEach(function (qidStr) {
+          } catch (e) {}
+          var localSeq = readSeqMap();
+          Object.keys(localSeq).forEach(function (k) {
+            seedSeq(parseInt(k, 10), localSeq[k]);
+          });
+          var serverByQ = {};
+          (serverList || []).forEach(function (row) {
+            if (!row) return;
+            var qid = parseInt(row.question_id, 10);
+            var sel = String(row.selected_answer || '').toUpperCase();
+            var seq = Math.max(0, parseInt(row.save_seq, 10) || 0);
+            if (!qid || !/^[A-D]$/.test(sel)) return;
+            serverByQ[qid] = { sel: sel, seq: seq };
+            seedSeq(qid, seq);
+          });
+          var qids = {};
+          Object.keys(serverByQ).forEach(function (k) { qids[k] = true; });
+          Object.keys(localMap).forEach(function (k) { qids[k] = true; });
+          Object.keys(qids).forEach(function (qidStr) {
             var qid = parseInt(qidStr, 10);
-            var val = String(map[qidStr] || '').toUpperCase();
-            if (!qid || !/^[A-D]$/.test(val)) return;
-            var inp = form.querySelector('input[type=radio][data-question-id="' + qid + '"][value="' + val + '"]');
-            if (inp && !inp.checked) {
-              inp.checked = true;
+            var srv = serverByQ[qid];
+            var loc = localMap[qid] || '';
+            var locSeq = Math.max(saveSeqByQid[qid] || 0, localSeq[qid] || 0);
+            var srvSeq = srv ? srv.seq : 0;
+            var srvSel = srv ? srv.sel : '';
+            if (srvSel && (!loc || locSeq < srvSeq || (locSeq === srvSeq && loc !== srvSel))) {
+              applyRadio(qid, srvSel);
+              persistAnswerBackup(qid, srvSel);
+              seedSeq(qid, srvSeq);
+              return;
+            }
+            if (loc) {
+              applyRadio(qid, loc);
+              persistAnswerBackup(qid, loc);
+              if (requeue && (!srvSel || loc !== srvSel)) {
+                queueSaveAnswer(qid, loc, -1);
+              }
             }
           });
           syncChoiceStyles();
           updateCounts();
           renderNavigator();
-        })();
+        }
+        reconcileAnswers(serverAnswersSeed, false);
         document.querySelectorAll('.flagBtn').forEach(function (btn) {
           btn.addEventListener('click', function () {
             var qid = parseInt(btn.getAttribute('data-question-id'), 10);
@@ -1739,7 +2142,19 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
             openLeaveModal(link.href);
           });
         });
+        window.addEventListener('pagehide', function () {
+          flushDebouncedSavesKeepalive();
+        });
         window.onbeforeunload = function () {
+          if (submitFinalizedOk) return;
+          flushDebouncedSavesKeepalive();
+          // Emergency keepalive only when expired or timeout submit is underway,
+          // submit not finalized, and a non-empty local payload exists.
+          // Do not blind-submit on normal navigation or manual-submit close.
+          if (timeoutSubmitUnderway || (countdown !== null && countdown <= 0)) {
+            sendTimeoutKeepaliveOnce('timeout');
+            return;
+          }
           if (state.submitting) return;
           return 'Your exam is still in progress.';
         };
@@ -1761,7 +2176,7 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
         }
 
         var timeSyncTimer = null;
-        var timeSyncMs = 15000;
+        var timeSyncMs = 30000;
         function runTimeSyncTick() {
           if (state.submitting) return;
           request('get_time', { attempt_id: attemptId }).then(function (data) {
@@ -1793,6 +2208,9 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               state.currentIndex = Math.max(0, Math.min(totalQuestions - 1, s.current_index));
             }
           }
+          if (data && data.ok) {
+            reconcileAnswers(Array.isArray(data.answers) ? data.answers : serverAnswersSeed, true);
+          }
         }).catch(function () {})
           .finally(function () {
             updateCounts();
@@ -1807,9 +2225,9 @@ $ereviewJsonDiagFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_Q
               autoSubmitOnTimeUp('timeout');
             } else {
               timerTick();
-              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 15000);
+              scheduleTimeSync((countdown !== null && countdown <= 60) ? 5000 : 30000);
             }
-            setInterval(function () { if (!state.submitting) queueStateSync(); }, 15000);
+            setInterval(function () { if (!state.submitting) queueStateSync(); }, 30000);
           });
       })();
       </script>

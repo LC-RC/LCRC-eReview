@@ -2,15 +2,22 @@
 /**
  * Ensures college/professor module tables exist. Idempotent.
  * Requires $conn (mysqli) from db.php.
+ *
+ * HOT PATH SAFETY: student take/AJAX requests must NOT run this DDL.
+ * Run via scripts/migrate_examination_schema.php (or EREVIEW_ENSURE_SCHEMA=1) at deploy.
  */
 if (!isset($conn) || !($conn instanceof mysqli)) {
     return;
 }
+require_once __DIR__ . '/examination_schema_gate.php';
 // Online perf: run SHOW COLUMNS / CREATE IF NOT EXISTS at most once per request.
 if (!empty($GLOBALS['__ereview_college_schema_ensured'])) {
     return;
 }
 $GLOBALS['__ereview_college_schema_ensured'] = true;
+if (!ereview_schema_ensure_enabled()) {
+    return;
+}
 
 @mysqli_query($conn, "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('admin','student','college_student','professor_admin') NOT NULL DEFAULT 'student'");
 
@@ -119,6 +126,7 @@ $stmts = [
       `selected_answer` varchar(1) DEFAULT NULL,
       `is_correct` tinyint(1) DEFAULT NULL,
       `answered_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      `save_seq` int(11) NOT NULL DEFAULT 0,
       PRIMARY KEY (`answer_id`),
       UNIQUE KEY `uq_college_answer_attempt_q` (`attempt_id`,`question_id`),
       KEY `idx_college_ans_q` (`question_id`)
@@ -249,6 +257,21 @@ $collegeAttemptExtraCols = [
     'ui_state_json' => "ALTER TABLE `college_exam_attempts` ADD COLUMN `ui_state_json` LONGTEXT NULL COMMENT 'Navigator state: current question index + flagged question ids'",
     'last_seen_at' => "ALTER TABLE `college_exam_attempts` ADD COLUMN `last_seen_at` datetime NULL COMMENT 'Heartbeat timestamp from active attempt page'",
 ];
+$idxStatusExpires = @mysqli_query($conn, 'SHOW INDEX FROM `college_exam_attempts`');
+$hasStatusExpiresIdx = false;
+if ($idxStatusExpires) {
+    while ($idxRow = mysqli_fetch_assoc($idxStatusExpires)) {
+        if (($idxRow['Key_name'] ?? '') === 'idx_cea_status_expires') {
+            $hasStatusExpiresIdx = true;
+            break;
+        }
+    }
+    mysqli_free_result($idxStatusExpires);
+}
+if (!$hasStatusExpiresIdx) {
+    @mysqli_query($conn, 'ALTER TABLE `college_exam_attempts` ADD KEY `idx_cea_status_expires` (`status`, `expires_at`)');
+}
+
 foreach ($collegeAttemptExtraCols as $col => $alterSql) {
     $chk = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_attempts` LIKE '" . mysqli_real_escape_string($conn, $col) . "'");
     if ($chk) {
@@ -273,6 +296,15 @@ foreach ($collegeAttemptSecurityCols as $col => $alterSql) {
         if (!$row) {
             @mysqli_query($conn, $alterSql);
         }
+    }
+}
+
+$chkSaveSeq = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_answers` LIKE 'save_seq'");
+if ($chkSaveSeq) {
+    $rowSs = mysqli_fetch_assoc($chkSaveSeq);
+    mysqli_free_result($chkSaveSeq);
+    if (!$rowSs) {
+        @mysqli_query($conn, "ALTER TABLE `college_exam_answers` ADD COLUMN `save_seq` int(11) NOT NULL DEFAULT 0 COMMENT 'Monotonic client save sequence; stale autosaves must not overwrite' AFTER `answered_at`");
     }
 }
 
@@ -407,3 +439,120 @@ college_sections_seed_from_existing($conn);
 
 require_once __DIR__ . '/college_exam_attempt_events.php';
 college_exam_attempt_events_ensure_schema($conn);
+
+// Regular exam Subject → Topic → questions_required (professor-defined, exam-scoped).
+@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `college_exam_subjects` (
+  `exam_subject_id` int(11) NOT NULL AUTO_INCREMENT,
+  `exam_id` int(11) NOT NULL,
+  `subject_name` varchar(255) NOT NULL,
+  `questions_required` int(11) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`exam_subject_id`),
+  UNIQUE KEY `uq_college_exam_subject_name` (`exam_id`,`subject_name`),
+  KEY `idx_cesub_exam` (`exam_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+$chkSubjQty = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_subjects` LIKE 'questions_required'");
+if ($chkSubjQty) {
+    $rowSubjQty = mysqli_fetch_assoc($chkSubjQty);
+    mysqli_free_result($chkSubjQty);
+    if (!$rowSubjQty) {
+        @mysqli_query($conn, "ALTER TABLE `college_exam_subjects` ADD COLUMN `questions_required` int(11) NOT NULL DEFAULT 0 COMMENT 'Subject-level question quota' AFTER `subject_name`");
+    }
+}
+
+@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `college_exam_topics` (
+  `exam_topic_id` int(11) NOT NULL AUTO_INCREMENT,
+  `exam_id` int(11) NOT NULL,
+  `exam_subject_id` int(11) NOT NULL,
+  `topic_name` varchar(255) NOT NULL,
+  `questions_required` int(11) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`exam_topic_id`),
+  UNIQUE KEY `uq_college_exam_topic_name` (`exam_subject_id`,`topic_name`),
+  KEY `idx_cetop_exam` (`exam_id`),
+  KEY `idx_cetop_subject` (`exam_subject_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+$chkModeCol = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exams` LIKE 'question_breakdown_mode'");
+if ($chkModeCol) {
+    $rowMode = mysqli_fetch_assoc($chkModeCol);
+    mysqli_free_result($chkModeCol);
+    if (!$rowMode) {
+        @mysqli_query($conn, "ALTER TABLE `college_exams` ADD COLUMN `question_breakdown_mode` varchar(32) NOT NULL DEFAULT 'overall' COMMENT 'overall|subject|subject_topic' AFTER `description`");
+    }
+}
+
+// Backfill mode for exams that already have subject/topic trees (pre-mode deployments).
+$backfillMode = @mysqli_query(
+    $conn,
+    "UPDATE college_exams e
+     SET e.question_breakdown_mode = CASE
+       WHEN EXISTS (
+         SELECT 1 FROM college_exam_topics t WHERE t.exam_id = e.exam_id LIMIT 1
+       ) THEN 'subject_topic'
+       WHEN EXISTS (
+         SELECT 1 FROM college_exam_subjects s WHERE s.exam_id = e.exam_id LIMIT 1
+       ) THEN 'subject'
+       ELSE e.question_breakdown_mode
+     END
+     WHERE e.question_breakdown_mode = 'overall'
+       AND EXISTS (SELECT 1 FROM college_exam_subjects s2 WHERE s2.exam_id = e.exam_id LIMIT 1)"
+);
+if ($backfillMode === false) {
+    // Fallback without correlated EXISTS (older MySQL quirks): ignore silently.
+}
+
+$chkTotalQtyCol = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exams` LIKE 'total_questions_required'");
+if ($chkTotalQtyCol) {
+    $rowTotalQty = mysqli_fetch_assoc($chkTotalQtyCol);
+    mysqli_free_result($chkTotalQtyCol);
+    if (!$rowTotalQty) {
+        @mysqli_query($conn, "ALTER TABLE `college_exams` ADD COLUMN `total_questions_required` int(11) NOT NULL DEFAULT 0 COMMENT 'Overall-mode total question quota (0 = use all authored)' AFTER `question_breakdown_mode`");
+    }
+}
+
+$chkTopicCol = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_questions` LIKE 'exam_topic_id'");
+if ($chkTopicCol) {
+    $rowTopic = mysqli_fetch_assoc($chkTopicCol);
+    mysqli_free_result($chkTopicCol);
+    if (!$rowTopic) {
+        @mysqli_query($conn, "ALTER TABLE `college_exam_questions` ADD COLUMN `exam_topic_id` int(11) DEFAULT NULL COMMENT 'FK to college_exam_topics; used in subject_topic mode' AFTER `exam_id`");
+        @mysqli_query($conn, 'ALTER TABLE `college_exam_questions` ADD KEY `idx_ceq_topic` (`exam_topic_id`)');
+    }
+}
+
+$chkQSubjCol = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_questions` LIKE 'exam_subject_id'");
+if ($chkQSubjCol) {
+    $rowQSubj = mysqli_fetch_assoc($chkQSubjCol);
+    mysqli_free_result($chkQSubjCol);
+    if (!$rowQSubj) {
+        @mysqli_query($conn, "ALTER TABLE `college_exam_questions` ADD COLUMN `exam_subject_id` int(11) DEFAULT NULL COMMENT 'FK to college_exam_subjects; used in subject / subject_topic modes' AFTER `exam_id`");
+        @mysqli_query($conn, 'ALTER TABLE `college_exam_questions` ADD KEY `idx_ceq_subject` (`exam_subject_id`)');
+    }
+}
+
+$chkBreakdown = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_attempts` LIKE 'subject_breakdown_json'");
+if ($chkBreakdown) {
+    $rowBd = mysqli_fetch_assoc($chkBreakdown);
+    mysqli_free_result($chkBreakdown);
+    if (!$rowBd) {
+        @mysqli_query($conn, "ALTER TABLE `college_exam_attempts` ADD COLUMN `subject_breakdown_json` longtext DEFAULT NULL COMMENT 'Subject/topic score breakdown JSON' AFTER `total_count`");
+    }
+}
+
+@mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `college_exam_attempt_questions` (
+  `attempt_question_id` int(11) NOT NULL AUTO_INCREMENT,
+  `attempt_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `display_position` int(11) NOT NULL,
+  `exam_subject_id` int(11) DEFAULT NULL,
+  `exam_topic_id` int(11) DEFAULT NULL,
+  `subject_name` varchar(255) NOT NULL DEFAULT '',
+  `topic_name` varchar(255) NOT NULL DEFAULT '',
+  `choice_perm` varchar(16) NOT NULL DEFAULT '' COMMENT 'Original A-D letters in displayed A,B,C,D order',
+  PRIMARY KEY (`attempt_question_id`),
+  UNIQUE KEY `uq_ceaq_attempt_pos` (`attempt_id`,`display_position`),
+  UNIQUE KEY `uq_ceaq_attempt_q` (`attempt_id`,`question_id`),
+  KEY `idx_ceaq_question` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");

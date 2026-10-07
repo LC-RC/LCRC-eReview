@@ -29,11 +29,34 @@ $user = isset($user) ? (string) $user : 'root';
 $pass = isset($pass) ? (string) $pass : '';
 $db = isset($db) ? (string) $db : 'ereview';
 
-$conn = mysqli_connect($host, $user, $pass, $db);
-
+$conn = false;
+$connectError = '';
+try {
+    $conn = mysqli_connect($host, $user, $pass, $db);
+} catch (Throwable $e) {
+    $conn = false;
+    $connectError = $e->getMessage();
+}
 if (!$conn) {
+    if ($connectError === '') {
+        $connectError = (string)mysqli_connect_error();
+    }
+    $script = strtolower(basename(str_replace('\\', '/', (string)($_SERVER['SCRIPT_FILENAME'] ?? $_SERVER['SCRIPT_NAME'] ?? ''))));
+    $isExamAjax = ($script === 'college_exam_ajax.php');
+    if ($isExamAjax) {
+        if (!headers_sent()) {
+            http_response_code(503);
+            header('Content-Type: application/json; charset=UTF-8');
+        }
+        echo json_encode([
+            'ok' => false,
+            'error' => 'Database unavailable',
+            'retry' => true,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     http_response_code(500);
-    die('Connection failed: ' . mysqli_connect_error());
+    die('Connection failed: ' . $connectError);
 }
 
 mysqli_set_charset($conn, 'utf8mb4');

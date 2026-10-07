@@ -9,6 +9,16 @@
  */
 function college_exam_attempt_events_ensure_schema(mysqli $conn): void
 {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+    require_once __DIR__ . '/examination_schema_gate.php';
+    // Never CREATE from exam hot paths — table is created by deploy migration.
+    if (!ereview_schema_ensure_enabled()) {
+        return;
+    }
     @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `college_exam_attempt_events` (
       `event_id` bigint(20) NOT NULL AUTO_INCREMENT,
       `attempt_id` int(11) NOT NULL,
