@@ -2539,10 +2539,10 @@ textarea.diag-field__control {
 }
 .eqb-rapid-modal {
   /* Fallback if specificity loses — real size is forced below via body.admin-app… */
-  width: min(920px, calc(100vw - 64px));
-  max-width: 920px;
-  height: min(88vh, 44rem);
-  max-height: 88vh;
+  width: min(1320px, calc(100vw - 40px));
+  max-width: 1320px;
+  height: min(92vh, calc(100dvh - 40px));
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2556,11 +2556,11 @@ textarea.diag-field__control {
 body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal,
 body.admin-app.admin-students-page .admin-modal.eqb-rapid-modal,
 body.admin-app.examination-admin-page.admin-students-page .admin-modal.eqb-rapid-modal {
-  width: min(920px, calc(100vw - 64px)) !important;
-  max-width: 920px !important;
-  min-width: min(720px, calc(100vw - 40px));
-  height: min(88vh, 44rem) !important;
-  max-height: 88vh !important;
+  width: min(1320px, calc(100vw - 40px)) !important;
+  max-width: 1320px !important;
+  min-width: min(960px, calc(100vw - 40px));
+  height: min(92vh, calc(100dvh - 40px)) !important;
+  max-height: 92vh !important;
   margin: 1rem auto !important;
   padding: 0 !important;
   overflow: hidden !important;
@@ -2772,7 +2772,7 @@ html[data-admin-theme="dark"] .eqb-rapid-entry__type-pill {
   box-sizing: border-box;
 }
 .eqb-rapid-text {
-  min-height: 6.5rem;
+  min-height: 10rem;
   border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 0.45rem;
   padding: 0.4rem 0.55rem;
@@ -2788,6 +2788,7 @@ html[data-admin-theme="dark"] .eqb-rapid-entry__type-pill {
   border-radius: 0.45rem !important;
   border-color: rgba(15, 23, 42, 0.14) !important;
   width: 100% !important;
+  min-height: 14rem !important;
 }
 .eqb-rapid-entry .tox-toolbar__primary {
   background: #f8fafc !important;
@@ -2990,7 +2991,7 @@ html[data-admin-theme="dark"] .eqb-rapid-entry .eqb-tf-choices {
   body.admin-app.examination-admin-page .admin-modal.eqb-rapid-modal,
   body.admin-app.admin-students-page .admin-modal.eqb-rapid-modal,
   body.admin-app.examination-admin-page.admin-students-page .admin-modal.eqb-rapid-modal {
-    width: min(900px, calc(100vw - 48px)) !important;
+    width: min(1100px, calc(100vw - 32px)) !important;
     min-width: 0;
   }
 }

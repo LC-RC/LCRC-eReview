@@ -1675,12 +1675,12 @@ body.admin-app.professor-admin .examination-edit-modal-loading {
 }
 
 body.admin-app.professor-admin .admin-modal.eqb-rapid-modal {
-  width: min(920px, 100%) !important;
-  max-width: min(920px, calc(100vw - 48px)) !important;
+  width: min(1320px, calc(100vw - 40px)) !important;
+  max-width: min(1320px, calc(100vw - 40px)) !important;
   min-width: 0 !important;
-  height: auto !important;
-  max-height: 100% !important;
-  margin: 0 !important;
+  height: min(92vh, calc(100dvh - 40px)) !important;
+  max-height: min(92vh, calc(100dvh - 40px)) !important;
+  margin: 0 auto !important;
 }
 
 body.admin-app.professor-admin .admin-modal > form,
