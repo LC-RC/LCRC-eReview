@@ -445,23 +445,9 @@ if ($action === 'save_answer') {
         ]);
         examination_ajax_json_exit(['ok' => false, 'error' => (string)($res['error'] ?? 'Could not save')]);
     }
-    $answeredCount = 0;
-    $cr = mysqli_query($conn, "SELECT COUNT(*) AS c FROM diagnostic_answers WHERE attempt_id=" . (int)$attemptId . " AND selected_answer IS NOT NULL AND selected_answer <> ''");
-    if ($cr) {
-        $answeredCount = (int)(mysqli_fetch_assoc($cr)['c'] ?? 0);
-        mysqli_free_result($cr);
-    }
-    $nowSql = date('Y-m-d H:i:s');
-    $touch = mysqli_prepare($conn, "UPDATE diagnostic_attempts SET last_seen_at=? WHERE attempt_id=? AND user_id=? AND status='in_progress'");
-    if ($touch) {
-        mysqli_stmt_bind_param($touch, 'sii', $nowSql, $attemptId, $userId);
-        mysqli_stmt_execute($touch);
-        mysqli_stmt_close($touch);
-    }
     examination_ajax_json_exit([
         'ok' => true,
         'saved_at' => date('H:i:s'),
-        'answered_count' => $answeredCount,
         'stale' => !empty($res['stale']),
     ]);
 }
@@ -552,6 +538,13 @@ if ($action === 'get_time') {
         echo json_encode(['ok' => false, 'remaining_seconds' => 0]);
         exit;
     }
+    $nowSql = date('Y-m-d H:i:s');
+    $touch = mysqli_prepare($conn, "UPDATE diagnostic_attempts SET last_seen_at=? WHERE attempt_id=? AND user_id=? AND status='in_progress'");
+    if ($touch) {
+        mysqli_stmt_bind_param($touch, 'sii', $nowSql, $attemptId, $userId);
+        mysqli_stmt_execute($touch);
+        mysqli_stmt_close($touch);
+    }
     $expRaw = $row['expires_at'] ?? '';
     if ($expRaw === '') {
         echo json_encode(['ok' => true, 'remaining_seconds' => null]);
@@ -565,7 +558,7 @@ if ($action === 'get_time') {
 
 if ($action === 'submit') {
     ignore_user_abort(true);
-    @set_time_limit(120);
+    @set_time_limit(45);
 
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         examination_ajax_json_exit(['ok' => false, 'error' => 'Invalid request']);
@@ -665,17 +658,31 @@ if ($action === 'submit') {
             }
         }
 
+        $batchIdChk = (int)($locked['batch_id'] ?? 0);
+        $batchSubjects = diagnostic_exam_load_batch_subjects($conn, $batchIdChk);
+        $questionsPaper = diagnostic_exam_build_flat_questions($conn, $batchIdChk, $batchSubjects, $attemptId);
+
         if (!$allowIncomplete) {
-            $batchIdChk = (int)($locked['batch_id'] ?? 0);
-            $batchSubjects = diagnostic_exam_load_batch_subjects($conn, $batchIdChk);
-            $questionsChk = diagnostic_exam_build_flat_questions($conn, $batchIdChk, $batchSubjects, $attemptId);
-            $qTotal = count($questionsChk);
-            $answered = 0;
-            $ar = mysqli_query($conn, "SELECT COUNT(*) AS c FROM diagnostic_answers WHERE attempt_id=" . (int)$attemptId . " AND selected_answer IS NOT NULL AND selected_answer <> ''");
+            $qTotal = count($questionsPaper);
+            $answeredIds = [];
+            foreach ($decodedAnswers as $rowAns) {
+                if (!is_array($rowAns)) {
+                    continue;
+                }
+                $qidP = (int)($rowAns['question_id'] ?? $rowAns['qid'] ?? 0);
+                $selP = strtoupper(trim((string)($rowAns['selected_answer'] ?? $rowAns['answer'] ?? '')));
+                if ($qidP > 0 && $selP !== '') {
+                    $answeredIds[$qidP] = true;
+                }
+            }
+            $ar = mysqli_query($conn, 'SELECT question_id FROM diagnostic_answers WHERE attempt_id=' . (int)$attemptId . " AND selected_answer IS NOT NULL AND selected_answer <> ''");
             if ($ar) {
-                $answered = (int)(mysqli_fetch_assoc($ar)['c'] ?? 0);
+                while ($arow = mysqli_fetch_assoc($ar)) {
+                    $answeredIds[(int)($arow['question_id'] ?? 0)] = true;
+                }
                 mysqli_free_result($ar);
             }
+            $answered = count($answeredIds);
             if ($qTotal > 0 && $answered < $qTotal) {
                 mysqli_commit($conn); // keep flushed answers; do not finalize
                 examination_ajax_json_exit([
@@ -687,7 +694,7 @@ if ($action === 'submit') {
             }
         }
 
-        $result = diagnostic_exam_finalize_attempt($conn, $attemptId, $userId);
+        $result = diagnostic_exam_finalize_attempt($conn, $attemptId, $userId, $questionsPaper);
         if (empty($result['ok'])) {
             mysqli_rollback($conn);
             examination_ajax_log('diagnostic_exam', [

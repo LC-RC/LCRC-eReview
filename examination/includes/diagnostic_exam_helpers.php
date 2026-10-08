@@ -494,7 +494,7 @@ function diagnostic_exam_batch_stats_for_student(mysqli $conn, int $batchId): ar
     ];
 }
 
-function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId): array
+function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId, ?array $preloadedQuestions = null): array
 {
     $st = mysqli_prepare($conn, 'SELECT * FROM diagnostic_attempts WHERE attempt_id=? AND user_id=? LIMIT 1');
     if (!$st) {
@@ -535,7 +535,9 @@ function diagnostic_exam_finalize_attempt(mysqli $conn, int $attemptId, int $use
         return ['ok' => false, 'error' => 'Batch missing'];
     }
     $batchSubjects = diagnostic_exam_load_batch_subjects($conn, $batchId);
-    $questions = diagnostic_exam_build_flat_questions($conn, $batchId, $batchSubjects, $attemptId);
+    $questions = is_array($preloadedQuestions)
+        ? $preloadedQuestions
+        : diagnostic_exam_build_flat_questions($conn, $batchId, $batchSubjects, $attemptId);
 
     $ansRes = mysqli_query($conn, 'SELECT answer_id, question_id, selected_answer FROM diagnostic_answers WHERE attempt_id=' . (int)$attemptId);
     $byQ = [];

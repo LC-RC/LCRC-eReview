@@ -533,8 +533,14 @@ function college_exam_write_answer_row(
  * @param array<int, mixed> $rawAnswers
  * @return array{ok:bool, saved:int, errors:int, payload_count:int, skipped:int, error?:string, db_error?:string}
  */
-function college_exam_upsert_attempt_answers_payload(mysqli $conn, int $attemptId, int $userId, array $rawAnswers): array
-{
+function college_exam_upsert_attempt_answers_payload(
+    mysqli $conn,
+    int $attemptId,
+    int $userId,
+    array $rawAnswers,
+    ?array $preloadedAttempt = null,
+    ?array $preloadedExam = null
+): array {
     $payloadCount = count($rawAnswers);
     $saved = 0;
     $errors = 0;
@@ -553,25 +559,33 @@ function college_exam_upsert_attempt_answers_payload(mysqli $conn, int $attemptI
         return ['ok' => true, 'saved' => 0, 'errors' => 0, 'payload_count' => 0, 'skipped' => 0];
     }
 
-    $stmt = mysqli_prepare(
-        $conn,
-        'SELECT attempt_id, exam_id, status FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
-    );
-    if (!$stmt) {
-        return [
-            'ok' => false,
-            'saved' => 0,
-            'errors' => $payloadCount,
-            'payload_count' => $payloadCount,
-            'skipped' => 0,
-            'error' => 'Lookup failed',
-            'db_error' => (string)mysqli_error($conn),
-        ];
+    $attempt = null;
+    if (is_array($preloadedAttempt)
+        && (int)($preloadedAttempt['attempt_id'] ?? 0) === $attemptId
+        && (int)($preloadedAttempt['exam_id'] ?? 0) > 0
+    ) {
+        $attempt = $preloadedAttempt;
+    } else {
+        $stmt = mysqli_prepare(
+            $conn,
+            'SELECT attempt_id, exam_id, status FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
+        );
+        if (!$stmt) {
+            return [
+                'ok' => false,
+                'saved' => 0,
+                'errors' => $payloadCount,
+                'payload_count' => $payloadCount,
+                'skipped' => 0,
+                'error' => 'Lookup failed',
+                'db_error' => (string)mysqli_error($conn),
+            ];
+        }
+        mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
+        mysqli_stmt_execute($stmt);
+        $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_bind_param($stmt, 'ii', $attemptId, $userId);
-    mysqli_stmt_execute($stmt);
-    $attempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-    mysqli_stmt_close($stmt);
     if (!$attempt || strtolower(trim((string)($attempt['status'] ?? ''))) !== 'in_progress') {
         return [
             'ok' => false,
@@ -584,10 +598,15 @@ function college_exam_upsert_attempt_answers_payload(mysqli $conn, int $attemptI
     }
     $examId = (int)($attempt['exam_id'] ?? 0);
 
-    $er = mysqli_query($conn, 'SELECT * FROM college_exams WHERE exam_id=' . $examId . ' LIMIT 1');
-    $exam = $er ? mysqli_fetch_assoc($er) : null;
-    if ($er) {
-        mysqli_free_result($er);
+    $exam = null;
+    if (is_array($preloadedExam) && (int)($preloadedExam['exam_id'] ?? 0) === $examId) {
+        $exam = $preloadedExam;
+    } else {
+        $er = mysqli_query($conn, 'SELECT * FROM college_exams WHERE exam_id=' . $examId . ' LIMIT 1');
+        $exam = $er ? mysqli_fetch_assoc($er) : null;
+        if ($er) {
+            mysqli_free_result($er);
+        }
     }
     if (!$exam) {
         return [
@@ -737,8 +756,13 @@ function college_exam_upsert_attempt_answers_payload(mysqli $conn, int $attemptI
     ];
 }
 
-function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId): array
-{
+function college_exam_finalize_attempt(
+    mysqli $conn,
+    int $attemptId,
+    int $userId,
+    ?array $preloadedExam = null,
+    ?array $preloadedQuestions = null
+): array {
     $stmt = mysqli_prepare(
         $conn,
         'SELECT * FROM college_exam_attempts WHERE attempt_id=? AND user_id=? LIMIT 1'
@@ -778,15 +802,25 @@ function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId
 
     $examId = (int)$att['exam_id'];
 
-    $examRow = mysqli_query($conn, "SELECT * FROM college_exams WHERE exam_id=" . $examId . " LIMIT 1");
-    $exam = $examRow ? mysqli_fetch_assoc($examRow) : null;
+    $exam = null;
+    if (is_array($preloadedExam) && (int)($preloadedExam['exam_id'] ?? 0) === $examId) {
+        $exam = $preloadedExam;
+    } else {
+        $examRow = mysqli_query($conn, "SELECT * FROM college_exams WHERE exam_id=" . $examId . " LIMIT 1");
+        $exam = $examRow ? mysqli_fetch_assoc($examRow) : null;
+        if ($examRow) {
+            mysqli_free_result($examRow);
+        }
+    }
     if (!$exam) {
         return ['ok' => false, 'error' => 'Exam missing'];
     }
 
     require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
     require_once __DIR__ . '/college_exam_attempt_paper.php';
-    $questions = college_exam_questions_for_student_attempt($conn, $exam, $att);
+    $questions = is_array($preloadedQuestions)
+        ? $preloadedQuestions
+        : college_exam_questions_for_student_attempt($conn, $exam, $att);
     $total = count($questions);
 
     $ansRes = mysqli_query($conn, "SELECT answer_id, question_id, selected_answer FROM college_exam_answers WHERE attempt_id=" . (int)$attemptId);
@@ -827,7 +861,10 @@ function college_exam_finalize_attempt(mysqli $conn, int $attemptId, int $userId
     $score = $total > 0 ? college_exam_compute_score_percentage($correct, $total) : 0.0;
     $submitted = date('Y-m-d H:i:s');
 
-    $breakdownMode = college_exam_get_breakdown_mode($conn, $examId);
+    $modeRaw = trim((string)($exam['question_breakdown_mode'] ?? ''));
+    $breakdownMode = $modeRaw !== ''
+        ? college_exam_normalize_breakdown_mode($modeRaw)
+        : college_exam_get_breakdown_mode($conn, $examId);
     $breakdown = ($breakdownMode === 'subject' || $breakdownMode === 'subject_topic')
         ? college_exam_build_subject_topic_breakdown($questions, $byQ, $breakdownMode)
         : [];

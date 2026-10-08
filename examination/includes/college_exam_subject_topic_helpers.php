@@ -27,111 +27,71 @@ function college_exam_normalize_breakdown_mode(string $mode): string
 
 function college_exam_subject_topic_tables_ready(mysqli $conn): bool
 {
-    static $ready = null;
-    if ($ready !== null) {
-        return $ready;
-    }
-    $a = @mysqli_query($conn, "SHOW TABLES LIKE 'college_exam_subjects'");
-    $b = @mysqli_query($conn, "SHOW TABLES LIKE 'college_exam_topics'");
-    $ready = ($a && mysqli_num_rows($a) > 0) && ($b && mysqli_num_rows($b) > 0);
-    if ($a) {
-        mysqli_free_result($a);
-    }
-    if ($b) {
-        mysqli_free_result($b);
+    require_once __DIR__ . '/examination_schema_gate.php';
+
+    return ereview_schema_object_ready_cached($conn, 'tables_college_exam_subjects_topics', static function (mysqli $c): bool {
+        $a = @mysqli_query($c, "SHOW TABLES LIKE 'college_exam_subjects'");
+        $b = @mysqli_query($c, "SHOW TABLES LIKE 'college_exam_topics'");
+        $ok = ($a && mysqli_num_rows($a) > 0) && ($b && mysqli_num_rows($b) > 0);
+        if ($a) {
+            mysqli_free_result($a);
+        }
+        if ($b) {
+            mysqli_free_result($b);
+        }
+
+        return $ok;
+    });
+}
+
+function college_exam_schema_column_ready(mysqli $conn, string $table, string $column): bool
+{
+    require_once __DIR__ . '/examination_schema_gate.php';
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $column = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+    if ($table === '' || $column === '') {
+        return false;
     }
 
-    return $ready;
+    return ereview_schema_object_ready_cached($conn, 'col_' . $table . '_' . $column, static function (mysqli $c) use ($table, $column): bool {
+        $r = @mysqli_query($c, "SHOW COLUMNS FROM `{$table}` LIKE '" . mysqli_real_escape_string($c, $column) . "'");
+        $ok = (bool)($r && mysqli_fetch_assoc($r));
+        if ($r) {
+            mysqli_free_result($r);
+        }
+
+        return $ok;
+    });
 }
 
 function college_exam_questions_has_topic_column(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_questions` LIKE 'exam_topic_id'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exam_questions', 'exam_topic_id');
 }
 
 function college_exam_questions_has_subject_column(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_questions` LIKE 'exam_subject_id'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exam_questions', 'exam_subject_id');
 }
 
 function college_exam_attempts_has_breakdown_column(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_attempts` LIKE 'subject_breakdown_json'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exam_attempts', 'subject_breakdown_json');
 }
 
 function college_exam_has_breakdown_mode_column(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exams` LIKE 'question_breakdown_mode'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exams', 'question_breakdown_mode');
 }
 
 function college_exam_has_total_questions_column(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exams` LIKE 'total_questions_required'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exams', 'total_questions_required');
 }
 
 function college_exam_subjects_has_questions_required(mysqli $conn): bool
 {
-    static $has = null;
-    if ($has !== null) {
-        return $has;
-    }
-    $r = @mysqli_query($conn, "SHOW COLUMNS FROM `college_exam_subjects` LIKE 'questions_required'");
-    $has = ($r && mysqli_fetch_assoc($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
-
-    return (bool)$has;
+    return college_exam_schema_column_ready($conn, 'college_exam_subjects', 'questions_required');
 }
 
 /**

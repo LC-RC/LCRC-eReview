@@ -312,14 +312,6 @@ if ($action === 'save_answer') {
         examination_ajax_json_exit(['ok' => false, 'error' => $saved['error'] ?? 'Could not save']);
     }
 
-    $nowSql = date('Y-m-d H:i:s');
-    $touch = mysqli_prepare($conn, "UPDATE college_exam_attempts SET last_seen_at=? WHERE attempt_id=? AND user_id=? AND status='in_progress'");
-    if ($touch) {
-        mysqli_stmt_bind_param($touch, 'sii', $nowSql, $attemptId, $userId);
-        mysqli_stmt_execute($touch);
-        mysqli_stmt_close($touch);
-    }
-
     examination_ajax_json_exit([
         'ok' => true,
         'saved_at' => date('H:i:s'),
@@ -442,31 +434,21 @@ if ($action === 'get_time') {
         mysqli_stmt_execute($touch);
         mysqli_stmt_close($touch);
     }
-    $answeredCount = 0;
-    $cr = mysqli_query(
-        $conn,
-        'SELECT COUNT(*) AS c FROM college_exam_answers WHERE attempt_id=' . (int)$attemptId
-        . " AND selected_answer IS NOT NULL AND TRIM(selected_answer) <> ''"
-    );
-    if ($cr) {
-        $answeredCount = (int)(mysqli_fetch_assoc($cr)['c'] ?? 0);
-        mysqli_free_result($cr);
-    }
     $expRaw2 = $row['expires_at'] ?? '';
     if ($expRaw2 === '') {
-        echo json_encode(['ok' => true, 'remaining_seconds' => null, 'answered_count' => $answeredCount]);
+        echo json_encode(['ok' => true, 'remaining_seconds' => null]);
         exit;
     }
     $expTs2 = strtotime((string)$expRaw2);
     $remaining = ($expTs2 !== false) ? max(0, $expTs2 - time()) : 0;
-    echo json_encode(['ok' => true, 'remaining_seconds' => $remaining, 'answered_count' => $answeredCount]);
+    echo json_encode(['ok' => true, 'remaining_seconds' => $remaining]);
     exit;
 }
 
 if ($action === 'submit') {
     // Finish flush+finalize even if the browser tab closes during timeout rush.
     ignore_user_abort(true);
-    @set_time_limit(120);
+    @set_time_limit(45);
 
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
@@ -586,23 +568,30 @@ if ($action === 'submit') {
     }
 
     $attempt = $locked;
-
-    // Heartbeat: mark active submit so expire-finalizer activity hold treats this client as present.
-    // Only while still in_progress (before finalize). Never touch last_seen_at after submitted.
-    $nowSql = date('Y-m-d H:i:s');
-    $touchSeen = mysqli_prepare(
-        $conn,
-        "UPDATE college_exam_attempts SET last_seen_at=? WHERE attempt_id=? AND user_id=? AND status='in_progress'"
-    );
-    if ($touchSeen) {
-        mysqli_stmt_bind_param($touchSeen, 'sii', $nowSql, $attemptId, $userId);
-        mysqli_stmt_execute($touchSeen);
-        mysqli_stmt_close($touchSeen);
+    $examIdLocked = (int)($attempt['exam_id'] ?? 0);
+    $examLocked = null;
+    if ($examIdLocked > 0) {
+        $exLoad = mysqli_prepare($conn, 'SELECT * FROM college_exams WHERE exam_id=? LIMIT 1');
+        if ($exLoad) {
+            mysqli_stmt_bind_param($exLoad, 'i', $examIdLocked);
+            mysqli_stmt_execute($exLoad);
+            $examLocked = mysqli_fetch_assoc(mysqli_stmt_get_result($exLoad));
+            mysqli_stmt_close($exLoad);
+        }
     }
 
     // Atomic flush: persist complete client payload BEFORE finalize.
+    // Do not UPDATE last_seen_at while this attempt row is locked.
+    $flushSaved = 0;
     if ($payloadCount > 0) {
-        $flush = college_exam_upsert_attempt_answers_payload($conn, $attemptId, $userId, $decodedAnswers);
+        $flush = college_exam_upsert_attempt_answers_payload(
+            $conn,
+            $attemptId,
+            $userId,
+            $decodedAnswers,
+            $attempt,
+            is_array($examLocked) ? $examLocked : null
+        );
         if (empty($flush['ok'])) {
             mysqli_rollback($conn);
             error_log(sprintf(
@@ -626,28 +615,31 @@ if ($action === 'submit') {
             ]);
             exit;
         }
+        $flushSaved = (int)($flush['saved'] ?? 0);
+    }
+
+    $questionsPaper = [];
+    if (is_array($examLocked)) {
+        $questionsPaper = college_exam_questions_for_student_attempt($conn, $examLocked, $attempt);
     }
 
     if (!$allowIncomplete) {
-        $examIdChk = (int)($attempt['exam_id'] ?? 0);
-        $examChk = null;
-        $exSt = mysqli_prepare($conn, 'SELECT * FROM college_exams WHERE exam_id=? LIMIT 1');
-        if ($exSt) {
-            mysqli_stmt_bind_param($exSt, 'i', $examIdChk);
-            mysqli_stmt_execute($exSt);
-            $examChk = mysqli_fetch_assoc(mysqli_stmt_get_result($exSt));
-            mysqli_stmt_close($exSt);
-        }
-        $questionsChk = [];
-        if ($examChk) {
-            $questionsChk = college_exam_questions_for_student_attempt($conn, $examChk, $attempt);
-        }
-        $qTotal = count($questionsChk);
+        $qTotal = count($questionsPaper);
         $answeredIds = [];
+        foreach ($decodedAnswers as $rowAns) {
+            if (!is_array($rowAns)) {
+                continue;
+            }
+            $qidP = (int)($rowAns['question_id'] ?? $rowAns['qid'] ?? 0);
+            $selP = strtoupper(trim((string)($rowAns['selected_answer'] ?? $rowAns['answer'] ?? '')));
+            if ($qidP > 0 && preg_match('/^[A-D]$/', $selP)) {
+                $answeredIds[$qidP] = true;
+            }
+        }
         $aidQ = mysqli_query(
             $conn,
             'SELECT question_id FROM college_exam_answers WHERE attempt_id=' . (int)$attemptId
-            . " AND selected_answer IS NOT NULL AND TRIM(selected_answer) <> ''"
+            . " AND selected_answer IS NOT NULL AND selected_answer <> ''"
         );
         if ($aidQ) {
             while ($row = mysqli_fetch_assoc($aidQ)) {
@@ -659,7 +651,7 @@ if ($action === 'submit') {
         if ($qTotal > 0 && $answered < $qTotal) {
             mysqli_commit($conn); // keep flushed answers; do not finalize
             $missing = [];
-            foreach ($questionsChk as $i => $qRow) {
+            foreach ($questionsPaper as $i => $qRow) {
                 $qid = (int)($qRow['question_id'] ?? 0);
                 if ($qid > 0 && empty($answeredIds[$qid])) {
                     $missing[] = $i + 1;
@@ -677,7 +669,13 @@ if ($action === 'submit') {
     }
 
     try {
-        $result = college_exam_finalize_attempt($conn, $attemptId, $userId);
+        $result = college_exam_finalize_attempt(
+            $conn,
+            $attemptId,
+            $userId,
+            is_array($examLocked) ? $examLocked : null,
+            $questionsPaper
+        );
         if (empty($result['ok'])) {
             mysqli_rollback($conn);
             examination_ajax_log('college_exam', [
@@ -724,16 +722,7 @@ if ($action === 'submit') {
         exit;
     }
 
-    $persistedCount = 0;
-    $pcq = @mysqli_query(
-        $conn,
-        'SELECT COUNT(*) AS c FROM college_exam_answers WHERE attempt_id=' . (int)$attemptId
-        . " AND selected_answer IS NOT NULL AND TRIM(selected_answer) <> ''"
-    );
-    if ($pcq) {
-        $persistedCount = (int)(mysqli_fetch_assoc($pcq)['c'] ?? 0);
-        mysqli_free_result($pcq);
-    }
+    $persistedCount = $flushSaved > 0 ? $flushSaved : $payloadCount;
 
     examination_ajax_log('college_exam', [
         'action' => 'submit',

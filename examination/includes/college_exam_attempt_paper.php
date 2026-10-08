@@ -12,17 +12,17 @@ require_once __DIR__ . '/college_exam_subject_topic_helpers.php';
 
 function college_exam_attempt_questions_table_ready(mysqli $conn): bool
 {
-    static $ready = null;
-    if ($ready !== null) {
-        return $ready;
-    }
-    $r = @mysqli_query($conn, "SHOW TABLES LIKE 'college_exam_attempt_questions'");
-    $ready = (bool)($r && mysqli_fetch_row($r));
-    if ($r) {
-        mysqli_free_result($r);
-    }
+    require_once __DIR__ . '/examination_schema_gate.php';
 
-    return $ready;
+    return ereview_schema_object_ready_cached($conn, 'table_college_exam_attempt_questions', static function (mysqli $c): bool {
+        $r = @mysqli_query($c, "SHOW TABLES LIKE 'college_exam_attempt_questions'");
+        $ok = (bool)($r && mysqli_fetch_row($r));
+        if ($r) {
+            mysqli_free_result($r);
+        }
+
+        return $ok;
+    });
 }
 
 function college_exam_attempt_has_snapshot(mysqli $conn, int $attemptId): bool
