@@ -117,6 +117,101 @@ html { scroll-behavior: smooth; }
   margin-bottom: 0.75rem;
 }
 .exam-question-text { font-size: 1.1875rem; line-height: 1.65; color: var(--exam-text); font-weight: 500; margin-bottom: 1.5rem; }
+/* Match professor TinyMCE content_style: Tailwind preflight otherwise flattens stems to plain text. */
+.quiz-rich-text p,
+.exam-question-text p {
+  margin: 0 0 0.55em 0;
+}
+.quiz-rich-text p:last-child,
+.exam-question-text p:last-child {
+  margin-bottom: 0;
+}
+.quiz-rich-text ul,
+.quiz-rich-text ol,
+.exam-question-text ul,
+.exam-question-text ol {
+  margin: 0.25em 0 0.7em 1.35em;
+  padding: 0;
+}
+.quiz-rich-text ul,
+.exam-question-text ul {
+  list-style: disc;
+}
+.quiz-rich-text ol,
+.exam-question-text ol {
+  list-style: decimal;
+}
+.quiz-rich-text ul ul,
+.exam-question-text ul ul {
+  list-style: circle;
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
+}
+.quiz-rich-text li,
+.exam-question-text li {
+  display: list-item;
+  margin: 0.12em 0;
+}
+.quiz-rich-text li p,
+.exam-question-text li p {
+  margin: 0.1em 0;
+}
+.quiz-rich-text strong,
+.quiz-rich-text b,
+.exam-question-text strong,
+.exam-question-text b {
+  font-weight: 700;
+}
+.quiz-rich-text em,
+.quiz-rich-text i,
+.exam-question-text em,
+.exam-question-text i {
+  font-style: italic;
+}
+.quiz-rich-text u,
+.exam-question-text u {
+  text-decoration: underline;
+}
+.quiz-rich-text s,
+.quiz-rich-text strike,
+.exam-question-text s,
+.exam-question-text strike {
+  text-decoration: line-through;
+}
+.quiz-rich-text sub,
+.exam-question-text sub {
+  vertical-align: sub;
+  font-size: 0.75em;
+}
+.quiz-rich-text sup,
+.exam-question-text sup {
+  vertical-align: super;
+  font-size: 0.75em;
+}
+.quiz-rich-text hr,
+.exam-question-text hr {
+  border: 0;
+  border-top: 1px solid var(--exam-border, #e2e8f0);
+  margin: 0.75em 0;
+}
+.quiz-rich-text table,
+.exam-question-text table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+.quiz-rich-text th,
+.quiz-rich-text td,
+.exam-question-text th,
+.exam-question-text td {
+  border: 1px solid var(--exam-border, #cbd5e1);
+  padding: 0.4rem 0.55rem;
+  vertical-align: top;
+}
+.quiz-rich-text thead th,
+.exam-question-text thead th {
+  font-weight: 700;
+}
 .exam-choices { display: flex; flex-direction: column; gap: 1rem; }
 .exam-choice {
   display: flex;
@@ -888,6 +983,37 @@ body.college-examination-portal.exam-taking-mode .exam-question-text {
   line-height: 1.55;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+body.college-examination-portal.exam-taking-mode .quiz-rich-text p,
+body.college-examination-portal.exam-taking-mode .exam-question-text p {
+  margin: 0 0 0.55em 0;
+}
+
+body.college-examination-portal.exam-taking-mode .quiz-rich-text ul,
+body.college-examination-portal.exam-taking-mode .exam-question-text ul {
+  list-style: disc;
+  margin: 0.25em 0 0.7em 1.35em;
+  padding: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .quiz-rich-text ol,
+body.college-examination-portal.exam-taking-mode .exam-question-text ol {
+  list-style: decimal;
+  margin: 0.25em 0 0.7em 1.35em;
+  padding: 0;
+}
+
+body.college-examination-portal.exam-taking-mode .quiz-rich-text li,
+body.college-examination-portal.exam-taking-mode .exam-question-text li {
+  display: list-item;
+}
+
+body.college-examination-portal.exam-taking-mode .quiz-rich-text strong,
+body.college-examination-portal.exam-taking-mode .quiz-rich-text b,
+body.college-examination-portal.exam-taking-mode .exam-question-text strong,
+body.college-examination-portal.exam-taking-mode .exam-question-text b {
+  font-weight: 700;
 }
 
 body.college-examination-portal.exam-taking-mode .exam-choice {

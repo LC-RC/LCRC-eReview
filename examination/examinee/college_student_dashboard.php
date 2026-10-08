@@ -274,7 +274,8 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
       </div>
     </section>
 
-    <div class="cs-dash-primary">
+    <div class="cs-dash-board">
+    <div class="cs-dash-col cs-dash-col--main">
     <section class="cp-dash-panel cp-anim delay-2" aria-labelledby="dash-your-exams">
       <div class="cp-dash-panel__head">
         <h2 class="cp-dash-panel__title" id="dash-your-exams"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span> Your examinations</h2>
@@ -286,7 +287,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
           <?php foreach ($attentionExamsShown as $examPick):
             $cpExam = $examPick;
             $cpExamFeatured = false;
-            $cpExamLayout = 'feed';
+            $cpExamLayout = 'lms';
             require dirname(__DIR__, 2) . '/includes/components/college_portal_exam_card.php';
           endforeach; ?>
         </div>
@@ -303,6 +304,67 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
       </div>
     </section>
 
+    <?php if (!empty($recentExams)): ?>
+    <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-recent-exams">
+      <div class="cp-dash-panel__head">
+        <h2 class="cp-dash-panel__title" id="dash-recent-exams"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-clock-history"></i></span> Recent activity</h2>
+        <a href="college_exams?view=finished" class="cp-text-link">View all</a>
+      </div>
+      <div class="cp-dash-panel__body cp-dash-panel__body--flush">
+      <div class="cp-data-table-wrap">
+        <table class="cp-data-table">
+          <thead>
+            <tr>
+              <th scope="col">Examination</th>
+              <th scope="col">Type</th>
+              <th scope="col">Status</th>
+              <th scope="col">Score</th>
+              <th scope="col">Submitted</th>
+              <th scope="col"><span class="sr-only">Action</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($recentExams as $recent):
+              $rtype = (string)($recent['exam_type'] ?? 'regular');
+              $rtypeLabel = examination_exam_type_label($rtype);
+              $rStatus = (string)($recent['_status_label'] ?? 'Finished');
+              $rScore = '—';
+              $rst = (string)($recent['attempt_status'] ?? '');
+              if ($rst === 'submitted' || ($rst === 'expired' && !empty($recent['submitted_at']))) {
+                  $rScore = college_exam_format_score_total_line_traditional(
+                      isset($recent['correct_count']) ? (int)$recent['correct_count'] : null,
+                      isset($recent['total_count']) ? (int)$recent['total_count'] : null,
+                      (int)($recent['_q_count'] ?? 0)
+                  );
+              }
+              $rSubmitted = !empty($recent['submitted_at']) ? date('M j, Y g:i A', strtotime((string)$recent['submitted_at'])) : '—';
+              $rAction = (string)($recent['_action_url'] ?? '');
+              $rActionLabel = (string)($recent['_action_label'] ?? 'View');
+            ?>
+            <tr>
+              <td class="cp-data-table__primary"><?php echo h((string)($recent['title'] ?? 'Untitled')); ?></td>
+              <td><span class="type-pill <?php echo $rtype === 'diagnostic' ? 'type-diagnostic' : 'type-regular'; ?>"><?php echo h($rtypeLabel); ?></span></td>
+              <td><span class="status-pill status-done"><i class="bi bi-check-circle"></i> <?php echo h($rStatus); ?></span></td>
+              <td class="cp-data-table__num"><?php echo h($rScore); ?></td>
+              <td class="cp-data-table__muted"><?php echo h($rSubmitted); ?></td>
+              <td class="cp-data-table__action">
+                <?php if ($rAction !== ''): ?>
+                  <a href="<?php echo h($rAction); ?>" class="cp-text-link cp-result-link"><?php echo h($rActionLabel); ?></a>
+                <?php else: ?>
+                  <span class="cp-data-table__muted">—</span>
+                <?php endif; ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      </div>
+    </section>
+    <?php endif; ?>
+    </div>
+
+    <div class="cs-dash-col cs-dash-col--side">
     <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-deadlines">
       <div class="cp-dash-panel__head">
         <h2 class="cp-dash-panel__title" id="dash-deadlines"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-alarm"></i></span> Upcoming deadlines</h2>
@@ -363,68 +425,6 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
           <?php endif; ?>
       </div>
     </section>
-    </div>
-
-    <?php if (!empty($recentExams) || $hasWeeklyActivity): ?>
-    <div class="cs-dash-secondary<?php echo empty($recentExams) || !$hasWeeklyActivity ? ' cs-dash-secondary--single' : ''; ?>">
-    <?php if (!empty($recentExams)): ?>
-    <section class="cp-dash-panel cp-anim delay-3" aria-labelledby="dash-recent-exams">
-      <div class="cp-dash-panel__head">
-        <h2 class="cp-dash-panel__title" id="dash-recent-exams"><span class="cp-dash-panel__ico" aria-hidden="true"><i class="bi bi-clock-history"></i></span> Recent activity</h2>
-        <a href="college_exams?view=finished" class="cp-text-link">View all</a>
-      </div>
-      <div class="cp-dash-panel__body cp-dash-panel__body--flush">
-      <div class="cp-data-table-wrap">
-        <table class="cp-data-table">
-          <thead>
-            <tr>
-              <th scope="col">Examination</th>
-              <th scope="col">Type</th>
-              <th scope="col">Status</th>
-              <th scope="col">Score</th>
-              <th scope="col">Submitted</th>
-              <th scope="col"><span class="sr-only">Action</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($recentExams as $recent):
-              $rtype = (string)($recent['exam_type'] ?? 'regular');
-              $rtypeLabel = examination_exam_type_label($rtype);
-              $rStatus = (string)($recent['_status_label'] ?? 'Finished');
-              $rScore = '—';
-              $rst = (string)($recent['attempt_status'] ?? '');
-              if ($rst === 'submitted' || ($rst === 'expired' && !empty($recent['submitted_at']))) {
-                  $rScore = college_exam_format_score_total_line_traditional(
-                      isset($recent['correct_count']) ? (int)$recent['correct_count'] : null,
-                      isset($recent['total_count']) ? (int)$recent['total_count'] : null,
-                      (int)($recent['_q_count'] ?? 0)
-                  );
-              }
-              $rSubmitted = !empty($recent['submitted_at']) ? date('M j, Y g:i A', strtotime((string)$recent['submitted_at'])) : '—';
-              $rAction = (string)($recent['_action_url'] ?? '');
-              $rActionLabel = (string)($recent['_action_label'] ?? 'View');
-            ?>
-            <tr>
-              <td class="cp-data-table__primary"><?php echo h((string)($recent['title'] ?? 'Untitled')); ?></td>
-              <td><span class="type-pill <?php echo $rtype === 'diagnostic' ? 'type-diagnostic' : 'type-regular'; ?>"><?php echo h($rtypeLabel); ?></span></td>
-              <td><span class="status-pill status-done"><i class="bi bi-check-circle"></i> <?php echo h($rStatus); ?></span></td>
-              <td class="cp-data-table__num"><?php echo h($rScore); ?></td>
-              <td class="cp-data-table__muted"><?php echo h($rSubmitted); ?></td>
-              <td class="cp-data-table__action">
-                <?php if ($rAction !== ''): ?>
-                  <a href="<?php echo h($rAction); ?>" class="cp-text-link cp-result-link"><?php echo h($rActionLabel); ?></a>
-                <?php else: ?>
-                  <span class="cp-data-table__muted">—</span>
-                <?php endif; ?>
-              </td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
-      </div>
-    </section>
-    <?php endif; ?>
 
     <?php if ($hasWeeklyActivity): ?>
     <section class="cp-dash-panel cs-dash-trend cp-anim delay-4" aria-labelledby="dash-activity">
@@ -442,7 +442,7 @@ $hasWeeklyActivity = array_sum($weeklyActivity) > 0;
     </section>
     <?php endif; ?>
     </div>
-    <?php endif; ?>
+    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>

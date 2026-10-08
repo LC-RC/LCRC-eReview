@@ -51,6 +51,20 @@ if (!function_exists('cp_portal_exam_status_pill_class')) {
 
         return date('M j, Y · g:i A', $ts);
     }
+
+    function cp_portal_exam_datetime_parts(string $formatted): array
+    {
+        $formatted = trim($formatted);
+        if ($formatted === '' || $formatted === '-') {
+            return ['date' => $formatted, 'time' => ''];
+        }
+        $parts = explode(' · ', $formatted, 2);
+
+        return [
+            'date' => trim((string)($parts[0] ?? '')),
+            'time' => trim((string)($parts[1] ?? '')),
+        ];
+    }
 }
 
 $examType = (string)($cpExam['exam_type'] ?? 'regular');
@@ -118,6 +132,21 @@ if ($cpExamFeatured || $cpExamLayout === 'featured') {
 
 $questionsLabel = $qCount . ' ' . ($qCount === 1 ? 'Question' : 'Questions');
 $scheduleLine = $opens . ' — ' . $closes;
+$openParts = cp_portal_exam_datetime_parts($opens);
+$closeParts = cp_portal_exam_datetime_parts($closes);
+$scheduleDateLabel = $openParts['date'] !== '' ? $openParts['date'] : $closeParts['date'];
+if ($closeParts['date'] !== '' && $openParts['date'] !== '' && strcasecmp($openParts['date'], $closeParts['date']) !== 0 && strcasecmp($openParts['date'], 'Immediate') !== 0) {
+    $scheduleDateLabel = $openParts['date'] . ' – ' . $closeParts['date'];
+}
+$scheduleTimeLabel = '';
+if ($openParts['time'] !== '' && $closeParts['time'] !== '') {
+    $scheduleTimeLabel = $openParts['time'] . ' – ' . $closeParts['time'];
+} elseif ($closeParts['time'] !== '') {
+    $scheduleTimeLabel = $closeParts['time'];
+} elseif ($openParts['time'] !== '') {
+    $scheduleTimeLabel = $openParts['time'];
+}
+$availableUntilLabel = $closeParts['time'] !== '' ? $closeParts['time'] : $closes;
 $isCatalogCard = ($cpExamLayout === 'card');
 
 $renderAction = static function () use ($actionMode, $actionUrl, $actionLabel, $cpExamLayout, $isCatalogCard): void {
@@ -149,29 +178,35 @@ $renderAction = static function () use ($actionMode, $actionUrl, $actionLabel, $
 
 if ($cpExamLayout === 'lms'): ?>
   <article class="cp-exam-lms-item<?php echo h($toneClass); ?><?php echo $cpExamIsNewest ? ' cp-exam-lms-item--new' : ''; ?>">
-    <div class="cp-exam-lms-item__icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></div>
     <div class="cp-exam-lms-item__main">
-      <div class="cp-exam-lms-item__title-row">
-        <h3 class="cp-exam-lms-item__title"><?php echo h($title); ?></h3>
-        <div class="cp-exam-lms-item__badges">
-          <?php if ($cpExamIsNewest): ?>
-            <span class="cp-exam-badge cp-exam-badge--new">New</span>
-          <?php endif; ?>
-          <span class="type-pill <?php echo h($typeClass); ?>"><?php echo h($typeLabel); ?></span>
-        </div>
+      <div class="cp-exam-lms-item__labels">
+        <span class="type-pill <?php echo h($typeClass); ?>"><?php echo h($typeLabel); ?></span>
+        <span class="status-pill <?php echo h($statusClass); ?>"><i class="bi <?php echo h($statusIcon); ?>"></i> <?php echo h($statusLabel); ?></span>
+        <?php if ($cpExamIsNewest): ?>
+          <span class="cp-exam-badge cp-exam-badge--new">New</span>
+        <?php endif; ?>
       </div>
+      <h3 class="cp-exam-lms-item__title"><?php echo h($title); ?></h3>
       <?php if ($descText !== ''): ?>
         <p class="cp-exam-lms-item__desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
       <?php endif; ?>
-      <p class="cp-exam-lms-item__facts">
-        <span><i class="bi bi-journal-text" aria-hidden="true"></i> <?php echo h($questionsLabel); ?></span>
-        <span class="cp-exam-lms-item__sep" aria-hidden="true">·</span>
-        <span><i class="bi bi-stopwatch" aria-hidden="true"></i> <?php echo h($duration); ?></span>
-      </p>
-      <p class="cp-exam-lms-item__schedule"><i class="bi bi-calendar3" aria-hidden="true"></i> <?php echo h($scheduleLine); ?></p>
+      <div class="cp-exam-meta">
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span><?php echo h($questionsLabel); ?></span>
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-stopwatch"></i></span><?php echo h($duration); ?></span>
+        <?php if ($availableUntilLabel !== '' && $availableUntilLabel !== '-'): ?>
+          <span class="cp-exam-meta__item cp-exam-meta__item--until"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>Available until <?php echo h($availableUntilLabel); ?></span>
+        <?php endif; ?>
+      </div>
+      <div class="cp-exam-meta cp-exam-meta--when">
+        <?php if ($scheduleDateLabel !== ''): ?>
+          <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-calendar3"></i></span><?php echo h($scheduleDateLabel); ?></span>
+        <?php endif; ?>
+        <?php if ($scheduleTimeLabel !== ''): ?>
+          <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-clock"></i></span><?php echo h($scheduleTimeLabel); ?></span>
+        <?php endif; ?>
+      </div>
     </div>
     <div class="cp-exam-lms-item__aside">
-      <span class="status-pill cp-exam-lms-item__status <?php echo h($statusClass); ?>"><i class="bi <?php echo h($statusIcon); ?>"></i> <?php echo h($statusLabel); ?></span>
       <?php if ($scoreFraction !== '' || $scorePercent !== ''): ?>
         <div class="cp-exam-lms-item__score">
           <span class="cp-exam-lms-item__score-k">Score</span>
@@ -197,8 +232,18 @@ if ($cpExamLayout === 'lms'): ?>
       <?php if ($descText !== ''): ?>
         <p class="cp-exam-feed-item__desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
       <?php endif; ?>
-      <p class="cp-exam-feed-item__meta"><i class="bi bi-journal-text" aria-hidden="true"></i> <?php echo h($questionsLabel . ' · ' . $duration); ?></p>
-      <p class="cp-exam-feed-item__schedule"><i class="bi bi-calendar3" aria-hidden="true"></i> <?php echo h($scheduleLine); ?></p>
+      <div class="cp-exam-meta">
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span><?php echo h($questionsLabel); ?></span>
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-stopwatch"></i></span><?php echo h($duration); ?></span>
+      </div>
+      <div class="cp-exam-meta cp-exam-meta--when">
+        <?php if ($scheduleDateLabel !== ''): ?>
+          <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-calendar3"></i></span><?php echo h($scheduleDateLabel); ?></span>
+        <?php endif; ?>
+        <?php if ($scheduleTimeLabel !== ''): ?>
+          <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-clock"></i></span><?php echo h($scheduleTimeLabel); ?></span>
+        <?php endif; ?>
+      </div>
     </div>
     <div class="cp-exam-feed-item__aside">
       <?php if ($scoreText !== ''): ?>
@@ -235,12 +280,23 @@ if ($cpExamLayout === 'lms'): ?>
     </div>
     <h3 class="cp-exam-featured__title"><?php echo h($title); ?></h3>
     <?php if ($descText !== ''): ?>
-      <p class="cp-exam-featured__desc"><?php echo h($descText); ?></p>
+      <p class="cp-exam-featured__desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
     <?php endif; ?>
-    <div class="cp-exam-featured__meta">
-      <span><i class="bi bi-journal-text" aria-hidden="true"></i> <?php echo h($questionsLabel . ' · ' . $duration); ?></span>
+    <div class="cp-exam-meta">
+      <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span><?php echo h($questionsLabel); ?></span>
+      <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-stopwatch"></i></span><?php echo h($duration); ?></span>
+      <?php if ($availableUntilLabel !== '' && $availableUntilLabel !== '-'): ?>
+        <span class="cp-exam-meta__item cp-exam-meta__item--until"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>Available until <?php echo h($availableUntilLabel); ?></span>
+      <?php endif; ?>
     </div>
-    <p class="cp-exam-featured__schedule"><i class="bi bi-calendar3" aria-hidden="true"></i> <?php echo h($scheduleLine); ?></p>
+    <div class="cp-exam-meta cp-exam-meta--when">
+      <?php if ($scheduleDateLabel !== ''): ?>
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-calendar3"></i></span><?php echo h($scheduleDateLabel); ?></span>
+      <?php endif; ?>
+      <?php if ($scheduleTimeLabel !== ''): ?>
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-clock"></i></span><?php echo h($scheduleTimeLabel); ?></span>
+      <?php endif; ?>
+    </div>
     <div class="cp-exam-featured__foot">
       <?php if ($scoreFraction !== '' || $scorePercent !== ''): ?>
         <div class="cp-exam-featured__score">
@@ -272,10 +328,9 @@ if ($cpExamLayout === 'lms'): ?>
       <?php if ($descText !== ''): ?>
         <p class="cp-exam-card__desc" title="<?php echo h($descText); ?>"><?php echo h($descText); ?></p>
       <?php endif; ?>
-      <div class="cp-exam-card__meta">
-        <span class="cp-exam-card__meta-item"><i class="bi bi-journal-text" aria-hidden="true"></i> <?php echo h($questionsLabel); ?></span>
-        <span class="cp-exam-card__meta-sep" aria-hidden="true">·</span>
-        <span class="cp-exam-card__meta-item"><i class="bi bi-stopwatch" aria-hidden="true"></i> <?php echo h($duration); ?></span>
+      <div class="cp-exam-card__meta cp-exam-meta">
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span><?php echo h($questionsLabel); ?></span>
+        <span class="cp-exam-meta__item"><span class="cp-exam-meta__ico" aria-hidden="true"><i class="bi bi-stopwatch"></i></span><?php echo h($duration); ?></span>
       </div>
       <div class="cp-exam-card__schedule">
         <div class="cp-exam-card__schedule-row">

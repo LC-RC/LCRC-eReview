@@ -69,6 +69,32 @@ html[data-student-theme="light"] {
   --student-glow-blue: rgba(22, 101, 160, 0.22);
   --student-glow-gold: rgba(242, 176, 30, 0.16);
   --student-hero-icon-fg: #dbeafe;
+
+  --app-bg: var(--student-bg);
+  --surface: var(--student-surface-solid);
+  --surface-elevated: var(--student-surface-2);
+  --surface-muted: var(--student-bg-elevated);
+  --surface-hover: var(--student-surface-hover);
+  --border: var(--student-border);
+  --border-strong: var(--student-border-strong);
+  --text-primary: var(--student-text);
+  --text-secondary: var(--student-text-secondary);
+  --text-muted: var(--student-text-muted);
+  --text-disabled: var(--student-text-muted);
+  --primary: var(--student-primary);
+  --primary-hover: var(--student-primary-hover);
+  --primary-soft: var(--student-primary-soft);
+  --success: var(--student-success);
+  --success-soft: var(--student-success-soft);
+  --warning: var(--student-warning);
+  --warning-soft: var(--student-warning-soft);
+  --danger: var(--student-danger);
+  --danger-soft: var(--student-danger-soft);
+  --info: var(--student-primary);
+  --info-soft: var(--student-primary-soft);
+  --shadow-sm: var(--student-shadow-sm);
+  --shadow-md: var(--student-shadow);
+  --shadow-lg: var(--student-shadow-lg);
 }
 
 html[data-student-theme="dark"] {
@@ -86,10 +112,10 @@ html[data-student-theme="dark"] {
   --student-glass-strong: rgba(12, 18, 32, 0.78);
   --student-blur: 18px;
 
-  --student-text: #f4f7fb;
-  --student-text-secondary: #9aa8c0;
-  --student-text-muted: #6d7b94;
-  --student-text-inverse: #0f172a;
+  --student-text: #f1f5fb;
+  --student-text-secondary: #b4c3d8;
+  --student-text-muted: #93a4be;
+  --student-text-inverse: #0b1220;
 
   --student-primary: #3b9fd9;
   --student-primary-hover: #2b8fc9;
@@ -131,4 +157,30 @@ html[data-student-theme="dark"] {
   --student-glow-blue: rgba(59, 159, 217, 0.28);
   --student-glow-gold: rgba(242, 176, 30, 0.14);
   --student-hero-icon-fg: #dbeafe;
+
+  --app-bg: var(--student-bg);
+  --surface: var(--student-surface-solid);
+  --surface-elevated: var(--student-surface-2);
+  --surface-muted: var(--student-bg-elevated);
+  --surface-hover: var(--student-surface-hover);
+  --border: var(--student-border);
+  --border-strong: var(--student-border-strong);
+  --text-primary: var(--student-text);
+  --text-secondary: var(--student-text-secondary);
+  --text-muted: var(--student-text-muted);
+  --text-disabled: var(--student-text-muted);
+  --primary: var(--student-primary);
+  --primary-hover: var(--student-primary-hover);
+  --primary-soft: var(--student-primary-soft);
+  --success: var(--student-success);
+  --success-soft: var(--student-success-soft);
+  --warning: var(--student-warning);
+  --warning-soft: var(--student-warning-soft);
+  --danger: var(--student-danger);
+  --danger-soft: var(--student-danger-soft);
+  --info: var(--student-primary);
+  --info-soft: var(--student-primary-soft);
+  --shadow-sm: var(--student-shadow-sm);
+  --shadow-md: var(--student-shadow);
+  --shadow-lg: var(--student-shadow-lg);
 }
