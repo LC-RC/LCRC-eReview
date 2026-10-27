@@ -85,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = trim((string)($result['title'] ?? ''));
             $qCount = (int)($result['question_count'] ?? 0);
             $_SESSION['examination_flash'] = $title !== ''
-                ? ('Duplicated "' . $title . '"' . ($qCount > 0 ? (' with ' . $qCount . ' question' . ($qCount === 1 ? '' : 's')) : '') . '.')
-                : 'Examination duplicated.';
+                ? ('Created Draft "' . $title . '"' . ($qCount > 0 ? (' with ' . $qCount . ' question' . ($qCount === 1 ? '' : 's')) : '') . '. Review the schedule before publishing. Student attempts were not copied.')
+                : 'Created a Draft copy. Review the schedule before publishing.';
             $editUrl = examination_domain_edit_url($newType, $newId, 'config') . '&modal=1';
             $join = $redirectQs !== '' ? '&' : '?';
             header('Location: ' . $redirect . $join . 'open_edit=' . rawurlencode($editUrl));

@@ -513,13 +513,17 @@ function examination_type_diagnostic_duplicate(mysqli $conn, int $sourceId, int 
             throw new RuntimeException('copy users failed');
         }
 
-        $okQ = @mysqli_query(
-            $conn,
-            'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order)
-             SELECT ' . (int)$newId . ', subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order
+        require_once dirname(__DIR__) . '/examination_duplicate_copy.php';
+        $qSql = examination_duplicate_diagnostic_has_extra_choices($conn)
+            ? 'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, extra_choices_json, correct_answer, sort_order)
+             SELECT ' . (int)$newId . ', subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, extra_choices_json, correct_answer, sort_order
              FROM diagnostic_questions WHERE batch_id=' . (int)$sourceId
              . ' ORDER BY sort_order ASC, question_id ASC'
-        );
+            : 'INSERT INTO diagnostic_questions (batch_id, subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order)
+             SELECT ' . (int)$newId . ', subject_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order
+             FROM diagnostic_questions WHERE batch_id=' . (int)$sourceId
+             . ' ORDER BY sort_order ASC, question_id ASC';
+        $okQ = @mysqli_query($conn, $qSql);
         if ($okQ === false) {
             throw new RuntimeException('copy questions failed');
         }

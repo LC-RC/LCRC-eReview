@@ -596,23 +596,12 @@ function examination_type_regular_duplicate(mysqli $conn, int $sourceId, int $pr
             throw new RuntimeException('copy users failed');
         }
 
-        $okQ = @mysqli_query(
-            $conn,
-            'INSERT INTO college_exam_questions (exam_id, question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order)
-             SELECT ' . (int)$newId . ', question_text, question_type, choice_a, choice_b, choice_c, choice_d, correct_answer, sort_order
-             FROM college_exam_questions WHERE exam_id=' . (int)$sourceId
-             . ' ORDER BY sort_order ASC, question_id ASC'
-        );
-        if ($okQ === false) {
-            throw new RuntimeException('copy questions failed');
+        require_once dirname(__DIR__) . '/examination_duplicate_copy.php';
+        $paper = examination_duplicate_copy_regular_paper($conn, $sourceId, $newId);
+        if (empty($paper['ok'])) {
+            throw new RuntimeException((string) ($paper['error'] ?? 'Could not copy questions and allocation.'));
         }
-
-        $qCount = 0;
-        $qc = @mysqli_query($conn, 'SELECT COUNT(*) AS c FROM college_exam_questions WHERE exam_id=' . (int)$newId);
-        if ($qc && ($qr = mysqli_fetch_assoc($qc))) {
-            $qCount = (int)($qr['c'] ?? 0);
-            mysqli_free_result($qc);
-        }
+        $qCount = (int) ($paper['question_count'] ?? 0);
 
         mysqli_commit($conn);
 
@@ -625,6 +614,10 @@ function examination_type_regular_duplicate(mysqli $conn, int $sourceId, int $pr
         ];
     } catch (Throwable $e) {
         mysqli_rollback($conn);
+        $msg = trim($e->getMessage());
+        if ($msg !== '' && !preg_match('/^(copy |prepare |insert )/i', $msg) && !str_contains(strtolower($msg), 'sql')) {
+            return ['ok' => false, 'error' => $msg];
+        }
 
         return ['ok' => false, 'error' => 'Could not duplicate this examination.'];
     }
