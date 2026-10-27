@@ -62,7 +62,11 @@ function college_exam_ajax_verify_attempt_access(mysqli $conn, array $attempt, i
     if ($examId <= 0) {
         return false;
     }
+    require_once dirname(__DIR__) . '/includes/examination_archive.php';
     $pubWhere = college_exam_where_published_sql();
+    if (examination_archive_column_ready($conn, 'college_exams')) {
+        $pubWhere .= ' AND ' . examination_archive_not_archived_sql('');
+    }
     $stmt = mysqli_prepare($conn, "SELECT * FROM college_exams WHERE exam_id=? AND {$pubWhere} LIMIT 1");
     if (!$stmt) {
         return false;

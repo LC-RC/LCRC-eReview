@@ -146,7 +146,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
 
 
 
-$statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', 'finished' => 'Finished'];
+$statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', 'finished' => 'Finished', 'archived' => 'Archived'];
 
 ?>
 
@@ -382,7 +382,9 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
               $examTypeKey = (string)($ex['exam_type'] ?? 'regular');
               $sourceId = (int)($ex['source_id'] ?? 0);
               $examKey = $examTypeKey . ':' . $sourceId;
-              $canDelete = empty($ex['is_running']);
+              $isArchived = !empty($ex['is_archived']);
+              $submittedCount = (int)($ex['submitted_count'] ?? 0);
+              $canDelete = empty($ex['is_running']) && !$isArchived && $submittedCount === 0;
 
             ?>
 
@@ -403,6 +405,9 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
               <td class="pcs-exam-title-cell pcs-primary-cell" data-label="Examination">
 
                 <div class="examination-title-cell" title="<?php echo h($ex['title']); ?>"><?php echo h($ex['title']); ?></div>
+                <?php if ($isArchived): ?>
+                  <div class="examination-desc-cell">Archived <?php echo h(examination_list_format_datetime($ex['archived_at'] ?? null)); ?> · Attempts and results kept</div>
+                <?php endif; ?>
 
                 <?php if (trim((string)($ex['description'] ?? '')) !== ''): ?>
 
@@ -434,7 +439,9 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
               <td class="student-action-cell" data-label="Actions">
                 <div class="examination-list-actions student-action-cluster">
+                  <?php if (!$isArchived): ?>
                   <button type="button" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view js-open-examination-edit" data-edit-url="<?php echo h(examination_list_edit_url($ex)); ?>"><i class="bi bi-pencil"></i> Edit</button>
+                  <?php endif; ?>
                   <div class="admin-student-action-menu-wrap examination-more-wrap" data-admin-student-action-menu>
                     <button type="button" class="admin-student-action-menu-trigger admin-student-action-menu-trigger--icon" data-action-menu-trigger aria-expanded="false" aria-haspopup="true" aria-label="More actions for <?php echo h($ex['title']); ?>">
                       <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
@@ -442,7 +449,9 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
                     <div class="admin-student-action-menu" data-action-menu-list role="menu">
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_questions_url($ex)); ?>"><i class="bi bi-question-circle" aria-hidden="true"></i> Questions</a>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_list_monitor_url($ex)); ?>"><i class="bi bi-graph-up" aria-hidden="true"></i> Monitor</a>
+                      <?php if (!$isArchived): ?>
                       <a role="menuitem" class="admin-student-action-item" href="<?php echo h(examination_domain_edit_url((string)($ex['exam_type'] ?? 'regular'), (int)($ex['source_id'] ?? 0), 'review')); ?>"><i class="bi bi-check2-square" aria-hidden="true"></i> Review / Publish</a>
+                      <?php endif; ?>
                       <button type="button"
                               role="menuitem"
                               class="admin-student-action-item js-duplicate-exam"
@@ -452,6 +461,25 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
                         <i class="bi bi-files" aria-hidden="true"></i> Duplicate
                       </button>
                       <div class="examination-action-menu-sep" role="separator"></div>
+                      <?php if ($isArchived): ?>
+                        <button type="button"
+                                role="menuitem"
+                                class="admin-student-action-item js-open-restore-exam"
+                                data-exam-type="<?php echo h($examTypeKey); ?>"
+                                data-source-id="<?php echo $sourceId; ?>"
+                                data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>">
+                          <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Restore
+                        </button>
+                      <?php else: ?>
+                        <button type="button"
+                                role="menuitem"
+                                class="admin-student-action-item js-open-archive-exam"
+                                data-exam-type="<?php echo h($examTypeKey); ?>"
+                                data-source-id="<?php echo $sourceId; ?>"
+                                data-exam-title="<?php echo h((string)($ex['title'] ?? '')); ?>"
+                                data-submitted-count="<?php echo $submittedCount; ?>">
+                          <i class="bi bi-archive" aria-hidden="true"></i> Archive
+                        </button>
                       <?php if ($canDelete): ?>
                         <button type="button"
                                 role="menuitem"
@@ -467,9 +495,10 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
                                 role="menuitem"
                                 class="admin-student-action-item admin-student-action-item--danger is-disabled"
                                 disabled
-                                title="Cannot delete while this examination is running">
-                          <i class="bi bi-trash" aria-hidden="true"></i> Delete (running)
+                                title="<?php echo !empty($ex['is_running']) ? 'Cannot delete while this examination is running' : 'Permanent delete is blocked while academic records exist. Archive instead.'; ?>">
+                          <i class="bi bi-trash" aria-hidden="true"></i> Delete
                         </button>
+                      <?php endif; ?>
                       <?php endif; ?>
                     </div>
                   </div>
@@ -506,6 +535,17 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
   <div id="deleteExamKeysMount"></div>
 </form>
 
+<form method="post" action="professor_examinations" id="archiveExamForm" class="hidden" aria-hidden="true">
+  <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken ?? generateCSRFToken()); ?>">
+  <input type="hidden" name="action" id="archiveExamAction" value="archive">
+  <input type="hidden" name="exam_type" id="archiveExamType" value="">
+  <input type="hidden" name="source_id" id="archiveExamSourceId" value="">
+  <input type="hidden" name="return_status" value="<?php echo h($statusFilter); ?>">
+  <input type="hidden" name="return_exam_type" value="<?php echo h($typeFilter); ?>">
+  <input type="hidden" name="return_examinee_type" value="<?php echo h($examineeFilter); ?>">
+  <input type="hidden" name="return_q" value="<?php echo h($searchQ); ?>">
+</form>
+
 <form method="post" action="professor_examinations" id="duplicateExamForm" class="hidden" aria-hidden="true">
   <input type="hidden" name="csrf_token" value="<?php echo h($csrfToken ?? generateCSRFToken()); ?>">
   <input type="hidden" name="action" value="duplicate">
@@ -529,6 +569,22 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
     <div class="admin-modal__actions">
       <button type="button" class="admin-btn admin-btn--secondary" id="deleteExamCancel">Cancel</button>
       <button type="button" class="admin-btn admin-btn--danger" id="deleteExamConfirm">Delete</button>
+    </div>
+  </section>
+</div>
+
+<div class="admin-modal-overlay" id="archiveExamModal" aria-hidden="true">
+  <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="archiveExamTitle">
+    <div class="admin-modal__hero">
+      <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-archive"></i></span>
+      <div>
+        <h3 id="archiveExamTitle" class="admin-modal__title">Archive examination?</h3>
+        <p class="admin-modal__desc" id="archiveExamDesc">Archive <strong></strong>? Students cannot start it. Attempts and results remain preserved. Restore later returns Draft.</p>
+      </div>
+    </div>
+    <div class="admin-modal__actions">
+      <button type="button" class="admin-btn admin-btn--secondary" id="archiveExamCancel">Cancel</button>
+      <button type="button" class="admin-btn admin-btn--primary" id="archiveExamConfirm">Archive</button>
     </div>
   </section>
 </div>
@@ -793,7 +849,12 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
     });
   }
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && deleteModal && deleteModal.classList.contains('is-open')) {
+    if (e.key !== 'Escape') return;
+    if (archiveModal && archiveModal.classList.contains('is-open')) {
+      closeArchiveModal();
+      return;
+    }
+    if (deleteModal && deleteModal.classList.contains('is-open')) {
       closeDeleteModal();
     }
   });
@@ -816,6 +877,85 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
         if (deleteAction) deleteAction.value = 'delete';
       }
       deleteForm.submit();
+    });
+  }
+
+  var archiveForm = document.getElementById('archiveExamForm');
+  var archiveAction = document.getElementById('archiveExamAction');
+  var archiveType = document.getElementById('archiveExamType');
+  var archiveSourceId = document.getElementById('archiveExamSourceId');
+  var archiveModal = document.getElementById('archiveExamModal');
+  var archiveTitleEl = document.getElementById('archiveExamTitle');
+  var archiveDescEl = document.getElementById('archiveExamDesc');
+  var archiveCancel = document.getElementById('archiveExamCancel');
+  var archiveConfirm = document.getElementById('archiveExamConfirm');
+  var pendingArchive = { action: 'archive', examType: '', sourceId: 0 };
+
+  function openArchiveModal(action, payload) {
+    pendingArchive = {
+      action: action,
+      examType: payload.examType || '',
+      sourceId: payload.sourceId || 0
+    };
+    var title = payload.title || 'this examination';
+    var n = parseInt(payload.submittedCount || '0', 10) || 0;
+    if (archiveTitleEl) archiveTitleEl.textContent = action === 'restore' ? 'Restore examination?' : 'Archive examination?';
+    if (archiveDescEl) {
+      if (action === 'restore') {
+        archiveDescEl.innerHTML = 'Restore <strong></strong> as Draft? It will not be published automatically. Existing attempts and the original schedule stay unchanged.';
+      } else {
+        archiveDescEl.innerHTML = 'Archive <strong></strong>? Students cannot start it. Attempts and results remain preserved'
+          + (n > 0 ? (' (' + n + ' submitted result' + (n === 1 ? '' : 's') + ').') : '.')
+          + ' Restore later returns Draft.';
+      }
+      var strong = archiveDescEl.querySelector('strong');
+      if (strong) strong.textContent = title;
+    }
+    if (archiveConfirm) archiveConfirm.textContent = action === 'restore' ? 'Restore as Draft' : 'Archive';
+    if (archiveModal) {
+      archiveModal.classList.add('is-open');
+      archiveModal.setAttribute('aria-hidden', 'false');
+    }
+  }
+  function closeArchiveModal() {
+    if (!archiveModal) return;
+    archiveModal.classList.remove('is-open');
+    archiveModal.setAttribute('aria-hidden', 'true');
+  }
+  document.querySelectorAll('.js-open-archive-exam').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      closeAllMenus();
+      openArchiveModal('archive', {
+        examType: btn.getAttribute('data-exam-type') || '',
+        sourceId: parseInt(btn.getAttribute('data-source-id') || '0', 10) || 0,
+        title: btn.getAttribute('data-exam-title') || 'this examination',
+        submittedCount: btn.getAttribute('data-submitted-count') || '0'
+      });
+    });
+  });
+  document.querySelectorAll('.js-open-restore-exam').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      closeAllMenus();
+      openArchiveModal('restore', {
+        examType: btn.getAttribute('data-exam-type') || '',
+        sourceId: parseInt(btn.getAttribute('data-source-id') || '0', 10) || 0,
+        title: btn.getAttribute('data-exam-title') || 'this examination'
+      });
+    });
+  });
+  if (archiveCancel) archiveCancel.addEventListener('click', closeArchiveModal);
+  if (archiveModal) {
+    archiveModal.addEventListener('click', function (e) {
+      if (e.target === archiveModal) closeArchiveModal();
+    });
+  }
+  if (archiveConfirm && archiveForm) {
+    archiveConfirm.addEventListener('click', function () {
+      if (!pendingArchive.examType || pendingArchive.sourceId <= 0) return;
+      if (archiveAction) archiveAction.value = pendingArchive.action;
+      if (archiveType) archiveType.value = pendingArchive.examType;
+      if (archiveSourceId) archiveSourceId.value = String(pendingArchive.sourceId);
+      archiveForm.submit();
     });
   }
 

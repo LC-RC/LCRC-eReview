@@ -46,7 +46,13 @@ function examination_questions_attempt_count(mysqli $conn, string $examType, int
 
 function examination_questions_mutations_locked(mysqli $conn, string $examType, int $sourceId): bool
 {
-    return examination_questions_attempt_count($conn, $examType, $sourceId) > 0;
+    require_once __DIR__ . '/academic_record_protection.php';
+    $deps = academic_record_exam_dependency_counts($conn, $examType, $sourceId);
+    if (empty($deps['ok'])) {
+        return true;
+    }
+
+    return (int) $deps['total'] > 0;
 }
 
 function examination_questions_load_regular(mysqli $conn, int $examId): array

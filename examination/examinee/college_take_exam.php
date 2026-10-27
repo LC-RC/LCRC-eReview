@@ -25,8 +25,8 @@ if ($examId <= 0) {
     exit;
 }
 
-$pubWhere = college_exam_where_published_sql();
-$stmt = mysqli_prepare($conn, "SELECT * FROM college_exams WHERE exam_id=? AND {$pubWhere} LIMIT 1");
+require_once dirname(__DIR__) . '/includes/examination_archive.php';
+$stmt = mysqli_prepare($conn, 'SELECT * FROM college_exams WHERE exam_id=? LIMIT 1');
 mysqli_stmt_bind_param($stmt, 'i', $examId);
 mysqli_stmt_execute($stmt);
 $exam = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
@@ -35,6 +35,24 @@ if (!$exam) {
     $_SESSION['error'] = 'Exam not found.';
     header('Location: college_exams');
     exit;
+}
+if (!examination_record_is_archived($exam) && !college_exam_row_is_published($exam)) {
+    $_SESSION['error'] = 'Exam not found.';
+    header('Location: college_exams');
+    exit;
+}
+if (examination_record_is_archived($exam)) {
+    $stmt = mysqli_prepare($conn, 'SELECT * FROM college_exam_attempts WHERE user_id=? AND exam_id=? LIMIT 1');
+    mysqli_stmt_bind_param($stmt, 'ii', $uid, $examId);
+    mysqli_stmt_execute($stmt);
+    $peekAttempt = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+    $peekStatus = strtolower(trim((string) ($peekAttempt['status'] ?? '')));
+    if (!in_array($peekStatus, ['submitted', 'expired', 'completed'], true)) {
+        $_SESSION['error'] = 'This examination has been archived and cannot be started.';
+        header('Location: college_exams');
+        exit;
+    }
 }
 
 $now = date('Y-m-d H:i:s');

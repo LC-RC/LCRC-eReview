@@ -1786,6 +1786,10 @@ function college_exam_where_published_sql(?string $tableAlias = null): string
 function college_exams_load_published_exams(mysqli $conn): array
 {
     $publishedWhere = college_exam_where_published_sql();
+    require_once __DIR__ . '/examination_archive.php';
+    if (examination_archive_column_ready($conn, 'college_exams')) {
+        $publishedWhere .= ' AND ' . examination_archive_not_archived_sql('');
+    }
     $attempts = [
         "SELECT * FROM college_exams WHERE {$publishedWhere} ORDER BY deadline IS NULL, deadline ASC, title ASC",
         "SELECT * FROM college_exams WHERE {$publishedWhere} ORDER BY exam_id DESC",

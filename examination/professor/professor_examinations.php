@@ -27,6 +27,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]));
     $redirect = 'professor_examinations' . ($redirectQs !== '' ? '?' . $redirectQs : '');
 
+    if ($action === 'archive' || $action === 'restore') {
+        require_once dirname(__DIR__) . '/includes/examination_archive.php';
+        $examType = examination_normalize_exam_type((string)($_POST['exam_type'] ?? ''));
+        $sourceId = (int)($_POST['source_id'] ?? 0);
+        $result = $action === 'restore'
+            ? examination_archive_restore($conn, $examType, $sourceId, $uid)
+            : examination_archive_apply($conn, $examType, $sourceId, $uid);
+        if (!empty($result['ok'])) {
+            $title = trim((string)($result['title'] ?? ''));
+            if ($action === 'restore') {
+                $_SESSION['examination_flash'] = $title !== ''
+                    ? ('Restored "' . $title . '" as Draft. Review before publishing. Attempts and results were not changed.')
+                    : 'Examination restored as Draft. Review before publishing.';
+                $redirectQs = http_build_query(array_filter([
+                    'status' => 'draft',
+                    'exam_type' => examination_normalize_exam_type((string)($_POST['return_exam_type'] ?? '')) ?: null,
+                    'examinee_type' => (($e = trim((string)($_POST['return_examinee_type'] ?? ''))) !== '') ? $e : null,
+                    'q' => (($q = trim((string)($_POST['return_q'] ?? ''))) !== '') ? $q : null,
+                ]));
+                $redirect = 'professor_examinations' . ($redirectQs !== '' ? '?' . $redirectQs : '');
+            } else {
+                $_SESSION['examination_flash'] = $title !== ''
+                    ? ('Archived "' . $title . '". Students cannot start it. Attempts and results were kept.')
+                    : 'Examination archived. Attempts and results were kept.';
+            }
+        } else {
+            $_SESSION['examination_flash_error'] = (string)($result['error'] ?? 'Could not update archive state.');
+        }
+        header('Location: ' . $redirect);
+        exit;
+    }
+
     if ($action === 'delete') {
         $examType = examination_normalize_exam_type((string)($_POST['exam_type'] ?? ''));
         $sourceId = (int)($_POST['source_id'] ?? 0);
@@ -106,7 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $statusFilter = strtolower(trim((string)($_GET['status'] ?? 'all')));
-if (!in_array($statusFilter, ['all', 'draft', 'published', 'finished'], true)) {
+if ($statusFilter === 'active') {
+    $statusFilter = 'all';
+}
+if (!in_array($statusFilter, ['all', 'draft', 'published', 'finished', 'archived'], true)) {
     $statusFilter = 'all';
 }
 

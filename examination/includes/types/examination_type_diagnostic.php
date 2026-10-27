@@ -9,6 +9,8 @@ require_once dirname(__DIR__) . '/college_exam_helpers.php';
 require_once dirname(__DIR__) . '/diagnostic_exam_helpers.php';
 require_once dirname(__DIR__) . '/examination_assignment.php';
 require_once dirname(__DIR__) . '/examination_eligibility.php';
+require_once dirname(__DIR__) . '/academic_record_protection.php';
+require_once dirname(__DIR__) . '/examination_archive.php';
 
 function examination_type_diagnostic_list_rows(mysqli $conn, int $professorId): array
 {
@@ -65,7 +67,8 @@ function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, stri
 
     $examineeCount = examination_count_assigned_examinees($conn, 'diagnostic', $batchId, $rawRow, $sections, $users);
     $allDone = $examineeCount > 0 && ($submitted + $inProgress) >= $examineeCount && $inProgress === 0;
-    $isPublished = !empty($rawRow['is_published']);
+    $isArchived = examination_record_is_archived($rawRow);
+    $isPublished = !empty($rawRow['is_published']) && !$isArchived;
     $isFinished = (!empty($rawRow['deadline']) && (string)$rawRow['deadline'] < $nowSql) || $allDone;
     $isOpenBySchedule = $isPublished
         && (empty($rawRow['available_from']) || (string)$rawRow['available_from'] <= $nowSql)
@@ -82,6 +85,10 @@ function examination_type_diagnostic_normalize(mysqli $conn, array $rawRow, stri
         'available_from' => examination_domain_nullable_datetime($rawRow['available_from'] ?? null),
         'deadline' => examination_domain_nullable_datetime($rawRow['deadline'] ?? null),
         'is_published' => $isPublished,
+        'is_archived' => $isArchived,
+        'archived_at' => examination_domain_nullable_datetime($rawRow['archived_at'] ?? null),
+        'archived_was_published' => !empty($rawRow['archived_was_published']),
+        'submitted_count' => $submitted,
         'examinee_scope' => $examineeScope,
         'assignment_mode' => $assignmentMode,
         'section_count' => count($sections),
@@ -188,6 +195,15 @@ function examination_type_diagnostic_save_config(mysqli $conn, int $professorId,
     $availSql = college_exam_parse_datetime_local(trim((string)($post['available_from'] ?? '')));
     $deadSql = college_exam_parse_datetime_local(trim((string)($post['deadline'] ?? '')));
     $isPublished = $isDraft ? 0 : 1;
+    if ($sourceId > 0) {
+        $existingArchive = examination_type_diagnostic_load_raw($conn, $sourceId, $professorId);
+        if (is_array($existingArchive) && examination_record_is_archived($existingArchive)) {
+            if (!$isDraft) {
+                return ['ok' => false, 'error' => 'Restore this examination before publishing. Archived exams stay unpublished.'];
+            }
+            $isPublished = 0;
+        }
+    }
     $shuffleQ = !empty($post['shuffle_questions']) ? 1 : 0;
     $shuffleC = !empty($post['shuffle_choices']) ? 1 : 0;
     $examineeScope = examination_normalize_examinee_scope((string)($post['examinee_scope'] ?? 'college_student'));
@@ -347,6 +363,25 @@ function examination_type_diagnostic_delete(mysqli $conn, int $sourceId, int $pr
 
     mysqli_begin_transaction($conn);
     try {
+        $lock = mysqli_prepare($conn, 'SELECT batch_id FROM diagnostic_batches WHERE batch_id=? AND created_by=? LIMIT 1 FOR UPDATE');
+        if (!$lock) {
+            throw new RuntimeException('Could not lock examination.');
+        }
+        mysqli_stmt_bind_param($lock, 'ii', $batchId, $professorId);
+        if (!mysqli_stmt_execute($lock)) {
+            mysqli_stmt_close($lock);
+            throw new RuntimeException('Could not lock examination.');
+        }
+        mysqli_stmt_get_result($lock);
+        mysqli_stmt_close($lock);
+
+        $block = examination_archive_delete_block_reason($conn, 'diagnostic', $batchId);
+        if ($block !== null) {
+            mysqli_rollback($conn);
+
+            return ['ok' => false, 'error' => $block, 'title' => $title];
+        }
+
         @mysqli_query(
             $conn,
             'DELETE a FROM diagnostic_answers a

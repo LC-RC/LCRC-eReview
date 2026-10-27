@@ -9,6 +9,8 @@ require_once dirname(__DIR__) . '/college_exam_helpers.php';
 require_once dirname(__DIR__) . '/college_exam_subject_topic_helpers.php';
 require_once dirname(__DIR__) . '/examination_assignment.php';
 require_once dirname(__DIR__) . '/examination_eligibility.php';
+require_once dirname(__DIR__) . '/academic_record_protection.php';
+require_once dirname(__DIR__) . '/examination_archive.php';
 
 function examination_type_regular_list_rows(mysqli $conn, int $professorId): array
 {
@@ -80,7 +82,8 @@ function examination_type_regular_question_count(mysqli $conn, int $examId): int
 function examination_type_regular_normalize(mysqli $conn, array $rawRow, string $nowSql): array
 {
     $examId = (int)($rawRow['exam_id'] ?? 0);
-    $isPublished = !empty($rawRow['is_published']);
+    $isArchived = examination_record_is_archived($rawRow);
+    $isPublished = !empty($rawRow['is_published']) && !$isArchived;
     $sections = examination_load_assigned_sections($conn, 'regular', $examId);
     $users = examination_load_assigned_user_ids($conn, 'regular', $examId);
     $examineeScope = examination_normalize_examinee_scope((string)($rawRow['examinee_scope'] ?? 'college_student'));
@@ -123,6 +126,10 @@ function examination_type_regular_normalize(mysqli $conn, array $rawRow, string 
         'available_from' => examination_domain_nullable_datetime($rawRow['available_from'] ?? null),
         'deadline' => examination_domain_nullable_datetime($rawRow['deadline'] ?? null),
         'is_published' => $isPublished,
+        'is_archived' => $isArchived,
+        'archived_at' => examination_domain_nullable_datetime($rawRow['archived_at'] ?? null),
+        'archived_was_published' => !empty($rawRow['archived_was_published']),
+        'submitted_count' => $submittedCount,
         'examinee_scope' => $examineeScope,
         'assignment_mode' => $assignmentMode,
         'section_count' => count($sections),
@@ -208,6 +215,15 @@ function examination_type_regular_save_config(mysqli $conn, int $professorId, ar
     $availSql = college_exam_parse_datetime_local(trim((string)($post['available_from'] ?? '')));
     $deadSql = college_exam_parse_datetime_local(trim((string)($post['deadline'] ?? '')));
     $isPublished = $isDraft ? 0 : 1;
+    if ($sourceId > 0) {
+        $existingArchive = examination_type_regular_load_raw($conn, $sourceId, $professorId);
+        if (is_array($existingArchive) && examination_record_is_archived($existingArchive)) {
+            if (!$isDraft) {
+                return ['ok' => false, 'error' => 'Restore this examination before publishing. Archived exams stay unpublished.'];
+            }
+            $isPublished = 0;
+        }
+    }
     $paperLocked = $sourceId > 0 && examination_questions_mutations_locked($conn, 'regular', $sourceId);
     $shuffleQuestions = !empty($post['shuffle_questions']) ? 1 : 0;
     $shuffleChoices = !empty($post['shuffle_choices']) ? 1 : 0;
@@ -428,6 +444,25 @@ function examination_type_regular_delete(mysqli $conn, int $sourceId, int $profe
 
     mysqli_begin_transaction($conn);
     try {
+        $lock = mysqli_prepare($conn, 'SELECT exam_id FROM college_exams WHERE exam_id=? AND created_by=? LIMIT 1 FOR UPDATE');
+        if (!$lock) {
+            throw new RuntimeException('Could not lock examination.');
+        }
+        mysqli_stmt_bind_param($lock, 'ii', $examId, $professorId);
+        if (!mysqli_stmt_execute($lock)) {
+            mysqli_stmt_close($lock);
+            throw new RuntimeException('Could not lock examination.');
+        }
+        mysqli_stmt_get_result($lock);
+        mysqli_stmt_close($lock);
+
+        $block = examination_archive_delete_block_reason($conn, 'regular', $examId);
+        if ($block !== null) {
+            mysqli_rollback($conn);
+
+            return ['ok' => false, 'error' => $block, 'title' => $title];
+        }
+
         @mysqli_query(
             $conn,
             'DELETE a FROM college_exam_answers a

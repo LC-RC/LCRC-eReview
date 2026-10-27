@@ -11,6 +11,7 @@ ereview_require_college_examination_portal();
 require_once dirname(__DIR__) . '/includes/diagnostic_schema.php';
 require_once dirname(__DIR__) . '/includes/diagnostic_exam_helpers.php';
 require_once dirname(__DIR__) . '/includes/examination_eligibility.php';
+require_once dirname(__DIR__) . '/includes/academic_record_protection.php';
 require_once dirname(__DIR__) . '/includes/examination_ajax_support.php';
 
 if (function_exists('mysqli_report')) {
@@ -46,7 +47,7 @@ function diagnostic_ajax_verify_attempt_access(mysqli $conn, array $attempt, int
         return false;
     }
     $batch = diagnostic_exam_load_batch($conn, $batchId);
-    if (!$batch || empty($batch['is_published'])) {
+    if (!$batch || empty($batch['is_published']) || examination_record_is_archived($batch)) {
         return false;
     }
 

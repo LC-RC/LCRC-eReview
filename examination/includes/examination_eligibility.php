@@ -235,6 +235,15 @@ function examination_user_is_assigned(mysqli $conn, int $userId, array $record, 
  */
 function examination_user_can_view_exam(mysqli $conn, int $userId, array $record, string $examType, ?array $attempt = null): bool
 {
+    require_once __DIR__ . '/academic_record_protection.php';
+    if (examination_record_is_archived($record)) {
+        if ($attempt === null) {
+            return false;
+        }
+        $st = strtolower(trim((string) ($attempt['status'] ?? '')));
+
+        return in_array($st, ['submitted', 'expired', 'completed'], true);
+    }
     if ($attempt !== null) {
         return true;
     }
@@ -250,6 +259,10 @@ function examination_user_can_view_exam(mysqli $conn, int $userId, array $record
  */
 function examination_user_can_start_exam(mysqli $conn, int $userId, array $record, string $examType, string $nowSql): bool
 {
+    require_once __DIR__ . '/academic_record_protection.php';
+    if (examination_record_is_archived($record)) {
+        return false;
+    }
     if (!examination_record_is_published($record, examination_exam_type_normalize($examType))) {
         return false;
     }
@@ -545,9 +558,13 @@ function examination_validate_assignment_for_publish(string $assignmentMode, arr
 
 function examination_assignment_mutations_locked(mysqli $conn, string $examType, int $sourceId): bool
 {
-    require_once __DIR__ . '/examination_questions.php';
+    require_once __DIR__ . '/academic_record_protection.php';
+    $deps = academic_record_exam_dependency_counts($conn, $examType, $sourceId);
+    if (empty($deps['ok'])) {
+        return true;
+    }
 
-    return examination_questions_attempt_count($conn, $examType, $sourceId) > 0;
+    return (int) $deps['total'] > 0;
 }
 
 /**

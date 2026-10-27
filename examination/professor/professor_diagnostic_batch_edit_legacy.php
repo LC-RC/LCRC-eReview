@@ -83,6 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($batchId > 0 && examination_questions_mutations_locked($conn, 'diagnostic', (int)$batchId)) {
             $error = 'Questions are locked because this examination already has student attempts. Destructive replace is blocked. Use the Examination wizard Questions step.';
         } else {
+            require_once dirname(__DIR__) . '/includes/academic_record_protection.php';
+            $legacyDeps = $batchId > 0
+                ? academic_record_exam_dependency_counts($conn, 'diagnostic', (int) $batchId)
+                : ['ok' => true, 'total' => 0];
+            if ($batchId > 0 && empty($legacyDeps['ok'])) {
+                $error = (string) ($legacyDeps['error'] ?? 'Could not verify academic records. Question replace refused.');
+            } elseif ($batchId > 0 && (int) $legacyDeps['total'] > 0) {
+                $error = 'Questions are locked because protected academic records exist. Destructive replace is blocked.';
+            } else {
             if ($batchId <= 0) {
                 $ins = mysqli_prepare($conn, 'INSERT INTO diagnostic_batches (title, description, time_limit_seconds, available_from, deadline, is_published, shuffle_questions, shuffle_choices, created_by) VALUES (?,?,?,?,?,?,?,?,?)');
                 mysqli_stmt_bind_param($ins, 'ssissiiii', $title, $description, $timeLimit, $availSql, $deadSql, $isPublished, $shuffleQ, $shuffleC, $uid);
@@ -152,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['message'] = 'Diagnostic batch saved.';
             header('Location: professor_diagnostic_batch_edit?id=' . (int)$batchId);
             exit;
+            }
         }
     }
 }

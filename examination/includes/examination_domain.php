@@ -7,6 +7,8 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/examination_assignment.php';
+require_once __DIR__ . '/academic_record_protection.php';
+require_once __DIR__ . '/examination_archive.php';
 require_once __DIR__ . '/examination_type_interface.php';
 require_once __DIR__ . '/types/examination_type_regular.php';
 require_once __DIR__ . '/types/examination_type_diagnostic.php';
@@ -46,6 +48,7 @@ function examination_domain_window_state(array $row, string $nowSql, bool $isFin
 function examination_domain_status_label(string $windowState, bool $isPublished): string
 {
     return match ($windowState) {
+        'archived' => 'Archived',
         'finished' => 'Finished',
         'draft' => 'Draft',
         'scheduled' => 'Scheduled',
@@ -67,8 +70,9 @@ function examination_domain_build_record(array $fields): array
     if ($assignedSections === [] && $sectionCount > 0 && is_array($fields['metadata']['assigned_sections'] ?? null)) {
         $assignedSections = $fields['metadata']['assigned_sections'];
     }
-    $isPublished = !empty($fields['is_published']);
-    $windowState = (string)($fields['window_state'] ?? 'draft');
+    $isArchived = !empty($fields['is_archived']) || examination_record_is_archived($fields);
+    $isPublished = !empty($fields['is_published']) && !$isArchived;
+    $windowState = $isArchived ? 'archived' : (string)($fields['window_state'] ?? 'draft');
 
     return [
         'source_id' => (int)($fields['source_id'] ?? 0),
@@ -80,6 +84,10 @@ function examination_domain_build_record(array $fields): array
         'available_from' => $fields['available_from'] ?? null,
         'deadline' => $fields['deadline'] ?? null,
         'is_published' => $isPublished,
+        'is_archived' => $isArchived,
+        'archived_at' => $fields['archived_at'] ?? null,
+        'archived_was_published' => !empty($fields['archived_was_published']),
+        'submitted_count' => (int)($fields['submitted_count'] ?? 0),
         'examinee_scope' => $examineeScope,
         'assignment_mode' => $assignmentMode,
         'examinee_scope_label' => examination_examinee_scope_label($examineeScope),
@@ -218,13 +226,17 @@ function examination_domain_list(mysqli $conn, int $professorId, array $filters 
             if ($examineeFilter === 'both' && $record['examinee_scope'] !== 'both') {
                 continue;
             }
-            if ($pubFilter === 'draft' && $record['is_published']) {
+            if ($pubFilter === 'archived') {
+                if (empty($record['is_archived'])) {
+                    continue;
+                }
+            } elseif ($pubFilter === 'draft' && ($record['is_published'] || !empty($record['is_archived']))) {
                 continue;
-            }
-            if ($pubFilter === 'published' && (!$record['is_published'] || $record['window_state'] === 'finished')) {
+            } elseif ($pubFilter === 'published' && (empty($record['is_published']) || $record['window_state'] === 'finished' || !empty($record['is_archived']))) {
                 continue;
-            }
-            if ($pubFilter === 'finished' && !$record['is_finished']) {
+            } elseif ($pubFilter === 'finished' && (empty($record['is_finished']) || !empty($record['is_archived']))) {
+                continue;
+            } elseif (in_array($pubFilter, ['active', 'all'], true) && $pubFilter === 'active' && !empty($record['is_archived'])) {
                 continue;
             }
             $out[] = $record;
@@ -270,8 +282,15 @@ function examination_domain_list_counts(mysqli $conn, int $professorId, array $f
  */
 function examination_domain_counts_from_list(array $rows): array
 {
-    $counts = ['all' => count($rows), 'draft' => 0, 'published' => 0, 'finished' => 0];
+    $counts = ['all' => 0, 'active' => 0, 'draft' => 0, 'published' => 0, 'finished' => 0, 'archived' => 0];
     foreach ($rows as $row) {
+        $isArchived = !empty($row['is_archived']);
+        if ($isArchived) {
+            $counts['archived']++;
+            continue;
+        }
+        $counts['active']++;
+        $counts['all']++;
         if (empty($row['is_published'])) {
             $counts['draft']++;
         }
@@ -295,13 +314,25 @@ function examination_domain_counts_from_list(array $rows): array
 function examination_domain_filter_list_by_status(array $rows, string $statusFilter): array
 {
     $statusFilter = strtolower(trim($statusFilter));
-    if ($statusFilter === '' || $statusFilter === 'all') {
-        return array_values($rows);
+    if ($statusFilter === '' || $statusFilter === 'all' || $statusFilter === 'active') {
+        $statusFilter = 'active';
     }
 
     $out = [];
     foreach ($rows as $row) {
-        if ($statusFilter === 'draft' && empty($row['is_published'])) {
+        $isArchived = !empty($row['is_archived']);
+        if ($statusFilter === 'archived') {
+            if ($isArchived) {
+                $out[] = $row;
+            }
+            continue;
+        }
+        if ($isArchived) {
+            continue;
+        }
+        if ($statusFilter === 'active') {
+            $out[] = $row;
+        } elseif ($statusFilter === 'draft' && empty($row['is_published'])) {
             $out[] = $row;
         } elseif ($statusFilter === 'published' && !empty($row['is_published']) && empty($row['is_finished'])) {
             $out[] = $row;
@@ -389,6 +420,14 @@ function examination_domain_save_config(mysqli $conn, string $examType, int $pro
     $examType = examination_normalize_exam_type($examType);
     if ($examType === '') {
         return ['ok' => false, 'error' => 'Invalid examination type.'];
+    }
+
+    if ($sourceId > 0) {
+        $existing = examination_domain_call($examType, 'load_raw', [$conn, $sourceId, $professorId]);
+        if (is_array($existing) && examination_record_is_archived($existing)
+            && strtolower(trim((string)($post['save_action'] ?? 'draft'))) === 'publish') {
+            return ['ok' => false, 'error' => 'Restore this examination before publishing. Archived exams stay unpublished.'];
+        }
     }
 
     $saveAction = strtolower(trim((string)($post['save_action'] ?? 'draft')));

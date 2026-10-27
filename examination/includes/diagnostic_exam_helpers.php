@@ -360,7 +360,15 @@ function diagnostic_exam_load_eligible_batches_for_user(mysqli $conn, int $userI
         return [];
     }
     $out = [];
-    $q = @mysqli_query($conn, "SELECT * FROM diagnostic_batches WHERE is_published=1 ORDER BY updated_at DESC");
+    $diagWhere = 'is_published=1';
+    $archiveHelper = __DIR__ . '/examination_archive.php';
+    if (is_file($archiveHelper)) {
+        require_once $archiveHelper;
+        if (examination_archive_column_ready($conn, 'diagnostic_batches')) {
+            $diagWhere .= ' AND ' . examination_archive_not_archived_sql('');
+        }
+    }
+    $q = @mysqli_query($conn, "SELECT * FROM diagnostic_batches WHERE {$diagWhere} ORDER BY updated_at DESC");
     if ($q) {
         while ($r = mysqli_fetch_assoc($q)) {
             if (diagnostic_exam_user_is_assigned($conn, $userId, $r)) {
