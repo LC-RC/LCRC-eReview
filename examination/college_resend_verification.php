@@ -33,7 +33,7 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page college-student-registration min-h-screen font-sans antialiased">
+<body class="auth-page college-student-registration registration-prototype min-h-screen font-sans antialiased<?php echo $success ? ' csr-confirm-mode' : ''; ?>">
   <div class="reg-frame8-layout">
     <div class="reg-frame8-right" style="margin:0 auto;max-width:32rem;">
       <header class="reg-frame8-header">
@@ -43,9 +43,14 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
         <h1 class="reg-frame8-title">Resend verification</h1>
         <p class="reg-frame8-subtitle">College Examination only. A new link invalidates the previous one.</p>
         <?php if ($success): ?>
-          <div class="auth-alert auth-alert--success mb-4" role="status" style="background:rgba(220,252,231,0.95);border-color:rgba(34,197,94,0.35);border-left-color:#22c55e;color:#166534;">
-            <i class="auth-alert-icon bi bi-check-circle-fill" aria-hidden="true"></i>
-            <span class="auth-alert-text"><?php echo h($success); ?></span>
+          <div class="csr-confirm-card" role="status">
+            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
+            <h2 class="csr-confirm-title">Check your email</h2>
+            <p class="csr-confirm-lead"><?php echo h($success); ?></p>
+            <p class="csr-confirm-hint">Check Spam or Junk. A new link replaces the previous one and expires in 24 hours.</p>
+            <div class="csr-confirm-actions">
+              <a class="csr-confirm-btn-secondary" href="login">Back to Login</a>
+            </div>
           </div>
         <?php endif; ?>
         <?php if ($error): ?>
@@ -54,6 +59,7 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
             <span class="auth-alert-text"><?php echo h($error); ?></span>
           </div>
         <?php endif; ?>
+        <?php if (!$success): ?>
         <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="space-y-4">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
           <div class="float-label-wrap" data-float-wrap>
@@ -66,6 +72,7 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
           <a href="<?php echo h(ereview_url('student_registration')); ?>">Register</a>
           · <a href="login">Login</a>
         </p>
+        <?php endif; ?>
       </main>
     </div>
   </div>

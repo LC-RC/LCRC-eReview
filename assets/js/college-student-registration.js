@@ -195,10 +195,24 @@
     }
   }
 
+  function bindSubmitLoading() {
+    var form = document.getElementById('reg-form');
+    var btn = document.getElementById('csr-submit-btn');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function () {
+      // Do not set disabled=true here: some browsers drop the POST if the submitter is disabled in this handler.
+      btn.classList.add('is-loading');
+      btn.setAttribute('aria-busy', 'true');
+      var label = btn.querySelector('span');
+      if (label) label.textContent = 'Sending…';
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     bindFloatLabels();
     bindPassword();
     bindAvatar();
+    bindSubmitLoading();
     var pw = document.getElementById('csr-password');
     if (pw && pw.value) {
       updatePasswordStrength(pw.value);

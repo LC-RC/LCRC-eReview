@@ -24,6 +24,8 @@ if (isset($http_response_header[0]) && preg_match('/\d{3}/', $http_response_head
 $ok = $status === '200'
     && str_contains($body, 'Student Registration')
     && str_contains($body, 'name="csrf_token"')
+    && str_contains($body, 'name="school_id"')
+    && !preg_match('/<input[^>]*name="school"/', $body)
     && !str_contains($body, 'Professor Admin Only');
 
 echo "URL: {$pageUrl}\n";

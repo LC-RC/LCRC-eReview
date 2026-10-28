@@ -12,6 +12,7 @@ $pageTitle = 'Student Registration';
 $csrf = generateCSRFToken();
 $error = null;
 $success = null;
+$confirmEmail = '';
 $formValues = [
     'full_name' => '',
     'email' => '',
@@ -39,6 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $avatarUseDefault = !empty($_POST['use_default_avatar']) ? 1 : 0;
         } else {
             $success = COLLEGE_PUBLIC_GENERIC_VERIFY;
+            $postedEmail = strtolower(trim((string) ($_POST['email'] ?? '')));
+            if (filter_var($postedEmail, FILTER_VALIDATE_EMAIL)) {
+                $confirmEmail = $postedEmail;
+            }
             $formValues = [
                 'full_name' => '',
                 'email' => '',
@@ -61,8 +66,8 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased">
-  <div class="reg-frame8-layout">
+<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-confirm-mode' : ''; ?>">
+  <div class="reg-frame8-layout<?php echo $success ? ' csr-confirm-layout' : ''; ?>">
     <div class="reg-frame8-left" aria-hidden="true">
       <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
       <div class="reg-grok-blob reg-grok-blob-2" aria-hidden="true"></div>
@@ -101,16 +106,24 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
         <p class="reg-frame8-subtitle">College Examination portal. Email verification required.</p>
 
         <?php if ($success): ?>
-          <div class="reg-frame8-form-scroll">
-            <div class="auth-alert auth-alert--success mb-4" role="status" style="background:rgba(220,252,231,0.95);border-color:rgba(34,197,94,0.35);border-left-color:#22c55e;color:#166534;">
-              <i class="auth-alert-icon bi bi-check-circle-fill" aria-hidden="true"></i>
-              <span class="auth-alert-text"><?php echo h($success); ?></span>
+          <div class="csr-confirm-card" role="status">
+            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
+            <h2 class="csr-confirm-title">Check your email</h2>
+            <p class="csr-confirm-lead">If this address can receive College Examination mail, we queued a verification message. Open the link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
+            <?php if ($confirmEmail !== ''): ?>
+              <p class="csr-confirm-email">Use the inbox for <strong><?php echo h($confirmEmail); ?></strong></p>
+            <?php endif; ?>
+            <p class="csr-confirm-hint">Check Spam or Junk if nothing appears in Inbox. This screen does not confirm that the provider accepted the message.</p>
+            <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
+              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+              <label class="csr-sr-only" for="csr-confirm-resend-email">Email address</label>
+              <input type="email" name="email" id="csr-confirm-resend-email" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($confirmEmail); ?>" placeholder="Email address" autocomplete="email">
+              <button type="submit" class="reg-submit w-full rounded-xl px-6 py-3 text-sm">Resend verification</button>
+            </form>
+            <div class="csr-confirm-actions">
+              <a class="csr-confirm-btn-secondary" href="login">Back to Login</a>
             </div>
-            <p class="text-sm mb-4">Did not get the message? You can request another verification email.</p>
-            <p class="text-center text-xs subtext mt-3">
-              Already verified? <a href="login">Login</a>
-              · <a href="<?php echo h(ereview_url('college_resend_verification')); ?>">Resend verification</a>
-            </p>
+            <p class="csr-confirm-support">Still no email after a few minutes? Confirm the address, wait for the rate limit window, then resend. Contact LCRC support if it still does not arrive.</p>
           </div>
         <?php else: ?>
         <form action="student_registration" method="post" enctype="multipart/form-data" novalidate id="reg-form">
@@ -128,18 +141,18 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
               <div class="space-y-1">
                 <div class="float-label-wrap" data-float-wrap>
-                  <label class="float-label" for="csr-full_name">Full name</label>
+                  <label class="float-label" for="csr-full_name">Full name <span class="csr-req" aria-hidden="true">*</span></label>
                   <input type="text" name="full_name" id="csr-full_name" required placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['full_name']); ?>">
                 </div>
               </div>
               <div class="space-y-1">
                 <div class="float-label-wrap" data-float-wrap>
-                  <label class="float-label" for="csr-email">Email address</label>
+                  <label class="float-label" for="csr-email">Email address <span class="csr-req" aria-hidden="true">*</span></label>
                   <input type="email" name="email" id="csr-email" required placeholder=" " autocomplete="off" class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['email']); ?>">
                 </div>
               </div>
               <div class="space-y-1">
-                <label class="reg-top-label" for="csr-school">School <span aria-hidden="true">*</span></label>
+                <label class="reg-top-label" for="csr-school">School <span class="csr-req" aria-hidden="true">*</span></label>
                 <select name="school_id" id="csr-school" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" aria-required="true">
                   <option value="" disabled <?php echo $formValues['school_id'] === '' ? 'selected' : ''; ?>><?php echo $schoolOptions === [] ? 'No schools available yet' : 'Select your school'; ?></option>
                   <?php foreach ($schoolOptions as $schOpt): ?>
@@ -151,7 +164,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                 <?php endif; ?>
               </div>
               <div class="space-y-1 reg-frame8-full">
-                <label class="reg-top-label" for="csr-section">Section</label>
+                <label class="reg-top-label" for="csr-section">Section <span class="csr-req" aria-hidden="true">*</span></label>
                 <select name="section" id="csr-section" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm">
                   <option value="" disabled <?php echo $formValues['section'] === '' ? 'selected' : ''; ?>><?php echo $sectionOptions === [] ? 'No sections available yet' : 'Select section'; ?></option>
                   <?php foreach ($sectionOptions as $secOpt): ?>
@@ -165,7 +178,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             <p class="reg-security-subheading">Password must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.</p>
             <div class="reg-section reg-frame8-full space-y-2">
               <div class="float-label-wrap auth-password-wrap" data-float-wrap>
-                <label class="float-label" for="csr-password">Password</label>
+                <label class="float-label" for="csr-password">Password <span class="csr-req" aria-hidden="true">*</span></label>
                 <input type="password" name="password" id="csr-password" required minlength="8" placeholder=" " class="auth-input w-full rounded-xl border px-4 pr-12 py-3 text-sm" autocomplete="new-password">
                 <button type="button" id="csr-toggle-password" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 transition-colors" aria-label="Show password">
                   <i class="bi bi-eye-fill text-lg"></i>
@@ -201,7 +214,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                 </div>
               </div>
               <div class="float-label-wrap auth-password-wrap" data-float-wrap>
-                <label class="float-label" for="csr-password-confirm">Confirm password</label>
+                <label class="float-label" for="csr-password-confirm">Confirm password <span class="csr-req" aria-hidden="true">*</span></label>
                 <input type="password" name="confirm_password" id="csr-password-confirm" required minlength="8" placeholder=" " class="auth-input w-full rounded-xl border px-4 pr-12 py-3 text-sm" autocomplete="new-password">
                 <button type="button" id="csr-toggle-password-confirm" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 transition-colors" aria-label="Show confirm password">
                   <i class="bi bi-eye-fill text-lg"></i>
