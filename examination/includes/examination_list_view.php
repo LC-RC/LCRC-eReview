@@ -143,6 +143,7 @@ $adminHeroTitle = 'Examinations';
 $adminHeroSubtitle = 'Create, configure, and monitor regular and diagnostic assessments.';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations']];
 $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm rounded-xl js-open-examination-edit" data-edit-url="professor_examination_edit?modal=1"><i class="bi bi-plus-lg"></i> New Examination</button>';
+$lmsHeroVariant = 'navy';
 
 
 
@@ -160,20 +161,22 @@ $statusTabs = ['all' => 'All', 'draft' => 'Draft', 'published' => 'Published', '
 
 </head>
 
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--exams">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--exams<?php echo ereview_lms_premium_body_class(); ?>">
 
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 
-
-
+<?php
+$toastSuccess = ereview_lms_toast_take('success', !empty($flashMessage) ? (string) $flashMessage : null);
+$toastError = ereview_lms_toast_take('error', !empty($flashError) ? (string) $flashError : null);
+?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-<?php if (!empty($flashMessage)): ?>
+<?php if (!empty($flashMessage) && empty($toastSuccess)): ?>
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">
     <i class="bi bi-check-circle-fill"></i><span><?php echo h($flashMessage); ?></span>
   </div>
 <?php endif; ?>
-<?php if (!empty($flashError)): ?>
+<?php if (!empty($flashError) && empty($toastError)): ?>
   <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2">
     <i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($flashError); ?></span>
   </div>

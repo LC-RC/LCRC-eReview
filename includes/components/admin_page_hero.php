@@ -72,8 +72,10 @@ $professorFeatureHero = !empty($professorFeatureHero);
 $professorPageChrome = !empty($professorPageChrome);
 $adminBackHref = trim((string) ($adminBackHref ?? ''));
 $adminBackLabel = trim((string) ($adminBackLabel ?? ''));
+$lmsHeroVariant = strtolower(trim((string) ($lmsHeroVariant ?? '')));
+$lmsHeroOptIn = $lmsHeroVariant === 'navy';
 ?>
-<section class="quiz-admin-hero page-hero admin-glass-hero<?php echo $professorFeatureHero ? ' prof-feature-hero' : ''; ?>" aria-labelledby="admin-page-title">
+<section class="quiz-admin-hero page-hero admin-glass-hero<?php echo $professorFeatureHero ? ' prof-feature-hero' : ''; ?><?php echo $lmsHeroOptIn ? ' lms-hero' : ''; ?>" aria-labelledby="admin-page-title">
   <?php if (!empty($adminBreadcrumbs) && is_array($adminBreadcrumbs)): ?>
     <?php include __DIR__ . '/../admin_breadcrumb.php'; ?>
   <?php endif; ?>
@@ -122,4 +124,8 @@ $adminBackLabel = '';
 $professorFeatureHero = false;
 $adminHeroMeta = '';
 $adminHeroActions = '';
+$lmsHeroVariant = '';
+if (function_exists('ereview_lms_toast_boot')) {
+    ereview_lms_toast_boot();
+}
 ?>

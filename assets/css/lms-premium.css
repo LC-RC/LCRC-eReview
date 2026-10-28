@@ -1,0 +1,1489 @@
+/**
+ * Phase 3.20.0 — shared professor LMS premium foundation.
+ * Applies only when body.admin-app.professor-admin.lms-premium is present.
+ * Component recipes require .lms-* classes. Does not restyle .pem-* monitor UI.
+ */
+
+body.admin-app.professor-admin.lms-premium {
+  --lms-canvas: #eef2f8;
+  --lms-surface: #ffffff;
+  --lms-surface-2: #f8fafc;
+  --lms-surface-3: #f4f8fc;
+  --lms-hero: #143d59;
+  --lms-hero-ink: #f8fbff;
+  --lms-text: #0f172a;
+  --lms-muted: #5b7390;
+  --lms-border: #d7e4f4;
+  --lms-input-bg: #ffffff;
+  --lms-input-border: #b7cce6;
+  --lms-elev-1: 0 1px 2px rgb(15 23 42 / 0.05);
+  --lms-elev-2: 0 8px 22px -16px rgb(15 39 68 / 0.28);
+  --lms-radius-card: 0.95rem;
+  --lms-focus-ring: 0 0 0 2px rgb(37 99 235 / 0.28);
+  --lms-color-scheme: light;
+  --lms-accent: #2563eb;
+  --lms-status-info-bg: #e8f2ff;
+  --lms-status-info-text: #1d4ed8;
+  --lms-status-info-border: #d4e4fb;
+  --lms-status-ok-bg: #e5f7ee;
+  --lms-status-ok-text: #047857;
+  --lms-status-ok-border: #c7ead8;
+  --lms-status-live-bg: #e0f2fe;
+  --lms-status-live-text: #0369a1;
+  --lms-status-live-border: #bae6fd;
+  --lms-status-warn-bg: #fff4da;
+  --lms-status-warn-text: #92400e;
+  --lms-status-warn-border: #f3e0b0;
+  --lms-status-neutral-bg: #f1f5f9;
+  --lms-status-neutral-text: #475569;
+  --lms-status-neutral-border: #e2e8f0;
+  --lms-kpi-total-bg: #d7e6ff;
+  --lms-kpi-ok-bg: #c4f4d6;
+  --lms-kpi-live-bg: #bfe8fb;
+  --lms-kpi-wait-bg: #ffd9a8;
+  --lms-space-1: 4px;
+  --lms-space-2: 8px;
+  --lms-space-3: 12px;
+  --lms-space-4: 16px;
+  --lms-space-5: 20px;
+  --lms-space-6: 24px;
+  --lms-space-8: 32px;
+  --lms-gap-crumb: var(--lms-space-3);
+  --lms-gap-hero: var(--lms-space-6);
+  --lms-gap-section: var(--lms-space-6);
+  --lms-gap-card: var(--lms-space-4);
+  --lms-gutter: 18px;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium {
+  --lms-canvas: #0f172a;
+  --lms-surface: #152033;
+  --lms-surface-2: #111827;
+  --lms-surface-3: #1a2336;
+  --lms-hero: #0b2a44;
+  --lms-hero-ink: #f1f5f9;
+  --lms-text: #e2e8f0;
+  --lms-muted: rgb(226 232 240 / 0.62);
+  --lms-border: rgba(148, 163, 184, 0.22);
+  --lms-input-bg: #0f172a;
+  --lms-input-border: rgba(148, 163, 184, 0.32);
+  --lms-elev-1: 0 1px 0 rgb(255 255 255 / 0.04);
+  --lms-elev-2: 0 10px 28px -18px rgb(0 0 0 / 0.55);
+  --lms-color-scheme: dark;
+  --lms-accent: #3b82f6;
+  --lms-status-info-bg: #1e3a5f;
+  --lms-status-info-text: #bfdbfe;
+  --lms-status-info-border: #3b82f6;
+  --lms-status-ok-bg: #10251c;
+  --lms-status-ok-text: #6ee7b7;
+  --lms-status-ok-border: rgba(52, 211, 153, 0.35);
+  --lms-status-live-bg: #0c4a6e;
+  --lms-status-live-text: #7dd3fc;
+  --lms-status-live-border: rgba(56, 189, 248, 0.35);
+  --lms-status-warn-bg: #3b2a12;
+  --lms-status-warn-text: #fcd34d;
+  --lms-status-warn-border: rgba(251, 191, 36, 0.32);
+  --lms-status-neutral-bg: #1e293b;
+  --lms-status-neutral-text: #cbd5e1;
+  --lms-status-neutral-border: rgba(148, 163, 184, 0.28);
+  --lms-kpi-total-bg: #1e3a5f;
+  --lms-kpi-ok-bg: #10251c;
+  --lms-kpi-live-bg: #0c4a6e;
+  --lms-kpi-wait-bg: #3b2a12;
+}
+
+body.admin-app.professor-admin.lms-premium,
+body.admin-app.professor-admin.lms-premium #main,
+body.admin-app.professor-admin.lms-premium .admin-content {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.admin-app.professor-admin.lms-premium {
+  color-scheme: var(--lms-color-scheme);
+}
+
+/* --- Hero --- */
+body.admin-app.professor-admin.lms-premium .lms-hero {
+  margin: 0 0 var(--lms-gap-hero);
+  min-width: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-breadcrumb {
+  margin: 0 0 var(--lms-gap-crumb);
+  padding: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__card,
+body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero .admin-hero-wash {
+  background: var(--lms-hero);
+  color: var(--lms-hero-ink);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-2);
+  padding: var(--lms-space-4) var(--lms-space-5);
+  min-width: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--lms-hero-ink);
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__sub {
+  margin: 0.28rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgb(248 251 255 / 0.78);
+  max-width: 40rem;
+  line-height: 1.4;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__title,
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__title-text,
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__eyebrow,
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__subtitle {
+  color: var(--lms-hero-ink);
+}
+body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__subtitle {
+  opacity: 0.82;
+}
+
+/* --- KPI --- */
+body.admin-app.professor-admin.lms-premium .lms-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--lms-gap-card);
+  margin: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi {
+  background: var(--lms-surface);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-1);
+  padding: var(--lms-space-3) var(--lms-space-4);
+  min-width: 0;
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi--total { background: var(--lms-kpi-total-bg); border-color: #9eb6dc; }
+body.admin-app.professor-admin.lms-premium .lms-kpi--ok { background: var(--lms-kpi-ok-bg); border-color: #86d5a8; }
+body.admin-app.professor-admin.lms-premium .lms-kpi--live { background: var(--lms-kpi-live-bg); border-color: #7ec8e8; }
+body.admin-app.professor-admin.lms-premium .lms-kpi--wait { background: var(--lms-kpi-wait-bg); border-color: #f0c48a; }
+body.admin-app.professor-admin.lms-premium .lms-kpi__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lms-muted);
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi__value {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--lms-muted);
+}
+
+/* --- Toolbar --- */
+body.admin-app.professor-admin.lms-premium .lms-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lms-space-2) var(--lms-space-3);
+  background: var(--lms-surface-3);
+  border: 1px solid var(--lms-border);
+  border-radius: 0.85rem;
+  padding: var(--lms-space-2) var(--lms-space-3);
+  margin: 0;
+  min-width: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-toolbar input,
+body.admin-app.professor-admin.lms-premium .lms-toolbar select,
+body.admin-app.professor-admin.lms-premium .lms-dialog input,
+body.admin-app.professor-admin.lms-premium .lms-dialog select {
+  color-scheme: var(--lms-color-scheme);
+  background: var(--lms-input-bg);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-input-border);
+  border-radius: 0.55rem;
+  min-height: 2.05rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.82rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-toolbar input:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-toolbar select:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-dialog input:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-dialog select:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-toolbar button:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-hero a:focus-visible,
+body.admin-app.professor-admin.lms-premium .lms-table a:focus-visible {
+  outline: none;
+  box-shadow: var(--lms-focus-ring);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-toolbar select:focus,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-dialog select:focus {
+  background: var(--lms-input-bg);
+  color: var(--lms-text);
+}
+
+/* --- Table --- */
+body.admin-app.professor-admin.lms-premium .lms-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  background: var(--lms-surface);
+  box-shadow: var(--lms-elev-1);
+}
+body.admin-app.professor-admin.lms-premium .lms-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--lms-surface-2);
+  color: var(--lms-muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--lms-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .lms-table thead th {
+  background: var(--lms-surface-2);
+  color: var(--lms-muted);
+}
+body.admin-app.professor-admin.lms-premium .lms-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--lms-border);
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+body.admin-app.professor-admin.lms-premium .lms-table tbody tr:nth-child(even) td {
+  background: var(--lms-surface-2);
+}
+body.admin-app.professor-admin.lms-premium .lms-table tbody tr:hover td {
+  background: var(--lms-surface-3);
+}
+body.admin-app.professor-admin.lms-premium .lms-table__name {
+  display: block;
+  font-weight: 750;
+}
+body.admin-app.professor-admin.lms-premium .lms-table__sub {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--lms-muted);
+}
+
+/* --- Status --- */
+body.admin-app.professor-admin.lms-premium .lms-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 1.3rem;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--lms-status-neutral-border);
+  background: var(--lms-status-neutral-bg);
+  color: var(--lms-status-neutral-text);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+body.admin-app.professor-admin.lms-premium .lms-status::before {
+  content: "";
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+body.admin-app.professor-admin.lms-premium .lms-status--info {
+  background: var(--lms-status-info-bg);
+  color: var(--lms-status-info-text);
+  border-color: var(--lms-status-info-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-status--ok {
+  background: var(--lms-status-ok-bg);
+  color: var(--lms-status-ok-text);
+  border-color: var(--lms-status-ok-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-status--live {
+  background: var(--lms-status-live-bg);
+  color: var(--lms-status-live-text);
+  border-color: var(--lms-status-live-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-status--warn {
+  background: var(--lms-status-warn-bg);
+  color: var(--lms-status-warn-text);
+  border-color: var(--lms-status-warn-border);
+}
+
+/* --- Dialog ---
+   Closed overlays must not paint. Premium theming must not override
+   .admin-modal-overlay { display:none } / .is-open visibility. */
+body.admin-app.professor-admin.lms-premium .lms-dialog-overlay,
+body.admin-app.professor-admin.lms-premium .admin-modal-overlay.lms-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--prof-z-modal, 80);
+  display: none;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 0.42);
+  pointer-events: none;
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog-overlay.is-open,
+body.admin-app.professor-admin.lms-premium .admin-modal-overlay.lms-dialog-overlay.is-open {
+  display: grid;
+  pointer-events: auto;
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog-overlay[hidden],
+body.admin-app.professor-admin.lms-premium .lms-dialog-overlay[aria-hidden="true"]:not(.is-open) {
+  display: none;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .lms-dialog-overlay.is-open {
+  background: rgb(2 6 15 / 0.62);
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog {
+  width: min(28rem, 100%);
+  background: var(--lms-surface);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-2);
+  padding: 1rem 1.05rem 1.05rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog__body {
+  margin: 0 0 0.85rem;
+  font-size: 0.84rem;
+  color: var(--lms-muted);
+  line-height: 1.45;
+}
+body.admin-app.professor-admin.lms-premium .lms-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+/* --- Empty --- */
+body.admin-app.professor-admin.lms-premium .lms-empty {
+  text-align: center;
+  padding: 1.6rem 1rem;
+  border: 1px dashed var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  background: var(--lms-surface-2);
+  color: var(--lms-muted);
+}
+body.admin-app.professor-admin.lms-premium .lms-empty__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-empty__text {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1100px) {
+  body.admin-app.professor-admin.lms-premium .lms-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  body.admin-app.professor-admin.lms-premium .lms-kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.admin-app.professor-admin.lms-premium .lms-hero__title {
+    font-size: 1.15rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.professor-admin.lms-premium * {
+    transition: none;
+  }
+}
+
+/* --- Examinations list (Phase 3.20.1) --- */
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero,
+html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  margin-top: 0 !important;
+  margin-bottom: var(--lms-gap-hero) !important;
+  min-width: 0;
+  max-width: 100%;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero::before,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero::after {
+  content: none !important;
+  display: none !important;
+}
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero > .relative.admin-hero-wash,
+html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero > .relative.admin-hero-wash,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero .admin-hero-wash {
+  background: var(--lms-hero) !important;
+  background-color: var(--lms-hero) !important;
+  background-image: none !important;
+  box-shadow: var(--lms-elev-2) !important;
+  border: 1px solid rgb(255 255 255 / 0.12) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: var(--lms-space-4) var(--lms-space-5) !important;
+  filter: none !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero .admin-hero-wash::before,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero.quiz-admin-hero .admin-hero-wash::after {
+  content: none !important;
+  display: none !important;
+  filter: none !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header {
+  min-height: 0;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__title,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__title-text,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__eyebrow,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__subtitle,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero h1 {
+  color: var(--lms-hero-ink) !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__eyebrow {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  font-weight: 750;
+  opacity: 0.82;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__subtitle {
+  opacity: 0.88;
+  font-weight: 550;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .quiz-admin-hero-icon {
+  background: rgb(255 255 255 / 0.14) !important;
+  color: #fff !important;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  box-shadow: none !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-btn--primary {
+  background: #fff !important;
+  color: #143d59 !important;
+  border-color: #fff !important;
+  font-weight: 750;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-count-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.12rem 0.65rem;
+  border-radius: 999px;
+  background: var(--lms-hero);
+  color: var(--lms-hero-ink);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .examination-page-shell,
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-exam-workspace,
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-kpi-row {
+  min-width: 0;
+  max-width: 100%;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-exam-workspace {
+  background: var(--lms-surface);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-1);
+  overflow: hidden;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-exam-head .prof-workspace__title {
+  color: var(--lms-text) !important;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-exam-head .prof-workspace__sub {
+  color: var(--lms-muted) !important;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-toolbar select,
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-toolbar input[type="search"] {
+  background: var(--lms-input-bg);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-input-border);
+  color-scheme: var(--lms-color-scheme);
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-table-wrap,
+body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-table-wrap.overflow-hidden,
+body.admin-app.professor-admin.lms-premium.prof-page--exams .students-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table {
+  min-width: 920px;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table thead th {
+  background: var(--lms-surface-2) !important;
+  color: var(--lms-muted) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table thead th {
+  background: var(--lms-surface-2) !important;
+  color: var(--lms-muted) !important;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .examination-schedule-line {
+  display: block;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--lms-muted);
+  line-height: 1.35;
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .students-bulk-bar.is-visible {
+  margin: 0;
+  border-radius: 0;
+  padding-left: var(--lms-gutter);
+  padding-right: var(--lms-gutter);
+  background: #fff7ed;
+  border: 0;
+  border-bottom: 1px solid #fdba74;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium.prof-page--exams .students-bulk-bar.is-visible {
+  background: #3b2a12;
+  border-color: rgba(251, 191, 36, 0.32);
+}
+body.admin-app.professor-admin.lms-premium.prof-page--exams .admin-student-action-menu {
+  background: var(--lms-surface);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-border);
+  box-shadow: var(--lms-elev-2);
+}
+
+@media (max-width: 1100px) {
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table .col-examinees,
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table .col-counts {
+    display: table-cell;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__subtitle {
+    padding-left: 0 !important;
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+  html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-hero .admin-page-header__actions {
+    width: 100%;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table,
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table tbody {
+    display: table !important;
+    width: 100%;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table thead {
+    display: table-header-group !important;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table tbody {
+    display: table-row-group !important;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table tr {
+    display: table-row !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table th,
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table td {
+    display: table-cell !important;
+    width: auto !important;
+    text-align: left !important;
+    padding: 0.5rem 0.55rem !important;
+    border-bottom: 1px solid var(--lms-border) !important;
+  }
+  body.admin-app.professor-admin.lms-premium.prof-page--exams .examinations-list-table.lms-table td::before {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+/* --- Shared workspace / forms / panels (Phase 3.20 master) --- */
+body.admin-app.professor-admin.lms-premium .lms-workspace,
+body.admin-app.professor-admin.lms-premium .lms-exam-workspace {
+  background: var(--lms-surface);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-1);
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__head,
+body.admin-app.professor-admin.lms-premium .lms-exam-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 14px var(--lms-gutter) 6px;
+  background: transparent;
+  border-bottom: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lms-space-1);
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lms-space-2) var(--lms-space-3);
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__head .prof-workspace__title,
+body.admin-app.professor-admin.lms-premium .lms-exam-head .prof-workspace__title {
+  margin: 0;
+  color: var(--lms-text) !important;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__head .prof-workspace__sub,
+body.admin-app.professor-admin.lms-premium .lms-exam-head .prof-workspace__sub {
+  margin: 0;
+  color: var(--lms-muted) !important;
+}
+body.admin-app.professor-admin.lms-premium .lms-count-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.3rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lms-muted);
+  border: 1px solid var(--lms-border);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+body.admin-app.professor-admin.lms-premium .lms-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  margin: 0;
+  padding: 0 var(--lms-gutter);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--lms-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-tabs .students-view-tab,
+body.admin-app.professor-admin.lms-premium .lms-tabs.examination-edit-steps .students-view-tab {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--lms-muted);
+  font-weight: 650;
+  font-size: 0.78rem;
+  padding: 8px 12px 9px;
+  margin: 0 0 -1px;
+}
+body.admin-app.professor-admin.lms-premium .lms-tabs .students-view-tab.is-active {
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: var(--lms-hero);
+  color: var(--lms-text);
+  font-weight: 750;
+}
+body.admin-app.professor-admin.lms-premium .lms-form,
+body.admin-app.professor-admin.lms-premium .lms-form input,
+body.admin-app.professor-admin.lms-premium .lms-form select,
+body.admin-app.professor-admin.lms-premium .lms-form textarea {
+  background: var(--lms-input-bg);
+  color: var(--lms-text);
+  border-color: var(--lms-input-border);
+  color-scheme: var(--lms-color-scheme);
+}
+body.admin-app.professor-admin.lms-premium .lms-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-info-tile {
+  background: var(--lms-surface-2);
+  border: 1px solid var(--lms-border);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  min-width: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-info-tile-k {
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--lms-muted);
+}
+body.admin-app.professor-admin.lms-premium .lms-info-tile-v {
+  margin-top: 0.2rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--lms-text);
+  overflow-wrap: anywhere;
+}
+body.admin-app.professor-admin.lms-premium .lms-setting-strip {
+  background: var(--lms-surface);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-1);
+}
+body.admin-app.professor-admin.lms-premium .admin-modal.lms-dialog {
+  background: var(--lms-surface);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-table-wrap {
+  max-width: 100%;
+}
+body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table,
+body.admin-app.professor-admin.lms-premium .sections-table.lms-table,
+body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table,
+body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table {
+  min-width: 860px;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-toc,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-q-card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-empty-panel,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-choice.neutral {
+  background: var(--lms-surface);
+  border-color: var(--lms-border);
+  color: var(--lms-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-toc-title,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-review-summary,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-q-meta,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-answer-line {
+  color: var(--lms-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-filter {
+  background: var(--lms-surface-2);
+  color: var(--lms-text);
+  border-color: var(--lms-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .perm-expl {
+  background: #10251c;
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
+}
+@media (max-width: 767px) {
+  body.admin-app.professor-admin.lms-premium .lms-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table,
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table tbody {
+    display: table !important;
+    width: 100%;
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table thead,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table thead {
+    display: table-header-group !important;
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table tbody,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table tbody {
+    display: table-row-group !important;
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table tr,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table tr,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table tr,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table tr {
+    display: table-row !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table th,
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table td,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table th,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table td,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table th,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table td,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table th,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table td {
+    display: table-cell !important;
+    width: auto !important;
+    text-align: left !important;
+    padding: 0.5rem 0.55rem !important;
+    border-bottom: 1px solid var(--lms-border) !important;
+  }
+  body.admin-app.professor-admin.lms-premium .pcs-students-table.lms-table td::before,
+  body.admin-app.professor-admin.lms-premium .sections-table.lms-table td::before,
+  body.admin-app.professor-admin.lms-premium .upload-tasks-table.lms-table td::before,
+  body.admin-app.professor-admin.lms-premium .pex-monitor-table.lms-table td::before {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+/* --- Phase 3.20 spacing polish: one owner per major gap --- */
+body.admin-app.professor-admin.lms-premium .students-page-shell,
+body.admin-app.professor-admin.lms-premium .examination-page-shell,
+body.admin-app.admin-students-page.professor-admin.lms-premium .students-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lms-gap-section);
+}
+body.admin-app.professor-admin.lms-premium .admin-flash[hidden] {
+  display: none;
+  margin: 0;
+  padding: 0;
+  border-width: 0;
+  min-height: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi-row.mb-4,
+body.admin-app.professor-admin.lms-premium .lms-workspace.mb-4,
+body.admin-app.professor-admin.lms-premium .prof-status-deck.mb-4 {
+  margin-bottom: 0;
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi-row--inset {
+  margin: 0;
+  padding: 0 var(--lms-space-5) var(--lms-space-4);
+}
+body.admin-app.professor-admin.lms-premium .lms-count-badge {
+  flex: 0 0 auto;
+  align-self: center;
+}
+body.admin-app.professor-admin.lms-premium .lms-empty {
+  margin: var(--lms-space-4);
+  padding: var(--lms-space-8) var(--lms-space-4);
+}
+
+@media (max-width: 767px) {
+  body.admin-app.professor-admin.lms-premium {
+    --lms-gap-hero: var(--lms-space-4);
+    --lms-gap-section: var(--lms-space-4);
+    --lms-gap-card: var(--lms-space-3);
+    --lms-gutter: 16px;
+  }
+}
+
+/* --- Unified data workspace composition --- */
+body.admin-app.professor-admin.lms-premium .lms-workspace,
+body.admin-app.professor-admin.lms-premium .lms-exam-workspace {
+  background: var(--lms-surface);
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__chrome {
+  background: transparent;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace .lms-workspace__head,
+body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-exam-head,
+body.admin-app.professor-admin.lms-premium .lms-workspace__head,
+body.admin-app.professor-admin.lms-premium .lms-exam-head {
+  background: transparent;
+  border-bottom: 0;
+  padding: 14px var(--lms-gutter) 6px;
+  gap: 4px;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__head .prof-workspace__title,
+body.admin-app.professor-admin.lms-premium .lms-exam-head .prof-workspace__title {
+  font-size: 0.92rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+body.admin-app.professor-admin.lms-premium .lms-workspace__head .prof-workspace__sub,
+body.admin-app.professor-admin.lms-premium .lms-exam-head .prof-workspace__sub {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-count-badge,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-count-badge {
+  background: transparent !important;
+  color: var(--lms-muted) !important;
+  border: 1px solid var(--lms-border);
+  min-height: 1.3rem;
+  padding: 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-tabs,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-view-tabs,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-exam-tabs,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-tabs {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 var(--lms-gutter) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--lms-border) !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-view-tab,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-tabs .students-view-tab,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-tabs .students-view-tab {
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  margin: 0 0 -1px !important;
+  padding: 8px 12px 9px !important;
+  color: var(--lms-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-view-tab.is-active,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-tabs .students-view-tab.is-active,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-tabs .students-view-tab.is-active {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--lms-hero) !important;
+  color: var(--lms-text) !important;
+  font-weight: 750;
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-toolbar,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-toolbar,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-toolbar,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .prof-workspace > .students-toolbar.lms-toolbar,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .prof-workspace form.students-toolbar.lms-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lms-space-2) var(--lms-space-3);
+  margin: 0 !important;
+  padding: 10px var(--lms-gutter) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--lms-border) !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-toolbar .admin-btn,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-toolbar .admin-btn,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-toolbar select,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-toolbar select,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-toolbar input[type="search"],
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-toolbar input[type="search"] {
+  min-height: 36px !important;
+  height: 36px;
+  box-sizing: border-box;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-search,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .students-search {
+  min-height: 36px;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-toolbar__search,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .students-toolbar__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: var(--lms-space-2);
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-status-chips {
+  width: auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-status-chip {
+  min-height: 28px;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--lms-border);
+  color: var(--lms-muted);
+  font-size: 0.72rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-status-chip.is-active {
+  border-color: var(--lms-hero);
+  color: var(--lms-text);
+  background: var(--lms-surface-2);
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .lms-table-wrap,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .lms-table-wrap,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-table-wrap,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--exams .lms-table-wrap.overflow-hidden,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-table-shell,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .page-table {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table thead th,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table tbody td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table thead th:first-child,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table tbody td:first-child {
+  padding-left: var(--lms-gutter);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table thead th:last-child,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table tbody td:last-child {
+  padding-right: var(--lms-gutter);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .lms-table.students-table--compact .student-actions-head,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .lms-table.students-table--compact .student-action-cell,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--sections .lms-table.students-table--compact .student-actions-head,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--sections .lms-table.students-table--compact .student-action-cell {
+  width: 13rem;
+  min-width: 13rem;
+  max-width: none;
+  text-align: right;
+  overflow: visible;
+  white-space: nowrap;
+  padding-right: var(--lms-gutter);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .lms-table--archived .student-actions-head,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .lms-table--archived .student-action-cell {
+  width: 16rem;
+  min-width: 16rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools tr.lms-retain-reason td {
+  border-top: 0;
+  padding-top: 0;
+  white-space: normal;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .student-action-cluster,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--sections .student-action-cluster {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .students-table-scroll,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--sections .students-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 640px) {
+  html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--schools .lms-table,
+  html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium.prof-page--sections .lms-table {
+    min-width: 0;
+  }
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table .student-actions-head,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table td.student-actions,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-table .student-actions-head + th,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .examinations-list-table .student-actions-head {
+  text-align: right;
+  white-space: nowrap;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .col-schedule {
+  white-space: normal;
+  min-width: 9.5rem;
+}
+body.admin-app.professor-admin.lms-premium .lms-kpi-row--inset {
+  padding-left: var(--lms-gutter);
+  padding-right: var(--lms-gutter);
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-tabs.examination-edit-steps {
+  margin: 0 0 var(--lms-space-4);
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--lms-border) !important;
+  border-radius: 0 !important;
+  gap: 2px !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-tabs.examination-edit-steps .students-view-tab {
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  padding: 8px 12px !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-tabs.examination-edit-steps .students-view-tab.is-active {
+  background: transparent !important;
+  border-bottom-color: var(--lms-hero) !important;
+  color: var(--lms-text) !important;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .prof-workspace--form.lms-workspace {
+  padding: 0;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .prof-workspace--form.lms-workspace > form,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .prof-workspace--form.lms-workspace .examination-edit-form {
+  padding: 14px var(--lms-gutter) 18px;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-review-workspace {
+  background: var(--lms-surface);
+  border: 1px solid var(--lms-border);
+  border-radius: var(--lms-radius-card);
+  box-shadow: var(--lms-elev-1);
+  padding: 14px var(--lms-gutter) 18px;
+  min-width: 0;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-workspace .students-bulk-bar,
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .lms-exam-workspace .students-bulk-bar {
+  padding-left: var(--lms-gutter);
+  padding-right: var(--lms-gutter);
+}
+
+/* --- Floating toasts (viewport, below topbar, under modal/dropdown) --- */
+body.admin-app.professor-admin.lms-premium .lms-toast-stack {
+  position: fixed;
+  top: calc(3.65rem + 12px);
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast-stack.lms-toast-stack--behind,
+body.admin-app.professor-admin.lms-premium:has(.admin-modal-overlay.is-open) .lms-toast-stack,
+body.admin-app.professor-admin.lms-premium:has(.lms-dialog-overlay.is-open) .lms-toast-stack {
+  z-index: 40;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast {
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px 12px;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 12px 14px;
+  overflow: hidden;
+  background: var(--lms-surface);
+  color: var(--lms-text);
+  border: 1px solid var(--lms-border);
+  border-radius: 14px;
+  box-shadow: var(--lms-elev-2), 0 1px 0 rgb(15 23 42 / 0.04);
+  opacity: 0;
+  transform: translate3d(12px, -6px, 0);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast.is-out {
+  opacity: 0;
+  transform: translate3d(12px, -4px, 0);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex: 0 0 auto;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__body {
+  min-width: 0;
+  padding-top: 2px;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__detail {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--lms-muted);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__close {
+  width: 28px;
+  height: 28px;
+  margin: -2px -2px 0 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lms-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__close:hover {
+  background: var(--lms-surface-2);
+  color: var(--lms-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__close:focus-visible {
+  outline: none;
+  box-shadow: var(--lms-focus-ring);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  transform-origin: left center;
+  animation: lms-toast-progress linear forwards;
+  background: currentColor;
+  opacity: 0.85;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--success {
+  border-color: var(--lms-status-ok-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--success .lms-toast__icon {
+  background: var(--lms-status-ok-bg);
+  color: var(--lms-status-ok-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--success .lms-toast__progress {
+  background: var(--lms-status-ok-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--error {
+  border-color: #fecaca;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--error .lms-toast__icon {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--warning {
+  border-color: var(--lms-status-warn-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--warning .lms-toast__icon {
+  background: var(--lms-status-warn-bg);
+  color: var(--lms-status-warn-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--warning .lms-toast__progress {
+  background: var(--lms-status-warn-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--info {
+  border-color: var(--lms-status-info-border);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--info .lms-toast__icon {
+  background: var(--lms-status-info-bg);
+  color: var(--lms-status-info-text);
+}
+body.admin-app.professor-admin.lms-premium .lms-toast--info .lms-toast__progress {
+  background: var(--lms-status-info-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .lms-toast--error {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.lms-premium .lms-toast--error .lms-toast__icon {
+  background: #3f1d1d;
+  color: #fca5a5;
+}
+@keyframes lms-toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@media (max-width: 640px) {
+  body.admin-app.professor-admin.lms-premium .lms-toast-stack {
+    top: calc(3.5rem + 10px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.professor-admin.lms-premium .lms-toast {
+    transition: none;
+    transform: none;
+  }
+  body.admin-app.professor-admin.lms-premium .lms-toast__progress {
+    animation: none;
+  }
+}
+
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-status {
+  margin: 0 auto 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--lms-muted, #64748b);
+  min-height: 1.1rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-status[data-state="saving"] {
+  color: var(--lms-accent, #1d4ed8);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-status[data-state="saved"] {
+  color: #15803d;
+}
+html[data-admin-theme="dark"] .exam-config-draft-status[data-state="saved"] {
+  color: #86efac;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-restore {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4.5rem 1rem 1rem;
+  background: color-mix(in srgb, var(--lms-bg, #0f172a) 28%, transparent);
+  pointer-events: auto;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-restore__card {
+  width: min(26rem, 100%);
+  background: var(--lms-surface, #fff);
+  color: var(--lms-text, #0f172a);
+  border: 1px solid var(--lms-border, #e2e8f0);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem 1rem;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-restore__card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-restore__card p {
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  opacity: 0.86;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-restore__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .admin-modal--examination-edit {
+  position: relative;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-ui="v2"] body.admin-app.professor-admin.lms-premium .exam-config-draft-status {
+    transition: none;
+  }
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--lms-status-info-bg, #e8f2ff);
+  border: 1px solid var(--lms-status-info-border, #d4e4fb);
+  color: var(--lms-text, #0f172a);
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip__k {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lms-accent, #2563eb);
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip__v {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip__copy {
+  border: 0;
+  background: var(--lms-hero, #143d59);
+  color: #fff;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip__copy.is-copied {
+  background: var(--lms-status-ok-text, #047857);
+}
+body.admin-app.professor-admin.lms-premium .college-exam-id-chip--empty {
+  font-size: 0.75rem;
+  color: var(--lms-muted, #5b7390);
+}

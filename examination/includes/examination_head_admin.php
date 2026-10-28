@@ -38,6 +38,14 @@ if (is_file($examinationAdminCssFile)) {
     if (is_file($professorPremiumCssFile)) {
         echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/professor-premium.css?v=' . filemtime($professorPremiumCssFile) . '">' . "\n";
     }
+    $lmsPremiumCssFile = dirname(__DIR__, 2) . '/assets/css/lms-premium.css';
+    if (ereview_lms_premium_should_load() && is_file($lmsPremiumCssFile)) {
+        echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/lms-premium.css?v=' . filemtime($lmsPremiumCssFile) . '" data-lms-premium="1">' . "\n";
+        $lmsToastJsFile = dirname(__DIR__, 2) . '/assets/js/lms-premium-toast.js';
+        if (is_file($lmsToastJsFile)) {
+            echo '<script src="' . h($cssBase) . '/assets/js/lms-premium-toast.js?v=' . filemtime($lmsToastJsFile) . '" defer></script>' . "\n";
+        }
+    }
     $professorModalsJsFile = dirname(__DIR__, 2) . '/assets/js/professor-modals.js';
     if (is_file($professorModalsJsFile)) {
         echo '<script src="' . h($cssBase) . '/assets/js/professor-modals.js?v=' . filemtime($professorModalsJsFile) . '" defer></script>' . "\n";
