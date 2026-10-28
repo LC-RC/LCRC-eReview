@@ -38,6 +38,10 @@ if (is_file($examinationAdminCssFile)) {
     if (is_file($professorPremiumCssFile)) {
         echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/professor-premium.css?v=' . filemtime($professorPremiumCssFile) . '">' . "\n";
     }
+    $examinationEditPageCssFile = dirname(__DIR__, 2) . '/assets/css/examination-edit-page.css';
+    if (!empty($examinationLoadEditPageCss) && is_file($examinationEditPageCssFile)) {
+        echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/examination-edit-page.css?v=' . filemtime($examinationEditPageCssFile) . '">' . "\n";
+    }
     $lmsPremiumCssFile = dirname(__DIR__, 2) . '/assets/css/lms-premium.css';
     if (ereview_lms_premium_should_load() && is_file($lmsPremiumCssFile)) {
         echo '<link rel="stylesheet" href="' . h($cssBase) . '/assets/css/lms-premium.css?v=' . filemtime($lmsPremiumCssFile) . '" data-lms-premium="1">' . "\n";

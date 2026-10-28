@@ -584,7 +584,17 @@ if (!empty($user['last_seen_at'])) {
           <input type="hidden" name="redirect" value="1">
           <div>
             <label class="block text-sm text-gray-600 mb-1" for="coll_ex_sn">Student Number</label>
-            <input type="text" id="coll_ex_sn" name="student_number" maxlength="32" class="w-full border rounded-lg px-3 py-2" placeholder="Optional">
+            <?php
+              require_once __DIR__ . '/examination/includes/college_student_number.php';
+              $collExSn = trim((string) ($user['student_number'] ?? ''));
+              $collExSnGenerated = college_student_number_is_generated($collExSn);
+            ?>
+            <?php if ($collExSnGenerated): ?>
+            <input type="text" id="coll_ex_sn" value="<?php echo h($collExSn); ?>" class="w-full border rounded-lg px-3 py-2 bg-gray-50" readonly>
+            <p class="text-xs text-gray-500 mt-1">Generated YYYY-NNN numbers cannot be changed.</p>
+            <?php else: ?>
+            <input type="text" id="coll_ex_sn" name="student_number" maxlength="32" class="w-full border rounded-lg px-3 py-2" placeholder="Optional legacy number (not YYYY-NNN)" value="<?php echo h($collExSn); ?>">
+            <?php endif; ?>
           </div>
           <div>
             <label class="block text-sm text-gray-600 mb-1" for="coll_ex_section">Section</label>

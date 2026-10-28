@@ -30,8 +30,11 @@ $monitorLiveTaking = 0;
 foreach ($assessments as $__aLive) {
     $monitorLiveTaking += (int) ($__aLive['taking_count'] ?? $__aLive['in_progress_count'] ?? 0);
 }
+$lmsHeroVariant = 'navy';
 if ($monitorLiveTaking > 0) {
-    $adminHeroMeta = '<span class="prof-hero-stat prof-hero-stat--live"><span class="prof-live-dot" aria-hidden="true"></span> Live</span>';
+    $adminHeroMeta = '<span class="lms-status lms-status--live"><span class="prof-live-dot" aria-hidden="true"></span> Live</span>';
+} else {
+    $adminHeroMeta = '<span class="lms-status lms-status--info">' . count($assessments) . ' assessment' . (count($assessments) === 1 ? '' : 's') . '</span>';
 }
 
 ?>
@@ -46,17 +49,16 @@ if ($monitorLiveTaking > 0) {
 
 </head>
 
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--monitor">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--monitor<?php echo ereview_lms_premium_body_class(); ?>">
 
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
 
-
-
+<?php $toastSuccess = ereview_lms_toast_take('success', !empty($monitorFlash) ? (string) $monitorFlash : null); ?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
 
 
-<?php if ($monitorFlash): ?>
+<?php if ($monitorFlash && empty($toastSuccess)): ?>
 
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2">
 
@@ -68,57 +70,59 @@ if ($monitorLiveTaking > 0) {
 
 
 
-<div class="examination-page-shell gap-3">
+<div class="examination-page-shell">
 
-  <section class="prof-summary-rail" aria-label="Monitoring snapshot">
-    <div class="prof-summary-rail__cell">
-      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-journal-text"></i></span>
-      <span class="prof-summary-rail__label">Assessments</span>
-      <span class="prof-summary-rail__value"><?php echo (int) count($assessments); ?></span>
-    </div>
-    <div class="prof-summary-rail__cell">
-      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-people"></i></span>
-      <span class="prof-summary-rail__label">Roster</span>
-      <span class="prof-summary-rail__value"><?php
+  <section class="lms-kpi-row" aria-label="Monitoring snapshot">
+    <article class="lms-kpi lms-kpi--total">
+      <span class="lms-kpi__label"><i class="bi bi-journal-text" aria-hidden="true"></i> Assessments</span>
+      <span class="lms-kpi__value"><?php echo (int) count($assessments); ?></span>
+      <span class="lms-kpi__hint">On this list</span>
+    </article>
+    <article class="lms-kpi lms-kpi--ok">
+      <span class="lms-kpi__label"><i class="bi bi-people" aria-hidden="true"></i> Roster</span>
+      <span class="lms-kpi__value"><?php
           $__monRoster = 0;
           foreach ($assessments as $__a) { $__monRoster += (int)($__a['roster_count'] ?? $__a['total_students'] ?? 0); }
           echo (int) $__monRoster;
         ?></span>
-    </div>
-    <div class="prof-summary-rail__cell">
-      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-broadcast"></i></span>
-      <span class="prof-summary-rail__label">Taking</span>
-      <span class="prof-summary-rail__value"><?php
+      <span class="lms-kpi__hint">Assigned seats</span>
+    </article>
+    <article class="lms-kpi lms-kpi--live">
+      <span class="lms-kpi__label"><i class="bi bi-broadcast" aria-hidden="true"></i> Taking</span>
+      <span class="lms-kpi__value"><?php
           $__monTaking = 0;
           foreach ($assessments as $__a) { $__monTaking += (int)($__a['taking_count'] ?? $__a['in_progress_count'] ?? 0); }
           echo (int) $__monTaking;
         ?></span>
-    </div>
-    <div class="prof-summary-rail__cell">
-      <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
-      <span class="prof-summary-rail__label">Submitted</span>
-      <span class="prof-summary-rail__value"><?php
+      <span class="lms-kpi__hint">In progress now</span>
+    </article>
+    <article class="lms-kpi lms-kpi--wait">
+      <span class="lms-kpi__label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Submitted</span>
+      <span class="lms-kpi__value"><?php
           $__monSubmitted = 0;
           foreach ($assessments as $__a) { $__monSubmitted += (int)($__a['submitted_count'] ?? 0); }
           echo (int) $__monSubmitted;
         ?></span>
-    </div>
+      <span class="lms-kpi__hint">Completed attempts</span>
+    </article>
   </section>
 
-  <section class="prof-workspace">
-  <div class="prof-workspace__head">
-    <div>
-      <h2 class="prof-workspace__title">Monitoring</h2>
+  <section class="prof-workspace lms-workspace">
+  <div class="prof-workspace__head lms-workspace__head">
+    <div class="lms-workspace__heading">
+      <div class="lms-workspace__title-row">
+        <h2 class="prof-workspace__title">Monitoring</h2>
+        <span class="prof-count lms-count-badge"><?php echo count($assessments); ?> assessment<?php echo count($assessments) === 1 ? '' : 's'; ?></span>
+      </div>
       <p class="prof-workspace__sub">Track live attempts, roster progress, and submission status.</p>
     </div>
-    <span class="prof-count"><?php echo count($assessments); ?> assessment<?php echo count($assessments) === 1 ? '' : 's'; ?></span>
   </div>
 
-  <div class="students-toolbar page-filter">
+  <div class="students-toolbar page-filter lms-toolbar">
 
     <form method="get" class="students-toolbar__search">
 
-      <select name="exam_type" aria-label="Exam type" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+      <select name="exam_type" aria-label="Exam type" class="admin-btn admin-btn--secondary admin-btn--sm">
 
         <option value="">All types</option>
 
@@ -128,14 +132,14 @@ if ($monitorLiveTaking > 0) {
 
       </select>
 
-      <select name="section" aria-label="Filter by section" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+      <select name="section" aria-label="Filter by section" class="admin-btn admin-btn--secondary admin-btn--sm">
         <option value="">All sections</option>
         <?php foreach ($monitorSectionOptions as $secOpt): ?>
           <option value="<?php echo h($secOpt); ?>" <?php echo $filterSection === $secOpt ? 'selected' : ''; ?>><?php echo h($secOpt); ?></option>
         <?php endforeach; ?>
       </select>
 
-      <select name="examinee_type" aria-label="Examinee type" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+      <select name="examinee_type" aria-label="Examinee type" class="admin-btn admin-btn--secondary admin-btn--sm">
 
         <option value="">All examinees</option>
 
@@ -145,7 +149,7 @@ if ($monitorLiveTaking > 0) {
 
       </select>
 
-      <select name="status" aria-label="Attempt status" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+      <select name="status" aria-label="Attempt status" class="admin-btn admin-btn--secondary admin-btn--sm">
 
         <option value="">Any status</option>
 
@@ -179,11 +183,11 @@ if ($monitorLiveTaking > 0) {
 
 
 
-  <div class="rounded-2xl page-table students-table-shell bg-white/90 border border-white/80 shadow-sm overflow-hidden">
+  <div class="rounded-2xl page-table students-table-shell lms-table-wrap overflow-hidden">
 
     <div class="students-table-scroll">
 
-      <table class="w-full text-left admin-students-table students-table--compact pex-monitor-table pex-list-table">
+      <table class="w-full text-left admin-students-table students-table--compact pex-monitor-table pex-list-table lms-table">
         <colgroup>
           <col style="width:12%">
           <col style="width:28%">
@@ -238,7 +242,7 @@ if ($monitorLiveTaking > 0) {
 
           <tr>
 
-            <td class="pcs-badge-cell" data-label="Type"><span class="admin-badge admin-badge--info"><?php echo h(examination_monitor_exam_type_label((string)$a['exam_type'])); ?></span></td>
+            <td class="pcs-badge-cell" data-label="Type"><span class="lms-status lms-status--info"><?php echo h(examination_monitor_exam_type_label((string)$a['exam_type'])); ?></span></td>
 
             <td class="pcs-primary-cell" data-label="Assessment"><span class="examination-title-cell" title="<?php echo h((string)$a['title']); ?>"><?php echo h((string)$a['title']); ?></span></td>
 

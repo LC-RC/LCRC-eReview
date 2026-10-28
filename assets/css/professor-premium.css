@@ -180,8 +180,13 @@ body.admin-app.professor-admin .admin-topbar-modern .admin-topbar-inner {
 
 body.admin-app.professor-admin .admin-topbar-search-wrap {
   background: rgba(241, 247, 255, 0.96) !important;
-  border: 1px solid rgba(147, 197, 253, 0.72) !important;
-  box-shadow: 0 0 24px -8px rgba(59, 130, 246, 0.45) !important;
+  border: 1px solid rgba(186, 210, 245, 0.7) !important;
+  box-shadow: none !important;
+}
+body.admin-app.professor-admin .admin-topbar-search-wrap.is-focused,
+body.admin-app.professor-admin .admin-topbar-search-wrap:focus-within {
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16) !important;
 }
 
 body.admin-app.professor-admin .examination-page-shell,
@@ -521,6 +526,10 @@ body.admin-app.professor-admin .admin-modal {
    -------------------------------------------------------------------------- */
 body.admin-app.professor-admin .prof-workspace {
   overflow: hidden;
+}
+body.admin-app.professor-admin .prof-workspace--progress {
+  overflow: visible;
+}
   background: var(--prof-surface);
   border: 1px solid var(--prof-border);
   border-radius: var(--prof-radius-ws);

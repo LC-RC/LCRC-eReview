@@ -132,7 +132,6 @@ if ($t === 'student' && !empty($_SESSION['user_id']) && isset($conn) && $conn) {
         <input type="search" placeholder="Search students, quizzes, content, packages..." aria-label="Search students" class="admin-topbar-search"
                x-model="searchQuery"
                @focus="searchFocused = true" @blur="searchFocused = false">
-        <span class="admin-topbar-kbd" aria-hidden="true">⌘K</span>
       </form>
     </div>
 

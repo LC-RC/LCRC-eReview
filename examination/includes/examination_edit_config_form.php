@@ -36,6 +36,8 @@
 $formClass = $isModalRender ? 'admin-modal-form' : 'space-y-4';
 if ($examType === 'diagnostic' && !$isModalRender) {
     $formClass = 'diag-portal';
+} elseif ($examType === 'regular' && !$isModalRender) {
+    $formClass = 'examination-edit-form';
 }
 
 $diagPublished = ($examType === 'diagnostic' && !$isNew && is_array($rec ?? null)) ? !empty($rec['is_published']) : false;
@@ -115,7 +117,7 @@ if ($examType === 'diagnostic') {
       <p class="diag-portal-section__desc">Title and description shown to examinees for this diagnostic.</p>
     <?php endif; ?>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <label class="block">
+      <label class="block examination-edit-field--title">
         <span class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Title</span>
         <input class="w-full" type="text" name="title" required value="<?php echo h($titleVal); ?>" <?php echo ($examType === 'diagnostic' && !$isModalRender) ? 'id="diagTitleInput"' : ''; ?>>
       </label>
@@ -204,7 +206,7 @@ if ($examType === 'diagnostic') {
     <?php if ($examType === 'diagnostic'): ?>
       <p class="diag-portal-section__desc">Who can take this diagnostic and how they are assigned.</p>
     <?php endif; ?>
-    <div class="flex flex-wrap gap-4">
+    <div class="flex flex-wrap gap-4 examination-edit-choice-row">
       <?php foreach (['college_student' => 'College Students', 'reviewee' => 'Reviewees', 'both' => 'Both'] as $sk => $sl): ?>
         <label class="font-semibold"><input type="radio" name="examinee_scope" value="<?php echo h($sk); ?>" <?php echo $scopeVal === $sk ? 'checked' : ''; ?>> <?php echo h($sl); ?></label>
       <?php endforeach; ?>
@@ -328,7 +330,7 @@ if ($examType === 'diagnostic') {
       <p class="examination-form-section__title">Time limit</p>
       <p class="examination-form-hint">How long they may take the exam after starting.</p>
       <p class="examination-form-hint examination-form-hint--secondary">Maximum time allowed after a student starts the examination. This may end earlier if the exam closes first.</p>
-      <div class="grid grid-cols-2 gap-3 mt-2">
+      <div class="grid grid-cols-2 gap-3 mt-2 examination-edit-timelimit">
         <label class="<?php echo $isModalRender ? 'admin-modal__field ' : ''; ?>block">
           <span class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Hours</span>
           <input class="w-full" type="number" min="0" max="999" name="time_limit_hours" id="cfgTimeLimitHours" value="<?php echo (int)$timeParts['hours']; ?>">
@@ -344,9 +346,9 @@ if ($examType === 'diagnostic') {
   <section class="<?php echo h($editSectionClass); ?>">
     <h2 class="<?php echo h($editSectionHeadingClass); ?>">Advanced Options</h2>
     <?php if (!empty($assignmentLocked) && $examType === 'regular'): ?>
-      <p class="examination-form-hint examination-form-hint--secondary">Randomization settings are locked because this examination already has student attempts.</p>
+      <p class="examination-edit-lock-banner" role="status"><i class="bi bi-lock-fill" aria-hidden="true"></i><span>Randomization settings are locked because this examination already has student attempts.</span></p>
     <?php endif; ?>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2 examination-edit-checks">
       <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_questions" id="cfgShuffleQ" value="1" <?php echo $shuffleQ ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle questions</label>
       <label class="font-semibold text-sm"><input type="checkbox" name="shuffle_choices" id="cfgShuffleC" value="1" <?php echo $shuffleC ? 'checked' : ''; ?><?php echo !empty($assignmentLocked) ? ' disabled' : ''; ?>> Shuffle choices</label>
       <?php if ($examType === 'regular'): ?>
@@ -390,7 +392,7 @@ if ($examType === 'diagnostic') {
     <button type="submit" name="save_action" value="draft" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2"></i> Save Changes</button>
   </div>
   <?php else: ?>
-  <div class="flex flex-wrap gap-3 items-center">
+  <div class="flex flex-wrap gap-3 items-center examination-edit-actions">
     <p class="exam-config-draft-status" id="examConfigDraftStatus" aria-live="polite">Unsaved</p>
     <p class="reg-bd-foot-status" id="regBreakdownFooterStatus" aria-live="polite" hidden></p>
     <button type="submit" name="save_action" value="draft" class="admin-btn admin-btn--secondary"><i class="bi bi-save"></i> Save Draft</button>
@@ -400,7 +402,7 @@ if ($examType === 'diagnostic') {
     <?php endif; ?>
     <a href="professor_examinations" class="admin-btn admin-btn--ghost">Cancel</a>
   </div>
-  <p class="text-sm opacity-70">Saving a draft does not require questions. Full publish validation for question banks is deferred to a later phase.</p>
+  <p class="text-sm opacity-70 examination-edit-footnote">Saving a draft does not require questions. Full publish validation for question banks is deferred to a later phase.</p>
   <?php endif; ?>
 
 

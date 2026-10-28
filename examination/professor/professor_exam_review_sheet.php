@@ -158,6 +158,7 @@ $adminHeroSubtitle = (string)$exam['title'] . ' — full question-by-question re
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Monitoring', 'professor_examination_monitor'], ['Review']];
 $adminBackHref = $backHref;
 $adminBackLabel = 'Back to Monitoring';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '';
 ?>
 <!DOCTYPE html>
@@ -233,20 +234,32 @@ $adminHeroActions = '';
     .perm-answer-line { margin: .75rem 0 0; font-size: .86rem; font-weight: 650; color: #0f2744; }
   </style>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--review-sheet<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
   <div class="examination-page-shell max-w-6xl mx-auto">
-    <div class="examination-kpi-grid mb-4">
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Email</div><div class="examination-kpi-card__value text-base"><?php echo h((string)$studentUser['email']); ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Score</div><div class="examination-kpi-card__value"><?php echo $attemptSubmitted ? h($scoreLine) : '-'; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Status</div><div class="examination-kpi-card__value text-base"><?php if ($attemptSubmitted): ?>Submitted<?php elseif ($attempt && $attemptStatus === 'in_progress'): ?>In progress<?php else: ?>No submission<?php endif; ?></div></div>
-      <div class="examination-kpi-card"><div class="examination-kpi-card__label">Tab leaves</div><div class="examination-kpi-card__value"><?php echo $attempt ? (int)($attempt['tab_switch_count'] ?? 0) : '-'; ?></div></div>
-    </div>
+    <section class="lms-kpi-row" aria-label="Review summary">
+      <article class="lms-kpi lms-kpi--total">
+        <span class="lms-kpi__label">Email</span>
+        <span class="lms-kpi__hint" style="font-size:0.88rem;font-weight:700;color:var(--lms-text);overflow-wrap:anywhere;"><?php echo h((string)$studentUser['email']); ?></span>
+      </article>
+      <article class="lms-kpi lms-kpi--ok">
+        <span class="lms-kpi__label">Score</span>
+        <span class="lms-kpi__value"><?php echo $attemptSubmitted ? h($scoreLine) : '—'; ?></span>
+      </article>
+      <article class="lms-kpi lms-kpi--live">
+        <span class="lms-kpi__label">Status</span>
+        <span class="lms-kpi__value" style="font-size:1.05rem;"><?php if ($attemptSubmitted): ?>Submitted<?php elseif ($attempt && $attemptStatus === 'in_progress'): ?>In progress<?php else: ?>No submission<?php endif; ?></span>
+      </article>
+      <article class="lms-kpi lms-kpi--wait">
+        <span class="lms-kpi__label">Tab leaves</span>
+        <span class="lms-kpi__value"><?php echo $attempt ? (int)($attempt['tab_switch_count'] ?? 0) : '—'; ?></span>
+      </article>
+    </section>
 
-    <div class="pb-16">
+    <div class="pb-16 lms-review-workspace">
       <?php if (!$attempt): ?>
         <div class="perm-empty-panel">
           <div class="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-slate-100 text-slate-500 text-2xl"><i class="bi bi-inbox"></i></div>

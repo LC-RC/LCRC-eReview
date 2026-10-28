@@ -59,7 +59,7 @@ $tabWhereMap = [
   'pending'  => "u.role='student' AND u.status='pending' AND ag.user_id IS NULL",
   'expired'  => "u.role='student' AND u.status='approved' AND u.access_end IS NOT NULL AND u.access_end < ? AND ag.user_id IS NULL",
   'rejected' => "u.role='student' AND u.status='rejected'",
-  'archived'=> "u.role='student' AND u.status='archived'",
+  'archived'=> "u.role IN ('student','college_student') AND u.status='archived'",
   'all'      => "u.role='student' AND u.status <> 'archived'",
 ];
 $tabWhere = $tabWhereMap[$tab];
@@ -132,6 +132,23 @@ if ($counts === null) {
     'archived' => (int) ($countRow['archived'] ?? 0),
     'all' => (int) ($countRow['all_students'] ?? 0),
   ];
+  $archSql = "SELECT COUNT(*) AS c FROM users u WHERE u.role IN ('student','college_student') AND u.status='archived'";
+  if ($q !== '') {
+    $archSql .= " AND {$searchSql}";
+    $archSt = mysqli_prepare($conn, $archSql);
+    if ($archSt) {
+      mysqli_stmt_bind_param($archSt, $searchTypes, ...$searchLikes);
+      mysqli_stmt_execute($archSt);
+      $archRow = mysqli_fetch_assoc(mysqli_stmt_get_result($archSt));
+      mysqli_stmt_close($archSt);
+      $counts['archived'] = (int) ($archRow['c'] ?? 0);
+    }
+  } else {
+    $archQ = @mysqli_query($conn, $archSql);
+    if ($archQ && ($archRow = mysqli_fetch_assoc($archQ))) {
+      $counts['archived'] = (int) ($archRow['c'] ?? 0);
+    }
+  }
   if ($q === '' && session_status() === PHP_SESSION_ACTIVE) {
     $_SESSION['admin_students_tab_counts'] = $counts;
     $_SESSION['admin_students_tab_counts_at'] = time();
@@ -142,7 +159,7 @@ $total = (int) ($counts[$tab] ?? 0);
 $totalPages = max(1, (int) ceil($total / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-$selectCols = "u.user_id, u.full_name, u.email, u.review_type, u.school, u.school_other, u.payment_proof, u.status, u.access_start, u.access_end, u.access_months, u.created_at";
+$selectCols = "u.user_id, u.full_name, u.email, u.review_type, u.school, u.school_other, u.payment_proof, u.role, u.status, u.access_start, u.access_end, u.access_months, u.created_at";
 $hasEnrollmentPath = ereview_schema_column_exists($conn, 'users', 'enrollment_path');
 if ($hasEnrollmentPath) {
   $selectCols .= ", u.enrollment_path";

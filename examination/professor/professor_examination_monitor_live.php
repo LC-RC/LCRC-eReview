@@ -26,5 +26,13 @@ if (!$ctx) {
     exit;
 }
 
-echo json_encode(examination_monitor_live_payload($conn, $ctx));
+$sectionFilter = '';
+if ($scope['exam_type'] === 'college_exam') {
+    $sectionFilter = examination_monitor_resolve_college_section_filter(
+        $conn,
+        (int)$scope['assessment_id'],
+        $_GET['section'] ?? ''
+    )['filter'];
+}
+echo json_encode(examination_monitor_live_payload($conn, $ctx, $sectionFilter));
 exit;

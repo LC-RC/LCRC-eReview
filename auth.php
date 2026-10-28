@@ -25,6 +25,13 @@ if (isset($_SESSION['user_id'], $_SESSION['role']) && $_SESSION['role'] === 'stu
         ereview_enforce_lms_student_session();
     }
 }
+// Native college students are not covered by the LMS gate. Re-check archive/login eligibility.
+if (isset($_SESSION['user_id'], $_SESSION['role']) && $_SESSION['role'] === 'college_student') {
+    require_once __DIR__ . '/includes/platform_access.php';
+    if (function_exists('ereview_enforce_college_student_session')) {
+        ereview_enforce_college_student_session();
+    }
+}
 
 /**
  * Check if user is logged in
@@ -98,6 +105,12 @@ function requireRole($role) {
         require_once __DIR__ . '/includes/platform_access.php';
         if (function_exists('ereview_enforce_lms_student_session')) {
             ereview_enforce_lms_student_session();
+        }
+    }
+    if ($role === 'college_student') {
+        require_once __DIR__ . '/includes/platform_access.php';
+        if (function_exists('ereview_enforce_college_student_session')) {
+            ereview_enforce_college_student_session();
         }
     }
 }

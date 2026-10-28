@@ -39,18 +39,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete' && $tid > 0) {
+        require_once dirname(__DIR__) . '/includes/academic_record_protection.php';
         $chk = mysqli_prepare($conn, 'SELECT task_id, title FROM college_upload_tasks WHERE task_id=? AND created_by=? LIMIT 1');
         mysqli_stmt_bind_param($chk, 'ii', $tid, $uid);
         mysqli_stmt_execute($chk);
         $ok = mysqli_fetch_assoc(mysqli_stmt_get_result($chk));
         mysqli_stmt_close($chk);
         if ($ok) {
-            college_upload_delete_task_files($conn, $tid, dirname(__DIR__, 2));
-            mysqli_query($conn, 'DELETE FROM college_upload_resubmission_requests WHERE task_id=' . (int) $tid);
-            mysqli_query($conn, 'DELETE FROM college_upload_task_sections WHERE task_id=' . (int) $tid);
-            mysqli_query($conn, 'DELETE FROM college_submissions WHERE task_id=' . (int) $tid);
-            mysqli_query($conn, 'DELETE FROM college_upload_tasks WHERE task_id=' . (int) $tid . ' AND created_by=' . (int) $uid);
-            $_SESSION['message'] = 'Upload task permanently deleted.';
+            $deps = academic_record_upload_task_dependency_counts($conn, $tid);
+            if (empty($deps['ok'])) {
+                $_SESSION['error'] = (string) ($deps['error'] ?? 'Could not verify submissions. Delete refused.');
+            } elseif ((int) $deps['total'] > 0) {
+                $close = mysqli_prepare($conn, 'UPDATE college_upload_tasks SET is_open=0 WHERE task_id=? AND created_by=? LIMIT 1');
+                if ($close) {
+                    mysqli_stmt_bind_param($close, 'ii', $tid, $uid);
+                    mysqli_stmt_execute($close);
+                    mysqli_stmt_close($close);
+                }
+                $_SESSION['error'] = academic_record_protected_refuse_message('upload task', (int) $deps['total'])
+                    . ' The task was closed instead. Uploaded files were not deleted.';
+            } else {
+                college_upload_delete_task_files($conn, $tid, dirname(__DIR__, 2));
+                mysqli_query($conn, 'DELETE FROM college_upload_resubmission_requests WHERE task_id=' . (int) $tid);
+                mysqli_query($conn, 'DELETE FROM college_upload_task_sections WHERE task_id=' . (int) $tid);
+                mysqli_query($conn, 'DELETE FROM college_submissions WHERE task_id=' . (int) $tid);
+                mysqli_query($conn, 'DELETE FROM college_upload_tasks WHERE task_id=' . (int) $tid . ' AND created_by=' . (int) $uid);
+                $_SESSION['message'] = 'Upload task permanently deleted.';
+            }
         } else {
             $_SESSION['error'] = 'Task not found or you do not have permission to delete it.';
         }
@@ -218,6 +233,8 @@ $adminHeroEyebrow = 'Task management';
 $adminHeroTitle = 'Upload Tasks';
 $adminHeroSubtitle = 'Assign file uploads, track deadlines, and review submissions.';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Upload Tasks']];
+$lmsHeroVariant = 'navy';
+$adminHeroMeta = '<span class="lms-status lms-status--info">' . (int) $totalTasks . ' task' . ((int) $totalTasks === 1 ? '' : 's') . '</span>';
 $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" id="putNewTaskBtn"><i class="bi bi-plus-lg"></i> New task</button>';
 ?>
 <!DOCTYPE html>
@@ -225,13 +242,14 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--uploads">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--uploads<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($msg) ? $msg : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-  <div class="examination-page-shell gap-3">
-    <section class="prof-control-strip" aria-labelledby="put-student-uploads-setting">
+  <div class="examination-page-shell">
+    <section class="prof-control-strip lms-setting-strip" aria-labelledby="put-student-uploads-setting">
       <form method="post" class="examination-module-setting__form" id="putUploadsModuleForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="save_uploads_module">
@@ -272,46 +290,48 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
       </form>
     </section>
 
-    <section class="prof-summary-rail" aria-label="Upload task summary">
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-collection"></i></span>
-        <span class="prof-summary-rail__label">Total tasks</span>
-        <span class="prof-summary-rail__value"><?php echo (int) $totalTasks; ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-unlock"></i></span>
-        <span class="prof-summary-rail__label">Open tasks</span>
-        <span class="prof-summary-rail__value"><?php echo (int) $openTasks; ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-inboxes"></i></span>
-        <span class="prof-summary-rail__label">Submissions</span>
-        <span class="prof-summary-rail__value"><?php echo (int) $totalSubs; ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-calendar-event"></i></span>
-        <span class="prof-summary-rail__label">Upcoming deadlines</span>
-        <span class="prof-summary-rail__value"><?php echo (int) $upcomingDeadlines; ?></span>
-      </div>
+    <section class="lms-kpi-row" aria-label="Upload task summary">
+      <article class="lms-kpi lms-kpi--total">
+        <span class="lms-kpi__label"><i class="bi bi-collection" aria-hidden="true"></i> Total tasks</span>
+        <span class="lms-kpi__value"><?php echo (int) $totalTasks; ?></span>
+        <span class="lms-kpi__hint">On this list</span>
+      </article>
+      <article class="lms-kpi lms-kpi--ok">
+        <span class="lms-kpi__label"><i class="bi bi-unlock" aria-hidden="true"></i> Open</span>
+        <span class="lms-kpi__value"><?php echo (int) $openTasks; ?></span>
+        <span class="lms-kpi__hint">Accepting files</span>
+      </article>
+      <article class="lms-kpi lms-kpi--live">
+        <span class="lms-kpi__label"><i class="bi bi-inboxes" aria-hidden="true"></i> Submissions</span>
+        <span class="lms-kpi__value"><?php echo (int) $totalSubs; ?></span>
+        <span class="lms-kpi__hint">Files received</span>
+      </article>
+      <article class="lms-kpi lms-kpi--wait">
+        <span class="lms-kpi__label"><i class="bi bi-calendar-event" aria-hidden="true"></i> Upcoming</span>
+        <span class="lms-kpi__value"><?php echo (int) $upcomingDeadlines; ?></span>
+        <span class="lms-kpi__hint">Deadlines ahead</span>
+      </article>
     </section>
 
-    <?php if ($msg): ?>
+    <?php if ($msg && empty($toastSuccess)): ?>
       <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($msg); ?></span></div>
     <?php endif; ?>
     <?php if ($err): ?>
       <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($err); ?></span></div>
     <?php endif; ?>
 
-    <section class="prof-workspace">
-      <div class="prof-workspace__head">
-        <div>
-          <h2 class="prof-workspace__title">Upload tasks</h2>
+    <section class="prof-workspace lms-workspace">
+      <div class="prof-workspace__head lms-workspace__head">
+        <div class="lms-workspace__heading">
+          <div class="lms-workspace__title-row">
+            <h2 class="prof-workspace__title">Upload tasks</h2>
+            <span class="prof-count lms-count-badge"><?php echo (int) $totalTasks; ?> listed</span>
+          </div>
           <p class="prof-workspace__sub">Manage file upload assignments and submissions.</p>
         </div>
-        <span class="prof-count"><?php echo (int) $totalTasks; ?> listed</span>
       </div>
 
-      <form method="get" class="students-toolbar page-filter">
+      <form method="get" class="students-toolbar page-filter lms-toolbar">
         <div class="students-toolbar__search flex-1">
           <div class="students-search">
             <i class="bi bi-search" aria-hidden="true"></i>
@@ -324,9 +344,10 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
         </div>
       </form>
 
+      <div class="page-table students-table-shell lms-table-wrap">
       <div class="students-table-scroll">
         <?php if ($totalTasks === 0): ?>
-          <div class="examination-empty-box">
+          <div class="examination-empty-box lms-empty">
             <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl border text-2xl mb-4 opacity-80">
               <i class="bi bi-inbox"></i>
             </div>
@@ -339,7 +360,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
             <?php endif; ?>
           </div>
         <?php else: ?>
-          <table class="w-full text-left admin-students-table students-table--compact upload-tasks-table pex-list-table">
+          <table class="w-full text-left admin-students-table students-table--compact upload-tasks-table pex-list-table lms-table">
             <colgroup>
               <col class="put-col-task" style="width:28%">
               <col class="put-col-audience" style="width:18%">
@@ -366,10 +387,10 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                 $subc = (int) ($t['submission_count'] ?? 0);
                 $eligible = (int) ($t['eligible_count'] ?? 0);
                 $stateBadge = match ($state) {
-                    'open' => 'admin-badge--success',
-                    'upcoming' => 'admin-badge--info',
-                    'locked' => 'admin-badge--warning',
-                    default => 'admin-badge--neutral',
+                    'open' => 'lms-status lms-status--ok',
+                    'upcoming' => 'lms-status lms-status--info',
+                    'locked' => 'lms-status lms-status--warn',
+                    default => 'lms-status',
                 };
                 $tidRow = (int) ($t['task_id'] ?? 0);
                 $opensLabel = !empty($t['open_at']) ? date('M j, g:i A', strtotime($t['open_at'])) : 'Immediate';
@@ -391,7 +412,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                 <td class="text-sm whitespace-nowrap pcs-meta-cell put-col-opens" data-label="Opens"><?php echo h($opensLabel); ?></td>
                 <td class="text-sm whitespace-nowrap pcs-meta-cell put-col-closes" data-label="Closes"><?php echo h($closesLabel); ?></td>
                 <td class="text-right text-sm whitespace-nowrap tabular-nums pcs-meta-cell put-col-subs" data-label="Submissions"><?php echo $subc; ?> / <?php echo $eligible; ?></td>
-                <td class="pcs-badge-cell put-col-status" data-label="Status"><span class="admin-badge <?php echo h($stateBadge); ?>"><?php echo h(college_upload_task_status_label($state)); ?></span></td>
+                <td class="pcs-badge-cell put-col-status" data-label="Status"><span class="<?php echo h($stateBadge); ?>"><?php echo h(college_upload_task_status_label($state)); ?></span></td>
                 <td class="student-action-cell" data-label="Actions">
                   <div class="student-action-cluster">
                     <a href="professor_upload_task_monitor?task_id=<?php echo $tidRow; ?>" class="admin-btn admin-btn--secondary admin-btn--sm admin-btn--view"><i class="bi bi-eye" aria-hidden="true"></i> View</a>
@@ -415,6 +436,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
             </tbody>
           </table>
         <?php endif; ?>
+      </div>
       </div>
     </section>
   </div>
@@ -730,7 +752,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
         var subs = parseInt(btn.getAttribute('data-submissions') || '0', 10);
         document.getElementById('putDeleteTaskId').value = btn.getAttribute('data-id') || '';
         document.getElementById('putDeleteDesc').innerHTML =
-          'This will permanently delete <strong>' + title.replace(/</g, '&lt;') + '</strong> and all associated submissions.'
+          'Permanent delete of <strong>' + title.replace(/</g, '&lt;') + '</strong> is refused when student submissions exist. Those tasks are closed instead and uploaded files are kept.'
           + (subs > 0 ? ' <strong>' + subs + '</strong> student submission(s) will be removed.' : '')
           + ' This cannot be undone.';
         openOverlay('putTaskDeleteModalOverlay');

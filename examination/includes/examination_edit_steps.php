@@ -13,7 +13,7 @@ $steps = [
     'review' => ['3. Review / Publish', examination_domain_edit_url($examType, $sourceId, 'review')],
 ];
 ?>
-<nav class="students-view-tabs mb-3" aria-label="Examination edit steps">
+<nav class="students-view-tabs examination-edit-steps lms-tabs" aria-label="Examination edit steps">
   <?php foreach ($steps as $key => $meta): ?>
     <?php if ($key === $activeStep): ?>
       <span class="students-view-tab is-active"><?php echo h($meta[0]); ?></span>

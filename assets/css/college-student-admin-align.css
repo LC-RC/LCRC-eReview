@@ -1,0 +1,1975 @@
+/**
+ * College student dashboard + exams — professor-aligned chrome.
+ * Loaded only from college_student_dashboard.php and college_exams.php.
+ * Scoped to body.college-student-admin-align. Do not import from shared heads.
+ */
+
+body.college-student-admin-align.college-examination-portal,
+body.college-student-admin-align {
+  --cs-admin-canvas: #eef3fb;
+  --cs-admin-surface: #ffffff;
+  --cs-admin-navy: #0f1f3d;
+  --cs-admin-blue: #2563eb;
+  --cs-admin-indigo: #4f46e5;
+  --cs-admin-muted: #5b6b86;
+  --cs-admin-hint: #64748b;
+  --cs-admin-border: rgba(147, 180, 230, 0.28);
+  --cs-admin-radius: 18px;
+  --cs-admin-radius-ws: 16px;
+  --cs-admin-radius-kpi: 16px;
+  --cs-admin-radius-ctrl: 10px;
+  --cs-admin-shadow-hero: 0 18px 44px -16px rgba(37, 76, 150, 0.34), 0 0 64px -18px rgba(99, 102, 241, 0.38);
+  --cs-admin-shadow-ws: 0 12px 30px -18px rgba(37, 76, 150, 0.28);
+  --cs-admin-shadow-kpi: inset 0 1px 0 rgba(255, 255, 255, 0.98), 0 12px 30px -16px rgba(37, 76, 150, 0.32), 0 0 28px -14px rgba(59, 130, 246, 0.28);
+  --cs-admin-control-h: 2.35rem;
+  background: var(--cs-admin-canvas) !important;
+}
+
+body.college-student-admin-align #main.app-shell-main--student {
+  background-color: var(--cs-admin-canvas) !important;
+  background-image: none !important;
+}
+
+body.college-student-admin-align .cs-admin-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.35rem 1.15rem 2.25rem;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  body.college-student-admin-align .cs-admin-page {
+    padding: 0.55rem 1.5rem 2.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  body.college-student-admin-align .cs-admin-page {
+    padding: 0.25rem 0.85rem 5.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar — admin glass, student nav preserved
+   -------------------------------------------------------------------------- */
+html[data-student-theme] body.college-student-admin-align.college-student-app.college-examination-portal.app-shell--student #app-sidebar.app-shell-sidebar--student,
+body.college-student-admin-align.college-student-app.college-examination-portal #app-sidebar.app-shell-sidebar--student,
+body.college-student-admin-align #app-sidebar.app-shell-sidebar--student {
+  background-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(239, 246, 255, 0.55) 42%, rgba(238, 242, 255, 0.62) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-right: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 8px 0 28px -18px rgba(37, 76, 150, 0.28);
+  color: var(--cs-admin-navy);
+}
+
+/* Beat existing student-portal !important sidebar fills on these two pages only. */
+html[data-student-theme] body.college-student-admin-align.college-student-app.college-examination-portal.app-shell--student #app-sidebar.app-shell-sidebar--student,
+body.college-student-admin-align #app-sidebar.app-shell-sidebar--student {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(239, 246, 255, 0.55) 42%, rgba(238, 242, 255, 0.62) 100%) !important;
+  background-color: transparent !important;
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-header--brand {
+  background: transparent;
+  border-bottom: 1px solid rgba(147, 180, 230, 0.28);
+}
+
+html[data-student-theme] body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-link,
+html[data-student-theme] body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-text,
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-link,
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-title {
+  color: var(--cs-admin-navy) !important;
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-sub {
+  color: var(--cs-admin-blue);
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-close-btn {
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align #app-sidebar .admin-sidebar-section-label,
+body.college-student-admin-align #app-sidebar .app-shell-section-label {
+  color: #64748b;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+html[data-student-theme] body.college-student-admin-align #app-sidebar .app-shell-nav-link--student,
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student {
+  color: #334155 !important;
+  border-radius: 14px;
+  margin: 0 0.45rem 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 0;
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student .student-nav-icon {
+  color: #1d4ed8;
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 0.85));
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student:not(.student-nav-item--active):hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #0f172a;
+}
+
+html[data-student-theme] body.college-student-admin-align #app-sidebar .app-shell-nav-link--student.student-nav-item--active,
+body.college-student-admin-align #app-sidebar .student-nav-item--active,
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student.student-nav-item--active {
+  background: linear-gradient(90deg, #2563eb, #4f46e5) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 16px -10px rgba(37, 99, 235, 0.55) !important;
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student.student-nav-item--active::after {
+  display: none;
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-nav-link--student.student-nav-item--active .student-nav-icon {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+html[data-student-theme] body.college-student-admin-align #app-sidebar .app-shell-sidebar-time,
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-time {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 18px -14px rgba(37, 76, 150, 0.35);
+}
+
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-time-label,
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-time-date,
+body.college-student-admin-align #app-sidebar .app-shell-sidebar-time-digital {
+  color: #334155;
+}
+
+body.college-student-admin-align .student-topbar,
+body.college-student-admin-align .admin-topbar {
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px -20px rgba(37, 76, 150, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Shared surfaces
+   -------------------------------------------------------------------------- */
+body.college-student-admin-align .cs-admin-panel,
+body.college-student-admin-align .cs-admin-workspace,
+body.college-student-admin-align .cs-admin-table-shell {
+  background: var(--cs-admin-surface);
+  border: 1px solid rgba(186, 210, 245, 0.42);
+  border-radius: var(--cs-admin-radius-ws);
+  box-shadow: var(--cs-admin-shadow-ws);
+  overflow: hidden;
+}
+
+body.college-student-admin-align .cs-admin-panel {
+  padding: 1rem 1.1rem;
+  min-width: 0;
+}
+
+body.college-student-admin-align .cs-admin-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-student-admin-align .cs-admin-panel__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cs-admin-navy);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+body.college-student-admin-align .cs-admin-link {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cs-admin-blue);
+  text-decoration: none;
+}
+
+body.college-student-admin-align .cs-admin-link:hover {
+  text-decoration: underline;
+}
+
+body.college-student-admin-align .cs-admin-empty,
+body.college-student-admin-align .cs-admin-panel__desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align .cs-admin-panel__desc {
+  margin-bottom: 0.75rem;
+}
+
+body.college-student-admin-align .cs-admin-empty-state {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--cs-admin-muted);
+}
+
+body.college-student-admin-align .cs-admin-empty-state__icon {
+  font-size: 1.6rem;
+  color: #93c5fd;
+  margin-bottom: 0.4rem;
+}
+
+body.college-student-admin-align .cs-admin-empty-state__title {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align .cs-admin-empty-state__text {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard
+   -------------------------------------------------------------------------- */
+body.college-student-admin-align .cs-admin-dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+body.college-student-admin-align .cs-admin-dash > * {
+  min-width: 0;
+}
+
+body.college-student-admin-align .cs-admin-hero-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+body.college-student-admin-align .cs-admin-hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 10.25rem;
+  padding: 1.2rem 1.5rem 1.25rem 1.55rem;
+  overflow: hidden;
+  border-radius: var(--cs-admin-radius);
+  border: 1px solid rgba(186, 210, 245, 0.38);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), transparent 42%),
+    radial-gradient(520px 220px at 92% 18%, rgba(129, 140, 248, 0.28), transparent 58%),
+    radial-gradient(380px 180px at 8% 0%, rgba(96, 165, 250, 0.14), transparent 62%),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eef2ff 100%);
+  box-shadow: var(--cs-admin-shadow-hero);
+}
+
+body.college-student-admin-align .cs-admin-hero__ribbon {
+  position: absolute;
+  right: -2%;
+  top: -8%;
+  width: 48%;
+  height: 120%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body.college-student-admin-align .cs-admin-hero__left,
+body.college-student-admin-align .cs-admin-hero__right {
+  position: relative;
+  z-index: 1;
+}
+
+body.college-student-admin-align .cs-admin-hero__left {
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+body.college-student-admin-align .cs-admin-hero__right {
+  flex: 0 1 38%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+body.college-student-admin-align .cs-admin-hero__date {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align .cs-admin-hero__dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16), 0 0 12px rgba(59, 130, 246, 0.75);
+}
+
+body.college-student-admin-align .cs-admin-hero__title {
+  margin: 0;
+  color: var(--cs-admin-navy);
+  font-size: 2.05rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+body.college-student-admin-align .cs-admin-hero__title span {
+  display: block;
+}
+
+body.college-student-admin-align .cs-admin-hero__sub {
+  margin: 0.5rem 0 0;
+  max-width: 34rem;
+  font-size: 0.92rem;
+  color: #52637c;
+}
+
+body.college-student-admin-align .cs-admin-quote__icon {
+  display: inline-flex;
+  width: 2.6rem;
+  height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--cs-admin-blue);
+  box-shadow: 0 10px 22px -10px rgba(59, 130, 246, 0.7);
+  flex-shrink: 0;
+}
+
+body.college-student-admin-align .cs-admin-quote__text {
+  margin: 0;
+  color: var(--cs-admin-navy);
+  font-style: italic;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+body.college-student-admin-align .cs-admin-quote__cite {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align a.cs-admin-kpi {
+  text-decoration: none;
+  color: inherit;
+}
+
+body.college-student-admin-align .cs-admin-kpi {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.05rem 1.1rem 1rem;
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.32);
+  border-radius: var(--cs-admin-radius-kpi);
+  box-shadow: var(--cs-admin-shadow-kpi);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+body.college-student-admin-align a.cs-admin-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 16px 34px -16px rgba(37, 76, 150, 0.4);
+}
+
+body.college-student-admin-align .cs-admin-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(120px 96px at 18% 36%, rgba(59, 130, 246, 0.42), transparent 70%);
+}
+
+body.college-student-admin-align .cs-admin-kpi--amber::before {
+  background: radial-gradient(120px 96px at 18% 36%, rgba(245, 158, 11, 0.4), transparent 70%);
+}
+
+body.college-student-admin-align .cs-admin-kpi--green::before {
+  background: radial-gradient(120px 96px at 18% 36%, rgba(16, 185, 129, 0.42), transparent 70%);
+}
+
+body.college-student-admin-align .cs-admin-kpi--violet::before {
+  background: radial-gradient(120px 96px at 18% 36%, rgba(124, 58, 237, 0.42), transparent 70%);
+}
+
+body.college-student-admin-align .cs-admin-kpi > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.college-student-admin-align .cs-admin-kpi__tile {
+  display: inline-flex;
+  width: 2.7rem;
+  height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, rgba(239, 246, 255, 0.95), rgba(147, 197, 253, 0.72));
+  border: 1px solid rgba(59, 130, 246, 0.42);
+  color: #1d4ed8;
+}
+
+body.college-student-admin-align .cs-admin-kpi--amber .cs-admin-kpi__tile {
+  background: linear-gradient(160deg, rgba(255, 251, 235, 0.96), rgba(253, 230, 138, 0.75));
+  border-color: rgba(217, 119, 6, 0.38);
+  color: #b45309;
+}
+
+body.college-student-admin-align .cs-admin-kpi--green .cs-admin-kpi__tile {
+  background: linear-gradient(160deg, rgba(236, 253, 245, 0.96), rgba(167, 243, 208, 0.72));
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #059669;
+}
+
+body.college-student-admin-align .cs-admin-kpi--violet .cs-admin-kpi__tile {
+  background: linear-gradient(160deg, rgba(245, 243, 255, 0.96), rgba(221, 214, 254, 0.78));
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #6d28d9;
+}
+
+body.college-student-admin-align .cs-admin-kpi__label {
+  color: var(--cs-admin-hint);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.college-student-admin-align .cs-admin-kpi__value {
+  color: var(--cs-admin-navy);
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-student-admin-align .cs-admin-kpi__hint {
+  color: var(--cs-admin-hint);
+  font-size: 0.75rem;
+}
+
+body.college-student-admin-align .cs-admin-deadline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+body.college-student-admin-align .cs-admin-deadline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.4rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  color: inherit;
+}
+
+body.college-student-admin-align .cs-admin-deadline__cal {
+  display: inline-flex;
+  width: 2.5rem;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 0.55rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.25rem 0;
+}
+
+body.college-student-admin-align .cs-admin-deadline__mon {
+  font-size: 0.56rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body.college-student-admin-align .cs-admin-deadline__day {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body.college-student-admin-align .cs-admin-deadline__title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align .cs-admin-deadline__meta {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align .cs-admin-deadline--today .cs-admin-deadline__cal {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+body.college-student-admin-align .cs-admin-deadline--soon .cs-admin-deadline__cal {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+body.college-student-admin-align .cs-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+body.college-student-admin-align .cs-admin-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cs-admin-hint);
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(147, 180, 230, 0.28);
+}
+
+body.college-student-admin-align .cs-admin-table td {
+  padding: 0.7rem 0.65rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  color: #334155;
+  vertical-align: middle;
+}
+
+body.college-student-admin-align .cs-admin-table tr:last-child td {
+  border-bottom: 0;
+}
+
+body.college-student-admin-align .cs-admin-table__primary {
+  font-weight: 700;
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align .cs-admin-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.college-student-admin-align .cs-admin-chart-wrap {
+  position: relative;
+  height: 11rem;
+}
+
+body.college-student-admin-align .cs-admin-panel--exams .cp-exam-lms-item,
+body.college-student-admin-align .cs-admin-panel--exams .cp-exam-feed-item {
+  background: #f8fbff;
+  border: 1px solid rgba(186, 210, 245, 0.45);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  body.college-student-admin-align .cs-admin-dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.college-student-admin-align .cs-admin-hero-wrap,
+  body.college-student-admin-align .college-exam-id-card,
+  body.college-student-admin-align .cs-admin-panel--exams,
+  body.college-student-admin-align .cs-admin-panel--activity {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  body.college-student-admin-align .cs-admin-dash {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  body.college-student-admin-align .cs-admin-hero-wrap,
+  body.college-student-admin-align .college-exam-id-card {
+    grid-column: 1 / -1;
+  }
+
+  body.college-student-admin-align .cs-admin-kpi {
+    grid-column: span 3;
+  }
+
+  body.college-student-admin-align .cs-admin-panel--exams {
+    grid-column: span 8;
+  }
+
+  body.college-student-admin-align .cs-admin-panel--deadlines {
+    grid-column: span 4;
+  }
+
+  body.college-student-admin-align .cs-admin-panel--activity {
+    grid-column: span 8;
+  }
+
+  body.college-student-admin-align .cs-admin-panel--trend {
+    grid-column: span 4;
+  }
+}
+
+@media (max-width: 767px) {
+  body.college-student-admin-align .cs-admin-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 0;
+    padding: 1rem 1.1rem;
+  }
+
+  body.college-student-admin-align .cs-admin-hero__right {
+    margin-top: 0.85rem;
+  }
+
+  body.college-student-admin-align .cs-admin-hero__title {
+    font-size: 1.55rem;
+  }
+
+  body.college-student-admin-align .cs-admin-hero__ribbon {
+    width: 70%;
+    opacity: 0.55;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Examinations workspace
+   -------------------------------------------------------------------------- */
+body.college-student-admin-align .cs-admin-page-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--cs-admin-radius);
+  border: 1px solid rgba(186, 210, 245, 0.38);
+  background:
+    radial-gradient(420px 180px at 92% 18%, rgba(129, 140, 248, 0.22), transparent 58%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: var(--cs-admin-shadow-hero);
+  padding: 1rem 1.25rem 1.05rem;
+  margin-bottom: 1rem;
+}
+
+body.college-student-admin-align .cs-admin-page-hero__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cs-admin-blue);
+}
+
+body.college-student-admin-align .cs-admin-page-hero__title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align .cs-admin-page-hero__icon {
+  display: inline-flex;
+  width: 2.6rem;
+  height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  background: linear-gradient(160deg, #eff6ff, #dbeafe);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #1d4ed8;
+}
+
+body.college-student-admin-align .cs-admin-page-hero__sub {
+  margin: 0.35rem 0 0 3.3rem;
+  font-size: 0.9rem;
+  color: #52637c;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.42);
+  border-radius: var(--cs-admin-radius-ws);
+  box-shadow: var(--cs-admin-shadow-ws);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__cell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__cell:last-child {
+  border-right: 0;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__ico {
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  width: 2.2rem;
+  height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  align-self: center;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__cell:nth-child(2) .cs-admin-summary-rail__ico {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__cell:nth-child(3) .cs-admin-summary-rail__ico {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__cell:nth-child(4) .cs-admin-summary-rail__ico {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__label {
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--cs-admin-navy);
+  font-variant-numeric: tabular-nums;
+}
+
+body.college-student-admin-align .cs-admin-summary-rail__hint {
+  grid-column: 2;
+  font-size: 0.7rem;
+  color: var(--cs-admin-hint);
+}
+
+body.college-student-admin-align .cs-admin-workspace {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+body.college-student-admin-align .cs-admin-workspace__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-student-admin-align .cs-admin-workspace__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--cs-admin-navy);
+}
+
+body.college-student-admin-align .cs-admin-workspace__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--cs-admin-muted);
+}
+
+body.college-student-admin-align .cs-admin-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cs-admin-hint);
+  background: #f1f5f9;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+}
+
+body.college-student-admin-align .cs-admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+body.college-student-admin-align .cs-admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--cs-admin-control-h);
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+body.college-student-admin-align .cs-admin-tab.is-active {
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: #fff;
+}
+
+body.college-student-admin-align .cs-admin-tab__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+body.college-student-admin-align .cs-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+body.college-student-admin-align .cs-admin-toolbar__search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 16rem;
+}
+
+body.college-student-admin-align .cs-admin-search {
+  position: relative;
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+
+body.college-student-admin-align .cs-admin-search i {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+body.college-student-admin-align .cs-admin-search input,
+body.college-student-admin-align .cs-admin-toolbar select {
+  min-height: var(--cs-admin-control-h);
+  border-radius: var(--cs-admin-radius-ctrl);
+  border: 1px solid var(--cs-admin-border);
+  background: #fff;
+  color: var(--cs-admin-navy);
+  font-size: 0.85rem;
+}
+
+body.college-student-admin-align .cs-admin-search input {
+  width: 100%;
+  padding: 0 0.75rem 0 2.1rem;
+}
+
+body.college-student-admin-align .cs-admin-toolbar select {
+  padding: 0 0.7rem;
+}
+
+body.college-student-admin-align .cs-admin-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--cs-admin-border);
+  border-radius: var(--cs-admin-radius-ctrl);
+  overflow: hidden;
+  background: #fff;
+}
+
+body.college-student-admin-align .cs-admin-view-toggle a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: var(--cs-admin-control-h);
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  text-decoration: none;
+}
+
+body.college-student-admin-align .cs-admin-view-toggle a.is-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+body.college-student-admin-align .cs-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.1rem;
+  padding: 0 0.7rem;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+body.college-student-admin-align .cs-admin-btn--primary {
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: #fff;
+}
+
+body.college-student-admin-align .cs-admin-btn--secondary {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+body.college-student-admin-align .cs-admin-btn-muted,
+body.college-student-admin-align .cs-admin-btn-closed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #64748b;
+}
+
+body.college-student-admin-align .cs-admin-exam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+  gap: 0.85rem;
+}
+
+body.college-student-admin-align .cs-admin-exam-grid > .cs-admin-empty-state {
+  grid-column: 1 / -1;
+}
+
+body.college-student-admin-align .cs-admin-exam-grid .cp-exam-card {
+  height: 100%;
+  background: #fff;
+  border: 1px solid rgba(186, 210, 245, 0.45);
+  border-radius: 14px;
+  box-shadow: var(--cs-admin-shadow-ws);
+}
+
+@media (max-width: 900px) {
+  body.college-student-admin-align .cs-admin-summary-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.college-student-admin-align .cs-admin-summary-rail__cell:nth-child(odd) {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  body.college-student-admin-align .cs-admin-summary-rail__cell:nth-child(2n) {
+    border-right: 0;
+  }
+
+  body.college-student-admin-align .cs-admin-page-hero__sub {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  body.college-student-admin-align .cs-admin-summary-rail {
+    grid-template-columns: 1fr;
+  }
+
+  body.college-student-admin-align .cs-admin-summary-rail__cell {
+    border-right: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  body.college-student-admin-align .cs-admin-table thead {
+    display: none;
+  }
+
+  body.college-student-admin-align .cs-admin-table tr {
+    display: block;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  body.college-student-admin-align .cs-admin-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 0;
+    padding: 0.2rem 0;
+  }
+
+  body.college-student-admin-align .cs-admin-table td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    color: var(--cs-admin-hint);
+  }
+}
+
+/* Dark student theme — keep contrast without professor admin classes */
+html[data-student-theme="dark"] body.college-student-admin-align {
+  --cs-admin-canvas: #0f172a;
+  --cs-admin-surface: #1e293b;
+  --cs-admin-navy: #f8fafc;
+  --cs-admin-muted: #cbd5e1;
+  --cs-admin-hint: #94a3b8;
+  --cs-admin-border: rgba(148, 163, 184, 0.28);
+}
+
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-hero,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-kpi,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-page-hero,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-summary-rail,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-workspace,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-panel,
+html[data-student-theme="dark"] body.college-student-admin-align .cs-admin-table-shell {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+html[data-student-theme="dark"] body.college-student-admin-align #app-sidebar.app-shell-sidebar--student {
+  background-image: linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.94));
+  border-right-color: rgba(148, 163, 184, 0.22);
+}
+
+html[data-student-theme="dark"] body.college-student-admin-align #app-sidebar .app-shell-nav-link--student {
+  color: #e2e8f0;
+}
+
+html[data-student-theme="dark"] body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-link,
+html[data-student-theme="dark"] body.college-student-admin-align #app-sidebar .app-shell-sidebar-brand-title {
+  color: #f8fafc;
+}
+
+/* --------------------------------------------------------------------------
+   College Exams page only — match reference catalog (not dashboard)
+   -------------------------------------------------------------------------- */
+body.cs-page--exams.college-student-admin-align,
+body.cs-page--exams.college-student-admin-align #main.app-shell-main--student {
+  background-color: #e8f2fc !important;
+  background-image:
+    radial-gradient(900px 420px at -8% 110%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(700px 320px at 108% -10%, rgba(165, 180, 252, 0.14), transparent 58%) !important;
+}
+
+body.cs-page--exams .cs-exams-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 6.4rem;
+  padding: 1rem 1.35rem 1rem 1.25rem;
+  margin-bottom: 0.85rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 22px;
+  background: linear-gradient(105deg, #f7fbff 0%, #eef4ff 48%, #f3eefe 100%);
+  box-shadow: 0 10px 28px -18px rgba(59, 130, 246, 0.28);
+}
+
+body.cs-page--exams .cs-exams-hero__waves {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 46%;
+  height: 100%;
+  pointer-events: none;
+}
+
+body.cs-page--exams .cs-exams-hero__copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+body.cs-page--exams .cs-exams-hero .cs-admin-page-hero__eyebrow {
+  margin: 0 0 0.15rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: #5b6b86;
+}
+
+body.cs-page--exams .cs-exams-hero .cs-admin-page-hero__title {
+  font-size: 1.7rem;
+  color: #1e3a5f;
+}
+
+body.cs-page--exams .cs-exams-hero .cs-admin-page-hero__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.7rem;
+  background: #fff;
+  border: 0;
+  color: #3b82f6;
+  box-shadow: 0 6px 14px -8px rgba(59, 130, 246, 0.45);
+}
+
+body.cs-page--exams .cs-exams-hero .cs-admin-page-hero__sub {
+  margin: 0.15rem 0 0 2.9rem;
+  font-size: 0.86rem;
+  color: #52637c;
+}
+
+body.cs-page--exams .cs-exams-hero__quote {
+  position: relative;
+  z-index: 1;
+  margin: 0 1.2rem 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  text-align: right;
+  color: #5b6b86;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+body.cs-page--exams .cs-exams-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+body.cs-page--exams a.cs-exams-stat {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto auto;
+  column-gap: 0.7rem;
+  align-items: center;
+  padding: 0.85rem 0.95rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px -16px rgba(37, 99, 235, 0.28);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+body.cs-page--exams a.cs-exams-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px -16px rgba(37, 99, 235, 0.38);
+}
+
+body.cs-page--exams .cs-exams-stat .cs-admin-summary-rail__ico {
+  grid-row: 1 / span 3;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.85rem;
+  font-size: 1.15rem;
+}
+
+body.cs-page--exams .cs-exams-stat .cs-admin-summary-rail__label {
+  grid-column: 2;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: #5b6b86;
+}
+
+body.cs-page--exams .cs-exams-stat .cs-admin-summary-rail__value {
+  grid-column: 2;
+  font-size: 1.7rem;
+  line-height: 1.05;
+}
+
+body.cs-page--exams .cs-exams-stat .cs-admin-summary-rail__hint {
+  grid-column: 2;
+  font-size: 0.72rem;
+  color: #52637c;
+}
+
+body.cs-page--exams .cs-exams-stat__go {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+body.cs-page--exams .cs-exams-stat--all {
+  background: linear-gradient(135deg, #ffffff 0%, #eef6ff 72%);
+}
+body.cs-page--exams .cs-exams-stat--all .cs-admin-summary-rail__ico {
+  background: #dbeafe;
+  color: #2563eb;
+}
+body.cs-page--exams .cs-exams-stat--open {
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 78%);
+}
+body.cs-page--exams .cs-exams-stat--open .cs-admin-summary-rail__ico {
+  background: #d1fae5;
+  color: #059669;
+}
+body.cs-page--exams .cs-exams-stat--upcoming {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 78%);
+}
+body.cs-page--exams .cs-exams-stat--upcoming .cs-admin-summary-rail__ico {
+  background: #ffedd5;
+  color: #d97706;
+}
+body.cs-page--exams .cs-exams-stat--finished {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 78%);
+}
+body.cs-page--exams .cs-exams-stat--finished .cs-admin-summary-rail__ico {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+body.cs-page--exams .cs-exams-browser {
+  padding: 0.75rem 0.85rem 0.95rem;
+  border: 0;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 30px -20px rgba(37, 99, 235, 0.28);
+  overflow: visible;
+}
+
+body.cs-page--exams .cs-admin-tabs {
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+}
+
+body.cs-page--exams .cs-admin-tab {
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+body.cs-page--exams .cs-admin-tab:hover {
+  background: #eef4ff;
+  color: #334155;
+}
+
+body.cs-page--exams .cs-admin-tab.is-active {
+  background: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 8px 16px -10px rgba(29, 78, 216, 0.55);
+}
+
+body.cs-page--exams .cs-admin-toolbar {
+  margin-bottom: 0.85rem;
+  gap: 0.6rem;
+}
+
+body.cs-page--exams .cs-admin-search input,
+body.cs-page--exams .cs-admin-toolbar select {
+  min-height: 2.45rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+body.cs-page--exams .cs-admin-search input:focus,
+body.cs-page--exams .cs-admin-toolbar select:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+body.cs-page--exams .cs-admin-view-toggle {
+  border-radius: 999px;
+  border-color: #e2e8f0;
+  background: #fff;
+}
+
+body.cs-page--exams .cs-admin-view-toggle a {
+  min-height: 2.45rem;
+  padding: 0 0.8rem;
+  color: #64748b;
+}
+
+body.cs-page--exams .cs-admin-view-toggle a.is-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+body.cs-page--exams .cs-admin-exam-grid.cs-exams-catalog {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+body.cs-page--exams.college-examination-portal .cs-exams-catalog .cp-exam-card,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card {
+  --cs-exam-accent: #3b82f6;
+  --cs-exam-accent-2: #7c5cfc;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: flex-start;
+  gap: 0.42rem;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border: 0;
+  border-radius: 22px;
+  color: #1a2f4a;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(124, 92, 252, 0.2), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(59, 130, 246, 0.22), transparent 54%),
+    linear-gradient(165deg, #eef3ff 0%, #f4f0ff 22%, #f8f9fd 46%, #fcfdff 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 18px 36px -28px rgba(37, 67, 140, 0.45);
+  transform: none;
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card--diagnostic {
+  --cs-exam-accent: #7c5cfc;
+  --cs-exam-accent-2: #6366f1;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(124, 92, 252, 0.26), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(99, 102, 241, 0.16), transparent 54%),
+    linear-gradient(165deg, #f3f0ff 0%, #eef2ff 24%, #f8f9fd 48%, #fcfdff 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card--upcoming {
+  --cs-exam-accent: #d97706;
+  --cs-exam-accent-2: #f59e0b;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(251, 191, 36, 0.22), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(59, 130, 246, 0.12), transparent 54%),
+    linear-gradient(165deg, #fff7ed 0%, #f4f0ff 28%, #f8f9fd 52%, #fcfdff 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card--active {
+  --cs-exam-accent: #2563eb;
+  --cs-exam-accent-2: #38bdf8;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(56, 189, 248, 0.22), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(37, 99, 235, 0.2), transparent 54%),
+    linear-gradient(165deg, #eaf4ff 0%, #eef2ff 26%, #f8f9fd 50%, #fcfdff 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card--finished {
+  --cs-exam-accent: #6366f1;
+  --cs-exam-accent-2: #22c55e;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(167, 139, 250, 0.24), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(59, 130, 246, 0.12), transparent 54%),
+    linear-gradient(165deg, #f3f0ff 0%, #eef6ff 26%, #f8f9fd 50%, #fcfdff 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card--missed {
+  --cs-exam-accent: #e11d48;
+  --cs-exam-accent-2: #fb7185;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(251, 113, 133, 0.18), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(99, 102, 241, 0.1), transparent 54%),
+    linear-gradient(165deg, #fff1f2 0%, #f4f0ff 28%, #f8f9fd 52%, #fcfdff 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  top: -3.4rem;
+  right: -2.1rem;
+  width: 9.5rem;
+  height: 9.5rem;
+  border-radius: 42% 58% 48% 52%;
+  background: linear-gradient(145deg, rgba(96, 165, 250, 0.42) 0%, rgba(129, 140, 248, 0.18) 48%, rgba(167, 139, 250, 0.32) 100%);
+  transform: rotate(16deg);
+  transition: transform 220ms ease;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  top: 1.15rem;
+  right: 2.55rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+  border: 1.5px solid rgba(99, 102, 241, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
+  transform: rotate(24deg);
+  box-shadow: 1.7rem 1.15rem 0 -0.55rem rgba(59, 130, 246, 0.16);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card:hover {
+  transform: translateY(-5px);
+  filter: saturate(1.04);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 22px 40px -24px rgba(49, 70, 140, 0.5);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card:hover::before {
+  transform: rotate(22deg) scale(1.04);
+}
+
+body.cs-page--exams.college-examination-portal .cs-exams-catalog .cp-exam-card__stretch,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__stretch {
+  display: none;
+  flex: 0 0 0;
+  height: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__header,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__body,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__foot {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-top: 0;
+  box-sizing: border-box;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__header {
+  margin: 0;
+  padding: 0.85rem 1.05rem 0.15rem;
+}
+
+body.cs-page--exams.college-examination-portal .cs-exams-catalog .cp-exam-card__body,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  padding: 0 1.05rem 0.15rem;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__labels-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+body.cs-page--exams .cs-exams-catalog .type-pill,
+body.cs-page--exams .cs-exams-catalog .status-pill,
+body.cs-page--exams .cs-exams-catalog .cp-exam-badge {
+  border: 0;
+  font-size: 0.6rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+}
+
+body.cs-page--exams .cs-exams-catalog .type-regular,
+body.cs-page--exams .cs-exams-catalog .type-diagnostic {
+  color: #1e3a8a;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+body.cs-page--exams .cs-exams-catalog .type-diagnostic {
+  color: #5b21b6;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-badge--new {
+  color: #9a3412;
+  background: rgba(255, 247, 237, 0.86);
+}
+
+body.cs-page--exams .cs-exams-catalog .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+body.cs-page--exams .cs-exams-catalog .status-pill i {
+  font-size: 0.58rem;
+}
+
+body.cs-page--exams .cs-exams-catalog .status-open,
+body.cs-page--exams .cs-exams-catalog .status-progress {
+  color: #0369a1;
+}
+
+body.cs-page--exams .cs-exams-catalog .status-upcoming {
+  color: #b45309;
+}
+
+body.cs-page--exams .cs-exams-catalog .status-done {
+  color: #047857;
+}
+
+body.cs-page--exams .cs-exams-catalog .status-missed {
+  color: #be123c;
+}
+
+body.cs-page--exams .cs-exams-catalog .status-closed {
+  color: #475569;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__title {
+  margin: 0.15rem 0 0;
+  max-width: 86%;
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+  font-size: 1.14rem;
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.025em;
+  color: #10233f;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__desc {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #52637c;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.85rem;
+  margin: 0.12rem 0 0;
+  padding: 0;
+  background: none;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.73rem;
+  font-weight: 650;
+  color: #3d4f68;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-meta__ico {
+  color: var(--cs-exam-accent, #3b82f6);
+  opacity: 0.9;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule {
+  display: grid;
+  gap: 0.08rem;
+  margin: 0.05rem 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: #52637c;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule-row {
+  display: grid;
+  grid-template-columns: 3.15rem minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule-k {
+  font-weight: 750;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule-k::after {
+  content: none;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule-v {
+  font-weight: 650;
+  color: #1e334d;
+  font-size: 0.72rem;
+}
+
+body.cs-page--exams.college-examination-portal .cs-exams-catalog .cp-exam-card__score,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "k pct"
+    "bar bar";
+  column-gap: 0.65rem;
+  row-gap: 0.28rem;
+  align-items: end;
+  margin: 0.2rem 0 0;
+  padding: 0.15rem 1.05rem 0.05rem;
+  border: 0;
+  background: none;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-head {
+  display: contents;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-k {
+  grid-area: k;
+  align-self: end;
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-pct {
+  grid-area: pct;
+  font-family: Georgia, "Iowan Old Style", Palatino, serif;
+  font-size: 1.42rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #1d4ed8;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-row {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-fraction {
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-bar {
+  flex: 1 1 auto;
+  height: 0.42rem;
+  margin: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+  overflow: hidden;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #60a5fa 0%, #4f46e5 58%, #7c5cfc 100%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__score--empty {
+  opacity: 0.55;
+}
+
+body.cs-page--exams.college-examination-portal .cs-exams-catalog .cp-exam-card__foot,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__foot {
+  display: flex;
+  justify-content: stretch;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  padding: 0.7rem 1.05rem 0.85rem;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 28%);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__action {
+  width: 100%;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 2.2rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(124, 92, 252, 0.08));
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__btn--start {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: #fff;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__btn--action {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.1), rgba(124, 92, 252, 0.12));
+  color: #1e3a8a;
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card:hover .cp-exam-card__btn--start,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card:hover .cp-exam-card__btn--action {
+  transform: translateY(-1px);
+}
+
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__btn--closed,
+body.cs-page--exams .cs-exams-catalog .cp-exam-card__btn--muted {
+  background: transparent;
+  color: #64748b;
+  cursor: default;
+}
+
+body.cs-page--exams .cs-exams-table {
+  border: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px -16px rgba(37, 99, 235, 0.28);
+}
+
+body.cs-page--exams .cs-exams-table .cs-admin-table thead th {
+  background: #f8fbff;
+}
+
+body.cs-page--exams .cs-exams-table .cs-admin-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+@media (max-width: 1280px) {
+  body.cs-page--exams .cs-admin-exam-grid.cs-exams-catalog {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  body.cs-page--exams .cs-admin-exam-grid.cs-exams-catalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.cs-page--exams .cs-exams-hero__quote {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  body.cs-page--exams .cs-exams-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.cs-page--exams .cs-exams-hero .cs-admin-page-hero__sub {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  body.cs-page--exams .cs-exams-stats,
+  body.cs-page--exams .cs-admin-exam-grid.cs-exams-catalog {
+    grid-template-columns: 1fr;
+  }
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-hero,
+html[data-student-theme="dark"] body.cs-page--exams a.cs-exams-stat,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-browser {
+  background: #1e293b;
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card {
+  color: #e2e8f0;
+  background:
+    radial-gradient(18rem 10rem at 108% -18%, rgba(129, 140, 248, 0.28), transparent 58%),
+    radial-gradient(14rem 9rem at -12% -24%, rgba(37, 99, 235, 0.22), transparent 54%),
+    linear-gradient(165deg, #1b2744 0%, #1e293b 42%, #172033 100%);
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__title,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule-v,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__score-fraction {
+  color: #f8fafc;
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__desc,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-meta__item,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__schedule {
+  color: #94a3b8;
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .type-regular,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .type-diagnostic,
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .status-pill {
+  background: rgba(15, 23, 42, 0.45);
+  color: #c7d2fe;
+}
+
+html[data-student-theme="dark"] body.cs-page--exams .cs-exams-catalog .cp-exam-card__foot {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.35) 40%);
+}
+
+body.college-student-admin-align .college-exam-id-card,
+body.admin-app .college-exam-id-chip,
+.college-exam-id-chip {
+  font-family: inherit;
+}
+body.college-student-admin-align .college-exam-id-card {
+  background: #f8fbff;
+  border: 1px solid rgba(186, 210, 245, 0.7);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+}
+body.college-student-admin-align .college-exam-id-block {
+  margin: 0;
+}
+body.college-student-admin-align .college-exam-id-block__label {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #143d59;
+}
+body.college-student-admin-align .college-exam-id-block__hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: #5b7390;
+  overflow-wrap: break-word;
+}
+.college-exam-id-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  max-width: 100%;
+  padding: 0.2rem 0.45rem 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #e8f2ff;
+  border: 1px solid #d4e4fb;
+  color: #143d59;
+}
+.college-exam-id-chip--empty {
+  font-size: 0.75rem;
+  color: #5b7390;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+.college-exam-id-chip__k {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+}
+.college-exam-id-chip__v {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: transparent;
+}
+.college-exam-id-chip__copy {
+  border: 0;
+  background: #143d59;
+  color: #fff;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.college-exam-id-chip__copy.is-copied {
+  background: #047857;
+}
+.college-exam-id-chip__copy-svg {
+  display: block;
+  flex-shrink: 0;
+}
+html[data-student-theme="dark"] body.college-student-admin-align .college-exam-id-card {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+html[data-student-theme="dark"] body.college-student-admin-align .college-exam-id-block__label,
+html[data-student-theme="dark"] .college-exam-id-chip {
+  color: #e2e8f0;
+}
+html[data-student-theme="dark"] .college-exam-id-chip {
+  background: rgba(30, 64, 175, 0.28);
+  border-color: rgba(147, 197, 253, 0.28);
+}
+html[data-student-theme="dark"] body.college-student-admin-align .college-exam-id-block__hint {
+  color: #94a3b8;
+}

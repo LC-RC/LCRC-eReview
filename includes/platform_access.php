@@ -89,7 +89,7 @@ function ereview_sql_college_examinee_where(string $alias = 'u'): string
 {
     $a = preg_replace('/[^a-z_]/', '', $alias) ?: 'u';
 
-    return "({$a}.role='college_student' OR ({$a}.role='student' AND {$a}.college_examination_access='active')) AND {$a}.status='approved'";
+    return "{$a}.status='approved' AND {$a}.college_examination_access<>'suspended' AND ({$a}.role='college_student' OR ({$a}.role='student' AND {$a}.college_examination_access='active'))";
 }
 
 /** @deprecated alias */
@@ -108,6 +108,14 @@ function ereview_require_college_examination_portal(): void
     requireLogin();
     $userId = getCurrentUserId();
     if ($userId === null || $userId <= 0 || !ereview_user_has_college_examination_access($conn, $userId)) {
+        $row = ($userId !== null && $userId > 0) ? ereview_user_load_platform_row($conn, $userId) : null;
+        $gate = $row ? ereview_user_can_authenticate($conn, $row) : ['ok' => false];
+        if (empty($gate['ok'])) {
+            ereview_force_student_session_end(
+                (string) ($gate['error'] ?? 'You do not have permission to access College Examination.'),
+                (string) ($gate['error_type'] ?? 'no_platform_access')
+            );
+        }
         $_SESSION['error'] = 'You do not have permission to access College Examination.';
         ereview_redirect('index');
         exit;
@@ -241,6 +249,40 @@ function ereview_enforce_lms_student_session(?mysqli $conn = null): void
 /**
  * End LMS student session and reject the request (HTML redirect or JSON).
  */
+/**
+ * End native college-student sessions when archive/login eligibility fails.
+ */
+function ereview_enforce_college_student_session(?mysqli $conn = null): void
+{
+    global $conn;
+    if ($conn === null) {
+        $conn = $GLOBALS['conn'] ?? null;
+    }
+    if (!$conn instanceof mysqli) {
+        return;
+    }
+    if (!isLoggedIn() || getCurrentUserRole() !== 'college_student') {
+        return;
+    }
+    $script = strtolower(basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    if ($script === 'logout.php') {
+        return;
+    }
+    $uid = (int) (getCurrentUserId() ?? 0);
+    $user = ereview_user_load_platform_row($conn, $uid);
+    if (!$user) {
+        ereview_force_student_session_end('Your session is no longer valid. Please sign in again.', 'invalid_user');
+    }
+    $gate = ereview_user_can_authenticate($conn, $user);
+    if (!empty($gate['ok'])) {
+        return;
+    }
+    ereview_force_student_session_end(
+        (string) ($gate['error'] ?? 'Your account access is not active.'),
+        (string) ($gate['error_type'] ?? 'access_denied')
+    );
+}
+
 function ereview_force_student_session_end(string $message, string $errorType = 'access_denied'): void
 {
     $_SESSION['error'] = $message;

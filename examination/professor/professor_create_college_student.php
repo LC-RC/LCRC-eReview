@@ -4,6 +4,7 @@ requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_sections.php';
 require_once dirname(__DIR__) . '/includes/college_student_create.php';
+require_once dirname(__DIR__) . '/includes/college_schools.php';
 require_once dirname(__DIR__, 2) . '/includes/url_helpers.php';
 
 $pageTitle = 'Add college student';
@@ -13,6 +14,7 @@ $success = null;
 $avatarPreviewPath = '';
 $avatarUseDefault = 1;
 $sectionOptions = college_sections_active_names($conn);
+$schoolOptions = college_schools_active_list($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -27,7 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $avatarPreviewPath = (string) $result['avatar_preview_path'];
             }
         } else {
-            $success = 'Account created. The student can sign in at the main login page.';
+            $assignedSn = trim((string) ($result['student_number'] ?? ''));
+            $success = 'Account created. The student can sign in at the main login page.'
+                . ($assignedSn !== '' ? ' Student number: ' . $assignedSn . '.' : '');
             $_POST = [];
             $avatarPreviewPath = '';
             $avatarUseDefault = 1;
@@ -44,6 +48,7 @@ $adminHeroEyebrow = 'Student management';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students', 'professor_college_students'], ['Create']];
 $adminBackHref = 'professor_college_students';
 $adminBackLabel = 'Back to Students';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="student_registration"><i class="bi bi-person-plus"></i> Registration form</a>';
 ?>
 <!DOCTYPE html>
@@ -51,18 +56,19 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="s
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--student-create<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($success) ? $success : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if ($error): ?><div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($error); ?></span></div><?php endif; ?>
-  <?php if ($success): ?><div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($success); ?></span></div><?php endif; ?>
+  <?php if ($success && empty($toastSuccess)): ?><div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($success); ?></span></div><?php endif; ?>
 
   <div class="examination-page-shell">
-    <section class="prof-workspace prof-workspace--form">
+    <section class="prof-workspace prof-workspace--form lms-workspace">
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <form method="post" enctype="multipart/form-data" class="rounded-xl overflow-hidden page-table xl:col-span-2 p-6 space-y-5">
+      <form method="post" enctype="multipart/form-data" class="rounded-xl overflow-hidden page-table xl:col-span-2 p-6 space-y-5 lms-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <div class="examination-avatar-zone">
           <div class="flex flex-wrap items-start gap-3">
@@ -95,23 +101,24 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="s
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Student number <span class="normal-case opacity-70">(optional)</span></label>
-            <input type="text" name="student_number" maxlength="32" pattern="[A-Za-z0-9_-]*" class="w-full" placeholder="e.g. 2008435" value="<?php echo h($_POST['student_number'] ?? ''); ?>">
-          </div>
-          <div>
             <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Email (login)</label>
             <input type="email" name="email" required autocomplete="off" class="w-full" value="<?php echo h($_POST['email'] ?? ''); ?>">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">School</label>
-            <input type="text" name="school" required class="w-full" value="<?php echo h($_POST['school'] ?? ''); ?>">
+            <select name="school_id" required class="w-full">
+              <option value=""><?php echo $schoolOptions === [] ? 'No active schools — add under Manage Schools first' : 'Select your school'; ?></option>
+              <?php foreach ($schoolOptions as $schOpt): ?>
+                <option value="<?php echo (int) $schOpt['school_id']; ?>" <?php echo ((string) (int) ($_POST['school_id'] ?? 0) === (string) (int) $schOpt['school_id']) ? 'selected' : ''; ?>><?php echo h((string) $schOpt['school_name']); ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Password</label>
-            <input type="password" name="password" required minlength="8" class="w-full" autocomplete="new-password">
+            <input type="password" name="password" required minlength="8" class="w-full" autocomplete="new-password" title="At least 8 characters with uppercase, lowercase, number, and symbol">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">Confirm password</label>
@@ -128,7 +135,8 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="s
         <h2 class="text-base font-bold m-0">Account setup notes</h2>
         <ul class="mt-3 text-sm space-y-2 opacity-90">
           <li><i class="bi bi-check-circle mr-1"></i> Student is created as <strong>approved</strong>.</li>
-          <li><i class="bi bi-check-circle mr-1"></i> Minimum password length is 8 characters.</li>
+          <li><i class="bi bi-check-circle mr-1"></i> A YYYY-NNN student number is assigned automatically. Do not type one.</li>
+          <li><i class="bi bi-check-circle mr-1"></i> Password must include uppercase, lowercase, a number, and a symbol (minimum 8 characters).</li>
           <li><i class="bi bi-check-circle mr-1"></i> Email must be unique to log in.</li>
           <li><i class="bi bi-check-circle mr-1"></i> You can review accounts in the students directory.</li>
         </ul>

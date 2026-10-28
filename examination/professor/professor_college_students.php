@@ -6,6 +6,9 @@ require_once dirname(__DIR__) . '/includes/college_sections.php';
 require_once dirname(__DIR__, 2) . '/includes/profile_avatar.php';
 require_once dirname(__DIR__, 2) . '/includes/platform_access.php';
 require_once dirname(__DIR__, 2) . '/includes/url_helpers.php';
+require_once dirname(__DIR__) . '/includes/college_school_assignment.php';
+require_once dirname(__DIR__) . '/includes/college_schools.php';
+require_once dirname(__DIR__) . '/includes/college_student_number_display.php';
 
 $pageTitle = 'Students';
 $csrf = generateCSRFToken();
@@ -15,12 +18,13 @@ $search = trim((string) ($_GET['q'] ?? ''));
 $statusFilter = (string) ($_GET['status'] ?? 'all');
 $typeFilter = (string) ($_GET['type'] ?? 'college_student');
 $sectionFilter = trim((string) ($_GET['section'] ?? ''));
+$schoolFilter = trim((string) ($_GET['school'] ?? ''));
 $sort = (string) ($_GET['sort'] ?? 'created_desc');
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $perPageRaw = (int) ($_GET['per_page'] ?? 25);
 $perPage = in_array($perPageRaw, [10, 25, 50, 100], true) ? $perPageRaw : 25;
 
-$validStatus = ['all', 'approved', 'pending', 'rejected'];
+$validStatus = ['all', 'approved', 'pending', 'rejected', 'archived'];
 $validType = ['college_student', 'reviewee'];
 $validSort = ['created_desc', 'created_asc', 'name_asc', 'name_desc'];
 if (!in_array($statusFilter, $validStatus, true)) {
@@ -43,8 +47,10 @@ function pcs_build_list_where(
     string $statusFilter,
     string $search,
     string $sectionFilter,
+    string $schoolFilter,
     bool $isStudentTab,
-    bool $platformColsReady
+    bool $platformColsReady,
+    bool $schoolAssignmentReady
 ): array {
     // Roster = native college accounts OR eReview students already granted exam access
     // (active/suspended). "Not enabled" LMS students stay on admin_students only.
@@ -57,7 +63,9 @@ function pcs_build_list_where(
         $where[] = "role='college_student'";
     }
 
-    if ($statusFilter !== 'all') {
+    if ($statusFilter === 'all') {
+        $where[] = "status<>'archived'";
+    } elseif ($statusFilter !== '') {
         $where[] = 'status=?';
         $types .= 's';
         $params[] = $statusFilter;
@@ -77,6 +85,21 @@ function pcs_build_list_where(
             $params[] = $sectionFilter;
         }
     }
+    if ($schoolFilter !== '') {
+        if ($schoolFilter === '__unmapped__') {
+            if ($schoolAssignmentReady) {
+                $where[] = '(college_school_assigned_at IS NULL OR TRIM(COALESCE(school,\'\'))=\'\')';
+            }
+        } else {
+            if ($schoolAssignmentReady) {
+                $where[] = 'college_school_assigned_at IS NOT NULL AND TRIM(school)=?';
+                $types .= 's';
+                $params[] = $schoolFilter;
+            } else {
+                $where[] = '1=0';
+            }
+        }
+    }
 
     return [$where, $types, $params];
 }
@@ -92,18 +115,21 @@ function pcs_sort_sql(string $sort): string
 }
 
 $platformColsReady = ereview_platform_access_columns_ready($conn);
+$schoolAssignmentReady = college_school_assignment_schema_ready($conn);
 [$whereParts, $whereTypes, $whereParams] = pcs_build_list_where(
     $reviewTypeSql,
     $statusFilter,
     $search,
     $sectionFilter,
+    $schoolFilter,
     $isStudentTab,
-    $platformColsReady
+    $platformColsReady,
+    $schoolAssignmentReady
 );
 $whereSql = implode(' AND ', $whereParts);
 
-$statsStudents = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0];
-$statsReviewees = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0];
+$statsStudents = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0, 'archived' => 0];
+$statsReviewees = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0, 'archived' => 0];
 $statsRosterSql = $platformColsReady
     ? "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))"
     : "role='college_student'";
@@ -121,22 +147,30 @@ if ($statsQ) {
         $c = (int) ($sr['c'] ?? 0);
         $bucket = ($rt === 'undergrad') ? 'students' : 'reviewees';
         if ($bucket === 'students') {
-            $statsStudents['total'] += $c;
-            if ($st === 'approved') {
-                $statsStudents['approved'] += $c;
-            } elseif ($st === 'pending') {
-                $statsStudents['pending'] += $c;
-            } elseif ($st === 'rejected') {
-                $statsStudents['rejected'] += $c;
+            if ($st === 'archived') {
+                $statsStudents['archived'] += $c;
+            } else {
+                $statsStudents['total'] += $c;
+                if ($st === 'approved') {
+                    $statsStudents['approved'] += $c;
+                } elseif ($st === 'pending') {
+                    $statsStudents['pending'] += $c;
+                } elseif ($st === 'rejected') {
+                    $statsStudents['rejected'] += $c;
+                }
             }
         } else {
-            $statsReviewees['total'] += $c;
-            if ($st === 'approved') {
-                $statsReviewees['approved'] += $c;
-            } elseif ($st === 'pending') {
-                $statsReviewees['pending'] += $c;
-            } elseif ($st === 'rejected') {
-                $statsReviewees['rejected'] += $c;
+            if ($st === 'archived') {
+                $statsReviewees['archived'] += $c;
+            } else {
+                $statsReviewees['total'] += $c;
+                if ($st === 'approved') {
+                    $statsReviewees['approved'] += $c;
+                } elseif ($st === 'pending') {
+                    $statsReviewees['pending'] += $c;
+                } elseif ($st === 'rejected') {
+                    $statsReviewees['rejected'] += $c;
+                }
             }
         }
     }
@@ -161,6 +195,34 @@ if ($sectionOptions === []) {
     }
 }
 
+$schoolOptions = [];
+$schoolOptSql = $platformColsReady
+    ? "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))"
+    : "role='college_student'";
+$schoolAssignedSql = ' AND college_school_assigned_at IS NOT NULL AND school IS NOT NULL AND TRIM(school) <> \'\'';
+if ($schoolAssignmentReady) {
+    $schoolOptSt = mysqli_prepare(
+        $conn,
+        "SELECT DISTINCT TRIM(school) AS school_label
+         FROM users
+         WHERE review_type=? AND {$schoolOptSql}
+           {$schoolAssignedSql}
+         ORDER BY school_label ASC"
+    );
+    if ($schoolOptSt) {
+        mysqli_stmt_bind_param($schoolOptSt, 's', $reviewTypeSql);
+        mysqli_stmt_execute($schoolOptSt);
+        $schoolRes = mysqli_stmt_get_result($schoolOptSt);
+        while ($sr = mysqli_fetch_assoc($schoolRes)) {
+            $label = trim((string) ($sr['school_label'] ?? ''));
+            if ($label !== '') {
+                $schoolOptions[] = $label;
+            }
+        }
+        mysqli_stmt_close($schoolOptSt);
+    }
+}
+
 $countSt = mysqli_prepare($conn, "SELECT COUNT(*) AS c FROM users WHERE {$whereSql}");
 $total = 0;
 if ($countSt) {
@@ -178,7 +240,8 @@ if ($page > $totalPages) {
 $offset = ($page - 1) * $perPage;
 
 $list = [];
-$listSql = "SELECT user_id, full_name, email, status, created_at, section, student_number, profile_picture, use_default_avatar, review_type, role, college_examination_access
+$schoolSelectCols = $schoolAssignmentReady ? ', college_school_assigned_at, college_school_assigned_by' : '';
+$listSql = "SELECT user_id, full_name, email, status, created_at, section, school, student_number, profile_picture, use_default_avatar, review_type, role, college_examination_access{$schoolSelectCols}
             FROM users WHERE {$whereSql} ORDER BY " . pcs_sort_sql($sort) . ' LIMIT ? OFFSET ?';
 $listSt = mysqli_prepare($conn, $listSql);
 if ($listSt) {
@@ -197,12 +260,13 @@ $activeStats = $isStudentTab ? $statsStudents : $statsReviewees;
 
 function students_page_query(array $overrides = []): string
 {
-    global $search, $statusFilter, $typeFilter, $sectionFilter, $sort, $page, $perPage;
+    global $search, $statusFilter, $typeFilter, $sectionFilter, $schoolFilter, $sort, $page, $perPage;
     $params = array_merge([
         'q' => $search !== '' ? $search : null,
         'status' => $statusFilter !== 'all' ? $statusFilter : null,
         'type' => $typeFilter !== 'college_student' ? $typeFilter : null,
         'section' => ($typeFilter === 'college_student' && $sectionFilter !== '') ? $sectionFilter : null,
+        'school' => $schoolFilter !== '' ? $schoolFilter : null,
         'sort' => $sort !== 'created_desc' ? $sort : null,
         'page' => $page > 1 ? $page : null,
         'per_page' => $perPage !== 25 ? $perPage : null,
@@ -220,9 +284,14 @@ $adminHeroIcon = 'people';
 $adminHeroEyebrow = 'Student management';
 $adminHeroTitle = 'Students';
 $adminHeroSubtitle = 'Manage examination students and reviewees.';
-$adminHeroMeta = '<span class="prof-hero-stat">' . (int) $statsStudents['total'] . ' student' . ((int) $statsStudents['total'] === 1 ? '' : 's') . '</span>';
+$lmsHeroVariant = 'navy';
+$lmsShare = static function (int $n, int $all): string {
+    return $all > 0 ? ((string) ((int) round(100 * $n / $all)) . '% of group') : '';
+};
+$adminHeroMeta = '<span class="lms-status lms-status--info">' . (int) $statsStudents['total'] . ' student' . ((int) $statsStudents['total'] === 1 ? '' : 's') . '</span>';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students']];
 $adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" href="student_registration"><i class="bi bi-person-plus"></i> Register Student</a>'
+    . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_college_schools"><i class="bi bi-building"></i> Manage Schools</a>'
     . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
 
 $statusChipMeta = [
@@ -230,9 +299,14 @@ $statusChipMeta = [
     'approved' => ['Approved', 'bi-check2-circle', (int) $activeStats['approved']],
     'pending' => ['Pending', 'bi-hourglass-split', (int) $activeStats['pending']],
     'rejected' => ['Rejected', 'bi-x-circle', (int) $activeStats['rejected']],
+    'archived' => ['Archived', 'bi-archive', (int) ($activeStats['archived'] ?? 0)],
 ];
 
-$hasActiveFilters = ($search !== '' || $sectionFilter !== '' || $sort !== 'created_desc' || $statusFilter !== 'all');
+$hasActiveFilters = ($search !== '' || $sectionFilter !== '' || $schoolFilter !== '' || $sort !== 'created_desc' || $statusFilter !== 'all');
+$schoolFilterLabel = $schoolFilter === '__unmapped__'
+    ? 'Unassigned (no staff-assigned school)'
+    : $schoolFilter;
+$catalogSchoolRows = $schoolAssignmentReady ? college_schools_list($conn, false) : [];
 $rangeStart = $total > 0 ? $offset + 1 : 0;
 $rangeEnd = min($offset + $perPage, $total);
 $apiUrl = ereview_url('professor_college_students_api');
@@ -242,29 +316,57 @@ $apiUrl = ereview_url('professor_college_students_api');
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--students">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--students<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($flashMessage) ? $flashMessage : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-  <?php if ($flashMessage !== null && $flashMessage !== ''): ?>
+  <?php if ($flashMessage !== null && $flashMessage !== '' && empty($toastSuccess)): ?>
     <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2" role="status">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h((string) $flashMessage); ?></span>
     </div>
   <?php endif; ?>
 
-  <div id="pcsFlash" class="admin-flash mb-3 p-3 rounded-xl flex items-center gap-2" role="status" hidden></div>
+  <div id="pcsFlash" class="admin-flash" role="status" hidden></div>
 
-  <div class="students-page-shell gap-3">
-    <section class="prof-workspace prof-workspace--roster">
-    <div class="prof-workspace__head">
-      <div>
-        <h2 class="prof-workspace__title"><?php echo $isStudentTab ? 'Students' : 'Reviewees'; ?></h2>
+  <div class="students-page-shell">
+    <section class="lms-kpi-row" aria-label="Student summary">
+      <article class="lms-kpi lms-kpi--total">
+        <span class="lms-kpi__label"><i class="bi bi-mortarboard" aria-hidden="true"></i> Students</span>
+        <span class="lms-kpi__value"><?php echo (int) $statsStudents['total']; ?></span>
+        <span class="lms-kpi__hint">College roster</span>
+      </article>
+      <article class="lms-kpi lms-kpi--live">
+        <span class="lms-kpi__label"><i class="bi bi-person-badge" aria-hidden="true"></i> Reviewees</span>
+        <span class="lms-kpi__value"><?php echo (int) $statsReviewees['total']; ?></span>
+        <span class="lms-kpi__hint">Reviewee roster</span>
+      </article>
+      <article class="lms-kpi lms-kpi--ok">
+        <span class="lms-kpi__label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Approved</span>
+        <span class="lms-kpi__value"><?php echo (int) $activeStats['approved']; ?></span>
+        <?php $h = $lmsShare((int) $activeStats['approved'], (int) $activeStats['total']); ?>
+        <span class="lms-kpi__hint"><?php echo h($h !== '' ? $h : 'In this group'); ?></span>
+      </article>
+      <article class="lms-kpi lms-kpi--wait">
+        <span class="lms-kpi__label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending</span>
+        <span class="lms-kpi__value"><?php echo (int) $activeStats['pending']; ?></span>
+        <?php $h = $lmsShare((int) $activeStats['pending'], (int) $activeStats['total']); ?>
+        <span class="lms-kpi__hint"><?php echo h($h !== '' ? $h : 'Awaiting review'); ?></span>
+      </article>
+    </section>
+    <section class="prof-workspace prof-workspace--roster lms-workspace">
+    <div class="lms-workspace__chrome">
+    <div class="prof-workspace__head lms-workspace__head">
+      <div class="lms-workspace__heading">
+        <div class="lms-workspace__title-row">
+          <h2 class="prof-workspace__title"><?php echo $isStudentTab ? 'Students' : 'Reviewees'; ?></h2>
+          <span class="prof-count lms-count-badge"><?php echo (int) $total; ?> <?php echo $isStudentTab ? 'student' : 'reviewee'; ?><?php echo (int) $total === 1 ? '' : 's'; ?></span>
+        </div>
         <p class="prof-workspace__sub"><?php echo $isStudentTab ? 'College Examination roster, sections, and account status.' : 'Reviewee accounts and access status.'; ?></p>
       </div>
-      <span class="prof-count"><?php echo (int) $total; ?> <?php echo $isStudentTab ? 'student' : 'reviewee'; ?><?php echo (int) $total === 1 ? '' : 's'; ?></span>
     </div>
-    <nav class="students-view-tabs" aria-label="Examinee groups">
+    <nav class="students-view-tabs lms-tabs" aria-label="Examinee groups">
       <a href="<?php echo h(students_page_query(['type' => 'college_student', 'section' => null, 'page' => null])); ?>" class="students-view-tab <?php echo $isStudentTab ? 'is-active' : ''; ?>">
         <i class="bi bi-mortarboard" aria-hidden="true"></i> Students <span class="students-status-chip__count"><?php echo (int) $statsStudents['total']; ?></span>
       </a>
@@ -272,7 +374,8 @@ $apiUrl = ereview_url('professor_college_students_api');
         <i class="bi bi-person-badge" aria-hidden="true"></i> Reviewees <span class="students-status-chip__count"><?php echo (int) $statsReviewees['total']; ?></span>
       </a>
     </nav>
-    <div class="students-toolbar page-filter">
+    </div>
+    <div class="students-toolbar page-filter lms-toolbar">
       <nav class="students-status-chips" aria-label="Filter by status">
         <?php foreach ($statusChipMeta as $key => $meta): ?>
           <a href="<?php echo h(students_page_query(['status' => $key === 'all' ? null : $key, 'page' => null])); ?>" class="students-status-chip <?php echo $statusFilter === $key ? 'is-active' : ''; ?>">
@@ -289,10 +392,10 @@ $apiUrl = ereview_url('professor_college_students_api');
         <?php endif; ?>
         <div class="students-search">
           <i class="bi bi-search" aria-hidden="true"></i>
-          <input type="search" id="searchQ" name="q" value="<?php echo h($search); ?>" placeholder="Search students, email, section..." aria-label="Search accounts">
+          <input type="search" id="searchQ" name="q" value="<?php echo h($search); ?>" placeholder="Name, email, College Exam ID, section, school" aria-label="Search accounts">
         </div>
         <?php if ($isStudentTab): ?>
-          <select name="section" aria-label="Filter by section" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+          <select name="section" aria-label="Filter by section" class="admin-btn admin-btn--secondary admin-btn--sm">
             <option value="">All sections</option>
             <option value="__none__" <?php echo $sectionFilter === '__none__' ? 'selected' : ''; ?>>No section</option>
             <?php foreach ($sectionOptions as $sec): ?>
@@ -300,7 +403,14 @@ $apiUrl = ereview_url('professor_college_students_api');
             <?php endforeach; ?>
           </select>
         <?php endif; ?>
-        <select name="sort" aria-label="Sort order" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+        <select name="school" aria-label="Filter by exact school" class="admin-btn admin-btn--secondary admin-btn--sm">
+          <option value="">All schools</option>
+          <option value="__unmapped__" <?php echo $schoolFilter === '__unmapped__' ? 'selected' : ''; ?>>Unassigned (not staff-assigned)</option>
+          <?php foreach ($schoolOptions as $sch): ?>
+            <option value="<?php echo h($sch); ?>" <?php echo ($schoolFilter !== '__unmapped__' && $schoolFilter === $sch) ? 'selected' : ''; ?>><?php echo h($sch); ?></option>
+          <?php endforeach; ?>
+        </select>
+        <select name="sort" aria-label="Sort order" class="admin-btn admin-btn--secondary admin-btn--sm">
           <option value="created_desc" <?php echo $sort === 'created_desc' ? 'selected' : ''; ?>>Recently created</option>
           <option value="created_asc" <?php echo $sort === 'created_asc' ? 'selected' : ''; ?>>Oldest created</option>
           <option value="name_asc" <?php echo $sort === 'name_asc' ? 'selected' : ''; ?>>Name A–Z</option>
@@ -308,7 +418,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         </select>
         <button type="submit" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-funnel"></i> Filter</button>
         <?php if ($hasActiveFilters): ?>
-          <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="students-clear-link">Clear</a>
+          <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'school' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="students-clear-link">Clear</a>
         <?php endif; ?>
       </form>
     </div>
@@ -317,18 +427,34 @@ $apiUrl = ereview_url('professor_college_students_api');
       <span class="students-bulk-bar__count"><span id="pcsBulkCount">0</span> selected</span>
       <span id="pcsBulkAllHint" class="students-bulk-bar__hint" hidden></span>
       <div class="students-bulk-bar__actions">
-        <button type="button" id="pcsBulkClearBtn" class="admin-modal__btn admin-modal__btn--ghost">Clear</button>
+        <button type="button" id="pcsBulkClearBtn" class="admin-btn admin-btn--secondary admin-btn--sm">Clear</button>
         <?php if ($isStudentTab): ?>
-          <button type="button" id="pcsBulkApproveBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2-circle"></i> Approve</button>
-          <button type="button" id="pcsBulkEnableBtn" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
-          <button type="button" id="pcsBulkSectionBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-collection"></i> Assign Section</button>
-          <button type="button" id="pcsBulkDisableBtn" class="admin-modal__btn admin-modal__btn--ghost"><i class="bi bi-slash-circle"></i> Suspend College Examination</button>
-          <button type="button" id="pcsBulkRemoveBtn" class="admin-modal__btn admin-modal__btn--danger"><i class="bi bi-trash"></i> Remove / Delete</button>
+          <button type="button" id="pcsBulkApproveBtn" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Approve</button>
+          <button type="button" id="pcsBulkEnableBtn" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-clipboard-check"></i> Enable College Examination</button>
+          <button type="button" id="pcsBulkSectionBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-collection"></i> Assign Section</button>
+          <button type="button" id="pcsBulkAssignSchoolBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-building"></i> Assign school</button>
+          <button type="button" id="pcsBulkActivateBtn" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-unlock"></i> Activate exam access</button>
+          <button type="button" id="pcsBulkDeactivateBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-slash-circle"></i> Deactivate exam access</button>
+          <button type="button" id="pcsBulkRollbackBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-arrow-counterclockwise"></i> Restore operation</button>
+          <button type="button" id="pcsBulkDisableBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-slash-circle"></i> Suspend LMS exam access</button>
+          <button type="button" id="pcsBulkArchiveBtn" class="admin-btn admin-btn--secondary admin-btn--sm"><i class="bi bi-archive"></i> Archive</button>
+          <button type="button" id="pcsBulkRestoreBtn" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-arrow-counterclockwise"></i> Restore</button>
+          <button type="button" id="pcsBulkRemoveBtn" class="admin-btn admin-btn--danger admin-btn--sm"><i class="bi bi-trash"></i> Remove / Delete</button>
         <?php endif; ?>
       </div>
     </div>
 
-    <div class="rounded-2xl page-table students-table-shell bg-white/90 border border-white/80 shadow-sm overflow-hidden">
+    <?php if ($schoolFilter !== ''): ?>
+      <div class="admin-flash admin-flash--info mb-3 p-3 rounded-xl flex items-start gap-2" role="status">
+        <i class="bi bi-building" aria-hidden="true"></i>
+        <div>
+          <strong>School filter (exact staff-assigned name):</strong> <?php echo h($schoolFilterLabel); ?>
+          <span class="block text-sm opacity-80 mt-1">This filter only changes who is listed. It does not change exam access. Legacy school text is not treated as assigned. Activate/deactivate still requires checked students — the school dropdown is not a bulk target.<?php echo $schoolAssignmentReady ? '' : ' Apply migration 053 to enable staff assignment.'; ?></span>
+        </div>
+      </div>
+    <?php endif; ?>
+
+    <div class="rounded-2xl page-table students-table-shell lms-table-wrap overflow-hidden">
       <div class="students-table-meta">
         <span>
           <?php if ($total > 0): ?>
@@ -342,6 +468,7 @@ $apiUrl = ereview_url('professor_college_students_api');
           <?php if ($statusFilter !== 'all'): ?><input type="hidden" name="status" value="<?php echo h($statusFilter); ?>"><?php endif; ?>
           <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
           <?php if ($isStudentTab && $sectionFilter !== ''): ?><input type="hidden" name="section" value="<?php echo h($sectionFilter); ?>"><?php endif; ?>
+          <?php if ($schoolFilter !== ''): ?><input type="hidden" name="school" value="<?php echo h($schoolFilter); ?>"><?php endif; ?>
           <?php if ($sort !== 'created_desc'): ?><input type="hidden" name="sort" value="<?php echo h($sort); ?>"><?php endif; ?>
           <label for="pcsPerPage" class="student-meta whitespace-nowrap">Rows per page</label>
           <select id="pcsPerPage" name="per_page" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2rem;" onchange="this.form.submit()">
@@ -353,11 +480,11 @@ $apiUrl = ereview_url('professor_college_students_api');
       </div>
 
       <?php if ($total === 0): ?>
-        <div class="students-empty-cell" style="padding:3rem 1.5rem;">
-          <div class="font-semibold text-lg mb-1">
+        <div class="students-empty-cell lms-empty" style="padding:3rem 1.5rem;">
+          <div class="lms-empty__title font-semibold text-lg mb-1">
             <?php echo $hasActiveFilters ? 'No students found' : ($isStudentTab ? 'No College Examination students yet' : 'No reviewees yet'); ?>
           </div>
-          <p class="text-sm mt-1 mb-3 opacity-80">
+          <p class="lms-empty__text text-sm mt-1 mb-3 opacity-80">
             <?php if ($hasActiveFilters): ?>
               Try adjusting your search or filters.
             <?php else: ?>
@@ -366,7 +493,7 @@ $apiUrl = ereview_url('professor_college_students_api');
           </p>
           <div class="flex flex-wrap gap-2 justify-center">
             <?php if ($hasActiveFilters): ?>
-              <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Clear filters</a>
+              <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'school' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Clear filters</a>
             <?php endif; ?>
             <?php if ($isStudentTab): ?>
               <a href="student_registration" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Register Student</a>
@@ -377,7 +504,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         </div>
       <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left admin-students-table students-table--compact pcs-students-table pex-list-table">
+          <table class="w-full text-left admin-students-table students-table--compact pcs-students-table pex-list-table lms-table">
             <colgroup>
               <?php if ($isStudentTab): ?>
                 <col class="pcs-col-check" style="width:3rem">
@@ -403,7 +530,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                 <?php endif; ?>
                 <th scope="col" class="college-student-account-head">Account</th>
                 <?php if ($isStudentTab): ?>
-                  <th scope="col" class="pcs-col-exam">College Exam</th>
+                  <th scope="col" class="pcs-col-exam">Exam access</th>
                   <th scope="col" class="pcs-col-section">Section</th>
                 <?php endif; ?>
                 <th scope="col" class="pcs-col-status">Status</th>
@@ -426,23 +553,35 @@ $apiUrl = ereview_url('professor_college_students_api');
                       ? ereview_user_college_examination_access_value($u)
                       : 'none';
                   $hasCollEx = ereview_user_has_college_examination_access($conn, $uid, $u);
-                  $canEnable = ($role === 'student' && !$hasCollEx && $collExAccessVal !== 'suspended' && $statusLower !== 'rejected');
+                  $canEnable = ($role === 'student' && !$hasCollEx && $collExAccessVal !== 'suspended' && $statusLower !== 'rejected' && $statusLower !== 'archived');
                   $canAssignSection = ($isStudentTab && (
                       $hasCollEx
                       || ($role === 'college_student' && in_array($statusLower, ['pending', 'approved'], true))
                   ));
+                  $schoolTxt = trim((string) ($u['school'] ?? ''));
+                  $schoolMapped = $schoolAssignmentReady
+                      ? college_school_row_is_staff_assigned($u)
+                      : false;
                   $canDisable = ($role === 'student' && $hasCollEx);
+                  $canDeactivateExam = $statusLower !== 'archived' && $schoolMapped && (
+                      ($role === 'college_student' && $collExAccessVal !== 'suspended')
+                      || ($role === 'student' && $hasCollEx)
+                  );
+                  $canActivateExam = $statusLower !== 'archived' && $schoolMapped && $collExAccessVal === 'suspended';
                   // LMS-linked: remove exam access only. Native college: hard-delete account.
-                  $canRemoveFromExam = ($role === 'student' && in_array($collExAccessVal, ['active', 'suspended'], true));
-                  $canDeleteNative = ($role === 'college_student');
+                  $canRemoveFromExam = ($statusLower !== 'archived' && $role === 'student' && in_array($collExAccessVal, ['active', 'suspended'], true));
+                  $canDeleteNative = ($statusLower !== 'archived' && $role === 'college_student');
+                  $canArchiveAccount = ($statusLower !== 'archived');
+                  $canRestoreAccount = ($statusLower === 'archived');
                   $canRowDelete = ($canRemoveFromExam || $canDeleteNative);
                   $canApprove = ($role === 'college_student' && in_array($statusLower, ['pending', 'rejected'], true));
                   $approveNeedsSection = ($canApprove && $sectionTxt === '');
                   $statusBadge = match ($statusLower) {
-                      'approved' => 'admin-badge--success',
-                      'pending' => 'admin-badge--warning',
-                      'rejected' => 'admin-badge--danger',
-                      default => 'admin-badge--neutral',
+                      'approved' => 'lms-status lms-status--ok',
+                      'pending' => 'lms-status lms-status--warn',
+                      'rejected' => 'lms-status',
+                      'archived' => 'lms-status',
+                      default => 'lms-status lms-status--info',
                   };
                   $createdFmt = !empty($u['created_at']) ? date('M j, Y', strtotime((string) $u['created_at'])) : '—';
                 ?>
@@ -457,8 +596,15 @@ $apiUrl = ereview_url('professor_college_students_api');
                            <?php if ($canEnable): ?>data-enableable="1"<?php endif; ?>
                            <?php if ($canAssignSection): ?>data-sectionable="1"<?php endif; ?>
                            <?php if ($canDisable): ?>data-disableable="1"<?php endif; ?>
+                           <?php if ($canActivateExam): ?>data-exam-activatable="1"<?php endif; ?>
+                           <?php if ($canDeactivateExam): ?>data-exam-deactivatable="1"<?php endif; ?>
+                           <?php if ($schoolMapped): ?>data-school-mapped="1"<?php endif; ?>
+                           data-legacy-school="<?php echo h($schoolTxt); ?>"
+                           data-school-assignable="1"
                            <?php if ($canRemoveFromExam): ?>data-removable="1"<?php endif; ?>
                            <?php if ($canDeleteNative): ?>data-deletable="1"<?php endif; ?>
+                           <?php if ($canArchiveAccount): ?>data-archivable="1"<?php endif; ?>
+                           <?php if ($canRestoreAccount): ?>data-restorable="1"<?php endif; ?>
                            <?php if ($canApprove): ?>data-approvable="1" data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>"<?php endif; ?>>
                   </td>
                   <?php endif; ?>
@@ -480,12 +626,20 @@ $apiUrl = ereview_url('professor_college_students_api');
                         <?php if ($emailTxt !== ''): ?>
                           <a href="mailto:<?php echo h($emailTxt); ?>" class="pcs-account-email" title="<?php echo h($emailTxt); ?>"><?php echo h($emailTxt); ?></a>
                         <?php endif; ?>
-                        <span class="student-meta college-student-account__id">User #<?php echo $uid; ?></span>
+                        <?php echo college_exam_id_chip_html(trim((string) ($u['student_number'] ?? '')), ['copy' => true, 'compact' => true]); ?>
+                        <?php if ($schoolMapped): ?>
+                          <span class="admin-badge admin-badge--info" title="Staff-assigned school">Assigned: <?php echo h($schoolTxt); ?></span>
+                        <?php else: ?>
+                          <span class="admin-badge admin-badge--neutral" title="Not staff-assigned">Unassigned</span>
+                          <?php if ($schoolTxt !== ''): ?>
+                            <span class="student-meta">Legacy text: <?php echo h($schoolTxt); ?> (not verified)</span>
+                          <?php endif; ?>
+                        <?php endif; ?>
                       </div>
                     </div>
                   </td>
                   <?php if ($isStudentTab): ?>
-                    <td class="pcs-col-exam" data-label="College Exam">
+                    <td class="pcs-col-exam" data-label="Exam access">
                       <?php if ($role === 'college_student' && $statusLower === 'pending'): ?>
                         <span class="commerce-pill commerce-pill--awaiting"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending approval</span>
                       <?php elseif ($role === 'college_student' && $statusLower === 'rejected'): ?>
@@ -514,7 +668,7 @@ $apiUrl = ereview_url('professor_college_students_api');
                       <?php endif; ?>
                     </td>
                   <?php endif; ?>
-                  <td class="pcs-col-status" data-label="Status"><span class="admin-badge <?php echo h($statusBadge); ?>"><?php echo h(ucfirst($statusLower)); ?></span></td>
+                  <td class="pcs-col-status" data-label="Status"><span class="<?php echo h($statusBadge); ?>"><?php echo h(ucfirst($statusLower)); ?></span></td>
                   <td class="pcs-col-created" data-label="Created"><span class="student-meta"><?php echo h($createdFmt); ?></span></td>
                   <td class="student-action-cell" data-label="Actions">
                     <div class="student-action-cluster">
@@ -541,8 +695,15 @@ $apiUrl = ereview_url('professor_college_students_api');
                             <button type="button" class="admin-student-action-item js-pcs-approve-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>" data-has-section="<?php echo $sectionTxt !== '' ? '1' : '0'; ?>" data-section="<?php echo h($sectionTxt); ?>"><i class="bi bi-check2-circle" aria-hidden="true"></i> <?php echo $approveNeedsSection ? 'Approve & set section' : 'Approve account'; ?></button>
                           <?php endif; ?>
                           <a role="menuitem" class="admin-student-action-item" href="professor_college_student_view?id=<?php echo $uid; ?>#college-examination"><i class="bi bi-sliders" aria-hidden="true"></i> Manage access</a>
+                          <button type="button" class="admin-student-action-item js-pcs-assign-school-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-legacy-school="<?php echo h($schoolTxt); ?>"><i class="bi bi-building" aria-hidden="true"></i> Assign school</button>
                           <?php if ($canEnable): ?>
                             <button type="button" class="admin-student-action-item js-pcs-enable-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-clipboard-check" aria-hidden="true"></i> Enable College Examination</button>
+                          <?php endif; ?>
+                          <?php if ($canActivateExam): ?>
+                            <button type="button" class="admin-student-action-item js-pcs-activate-one" role="menuitem" data-user-id="<?php echo $uid; ?>"><i class="bi bi-unlock" aria-hidden="true"></i> Activate exam access</button>
+                          <?php endif; ?>
+                          <?php if ($canDeactivateExam): ?>
+                            <button type="button" class="admin-student-action-item js-pcs-deactivate-one" role="menuitem" data-user-id="<?php echo $uid; ?>"><i class="bi bi-slash-circle" aria-hidden="true"></i> Deactivate exam access</button>
                           <?php endif; ?>
                           <?php if ($canDisable): ?>
                             <button type="button" class="admin-student-action-item js-pcs-disable-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-slash-circle" aria-hidden="true"></i> Suspend College Examination</button>
@@ -560,6 +721,12 @@ $apiUrl = ereview_url('professor_college_students_api');
                                     data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"
                                     data-remove-mode="delete"
                                     data-is-reviewee="<?php echo $isStudentTab ? '0' : '1'; ?>"><i class="bi bi-trash" aria-hidden="true"></i> Delete student</button>
+                          <?php endif; ?>
+                          <?php if ($canArchiveAccount): ?>
+                            <button type="button" class="admin-student-action-item js-pcs-archive-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-archive" aria-hidden="true"></i> Archive account</button>
+                          <?php endif; ?>
+                          <?php if ($canRestoreAccount): ?>
+                            <button type="button" class="admin-student-action-item js-pcs-restore-one" role="menuitem" data-user-id="<?php echo $uid; ?>" data-student-name="<?php echo h((string) ($u['full_name'] ?? '')); ?>"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Restore account</button>
                           <?php endif; ?>
                         </div>
                       </div>
@@ -592,8 +759,8 @@ $apiUrl = ereview_url('professor_college_students_api');
   </div>
 
   <?php if ($isStudentTab): ?>
-  <div id="pcsApproveModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsApproveTitle">
+  <div id="pcsApproveModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsApproveTitle">
       <form id="pcsApproveForm">
         <div class="admin-modal__hero">
           <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-check2-circle"></i></span>
@@ -622,8 +789,8 @@ $apiUrl = ereview_url('professor_college_students_api');
     </section>
   </div>
 
-  <div id="pcsEnableModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsEnableTitle">
+  <div id="pcsEnableModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsEnableTitle">
       <form id="pcsEnableForm">
         <div class="admin-modal__hero">
           <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-clipboard-check"></i></span>
@@ -664,8 +831,8 @@ $apiUrl = ereview_url('professor_college_students_api');
     </section>
   </div>
 
-  <div id="pcsSectionModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsSectionTitle">
+  <div id="pcsSectionModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="pcsSectionTitle">
       <form id="pcsSectionForm">
         <div class="admin-modal__hero">
           <span class="admin-modal__hero-icon admin-modal__hero-icon--approve"><i class="bi bi-collection"></i></span>
@@ -693,13 +860,13 @@ $apiUrl = ereview_url('professor_college_students_api');
     </section>
   </div>
 
-  <div id="pcsDisableModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsDisableTitle">
+  <div id="pcsDisableModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsDisableTitle">
       <div class="admin-modal__hero">
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
         <div>
           <h3 id="pcsDisableTitle" class="admin-modal__title">Suspend College Examination?</h3>
-          <p class="admin-modal__desc">This suspends College Examination login access for <strong id="pcsDisableCount">0</strong> selected eReview student account(s). eReview LMS access is unchanged.</p>
+          <p class="admin-modal__desc">This suspends College Examination login access for <strong id="pcsDisableCount">0</strong> selected eReview LMS student account(s) only. Native college accounts use Deactivate exam access. eReview LMS access is unchanged.</p>
         </div>
       </div>
       <div id="pcsDisableError" class="admin-modal__error"></div>
@@ -709,10 +876,123 @@ $apiUrl = ereview_url('professor_college_students_api');
       </div>
     </section>
   </div>
+  <div id="pcsArchiveModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsArchiveTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-archive"></i></span>
+        <div>
+          <h3 id="pcsArchiveTitle" class="admin-modal__title">Archive student account?</h3>
+          <p class="admin-modal__desc">Archives <strong id="pcsArchiveCount">0</strong> account(s). They cannot sign in to eReview or College Examination. The same user ID, email, grants, exam access flag, and history are kept. This is not unlink, suspend, or delete. School scoping is not applied (same as this roster).</p>
+        </div>
+      </div>
+      <div id="pcsArchiveError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsArchiveCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--danger" id="pcsArchiveConfirm">Archive</button>
+      </div>
+    </section>
+  </div>
+  <div id="pcsRestoreModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog" role="dialog" aria-modal="true" aria-labelledby="pcsRestoreTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-arrow-counterclockwise"></i></span>
+        <div>
+          <h3 id="pcsRestoreTitle" class="admin-modal__title">Restore student account?</h3>
+          <p class="admin-modal__desc">Restores <strong id="pcsRestoreCount">0</strong> archived account(s) to the status recorded at archive time. Does not create a new account, grant a new LMS subscription, or change College Examination access beyond what was stored.</p>
+        </div>
+      </div>
+      <div id="pcsRestoreError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsRestoreCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--ok" id="pcsRestoreConfirm">Restore</button>
+      </div>
+    </section>
+  </div>
+  <div id="pcsAssignSchoolModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog" role="dialog" aria-modal="true" aria-labelledby="pcsAssignSchoolTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-building"></i></span>
+        <div>
+          <h3 id="pcsAssignSchoolTitle" class="admin-modal__title">Assign school</h3>
+          <p class="admin-modal__desc">Staff must choose the school explicitly. Legacy text is shown for reference and is not treated as assigned until you save. This does not change approval or exam access.</p>
+        </div>
+      </div>
+      <p class="text-sm mb-2" id="pcsAssignSchoolLegacy"></p>
+      <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1" for="pcsAssignSchoolSelect">School directory</label>
+      <select id="pcsAssignSchoolSelect" class="w-full mb-3">
+        <option value=""><?php echo $catalogSchoolRows === [] ? 'No schools yet — open Manage Schools' : 'Select a school'; ?></option>
+        <?php foreach ($catalogSchoolRows as $catRow): ?>
+          <option value="<?php echo h((string) $catRow['school_name']); ?>"><?php echo h((string) $catRow['school_name']); ?><?php echo ($catRow['status'] ?? '') === 'inactive' ? ' (inactive)' : ''; ?></option>
+        <?php endforeach; ?>
+      </select>
+      <p class="examination-form-hint">Add or rename schools in <a class="underline font-semibold" href="professor_college_schools">Manage Schools</a>. Registration only lists Active schools.</p>
+      <div id="pcsAssignSchoolError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsAssignSchoolCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--ok" id="pcsAssignSchoolConfirm">Save assignment</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="pcsActivateModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog" role="dialog" aria-modal="true" aria-labelledby="pcsActivateTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-unlock"></i></span>
+        <div>
+          <h3 id="pcsActivateTitle" class="admin-modal__title">Activate exam access?</h3>
+          <p class="admin-modal__desc">Sets College Examination access to <strong>active</strong> for <strong id="pcsActivateCount">0</strong> selected student(s) that have a school on record. Does not change account status, school, section, student numbers, or exam history. Students without a school are rejected server-side.</p>
+        </div>
+      </div>
+      <div id="pcsActivateError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsActivateCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--ok" id="pcsActivateConfirm">Activate selected</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="pcsDeactivateModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsDeactivateTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
+        <div>
+          <h3 id="pcsDeactivateTitle" class="admin-modal__title">Deactivate exam access?</h3>
+          <p class="admin-modal__desc">Suspends College Examination access for <strong id="pcsDeactivateCount">0</strong> selected student(s) with a <strong>staff-assigned</strong> school. Accounts, numbers, and history are kept. Unassigned students are rejected. The school filter is not the target list — only checked IDs are sent.</p>
+        </div>
+      </div>
+      <div id="pcsDeactivateError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsDeactivateCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--danger" id="pcsDeactivateConfirm">Deactivate selected</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="pcsRollbackModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog" role="dialog" aria-modal="true" aria-labelledby="pcsRollbackTitle">
+      <div class="admin-modal__hero">
+        <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-arrow-counterclockwise"></i></span>
+        <div>
+          <h3 id="pcsRollbackTitle" class="admin-modal__title">Restore prior values</h3>
+          <p class="admin-modal__desc">Restore uses the audit id from a previous result. Exam access and school are restored to each record's exact prior value — not assumed Active.</p>
+        </div>
+      </div>
+      <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1" for="pcsRollbackOpId">Exam access operation ID</label>
+      <input type="number" id="pcsRollbackOpId" min="1" class="w-full mb-3" value="">
+      <label class="block text-xs font-semibold uppercase tracking-wide opacity-70 mb-1" for="pcsRollbackSchoolLogId">School assignment log ID</label>
+      <input type="number" id="pcsRollbackSchoolLogId" min="1" class="w-full" value="">
+      <div id="pcsRollbackError" class="admin-modal__error"></div>
+      <div class="admin-modal__actions">
+        <button type="button" class="admin-modal__btn admin-modal__btn--ghost" id="pcsRollbackCancel">Cancel</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--ok" id="pcsRollbackSchoolConfirm">Restore school</button>
+        <button type="button" class="admin-modal__btn admin-modal__btn--ok" id="pcsRollbackConfirm">Restore exam access</button>
+      </div>
+    </section>
+  </div>
   <?php endif; ?>
 
-  <div class="admin-modal-overlay" id="deleteStudentModal" aria-hidden="true">
-    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="deleteStudentTitle">
+  <div class="admin-modal-overlay lms-dialog-overlay" id="deleteStudentModal" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="deleteStudentTitle">
       <div class="admin-modal__hero">
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-shield-exclamation"></i></span>
         <div>
@@ -732,13 +1012,13 @@ $apiUrl = ereview_url('professor_college_students_api');
     </section>
   </div>
 
-  <div class="admin-modal-overlay" id="pcsBulkRemoveModalOverlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsBulkRemoveTitle">
+  <div class="admin-modal-overlay lms-dialog-overlay" id="pcsBulkRemoveModalOverlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="pcsBulkRemoveTitle">
       <div class="admin-modal__hero">
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-trash"></i></span>
         <div>
           <h3 id="pcsBulkRemoveTitle" class="admin-modal__title">Remove / delete selected?</h3>
-          <p class="admin-modal__desc" id="pcsBulkRemoveDesc">eReview LMS-linked students lose College Examination access only. Native college accounts are permanently deleted.</p>
+          <p class="admin-modal__desc" id="pcsBulkRemoveDesc">eReview LMS-linked students lose College Examination access only. Native college accounts are archived by default. Permanent delete is refused when examination attempts or submissions exist.</p>
         </div>
       </div>
       <div id="pcsBulkRemoveError" class="admin-modal__error"></div>
@@ -756,6 +1036,11 @@ $apiUrl = ereview_url('professor_college_students_api');
     var visibleCount = <?php echo (int) count($list); ?>;
 
     function showFlash(type, message) {
+      if (window.LmsPremiumToast) {
+        if (type === 'error') window.LmsPremiumToast.error(message);
+        else window.LmsPremiumToast.success(message);
+        return;
+      }
       var el = document.getElementById('pcsFlash');
       if (!el) return;
       el.hidden = false;
@@ -819,6 +1104,23 @@ $apiUrl = ereview_url('professor_college_students_api');
         var disN = selected.filter(function (cb) { return cb.getAttribute('data-disableable') === '1'; }).length;
         disableBtn.disabled = disN === 0;
         disableBtn.title = disN === 0 ? 'Select eReview students with College Examination access' : ('Suspend College Examination for ' + disN + ' selected student(s)');
+      }
+      var activateBtn = document.getElementById('pcsBulkActivateBtn');
+      if (activateBtn) {
+        var actN = selected.filter(function (cb) { return cb.getAttribute('data-exam-activatable') === '1'; }).length;
+        activateBtn.disabled = actN === 0;
+        activateBtn.title = actN === 0 ? 'Select mapped students who are currently suspended' : ('Activate exam access for ' + actN + ' selected student(s)');
+      }
+      var assignSchoolBtn = document.getElementById('pcsBulkAssignSchoolBtn');
+      if (assignSchoolBtn) {
+        assignSchoolBtn.disabled = n !== 1;
+        assignSchoolBtn.title = n !== 1 ? 'Select exactly one student to assign a school' : 'Assign school for the selected student';
+      }
+      var deactivateBtn = document.getElementById('pcsBulkDeactivateBtn');
+      if (deactivateBtn) {
+        var deactN = selected.filter(function (cb) { return cb.getAttribute('data-exam-deactivatable') === '1'; }).length;
+        deactivateBtn.disabled = deactN === 0;
+        deactivateBtn.title = deactN === 0 ? 'Select mapped students with exam access to deactivate' : ('Deactivate exam access for ' + deactN + ' selected student(s)');
       }
       var removeBtn = document.getElementById('pcsBulkRemoveBtn');
       if (removeBtn) {
@@ -1137,6 +1439,286 @@ $apiUrl = ereview_url('professor_college_students_api');
     var disableOverlay = document.getElementById('pcsDisableModalOverlay');
     if (disableOverlay) disableOverlay.addEventListener('click', function (e) { if (e.target === disableOverlay) closeOverlay('pcsDisableModalOverlay'); });
 
+    function openArchiveModal(ids) {
+      pendingIds = ids.slice();
+      var el = document.getElementById('pcsArchiveCount');
+      if (el) el.textContent = String(pendingIds.length);
+      var err = document.getElementById('pcsArchiveError');
+      if (err) err.textContent = '';
+      openOverlay('pcsArchiveModalOverlay');
+    }
+    var archiveConfirm = document.getElementById('pcsArchiveConfirm');
+    if (archiveConfirm) {
+      archiveConfirm.addEventListener('click', function () {
+        if (pendingIds.length === 0) return;
+        var errEl = document.getElementById('pcsArchiveError');
+        archiveConfirm.disabled = true;
+        apiPost('bulk_archive_students', { user_ids: pendingIds, reason: 'inactive' }, function (data) {
+          closeOverlay('pcsArchiveModalOverlay');
+          showFlash('success', data.message || 'Students archived.');
+          setTimeout(function () { window.location.reload(); }, 600);
+        }, errEl).finally(function () {
+          archiveConfirm.disabled = false;
+        });
+      });
+    }
+    var archiveCancel = document.getElementById('pcsArchiveCancel');
+    if (archiveCancel) archiveCancel.addEventListener('click', function () { closeOverlay('pcsArchiveModalOverlay'); });
+    var archiveOverlay = document.getElementById('pcsArchiveModalOverlay');
+    if (archiveOverlay) archiveOverlay.addEventListener('click', function (e) { if (e.target === archiveOverlay) closeOverlay('pcsArchiveModalOverlay'); });
+    var bulkArchive = document.getElementById('pcsBulkArchiveBtn');
+    if (bulkArchive) {
+      bulkArchive.addEventListener('click', function () {
+        var ids = selectedBoxes().filter(function (cb) { return cb.getAttribute('data-archivable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length) openArchiveModal(ids);
+      });
+    }
+    document.querySelectorAll('.js-pcs-archive-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        openArchiveModal([btn.getAttribute('data-user-id')]);
+      });
+    });
+
+    function openRestoreModal(ids) {
+      pendingIds = ids.slice();
+      var el = document.getElementById('pcsRestoreCount');
+      if (el) el.textContent = String(pendingIds.length);
+      var err = document.getElementById('pcsRestoreError');
+      if (err) err.textContent = '';
+      openOverlay('pcsRestoreModalOverlay');
+    }
+    var restoreConfirm = document.getElementById('pcsRestoreConfirm');
+    if (restoreConfirm) {
+      restoreConfirm.addEventListener('click', function () {
+        if (pendingIds.length === 0) return;
+        var errEl = document.getElementById('pcsRestoreError');
+        restoreConfirm.disabled = true;
+        apiPost('bulk_restore_students', { user_ids: pendingIds }, function (data) {
+          closeOverlay('pcsRestoreModalOverlay');
+          showFlash('success', data.message || 'Students restored.');
+          setTimeout(function () { window.location.reload(); }, 600);
+        }, errEl).finally(function () {
+          restoreConfirm.disabled = false;
+        });
+      });
+    }
+    var restoreCancel = document.getElementById('pcsRestoreCancel');
+    if (restoreCancel) restoreCancel.addEventListener('click', function () { closeOverlay('pcsRestoreModalOverlay'); });
+    var restoreOverlay = document.getElementById('pcsRestoreModalOverlay');
+    if (restoreOverlay) restoreOverlay.addEventListener('click', function (e) { if (e.target === restoreOverlay) closeOverlay('pcsRestoreModalOverlay'); });
+    var bulkRestore = document.getElementById('pcsBulkRestoreBtn');
+    if (bulkRestore) {
+      bulkRestore.addEventListener('click', function () {
+        var ids = selectedBoxes().filter(function (cb) { return cb.getAttribute('data-restorable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length) openRestoreModal(ids);
+      });
+    }
+    document.querySelectorAll('.js-pcs-restore-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        openRestoreModal([btn.getAttribute('data-user-id')]);
+      });
+    });
+
+    var pendingAssignUserId = 0;
+    function openAssignSchoolModal(userId, legacySchool) {
+      pendingAssignUserId = Number(userId) || 0;
+      var legacyEl = document.getElementById('pcsAssignSchoolLegacy');
+      if (legacyEl) {
+        legacyEl.textContent = legacySchool
+          ? ('Current users.school text (not verified until you save): ' + legacySchool)
+          : 'No school text on file.';
+      }
+      var err = document.getElementById('pcsAssignSchoolError');
+      if (err) err.textContent = '';
+      var selReset = document.getElementById('pcsAssignSchoolSelect');
+      if (selReset) selReset.selectedIndex = 0;
+      openOverlay('pcsAssignSchoolModalOverlay');
+    }
+    var assignSchoolConfirm = document.getElementById('pcsAssignSchoolConfirm');
+    if (assignSchoolConfirm) {
+      assignSchoolConfirm.addEventListener('click', function () {
+        if (!pendingAssignUserId) return;
+        var sel = document.getElementById('pcsAssignSchoolSelect');
+        var school = (sel && sel.value) ? String(sel.value).trim() : '';
+        var errEl = document.getElementById('pcsAssignSchoolError');
+        if (!school) {
+          if (errEl) errEl.textContent = 'Select a school from the directory.';
+          return;
+        }
+        if (!window.confirm('Save staff school assignment "' + school + '" for user #' + pendingAssignUserId + '? This does not change exam access or account status.')) {
+          return;
+        }
+        assignSchoolConfirm.disabled = true;
+        apiPost('assign_school', { user_id: pendingAssignUserId, school: school }, function (data) {
+          closeOverlay('pcsAssignSchoolModalOverlay');
+          showFlash('success', data.message || 'School assigned.');
+          setTimeout(function () { window.location.reload(); }, 800);
+        }, errEl).finally(function () {
+          assignSchoolConfirm.disabled = false;
+        });
+      });
+    }
+    var assignSchoolCancel = document.getElementById('pcsAssignSchoolCancel');
+    if (assignSchoolCancel) assignSchoolCancel.addEventListener('click', function () { closeOverlay('pcsAssignSchoolModalOverlay'); });
+    var assignSchoolOverlay = document.getElementById('pcsAssignSchoolModalOverlay');
+    if (assignSchoolOverlay) assignSchoolOverlay.addEventListener('click', function (e) { if (e.target === assignSchoolOverlay) closeOverlay('pcsAssignSchoolModalOverlay'); });
+    var bulkAssignSchool = document.getElementById('pcsBulkAssignSchoolBtn');
+    if (bulkAssignSchool) {
+      bulkAssignSchool.addEventListener('click', function () {
+        var boxes = selectedBoxes();
+        if (boxes.length !== 1) return;
+        openAssignSchoolModal(boxes[0].value, boxes[0].getAttribute('data-legacy-school') || '');
+      });
+    }
+    document.querySelectorAll('.js-pcs-assign-school-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        openAssignSchoolModal(btn.getAttribute('data-user-id'), btn.getAttribute('data-legacy-school') || '');
+      });
+    });
+
+    function openActivateModal(ids) {
+      pendingIds = ids.slice();
+      var el = document.getElementById('pcsActivateCount');
+      if (el) el.textContent = String(pendingIds.length);
+      var err = document.getElementById('pcsActivateError');
+      if (err) err.textContent = '';
+      openOverlay('pcsActivateModalOverlay');
+    }
+    var activateConfirm = document.getElementById('pcsActivateConfirm');
+    if (activateConfirm) {
+      activateConfirm.addEventListener('click', function () {
+        if (pendingIds.length === 0) return;
+        var errEl = document.getElementById('pcsActivateError');
+        activateConfirm.disabled = true;
+        apiPost('bulk_activate_exam_access', { user_ids: pendingIds }, function (data) {
+          closeOverlay('pcsActivateModalOverlay');
+          showFlash('success', data.message || 'Exam access activated.');
+          setTimeout(function () { window.location.reload(); }, 800);
+        }, errEl).finally(function () {
+          activateConfirm.disabled = false;
+        });
+      });
+    }
+    var activateCancel = document.getElementById('pcsActivateCancel');
+    if (activateCancel) activateCancel.addEventListener('click', function () { closeOverlay('pcsActivateModalOverlay'); });
+    var activateOverlay = document.getElementById('pcsActivateModalOverlay');
+    if (activateOverlay) activateOverlay.addEventListener('click', function (e) { if (e.target === activateOverlay) closeOverlay('pcsActivateModalOverlay'); });
+    var bulkActivate = document.getElementById('pcsBulkActivateBtn');
+    if (bulkActivate) {
+      bulkActivate.addEventListener('click', function () {
+        var ids = selectedBoxes().filter(function (cb) { return cb.getAttribute('data-exam-activatable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length) openActivateModal(ids);
+      });
+    }
+    document.querySelectorAll('.js-pcs-activate-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        var id = btn.getAttribute('data-user-id');
+        if (id) openActivateModal([id]);
+      });
+    });
+
+    function openDeactivateModal(ids) {
+      pendingIds = ids.slice();
+      var el = document.getElementById('pcsDeactivateCount');
+      if (el) el.textContent = String(pendingIds.length);
+      var err = document.getElementById('pcsDeactivateError');
+      if (err) err.textContent = '';
+      openOverlay('pcsDeactivateModalOverlay');
+    }
+    var deactivateConfirm = document.getElementById('pcsDeactivateConfirm');
+    if (deactivateConfirm) {
+      deactivateConfirm.addEventListener('click', function () {
+        if (pendingIds.length === 0) return;
+        var errEl = document.getElementById('pcsDeactivateError');
+        deactivateConfirm.disabled = true;
+        apiPost('bulk_deactivate_exam_access', { user_ids: pendingIds }, function (data) {
+          closeOverlay('pcsDeactivateModalOverlay');
+          showFlash('success', data.message || 'Exam access deactivated.');
+          setTimeout(function () { window.location.reload(); }, 800);
+        }, errEl).finally(function () {
+          deactivateConfirm.disabled = false;
+        });
+      });
+    }
+    var deactivateCancel = document.getElementById('pcsDeactivateCancel');
+    if (deactivateCancel) deactivateCancel.addEventListener('click', function () { closeOverlay('pcsDeactivateModalOverlay'); });
+    var deactivateOverlay = document.getElementById('pcsDeactivateModalOverlay');
+    if (deactivateOverlay) deactivateOverlay.addEventListener('click', function (e) { if (e.target === deactivateOverlay) closeOverlay('pcsDeactivateModalOverlay'); });
+    var bulkDeactivate = document.getElementById('pcsBulkDeactivateBtn');
+    if (bulkDeactivate) {
+      bulkDeactivate.addEventListener('click', function () {
+        var ids = selectedBoxes().filter(function (cb) { return cb.getAttribute('data-exam-deactivatable') === '1'; }).map(function (cb) { return cb.value; });
+        if (ids.length) openDeactivateModal(ids);
+      });
+    }
+    document.querySelectorAll('.js-pcs-deactivate-one').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeAllMenus();
+        var id = btn.getAttribute('data-user-id');
+        if (id) openDeactivateModal([id]);
+      });
+    });
+
+    var bulkRollback = document.getElementById('pcsBulkRollbackBtn');
+    if (bulkRollback) {
+      bulkRollback.addEventListener('click', function () {
+        var err = document.getElementById('pcsRollbackError');
+        if (err) err.textContent = '';
+        openOverlay('pcsRollbackModalOverlay');
+      });
+    }
+    var rollbackSchoolConfirm = document.getElementById('pcsRollbackSchoolConfirm');
+    if (rollbackSchoolConfirm) {
+      rollbackSchoolConfirm.addEventListener('click', function () {
+        var logInput = document.getElementById('pcsRollbackSchoolLogId');
+        var logId = logInput ? String(logInput.value || '').trim() : '';
+        var errEl = document.getElementById('pcsRollbackError');
+        if (!logId || Number(logId) < 1) {
+          if (errEl) errEl.textContent = 'Enter a school assignment log ID from an assign/correct result.';
+          return;
+        }
+        if (!window.confirm('Restore the exact prior school values from log #' + logId + '?')) {
+          return;
+        }
+        rollbackSchoolConfirm.disabled = true;
+        apiPost('rollback_school_assignment', { log_id: logId }, function (data) {
+          closeOverlay('pcsRollbackModalOverlay');
+          showFlash('success', data.message || 'School restored.');
+          setTimeout(function () { window.location.reload(); }, 800);
+        }, errEl).finally(function () {
+          rollbackSchoolConfirm.disabled = false;
+        });
+      });
+    }
+    var rollbackConfirm = document.getElementById('pcsRollbackConfirm');
+    if (rollbackConfirm) {
+      rollbackConfirm.addEventListener('click', function () {
+        var opInput = document.getElementById('pcsRollbackOpId');
+        var opId = opInput ? String(opInput.value || '').trim() : '';
+        var errEl = document.getElementById('pcsRollbackError');
+        if (!opId || Number(opId) < 1) {
+          if (errEl) errEl.textContent = 'Enter a valid operation ID from an activate/deactivate result.';
+          return;
+        }
+        rollbackConfirm.disabled = true;
+        apiPost('rollback_exam_access_op', { op_id: opId }, function (data) {
+          closeOverlay('pcsRollbackModalOverlay');
+          showFlash('success', data.message || 'Prior access restored.');
+          setTimeout(function () { window.location.reload(); }, 800);
+        }, errEl).finally(function () {
+          rollbackConfirm.disabled = false;
+        });
+      });
+    }
+    var rollbackCancel = document.getElementById('pcsRollbackCancel');
+    if (rollbackCancel) rollbackCancel.addEventListener('click', function () { closeOverlay('pcsRollbackModalOverlay'); });
+    var rollbackOverlay = document.getElementById('pcsRollbackModalOverlay');
+    if (rollbackOverlay) rollbackOverlay.addEventListener('click', function (e) { if (e.target === rollbackOverlay) closeOverlay('pcsRollbackModalOverlay'); });
+
     var bulkDisable = document.getElementById('pcsBulkDisableBtn');
     if (bulkDisable) {
       bulkDisable.addEventListener('click', function () {
@@ -1205,19 +1787,25 @@ $apiUrl = ereview_url('professor_college_students_api');
     var confirmBtn = document.getElementById('deleteStudentConfirm');
     if (deleteModal) {
       function openDelete(uid, name, mode) {
-        mode = mode === 'delete' ? 'delete' : 'unlink';
+        mode = mode === 'delete' ? 'delete' : (mode === 'archive' ? 'archive' : 'unlink');
         if (uidInput) uidInput.value = String(uid);
         if (modeInput) modeInput.value = mode;
         if (nameEl) nameEl.textContent = name || 'this account';
-        if (titleEl) titleEl.textContent = mode === 'delete' ? 'Delete student account?' : 'Remove from Examination?';
+        if (titleEl) {
+          titleEl.textContent = mode === 'delete'
+            ? 'Delete student account?'
+            : (mode === 'archive' ? 'Archive student account?' : 'Remove from Examination?');
+        }
         if (descEl) {
           descEl.innerHTML = mode === 'delete'
-            ? ('This permanently deletes the native college examination account for <strong id="deleteStudentNameDisplay"></strong>. Linked examination attempts and uploads may be removed. This cannot be undone.')
-            : ('This removes College Examination access for <strong id="deleteStudentNameDisplay"></strong>. Their eReview LMS account stays intact.');
+            ? ('Permanent delete of <strong id="deleteStudentNameDisplay"></strong> is allowed only when this native account has no attempts, answers, scores, or submissions. Otherwise the server archives instead.')
+            : (mode === 'archive'
+              ? ('Archive <strong id="deleteStudentNameDisplay"></strong>? Student ID and academic records stay preserved. This can be restored later.')
+              : ('This removes College Examination access for <strong id="deleteStudentNameDisplay"></strong>. Their eReview LMS account stays intact.'));
           var nested = document.getElementById('deleteStudentNameDisplay');
           if (nested) nested.textContent = name || 'this account';
         }
-        if (confirmBtn) confirmBtn.textContent = mode === 'delete' ? 'Delete student' : 'Remove';
+        if (confirmBtn) confirmBtn.textContent = mode === 'delete' ? 'Delete student' : (mode === 'archive' ? 'Archive student' : 'Remove');
         deleteModal.classList.add('is-open');
         deleteModal.setAttribute('aria-hidden', 'false');
         closeAllMenus();
@@ -1259,7 +1847,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         if (desc) {
           desc.textContent = 'Selected: ' + pendingIds.length
             + (unlinkN ? (' · ' + unlinkN + ' LMS-linked (exam access removed, account kept)') : '')
-            + (deleteN ? (' · ' + deleteN + ' native college account(s) permanently deleted') : '')
+            + (deleteN ? (' · ' + deleteN + ' native college account(s) archived unless you later use an empty-account delete') : '')
             + '.';
         }
         var errEl = document.getElementById('pcsBulkRemoveError');
@@ -1286,7 +1874,7 @@ $apiUrl = ereview_url('professor_college_students_api');
 
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'pcsBulkRemoveModalOverlay', 'pcsApproveModalOverlay', 'deleteStudentModal'].forEach(function (id) {
+      ['pcsEnableModalOverlay', 'pcsSectionModalOverlay', 'pcsDisableModalOverlay', 'pcsArchiveModalOverlay', 'pcsRestoreModalOverlay', 'pcsActivateModalOverlay', 'pcsDeactivateModalOverlay', 'pcsAssignSchoolModalOverlay', 'pcsRollbackModalOverlay', 'pcsBulkRemoveModalOverlay', 'pcsApproveModalOverlay', 'deleteStudentModal'].forEach(function (id) {
         closeOverlay(id);
       });
       if (deleteModal) {
@@ -1297,5 +1885,6 @@ $apiUrl = ereview_url('professor_college_students_api');
     });
   })();
   </script>
+  <?php college_exam_id_copy_script(); ?>
 </body>
 </html>

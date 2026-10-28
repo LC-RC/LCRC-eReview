@@ -3592,3 +3592,87 @@ html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.admin-commerce-
   color: var(--text-primary, #e8eef8);
   border-color: rgba(120, 160, 255, 0.28);
 }
+
+/* Staff topbar search: one surface (wrap), icon inside field, no decorative kbd. */
+body.admin-app .admin-topbar-inner {
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+body.admin-app .admin-topbar-left {
+  gap: 0.5rem;
+}
+body.admin-app .admin-topbar-actions {
+  gap: 0.35rem;
+}
+body.admin-app .admin-topbar-search-wrap {
+  position: relative;
+  height: 2.5rem !important;
+  padding: 0 0.75rem 0 2.35rem;
+}
+body.admin-app .admin-topbar-search-wrap .admin-topbar-search-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: #64748b;
+}
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap .admin-topbar-search-icon {
+  color: rgba(226, 232, 240, 0.72);
+}
+body.admin-app .admin-topbar-search-wrap .admin-topbar-kbd {
+  display: none !important;
+}
+body.admin-app .admin-topbar-search-wrap .admin-topbar-search,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search,
+html[data-admin-ui="v2"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search-wrap input[type="search"].admin-topbar-search,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app .admin-topbar-search-wrap input[type="search"].admin-topbar-search {
+  display: block;
+  width: 100%;
+  height: 2.5rem;
+  min-height: 0 !important;
+  margin: 0;
+  padding: 0 0.2rem 0 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--text-primary, #0f172a) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  line-height: 2.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+}
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap .admin-topbar-search {
+  color: var(--text-primary, #e8eef8) !important;
+}
+body.admin-app .admin-topbar-search-wrap .admin-topbar-search::placeholder,
+html[data-admin-theme="light"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search::placeholder {
+  color: var(--admin-text-muted, #64748b) !important;
+  opacity: 1;
+}
+html:not([data-admin-theme="light"]) body.admin-app .admin-topbar-search-wrap .admin-topbar-search::placeholder {
+  color: rgba(148, 163, 184, 0.9) !important;
+}
+body.admin-app .admin-topbar-search-wrap .admin-topbar-search:focus,
+html[data-admin-ui="v2"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search:focus,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app .admin-topbar-search-wrap .admin-topbar-search:focus {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+body.admin-app .admin-topbar-menu-btn,
+body.admin-app .admin-theme-toggle,
+body.admin-app .admin-topbar-action {
+  width: 40px !important;
+  height: 40px !important;
+  flex-shrink: 0;
+}

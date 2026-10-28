@@ -31,12 +31,16 @@ if ($examType === 'diagnostic') {
     $adminHeroSubtitle = (string)($rec['title'] ?? 'CPA Diagnostic Assessment');
 } else {
     $adminHeroTitle = 'Questions';
-    $adminHeroSubtitle = ($rec['exam_type_label'] ?? '') . ' · ' . ($rec['title'] ?? '');
+    $adminHeroSubtitle = (string)($rec['title'] ?? '');
+    $adminHeroMeta = '<span class="examination-edit-type-chip">' . h((string)($rec['exam_type_label'] ?? 'Regular exam')) . '</span>';
 }
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], ['Questions']];
 $adminBackHref = 'professor_examinations';
 $adminBackLabel = 'Back to Examinations';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '';
+$professorPageChrome = ($examType !== 'diagnostic');
+$examinationLoadEditPageCss = ($examType !== 'diagnostic');
 $activeStep = 'questions';
 
 $regularQuestions = $examType === 'regular' ? examination_questions_load_regular($conn, $sourceId) : [];
@@ -156,14 +160,19 @@ $diagRequired = 0;
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ''; ?>">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--exam-edit<?php echo $examType === 'diagnostic' ? ' diag-exam-portal' : ' examination-edit-page examination-edit-page--regular'; ?><?php echo ereview_lms_premium_body_class(); ?>">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
+<?php
+$toastSuccess = ereview_lms_toast_take('success', !empty($flashMessage) ? (string) $flashMessage : null);
+$toastError = ereview_lms_toast_take('error', !empty($flashError) ? (string) $flashError : null);
+?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-<?php if ($flashMessage): ?>
+<div class="examination-page-shell">
+<?php if ($flashMessage && empty($toastSuccess)): ?>
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($flashMessage); ?></span></div>
 <?php endif; ?>
-<?php if ($flashError): ?>
+<?php if ($flashError && empty($toastError)): ?>
   <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($flashError); ?></span></div>
 <?php endif; ?>
 <?php if ($error): ?>
@@ -186,8 +195,8 @@ $diagRequired = 0;
 <?php require dirname(__DIR__) . '/includes/examination_edit_steps.php'; ?>
 
 <?php if ($locked): ?>
-  <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2">
-    <i class="bi bi-lock-fill"></i>
+  <div class="<?php echo $examType === 'diagnostic' ? 'admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2' : 'examination-edit-lock-banner'; ?>" role="status">
+    <i class="bi bi-lock-fill" aria-hidden="true"></i>
     <span>Questions are locked — this examination already has <?php echo (int)$attemptCount; ?> student attempt(s). Existing question IDs and answers are preserved.</span>
   </div>
 <?php endif; ?>
@@ -1054,6 +1063,7 @@ $diagRequired = 0;
 })();
 </script>
 <?php endif; ?>
+</div>
 </body>
 </html>
 

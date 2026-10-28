@@ -22,7 +22,7 @@ $studentStatus = [
 $qStudents = @mysqli_query($conn, "
   SELECT status, COUNT(*) AS c
   FROM users
-  WHERE role='college_student'
+  WHERE role='college_student' AND status<>'archived'
   GROUP BY status
 ");
 if ($qStudents) {
@@ -260,7 +260,7 @@ $qStudentTrend = @mysqli_query($conn, "
     SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS this_week,
     SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS prev_week
   FROM users
-  WHERE role='college_student'
+  WHERE role='college_student' AND status<>'archived'
 ");
 if ($qStudentTrend && $r = mysqli_fetch_assoc($qStudentTrend)) {
   $studentsNew7 = (int)($r['this_week'] ?? 0);

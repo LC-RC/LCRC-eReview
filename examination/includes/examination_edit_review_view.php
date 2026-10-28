@@ -32,10 +32,16 @@ $professorFeatureHero = true;
 $adminHeroEyebrow = 'Examination management';
 $adminHeroTitle = 'Review & Publish';
 $adminHeroSubtitle = (string)($rec['title'] ?? '');
+if ($examType !== 'diagnostic') {
+    $adminHeroMeta = '<span class="examination-edit-type-chip">' . h((string)($rec['exam_type_label'] ?? 'Regular exam')) . '</span>';
+}
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Examinations', 'professor_examinations'], ['Review']];
 $adminBackHref = 'professor_examinations';
 $adminBackLabel = 'Back to Examinations';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '';
+$professorPageChrome = ($examType !== 'diagnostic');
+$examinationLoadEditPageCss = ($examType !== 'diagnostic');
 $activeStep = 'review';
 ?>
 <!DOCTYPE html>
@@ -43,14 +49,19 @@ $activeStep = 'review';
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--exam-edit<?php echo $examType === 'diagnostic' ? '' : ' examination-edit-page examination-edit-page--regular'; ?><?php echo ereview_lms_premium_body_class(); ?>">
 <?php include dirname(__DIR__) . '/professor/professor_admin_sidebar.php'; ?>
+<?php
+$toastSuccess = ereview_lms_toast_take('success', !empty($flashMessage) ? (string) $flashMessage : null);
+$toastError = ereview_lms_toast_take('error', !empty($flashError) ? (string) $flashError : null);
+?>
 <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-<?php if ($flashMessage): ?>
+<div class="examination-page-shell">
+<?php if ($flashMessage && empty($toastSuccess)): ?>
   <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($flashMessage); ?></span></div>
 <?php endif; ?>
-<?php if ($flashError): ?>
+<?php if ($flashError && empty($toastError)): ?>
   <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($flashError); ?></span></div>
 <?php endif; ?>
 <?php if ($error): ?>
@@ -59,7 +70,7 @@ $activeStep = 'review';
 
 <?php require dirname(__DIR__) . '/includes/examination_edit_steps.php'; ?>
 
-<section class="prof-workspace prof-workspace--form mb-4">
+<section class="prof-workspace prof-workspace--form lms-workspace mb-4">
   <div class="prof-form-section">
   <h2 class="prof-form-section__title">Examination</h2>
   <div class="examination-summary-row"><span class="examination-summary-label">Title</span><span class="examination-summary-value"><?php echo h($rec['title']); ?></span></div>
@@ -159,5 +170,6 @@ $activeStep = 'review';
 
 <p class="text-sm opacity-70 mt-3 mb-0">Drafts may be incomplete. Publishing requires valid configuration, assignment, and complete questions.</p>
 </section>
+</div>
 </body>
 </html>

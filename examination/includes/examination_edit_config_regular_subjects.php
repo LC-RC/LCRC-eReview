@@ -334,8 +334,9 @@ if ($regMode === 'overall') {
 </style>
 <section class="<?php echo h($editSectionClass); ?> reg-bd" id="regularSubjectsPanel">
   <?php if (!empty($assignmentLocked)): ?>
-    <div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl text-sm">
-      This examination already has student attempts. Question allocation and randomization settings are locked to preserve existing attempt data.
+    <div class="examination-edit-lock-banner" role="status">
+      <i class="bi bi-lock-fill" aria-hidden="true"></i>
+      <span>This examination already has student attempts. Question allocation and randomization settings are locked so existing attempt data stays intact.</span>
     </div>
   <?php endif; ?>
   <div class="reg-bd-head">

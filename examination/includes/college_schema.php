@@ -556,3 +556,6 @@ if ($chkBreakdown) {
   UNIQUE KEY `uq_ceaq_attempt_q` (`attempt_id`,`question_id`),
   KEY `idx_ceaq_question` (`question_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+require_once __DIR__ . '/college_exam_client_heartbeat.php';
+college_exam_client_heartbeat_ensure_schema($conn);

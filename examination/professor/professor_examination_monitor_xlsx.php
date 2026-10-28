@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Excel (.xlsx) download: per-examinee progress — finished assessments only.
+ * Excel (.xlsx) download: per-examinee progress.
  */
 require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
@@ -27,20 +27,17 @@ if (!$ctx) {
 
 $now = date('Y-m-d H:i:s');
 examination_monitor_finalize_expired($conn, $scope);
+$sectionFilter = ($scope['exam_type'] === 'college_exam')
+    ? examination_monitor_resolve_college_section_filter($conn, (int)$scope['assessment_id'], $_GET['section'] ?? '')['filter']
+    : '';
 $metrics = examination_monitor_metrics($conn, $scope);
 $window = examination_monitor_running_finished($conn, $ctx, $metrics, $now);
 $isFinished = $window['is_finished'];
 
-if (!$isFinished) {
-    $_SESSION['message'] = 'Excel report is only available after the exam is finished.';
-    header('Location: ' . examination_monitor_scoped_url($scope));
-    exit;
-}
-
-$rows = examination_monitor_export_rows($conn, $ctx, $isFinished);
+$rows = examination_monitor_export_rows($conn, $ctx, $isFinished, $sectionFilter);
 
 $lookupRows = [];
-foreach (examination_monitor_progress_rows($conn, $scope) as $st) {
+foreach (examination_monitor_progress_rows($conn, $scope, $sectionFilter) as $st) {
     $sn = trim((string)($st['student_number'] ?? ''));
     if ($sn === '') {
         continue;

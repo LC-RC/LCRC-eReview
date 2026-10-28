@@ -105,10 +105,26 @@ unset($_SESSION['section_delete_error']);
 
 $adminLoadStudentsCss = true;
 $professorFeatureHero = true;
+$lmsSecAll = count($sections);
+$lmsSecActive = 0;
+$lmsSecInactive = 0;
+foreach ($sections as $__sec) {
+    if (($__sec['status'] ?? '') === 'inactive') {
+        $lmsSecInactive++;
+    } else {
+        $lmsSecActive++;
+    }
+}
+$lmsSecStudents = 0;
+foreach ($studentCounts as $__n) {
+    $lmsSecStudents += (int) $__n;
+}
+$lmsHeroVariant = 'navy';
 $adminHeroIcon = 'collection';
 $adminHeroEyebrow = 'Examination management';
 $adminHeroTitle = 'Sections';
 $adminHeroSubtitle = 'Manage examination sections and audience assignments.';
+$adminHeroMeta = '<span class="lms-status lms-status--info">' . $lmsSecAll . ' section' . ($lmsSecAll === 1 ? '' : 's') . '</span>';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Sections']];
 $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="openAddSectionBtn"><i class="bi bi-plus-lg"></i> Add Section</button>';
 ?>
@@ -117,12 +133,13 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--sections">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--sections<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($flashMessage) ? $flashMessage : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-  <?php if ($flashMessage): ?>
+  <?php if ($flashMessage && empty($toastSuccess)): ?>
     <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2" role="status">
       <i class="bi bi-check-circle-fill"></i><span><?php echo h((string) $flashMessage); ?></span>
     </div>
@@ -134,21 +151,45 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
   <?php endif; ?>
 
   <div class="students-page-shell">
-    <div class="prof-workspace prof-workspace--registry">
-    <div class="prof-workspace__head">
-      <div>
-        <h2 class="prof-workspace__title">Section directory</h2>
+    <section class="lms-kpi-row" aria-label="Section summary">
+      <article class="lms-kpi lms-kpi--total">
+        <span class="lms-kpi__label"><i class="bi bi-collection" aria-hidden="true"></i> Sections</span>
+        <span class="lms-kpi__value"><?php echo (int) $lmsSecAll; ?></span>
+        <span class="lms-kpi__hint">Directory total</span>
+      </article>
+      <article class="lms-kpi lms-kpi--ok">
+        <span class="lms-kpi__label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Active</span>
+        <span class="lms-kpi__value"><?php echo (int) $lmsSecActive; ?></span>
+        <span class="lms-kpi__hint">Assignable groups</span>
+      </article>
+      <article class="lms-kpi lms-kpi--wait">
+        <span class="lms-kpi__label"><i class="bi bi-pause-circle" aria-hidden="true"></i> Inactive</span>
+        <span class="lms-kpi__value"><?php echo (int) $lmsSecInactive; ?></span>
+        <span class="lms-kpi__hint">Hidden from assignment</span>
+      </article>
+      <article class="lms-kpi lms-kpi--live">
+        <span class="lms-kpi__label"><i class="bi bi-people" aria-hidden="true"></i> Students</span>
+        <span class="lms-kpi__value"><?php echo (int) $lmsSecStudents; ?></span>
+        <span class="lms-kpi__hint">Assigned to a section</span>
+      </article>
+    </section>
+    <div class="prof-workspace prof-workspace--registry lms-workspace">
+    <div class="prof-workspace__head lms-workspace__head">
+      <div class="lms-workspace__heading">
+        <div class="lms-workspace__title-row">
+          <h2 class="prof-workspace__title">Section directory</h2>
+          <span class="prof-count lms-count-badge"><?php echo count($rows); ?> section<?php echo count($rows) === 1 ? '' : 's'; ?></span>
+        </div>
         <p class="prof-workspace__sub">Organize examination groups and audience assignments.</p>
       </div>
-      <span class="prof-count"><?php echo count($rows); ?> section<?php echo count($rows) === 1 ? '' : 's'; ?></span>
     </div>
-    <div class="students-toolbar page-filter">
+    <div class="students-toolbar page-filter lms-toolbar">
       <form method="get" class="students-toolbar__search">
         <div class="students-search">
           <i class="bi bi-search" aria-hidden="true"></i>
           <input type="search" id="secQ" name="q" value="<?php echo h($q); ?>" placeholder="Search sections..." aria-label="Search sections">
         </div>
-        <select id="secStatus" name="status" aria-label="Filter by status" class="admin-btn admin-btn--secondary admin-btn--sm" style="min-height:2.25rem;">
+        <select id="secStatus" name="status" aria-label="Filter by status" class="admin-btn admin-btn--secondary admin-btn--sm">
           <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All statuses</option>
           <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
           <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
@@ -161,14 +202,14 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
     </div>
 
     <?php if ($rows === []): ?>
-        <div class="students-empty-cell" style="padding:3rem 1.5rem;">
+        <div class="students-empty-cell lms-empty" style="padding:3rem 1.5rem;">
           <div class="font-semibold text-lg mb-1">No sections found</div>
           <p class="text-sm mt-1 mb-3 opacity-80">Create a section to use it when enabling College Examination access or assigning exam audiences.</p>
           <button type="button" class="admin-btn admin-btn--primary admin-btn--sm" id="openAddSectionEmptyBtn"><i class="bi bi-plus-lg"></i> Add Section</button>
         </div>
       <?php else: ?>
         <div class="students-table-scroll">
-          <table class="w-full text-left admin-students-table students-table--compact sections-table pex-list-table">
+          <table class="w-full text-left admin-students-table students-table--compact sections-table pex-list-table lms-table">
             <colgroup>
               <col style="width:36%">
               <col style="width:14%">
@@ -202,7 +243,7 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
                     </div>
                   </td>
                   <td class="pcs-badge-cell" data-label="Status">
-                    <span class="commerce-pill <?php echo $isActive ? 'commerce-pill--verified' : 'commerce-pill--awaiting'; ?>">
+                    <span class="<?php echo $isActive ? 'lms-status lms-status--ok' : 'lms-status lms-status--warn'; ?>">
                       <?php echo $isActive ? 'Active' : 'Inactive'; ?>
                     </span>
                   </td>
@@ -262,8 +303,8 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
     </div>
   </div>
 
-  <div id="sectionFormModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="sectionModalTitle">
+  <div id="sectionFormModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="sectionModalTitle">
       <form method="post" id="sectionForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" id="sectionFormAction" value="create">
@@ -294,8 +335,8 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
     </section>
   </div>
 
-  <div id="sectionStatusModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="sectionStatusTitle">
+  <div id="sectionStatusModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--approve" role="dialog" aria-modal="true" aria-labelledby="sectionStatusTitle">
       <form method="post" id="sectionStatusForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="set_status">
@@ -316,8 +357,8 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
     </section>
   </div>
 
-  <div id="sectionDeleteModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="sectionDeleteTitle">
+  <div id="sectionDeleteModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="sectionDeleteTitle">
       <form method="post" id="sectionDeleteForm">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="action" value="delete">
@@ -339,8 +380,8 @@ $adminHeroActions = '<button type="button" class="admin-btn admin-btn--primary a
     </section>
   </div>
 
-  <div id="sectionBlockedModalOverlay" class="admin-modal-overlay" aria-hidden="true">
-    <section class="admin-modal admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="sectionBlockedTitle">
+  <div id="sectionBlockedModalOverlay" class="admin-modal-overlay lms-dialog-overlay" aria-hidden="true">
+    <section class="admin-modal lms-dialog admin-modal--danger" role="dialog" aria-modal="true" aria-labelledby="sectionBlockedTitle">
       <div class="admin-modal__hero">
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-shield-exclamation"></i></span>
         <div>

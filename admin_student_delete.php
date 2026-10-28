@@ -4,13 +4,14 @@
  * Never hard-deletes users or cascades exam/LMS history.
  *
  * POST actions:
- *   (default) archive  — status → archived
- *   restore            — status → approved (or pending if no active grant)
+ *   (default) archive  — status → archived (snapshot prior status + exam access)
+ *   restore            — status → snapshot prior_status (never infers grants)
  */
 require_once __DIR__ . '/auth.php';
 requireAdminPage();
 require_once __DIR__ . '/includes/admin_account_window.php';
 require_once __DIR__ . '/includes/commerce_access_gate.php';
+require_once __DIR__ . '/includes/user_archive_lifecycle.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -105,85 +106,44 @@ if (!$passOk) {
     exit;
 }
 
-admin_ensure_user_status_archived($conn);
-
-$targetStmt = mysqli_prepare(
-    $conn,
-    "SELECT user_id, full_name, email, role, status, review_type, school, school_other, access_start, access_end, college_examination_access
-     FROM users WHERE user_id = ? LIMIT 1"
-);
-if (!$targetStmt) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Unable to fetch user']);
-    exit;
-}
-mysqli_stmt_bind_param($targetStmt, 'i', $targetUserId);
-mysqli_stmt_execute($targetStmt);
-$targetRes = mysqli_stmt_get_result($targetStmt);
-$target = $targetRes ? mysqli_fetch_assoc($targetRes) : null;
-mysqli_stmt_close($targetStmt);
-
-if (!$target) {
-    echo json_encode(['ok' => false, 'error' => 'User not found']);
-    exit;
-}
-if ((string)($target['role'] ?? '') !== 'student') {
-    echo json_encode(['ok' => false, 'error' => 'Only student accounts can be archived here.']);
-    exit;
-}
-
-$currentStatus = strtolower((string) ($target['status'] ?? ''));
 require_once __DIR__ . '/includes/admin_acl.php';
 
 if ($action === 'restore') {
-    if ($currentStatus !== 'archived') {
-        echo json_encode(['ok' => false, 'error' => 'Only archived students can be restored.']);
+    mysqli_begin_transaction($conn);
+    try {
+        $target = user_archive_lock_user($conn, $targetUserId);
+        if (!$target) {
+            throw new UserArchiveException('User not found', 'not_found');
+        }
+        $result = user_archive_restore_locked($conn, $target, $adminId);
+        if (empty($result['ok'])) {
+            throw user_archive_exception_from_result($result, 'Restore failed.');
+        }
+        mysqli_commit($conn);
+        $newStatus = (string) ($result['status'] ?? '');
+        echo json_encode([
+            'ok' => true,
+            'action' => 'restore',
+            'message' => 'Student restored to status "' . $newStatus . '". Grants and College Examination access were left unchanged. Existing records were preserved.',
+            'user_id' => $targetUserId,
+            'status' => $newStatus,
+            'legacy_snapshot' => !empty($result['legacy']),
+        ]);
         exit;
-    }
-    $hasGrant = function_exists('commerce_student_has_active_access')
-        && commerce_student_has_active_access($conn, $targetUserId);
-    $newStatus = $hasGrant ? 'approved' : 'pending';
-    $upd = mysqli_prepare(
-        $conn,
-        "UPDATE users SET status = ? WHERE user_id = ? AND role = 'student' AND status = 'archived' LIMIT 1"
-    );
-    if (!$upd) {
+    } catch (UserArchiveException $e) {
+        mysqli_rollback($conn);
+        http_response_code(user_archive_http_status_for_error($e->errorType, $e->getMessage()));
+        echo json_encode(user_archive_json_error_payload($e));
+        exit;
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
         http_response_code(500);
-        echo json_encode(['ok' => false, 'error' => 'Could not restore student.']);
+        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
         exit;
     }
-    mysqli_stmt_bind_param($upd, 'si', $newStatus, $targetUserId);
-    $ok = mysqli_stmt_execute($upd);
-    $affected = (int) mysqli_stmt_affected_rows($upd);
-    mysqli_stmt_close($upd);
-    if (!$ok || $affected < 1) {
-        echo json_encode(['ok' => false, 'error' => 'Restore failed.']);
-        exit;
-    }
-    users_activity_log($conn, 'student_restored', [
-        'email' => (string) ($target['email'] ?? ''),
-        'name' => (string) ($target['full_name'] ?? ''),
-        'new_status' => $newStatus,
-    ], $adminId, null, 'admin', $targetUserId);
-
-    echo json_encode([
-        'ok' => true,
-        'action' => 'restore',
-        'message' => $hasGrant
-            ? 'Student restored to Active. Existing records were preserved.'
-            : 'Student restored as Pending (no active access grant). Existing records were preserved.',
-        'user_id' => $targetUserId,
-        'status' => $newStatus,
-    ]);
-    exit;
 }
 
 // ---- ARCHIVE ----
-if ($currentStatus === 'archived') {
-    echo json_encode(['ok' => true, 'message' => 'Student is already archived.', 'user_id' => $targetUserId]);
-    exit;
-}
-
 $reasonOtherShort = function_exists('mb_substr') ? mb_substr($deleteReasonOther, 0, 220) : substr($deleteReasonOther, 0, 220);
 $finalReason = $deleteReason === 'other'
     ? ('Other: ' . $reasonOtherShort)
@@ -191,65 +151,19 @@ $finalReason = $deleteReason === 'other'
 
 mysqli_begin_transaction($conn);
 try {
-    // Soft-archive: keep the user row and all related history.
-    $hasCollegeAccessCol = false;
-    if (function_exists('ereview_schema_column_exists')) {
-        require_once __DIR__ . '/includes/schema_introspection.php';
-        $hasCollegeAccessCol = ereview_schema_column_exists($conn, 'users', 'college_examination_access');
-    } else {
-        $colRes = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'college_examination_access'");
-        $hasCollegeAccessCol = $colRes && mysqli_fetch_assoc($colRes);
+    $target = user_archive_lock_user($conn, $targetUserId);
+    if (!$target) {
+        throw new UserArchiveException('User not found', 'not_found');
     }
-    if ($hasCollegeAccessCol) {
-        $upd = mysqli_prepare(
-            $conn,
-            "UPDATE users
-             SET status = 'archived',
-                 college_examination_access = IF(college_examination_access = 'active', 'suspended', college_examination_access)
-             WHERE user_id = ? AND role = 'student'
-             LIMIT 1"
-        );
-    } else {
-        $upd = mysqli_prepare(
-            $conn,
-            "UPDATE users
-             SET status = 'archived'
-             WHERE user_id = ? AND role = 'student'
-             LIMIT 1"
-        );
+    $result = user_archive_apply_locked($conn, $target, $adminId, $finalReason);
+    if (empty($result['ok'])) {
+        throw user_archive_exception_from_result($result, 'Archive failed.');
     }
-    if (!$upd) {
-        throw new Exception('Failed to prepare archive update.');
+    if (!empty($result['already'])) {
+        mysqli_commit($conn);
+        echo json_encode(['ok' => true, 'message' => 'Student is already archived.', 'user_id' => $targetUserId]);
+        exit;
     }
-    mysqli_stmt_bind_param($upd, 'i', $targetUserId);
-    if (!mysqli_stmt_execute($upd)) {
-        $err = mysqli_stmt_error($upd);
-        mysqli_stmt_close($upd);
-        throw new Exception($err ?: 'Archive failed.');
-    }
-    $affected = (int) mysqli_stmt_affected_rows($upd);
-    mysqli_stmt_close($upd);
-    if ($affected < 1) {
-        throw new Exception('Archive failed (no rows updated).');
-    }
-
-    // Optional audit snapshot (not a hard-delete log). Keep table for historical hard deletes.
-    $createSql = "CREATE TABLE IF NOT EXISTS deleted_users_log (
-        log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        deleted_user_id INT NOT NULL,
-        deleted_name VARCHAR(180) NOT NULL,
-        deleted_email VARCHAR(180) NOT NULL,
-        deleted_school VARCHAR(180) NULL,
-        deleted_review_type VARCHAR(80) NULL,
-        deleted_access_range VARCHAR(80) NULL,
-        deleted_by_admin_id INT NOT NULL,
-        deleted_by_admin_name VARCHAR(180) NOT NULL,
-        deletion_reason VARCHAR(255) NULL,
-        deleted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_deleted_users_deleted_at (deleted_at),
-        INDEX idx_deleted_users_admin (deleted_by_admin_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci";
-    @mysqli_query($conn, $createSql);
 
     $adminName = (string)($_SESSION['full_name'] ?? 'Administrator');
     $archivedName = (string)($target['full_name'] ?? '');
@@ -258,18 +172,18 @@ try {
         ? (string)$target['school_other']
         : (string)($target['school'] ?? '');
     $archivedReviewType = strtolower((string)($target['review_type'] ?? '')) === 'undergrad' ? 'Undergrad' : 'Reviewee';
-    $start = !empty($target['access_start']) ? date('F j, Y', strtotime((string)$target['access_start'])) : '?';
-    $end = !empty($target['access_end']) ? date('F j, Y', strtotime((string)$target['access_end'])) : '?';
-    $archivedAccessRange = (!empty($target['access_start']) || !empty($target['access_end'])) ? ($start . ' - ' . $end) : 'No access set';
     $logReason = 'ARCHIVED: ' . $finalReason;
 
-    $insertLog = mysqli_prepare(
-        $conn,
-        "INSERT INTO deleted_users_log
-            (deleted_user_id, deleted_name, deleted_email, deleted_school, deleted_review_type, deleted_access_range, deleted_by_admin_id, deleted_by_admin_name, deletion_reason, deleted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
-    );
+    $insertLog = user_archive_deleted_users_log_ready($conn)
+        ? mysqli_prepare(
+            $conn,
+            "INSERT INTO deleted_users_log
+                (deleted_user_id, deleted_name, deleted_email, deleted_school, deleted_review_type, deleted_access_range, deleted_by_admin_id, deleted_by_admin_name, deletion_reason, deleted_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+        )
+        : false;
     if ($insertLog) {
+        $accessRange = 'preserved';
         mysqli_stmt_bind_param(
             $insertLog,
             'isssssiss',
@@ -278,7 +192,7 @@ try {
             $archivedEmail,
             $archivedSchool,
             $archivedReviewType,
-            $archivedAccessRange,
+            $accessRange,
             $adminId,
             $adminName,
             $logReason
@@ -288,19 +202,18 @@ try {
     }
 
     mysqli_commit($conn);
-    users_activity_log($conn, 'student_archived', [
-        'reason' => $finalReason,
-        'email' => (string) ($target['email'] ?? ''),
-        'name' => (string) ($target['full_name'] ?? ''),
-    ], $adminId, null, 'admin', $targetUserId);
-
     echo json_encode([
         'ok' => true,
         'action' => 'archive',
-        'message' => 'Student archived. The account was removed from Active Students; all records were preserved.',
+        'message' => 'Student archived. Login to eReview and College Examination is blocked. The account row and historical records were preserved.',
         'user_id' => $targetUserId,
         'status' => 'archived',
+        'snapshot_id' => (int) ($result['snapshot_id'] ?? 0),
     ]);
+} catch (UserArchiveException $e) {
+    mysqli_rollback($conn);
+    http_response_code(user_archive_http_status_for_error($e->errorType, $e->getMessage()));
+    echo json_encode(user_archive_json_error_payload($e));
 } catch (Throwable $e) {
     mysqli_rollback($conn);
     http_response_code(500);

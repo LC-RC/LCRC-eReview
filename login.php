@@ -112,6 +112,10 @@ $showRecaptcha = ($loginAttemptCount >= LOGIN_CAPTCHA_AFTER_ATTEMPTS && $recaptc
 $errorTitles = [
     'rate_limit' => 'Too many attempts',
     'not_approved' => 'Account not approved',
+    'pending_approval' => 'Account not approved',
+    'archived' => 'Account inactive',
+    'rejected' => 'Account not approved',
+    'no_platform_access' => 'No platform access',
     'access_expired' => 'Access expired',
     'invalid_credentials' => 'Incorrect credentials',
     'csrf' => 'Invalid request',

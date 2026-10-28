@@ -7,8 +7,19 @@
     wrap.classList.toggle('has-value', (input.value || '').trim() !== '');
   }
 
+  function passwordChecks(pw) {
+    return {
+      length: pw.length >= 8,
+      upper: /[A-Z]/.test(pw),
+      lower: /[a-z]/.test(pw),
+      number: /[0-9]/.test(pw),
+      symbol: /[^A-Za-z0-9]/.test(pw)
+    };
+  }
+
   function allPasswordChecksMet(pw) {
-    return pw.length >= 8;
+    var c = passwordChecks(pw);
+    return c.length && c.upper && c.lower && c.number && c.symbol;
   }
 
   function updatePasswordStrength(pw) {
@@ -24,17 +35,26 @@
     else if (len >= 4) cls = 'fair';
     fill.className = 'reg-pw-strength-fill ' + cls;
     label.className = 'reg-pw-strength-label ' + cls;
-    label.textContent = len >= 8 ? 'Ready' : len >= 4 ? 'Fair' : 'Too short';
+    label.textContent = allPasswordChecksMet(pw) ? 'Ready' : len >= 8 ? 'Add remaining requirements' : len >= 4 ? 'Fair' : 'Too short';
     if (bar) bar.setAttribute('aria-valuenow', String(Math.min(len, 12)));
   }
 
   function updatePasswordChecklist(pw) {
-    var lenEl = document.getElementById('csr-pw-check-length');
-    if (!lenEl) return;
-    var ok = pw.length >= 8;
-    lenEl.classList.toggle('met', ok);
-    var icon = lenEl.querySelector('i');
-    if (icon) icon.className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+    var checks = passwordChecks(pw);
+    var map = {
+      'csr-pw-check-length': checks.length,
+      'csr-pw-check-upper': checks.upper,
+      'csr-pw-check-lower': checks.lower,
+      'csr-pw-check-number': checks.number,
+      'csr-pw-check-symbol': checks.symbol
+    };
+    Object.keys(map).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('met', !!map[id]);
+      var icon = el.querySelector('i');
+      if (icon) icon.className = map[id] ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+    });
   }
 
   function updateConfirmMatch() {
@@ -56,7 +76,7 @@
     } else {
       if (ok) ok.classList.add('hidden');
       if (err) {
-        err.textContent = p !== c ? 'Passwords do not match.' : 'Password must be at least 8 characters.';
+        err.textContent = p !== c ? 'Passwords do not match.' : 'Password does not meet the requirements.';
         err.classList.remove('hidden');
       }
     }

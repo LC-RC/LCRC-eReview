@@ -402,7 +402,7 @@ if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === '
         sca_api_json(['ok' => false, 'error' => 'Invalid user.'], 400);
     }
     $adminId = (int) (getCurrentUserId() ?? 0);
-    $chk = mysqli_prepare($conn, "SELECT user_id, role, status, college_examination_access FROM users WHERE user_id=? AND role='student' LIMIT 1");
+    $chk = mysqli_prepare($conn, "SELECT user_id, role, status, college_examination_access, student_number FROM users WHERE user_id=? AND role='student' LIMIT 1");
     if (!$chk) {
         sca_api_json(['ok' => false, 'error' => 'Could not load student.'], 500);
     }
@@ -431,6 +431,7 @@ if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === '
         sca_api_json(['ok' => true, 'already_active' => true, 'user_id' => $userId]);
     }
     $studentNumber = trim((string) ($_POST['student_number'] ?? ''));
+    require_once __DIR__ . '/examination/includes/college_student_number.php';
     require_once __DIR__ . '/examination/includes/college_sections.php';
     $parsedSection = college_sections_parse_optional_post($conn, (string) ($_POST['section'] ?? '__none__'));
     if (empty($parsedSection['ok'])) {
@@ -440,7 +441,16 @@ if ($action === 'enable_college_examination' && $_SERVER['REQUEST_METHOD'] === '
     if (!in_array($reviewType, ['undergrad', 'reviewee'], true)) {
         $reviewType = 'undergrad';
     }
-    if ($studentNumber !== '' && (strlen($studentNumber) > 32 || !preg_match('/^[A-Za-z0-9_-]+$/', $studentNumber))) {
+    $currentSn = trim((string) ($row['student_number'] ?? ''));
+    $snStaffErr = college_student_number_staff_change_error($currentSn, $studentNumber === '' ? $currentSn : $studentNumber);
+    if ($studentNumber !== '' && $snStaffErr !== null) {
+        sca_api_json(['ok' => false, 'error' => $snStaffErr], 422);
+    }
+    if (college_student_number_is_generated($currentSn)) {
+        $studentNumber = $currentSn;
+    } elseif ($studentNumber !== '' && college_student_number_is_generated($studentNumber)) {
+        sca_api_json(['ok' => false, 'error' => 'Staff cannot assign YYYY-NNN student numbers.'], 422);
+    } elseif ($studentNumber !== '' && !college_student_number_is_legacy_allowed($studentNumber)) {
         sca_api_json(['ok' => false, 'error' => 'Student number must be at most 32 characters and use only letters, digits, hyphen, or underscore.'], 422);
     }
     if ($studentNumber !== '') {

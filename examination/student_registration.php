@@ -2,9 +2,11 @@
 require_once dirname(__DIR__) . '/session_config.php';
 require_once dirname(__DIR__) . '/db.php';
 require_once dirname(__DIR__) . '/auth.php';
+require_once dirname(__DIR__) . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/college_schema.php';
 require_once __DIR__ . '/includes/college_sections.php';
-require_once __DIR__ . '/includes/college_student_create.php';
+require_once __DIR__ . '/includes/college_email_verification.php';
+require_once __DIR__ . '/includes/college_schools.php';
 
 $pageTitle = 'Student Registration';
 $csrf = generateCSRFToken();
@@ -13,37 +15,34 @@ $success = null;
 $formValues = [
     'full_name' => '',
     'email' => '',
-    'student_number' => '',
-    'school' => '',
+    'school_id' => '',
     'section' => '',
 ];
 $avatarUseDefault = 1;
 $sectionOptions = college_sections_active_names($conn);
+$schoolOptions = college_schools_active_list($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $error = 'Invalid request. Please refresh the page and try again.';
     } else {
-        $result = college_student_create_from_request($conn, $_POST, $_FILES, ['initial_status' => 'pending']);
-        if (!$result['ok']) {
-            $error = $result['error'] ?? 'Could not create account.';
+        $result = college_public_register_from_request($conn, $_POST, $_FILES);
+        if (empty($result['ok'])) {
+            $error = (string) ($result['error'] ?? 'Could not submit registration.');
             $formValues = [
                 'full_name' => trim((string) ($_POST['full_name'] ?? '')),
                 'email' => trim((string) ($_POST['email'] ?? '')),
-                'student_number' => trim((string) ($_POST['student_number'] ?? '')),
-                'school' => trim((string) ($_POST['school'] ?? '')),
+                'school_id' => (string) ((int) ($_POST['school_id'] ?? 0) ?: ''),
                 'section' => trim((string) ($_POST['section'] ?? '')),
             ];
             $avatarUseDefault = !empty($_POST['use_default_avatar']) ? 1 : 0;
         } else {
-            $name = trim((string) ($_POST['full_name'] ?? 'Student'));
-            $success = 'Registration submitted for ' . $name . '. Please wait for a professor or administrator to approve your account before you can sign in.';
+            $success = COLLEGE_PUBLIC_GENERIC_VERIFY;
             $formValues = [
                 'full_name' => '',
                 'email' => '',
-                'student_number' => '',
-                'school' => '',
+                'school_id' => '',
                 'section' => '',
             ];
             $avatarUseDefault = 1;
@@ -85,8 +84,8 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       <div class="reg-frame8-hero reg-left-statement" aria-live="polite">
         <div class="reg-left-statement-inner">
           <p class="reg-left-statement-headline">College Examination student registration.</p>
-          <p class="reg-left-statement-metrics">Section · School · Secure login</p>
-          <p class="reg-left-statement-blurb">Create your college examination account here. After registering, wait for professor or admin approval before signing in. This is separate from the main eReview LMS registration page.</p>
+          <p class="reg-left-statement-metrics">Section · School · Email verification</p>
+          <p class="reg-left-statement-blurb">Register for the College Examination portal only. Your account and student number are created after you verify your email. This is separate from LMS review-package registration and does not involve payment.</p>
         </div>
       </div>
     </div>
@@ -99,18 +98,25 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
 
       <main class="reg-frame8-main">
         <h1 class="reg-frame8-title">Student Registration</h1>
-        <p class="reg-frame8-subtitle">Register for the College Examination portal.</p>
+        <p class="reg-frame8-subtitle">College Examination portal. Email verification required.</p>
 
+        <?php if ($success): ?>
+          <div class="reg-frame8-form-scroll">
+            <div class="auth-alert auth-alert--success mb-4" role="status" style="background:rgba(220,252,231,0.95);border-color:rgba(34,197,94,0.35);border-left-color:#22c55e;color:#166534;">
+              <i class="auth-alert-icon bi bi-check-circle-fill" aria-hidden="true"></i>
+              <span class="auth-alert-text"><?php echo h($success); ?></span>
+            </div>
+            <p class="text-sm mb-4">Did not get the message? You can request another verification email.</p>
+            <p class="text-center text-xs subtext mt-3">
+              Already verified? <a href="login">Login</a>
+              · <a href="<?php echo h(ereview_url('college_resend_verification')); ?>">Resend verification</a>
+            </p>
+          </div>
+        <?php else: ?>
         <form action="student_registration" method="post" enctype="multipart/form-data" novalidate id="reg-form">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
 
           <div class="reg-frame8-form-scroll" id="reg-form-scroll">
-            <?php if ($success): ?>
-              <div class="auth-alert auth-alert--success mb-4" role="status" style="background:rgba(220,252,231,0.95);border-color:rgba(34,197,94,0.35);border-left-color:#22c55e;color:#166534;">
-                <i class="auth-alert-icon bi bi-check-circle-fill" aria-hidden="true"></i>
-                <span class="auth-alert-text"><?php echo h($success); ?></span>
-              </div>
-            <?php endif; ?>
             <?php if ($error): ?>
               <div class="auth-alert auth-alert--error" role="alert" aria-live="assertive">
                 <i class="auth-alert-icon bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
@@ -133,16 +139,16 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                 </div>
               </div>
               <div class="space-y-1">
-                <div class="float-label-wrap" data-float-wrap>
-                  <label class="float-label" for="csr-student_number">Student number (optional)</label>
-                  <input type="text" name="student_number" id="csr-student_number" maxlength="32" pattern="[A-Za-z0-9_-]*" placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['student_number']); ?>">
-                </div>
-              </div>
-              <div class="space-y-1">
-                <div class="float-label-wrap" data-float-wrap>
-                  <label class="float-label" for="csr-school">School</label>
-                  <input type="text" name="school" id="csr-school" required placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['school']); ?>">
-                </div>
+                <label class="reg-top-label" for="csr-school">School <span aria-hidden="true">*</span></label>
+                <select name="school_id" id="csr-school" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" aria-required="true">
+                  <option value="" disabled <?php echo $formValues['school_id'] === '' ? 'selected' : ''; ?>><?php echo $schoolOptions === [] ? 'No schools available yet' : 'Select your school'; ?></option>
+                  <?php foreach ($schoolOptions as $schOpt): ?>
+                    <option value="<?php echo (int) $schOpt['school_id']; ?>" <?php echo ((string) (int) $schOpt['school_id'] === (string) $formValues['school_id']) ? 'selected' : ''; ?>><?php echo h((string) $schOpt['school_name']); ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <?php if ($schoolOptions === []): ?>
+                  <p class="text-xs mt-1 opacity-80">Schools are configured by Professor Admin. Try again after a school is added and set to Active.</p>
+                <?php endif; ?>
               </div>
               <div class="space-y-1 reg-frame8-full">
                 <label class="reg-top-label" for="csr-section">Section</label>
@@ -156,7 +162,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             </div>
 
             <span class="reg-section-label"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Security</span>
-            <p class="reg-security-subheading">Choose a password for your account (minimum 8 characters).</p>
+            <p class="reg-security-subheading">Password must be at least 8 characters and include uppercase, lowercase, a number, and a symbol.</p>
             <div class="reg-section reg-frame8-full space-y-2">
               <div class="float-label-wrap auth-password-wrap" data-float-wrap>
                 <label class="float-label" for="csr-password">Password</label>
@@ -176,6 +182,22 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                 <div class="reg-pw-check-item" id="csr-pw-check-length">
                   <i class="bi bi-circle" aria-hidden="true"></i>
                   <span>At least 8 characters</span>
+                </div>
+                <div class="reg-pw-check-item" id="csr-pw-check-upper">
+                  <i class="bi bi-circle" aria-hidden="true"></i>
+                  <span>One uppercase letter</span>
+                </div>
+                <div class="reg-pw-check-item" id="csr-pw-check-lower">
+                  <i class="bi bi-circle" aria-hidden="true"></i>
+                  <span>One lowercase letter</span>
+                </div>
+                <div class="reg-pw-check-item" id="csr-pw-check-number">
+                  <i class="bi bi-circle" aria-hidden="true"></i>
+                  <span>One number</span>
+                </div>
+                <div class="reg-pw-check-item" id="csr-pw-check-symbol">
+                  <i class="bi bi-circle" aria-hidden="true"></i>
+                  <span>One symbol</span>
                 </div>
               </div>
               <div class="float-label-wrap auth-password-wrap" data-float-wrap>
@@ -220,15 +242,17 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
 
           <div class="reg-frame8-form-fixed-bottom">
             <button type="submit" class="reg-submit btn-shine w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm" id="csr-submit-btn">
-              <span>Create Account</span>
+              <span>Send verification email</span>
               <i class="bi bi-arrow-right text-lg" aria-hidden="true"></i>
             </button>
             <p class="text-center text-xs subtext mt-3">
               Already have an account? <a href="login">Login</a>
               · Main eReview registration: <a href="registration">Register</a>
+              · <a href="<?php echo h(ereview_url('college_resend_verification')); ?>">Resend verification</a>
             </p>
           </div>
         </form>
+        <?php endif; ?>
       </main>
 
       <footer class="reg-frame8-footer">

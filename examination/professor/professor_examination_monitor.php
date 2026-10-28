@@ -13,10 +13,12 @@ $scope = examination_monitor_parse_scope($_GET);
 
 if ($scope !== null && $scope['exam_type'] === 'college_exam' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'save_review_access') {
     $examIdPost = (int)($_POST['exam_id'] ?? 0);
+    $sectionKeep = examination_monitor_normalize_section_filter($_POST['section'] ?? '');
+    $reviewReturnUrl = examination_monitor_scoped_url(['exam_type' => 'college_exam', 'assessment_id' => $examIdPost], $sectionKeep);
     $ctxPost = examination_monitor_load_context($conn, $uid, 'college_exam', $examIdPost);
     if (!$ctxPost || !verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $_SESSION['message'] = 'Invalid security token.';
-        header('Location: professor_examination_monitor?exam_type=regular&exam_id=' . $examIdPost);
+        header('Location: ' . $reviewReturnUrl);
         exit;
     }
     $exam = $ctxPost['row'];
@@ -48,7 +50,7 @@ if ($scope !== null && $scope['exam_type'] === 'college_exam' && ($_SERVER['REQU
             $_SESSION['message'] = 'Review sheet schedule saved.';
         }
     }
-    header('Location: professor_examination_monitor?exam_type=regular&exam_id=' . $examIdPost);
+    header('Location: ' . $reviewReturnUrl);
     exit;
 }
 
@@ -79,10 +81,29 @@ if (!$ctx) {
 }
 
 examination_monitor_finalize_expired($conn, $scope);
-$metrics = examination_monitor_metrics($conn, $scope);
-$students = examination_monitor_progress_rows($conn, $scope);
+$collegeSectionFilter = '';
+$collegeSectionOptions = [];
+$collegeHasUnassignedSection = false;
+$collegeSectionInvalid = false;
+if ($ctx['exam_type'] === 'college_exam') {
+    $resolvedSection = examination_monitor_resolve_college_section_filter(
+        $conn,
+        (int)$scope['assessment_id'],
+        $_GET['section'] ?? ''
+    );
+    $collegeSectionFilter = (string)$resolvedSection['filter'];
+    $collegeSectionOptions = $resolvedSection['options'];
+    $collegeHasUnassignedSection = !empty($resolvedSection['has_none']);
+    $collegeSectionInvalid = !empty($resolvedSection['invalid']);
+}
+$metricsExamWide = examination_monitor_metrics($conn, $scope);
+$window = examination_monitor_running_finished($conn, $ctx, $metricsExamWide, $now);
+$metrics = ($ctx['exam_type'] === 'college_exam' && $collegeSectionFilter !== '')
+    ? examination_monitor_metrics($conn, $scope, $collegeSectionFilter)
+    : $metricsExamWide;
+$students = examination_monitor_progress_rows($conn, $scope, $collegeSectionFilter);
 $totalStudents = examination_monitor_roster_count($conn, $scope);
-$window = examination_monitor_running_finished($conn, $ctx, $metrics, $now);
+$reportingRosterCount = count($students);
 $isRunning = $window['is_running'];
 $isFinished = $window['is_finished'];
 $allFinishedOpenExam = $window['all_finished_open'];
@@ -109,7 +130,7 @@ $reviewUntilLocal = '';
 if ($ctx['supports_review_sheet']) {
     $exam = $ctx['row'];
     $reviewScheduleEligible = $totalStudents > 0
-        && ($isFinished || ((int)($metrics['taking_count'] ?? 0) === 0 && (int)($metrics['submitted_count'] ?? 0) > 0 && (int)($metrics['submitted_count'] ?? 0) >= $totalStudents));
+        && ($isFinished || ((int)($metricsExamWide['taking_count'] ?? 0) === 0 && (int)($metricsExamWide['submitted_count'] ?? 0) > 0 && (int)($metricsExamWide['submitted_count'] ?? 0) >= $totalStudents));
     $reviewAccessStatus = college_exam_review_access_status($exam, $now);
     $reviewFromLocal = college_exam_format_datetime_local($exam['review_sheet_available_from'] ?? null);
     $reviewUntilLocal = college_exam_format_datetime_local($exam['review_sheet_available_until'] ?? null);
@@ -127,10 +148,44 @@ if ($ctx['exam_type'] === 'diagnostic') {
     $assignmentMode = diagnostic_exam_normalize_assignment_mode((string)($ctx['row']['assignment_mode'] ?? 'sections'));
 }
 
-$liveUrl = examination_monitor_live_url($scope);
-$pdfUrl = examination_monitor_pdf_url($scope);
-$xlsxUrl = examination_monitor_xlsx_url($scope);
-$scopeUrl = examination_monitor_scoped_url($scope);
+$itemAnalytics = null;
+$securityEventRows = [];
+$securityEventStats = ['matching' => 0, 'examinees' => 0, 'types' => []];
+$securityEventFilters = ['user_id' => 0, 'event_type' => '', 'from' => null, 'until' => null];
+if ($ctx['exam_type'] === 'college_exam') {
+    require_once dirname(__DIR__) . '/includes/examination_monitor_item_analytics.php';
+    $itemAnalytics = examination_monitor_item_analytics($conn, (int)$scope['assessment_id'], $collegeSectionFilter);
+    $secUserIds = [];
+    foreach ($students as $stSecEv) {
+        $secUserIds[] = (int)($stSecEv['user_id'] ?? 0);
+    }
+    $securityEventFilters = examination_monitor_normalize_security_filters([
+        'user_id' => $_GET['sec_user'] ?? 0,
+        'event_type' => $_GET['sec_type'] ?? '',
+        'from' => $_GET['sec_from'] ?? '',
+        'until' => $_GET['sec_until'] ?? '',
+    ], $secUserIds);
+    $securityEventRows = examination_monitor_college_security_events(
+        $conn,
+        (int)$scope['assessment_id'],
+        $secUserIds,
+        $securityEventFilters,
+        200
+    );
+    $securityEventStats = examination_monitor_college_security_events_stats(
+        $conn,
+        (int)$scope['assessment_id'],
+        $secUserIds,
+        $securityEventFilters
+    );
+}
+
+$liveUrl = examination_monitor_live_url($scope, $collegeSectionFilter);
+$pdfUrl = examination_monitor_pdf_url($scope, $collegeSectionFilter);
+$xlsxUrl = examination_monitor_xlsx_url($scope, $collegeSectionFilter);
+$analyticsPdfUrl = examination_monitor_analytics_pdf_url($scope, $collegeSectionFilter);
+$analyticsXlsxUrl = examination_monitor_analytics_xlsx_url($scope, $collegeSectionFilter);
+$scopeUrl = examination_monitor_scoped_url($scope, $collegeSectionFilter);
 $examIdSafe = (int)$ctx['assessment_id'];
 $monitorFlash = $_SESSION['message'] ?? null;
 unset($_SESSION['message']);

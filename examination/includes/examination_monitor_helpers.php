@@ -86,40 +86,226 @@ function examination_monitor_parse_scope(array $query): ?array
     return null;
 }
 
-function examination_monitor_live_url(array $scope): string
+/**
+ * Normalize a monitor/export section query value.
+ * '' = all sections; '__none__' = blank/NULL current users.section; otherwise a named section.
+ */
+function examination_monitor_normalize_section_filter(mixed $raw): string
+{
+    $s = trim((string)$raw);
+    if ($s === '' || strcasecmp($s, 'all') === 0) {
+        return '';
+    }
+    if ($s === '__none__') {
+        return '__none__';
+    }
+
+    return $s;
+}
+
+function examination_monitor_append_section_query(string $url, string $examType, string $sectionFilter = ''): string
+{
+    if (examination_monitor_normalize_exam_type($examType) !== 'college_exam') {
+        return $url;
+    }
+    $n = examination_monitor_normalize_section_filter($sectionFilter);
+    if ($n === '') {
+        return $url;
+    }
+    $sep = str_contains($url, '?') ? '&' : '?';
+
+    return $url . $sep . 'section=' . rawurlencode($n);
+}
+
+/**
+ * Assigned ∪ attempt-holder user IDs, optionally restricted to current users.section.
+ *
+ * @return list<int>
+ */
+function examination_monitor_college_reporting_user_ids(mysqli $conn, int $examId, string $sectionFilter = ''): array
+{
+    require_once __DIR__ . '/examination_eligibility.php';
+    $examId = (int)$examId;
+    if ($examId <= 0) {
+        return [];
+    }
+    $ids = examination_assigned_roster_user_ids($conn, 'regular', $examId);
+    $sectionFilter = examination_monitor_normalize_section_filter($sectionFilter);
+    if ($sectionFilter === '' || $ids === []) {
+        return $ids;
+    }
+    $in = implode(',', array_map('intval', $ids));
+    $res = @mysqli_query($conn, "SELECT user_id, TRIM(COALESCE(section,'')) AS section FROM users WHERE user_id IN ({$in})");
+    $out = [];
+    if ($res) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $uid = (int)($row['user_id'] ?? 0);
+            $sec = trim((string)($row['section'] ?? ''));
+            if ($uid <= 0) {
+                continue;
+            }
+            if ($sectionFilter === '__none__') {
+                if ($sec === '') {
+                    $out[] = $uid;
+                }
+            } elseif (examination_section_is_in_list($sec, [$sectionFilter])) {
+                $out[] = $uid;
+            }
+        }
+        mysqli_free_result($res);
+    }
+    sort($out);
+
+    return array_values($out);
+}
+
+/**
+ * Named monitor dropdown options = exam-assigned college_exam_sections labels
+ * union distinct non-blank users.section on this exam's reporting roster
+ * (assigned ∪ attempt holders). Does not query the global college_sections catalog.
+ * No Section is not an assigned section; it is offered only when that roster
+ * includes a blank users.section.
+ *
+ * @return array{options: list<string>, has_none: bool}
+ */
+function examination_monitor_college_section_options(mysqli $conn, int $examId): array
+{
+    require_once __DIR__ . '/examination_eligibility.php';
+    $examId = (int)$examId;
+    $named = [];
+    $addNamed = static function (string $label) use (&$named): void {
+        $label = trim($label);
+        if ($label === '') {
+            return;
+        }
+        $key = examination_normalize_section_compare_key($label);
+        if ($key === '' || isset($named[$key])) {
+            return;
+        }
+        $named[$key] = $label;
+    };
+    if ($examId > 0) {
+        foreach (examination_load_assigned_sections($conn, 'regular', $examId) as $sec) {
+            $addNamed((string)$sec);
+        }
+    }
+
+    $hasNone = false;
+    $ids = $examId > 0 ? examination_monitor_college_reporting_user_ids($conn, $examId, '') : [];
+    if ($ids !== []) {
+        $in = implode(',', array_map('intval', $ids));
+        $res = @mysqli_query($conn, "SELECT TRIM(COALESCE(section,'')) AS section FROM users WHERE user_id IN ({$in})");
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                $sec = trim((string)($row['section'] ?? ''));
+                if ($sec === '') {
+                    $hasNone = true;
+                    continue;
+                }
+                $addNamed($sec);
+            }
+            mysqli_free_result($res);
+        }
+    }
+    $options = array_values($named);
+    natcasesort($options);
+
+    return ['options' => array_values($options), 'has_none' => $hasNone];
+}
+
+/**
+ * Accept GET section only when it is All, an exam-assigned named section, or No Section
+ * when that population exists. Invalid values fall back to All Sections (do not filter).
+ *
+ * @return array{filter: string, invalid: bool, options: list<string>, has_none: bool}
+ */
+function examination_monitor_resolve_college_section_filter(mysqli $conn, int $examId, mixed $raw, ?array $secOpts = null): array
+{
+    $secOpts = is_array($secOpts) ? $secOpts : examination_monitor_college_section_options($conn, $examId);
+    $options = is_array($secOpts['options'] ?? null) ? $secOpts['options'] : [];
+    $hasNone = !empty($secOpts['has_none']);
+    $n = examination_monitor_normalize_section_filter($raw);
+    if ($n === '') {
+        return ['filter' => '', 'invalid' => false, 'options' => $options, 'has_none' => $hasNone];
+    }
+    if ($n === '__none__') {
+        if ($hasNone) {
+            return ['filter' => '__none__', 'invalid' => false, 'options' => $options, 'has_none' => $hasNone];
+        }
+
+        return ['filter' => '', 'invalid' => true, 'options' => $options, 'has_none' => $hasNone];
+    }
+    foreach ($options as $opt) {
+        if (examination_section_is_in_list($n, [(string)$opt])) {
+            return ['filter' => (string)$opt, 'invalid' => false, 'options' => $options, 'has_none' => $hasNone];
+        }
+    }
+
+    return ['filter' => '', 'invalid' => true, 'options' => $options, 'has_none' => $hasNone];
+}
+
+function examination_monitor_live_url(array $scope, string $sectionFilter = ''): string
 {
     if ($scope['exam_type'] === 'diagnostic') {
         return 'professor_examination_monitor_live?exam_type=diagnostic&batch_id=' . (int)$scope['assessment_id'];
     }
 
-    return 'professor_examination_monitor_live?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+    $url = 'professor_examination_monitor_live?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
 }
 
-function examination_monitor_pdf_url(array $scope): string
+function examination_monitor_pdf_url(array $scope, string $sectionFilter = ''): string
 {
     if ($scope['exam_type'] === 'diagnostic') {
         return 'professor_examination_monitor_pdf?exam_type=diagnostic&batch_id=' . (int)$scope['assessment_id'];
     }
 
-    return 'professor_examination_monitor_pdf?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+    $url = 'professor_examination_monitor_pdf?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
 }
 
-function examination_monitor_xlsx_url(array $scope): string
+function examination_monitor_xlsx_url(array $scope, string $sectionFilter = ''): string
 {
     if ($scope['exam_type'] === 'diagnostic') {
         return 'professor_examination_monitor_xlsx?exam_type=diagnostic&batch_id=' . (int)$scope['assessment_id'];
     }
 
-    return 'professor_examination_monitor_xlsx?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+    $url = 'professor_examination_monitor_xlsx?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
 }
 
-function examination_monitor_scoped_url(array $scope): string
+function examination_monitor_analytics_pdf_url(array $scope, string $sectionFilter = ''): string
+{
+    if (($scope['exam_type'] ?? '') !== 'college_exam') {
+        return '';
+    }
+    $url = 'professor_examination_monitor_analytics_pdf?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
+}
+
+function examination_monitor_analytics_xlsx_url(array $scope, string $sectionFilter = ''): string
+{
+    if (($scope['exam_type'] ?? '') !== 'college_exam') {
+        return '';
+    }
+    $url = 'professor_examination_monitor_analytics_xlsx?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
+}
+
+function examination_monitor_scoped_url(array $scope, string $sectionFilter = ''): string
 {
     if ($scope['exam_type'] === 'diagnostic') {
         return 'professor_examination_monitor?exam_type=diagnostic&batch_id=' . (int)$scope['assessment_id'];
     }
 
-    return 'professor_examination_monitor?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+    $url = 'professor_examination_monitor?exam_type=regular&exam_id=' . (int)$scope['assessment_id'];
+
+    return examination_monitor_append_section_query($url, 'college_exam', $sectionFilter);
 }
 
 function examination_monitor_load_context(mysqli $conn, int $professorId, string $examType, int $assessmentId): ?array
@@ -340,16 +526,16 @@ function examination_monitor_roster_count(mysqli $conn, array $scope): int
     return diagnostic_exam_count_assigned_examinees($conn, (int)$scope['assessment_id']);
 }
 
-function examination_monitor_metrics(mysqli $conn, array $scope): array
+function examination_monitor_metrics(mysqli $conn, array $scope, string $sectionFilter = ''): array
 {
     if ($scope['exam_type'] === 'college_exam') {
-        return examination_monitor_metrics_for_college_exam($conn, (int)$scope['assessment_id']);
+        return examination_monitor_metrics_for_college_exam($conn, (int)$scope['assessment_id'], $sectionFilter);
     }
 
     return examination_monitor_metrics_for_diagnostic($conn, (int)$scope['assessment_id']);
 }
 
-function examination_monitor_metrics_for_college_exam(mysqli $conn, int $examId): array
+function examination_monitor_metrics_for_college_exam(mysqli $conn, int $examId, string $sectionFilter = ''): array
 {
     $metrics = [
         'taking_count' => 0,
@@ -358,13 +544,22 @@ function examination_monitor_metrics_for_college_exam(mysqli $conn, int $examId)
         'pass_count' => 0,
         'fail_count' => 0,
     ];
+    $userClause = '';
+    $sectionFilter = examination_monitor_normalize_section_filter($sectionFilter);
+    if ($sectionFilter !== '') {
+        $userIds = examination_monitor_college_reporting_user_ids($conn, $examId, $sectionFilter);
+        if ($userIds === []) {
+            return $metrics;
+        }
+        $userClause = ' AND user_id IN (' . implode(',', array_map('intval', $userIds)) . ')';
+    }
     $mq = @mysqli_query($conn, "
       SELECT
         SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) AS taking_count,
         SUM(CASE WHEN status='submitted' THEN 1 ELSE 0 END) AS submitted_count,
         AVG(CASE WHEN status='submitted' AND IFNULL(total_count,0) > 0
-          THEN (50 + 0.5 * (100.0 * COALESCE(correct_count,0) / total_count))
-          WHEN status='submitted' THEN score END) AS avg_score,
+          THEN ROUND(100.0 * COALESCE(correct_count,0) / total_count, 0)
+          WHEN status='submitted' AND score IS NOT NULL THEN score END) AS avg_score,
         SUM(CASE WHEN status='submitted' AND IFNULL(total_count,0) > 0
           AND COALESCE(correct_count,0) >= CEILING(total_count / 2) THEN 1
           ELSE 0 END) AS pass_count,
@@ -373,7 +568,7 @@ function examination_monitor_metrics_for_college_exam(mysqli $conn, int $examId)
           WHEN status='submitted' AND IFNULL(total_count,0) <= 0 THEN 1
           ELSE 0 END) AS fail_count
       FROM college_exam_attempts
-      WHERE exam_id=" . (int)$examId
+      WHERE exam_id=" . (int)$examId . $userClause
     );
     if ($mq && ($m = mysqli_fetch_assoc($mq))) {
         $metrics['taking_count'] = (int)($m['taking_count'] ?? 0);
@@ -429,21 +624,21 @@ function examination_monitor_diagnostic_roster_user_ids(mysqli $conn, int $batch
     return examination_assigned_roster_user_ids($conn, 'diagnostic', $batchId);
 }
 
-function examination_monitor_progress_rows(mysqli $conn, array $scope): array
+function examination_monitor_progress_rows(mysqli $conn, array $scope, string $sectionFilter = ''): array
 {
     if ($scope['exam_type'] === 'college_exam') {
-        return examination_monitor_college_progress_rows($conn, (int)$scope['assessment_id']);
+        return examination_monitor_college_progress_rows($conn, (int)$scope['assessment_id'], $sectionFilter);
     }
 
     return examination_monitor_diagnostic_progress_rows($conn, (int)$scope['assessment_id']);
 }
 
-function examination_monitor_college_progress_rows(mysqli $conn, int $examId): array
+function examination_monitor_college_progress_rows(mysqli $conn, int $examId, string $sectionFilter = ''): array
 {
     require_once __DIR__ . '/examination_eligibility.php';
     require_once __DIR__ . '/college_exam_attempt_events.php';
     college_exam_attempt_events_ensure_schema($conn);
-    $userIds = examination_assigned_roster_user_ids($conn, 'regular', $examId);
+    $userIds = examination_monitor_college_reporting_user_ids($conn, $examId, $sectionFilter);
     if ($userIds === []) {
         return [];
     }
@@ -506,6 +701,67 @@ function examination_monitor_diagnostic_progress_rows(mysqli $conn, int $batchId
     return $rows;
 }
 
+/**
+ * Overview “Exam access” facts from existing publish + schedule helpers.
+ * Does not create attempts or change eligibility; per-student assignment is not claimed here.
+ *
+ * @param array<string,mixed> $record college_exams row
+ * @param array{is_running?:bool,is_finished?:bool,all_finished_open?:bool} $window
+ * @return array{published:bool,publish_label:string,access_key:string,access_label:string,access_detail:string}
+ */
+function examination_monitor_exam_access_summary(array $record, array $window, string $nowSql): array
+{
+    require_once __DIR__ . '/examination_eligibility.php';
+    $published = examination_record_is_published($record, 'regular');
+    $out = [
+        'published' => $published,
+        'publish_label' => $published ? 'Published' : 'Unpublished',
+        'access_key' => 'unavailable',
+        'access_label' => 'Not open',
+        'access_detail' => 'Schedule facts are shown below. Whether a given student can start also depends on assignment.',
+    ];
+    if (!$published) {
+        $out['access_key'] = 'unpublished';
+        $out['access_label'] = 'Students cannot start';
+        $out['access_detail'] = 'Unpublished exams cannot be started. Publish and set the window in the editor. This monitor does not start attempts.';
+
+        return $out;
+    }
+    if (!empty($window['all_finished_open'])) {
+        $out['access_key'] = 'closed';
+        $out['access_label'] = 'Closed';
+        $out['access_detail'] = 'No close time is set and everyone on the roster has submitted, so new starts are closed.';
+
+        return $out;
+    }
+    if (examination_record_schedule_is_open($record, $nowSql)) {
+        $out['access_key'] = 'open';
+        $out['access_label'] = 'Open now';
+        $out['access_detail'] = 'Assigned students may start their own attempt during this window. This monitor does not start attempts.';
+
+        return $out;
+    }
+    $nowTs = examination_schedule_to_timestamp($nowSql) ?? time();
+    $startsTs = examination_schedule_to_timestamp(isset($record['available_from']) ? (string)$record['available_from'] : null);
+    if ($startsTs !== null && $nowTs < $startsTs) {
+        $out['access_key'] = 'scheduled';
+        $out['access_label'] = 'Scheduled — not open yet';
+        $out['access_detail'] = 'Opens ' . examination_monitor_format_dt($record['available_from'] ?? null) . '. Assigned students cannot start before then.';
+
+        return $out;
+    }
+    $endsTs = examination_schedule_to_timestamp(isset($record['deadline']) ? (string)$record['deadline'] : null);
+    if ($endsTs !== null && $nowTs >= $endsTs) {
+        $out['access_key'] = 'closed';
+        $out['access_label'] = 'Closed';
+        $out['access_detail'] = 'The close time has passed, so students cannot start a new attempt.';
+
+        return $out;
+    }
+
+    return $out;
+}
+
 function examination_monitor_running_finished(mysqli $conn, array $ctx, array $metrics, string $nowSql): array
 {
     $row = $ctx['row'];
@@ -533,12 +789,12 @@ function examination_monitor_running_finished(mysqli $conn, array $ctx, array $m
     return ['is_running' => $isRunning, 'is_finished' => $isFinished, 'all_finished_open' => $allDone && empty($row['deadline'])];
 }
 
-function examination_monitor_export_rows(mysqli $conn, array $ctx, bool $isFinished): array
+function examination_monitor_export_rows(mysqli $conn, array $ctx, bool $isFinished, string $sectionFilter = ''): array
 {
     if ($ctx['exam_type'] === 'college_exam') {
         require_once __DIR__ . '/exam_monitor_progress_rows.php';
 
-        return exam_monitor_progress_export_rows($conn, (int)$ctx['assessment_id'], (int)$ctx['question_count'], $isFinished);
+        return exam_monitor_progress_export_rows($conn, (int)$ctx['assessment_id'], (int)$ctx['question_count'], $isFinished, $sectionFilter);
     }
 
     $rows = [];
@@ -645,9 +901,161 @@ function examination_monitor_format_remaining(?string $expiresAt, ?int $nowTs = 
     return sprintf('%d:%02d', $m, $s);
 }
 
-function examination_monitor_live_payload(mysqli $conn, array $ctx): array
+/**
+ * Elapsed attempt time from started_at to submitted_at, or to $nowTs while in progress.
+ * Returns null when start (or end, for finished attempts) is missing so the UI cannot fabricate duration.
+ */
+function examination_monitor_attempt_duration_seconds(
+    ?string $startedAt,
+    ?string $submittedAt,
+    ?string $attemptStatus,
+    ?int $nowTs = null
+): ?int {
+    if ($startedAt === null || trim($startedAt) === '') {
+        return null;
+    }
+    $start = strtotime($startedAt);
+    if ($start === false) {
+        return null;
+    }
+    $st = strtolower(trim((string)$attemptStatus));
+    $endTs = null;
+    if ($st === 'submitted' || $st === 'expired') {
+        if ($submittedAt === null || trim($submittedAt) === '') {
+            return null;
+        }
+        $end = strtotime($submittedAt);
+        if ($end === false) {
+            return null;
+        }
+        $endTs = $end;
+    } elseif ($st === 'in_progress') {
+        $endTs = $nowTs ?? time();
+    } else {
+        return null;
+    }
+
+    return max(0, $endTs - $start);
+}
+
+function examination_monitor_format_duration_seconds(?int $sec): string
+{
+    if ($sec === null) {
+        return '';
+    }
+    $sec = max(0, $sec);
+    $h = intdiv($sec, 3600);
+    $m = intdiv($sec % 3600, 60);
+    $s = $sec % 60;
+    if ($h > 0) {
+        return sprintf('%dh %02dm', $h, $m);
+    }
+    if ($m > 0) {
+        return sprintf('%dm %02ds', $m, $s);
+    }
+
+    return sprintf('%ds', $s);
+}
+
+/**
+ * True only when the take page includes the client-heartbeat script.
+ * Unwired take pages must not be presented as live device/instance detection.
+ */
+function examination_monitor_client_instance_tracking_wired(): bool
+{
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+    $take = dirname(__DIR__) . '/examinee/college_take_exam.php';
+    if (!is_file($take)) {
+        $cached = false;
+
+        return false;
+    }
+    $src = (string)@file_get_contents($take);
+    $cached = (bool)preg_match('/<script[^>]+college-exam-client-heartbeat\\.js/i', $src);
+
+    return $cached;
+}
+
+function examination_monitor_client_instances_label(bool $trackingLive, int $instances, int $scopes): string
+{
+    if (!$trackingLive) {
+        return 'Not currently tracked';
+    }
+    $instances = max(0, $instances);
+    $scopes = max(0, $scopes);
+    if ($instances <= 0) {
+        return 'No active exam page instances';
+    }
+    $inst = $instances . ' exam page instance' . ($instances === 1 ? '' : 's');
+    if ($scopes > 0) {
+        $inst .= ' · ' . $scopes . ' browser scope' . ($scopes === 1 ? '' : 's');
+    }
+
+    return $inst;
+}
+
+/**
+ * Live JSON answer/score fields from SQL progress-row counts.
+ *
+ * College submitted/expired keep actual non-empty selected_answer counts.
+ * Diagnostic submitted/expired still map answered_count to paper total_count
+ * (legacy diagnostic roster display).
+ *
+ * @return array{answered_count:int,correct_count:int,score_pct_answered:?float,total_questions:?int}
+ */
+function examination_monitor_live_answer_fields(
+    string $examType,
+    string $attemptStatus,
+    int $answeredLive,
+    int $correctLive,
+    mixed $correctCount,
+    mixed $totalCount,
+    int $qTotal
+): array {
+    $attemptStatus = strtolower(trim($attemptStatus));
+    $closed = ($attemptStatus === 'submitted' || $attemptStatus === 'expired');
+    $isCollege = ($examType === 'college_exam');
+    $paperTot = ($totalCount !== null && $totalCount !== '') ? (int)$totalCount : 0;
+    $answered = $answeredLive;
+    $correct = $correctLive;
+    if ($closed) {
+        if ($correctCount !== null && $correctCount !== '') {
+            $correct = (int)$correctCount;
+        }
+        if (!$isCollege && $paperTot > 0) {
+            $answered = $paperTot;
+        }
+    }
+    $totalQuestions = $qTotal > 0 ? $qTotal : ($paperTot > 0 ? $paperTot : null);
+    $livePct = null;
+    if ($isCollege && $closed) {
+        $den = $paperTot > 0 ? $paperTot : (int)($totalQuestions ?? 0);
+        if ($den > 0) {
+            $livePct = round(100 * $correct / $den, 1);
+        }
+    } elseif ($answered > 0) {
+        $livePct = round(100 * $correct / $answered, 1);
+    }
+
+    return [
+        'answered_count' => $answered,
+        'correct_count' => $correct,
+        'score_pct_answered' => $livePct,
+        'total_questions' => $totalQuestions,
+    ];
+}
+
+function examination_monitor_live_payload(mysqli $conn, array $ctx, string $sectionFilter = ''): array
 {
     $scope = ['exam_type' => $ctx['exam_type'], 'assessment_id' => (int)$ctx['assessment_id']];
+    if (($ctx['exam_type'] ?? '') !== 'college_exam') {
+        $sectionFilter = '';
+    } else {
+        $sectionFilter = examination_monitor_normalize_section_filter($sectionFilter);
+    }
     if (!empty($_GET['tab_events_attempt_id'])) {
         $aid = (int)$_GET['tab_events_attempt_id'];
         require_once __DIR__ . '/college_exam_attempt_events.php';
@@ -678,13 +1086,23 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
     }
 
     $autoFinalized = examination_monitor_finalize_expired($conn, $scope);
-    $metrics = examination_monitor_metrics($conn, $scope);
+    $metrics = examination_monitor_metrics($conn, $scope, $sectionFilter);
     $qTotal = (int)($ctx['question_count'] ?? 0);
     $students = [];
     $totalTab = 0;
     $nowTs = time();
     $presenceCounts = ['active' => 0, 'idle' => 0, 'disconnected' => 0, 'submitted' => 0, 'expired' => 0, 'not_started' => 0];
-    foreach (examination_monitor_progress_rows($conn, $scope) as $row) {
+    $clientOverlapByAttempt = [];
+    $overlapExamineeCount = 0;
+    $clientTrackingLive = false;
+    $concurrentAlerts = [];
+    if (($ctx['exam_type'] ?? '') === 'college_exam') {
+        $clientTrackingLive = examination_monitor_client_instance_tracking_wired();
+        require_once __DIR__ . '/college_exam_client_heartbeat.php';
+        $clientOverlapByAttempt = college_exam_client_active_counts_for_exam($conn, (int)$ctx['assessment_id']);
+        $concurrentAlerts = examination_monitor_college_concurrent_alerts($conn, (int)$ctx['assessment_id']);
+    }
+    foreach (examination_monitor_progress_rows($conn, $scope, $sectionFilter) as $row) {
         $tc = (int)($row['tab_switch_count'] ?? 0);
         $totalTab += $tc;
         $attemptStatus = (string)($row['attempt_status'] ?? '');
@@ -702,20 +1120,18 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
         }
         $currentIndex = isset($ui['current_index']) ? (int)$ui['current_index'] : null;
         $currentQuestion = ($currentIndex !== null && $currentIndex >= 0) ? ($currentIndex + 1) : null;
-        $answeredLive = isset($row['answered_live']) ? (int)$row['answered_live'] : 0;
-        $correctLive = isset($row['correct_live']) ? (int)$row['correct_live'] : 0;
-        if ($attemptStatus === 'submitted' || $attemptStatus === 'expired') {
-            if (isset($row['correct_count'])) {
-                $correctLive = (int)$row['correct_count'];
-            }
-            if (isset($row['total_count']) && (int)$row['total_count'] > 0) {
-                $answeredLive = (int)$row['total_count'];
-            }
-        }
-        $livePct = null;
-        if ($answeredLive > 0) {
-            $livePct = round(100 * $correctLive / $answeredLive, 1);
-        }
+        $liveFields = examination_monitor_live_answer_fields(
+            (string)($ctx['exam_type'] ?? ''),
+            $attemptStatus,
+            isset($row['answered_live']) ? (int)$row['answered_live'] : 0,
+            isset($row['correct_live']) ? (int)$row['correct_live'] : 0,
+            $row['correct_count'] ?? null,
+            $row['total_count'] ?? null,
+            $qTotal
+        );
+        $answeredLive = (int)$liveFields['answered_count'];
+        $correctLive = (int)$liveFields['correct_count'];
+        $livePct = $liveFields['score_pct_answered'];
         $remainingSec = null;
         $expRaw = $row['expires_at'] ?? null;
         $remainingFmt = null;
@@ -735,17 +1151,35 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
         }
         $lastEvent = strtolower(trim((string)($row['last_tab_event'] ?? '')));
         $tabHidden = ($lastEvent === 'tab_hidden');
+        $aidLive = isset($row['attempt_id']) ? (int)$row['attempt_id'] : 0;
+        $clientCounts = ($aidLive > 0 && isset($clientOverlapByAttempt[$aidLive]) && is_array($clientOverlapByAttempt[$aidLive]))
+            ? $clientOverlapByAttempt[$aidLive]
+            : ['instances' => 0, 'scopes' => 0];
+        $activeInstances = (int)($clientCounts['instances'] ?? 0);
+        $activeScopes = (int)($clientCounts['scopes'] ?? 0);
+        $clientOverlap = $activeInstances >= 2;
+        if ($clientOverlap) {
+            $overlapExamineeCount++;
+        }
+        $submittedRaw = $row['submitted_at'] ?? null;
+        $durSec = examination_monitor_attempt_duration_seconds(
+            isset($row['started_at']) ? (string)$row['started_at'] : null,
+            isset($submittedRaw) ? (string)$submittedRaw : null,
+            $attemptStatus,
+            $nowTs
+        );
         $students[] = [
             'user_id' => (int)($row['user_id'] ?? 0),
             'full_name' => (string)($row['full_name'] ?? ''),
+            'student_number' => trim((string)($row['student_number'] ?? '')),
             'section' => (string)($row['section'] ?? ''),
-            'attempt_id' => isset($row['attempt_id']) ? (int)$row['attempt_id'] : null,
+            'attempt_id' => $aidLive > 0 ? $aidLive : null,
             'attempt_status' => $attemptStatus,
             'presence_status' => $presence,
             'answered_count' => $answeredLive,
             'correct_count' => $correctLive,
             'score_pct_answered' => $livePct,
-            'total_questions' => $qTotal > 0 ? $qTotal : (isset($row['total_count']) ? (int)$row['total_count'] : null),
+            'total_questions' => $liveFields['total_questions'],
             'current_question' => $currentQuestion,
             'remaining_seconds' => $remainingSec,
             'remaining_fmt' => $remainingFmt,
@@ -753,10 +1187,22 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
             'last_seen_fmt' => examination_monitor_format_dt($row['last_seen_at'] ?? null),
             'started_at' => $row['started_at'] ?? null,
             'started_fmt' => examination_monitor_format_dt($row['started_at'] ?? null),
+            'submitted_at' => $submittedRaw,
+            'submitted_fmt' => examination_monitor_format_dt($submittedRaw),
+            'duration_seconds' => $durSec,
+            'duration_fmt' => examination_monitor_format_duration_seconds($durSec),
             'tab_switch_count' => $tc,
             'tab_hidden' => $tabHidden,
             'last_tab_switch_at' => $row['last_tab_switch_at'] ?? null,
             'last_tab_switch_fmt' => examination_monitor_format_dt($row['last_tab_switch_at'] ?? null),
+            'active_instances' => $activeInstances,
+            'active_browser_scopes' => $activeScopes,
+            'client_overlap' => $clientOverlap,
+            'client_instances_label' => examination_monitor_client_instances_label(
+                $clientTrackingLive,
+                $activeInstances,
+                $activeScopes
+            ),
         ];
     }
 
@@ -772,9 +1218,13 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
         'fail_count' => (int)($metrics['fail_count'] ?? 0),
         'total_tab_leaves' => $totalTab,
         'roster_total' => count($students),
+        'section_filter' => $sectionFilter,
         'presence' => $presenceCounts,
         'idle_seconds' => examination_monitor_idle_threshold_seconds(),
         'disconnected_seconds' => examination_monitor_disconnected_threshold_seconds(),
+        'client_tracking_live' => $clientTrackingLive,
+        'overlap_examinee_count' => $overlapExamineeCount,
+        'concurrent_alerts' => $concurrentAlerts,
         'students' => $students,
     ];
 }
@@ -782,4 +1232,299 @@ function examination_monitor_live_payload(mysqli $conn, array $ctx): array
 function examination_monitor_examinee_type_label(string $reviewType): string
 {
     return strtolower(trim($reviewType)) === 'undergrad' ? 'College Student' : 'Reviewee';
+}
+
+/**
+ * @return array<string,string> event_type => label (stored types only)
+ */
+function examination_monitor_college_security_allowed_types(): array
+{
+    return [
+        'tab_hidden' => 'Tab left',
+        'tab_visible' => 'Returned to exam',
+        'exam_started' => 'Exam started',
+        'exam_submitted' => 'Exam submitted',
+        'exam_finalized' => 'Exam submitted',
+        'exam_expired' => 'Exam expired / auto-submitted',
+    ];
+}
+
+function examination_monitor_college_security_type_label(string $type): string
+{
+    $type = strtolower(trim($type));
+    $map = examination_monitor_college_security_allowed_types();
+
+    return $map[$type] ?? ($type !== '' ? $type : 'Event');
+}
+
+/** Parse datetime-local / SQL datetime into Y-m-d H:i:s, or null. */
+function examination_monitor_parse_filter_dt(string $raw): ?string
+{
+    $raw = trim($raw);
+    if ($raw === '' || preg_match('/^0000-00-00/', $raw)) {
+        return null;
+    }
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/', $raw, $m)) {
+        $y = (int)$m[1];
+        $mo = (int)$m[2];
+        $d = (int)$m[3];
+        $h = (int)$m[4];
+        $mi = (int)$m[5];
+        $s = isset($m[6]) && $m[6] !== '' ? (int)$m[6] : 0;
+        if (!checkdate($mo, $d, $y) || $h > 23 || $mi > 59 || $s > 59) {
+            return null;
+        }
+
+        return sprintf('%04d-%02d-%02d %02d:%02d:%02d', $y, $mo, $d, $h, $mi, $s);
+    }
+
+    return null;
+}
+
+/**
+ * @param list<int> $allowedUserIds
+ * @return array{user_id:int,event_type:string,from:?string,until:?string}
+ */
+function examination_monitor_normalize_security_filters(array $raw, array $allowedUserIds): array
+{
+    $allowed = [];
+    foreach ($allowedUserIds as $uid) {
+        $uid = (int)$uid;
+        if ($uid > 0) {
+            $allowed[$uid] = $uid;
+        }
+    }
+    $userId = (int)($raw['user_id'] ?? 0);
+    if ($userId > 0 && !isset($allowed[$userId])) {
+        $userId = 0;
+    }
+    $type = strtolower(trim((string)($raw['event_type'] ?? '')));
+    if ($type !== '' && !isset(examination_monitor_college_security_allowed_types()[$type])) {
+        $type = '';
+    }
+    $from = examination_monitor_parse_filter_dt((string)($raw['from'] ?? ''));
+    $until = examination_monitor_parse_filter_dt((string)($raw['until'] ?? ''));
+    if ($from !== null && $until !== null && $until < $from) {
+        $until = null;
+    }
+
+    return [
+        'user_id' => $userId,
+        'event_type' => $type,
+        'from' => $from,
+        'until' => $until,
+    ];
+}
+
+/**
+ * @param list<int> $userIds
+ * @return array{sql:string,ids:list<int>}|null
+ */
+function examination_monitor_college_security_events_where(int $examId, array $userIds, array $filters): ?array
+{
+    $examId = (int)$examId;
+    if ($examId <= 0) {
+        return null;
+    }
+    $ids = [];
+    foreach ($userIds as $uid) {
+        $uid = (int)$uid;
+        if ($uid > 0) {
+            $ids[$uid] = $uid;
+        }
+    }
+    $wantUser = (int)($filters['user_id'] ?? 0);
+    if ($wantUser > 0) {
+        if (!isset($ids[$wantUser])) {
+            return null;
+        }
+        $ids = [$wantUser => $wantUser];
+    }
+    if ($ids === []) {
+        return null;
+    }
+    $in = implode(',', array_map('intval', array_values($ids)));
+    $sql = 'e.exam_id=' . $examId . ' AND e.user_id IN (' . $in . ')'
+        . " AND e.event_type NOT IN ('window_blurred','window_focused')";
+    $type = strtolower(trim((string)($filters['event_type'] ?? '')));
+    $allowed = examination_monitor_college_security_allowed_types();
+    if ($type === 'exam_submitted') {
+        $sql .= " AND e.event_type IN ('exam_submitted','exam_finalized')";
+    } elseif ($type !== '' && preg_match('/^[a-z_]+$/', $type) && isset($allowed[$type])) {
+        $sql .= " AND e.event_type='" . $type . "'";
+    }
+    $from = isset($filters['from']) && is_string($filters['from']) ? $filters['from'] : null;
+    $until = isset($filters['until']) && is_string($filters['until']) ? $filters['until'] : null;
+    if ($from !== null && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $from)) {
+        $sql .= " AND e.occurred_at >= '" . $from . "'";
+    }
+    if ($until !== null && preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $until)) {
+        $sql .= " AND e.occurred_at <= '" . $until . "'";
+    }
+
+    return ['sql' => $sql, 'ids' => array_values($ids)];
+}
+
+/**
+ * Recent recorded attempt events for the college monitor Security tab (existing table only).
+ *
+ * @param list<int> $userIds
+ * @param array{user_id?:int,event_type?:string,from?:?string,until?:?string} $filters
+ * @return list<array<string,mixed>>
+ */
+function examination_monitor_college_security_events(mysqli $conn, int $examId, array $userIds, array $filters = [], int $limit = 200): array
+{
+    $scope = examination_monitor_college_security_events_where($examId, $userIds, $filters);
+    if ($scope === null) {
+        return [];
+    }
+    $limit = max(1, min(400, $limit));
+    $sql = 'SELECT e.event_id, e.attempt_id, e.user_id, e.event_type, e.occurred_at, e.meta_json
+            FROM college_exam_attempt_events e
+            WHERE ' . $scope['sql'] . '
+            ORDER BY e.occurred_at DESC, e.event_id DESC
+            LIMIT ' . (int)$limit;
+    $res = @mysqli_query($conn, $sql);
+    $out = [];
+    if (!$res) {
+        return $out;
+    }
+    while ($row = mysqli_fetch_assoc($res)) {
+        $type = strtolower(trim((string)($row['event_type'] ?? '')));
+        $away = null;
+        $rawMeta = (string)($row['meta_json'] ?? '');
+        if ($rawMeta !== '') {
+            $decoded = json_decode($rawMeta, true);
+            if (is_array($decoded) && isset($decoded['away_seconds']) && is_numeric($decoded['away_seconds'])) {
+                $away = max(0, (int)$decoded['away_seconds']);
+            }
+        }
+        $detail = null;
+        if ($type === 'tab_visible' && $away !== null) {
+            $detail = 'Away for ' . $away . ' second' . ($away === 1 ? '' : 's');
+        }
+        $out[] = [
+            'event_id' => (int)($row['event_id'] ?? 0),
+            'attempt_id' => (int)($row['attempt_id'] ?? 0),
+            'user_id' => (int)($row['user_id'] ?? 0),
+            'event_type' => $type,
+            'label' => examination_monitor_college_security_type_label($type),
+            'kind' => 'recorded',
+            'occurred_at' => (string)($row['occurred_at'] ?? ''),
+            'occurred_fmt' => examination_monitor_format_dt($row['occurred_at'] ?? null),
+            'away_seconds' => $away,
+            'detail' => $detail,
+        ];
+    }
+    mysqli_free_result($res);
+
+    return $out;
+}
+
+/**
+ * @param list<int> $userIds
+ * @return array{matching:int,examinees:int,types:list<array{type:string,label:string,count:int}>}
+ */
+function examination_monitor_college_security_events_stats(mysqli $conn, int $examId, array $userIds, array $filters = []): array
+{
+    $empty = ['matching' => 0, 'examinees' => 0, 'types' => []];
+    $scope = examination_monitor_college_security_events_where($examId, $userIds, $filters);
+    if ($scope === null) {
+        return $empty;
+    }
+    $totSql = 'SELECT COUNT(*) AS c, COUNT(DISTINCT e.user_id) AS u
+               FROM college_exam_attempt_events e WHERE ' . $scope['sql'];
+    $totRes = @mysqli_query($conn, $totSql);
+    $matching = 0;
+    $examinees = 0;
+    if ($totRes && ($tr = mysqli_fetch_assoc($totRes))) {
+        $matching = (int)($tr['c'] ?? 0);
+        $examinees = (int)($tr['u'] ?? 0);
+    }
+    if ($totRes) {
+        mysqli_free_result($totRes);
+    }
+    $typeSql = 'SELECT e.event_type AS t, COUNT(*) AS c
+                FROM college_exam_attempt_events e WHERE ' . $scope['sql'] . '
+                GROUP BY e.event_type ORDER BY c DESC, t ASC';
+    $typeRes = @mysqli_query($conn, $typeSql);
+    $types = [];
+    $merged = [];
+    if ($typeRes) {
+        while ($row = mysqli_fetch_assoc($typeRes)) {
+            $t = strtolower(trim((string)($row['t'] ?? '')));
+            $label = examination_monitor_college_security_type_label($t);
+            $n = (int)($row['c'] ?? 0);
+            if (!isset($merged[$label])) {
+                $merged[$label] = ['type' => $t, 'label' => $label, 'count' => 0];
+            }
+            $merged[$label]['count'] += $n;
+        }
+        mysqli_free_result($typeRes);
+    }
+    foreach ($merged as $row) {
+        $types[] = $row;
+    }
+    usort($types, static function (array $a, array $b): int {
+        return ($b['count'] <=> $a['count']) ?: strcmp((string)$a['label'], (string)$b['label']);
+    });
+
+    return ['matching' => $matching, 'examinees' => $examinees, 'types' => $types];
+}
+
+/**
+ * Stored overlapping-instance alerts for the Security tab (read-only; no restriction actions).
+ *
+ * @return list<array<string,mixed>>
+ */
+function examination_monitor_college_concurrent_alerts(mysqli $conn, int $examId): array
+{
+    $examId = (int)$examId;
+    if ($examId <= 0) {
+        return [];
+    }
+    require_once __DIR__ . '/college_exam_client_heartbeat.php';
+    if (!college_exam_client_heartbeat_tables_ready($conn)) {
+        return [];
+    }
+    $stmt = mysqli_prepare(
+        $conn,
+        'SELECT a.alert_id, a.attempt_id, a.user_id, a.status, a.instance_count, a.browser_scope_count,
+                a.peak_instance_count, a.peak_scope_count, a.first_detected_at, a.last_detected_at,
+                u.full_name
+         FROM college_exam_concurrent_alerts a
+         LEFT JOIN users u ON u.user_id = a.user_id
+         WHERE a.exam_id=?
+         ORDER BY a.last_detected_at DESC, a.alert_id DESC
+         LIMIT 100'
+    );
+    if (!$stmt) {
+        return [];
+    }
+    mysqli_stmt_bind_param($stmt, 'i', $examId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $out = [];
+    while ($res && ($row = mysqli_fetch_assoc($res))) {
+        $status = strtolower(trim((string)($row['status'] ?? 'pending_review')));
+        $out[] = [
+            'alert_id' => (int)($row['alert_id'] ?? 0),
+            'attempt_id' => (int)($row['attempt_id'] ?? 0),
+            'user_id' => (int)($row['user_id'] ?? 0),
+            'full_name' => (string)($row['full_name'] ?? ''),
+            'status' => $status,
+            'review_state' => $status === '' ? 'pending_review' : $status,
+            'instance_count' => (int)($row['instance_count'] ?? 0),
+            'browser_scope_count' => (int)($row['browser_scope_count'] ?? 0),
+            'peak_instance_count' => (int)($row['peak_instance_count'] ?? 0),
+            'peak_scope_count' => (int)($row['peak_scope_count'] ?? 0),
+            'first_detected_at' => $row['first_detected_at'] ?? null,
+            'first_detected_fmt' => examination_monitor_format_dt($row['first_detected_at'] ?? null),
+            'last_detected_at' => $row['last_detected_at'] ?? null,
+            'last_detected_fmt' => examination_monitor_format_dt($row['last_detected_at'] ?? null),
+        ];
+    }
+    mysqli_stmt_close($stmt);
+
+    return $out;
 }

@@ -227,6 +227,7 @@ $adminBackHref = 'professor_upload_tasks';
 $adminBackLabel = 'Back to Upload Tasks';
 $adminHeroMeta = '<span class="text-sm opacity-80">Opens: <strong>' . h($openLabel !== '-' ? $openLabel : 'Immediately') . '</strong></span>'
     . '<span class="text-sm opacity-80">Closes: <strong>' . h($deadlineLabel) . '</strong></span>';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="professor_upload_tasks?edit=' . (int)$task['task_id'] . '"><i class="bi bi-pencil-square"></i> Edit task</a>'
     . $statusBadgeHtml;
 ?>
@@ -235,12 +236,13 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="p
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--upload-monitor<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($msg) ? $msg : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
-  <?php if ($msg): ?>
+  <?php if ($msg && empty($toastSuccess)): ?>
     <div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($msg); ?></span></div>
   <?php endif; ?>
   <?php if ($err): ?>
@@ -248,37 +250,37 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="p
   <?php endif; ?>
 
   <div class="examination-page-shell">
-    <section class="prof-summary-rail" aria-label="Submission snapshot">
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-inboxes"></i></span>
-        <span class="prof-summary-rail__label">Submissions</span>
-        <span class="prof-summary-rail__value"><?php echo (int)$subCount; ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-people"></i></span>
-        <span class="prof-summary-rail__label">Eligible students</span>
-        <span class="prof-summary-rail__value"><?php echo (int)$rosterCount; ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
-        <span class="prof-summary-rail__label">Pending</span>
-        <span class="prof-summary-rail__value"><?php echo (int)max(0, $rosterCount - $subCount); ?></span>
-      </div>
-      <div class="prof-summary-rail__cell">
-        <span class="prof-summary-rail__ico" aria-hidden="true"><i class="bi bi-funnel"></i></span>
-        <span class="prof-summary-rail__label">Showing</span>
-        <span class="prof-summary-rail__value"><?php echo (int)$shownCount; ?></span>
-      </div>
+    <section class="lms-kpi-row" aria-label="Submission snapshot">
+      <article class="lms-kpi lms-kpi--live">
+        <span class="lms-kpi__label"><i class="bi bi-inboxes" aria-hidden="true"></i> Submissions</span>
+        <span class="lms-kpi__value"><?php echo (int)$subCount; ?></span>
+        <span class="lms-kpi__hint">Files received</span>
+      </article>
+      <article class="lms-kpi lms-kpi--total">
+        <span class="lms-kpi__label"><i class="bi bi-people" aria-hidden="true"></i> Eligible</span>
+        <span class="lms-kpi__value"><?php echo (int)$rosterCount; ?></span>
+        <span class="lms-kpi__hint">Assigned students</span>
+      </article>
+      <article class="lms-kpi lms-kpi--wait">
+        <span class="lms-kpi__label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending</span>
+        <span class="lms-kpi__value"><?php echo (int)max(0, $rosterCount - $subCount); ?></span>
+        <span class="lms-kpi__hint">Not yet submitted</span>
+      </article>
+      <article class="lms-kpi lms-kpi--ok">
+        <span class="lms-kpi__label"><i class="bi bi-funnel" aria-hidden="true"></i> Showing</span>
+        <span class="lms-kpi__value"><?php echo (int)$shownCount; ?></span>
+        <span class="lms-kpi__hint">Current filter</span>
+      </article>
     </section>
 
-    <section class="prof-workspace">
+    <section class="prof-workspace lms-workspace">
     <div class="rounded-xl overflow-hidden students-table-shell">
       <div class="examination-table-card-head flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-base font-bold m-0 flex items-center gap-2"><i class="bi bi-inboxes"></i> Student files</h2>
         <span class="text-xs font-bold uppercase tracking-wider opacity-60"><?php echo (int)$countImages; ?> images · <?php echo (int)$countPdfs; ?> PDFs</span>
       </div>
       <?php if (!empty($subs)): ?>
-      <div class="students-toolbar page-filter px-4 py-3 border-b border-[var(--admin-border)]">
+      <div class="students-toolbar page-filter lms-toolbar px-4 py-3 border-b border-[var(--admin-border)]">
         <form method="get" class="students-toolbar__search" action="professor_upload_task_monitor">
           <input type="hidden" name="task_id" value="<?php echo (int)$taskId; ?>">
           <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
@@ -316,7 +318,7 @@ $adminHeroActions = '<a class="admin-btn admin-btn--ghost admin-btn--sm" href="p
             <p class="text-sm text-slate-500 mt-1 mb-0">Try another search or <a class="students-clear-link" href="<?php echo h($putMonQs(['q' => '', 'type' => 'all'])); ?>">clear filters</a>.</p>
           </div>
         <?php else: ?>
-          <table class="admin-students-table students-table--compact w-full text-left upload-monitor-table pex-list-table">
+          <table class="admin-students-table students-table--compact w-full text-left upload-monitor-table pex-list-table lms-table">
             <colgroup>
               <col style="width:4.5rem">
               <col style="width:16%">

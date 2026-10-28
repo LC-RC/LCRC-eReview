@@ -1,0 +1,305 @@
+/**
+ * Professor Edit Examination (regular) — presentation only.
+ * Scope: body.examination-edit-page (not diagnostic portal, not monitor).
+ */
+
+body.admin-app.examination-edit-page {
+  --exed-max: 72rem;
+  --exed-radius: 0.85rem;
+  --exed-border: rgba(148, 163, 184, 0.35);
+  --exed-ink: #0f2744;
+  --exed-muted: #475569;
+  --exed-surface: #ffffff;
+  --exed-soft: #f8fafc;
+}
+
+body.admin-app.examination-edit-page #main,
+body.admin-app.examination-edit-page .admin-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Compact header (overrides professor-premium 8rem+ hero on this page only) */
+body.admin-app.examination-edit-page .quiz-admin-hero.page-hero,
+body.admin-app.examination-edit-page .admin-glass-hero {
+  margin-bottom: 0.45rem;
+}
+
+body.admin-app.examination-edit-page .admin-breadcrumb {
+  margin: 0 0 0.35rem;
+}
+
+body.admin-app.examination-edit-page .admin-back-link {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+body.admin-app.professor-admin.examination-edit-page:not(.professor-dashboard-page) .quiz-admin-hero .admin-hero-wash,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.examination-edit-page:not(.professor-dashboard-page) .quiz-admin-hero > .relative.admin-hero-wash {
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0.7rem 1rem !important;
+}
+
+body.admin-app.professor-admin.examination-edit-page:not(.professor-dashboard-page) .quiz-admin-hero .admin-page-header {
+  min-height: 0;
+  align-items: flex-start;
+  gap: 0.55rem 1rem;
+}
+
+body.admin-app.examination-edit-page .quiz-admin-hero-icon {
+  height: 2.25rem !important;
+  width: 2.25rem !important;
+  font-size: 0.95rem !important;
+}
+
+body.admin-app.examination-edit-page .admin-page-header__title {
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+
+body.admin-app.examination-edit-page .admin-page-header__subtitle {
+  margin-top: 0.15rem;
+  padding-left: 2.85rem;
+  max-width: 42rem;
+  font-size: 0.88rem;
+  color: var(--exed-muted);
+}
+
+body.admin-app.examination-edit-page .admin-page-header__eyebrow {
+  padding-left: 2.85rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #64748b;
+}
+
+body.admin-app.examination-edit-page .examination-edit-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+body.admin-app.examination-edit-page .prof-hero-statwrap {
+  display: flex;
+  align-items: center;
+}
+
+/* Content width + step/form spacing */
+body.admin-app.examination-edit-page .examination-page-shell {
+  width: 100%;
+  max-width: var(--exed-max);
+  margin: 0 auto 1.5rem;
+  padding: 0 1rem;
+  gap: 0.65rem;
+  box-sizing: border-box;
+}
+
+body.admin-app.examination-edit-page .students-view-tabs.examination-edit-steps,
+body.admin-app.examination-edit-page .students-view-tabs.mb-3 {
+  margin-bottom: 0;
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+body.admin-app.examination-edit-page .prof-workspace--form {
+  padding: 1rem 1.05rem 1.2rem;
+  border: 1px solid var(--exed-border);
+  border-radius: var(--exed-radius);
+  background: var(--exed-surface);
+  box-shadow: 0 10px 28px -20px rgba(15, 39, 68, 0.35);
+  min-width: 0;
+}
+
+body.admin-app.examination-edit-page form.examination-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+body.admin-app.examination-edit-page form.examination-edit-form > input[type="hidden"] {
+  display: none;
+}
+
+/* Cards / hierarchy */
+body.admin-app.professor-admin.examination-edit-page .prof-form-section,
+body.admin-app.professor-admin.examination-edit-page .prof-workspace--form > form > .prof-form-section:first-child,
+body.admin-app.professor-admin.examination-edit-page .prof-form-section:first-of-type {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--exed-border);
+  border-radius: 0.75rem;
+  background: var(--exed-soft);
+  box-shadow: none;
+}
+
+body.admin-app.professor-admin.examination-edit-page .prof-form-section__title {
+  margin: 0 0 0.65rem;
+  color: var(--exed-ink);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+body.admin-app.examination-edit-page .prof-form-section .examination-form-section {
+  margin-top: 0.55rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.65rem;
+  background: #ffffff;
+}
+
+body.admin-app.examination-edit-page .examination-form-section__title {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+body.admin-app.examination-edit-page .examination-form-hint {
+  margin: 0.1rem 0;
+  font-size: 0.8rem;
+  color: var(--exed-muted);
+  line-height: 1.45;
+}
+
+body.admin-app.examination-edit-page .examination-form-hint--secondary {
+  color: #64748b;
+}
+
+/* Field widths — do not stretch short controls full page */
+body.admin-app.examination-edit-page .examination-edit-field--title {
+  max-width: 36rem;
+}
+
+body.admin-app.examination-edit-page .examination-edit-timelimit {
+  max-width: 22rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+body.admin-app.examination-edit-page .examination-edit-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.25rem;
+}
+
+body.admin-app.examination-edit-page .examination-edit-choice-row label,
+body.admin-app.examination-edit-page .examination-edit-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 650;
+  color: var(--exed-ink);
+}
+
+body.admin-app.examination-edit-page .examination-edit-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+body.admin-app.examination-edit-page .prof-form-section input,
+body.admin-app.examination-edit-page .prof-form-section select,
+body.admin-app.examination-edit-page .prof-form-section textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.admin-app.examination-edit-page .prof-form-section input:focus,
+body.admin-app.examination-edit-page .prof-form-section select:focus,
+body.admin-app.examination-edit-page .prof-form-section textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  outline: none;
+}
+
+body.admin-app.examination-edit-page .prof-form-section input:disabled,
+body.admin-app.examination-edit-page .prof-form-section select:disabled,
+body.admin-app.examination-edit-page .examination-edit-checks input:disabled + span,
+body.admin-app.examination-edit-page .examination-edit-checks label:has(input:disabled) {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* Existing-attempts lock — high contrast (do not use dark-theme flash colors) */
+body.admin-app.examination-edit-page .examination-edit-lock-banner,
+body.admin-app.examination-edit-page #main .examination-edit-lock-banner,
+html[data-admin-theme="light"] body.admin-app.examination-edit-page .examination-edit-lock-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.7rem;
+  border: 1px solid #b45309;
+  background: #fffbeb;
+  color: #78350f !important;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: none;
+}
+
+body.admin-app.examination-edit-page .examination-edit-lock-banner i,
+body.admin-app.examination-edit-page #main .examination-edit-lock-banner i {
+  color: #b45309 !important;
+  font-size: 1.05rem;
+  margin-top: 0.08rem;
+  flex-shrink: 0;
+}
+
+body.admin-app.examination-edit-page .examination-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  padding-top: 0.25rem;
+}
+
+body.admin-app.examination-edit-page .examination-edit-footnote {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--exed-muted);
+}
+
+/* Question breakdown panel sits inside a card already */
+body.admin-app.examination-edit-page #regularSubjectsPanel.reg-bd.prof-form-section {
+  background: var(--exed-soft);
+}
+
+@media (max-width: 767px) {
+  body.admin-app.examination-edit-page .admin-page-header__subtitle,
+  body.admin-app.examination-edit-page .admin-page-header__eyebrow {
+    padding-left: 0;
+  }
+
+  body.admin-app.examination-edit-page .examination-page-shell {
+    padding: 0 0.75rem;
+  }
+
+  body.admin-app.examination-edit-page .prof-workspace--form {
+    padding: 0.8rem 0.75rem 1rem;
+  }
+
+  body.admin-app.professor-admin.examination-edit-page .prof-form-section {
+    padding: 0.8rem 0.75rem;
+  }
+
+  body.admin-app.examination-edit-page .students-view-tab {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+  }
+}

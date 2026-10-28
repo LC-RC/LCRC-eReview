@@ -1,40 +1,39 @@
 <?php
 require_once __DIR__ . '/college_exam_helpers.php';
+require_once __DIR__ . '/examination_eligibility.php';
 
 /**
  * Shared student-progress rows for PDF / Excel exports (exam monitor).
+ * Roster matches live monitor: assigned examinees ∪ anyone with an attempt.
  *
  * @return list<array{student_number:string,name:string,email:string,status:string,score:string,mark:string}>
  */
-function exam_monitor_progress_export_rows(mysqli $conn, int $examId, int $examQuestionCount, bool $isFinished): array
+function exam_monitor_progress_export_rows(mysqli $conn, int $examId, int $examQuestionCount, bool $isFinished, string $sectionFilter = ''): array
 {
+    require_once __DIR__ . '/examination_monitor_helpers.php';
+    $userIds = examination_monitor_college_reporting_user_ids($conn, $examId, $sectionFilter);
+    if ($userIds === []) {
+        return [];
+    }
+
+    $in = implode(',', array_map('intval', $userIds));
     $students = [];
-    $sq = mysqli_prepare($conn, "
+    $sql = '
       SELECT
         u.user_id, u.full_name, u.email, u.student_number,
         a.status AS attempt_status, a.score, a.correct_count, a.total_count
       FROM users u
-      INNER JOIN (
-        SELECT user_id FROM college_exam_attempts WHERE exam_id=?
-        UNION
-        SELECT u2.user_id FROM users u2
-        WHERE u2.role='college_student'
-          AND (
-            u2.status='approved' OR u2.status IS NULL OR TRIM(COALESCE(u2.status,''))=''
-          )
-      ) exam_roster ON exam_roster.user_id = u.user_id
-      LEFT JOIN college_exam_attempts a ON a.user_id=u.user_id AND a.exam_id=?
+      LEFT JOIN college_exam_attempts a ON a.user_id=u.user_id AND a.exam_id=' . (int)$examId . '
+      WHERE u.user_id IN (' . $in . ')
       ORDER BY u.full_name ASC
-    ");
-    mysqli_stmt_bind_param($sq, 'ii', $examId, $examId);
-    mysqli_stmt_execute($sq);
-    $sres = mysqli_stmt_get_result($sq);
+    ';
+    $sres = @mysqli_query($conn, $sql);
     if ($sres) {
         while ($row = mysqli_fetch_assoc($sres)) {
             $students[] = $row;
         }
+        mysqli_free_result($sres);
     }
-    mysqli_stmt_close($sq);
 
     $rows = [];
     foreach ($students as $st) {

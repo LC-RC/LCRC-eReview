@@ -473,6 +473,8 @@ function users_activity_log_action_labels(): array
         'account_activated' => 'Activated student account',
         'access_granted' => 'Granted student access',
         'student_deleted' => 'Deleted student',
+        'student_archived' => 'Archived student',
+        'student_restored' => 'Restored student',
         'quiz_created' => 'Created quiz',
         'quiz_updated' => 'Updated quiz',
         'quiz_deleted' => 'Deleted quiz',

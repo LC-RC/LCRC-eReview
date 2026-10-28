@@ -1,0 +1,4857 @@
+﻿/* Regular college exam monitor analytics + tab workspace (scoped). */
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 0.55rem;
+  padding-top: 0.55rem;
+  min-width: 0;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #64748b;
+  opacity: 1;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb__link {
+  color: #2563eb;
+  text-decoration: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb__link:hover {
+  text-decoration: underline;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb-current {
+  color: #475569;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.55rem 1rem;
+  padding: 0.7rem 0.9rem 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  box-shadow: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__identity {
+  min-width: 0;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin: 0;
+  color: #0f2744;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__badges .admin-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__subtitle {
+  margin: 0.28rem 0 0;
+  max-width: 42rem;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.28rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 550;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule-label {
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-decoration: none;
+  background: none;
+  border: 0;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back:hover {
+  text-decoration: underline;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #0f2744;
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb-current {
+  color: #94a3b8;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb__link {
+  color: #93c5fd;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  color: #f1f5f9;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__subtitle {
+  color: #cbd5e1;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule-label {
+  color: #94a3b8;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back {
+  color: #93c5fd;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #e2e8f0;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: #93c5fd;
+}
+.pem-monitor-chrome {
+  margin: 0 0 0.45rem;
+}
+.pem-live-rank {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 0.85fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+.pem-live-rank .pem-live-strip,
+.pem-live-rank .pem-top10 {
+  margin-bottom: 0;
+}
+.pem-top10 {
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.95rem;
+  padding: 0.7rem 0.8rem 0.75rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  min-width: 0;
+  margin-bottom: 0.7rem;
+}
+.pem-top10--live {
+  border-color: #e8e4d9;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 0.05);
+}
+.pem-top10--live .pem-card-head h3 {
+  color: #143d59;
+}
+.pem-top10__sub {
+  margin: 0.12rem 0 0;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 650;
+}
+.pem-top10__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 22rem;
+  overflow: auto;
+}
+.pem-top10__item {
+  display: grid;
+  grid-template-columns: 1.7rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.65rem;
+  border: 1px solid transparent;
+}
+.pem-top10__item--gold {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.pem-top10__item--silver {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+.pem-top10__item--bronze {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+.pem-top10__rank {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #143d59;
+  background: #eef2f6;
+}
+.pem-top10__item--gold .pem-top10__rank {
+  background: #facc15;
+  color: #713f12;
+}
+.pem-top10__item--silver .pem-top10__rank {
+  background: #cbd5e1;
+  color: #334155;
+}
+.pem-top10__item--bronze .pem-top10__rank {
+  background: #fdba74;
+  color: #9a3412;
+}
+.pem-top10__name {
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: #0f172a;
+  line-height: 1.25;
+}
+.pem-top10__meta {
+  margin: 0.05rem 0 0.22rem;
+  font-size: 0.66rem;
+  color: #64748b;
+}
+.pem-top10__bar {
+  display: grid;
+  grid-template-columns: minmax(3.5rem, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+.pem-top10__track {
+  display: block;
+  height: 0.4rem;
+  background: #eef2f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pem-top10__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #2563eb;
+}
+.pem-top10__item--gold .pem-top10__fill { background: #ca8a04; }
+.pem-top10__item--silver .pem-top10__fill { background: #64748b; }
+.pem-top10__item--bronze .pem-top10__fill { background: #c2410c; }
+.pem-top10__score {
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #143d59;
+}
+.pem-top10__note,
+.pem-top10__empty {
+  margin: 0.45rem 0 0;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+.pem-live-strip {
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.85rem;
+  padding: 0.45rem 0.7rem 0.5rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  margin-bottom: 0;
+}
+.pem-live-strip__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.3rem;
+}
+.pem-live-strip__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.7rem;
+  margin-bottom: 0;
+}
+.pem-live-strip__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #143d59;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.pem-live-strip__sub {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.pem-live-strip__row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem 0.35rem;
+}
+.pem-live-strip__row--primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 28rem;
+}
+.pem-live-strip__cell {
+  min-width: 0;
+  padding: 0.1rem 0.1rem;
+}
+.pem-live-strip__label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-live-strip__value {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #143d59;
+  font-variant-numeric: tabular-nums;
+}
+.pem-section-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+  padding: 0.15rem 0.35rem;
+  background: #f8fafc;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.65rem;
+}
+.pem-section-bar .admin-btn--sm {
+  min-height: 1.85rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+}
+.pem-ops-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0 0 0.75rem;
+}
+.pem-ops-panel {
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.85rem;
+  min-width: 0;
+}
+.pem-ops-panel__sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.84rem;
+  font-weight: 750;
+  color: #143d59;
+}
+.pem-ops-panel__sum::-webkit-details-marker { display: none; }
+.pem-ops-panel .p-4 { padding: 0 0.75rem 0.75rem; }
+.pem-tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0 0 0.55rem;
+  padding: 0.2rem;
+  background: #e8eef4;
+  border-radius: 0.9rem;
+}
+.pem-tab-nav .pem-tab-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 750;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.pem-tab-nav .pem-tab-btn:hover:not(.is-active):not([aria-selected="true"]) {
+  background: #f8fafc;
+  color: #334155;
+}
+.pem-tab-nav .pem-tab-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.pem-tab-nav .pem-tab-btn.is-active,
+.pem-tab-nav .pem-tab-btn[aria-selected="true"] {
+  background: #fff;
+  color: #143d59;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+}
+.pem-export-menu {
+  position: relative;
+  display: inline-block;
+}
+.pem-export-menu__sum {
+  list-style: none;
+  cursor: pointer;
+}
+.pem-export-menu__sum::-webkit-details-marker { display: none; }
+.pem-export-menu__list {
+  position: absolute;
+  right: 0;
+  z-index: 20;
+  min-width: 13.5rem;
+  margin-top: 0.25rem;
+  padding: 0.3rem;
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.65rem;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 0.12);
+}
+.pem-export-menu__list a {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.45rem;
+  color: #143d59;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pem-export-menu__list a:hover { background: #f1f5f9; }
+.pem-review-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.pem-review-card__head h3 { margin: 0; font-size: 0.95rem; }
+.pem-review-form { margin-top: 0.35rem; }
+.pem-review-card {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+.pem-tab-live-feed {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.75rem;
+}
+.pem-tab-live-feed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  color: #143d59;
+  font-size: 0.82rem;
+}
+.pem-tab-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.7rem;
+  cursor: pointer;
+}
+.pem-tab-nav .pem-tab-btn.is-active {
+  background: #fff;
+  color: #143d59;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+}
+.pem-tab-pane[hidden] { display: none !important; }
+.pem-client-overlap {
+  margin: 0.4rem 0 0;
+  padding: 0.55rem 0.75rem;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 0.65rem;
+  color: #9a3412;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.pem-client-overlap[hidden] { display: none !important; }
+.pem-client-overlap--tab { margin: 0 0 0.85rem; }
+.pem-security-note {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.75rem;
+  color: #78350f;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.pem-security-note--tight {
+  margin: 0 0 0.55rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+}
+.pem-tab-live-feed--compact {
+  margin-bottom: 0.55rem;
+  padding: 0.4rem 0.65rem;
+}
+.pem-sec-live-sum {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #92400e;
+}
+.pem-sec-live-details {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: #78350f;
+}
+.pem-sec-live-details summary { cursor: pointer; font-weight: 650; }
+.pem-sec-history { margin-top: 0.35rem; }
+.pem-sec-history__hint { margin: 0 0 0.4rem; }
+.pem-sec-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.4rem;
+}
+.pem-sec-kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  padding: 0.35rem 0.55rem;
+}
+.pem-sec-kpi__l {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-sec-kpi__v {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #143d59;
+  line-height: 1.2;
+}
+.pem-sec-typecounts {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  color: #475569;
+}
+.pem-sec-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin: 0 0 0.55rem;
+}
+.pem-sec-dt {
+  min-height: 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.45rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.78rem;
+}
+.pem-sec-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.pem-sec-tl {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 0.55rem 0.75rem;
+  padding: 0.45rem 0.7rem;
+  border-top: 1px solid #eef2f7;
+  align-items: start;
+}
+.pem-sec-tl:first-child { border-top: 0; }
+.pem-sec-tl--empty { display: block; color: #64748b; font-size: 0.82rem; }
+.pem-sec-tl__time {
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #475569;
+}
+.pem-sec-tl__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  min-width: 0;
+}
+.pem-sec-tl__name {
+  font-weight: 750;
+  color: #143d59;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.pem-sec-tl__detail { font-size: 0.78rem; color: #64748b; }
+@media (max-width: 720px) {
+  .pem-sec-kpis { grid-template-columns: 1fr; }
+  .pem-sec-tl { grid-template-columns: 1fr; }
+}
+.pem-security-table .js-open-tab-events {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #143d59;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.pem-analytics__toolbar--drill {
+  margin-bottom: 0.65rem;
+}
+.pem-ana-export {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+.pem-analytics__table tr.pem-ana-weak td {
+  background: #fff7ed;
+}
+.pem-analytics__hint--inline {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+.pem-analytics {
+  margin: 0 0 1.15rem;
+}
+.pem-analytics__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.pem-analytics__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--admin-text, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.pem-analytics__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--admin-text-secondary, #475569);
+  max-width: 48rem;
+}
+.pem-analytics__scope {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.85rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.pem-analytics__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin: 0 0 0.45rem;
+  padding: 0.55rem 0.7rem;
+  background: #f8fafc;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.8rem;
+}
+.pem-analytics__flab {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-analytics__toolbar select,
+.pem-analytics__toolbar button {
+  min-height: 2.05rem;
+}
+.pem-analytics__hint {
+  margin: 0 0 0.7rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.pem-analytics__kpis {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.45rem;
+  align-items: stretch;
+}
+.pem-analytics__kpi {
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.75rem 0.7rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  min-width: 0;
+}
+.pem-analytics__kpi--hero {
+  background: linear-gradient(155deg, #143d59 0%, #1d4ed8 100%);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgb(29 78 216 / 0.18);
+}
+.pem-analytics__kpi--hero .pem-analytics__kpi-label,
+.pem-analytics__kpi--hero .pem-analytics__kpi-hint {
+  color: rgba(255, 255, 255, 0.78);
+}
+.pem-analytics__kpi--hero .pem-analytics__kpi-value {
+  color: #fff;
+  font-size: 1.55rem;
+}
+.pem-analytics__kpi-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-analytics__kpi-value {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #143d59;
+  line-height: 1.2;
+}
+.pem-analytics__kpi-value--sm {
+  font-size: 0.98rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pem-analytics__kpi-hint {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+.pem-analytics__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+.pem-analytics__card {
+  background: #fff;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 0.95rem;
+  padding: 0.75rem 0.85rem 0.85rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  min-width: 0;
+  margin-bottom: 0.7rem;
+}
+.pem-analytics__card--note {
+  background: #f8fafc;
+}
+.pem-analytics__card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.pem-analytics__chart {
+  position: relative;
+  height: 13.5rem;
+}
+.pem-analytics__chart--sm {
+  height: 10.5rem;
+}
+.pem-analytics__chart--lg {
+  height: 16.5rem;
+}
+.pem-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.pem-card-head h3 { margin: 0; }
+.pem-card-head__meta {
+  font-size: 0.7rem;
+  font-weight: 650;
+  color: #64748b;
+}
+.pem-analytics__hint--inline {
+  margin: 0;
+}
+.pem-analytics__empty {
+  margin: 0 0 0.55rem;
+  padding: 0.55rem 0.1rem;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+.pem-analytics__table-wrap {
+  overflow-x: auto;
+}
+.pem-analytics__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.pem-analytics__table th,
+.pem-analytics__table td {
+  padding: 0.38rem 0.45rem;
+  border-top: 1px solid #e2e8f0;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.pem-analytics__table th:first-child,
+.pem-analytics__table td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+.pem-analytics__table thead th {
+  border-top: 0;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+.pem-analytics__heat {
+  display: inline-flex;
+  min-width: 3.1rem;
+  justify-content: flex-end;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+.pem-analytics__heat--ok { background: #ecfdf5; color: #047857; }
+.pem-analytics__heat--mid { background: #fff7ed; color: #c2410c; }
+.pem-analytics__heat--bad { background: #fef2f2; color: #b91c1c; }
+.pem-analytics__heat--na { background: #f1f5f9; color: #64748b; }
+.pem-analytics__qstem {
+  display: block;
+  max-width: 32rem;
+  color: #0f172a;
+  font-weight: 650;
+}
+.pem-analytics__meta {
+  display: block;
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+}
+.pem-analytics__n {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 650;
+}
+.pem-analytics__choices {
+  font-size: 0.7rem;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+.pem-analytics .pem-ana-toggle { margin-top: 0.45rem; }
+.pem-access-sub { margin: 0 0 0.45rem; }
+.pem-access-states {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 0.75rem;
+  margin: 0 0 0.45rem;
+}
+.pem-access-states__k {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+@media (max-width: 640px) {
+  .pem-access-states { grid-template-columns: 1fr; }
+}
+.pem-page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+  padding: 0.35rem 0.1rem 0.1rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.pem-page-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.pem-section-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+.pem-ana-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  margin: 0 0 0.55rem;
+  padding: 0.1rem;
+  background: #e8eef4;
+  border-radius: 0.65rem;
+}
+.pem-ana-subnav__btn--dup { display: none !important; }
+.pem-ana-subnav__btn {
+  border: 0;
+  background: transparent;
+  color: var(--admin-text-secondary, #475569);
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 1.85rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.pem-ana-subnav__btn:hover:not(.is-active):not([aria-selected="true"]) {
+  background: #f8fafc;
+  color: #334155;
+}
+.pem-ana-subnav__btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.pem-ana-subnav__btn.is-active,
+.pem-ana-subnav__btn[aria-selected="true"] {
+  background: #fff;
+  color: var(--admin-primary, #2563eb);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.08);
+}
+.pem-ana-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.9fr);
+  grid-template-areas:
+    "hist rank"
+    "need rank";
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+.pem-ana-overview .pem-analytics__card { margin-bottom: 0; }
+.pem-ana-overview .pem-top10 { grid-area: rank; margin-bottom: 0; }
+.pem-ana-overview__hist { grid-area: hist; }
+.pem-ana-overview__need { grid-area: need; }
+.pem-ana-table-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-bottom: 0.55rem;
+}
+.pem-ana-search {
+  min-height: 2.05rem;
+  min-width: 14rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--admin-border, #e4e7ec);
+  border-radius: 0.5rem;
+  font-size: 0.84rem;
+}
+.pem-analytics__table--sortable th[data-sort] {
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pem-ana-choices summary {
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--admin-primary, #2563eb);
+}
+.pem-ana-choices__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+}
+.pem-ana-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.9fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+.pem-ana-student-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+.pem-ana-student-btn:hover .pem-analytics__qstem,
+.pem-ana-student-btn:focus-visible .pem-analytics__qstem {
+  color: var(--admin-primary, #2563eb);
+  text-decoration: underline;
+}
+.pem-access-card > summary,
+.pem-review-card > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.pem-access-card > summary::-webkit-details-marker,
+.pem-review-card > summary::-webkit-details-marker { display: none; }
+.pem-access-dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem 0.85rem;
+  margin: 0.35rem 0 0;
+}
+.pem-access-dl dt {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  font-weight: 700;
+  margin: 0;
+}
+.pem-access-dl dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: #0f172a;
+}
+@media (max-width: 720px) {
+  .pem-access-dl { grid-template-columns: 1fr; }
+}
+.pem-analytics tr.is-hidden,
+.pem-analytics tr.pem-ana-more.is-collapsed { display: none !important; }
+@media (max-width: 1100px) {
+  .pem-analytics__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pem-analytics__grid { grid-template-columns: 1fr; }
+  .pem-ana-overview,
+  .pem-ana-split,
+  .pem-live-rank { grid-template-columns: 1fr; }
+  .pem-ana-overview { grid-template-areas: "rank" "hist" "need"; }
+  .pem-live-strip__row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pem-live-strip__row--primary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pem-ops-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pem-analytics__kpis { grid-template-columns: 1fr; }
+  .pem-analytics__scope { white-space: normal; }
+  .pem-live-strip__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pem-live-strip__row--primary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pem-ana-search { min-width: 0; width: 100%; }
+  .pem-analytics__chart--lg { height: 13.5rem; }
+  .pem-meter { grid-template-columns: minmax(3.5rem, 1fr) auto; }
+  .pem-meter__n { grid-column: 1 / -1; }
+}
+
+.pem-meter {
+  display: grid;
+  grid-template-columns: minmax(4.25rem, 1fr) auto auto;
+  align-items: center;
+  gap: 0.28rem 0.4rem;
+  min-width: 8.75rem;
+}
+.pem-meter__track {
+  display: block;
+  height: 0.42rem;
+  background: #eef2f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pem-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.pem-meter__fill--ok { background: #12b76a; }
+.pem-meter__fill--mid { background: #2563eb; }
+.pem-meter__fill--bad { background: #f59e0b; }
+.pem-meter__fill--na { background: #cbd5e1; }
+.pem-meter__val {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  color: #143d59;
+}
+.pem-meter__n {
+  font-size: 0.66rem;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.pem-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 16.5rem;
+  overflow: auto;
+}
+.pem-rank-list__item {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #eef2f6;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+}
+.pem-rank-list__item.is-weak {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+.pem-rank-list__pos {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #143d59;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+.pem-rank-list__title {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #0f172a;
+  line-height: 1.3;
+}
+.pem-rank-list__meta {
+  margin: 0.12rem 0 0.28rem;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+.pem-bar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.pem-bar-list__item {
+  display: grid;
+  gap: 0.28rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #eef2f6;
+}
+.pem-bar-list__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.pem-bar-list__item.is-weak {
+  background: #fff7ed;
+  border-radius: 0.55rem;
+  padding: 0.4rem 0.4rem 0.5rem;
+  border-bottom-color: transparent;
+}
+.pem-bar-list__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.6rem;
+}
+.pem-bar-list__label strong {
+  font-size: 0.82rem;
+  color: #0f172a;
+}
+.pem-bar-list__label span {
+  font-size: 0.68rem;
+  color: #64748b;
+}
+.pem-stat-pills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+}
+.pem-stat-pill {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+  padding: 0.4rem 0.5rem;
+  background: #f8fafc;
+}
+.pem-stat-pill__k {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-stat-pill__v {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #143d59;
+  font-variant-numeric: tabular-nums;
+}
+.pem-stat-pill--ok { background: #ecfdf5; border-color: #a7f3d0; }
+.pem-stat-pill--ok .pem-stat-pill__v { color: #047857; }
+.pem-stat-pill--bad { background: #fff7ed; border-color: #fed7aa; }
+.pem-stat-pill--bad .pem-stat-pill__v { color: #c2410c; }
+.pem-stat-pill--na { background: #f1f5f9; }
+.pem-analytics__table--rows tbody tr {
+  cursor: pointer;
+}
+.pem-analytics__table--rows tbody tr:hover td {
+  background: #f8fafc;
+}
+.pem-analytics__table--rows tbody tr.is-selected td {
+  background: #eff6ff;
+}
+.pem-ana-weak td {
+  background: #fffbeb;
+}
+.pem-ana-detail {
+  position: sticky;
+  top: 4.5rem;
+}
+.pem-ana-split--charts {
+  margin-bottom: 0.7rem;
+}
+.pem-ana-split--charts > .pem-analytics__card { margin-bottom: 0; }
+.pem-analytics__qstem {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pem-q-board__list .pem-analytics__table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+#pemAnaQuestionTable.pem-q-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+#pemAnaQuestionTable .pem-q-col-q { width: 42%; }
+#pemAnaQuestionTable .pem-q-col-n { width: 13%; }
+#pemAnaQuestionTable .pem-q-col-acc { width: 19%; }
+#pemAnaQuestionTable.pem-q-table thead th {
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  padding: 0.5rem 0.65rem;
+  background: #f8fafc;
+  vertical-align: bottom;
+}
+#pemAnaQuestionTable.pem-q-table thead th[data-sort] {
+  white-space: normal;
+}
+#pemAnaQuestionTable.pem-q-table th:nth-child(1),
+#pemAnaQuestionTable.pem-q-table td:nth-child(1) {
+  min-width: 14rem;
+}
+#pemAnaQuestionTable.pem-q-table th:nth-child(2),
+#pemAnaQuestionTable.pem-q-table td:nth-child(2) {
+  min-width: 6.75rem;
+}
+#pemAnaQuestionTable.pem-q-table th:nth-child(3),
+#pemAnaQuestionTable.pem-q-table td:nth-child(3) {
+  min-width: 7.5rem;
+}
+#pemAnaQuestionTable.pem-q-table th:nth-child(4),
+#pemAnaQuestionTable.pem-q-table td:nth-child(4) {
+  min-width: 7.25rem;
+}
+#pemAnaQuestionTable.pem-q-table th:nth-child(5),
+#pemAnaQuestionTable.pem-q-table td:nth-child(5) {
+  min-width: 7.5rem;
+}
+#pemAnaQuestionTable.pem-q-table th:not(:first-child),
+#pemAnaQuestionTable.pem-q-table td:not(:first-child) {
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: middle;
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
+}
+#pemAnaQuestionTable.pem-q-table th:first-child,
+#pemAnaQuestionTable.pem-q-table td:first-child {
+  min-width: 14rem;
+}
+#pemAnaQuestionTable.pem-q-table .pem-analytics__qstem {
+  max-width: none;
+}
+#pemAnaQuestionDetailTitle {
+  max-width: none;
+  display: block;
+  overflow: visible;
+  font-size: 0.95rem;
+}
+.pem-q-board__detail .pem-card-head {
+  align-items: center;
+  gap: 0.5rem;
+}
+.pem-q-detail__html[hidden] { display: none !important; }
+.pem-q-detail__html {
+  margin: 0 0 0.65rem;
+  padding: 0.15rem 0 0.1rem;
+  color: #143d59;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+.pem-q-detail__html p,
+.pem-q-detail__html ul,
+.pem-q-detail__html ol,
+.pem-q-detail__html table {
+  margin: 0 0 0.45rem;
+}
+.pem-q-detail__html p:last-child,
+.pem-q-detail__html ul:last-child,
+.pem-q-detail__html ol:last-child,
+.pem-q-detail__html table:last-child {
+  margin-bottom: 0;
+}
+.pem-q-board__detail .pem-analytics__hint {
+  margin-bottom: 0.55rem;
+}
+.pem-q-board__detail .pem-stat-pills {
+  margin-bottom: 0.85rem;
+}
+.pem-q-board__detail .pem-analytics__chart--md {
+  margin-top: 0.15rem;
+}
+
+.pem-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+  align-items: stretch;
+}
+.pem-kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  background: #fff;
+  border: 1px solid #e8eef5;
+  border-radius: 1rem;
+  padding: 0.85rem 0.9rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+.pem-kpi-card__ico {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.pem-kpi-card__ico--navy { background: #eff6ff; color: #1d4ed8; }
+.pem-kpi-card__ico--ok { background: #ecfdf5; color: #047857; }
+.pem-kpi-card__ico--live { background: #e0f2fe; color: #0369a1; }
+.pem-kpi-card__ico--wait { background: #fff7ed; color: #c2410c; }
+.pem-kpi-card__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.pem-kpi-card__value {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #143d59;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.pem-kpi-card__hint {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+.pem-live-main { min-width: 0; }
+.pem-split-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+.pem-panel,
+.pem-roster-card,
+.pem-security-workspace {
+  background: #fff;
+  border: 1px solid #e8eef5;
+  border-radius: 1rem;
+  padding: 0.85rem 0.95rem 0.95rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+.pem-panel h3,
+.pem-quick__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.pem-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.pem-ring {
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.pem-ring__hole {
+  width: 5.6rem;
+  height: 5.6rem;
+  border-radius: 999px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.pem-ring__hole strong {
+  display: block;
+  font-size: 1.35rem;
+  color: #143d59;
+  line-height: 1;
+}
+.pem-ring__hole span {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 700;
+}
+.pem-ring-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #334155;
+}
+.pem-ring-legend strong { color: #143d59; }
+.pem-ring-legend em { color: #64748b; font-style: normal; font-size: 0.72rem; }
+.pem-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  margin-right: 0.35rem;
+}
+.pem-dot--sub { background: #2563eb; }
+.pem-dot--take { background: #38bdf8; }
+.pem-dot--ns { background: #e2e8f0; }
+.pem-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  color: #047857;
+  background: #ecfdf5;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+.pem-activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.pem-activity__item {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: start;
+  font-size: 0.8rem;
+}
+.pem-activity__time { color: #64748b; font-variant-numeric: tabular-nums; }
+.pem-activity__text { color: #0f172a; }
+.pem-activity__item--submit { border-left: 3px solid #12b76a; padding-left: 0.45rem; }
+.pem-activity__item--start { border-left: 3px solid #2563eb; padding-left: 0.45rem; }
+.pem-activity__item--tab { border-left: 3px solid #f59e0b; padding-left: 0.45rem; }
+.pem-panel-link {
+  display: inline-block;
+  margin-top: 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: #2563eb;
+}
+.pem-quick { margin-bottom: 0.55rem; }
+.pem-quick__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.pem-quick__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  text-align: left;
+  border: 1px solid #e8eef5;
+  background: #f8fafc;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.75rem;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  min-height: 5.1rem;
+}
+.pem-quick__btn:hover,
+.pem-quick__btn:focus-visible {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+.pem-quick__btn i { color: #2563eb; font-size: 1.05rem; }
+.pem-quick__btn span { font-size: 0.8rem; font-weight: 800; color: #143d59; }
+.pem-quick__btn em { font-size: 0.68rem; color: #64748b; font-style: normal; }
+.pem-top10--live {
+  background: linear-gradient(180deg, #fffdf7 0%, #fff 42%);
+}
+.pem-top10 h3 i { color: #ca8a04; margin-right: 0.25rem; }
+.pem-page-toolbar {
+  background: transparent;
+  box-shadow: none;
+}
+.pem-roster-card .students-table-shell {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+@media (max-width: 1100px) {
+  .pem-kpi-row,
+  .pem-split-2,
+  .pem-quick__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .pem-kpi-row,
+  .pem-split-2,
+  .pem-quick__grid { grid-template-columns: 1fr; }
+  .pem-activity__item { grid-template-columns: 1fr; }
+}
+
+/* --- Visual system override (beats professor-premium wash) --- */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs:not(.professor-dashboard-page),
+body.admin-app.professor-admin.pem-monitor-tabs {
+  --pem-ink: #0f2744;
+  --pem-navy: #143d59;
+  --pem-accent: #3b5bfd;
+  --pem-canvas: #eef2f8;
+  --pem-surface: #ffffff;
+  --pem-surface-2: #f8fafc;
+  --pem-surface-3: #f4f8fc;
+  --pem-text: #0f172a;
+  --pem-text-2: #475569;
+  --pem-muted: #64748b;
+  --pem-border: #e8eef5;
+  --pem-border-strong: #dbe4f0;
+  --pem-input-bg: #ffffff;
+  --pem-input-border: #d7e6f8;
+  --pem-hover: #f8fafc;
+  --pem-selected: #eff6ff;
+  --pem-focus: #2563eb;
+  --pem-table-head-bg: #eaf2ff;
+  --pem-table-head-text: #143d59;
+  --pem-table-row: #ffffff;
+  --pem-table-row-hover: #f1f7ff;
+  --pem-track: #e8eef4;
+  --pem-ring-track: #e2e8f0;
+  --pem-link: #2563eb;
+  --pem-chart-grid: #eef2f6;
+  --pem-chart-tick: #64748b;
+  --pem-chart-axis: #143d59;
+  --pem-row-active: #f7fbff;
+  --pem-row-submitted: #f7fdf9;
+  --pem-row-idle: #fffdf7;
+  --pem-row-risk: #fff8f9;
+  --pem-status-active-bg: #e8f2ff;
+  --pem-status-active-text: #1d4ed8;
+  --pem-status-active-border: #d4e4fb;
+  --pem-status-ok-bg: #e5f7ee;
+  --pem-status-ok-text: #047857;
+  --pem-status-ok-border: #c7ead8;
+  --pem-status-idle-bg: #fff4da;
+  --pem-status-idle-text: #92400e;
+  --pem-status-idle-border: #f3e0b0;
+  --pem-status-risk-bg: #fdebec;
+  --pem-status-risk-text: #b42338;
+  --pem-status-risk-border: #f5cdd2;
+  --pem-status-ns-bg: #f1f5f9;
+  --pem-status-ns-text: #475569;
+  --pem-status-ns-border: #e2e8f0;
+  --pem-warn-bg: #fffbeb;
+  --pem-warn-text: #78350f;
+  --pem-warn-border: #fde68a;
+  --pem-elev-1: 0 1px 2px rgb(15 23 42 / 0.05);
+  --pem-elev-2: 0 6px 18px -12px rgb(15 39 68 / 0.22);
+  --pem-radius-card: 0.9rem;
+  --pem-radius-chip: 0.55rem;
+  --pem-space-card: 0.85rem 1rem;
+  --pem-title-size: 0.9rem;
+  --pem-kpi-num: 1.62rem;
+  --pem-label-size: 0.68rem;
+  --pem-seg-sub: #2563eb;
+  --pem-seg-take: #0ea5e9;
+  --pem-seg-ok: #12b76a;
+  --pem-seg-idle: #f59e0b;
+  --pem-seg-ns: #94a3b8;
+  --pem-focus-ring: 0 0 0 2px rgb(37 99 235 / 0.22);
+  --pem-hero: #143d59;
+  --pem-color-scheme: light;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .admin-main,
+body.pem-monitor-tabs .admin-content {
+  background: var(--pem-canvas, #eef2f8);
+}
+
+body.pem-monitor-tabs .pem-tab-workspace {
+  max-width: none;
+  min-width: 0;
+}
+.pem-tab-nav {
+  background: #e8eef4;
+  border: 0;
+  padding: 0.2rem;
+  gap: 0.2rem;
+  box-shadow: none;
+}
+.pem-tab-nav .pem-tab-btn {
+  color: #475569;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+}
+.pem-tab-nav .pem-tab-btn.is-active,
+.pem-tab-nav .pem-tab-btn[aria-selected="true"] {
+  background: #fff;
+  color: #143d59;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+}
+.pem-page-toolbar {
+  padding: 0.3rem 0.05rem 0;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+.pem-ana-subnav {
+  background: #e8eef4;
+  border: 0;
+  padding: 0.1rem;
+}
+
+.pem-live-dash .pem-kpi-row {
+  gap: 0.65rem;
+  margin-bottom: 0;
+  align-items: stretch;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.pem-live-dash .pem-kpi-card {
+  height: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e8eef5;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  min-width: 0;
+}
+.pem-live-dash .pem-kpi-card:nth-child(1) { box-shadow: inset 3px 0 0 #2563eb, 0 1px 2px rgb(15 23 42 / 0.04); }
+.pem-live-dash .pem-kpi-card:nth-child(2) { box-shadow: inset 3px 0 0 #12b76a, 0 1px 2px rgb(15 23 42 / 0.04); }
+.pem-live-dash .pem-kpi-card:nth-child(3) { box-shadow: inset 3px 0 0 #0ea5e9, 0 1px 2px rgb(15 23 42 / 0.04); }
+.pem-live-dash .pem-kpi-card:nth-child(4) { box-shadow: inset 3px 0 0 #f59e0b, 0 1px 2px rgb(15 23 42 / 0.04); }
+.pem-live-dash .pem-kpi-card__label {
+  font-size: 0.75rem;
+  color: #475569;
+  letter-spacing: 0.03em;
+}
+.pem-live-dash .pem-kpi-card__value {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  color: #143d59;
+}
+.pem-live-dash .pem-kpi-card__hint {
+  font-size: 0.72rem;
+  color: #475569;
+}
+.pem-live-dash .pem-kpi-card__ico {
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.05rem;
+  border-radius: 0.65rem;
+}
+
+.pem-live-rank {
+  grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 0.78fr);
+  gap: 1.05rem;
+  align-items: stretch;
+}
+.pem-split-2 { gap: 0.95rem; margin-bottom: 0.85rem; }
+.pem-panel,
+.pem-roster-card,
+.pem-security-workspace,
+.pem-analytics__card,
+.pem-top10 {
+  border: 1px solid #e8eef5;
+  box-shadow: none;
+  padding: 0.9rem 1rem 1rem;
+  border-radius: 1rem;
+  background: #fff;
+}
+.pem-live-dash__progress .pem-ring { width: 9.25rem; height: 9.25rem; }
+.pem-live-dash__progress .pem-ring__hole { width: 6rem; height: 6rem; }
+.pem-live-dash__progress .pem-ring__hole strong { font-size: 1.45rem; }
+.pem-live-dash__progress .pem-ring__hole span { font-size: 0.7rem; color: #475569; }
+.pem-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  padding: 0.15rem 0 0;
+}
+.pem-quick__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid #dbe4f0;
+  background: #fff;
+  color: #143d59;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: none;
+}
+.pem-quick__link:hover,
+.pem-quick__link:focus-visible {
+  border-color: #a5b4fc;
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+.pem-top10 { padding: 1.05rem 1.1rem 1.15rem; }
+.pem-top10__list { gap: 0.45rem; max-height: none; }
+.pem-top10__item { padding: 0.5rem 0.45rem; }
+.pem-top10__name { font-size: 0.9rem; }
+.pem-top10__meta { font-size: 0.72rem; }
+.pem-top10__score { font-size: 0.88rem; }
+.pem-top10__track { height: 0.5rem; }
+
+.pem-analytics__kpis { gap: 0.85rem; margin-bottom: 0.85rem; }
+.pem-analytics__kpi { padding: 0.95rem 1rem 1.05rem; border: 0; box-shadow: 0 10px 28px -18px rgb(15 39 68 / 0.4); }
+.pem-analytics__kpi-value { font-size: 1.45rem; }
+.pem-analytics__kpi--hero .pem-analytics__kpi-value { font-size: 1.7rem; }
+.pem-analytics__chart { height: 15rem; }
+.pem-analytics__chart--lg { height: 18.5rem; }
+.pem-ana-overview { gap: 1rem; }
+.pem-analytics__table th,
+.pem-analytics__table td { padding: 0.55rem 0.6rem; }
+.pem-analytics__empty {
+  padding: 1.1rem 0.4rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.pem-security-workspace { margin-top: 0.85rem; }
+.pem-sec-tl { padding: 0.7rem 0.85rem; }
+.pem-sec-tl[data-type="tab_hidden"] { box-shadow: inset 3px 0 0 #f59e0b; }
+.pem-sec-tl[data-type="tab_visible"] { box-shadow: inset 3px 0 0 #38bdf8; }
+.pem-sec-tl[data-type="exam_started"] { box-shadow: inset 3px 0 0 #2563eb; }
+.pem-sec-tl[data-type="exam_submitted"] { box-shadow: inset 3px 0 0 #12b76a; }
+.pem-sec-tl[data-type="exam_expired"] { box-shadow: inset 3px 0 0 #ef4444; }
+.pem-sec-kpis { gap: 0.65rem; }
+.pem-sec-kpi {
+  background: #f8fafc;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.8rem;
+}
+
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pex-monitor-detail-table tbody td {
+  padding: 0.55rem 0.65rem !important;
+  font-size: 0.84rem;
+  vertical-align: top;
+}
+body.pem-monitor-tabs .pem-roster-filters {
+  padding: 0.7rem 0.8rem !important;
+  background: #f8fafc !important;
+  border-radius: 0.85rem;
+}
+
+@media (max-width: 1100px) {
+  .pem-live-rank { grid-template-columns: 1fr; }
+  .pem-kpi-row,
+  .pem-split-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .pem-kpi-row,
+  .pem-split-2 { grid-template-columns: 1fr; }
+  .pem-ring { width: 9rem; height: 9rem; }
+  .pem-ring__hole { width: 5.8rem; height: 5.8rem; }
+  .pem-live-dash__progress .pem-ring { width: 8.5rem; height: 8.5rem; }
+  .pem-live-dash__progress .pem-ring__hole { width: 5.5rem; height: 5.5rem; }
+}
+
+/* Structural dashboard layouts (not color-only polish). */
+.pem-dash-head {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 0.45rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.pem-dash-head .pem-tab-nav {
+  margin: 0;
+  padding: 0.18rem;
+  background: #e8eef6;
+  border: 1px solid #dbe4f0;
+  border-radius: 0.75rem;
+}
+.pem-dash-head .pem-page-toolbar {
+  margin: 0;
+  padding: 0.15rem 0.1rem 0;
+  border: 0;
+  background: transparent;
+}
+.pem-page-toolbar .admin-btn,
+.pem-page-toolbar select,
+.pem-page-toolbar .pem-export-menu__sum {
+  min-height: 2.25rem;
+}
+.pem-export-menu__list {
+  z-index: 40;
+}
+.pem-ana-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.55rem;
+  background: #f4f8fc;
+  border: 1px solid #dbe7f3;
+  border-radius: 0.75rem;
+}
+.pem-ana-chrome:not(:has(> :not([hidden]))) {
+  display: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.pem-ana-chrome [hidden],
+.pem-ana-subnav[hidden],
+.pem-analytics__toolbar[hidden],
+.pem-analytics__toolbar--drill[hidden] {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.pem-ana-chrome .pem-ana-subnav,
+.pem-ana-chrome .pem-analytics__toolbar--drill {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.pem-analytics__toolbar--drill {
+  background: transparent;
+  border: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.pem-tab-panels {
+  margin-top: 0;
+}
+.pem-live-dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "kpis"
+    "mid"
+    "notes"
+    "roster";
+  gap: 0.55rem;
+  align-items: start;
+  container-type: inline-size;
+  container-name: pem-live;
+}
+.pem-live-dash > .pem-kpi-row { grid-area: kpis; margin-bottom: 0; }
+.pem-live-dash__mid {
+  grid-area: mid;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+  min-width: 0;
+}
+.pem-live-dash .pem-panel {
+  padding: 0.8rem 0.9rem 0.85rem;
+  border: 1px solid #e8eef5;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+.pem-live-dash .pem-card-head {
+  margin-bottom: 0.65rem;
+  align-items: center;
+}
+.pem-live-dash .pem-card-head h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #143d59;
+}
+.pem-live-dash__progress,
+.pem-live-dash__activity,
+.pem-live-dash__rank { min-width: 0; min-height: 0; }
+.pem-live-dash__progress .pem-ring-wrap {
+  align-items: center;
+  gap: 0.85rem 1.1rem;
+}
+.pem-live-dash__progress .pem-ring-legend {
+  flex: 1 1 10.5rem;
+  min-width: 10.5rem;
+  gap: 0.45rem;
+}
+.pem-live-dash__activity .pem-activity {
+  gap: 0;
+  max-height: min(22rem, 60vh);
+  overflow: auto;
+}
+.pem-live-dash__activity .pem-activity__item {
+  grid-template-columns: minmax(6.25rem, 7.25rem) minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+  font-size: 0.82rem;
+  padding: 0.42rem 0.35rem 0.42rem 0.5rem;
+  border-bottom: 1px solid #eef2f6;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.pem-live-dash__activity .pem-activity__item:last-child { border-bottom: 0; }
+.pem-live-dash__activity .pem-activity__time {
+  color: #475569;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.pem-live-dash__activity .pem-activity__text { color: #0f172a; }
+.pem-live-dash__activity .pem-analytics__empty {
+  margin: 0.15rem 0 0.35rem;
+  padding: 0.35rem 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+.pem-live-dash .pem-top10--live {
+  margin-bottom: 0;
+  background: #fff;
+  border: 1px solid #e8eef5;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  padding: 0.8rem 0.9rem 0.85rem;
+}
+.pem-live-dash .pem-top10--live .pem-top10__list {
+  gap: 0.3rem;
+  max-height: min(22rem, 60vh);
+  overflow: auto;
+}
+.pem-live-dash .pem-top10--live .pem-top10__item {
+  padding: 0.4rem 0.4rem;
+  align-items: center;
+}
+.pem-live-dash .pem-top10--live .pem-top10__rank {
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.72rem;
+}
+.pem-live-dash .pem-top10--live .pem-top10__name { font-size: 0.82rem; }
+.pem-live-dash .pem-top10--live .pem-top10__meta { font-size: 0.68rem; color: #475569; }
+.pem-live-dash .pem-top10--live .pem-top10__score { font-size: 0.8rem; }
+.pem-live-dash .pem-top10--live .pem-top10__note,
+.pem-live-dash .pem-top10--live .pem-top10__more,
+.pem-live-dash .pem-top10--live .pem-top10__empty {
+  margin: 0.4rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+.pem-live-dash__notes { grid-area: notes; }
+.pem-live-dash__notes:not(:has(:not([hidden]))) { display: none; }
+.pem-live-dash__roster { grid-area: roster; margin-bottom: 0 !important; }
+.pem-live-dash > .pem-live-kpi-poll { display: none; }
+
+@container pem-live (max-width: 52rem) {
+  .pem-live-dash .pem-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container pem-live (max-width: 28rem) {
+  .pem-live-dash .pem-kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container pem-live (max-width: 58rem) {
+  .pem-live-dash__mid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pem-live-dash__rank { grid-column: 1 / -1; }
+}
+@container pem-live (max-width: 36rem) {
+  .pem-live-dash__mid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pem-live-dash__rank { grid-column: auto; }
+  .pem-live-dash__activity .pem-activity__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .pem-live-dash .pem-kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pem-live-dash__mid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pem-live-dash__rank { grid-column: auto; }
+}
+.pem-top10--sparse { padding-bottom: 0.75rem; }
+.pem-top10__more {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.4;
+}
+.pem-roster-card .pem-roster-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.45rem;
+  background: #f4f8fd !important;
+  border: 1px solid #e8eef5 !important;
+  box-shadow: none !important;
+  padding: 0.45rem 0.55rem !important;
+  border-radius: 0.75rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters__search {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  background: #fff;
+  border: 1px solid #d7e6f8;
+  border-radius: 0.5rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2rem;
+  border: 0;
+  background: transparent;
+  font-size: 0.8125rem;
+  color: #143d59;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search input:focus {
+  outline: none;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 0.18);
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .admin-btn--sm,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters select {
+  min-height: 2rem !important;
+  padding: 0.2rem 0.5rem !important;
+  font-size: 0.75rem !important;
+  color: #143d59 !important;
+  background: #fff !important;
+  border: 1px solid #d7e6f8 !important;
+  border-radius: 0.5rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .admin-btn--sm:focus-visible,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters select:focus-visible,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .pem-more-filters__sum:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters #pemFilterClear {
+  background: #eaf2ff !important;
+  color: #1d4ed8 !important;
+  border-color: #d4e4fb !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-toolbar__meta {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #64748b;
+  white-space: nowrap;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters {
+  position: relative;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__sum {
+  list-style: none;
+  cursor: pointer;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__sum::-webkit-details-marker {
+  display: none;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters[open] .pem-more-filters__sum {
+  background: #eaf2ff !important;
+  color: #1d4ed8 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__panel {
+  position: absolute;
+  top: calc(100% + 0.28rem);
+  right: 0;
+  z-index: 8;
+  min-width: 13.5rem;
+  padding: 0.55rem 0.65rem;
+  background: #fff;
+  border: 1px solid #d7e6f8;
+  border-radius: 0.65rem;
+  box-shadow: 0 8px 20px -16px rgb(15 23 42 / 0.35);
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__opt {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #143d59;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.65rem;
+  line-height: 1.3;
+  color: #64748b;
+}
+@media (max-width: 767px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters__search {
+    flex: 1 1 100%;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-toolbar__meta {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+.pem-session {
+  display: grid;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  color: #334155;
+}
+.pem-session__times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.2rem 0.4rem;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+.pem-session__arrow { color: #94a3b8; align-self: center; }
+.pem-session__dur { color: #64748b; font-weight: 700; }
+.pem-session__live,
+.pem-session__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem 0.5rem;
+}
+
+/* College examinee roster (Phase 3.9) â€” scoped; do not restyle diagnostic 12-col. */
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card {
+  background: #fff;
+  border: 1px solid #e8eef5;
+  border-radius: 1rem;
+  box-shadow: 0 10px 28px -22px rgb(15 23 42 / 0.28);
+  padding: 0.7rem 0.6rem 0.75rem;
+  max-width: 100%;
+  min-width: 0;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-num { width: 26px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-examinee { width: 158px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-status { width: 90px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-live { width: 84px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-progress { width: 86px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-score { width: 60px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-started,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-submitted,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-seen { width: 76px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-duration { width: 54px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-tabs { width: 44px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor col.pem-col-review { width: 64px !important; }
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-shell {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-shell .students-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  isolation: isolate;
+  -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 768px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor {
+    min-width: 940px !important;
+    width: 100%;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-shell .students-table-scroll {
+    max-height: calc(100vh - 11rem);
+    overflow: auto;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+    position: sticky !important;
+    top: 0;
+    z-index: 6;
+    box-shadow: 0 1px 0 #cfe0f5;
+  }
+}
+@media (max-width: 767px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor {
+    min-width: 940px !important;
+    width: 940px !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-shell .students-table-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+    position: sticky !important;
+    top: 0;
+    z-index: 6;
+  }
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+  padding: 0.38rem 0.28rem !important;
+  font-size: 0.6rem !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #143d59 !important;
+  background: #eaf2ff !important;
+  border-bottom: 1px solid #d7e6f8 !important;
+  white-space: normal;
+  line-height: 1.2;
+  overflow: hidden !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody {
+  overflow-anchor: none;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th.pem-col-num,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td.pem-row-num {
+  padding-left: 0.45rem !important;
+  padding-right: 0.18rem !important;
+}
+@keyframes pem-tab-flash {
+  0%, 35% { background-image: linear-gradient(#fff4df, #fff4df); }
+  100% { background-image: none; }
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td {
+  background-color: #ffffff !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td {
+  background-color: #f7fbff !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td {
+  background-color: #f7fdf9 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td {
+  background-color: #fffdf7 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="disconnected"] td,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="expired"] td {
+  background-color: #fff8f9 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:hover td {
+  background-color: #f1f7ff !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row.tab-flash td {
+  animation: pem-tab-flash 1.1s ease-out 1;
+}
+@media (min-width: 768px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td.pem-row-num {
+    box-shadow: inset 3px 0 0 #cbd5e1;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td.pem-row-num {
+    box-shadow: inset 3px 0 0 #3b82f6;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td.pem-row-num {
+    box-shadow: inset 3px 0 0 #22c55e;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td.pem-row-num {
+    box-shadow: inset 3px 0 0 #f59e0b;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="disconnected"] td.pem-row-num,
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="expired"] td.pem-row-num {
+    box-shadow: inset 3px 0 0 #fb7185;
+  }
+}
+@media (max-width: 767px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td.college-student-account-cell {
+    box-shadow: inset 3px 0 0 #cbd5e1;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td.college-student-account-cell {
+    box-shadow: inset 3px 0 0 #3b82f6;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td.college-student-account-cell {
+    box-shadow: inset 3px 0 0 #22c55e;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td.college-student-account-cell {
+    box-shadow: inset 3px 0 0 #f59e0b;
+  }
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="disconnected"] td.college-student-account-cell,
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="expired"] td.college-student-account-cell {
+    box-shadow: inset 3px 0 0 #fb7185;
+  }
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-stack {
+  max-width: none;
+  gap: 0.12rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-label {
+  font-size: 0.72rem !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  color: #143d59 !important;
+  line-height: 1.15;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-pct {
+  font-size: 0.58rem !important;
+  font-weight: 650;
+  color: #64748b !important;
+  font-variant-numeric: tabular-nums;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress {
+  height: 4px;
+  background: #e8eef5;
+  border-radius: 999px;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress > span {
+  background: #3b82f6;
+  border-radius: 999px;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .pem-mini-progress > span {
+  background: #22c55e;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .pem-mini-progress > span {
+  background: #f59e0b;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-mini-progress > span,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-mini-progress > span {
+  background: #fb7185;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.02rem;
+  padding: 0.1rem 0.32rem;
+  border-radius: 0.45rem;
+  background: #f4f8fd;
+  max-width: 100%;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__n {
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  color: #143d59 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn {
+  min-height: 1.4rem !important;
+  padding: 0.08rem 0.4rem !important;
+  font-size: 0.66rem !important;
+  font-weight: 650 !important;
+  background: #e8f2ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #d4e4fb !important;
+  border-radius: 0.4rem;
+  gap: 0.2rem !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn:hover {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Phase 3.9 â€” compact premium cells */
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td {
+  padding: 0.3rem 0.28rem !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid #e7eef5 !important;
+  font-size: 0.74rem !important;
+  color: #143d59 !important;
+  overflow: hidden !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td.pem-dt-cell,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td.pem-live-cell,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td.student-action-cell,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td.pem-tab-cell {
+  overflow: visible !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-row-num {
+  width: 26px;
+  text-align: right;
+  font-size: 0.64rem !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums;
+  color: #8aa0b5 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-cell {
+  align-items: center;
+  gap: 0.42rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-avatar-media {
+  width: 1.7rem !important;
+  height: 1.7rem !important;
+  min-width: 1.7rem !important;
+  font-size: 0.62rem !important;
+  font-weight: 750 !important;
+  background: #e8f2ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #d7e6f8 !important;
+  border-radius: 999px !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .student-avatar-media {
+  background: #e5f7ee !important;
+  color: #047857 !important;
+  border-color: #c7ead8 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .student-avatar-media {
+  background: #fff4da !important;
+  color: #92400e !important;
+  border-color: #f3e0b0 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .student-avatar-media,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .student-avatar-media {
+  background: #fdebec !important;
+  color: #b42338 !important;
+  border-color: #f5cdd2 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .student-avatar-media,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="absent"] .student-avatar-media {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-name {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal !important;
+  text-overflow: clip;
+  max-width: 100% !important;
+  font-size: 0.78rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  color: #143d59 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-name:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-meta-sub {
+  font-size: 0.6rem !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .admin-badge {
+  min-height: 1.18rem !important;
+  padding: 0.04rem 0.32rem !important;
+  font-size: 0.6rem !important;
+  font-weight: 650 !important;
+  border: 1px solid transparent !important;
+  gap: 0.16rem !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="active"] .js-status-cell .admin-badge {
+  background: #e8f2ff !important;
+  color: #1d4ed8 !important;
+  border-color: #d4e4fb !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .js-status-cell .admin-badge {
+  background: #e5f7ee !important;
+  color: #047857 !important;
+  border-color: #c7ead8 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .js-status-cell .admin-badge,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="absent"] .js-status-cell .admin-badge {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .js-status-cell .admin-badge {
+  background: #fff4da !important;
+  color: #92400e !important;
+  border-color: #f3e0b0 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .js-status-cell .admin-badge,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .js-status-cell .admin-badge {
+  background: #fdebec !important;
+  color: #b42338 !important;
+  border-color: #f5cdd2 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .admin-badge--success {
+  background: #e8f2ff !important;
+  color: #1d4ed8 !important;
+  border-color: #d4e4fb !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .admin-badge--warning {
+  background: #fff4da !important;
+  color: #92400e !important;
+  border-color: #f3e0b0 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .admin-badge--warning,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .admin-badge--warning {
+  background: #fdebec !important;
+  color: #b42338 !important;
+  border-color: #f5cdd2 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty {
+  display: inline-block;
+  font-size: 0.62rem !important;
+  font-weight: 650 !important;
+  color: #94a3b8 !important;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: normal;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty--info {
+  color: #64748b !important;
+  font-weight: 600;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__p {
+  display: block;
+  font-size: 0.58rem !important;
+  font-weight: 650;
+  color: #64748b !important;
+  font-variant-numeric: tabular-nums;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-empty {
+  color: #94a3b8;
+  font-weight: 650;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-stack[hidden],
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-empty[hidden],
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-stack:not([hidden]) + .pem-progress-empty {
+  display: none !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell {
+  min-width: 0;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-current-cell:empty,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-time-cell:empty,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-tab-vis-cell:empty,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-meta-clients:empty,
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-meta-clients:not(.is-overlap) {
+  display: none;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-empty {
+  color: #94a3b8;
+  font-weight: 650;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-empty[hidden] {
+  display: none !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-current-cell:not(:empty),
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-time-cell:not(:empty) {
+  display: block;
+  margin-right: 0;
+  font-size: 0.68rem !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  color: #1d4ed8 !important;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .pem-live-cell .js-current-cell:not(:empty),
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .pem-live-cell .js-time-cell:not(:empty) {
+  color: #92400e !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .js-current-cell:not(:empty),
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .js-time-cell:not(:empty),
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .js-current-cell:not(:empty),
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .js-time-cell:not(:empty) {
+  color: #b42338 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-tab-vis-cell:not(:empty) {
+  display: block;
+  margin-top: 0.08rem;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-meta-clients.is-overlap {
+  display: block;
+  margin-left: 0;
+  margin-top: 0.06rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #9a5b12;
+  white-space: nowrap;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell .pem-dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell .pem-dt__t {
+  order: -1;
+  font-size: 0.7rem !important;
+  font-weight: 750 !important;
+  color: #143d59 !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell .pem-dt__d {
+  font-size: 0.56rem !important;
+  font-weight: 600;
+  color: #6b8499 !important;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dur-cell {
+  font-size: 0.7rem !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums;
+  color: #143d59 !important;
+  white-space: nowrap;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-tab-cell .pem-switch-btn {
+  min-height: 1.28rem !important;
+  min-width: 1.7rem;
+  padding: 0.04rem 0.28rem !important;
+  font-size: 0.66rem !important;
+  font-variant-numeric: tabular-nums;
+  background: #eef4fb !important;
+  color: #143d59 !important;
+  border: 1px solid #d7e4f2 !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-tab-empty[hidden] {
+  display: none !important;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-wait {
+  font-size: 0.6rem !important;
+  color: #64748b !important;
+  white-space: nowrap;
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-switch-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td {
+    padding: 0.55rem 0.75rem !important;
+  }
+}
+.pem-ana-dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 0.9fr);
+  grid-template-areas:
+    "hist need"
+    "subjects need";
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+  align-items: start;
+}
+.pem-ana-dash__hist { grid-area: hist; }
+.pem-ana-dash__need { grid-area: need; }
+.pem-ana-dash__subjects { grid-area: subjects; }
+.pem-ana-dash .pem-analytics__card { margin-bottom: 0; }
+.pem-insight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(17rem, 0.9fr);
+  gap: 0.9rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+.pem-insight .pem-analytics__card { margin-bottom: 0; }
+.pem-q-board,
+.pem-weak-dash,
+.pem-sec-dash {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.9fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+.pem-analytics__chart--hero { height: 20rem; }
+.pem-analytics__chart--md { height: 12rem; }
+.pem-q-item { display: grid; gap: 0.25rem; }
+.pem-q-item summary {
+  cursor: pointer;
+  list-style: none;
+}
+.pem-q-item summary::-webkit-details-marker { display: none; }
+.pem-q-item__expand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin-top: 0.4rem;
+  color: #475569;
+  font-size: 0.78rem;
+}
+.pem-q-dist { color: #143d59; font-weight: 700; }
+.pem-weak-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr));
+  gap: 0.65rem;
+}
+.pem-weak-card {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #e4eaf3;
+  border-radius: 0.9rem;
+  background: #fff;
+  cursor: pointer;
+}
+.pem-weak-card.is-selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 0.15);
+}
+.pem-weak-card.is-hidden { display: none; }
+.pem-weak-card__name { font-weight: 800; color: #143d59; }
+.pem-weak-card__meta { font-size: 0.75rem; color: #64748b; }
+.pem-weak-card__score { font-size: 1.15rem; font-weight: 800; color: #0f172a; }
+.pem-q-table tbody tr.is-hidden { display: none; }
+.pem-sec-dash__side,
+.pem-sec-dash__main { min-width: 0; }
+.pem-sec-dash .pem-concurrent-alerts,
+.pem-sec-dash .pem-tab-live-feed,
+.pem-sec-dash .pem-sec-history {
+  background: #f8fafc;
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.pem-security-workspace {
+  padding: 0.9rem 1rem 1rem;
+}
+@media (max-width: 1100px) {
+  .pem-ana-dash,
+  .pem-insight,
+  .pem-q-board,
+  .pem-weak-dash,
+  .pem-sec-dash {
+    grid-template-columns: 1fr;
+  }
+  .pem-ana-dash__hist,
+  .pem-ana-dash__need,
+  .pem-ana-dash__subjects { grid-area: auto; }
+  .pem-analytics__chart--hero { height: 14rem; }
+}
+@media (max-width: 1280px) {
+  .pem-dash-head {
+    margin-bottom: 0.4rem;
+  }
+  .pem-tab-nav .pem-tab-btn {
+    font-size: 0.8rem;
+    min-height: 2.15rem;
+    padding: 0.3rem 0.7rem;
+  }
+}
+@media (max-width: 900px) {
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+    grid-template-columns: 1fr;
+  }
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__actions {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 720px) {
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+    font-size: 1.08rem;
+  }
+  .pem-tab-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+    padding-bottom: 0.35rem;
+  }
+  .pem-tab-nav::-webkit-scrollbar {
+    height: 5px;
+  }
+  .pem-tab-nav::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 999px;
+  }
+  .pem-tab-nav .pem-tab-btn {
+    flex: 0 0 auto;
+  }
+  .pem-page-toolbar {
+    align-items: flex-start;
+  }
+  .pem-page-toolbar__actions {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
+
+/* --- Phase 3.18a/b: college-monitor tokens, dark surfaces, cheap canvas --- */
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs #main,
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs #main.admin-main-shell,
+html[data-admin-theme="light"] body.admin-app.professor-admin.pem-monitor-tabs #main,
+html[data-admin-theme="light"] body.admin-app.professor-admin.pem-monitor-tabs #main.admin-main-shell,
+html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs #main,
+html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs #main.admin-main-shell,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs #main,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs #main.admin-main-shell,
+body.admin-app.professor-admin.pem-monitor-tabs #main,
+body.admin-app.professor-admin.pem-monitor-tabs #main.admin-main-shell {
+  background-image: none !important;
+  background-attachment: scroll !important;
+  background-color: var(--pem-canvas, #eef2f8) !important;
+}
+html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs #main::before,
+body.admin-app.professor-admin.pem-monitor-tabs #main::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  filter: none !important;
+  opacity: 0 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs,
+html[data-admin-theme="dark"][data-admin-ui="v2"] body.admin-app.professor-admin.pem-monitor-tabs {
+  background: var(--pem-canvas, #0b1220) !important;
+  background-image: none !important;
+  background-attachment: scroll !important;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs {
+  --pem-ink: #f1f5f9;
+  --pem-navy: #e2e8f0;
+  --pem-accent: #93c5fd;
+  --pem-canvas: #0b1220;
+  --pem-surface: #1e293b;
+  --pem-surface-2: #162033;
+  --pem-surface-3: #1a2740;
+  --pem-text: #f1f5f9;
+  --pem-text-2: #cbd5e1;
+  --pem-muted: #94a3b8;
+  --pem-border: rgba(148, 163, 184, 0.28);
+  --pem-border-strong: rgba(148, 163, 184, 0.42);
+  --pem-input-bg: #0f172a;
+  --pem-input-border: rgba(148, 163, 184, 0.38);
+  --pem-hover: rgba(148, 163, 184, 0.12);
+  --pem-selected: rgba(59, 130, 246, 0.22);
+  --pem-focus: #60a5fa;
+  --pem-table-head-bg: #243044;
+  --pem-table-head-text: #e2e8f0;
+  --pem-table-row: #1a2436;
+  --pem-table-row-hover: #243044;
+  --pem-track: #162033;
+  --pem-ring-track: #334155;
+  --pem-link: #93c5fd;
+  --pem-chart-grid: rgba(148, 163, 184, 0.18);
+  --pem-chart-tick: #94a3b8;
+  --pem-chart-axis: #e2e8f0;
+  --pem-row-active: #172554;
+  --pem-row-submitted: #052e1c;
+  --pem-row-idle: #3b2a12;
+  --pem-row-risk: #3f1519;
+  --pem-status-active-bg: rgba(37, 99, 235, 0.22);
+  --pem-status-active-text: #bfdbfe;
+  --pem-status-active-border: rgba(96, 165, 250, 0.4);
+  --pem-status-ok-bg: rgba(16, 185, 129, 0.18);
+  --pem-status-ok-text: #6ee7b7;
+  --pem-status-ok-border: rgba(52, 211, 153, 0.35);
+  --pem-status-idle-bg: rgba(245, 158, 11, 0.2);
+  --pem-status-idle-text: #fcd34d;
+  --pem-status-idle-border: rgba(251, 191, 36, 0.4);
+  --pem-status-risk-bg: rgba(244, 63, 94, 0.2);
+  --pem-status-risk-text: #fda4af;
+  --pem-status-risk-border: rgba(251, 113, 133, 0.4);
+  --pem-status-ns-bg: rgba(148, 163, 184, 0.14);
+  --pem-status-ns-text: #cbd5e1;
+  --pem-status-ns-border: rgba(148, 163, 184, 0.28);
+  --pem-warn-bg: rgba(245, 158, 11, 0.14);
+  --pem-warn-text: #fde68a;
+  --pem-warn-border: rgba(251, 191, 36, 0.35);
+  --pem-elev-1: 0 1px 0 rgb(255 255 255 / 0.04);
+  --pem-elev-2: 0 8px 22px -16px rgb(0 0 0 / 0.5);
+  --pem-radius-card: 0.9rem;
+  --pem-radius-chip: 0.55rem;
+  --pem-space-card: 0.85rem 1rem;
+  --pem-title-size: 0.9rem;
+  --pem-kpi-num: 1.62rem;
+  --pem-label-size: 0.68rem;
+  --pem-seg-sub: #60a5fa;
+  --pem-seg-take: #38bdf8;
+  --pem-seg-ok: #34d399;
+  --pem-seg-idle: #fbbf24;
+  --pem-seg-ns: #64748b;
+  --pem-focus-ring: 0 0 0 2px rgba(96, 165, 250, 0.28);
+  --pem-hero: #0f2744;
+  --pem-color-scheme: dark;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb-current,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule-label {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head .admin-breadcrumb__link,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-panel-link {
+  color: var(--pem-link);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  background: var(--pem-surface);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  color: var(--pem-ink);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__subtitle {
+  color: var(--pem-text-2);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+  background: transparent;
+  border-color: var(--pem-border-strong);
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all:hover {
+  background: var(--pem-hover);
+  border-color: var(--pem-link);
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-dash-head .pem-tab-nav,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-subnav {
+  background: var(--pem-track);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-btn,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-subnav__btn {
+  color: var(--pem-text-2);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn:hover:not(.is-active):not([aria-selected="true"]),
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-subnav__btn:hover:not(.is-active):not([aria-selected="true"]) {
+  background: var(--pem-hover);
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn.is-active,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn[aria-selected="true"],
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-subnav__btn.is-active,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-subnav__btn[aria-selected="true"] {
+  background: var(--pem-surface);
+  color: var(--pem-ink);
+  border-color: var(--pem-border-strong);
+  box-shadow: none;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .pem-export-menu__sum,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-section-bar select,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__toolbar select,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__toolbar button,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-dt,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-export-menu__list,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__link {
+  background: var(--pem-input-bg) !important;
+  color: var(--pem-text) !important;
+  border: 1px solid var(--pem-input-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn:focus-visible,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .pem-export-menu__sum:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select:focus-visible {
+  background: var(--pem-hover) !important;
+  border-color: var(--pem-link) !important;
+  color: var(--pem-text) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn:disabled,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-export-menu__list a {
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-export-menu__list a:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__link:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__link:focus-visible,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn:hover,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn:focus-visible {
+  background: var(--pem-hover);
+  border-color: var(--pem-link);
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn {
+  background: var(--pem-surface-2);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn span,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn i {
+  color: var(--pem-ink);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__btn em {
+  color: var(--pem-muted);
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-chrome {
+  background: var(--pem-surface-3);
+  border-color: var(--pem-border);
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-panel,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-roster-card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-security-workspace,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-review-card,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card {
+  background: var(--pem-surface);
+  border-color: var(--pem-border);
+  box-shadow: none;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero {
+  background: linear-gradient(155deg, #0f2744 0%, #1d4ed8 100%);
+  border-color: transparent;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-hint {
+  color: rgba(255, 255, 255, 0.82);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-value {
+  color: #fff;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__sub,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-card-head__meta,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__sub,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__note,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__more,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__meta,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__note,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__more,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-analytics__empty {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__value,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__value,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-value,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-panel h3,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__title,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-card-head h3,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card h3,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__title,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10--live .pem-card-head h3,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-activity-title,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card__name,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card__score,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__name,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__score,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-bar-list__label strong,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-q-dist,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__qstem {
+  color: var(--pem-ink);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico--navy { background: var(--pem-status-active-bg); color: var(--pem-status-active-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico--ok { background: var(--pem-status-ok-bg); color: var(--pem-status-ok-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico--live { background: var(--pem-status-active-bg); color: var(--pem-status-active-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico--wait { background: var(--pem-status-idle-bg); color: var(--pem-status-idle-text); }
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole {
+  background: var(--pem-surface);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole strong,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend strong {
+  color: var(--pem-ink);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole span,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend em,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__progress .pem-ring__hole span {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-dot--ns { background: #334155; }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-pill {
+  background: var(--pem-status-ok-bg);
+  color: var(--pem-status-ok-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-activity__time,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__time {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-activity__text,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__text {
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item {
+  border-bottom-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10--live {
+  background: var(--pem-surface);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__item--gold {
+  background: rgba(202, 138, 4, 0.14);
+  border-color: rgba(250, 204, 21, 0.35);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__item--silver {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__item--bronze {
+  background: rgba(194, 65, 12, 0.16);
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card {
+  background: var(--pem-surface);
+  border-color: var(--pem-border);
+  box-shadow: none;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-roster-filters,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-card .pem-roster-filters,
+html[data-admin-theme="dark"] body.pem-monitor-tabs .pem-roster-filters {
+  background: var(--pem-surface-2) !important;
+  border-color: var(--pem-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search {
+  background: var(--pem-input-bg);
+  border-color: var(--pem-input-border);
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search input,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .admin-btn--sm,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters select {
+  color: var(--pem-text) !important;
+  background: var(--pem-input-bg) !important;
+  border-color: var(--pem-input-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search input {
+  background: transparent !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters #pemFilterClear,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters[open] .pem-more-filters__sum {
+  background: var(--pem-status-active-bg) !important;
+  color: var(--pem-status-active-text) !important;
+  border-color: var(--pem-status-active-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-toolbar__meta,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__hint {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__panel {
+  background: var(--pem-surface);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs .pem-more-filters__opt {
+  color: var(--pem-text);
+}
+
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+  color: var(--pem-table-head-text) !important;
+  background: var(--pem-table-head-bg) !important;
+  border-bottom-color: var(--pem-border) !important;
+  box-shadow: 0 1px 0 var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody td {
+  color: var(--pem-text) !important;
+  border-bottom-color: var(--pem-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td {
+  background-color: var(--pem-table-row) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td {
+  background-color: var(--pem-row-active) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td {
+  background-color: var(--pem-row-submitted) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td {
+  background-color: var(--pem-row-idle) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="disconnected"] td,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="expired"] td {
+  background-color: var(--pem-row-risk) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:hover td {
+  background-color: var(--pem-table-row-hover) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-label,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__n,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-name,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell .pem-dt__t,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dur-cell {
+  color: var(--pem-ink) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-pct,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-meta-sub,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__p,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-wait,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell .pem-dt__d,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-row-num {
+  color: var(--pem-muted) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress {
+  background: #334155;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score {
+  background: var(--pem-surface-2);
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-empty,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-empty {
+  color: var(--pem-muted) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-avatar-media {
+  background: var(--pem-status-active-bg) !important;
+  color: var(--pem-status-active-text) !important;
+  border-color: var(--pem-status-active-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .student-avatar-media {
+  background: var(--pem-status-ok-bg) !important;
+  color: var(--pem-status-ok-text) !important;
+  border-color: var(--pem-status-ok-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .student-avatar-media {
+  background: var(--pem-status-idle-bg) !important;
+  color: var(--pem-status-idle-text) !important;
+  border-color: var(--pem-status-idle-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .student-avatar-media,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .student-avatar-media {
+  background: var(--pem-status-risk-bg) !important;
+  color: var(--pem-status-risk-text) !important;
+  border-color: var(--pem-status-risk-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .student-avatar-media,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="absent"] .student-avatar-media {
+  background: var(--pem-status-ns-bg) !important;
+  color: var(--pem-status-ns-text) !important;
+  border-color: var(--pem-status-ns-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="active"] .js-status-cell .admin-badge,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .admin-badge--success {
+  background: var(--pem-status-active-bg) !important;
+  color: var(--pem-status-active-text) !important;
+  border-color: var(--pem-status-active-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .js-status-cell .admin-badge {
+  background: var(--pem-status-ok-bg) !important;
+  color: var(--pem-status-ok-text) !important;
+  border-color: var(--pem-status-ok-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .js-status-cell .admin-badge,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="absent"] .js-status-cell .admin-badge {
+  background: var(--pem-status-ns-bg) !important;
+  color: var(--pem-status-ns-text) !important;
+  border-color: var(--pem-status-ns-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .js-status-cell .admin-badge,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .admin-badge--warning {
+  background: var(--pem-status-idle-bg) !important;
+  color: var(--pem-status-idle-text) !important;
+  border-color: var(--pem-status-idle-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .js-status-cell .admin-badge,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .js-status-cell .admin-badge,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .admin-badge--warning,
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .admin-badge--warning {
+  background: var(--pem-status-risk-bg) !important;
+  color: var(--pem-status-risk-text) !important;
+  border-color: var(--pem-status-risk-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn {
+  background: var(--pem-status-active-bg) !important;
+  color: var(--pem-status-active-text) !important;
+  border-color: var(--pem-status-active-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-tab-cell .pem-switch-btn {
+  background: var(--pem-surface-2) !important;
+  color: var(--pem-text) !important;
+  border-color: var(--pem-border) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-current-cell:not(:empty),
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-time-cell:not(:empty) {
+  color: var(--pem-status-active-text) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .pem-live-cell .js-current-cell:not(:empty),
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="idle"] .pem-live-cell .js-time-cell:not(:empty) {
+  color: var(--pem-status-idle-text) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .js-current-cell:not(:empty),
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="disconnected"] .pem-live-cell .js-time-cell:not(:empty),
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .js-current-cell:not(:empty),
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="expired"] .pem-live-cell .js-time-cell:not(:empty) {
+  color: var(--pem-status-risk-text) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-cell .js-meta-clients.is-overlap {
+  color: var(--pem-status-idle-text);
+}
+@keyframes pem-tab-flash-dark {
+  0%, 35% { background-image: linear-gradient(#3f2f14, #3f2f14); }
+  100% { background-image: none; }
+}
+html[data-admin-theme="dark"] body.admin-app.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row.tab-flash td {
+  animation-name: pem-tab-flash-dark;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-live-feed,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-security-note,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-client-overlap {
+  background: var(--pem-warn-bg);
+  border-color: var(--pem-warn-border);
+  color: var(--pem-warn-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-live-sum,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-live-details,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs #examSecurityFeed,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs #examSecurityFeed.text-amber-950 {
+  color: var(--pem-warn-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-kpi,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-timeline,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-dash .pem-concurrent-alerts,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-dash .pem-tab-live-feed,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-dash .pem-sec-history,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card--note {
+  background: var(--pem-surface-2);
+  border-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-kpi__l,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-typecounts,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-tl__time,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-tl__detail,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-tl--empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card__meta,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__meta,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__n,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__choices,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-q-item__expand {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-kpi__v,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-tl__name,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-security-table .js-open-tab-events,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill__v {
+  color: var(--pem-ink);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-tl {
+  border-top-color: var(--pem-border);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table th,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table td {
+  border-top-color: var(--pem-border);
+  color: var(--pem-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table thead th {
+  color: var(--pem-muted);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table--rows tbody tr:hover td {
+  background: var(--pem-hover);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table--rows tbody tr.is-selected td {
+  background: var(--pem-selected);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__table tr.pem-ana-weak td,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-weak td {
+  background: var(--pem-warn-bg);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__heat--ok { background: var(--pem-status-ok-bg); color: var(--pem-status-ok-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__heat--mid { background: var(--pem-status-idle-bg); color: var(--pem-status-idle-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__heat--bad { background: var(--pem-status-risk-bg); color: var(--pem-status-risk-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__heat--na { background: var(--pem-status-ns-bg); color: var(--pem-status-ns-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill--ok { background: var(--pem-status-ok-bg); border-color: var(--pem-status-ok-border); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill--ok .pem-stat-pill__v { color: var(--pem-status-ok-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill--bad { background: var(--pem-status-idle-bg); border-color: var(--pem-status-idle-border); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill--bad .pem-stat-pill__v { color: var(--pem-status-idle-text); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-stat-pill--na { background: var(--pem-status-ns-bg); }
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__scope {
+  background: var(--pem-status-active-bg);
+  color: var(--pem-status-active-text);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card.is-selected {
+  border-color: var(--pem-focus);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-activity-title {
+  color: var(--pem-ink);
+}
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-empty {
+  color: #92400e;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-activity-title {
+  color: #143d59;
+}
+
+/* --- Phase 3.19a: shared surface, type, and elevation foundation --- */
+body.admin-app.professor-admin.pem-monitor-tabs {
+  color-scheme: var(--pem-color-scheme, light);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-review-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-security-workspace,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-roster-card {
+  background: var(--pem-surface);
+  border: 1px solid var(--pem-border);
+  border-radius: var(--pem-radius-card);
+  box-shadow: var(--pem-elev-1);
+  color: var(--pem-text);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi {
+  padding: var(--pem-space-card);
+}
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-roster-card {
+  box-shadow: var(--pem-elev-2);
+  padding: 0.75rem 0.7rem 0.8rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  padding: 0.7rem 0.9rem 0.75rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-roster-filters,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters,
+body.pem-monitor-tabs .pem-roster-filters,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ana-chrome,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__toolbar,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-sec-kpi {
+  background: var(--pem-surface-2) !important;
+  border: 1px solid var(--pem-border);
+  border-radius: var(--pem-radius-chip);
+  box-shadow: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-dash-head .pem-tab-nav,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav {
+  background: var(--pem-surface-3);
+  border: 1px solid var(--pem-border);
+  border-radius: var(--pem-radius-card);
+  box-shadow: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn.is-active,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn[aria-selected="true"] {
+  background: var(--pem-surface);
+  color: var(--pem-ink);
+  border-color: var(--pem-border-strong);
+  box-shadow: var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(1) {
+  box-shadow: inset 3px 0 0 var(--pem-seg-sub), var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(2) {
+  box-shadow: inset 3px 0 0 var(--pem-seg-ok), var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(3) {
+  box-shadow: inset 3px 0 0 var(--pem-seg-take), var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(4) {
+  box-shadow: inset 3px 0 0 var(--pem-seg-idle), var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero {
+  background: var(--pem-hero, #143d59);
+  border-color: transparent;
+  box-shadow: var(--pem-elev-2);
+  color: #fff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-hint {
+  color: rgba(255, 255, 255, 0.78);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-value {
+  color: #fff;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero {
+  background: var(--pem-hero, #0f2744);
+  color: #fff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi:not(.pem-analytics__kpi--hero),
+body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi:not(.pem-analytics__kpi--hero):hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10:hover {
+  border-color: var(--pem-border-strong);
+  background: var(--pem-surface);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__flab,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule-label {
+  font-size: var(--pem-label-size);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pem-muted);
+  line-height: 1.3;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole strong {
+  font-size: var(--pem-kpi-num);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+  color: var(--pem-ink);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi--hero .pem-analytics__kpi-value {
+  font-size: calc(var(--pem-kpi-num) + 0.12rem);
+  color: #fff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi-hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__sub,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__empty,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-card-head__meta {
+  color: var(--pem-muted);
+  font-weight: 500;
+  line-height: 1.4;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel h3,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-quick__title,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-card-head h3,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card h3,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__title,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10 .pem-card-head h3,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-progress-head .prof-workspace__title,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-activity-title {
+  font-size: var(--pem-title-size);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--pem-ink);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  color: var(--pem-ink);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__subtitle,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule {
+  color: var(--pem-text-2);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole {
+  background: var(--pem-surface);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring__hole span {
+  color: var(--pem-muted);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico {
+  border-radius: var(--pem-radius-chip);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn:focus-visible,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn:focus-visible,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select:focus-visible,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all:focus-visible,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back:focus-visible,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters select:focus-visible,
+body.admin-app.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search input:focus {
+  outline: none;
+  box-shadow: var(--pem-focus-ring);
+  border-color: var(--pem-focus);
+}
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-panel,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-top10,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__card,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-analytics__kpi:not(.pem-analytics__kpi--hero),
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-weak-card,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+    transition: none;
+  }
+}
+
+/* --- Phase 3.19b: visually alive composition (college monitor only) --- */
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0.95rem 1.15rem 1.05rem;
+  background:
+    radial-gradient(42rem 12rem at 6% -35%, rgba(125, 211, 252, 0.34), transparent 58%),
+    radial-gradient(28rem 10rem at 100% 120%, rgba(37, 99, 235, 0.28), transparent 62%),
+    linear-gradient(128deg, #0a1a33 0%, #12385a 52%, #1e4b8c 100%);
+  border: 1px solid rgba(147, 197, 253, 0.28);
+  box-shadow: 0 12px 28px -18px rgb(10 26 51 / 0.55);
+  color: #e8eef8;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  color: #f8fbff;
+  font-size: 1.32rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__subtitle {
+  color: rgba(226, 232, 240, 0.82);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__schedule-label {
+  color: rgba(191, 219, 254, 0.88);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back {
+  color: #bfdbfe;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__back:hover {
+  color: #fff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(191, 219, 254, 0.42);
+  color: #f8fbff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__all:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #93c5fd;
+  color: #fff;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card .admin-badge {
+  border-width: 1px;
+  border-style: solid;
+  backdrop-filter: none;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card .admin-badge--success {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(110, 231, 183, 0.4);
+  color: #bbf7d0;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card .admin-badge--info {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: rgba(147, 197, 253, 0.45);
+  color: #dbeafe;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card .admin-badge--warning {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(252, 211, 77, 0.4);
+  color: #fde68a;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card .admin-badge--neutral {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(203, 213, 225, 0.35);
+  color: #e2e8f0;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__card {
+  background:
+    radial-gradient(42rem 12rem at 8% -40%, rgba(96, 165, 250, 0.22), transparent 58%),
+    radial-gradient(24rem 10rem at 100% 130%, rgba(37, 99, 235, 0.2), transparent 60%),
+    linear-gradient(128deg, #071221 0%, #0c1e36 55%, #123056 100%);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e8eef8;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-head__title {
+  color: #f8fbff;
+}
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash {
+  gap: 0.75rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__mid {
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.92fr) minmax(0, 0.92fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem 0.7rem;
+  min-height: 7.15rem;
+  box-shadow: var(--pem-elev-1);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__ico {
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 1.05rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__value {
+  font-size: 1.85rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__bar {
+  display: block;
+  margin-top: 0.45rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.08);
+  overflow: hidden;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--total,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total {
+  background: linear-gradient(180deg, #d7e6ff 0%, #c4d6f8 100%);
+  border-color: #9eb8e8;
+  color: #1d4ed8;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--sub,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub {
+  background: linear-gradient(180deg, #c4f4d6 0%, #a9e9c2 100%);
+  border-color: #7ed3a4;
+  color: #047857;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--take,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take {
+  background: linear-gradient(180deg, #bfe8fb 0%, #9ed8f3 100%);
+  border-color: #6ec0e4;
+  color: #0369a1;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--wait,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait {
+  background: linear-gradient(180deg, #ffd9a8 0%, #f5c78a 100%);
+  border-color: #e4ae62;
+  color: #9a3412;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total .pem-kpi-card__value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub .pem-kpi-card__value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take .pem-kpi-card__value,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait .pem-kpi-card__value {
+  color: inherit;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait .pem-kpi-card__label,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total .pem-kpi-card__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub .pem-kpi-card__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take .pem-kpi-card__hint,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait .pem-kpi-card__hint {
+  color: rgb(15 23 42 / 0.58);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--total:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--sub:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--take:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--wait:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pem-elev-2);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--total:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total:hover { background: linear-gradient(180deg, #e4eeff 0%, #cddbf8 100%); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--sub:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub:hover { background: linear-gradient(180deg, #d5f8e3 0%, #b6eecb 100%); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--take:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take:hover { background: linear-gradient(180deg, #d2f0fd 0%, #ace0f6 100%); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--wait:hover,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait:hover { background: linear-gradient(180deg, #ffe7c2 0%, #f7d19a 100%); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(1),
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(2),
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(3),
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card:nth-child(4) {
+  box-shadow: var(--pem-elev-1);
+}
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__progress,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__progress {
+  background:
+    radial-gradient(18rem 10rem at 12% 0%, rgba(37, 99, 235, 0.1), transparent 55%),
+    #f4f8ff;
+  border-color: #cddcf5;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__activity,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity {
+  background: #fbfaf6;
+  border-color: #eadfca;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10--live {
+  background: #fffaf0;
+  border-color: #f0dcab;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__progress:hover {
+  background: #f4f8ff;
+  border-color: #9eb8e8;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__activity:hover {
+  background: #fbfaf6;
+  border-color: #d4c29a;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live:hover {
+  background: #fffaf0;
+  border-color: #e4c57a;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring--hero {
+  width: 11.25rem;
+  height: 11.25rem;
+  box-shadow: 0 0 0 10px rgb(37 99 235 / 0.08);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring--hero .pem-ring__hole {
+  width: 7.15rem;
+  height: 7.15rem;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.04);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring--hero .pem-ring__hole strong {
+  font-size: 1.85rem;
+  color: #0f2744;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend {
+  display: grid;
+  gap: 0.55rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend li {
+  display: grid;
+  grid-template-columns: 0.55rem minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "dot lab n pct"
+    "track track track track";
+  align-items: center;
+  gap: 0.2rem 0.4rem;
+  font-size: 0.78rem;
+  color: var(--pem-text-2);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend .pem-dot { grid-area: dot; }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend__lab { grid-area: lab; font-weight: 650; color: var(--pem-ink); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend strong {
+  grid-area: n;
+  font-variant-numeric: tabular-nums;
+  color: var(--pem-ink);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend em {
+  grid-area: pct;
+  font-style: normal;
+  color: var(--pem-muted);
+  font-size: 0.72rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend__track {
+  grid-area: track;
+  display: block;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.08);
+  overflow: hidden;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend__track > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pem-seg-sub);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend li:nth-child(2) .pem-ring-legend__track > i { background: var(--pem-seg-take); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-ring-legend li:nth-child(3) .pem-ring-legend__track > i { background: var(--pem-seg-ns); }
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity {
+  position: relative;
+  padding-left: 0.15rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item {
+  position: relative;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  margin-left: 0.85rem;
+  padding: 0.45rem 0.35rem 0.5rem 0.7rem;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0.55rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item::before {
+  content: "";
+  position: absolute;
+  left: -0.88rem;
+  top: 0.7rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--pem-seg-sub);
+  box-shadow: 0 0 0 3px #fbfaf6;
+  z-index: 1;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item::after {
+  content: "";
+  position: absolute;
+  left: -0.66rem;
+  top: 1.35rem;
+  bottom: -0.35rem;
+  width: 2px;
+  background: #e8dfcc;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item:last-child::after { display: none; }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item--submit::before { background: var(--pem-seg-ok); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item--start::before { background: var(--pem-seg-sub); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item--tab::before { background: var(--pem-seg-idle); }
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__time {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pem-muted);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-panel-link {
+  display: inline-flex;
+  margin-top: 0.7rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.45rem;
+  background: rgb(37 99 235 / 0.08);
+}
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__item {
+  padding: 0.48rem 0.5rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__rank,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__rank {
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.82rem;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__track,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live .pem-top10__track {
+  height: 0.55rem;
+  background: rgb(15 23 42 / 0.08);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__item--gold .pem-top10__fill {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-top10__tied {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.06);
+  color: var(--pem-muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn.is-active,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn[aria-selected="true"] {
+  background: #143d59;
+  color: #fff;
+  border-color: #143d59;
+}
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn,
+body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .pem-export-menu__sum {
+  appearance: none;
+  color-scheme: var(--pem-color-scheme, light);
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--total,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total {
+  background: linear-gradient(180deg, #172554 0%, #1e3a5f 100%);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #bfdbfe;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--sub,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub {
+  background: linear-gradient(180deg, #052e1c 0%, #0b3d28 100%);
+  border-color: rgba(52, 211, 153, 0.32);
+  color: #6ee7b7;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--take,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take {
+  background: linear-gradient(180deg, #0c4a6e 0%, #155e75 100%);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-kpi-card.pem-kpi-card--wait,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait {
+  background: linear-gradient(180deg, #3b2a12 0%, #4a3416 100%);
+  border-color: rgba(251, 191, 36, 0.32);
+  color: #fcd34d;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait .pem-kpi-card__label,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total .pem-kpi-card__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub .pem-kpi-card__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take .pem-kpi-card__hint,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait .pem-kpi-card__hint {
+  color: rgb(226 232 240 / 0.72);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card__bar {
+  background: rgb(255 255 255 / 0.12);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__progress,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__progress {
+  background:
+    radial-gradient(18rem 10rem at 12% 0%, rgba(37, 99, 235, 0.16), transparent 55%),
+    #152033;
+  border-color: rgba(96, 165, 250, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-panel.pem-live-dash__activity,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity {
+  background: #1a1d18;
+  border-color: rgba(212, 175, 110, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash .pem-top10--live,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-top10--live {
+  background: #231c12;
+  border-color: rgba(250, 204, 21, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring--hero .pem-ring__hole {
+  background: #0f172a;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-ring--hero .pem-ring__hole strong {
+  color: #f1f5f9;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item::before {
+  box-shadow: 0 0 0 3px #1a1d18;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__activity .pem-activity__item::after {
+  background: rgba(212, 175, 110, 0.28);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn.is-active,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-tab-nav .pem-tab-btn[aria-selected="true"] {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #fff;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar select,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .admin-btn,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.pem-monitor-tabs .pem-page-toolbar .pem-export-menu__sum {
+  background: var(--pem-input-bg) !important;
+  color: var(--pem-text) !important;
+  border-color: var(--pem-input-border) !important;
+}
+
+@media (max-width: 1100px) {
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-live-dash__mid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--total:hover,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--sub:hover,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--take:hover,
+  body.admin-app.professor-admin.pem-monitor-tabs .pem-kpi-card--wait:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Phase 3.19c: premium Examinee Roster + Security Events workspace
+   Display-only. Does not change poll, scoring, columns, or event semantics.
+   ========================================================================== */
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card {
+  background:
+    linear-gradient(180deg, #f4f8ff 0%, #eef4fb 7.5rem, #ffffff 7.5rem);
+  border: 1px solid #c9d9ee;
+  border-radius: 1.15rem;
+  box-shadow: var(--pem-elev-2);
+  padding: 0.85rem 0.8rem 0.9rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid #d7e4f4;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head__copy {
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head .prof-workspace__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0b2a44;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head .prof-workspace__title i {
+  display: inline-grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.5rem;
+  background: #143d59;
+  color: #e8f4ff;
+  font-size: 0.85rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head__sub {
+  margin: 0.22rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 550;
+  color: #5b7390;
+  line-height: 1.35;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-count-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  background: #143d59;
+  color: #f8fbff;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  border: 1px solid #0b2a44;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-card .pem-roster-filters {
+  background: #e7f0fb !important;
+  border: 1px solid #c7d9ef !important;
+  border-radius: 0.85rem !important;
+  padding: 0.5rem 0.55rem !important;
+  gap: 0.4rem 0.5rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search {
+  background: #fff;
+  border: 1px solid #b7cce6;
+  border-radius: 0.6rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .admin-btn--sm,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters select {
+  background: #fff !important;
+  border-color: #b7cce6 !important;
+  color: #143d59 !important;
+  font-weight: 650;
+  border-radius: 0.55rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-toolbar__meta {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #3d5a78;
+  background: rgb(255 255 255 / 0.7);
+  border: 1px solid #c9d9ee;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+  background: #d9e7fb !important;
+  color: #0b2a44 !important;
+  border-bottom: 1px solid #b7cce6 !important;
+  box-shadow: 0 1px 0 #b7cce6;
+  font-size: 0.58rem !important;
+  letter-spacing: 0.055em !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td {
+  background-color: #f7faff !important;
+  border-bottom: 1px solid #dce7f4 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:nth-child(even) td {
+  background-color: #eef4fb !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="not_started"] td,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="absent"] td {
+  background-color: #f4f6f9 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td {
+  background-color: #edf5ff !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td {
+  background-color: #ecfdf5 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td {
+  background-color: #fff8e8 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="disconnected"] td,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="expired"] td {
+  background-color: #fff1f2 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:hover td {
+  background-color: #e4effc !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"]:hover td {
+  background-color: #d9fbe8 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-cell {
+  display: flex !important;
+  align-items: center;
+  gap: 0.48rem;
+  min-width: 0;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-avatar-cell {
+  flex: 0 0 auto;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-avatar-media {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+  min-width: 1.85rem !important;
+  overflow: hidden;
+  font-size: 0.58rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  background: linear-gradient(180deg, #dbeafe, #bfdbfe) !important;
+  color: #1e3a8a !important;
+  border: 1px solid #93c5fd !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-stack {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
+  min-width: 3.4rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-label,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-pct {
+  display: block;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress {
+  display: block;
+  width: 100%;
+  height: 5px;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress > span {
+  display: block;
+  height: 100%;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .student-avatar-media {
+  background: linear-gradient(180deg, #bbf7d0, #86efac) !important;
+  color: #065f46 !important;
+  border-color: #6ee7b7 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .student-avatar-media,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="absent"] .student-avatar-media {
+  background: linear-gradient(180deg, #e2e8f0, #cbd5e1) !important;
+  color: #334155 !important;
+  border-color: #94a3b8 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-name {
+  font-weight: 750 !important;
+  color: #0b2a44 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-meta-sub {
+  display: block;
+  margin-top: 0.08rem;
+  font-size: 0.58rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #64748b !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-status-cell .admin-badge {
+  border-radius: 999px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="not_started"] .js-status-cell .admin-badge::before,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .js-status-cell .admin-badge::before,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="active"] .js-status-cell .admin-badge::before {
+  content: "";
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score {
+  background: #fff;
+  border: 1px solid #cfe0f3;
+  box-shadow: 0 1px 0 rgb(15 23 42 / 0.04);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-monitor-row[data-status="submitted"] .pem-score {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__n {
+  font-size: 0.8rem !important;
+  font-weight: 800 !important;
+  color: #0b2a44 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-mini-progress {
+  height: 5px;
+  background: #d7e4f4;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-dt-cell,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-started-cell,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-submitted-cell,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .js-last-cell {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem !important;
+  font-weight: 650;
+  color: #334155 !important;
+  white-space: nowrap;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-empty,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-empty,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-muted,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .opacity-60 {
+  opacity: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.15rem;
+  padding: 0.04rem 0.32rem;
+  border-radius: 0.32rem;
+  background: rgb(15 23 42 / 0.05);
+  color: #64748b !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty--info {
+  background: #e0f2fe;
+  color: #0369a1 !important;
+  letter-spacing: 0;
+  font-weight: 650 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn {
+  background: #143d59 !important;
+  color: #f8fbff !important;
+  border: 1px solid #0b2a44 !important;
+  border-radius: 0.45rem;
+  font-weight: 700 !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-btn:hover {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #fff !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-wait {
+  font-size: 0.62rem;
+  font-weight: 650;
+  color: #64748b;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .students-empty-cell {
+  padding: 1.6rem 1rem !important;
+  text-align: center;
+  font-weight: 650;
+  color: #475569 !important;
+  background:
+    radial-gradient(12rem 6rem at 50% 0%, #e8f1ff, transparent 70%),
+    #f8fafc !important;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tr.pem-filter-empty td {
+  background: #f1f5f9 !important;
+}
+
+/* Security Events workspace */
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-workspace {
+  background:
+    linear-gradient(180deg, #fff8eb 0%, #fffdf8 5.5rem, #ffffff 5.5rem);
+  border: 1px solid #ead9b4;
+  border-radius: 1.15rem;
+  box-shadow: var(--pem-elev-2);
+  padding: 0.9rem 0.95rem 1.05rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ead9b4;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-head .prof-workspace__title i {
+  display: inline-grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.5rem;
+  background: #92400e;
+  color: #fff7ed;
+  font-size: 0.85rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note {
+  position: relative;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 0.8rem;
+  color: #7c2d12;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.55rem 0.75rem 0.55rem 1.45rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note::before {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  top: 0.72rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgb(245 158 11 / 0.18);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note strong {
+  display: block;
+  font-size: 0.78rem;
+  color: #9a3412;
+  margin-bottom: 0.1rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note--inline {
+  padding-left: 0.55rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note--inline::before {
+  display: none;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-concurrent-alerts,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-tab-live-feed,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-sec-history {
+  background: #fff;
+  border: 1px solid #e4eaf3;
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.85rem 0.9rem;
+  box-shadow: var(--pem-elev-1);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-concurrent-alerts {
+  border-color: #fde68a;
+  background: #fffdf7;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-tab-live-feed {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-tab-live-feed__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-tab-live-feed__head strong {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0b2a44;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-live-details summary {
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 750;
+  color: #1d4ed8;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 0.45rem;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-live-details summary::-webkit-details-marker {
+  display: none;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-live-details summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.32rem solid currentColor;
+  border-top: 0.22rem solid transparent;
+  border-bottom: 0.22rem solid transparent;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-live-details[open] summary::before {
+  transform: rotate(90deg);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0.55rem 0 0.65rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpi {
+  background: #f4f8ff;
+  border: 1px solid #d7e6f8;
+  border-radius: 0.7rem;
+  padding: 0.45rem 0.55rem;
+  display: grid;
+  gap: 0.08rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpi__l {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpi__v {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0b2a44;
+  font-variant-numeric: tabular-nums;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  align-items: center;
+  background: #f4f8fd;
+  border: 1px solid #e4eaf3;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-tl {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.5rem 0.6rem;
+  background: #f8fbff;
+  border: 1px solid #e4eaf3;
+  border-radius: 0.65rem;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-tl--empty {
+  grid-template-columns: 1fr;
+  text-align: center;
+  color: #64748b;
+  font-weight: 650;
+  background: #f8fafc;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-tl__time {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-client-overlap {
+  background: #fff7ed;
+  border: 1px dashed #fb923c;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .sec-alert-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45rem;
+  padding: 0.45rem 0.2rem;
+  border-bottom: 1px solid #f1e6c8;
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .sec-alert-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: #f59e0b;
+}
+
+/* Lower analytics surfaces on the same page */
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-analytics__card,
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-weak-card {
+  border-radius: 0.95rem;
+  box-shadow: var(--pem-elev-1);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-analytics__kpi {
+  background: #f4f8ff;
+  border: 1px solid #c9d9ee;
+  border-radius: 0.9rem;
+  box-shadow: var(--pem-elev-1);
+}
+body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-analytics__kpi--hero {
+  background: linear-gradient(180deg, #d7e6ff, #b8ccf4);
+  border-color: #9eb6dc;
+}
+
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-live-dash__roster.pem-roster-card {
+  background:
+    linear-gradient(180deg, #152033 0%, #121826 7.5rem, #0f172a 7.5rem);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head {
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head .prof-workspace__title,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-head .prof-workspace__title {
+  color: #f1f5f9;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-head__sub {
+  color: rgb(226 232 240 / 0.62);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-count-badge {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #fff;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-card .pem-roster-filters {
+  background: #152033 !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-search,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .admin-btn--sm,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters select {
+  background: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  color: #e2e8f0 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-roster-filters .students-toolbar__meta {
+  background: rgb(15 23 42 / 0.7);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor thead th {
+  background: #1e3a5f !important;
+  color: #dbeafe !important;
+  border-bottom-color: #1d4ed8 !important;
+  box-shadow: 0 1px 0 #1d4ed8;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row td {
+  background-color: #111827 !important;
+  border-bottom-color: rgba(148, 163, 184, 0.14) !important;
+  color: #e2e8f0 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:nth-child(even) td {
+  background-color: #152033 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="not_started"] td,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="absent"] td {
+  background-color: #1a2030 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="active"] td {
+  background-color: #132033 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="submitted"] td {
+  background-color: #10251c !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row[data-status="idle"] td {
+  background-color: #261c10 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor tbody tr.js-monitor-row:hover td {
+  background-color: #1e3a5f !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .student-name,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score__n,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-label {
+  color: #f1f5f9 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-progress-empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-score-empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-live-empty,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .pem-review-muted,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs #pemRosterTable.pem-roster-monitor .opacity-60 {
+  background: rgb(255 255 255 / 0.06);
+  color: #94a3b8 !important;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-workspace {
+  background:
+    linear-gradient(180deg, #2a2114 0%, #1a1d18 5.5rem, #0f172a 5.5rem);
+  border-color: rgba(251, 191, 36, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-head {
+  border-bottom-color: rgba(251, 191, 36, 0.18);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note {
+  background: #2a2114;
+  border-color: rgba(251, 191, 36, 0.28);
+  color: #fde68a;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-concurrent-alerts,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-tab-live-feed,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-sec-history {
+  background: #152033;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-concurrent-alerts {
+  background: #231c12;
+  border-color: rgba(251, 191, 36, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-dash .pem-tab-live-feed {
+  background: #132033;
+  border-color: rgba(96, 165, 250, 0.28);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-tab-live-feed__head strong,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpi__v {
+  color: #f1f5f9;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpi {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-filters,
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-tl {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-live-details summary {
+  background: #1e3a5f;
+  border-color: #3b82f6;
+  color: #bfdbfe;
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-analytics__kpi {
+  background: #152033;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+html[data-admin-theme="dark"] body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-analytics__kpi--hero {
+  background: linear-gradient(180deg, #1e3a5f, #152033);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+@media (max-width: 767px) {
+  body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-kpis {
+    grid-template-columns: 1fr;
+  }
+  body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-sec-tl {
+    grid-template-columns: 1fr;
+  }
+  body.admin-app.professor-admin.examination-admin-page.pem-monitor-tabs .pem-security-note {
+    padding-left: 1.35rem;
+  }
+}
+

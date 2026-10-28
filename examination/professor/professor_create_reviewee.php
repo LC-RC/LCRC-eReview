@@ -3,6 +3,7 @@ require_once dirname(__DIR__, 2) . '/auth.php';
 requireRole('professor_admin');
 require_once dirname(__DIR__) . '/includes/college_schema.php';
 require_once dirname(__DIR__) . '/includes/college_sections.php';
+require_once dirname(__DIR__) . '/includes/college_student_number.php';
 
 $pageTitle = 'Add reviewee';
 $csrf = generateCSRFToken();
@@ -40,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // keep validation error
         } elseif ($fullName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid full name and email.';
-        } elseif ($studentNumber !== '' && (strlen($studentNumber) > 32 || !preg_match('/^[A-Za-z0-9_-]+$/', $studentNumber))) {
-            $error = 'Student number must be at most 32 characters and use only letters, digits, hyphen, or underscore.';
+        } elseif ($studentNumber !== '' && (college_student_number_is_generated($studentNumber) || !college_student_number_is_legacy_allowed($studentNumber))) {
+            $error = 'Reviewees use a legacy student number only (not YYYY-NNN). Leave blank or enter letters, digits, hyphen, or underscore.';
         } elseif ($password === '' || strlen($password) < 8) {
             $error = 'Password must be at least 8 characters.';
         } elseif ($confirmPassword === '' || $confirmPassword !== $password) {
@@ -170,6 +171,7 @@ $adminHeroEyebrow = 'Student management';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students', 'professor_college_students?type=reviewee'], ['Create reviewee']];
 $adminBackHref = 'professor_college_students?type=reviewee';
 $adminBackLabel = 'Back to Students';
+$lmsHeroVariant = 'navy';
 $adminHeroActions = '';
 ?>
 <!DOCTYPE html>
@@ -177,18 +179,19 @@ $adminHeroActions = '';
 <head>
   <?php require_once dirname(__DIR__) . '/includes/examination_head_admin.php'; ?>
 </head>
-<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin">
+<body class="font-sans antialiased admin-app admin-students-page examination-admin-page professor-admin prof-page--reviewee-create<?php echo ereview_lms_premium_body_class(); ?>">
   <?php include __DIR__ . '/professor_admin_sidebar.php'; ?>
 
+  <?php $toastSuccess = ereview_lms_toast_take('success', is_string($success) ? $success : null); ?>
   <?php include dirname(__DIR__, 2) . '/includes/components/admin_page_hero.php'; ?>
 
   <?php if ($error): ?><div class="admin-flash admin-flash--error mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i><span><?php echo h($error); ?></span></div><?php endif; ?>
-  <?php if ($success): ?><div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($success); ?></span></div><?php endif; ?>
+  <?php if ($success && empty($toastSuccess)): ?><div class="admin-flash admin-flash--success mb-3 p-3 rounded-xl flex items-center gap-2"><i class="bi bi-check-circle-fill"></i><span><?php echo h($success); ?></span></div><?php endif; ?>
 
   <div class="examination-page-shell">
-    <section class="prof-workspace prof-workspace--form">
+    <section class="prof-workspace prof-workspace--form lms-workspace">
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <form method="post" enctype="multipart/form-data" class="rounded-xl overflow-hidden page-table xl:col-span-2 p-6 space-y-5">
+      <form method="post" enctype="multipart/form-data" class="rounded-xl overflow-hidden page-table xl:col-span-2 p-6 space-y-5 lms-form">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <div class="examination-avatar-zone">
           <div class="flex flex-wrap items-start gap-3">

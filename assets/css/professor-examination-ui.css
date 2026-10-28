@@ -539,9 +539,10 @@ body.admin-app.examination-admin-page #eqbEditOverlay.admin-modal-overlay {
 /* Topbar / sidebar polish (exam pages only) */
 body.admin-app.examination-admin-page .admin-topbar-search-wrap {
   border-radius: 0.75rem;
-  max-width: min(22rem, 100%);
+  max-width: min(28rem, 100%);
 }
-body.admin-app.examination-admin-page .admin-topbar-search-wrap.is-focused {
+body.admin-app.examination-admin-page .admin-topbar-search-wrap.is-focused,
+body.admin-app.examination-admin-page .admin-topbar-search-wrap:focus-within {
   border-color: rgba(59, 130, 246, 0.55);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
 }
