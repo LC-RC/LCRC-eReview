@@ -124,7 +124,8 @@ $pass('GET confirm reads session only', str_contains($regSrc, 'college_public_co
 $pass('source: heading is not Check your email', !str_contains($regSrc, 'Check your email'));
 $pass('source: heading is Continue verification', str_contains($regSrc, 'Continue verification'));
 $pass('source: mail-failed heading is present', str_contains($regSrc, 'Verification email not sent'));
-$pass('source: failed card uses error visual class', str_contains($regSrc, 'csr-confirm-card--failed'));
+$pass('source: failed card uses LMS error modal', str_contains($regSrc, 'reg-error-card') && str_contains($regSrc, 'reg-error-backdrop'));
+$pass('source: generic confirm uses LMS overlay modal', str_contains($regSrc, 'reg-modal-backdrop') && str_contains($regSrc, 'csr-modal-mail-icon'));
 $pass('source: generic confirm does not say use the inbox', !str_contains($regSrc, 'Use the inbox for'));
 $pass('GET confirm does not call register helper', substr_count($regSrc, 'college_public_register_from_request') === 1);
 $pass('POST still calls register once', substr_count($regSrc, 'college_public_register_from_request($conn, $_POST, $_FILES)') === 1);

@@ -196,8 +196,9 @@
   }
 
   function bindSubmitLoading() {
-    var form = document.getElementById('reg-form');
+    var form = document.getElementById('reg-form') || document.getElementById('csr-resend-form');
     var btn = document.getElementById('csr-submit-btn');
+    var loadingModal = document.getElementById('csr-modal-loading');
     if (!form || !btn) return;
     form.addEventListener('submit', function () {
       // Do not set disabled=true here: some browsers drop the POST if the submitter is disabled in this handler.
@@ -205,16 +206,144 @@
       btn.setAttribute('aria-busy', 'true');
       var label = btn.querySelector('span');
       if (label) label.textContent = 'Sending…';
+      if (loadingModal) {
+        loadingModal.classList.add('is-active');
+        loadingModal.setAttribute('aria-hidden', 'false');
+      }
     });
   }
 
-  function focusStatusTarget() {
-    var heading = document.getElementById('csr-confirm-heading');
-    if (heading) {
-      heading.focus();
+  function modalFocusable(container) {
+    if (!container) return [];
+    return Array.prototype.slice.call(container.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) {
+      return !el.hasAttribute('hidden') && el.getClientRects().length > 0;
+    });
+  }
+
+  function setPageInert(on) {
+    var shell = document.querySelector('.reg-frame8-layout, .csr-resend-shell');
+    if (!shell) return;
+    if (on) {
+      shell.setAttribute('inert', '');
+      shell.setAttribute('aria-hidden', 'true');
+    } else {
+      shell.removeAttribute('inert');
+      shell.removeAttribute('aria-hidden');
+    }
+  }
+
+  function activateBackdrop(el, on) {
+    if (!el) return;
+    el.classList.toggle('is-active', !!on);
+    el.setAttribute('aria-hidden', on ? 'false' : 'true');
+  }
+
+  function focusIn(el, preferred) {
+    var target = preferred || (el && el.querySelector('.btn-primary')) || (el && el.querySelector('h2'));
+    if (!target || typeof target.focus !== 'function') return;
+    if (target.tabIndex < 0 && target.tagName === 'H2') {
+      target.setAttribute('tabindex', '-1');
+    }
+    try {
+      target.focus({ preventScroll: true });
+    } catch (e) {
+      target.focus();
+    }
+  }
+
+  function bindVerifyModals() {
+    var sent = document.getElementById('csr-modal-email-sent');
+    var waiting = document.getElementById('csr-modal-waiting');
+    var err = document.getElementById('csr-modal-error');
+    var ok = document.getElementById('csr-modal-email-sent-ok');
+    var errClose = document.getElementById('csr-modal-error-close');
+
+    function activeModal() {
+      return document.querySelector('.reg-modal-backdrop.is-active, .reg-error-backdrop.is-active');
+    }
+
+    if (ok && sent && waiting) {
+      ok.addEventListener('click', function () {
+        activateBackdrop(sent, false);
+        activateBackdrop(waiting, true);
+        setPageInert(true);
+        focusIn(waiting, document.getElementById('csr-waiting-heading'));
+      });
+    }
+
+    document.querySelectorAll('.csr-confirm-resend').forEach(function (resendForm) {
+      resendForm.addEventListener('submit', function () {
+        var loadingModal = document.getElementById('csr-modal-loading');
+        activateBackdrop(sent, false);
+        activateBackdrop(waiting, false);
+        activateBackdrop(err, false);
+        activateBackdrop(loadingModal, true);
+      });
+    });
+
+    if (errClose && err && errClose.type === 'button') {
+      errClose.addEventListener('click', function () {
+        activateBackdrop(err, false);
+        setPageInert(false);
+        var email = document.getElementById('email') || document.getElementById('csr-email');
+        if (email) email.focus();
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      var modal = activeModal();
+      if (!modal || modal.id === 'csr-modal-loading') return;
+
+      if (e.key === 'Escape') {
+        if (err && err.classList.contains('is-active')) {
+          if (errClose && errClose.type === 'button') {
+            errClose.click();
+          }
+          return;
+        }
+        if (sent && sent.classList.contains('is-active') && ok) {
+          e.preventDefault();
+          ok.click();
+        }
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+      var nodes = modalFocusable(modal);
+      if (!nodes.length) {
+        e.preventDefault();
+        focusIn(modal);
+        return;
+      }
+      var first = nodes[0];
+      var last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    if (sent && sent.classList.contains('is-active')) {
+      setPageInert(true);
+      focusIn(sent, ok);
       return;
     }
-    var alertEl = document.querySelector('#reg-form-scroll .auth-alert--error');
+    if (err && err.classList.contains('is-active')) {
+      setPageInert(true);
+      focusIn(err, errClose);
+    }
+  }
+
+  function focusStatusTarget() {
+    if (document.querySelector('.reg-modal-backdrop.is-active, .reg-error-backdrop.is-active')) {
+      return;
+    }
+    var alertEl = document.querySelector('#reg-form-scroll .auth-alert--error, .csr-resend-form-card .auth-alert--error');
     if (alertEl) {
       if (!alertEl.hasAttribute('tabindex')) {
         alertEl.setAttribute('tabindex', '-1');
@@ -228,6 +357,7 @@
     bindPassword();
     bindAvatar();
     bindSubmitLoading();
+    bindVerifyModals();
     focusStatusTarget();
     var pw = document.getElementById('csr-password');
     if (pw && pw.value) {

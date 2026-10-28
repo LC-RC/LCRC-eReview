@@ -70,10 +70,14 @@ $regSrc = (string) file_get_contents($root . '/examination/student_registration.
 $pass('confirmation does not claim delivery', str_contains($regSrc, 'does not confirm that the provider accepted'));
 $pass('generic confirm does not say use the inbox', !str_contains($regSrc, 'Use the inbox for'));
 $pass('generic confirm hedges issued message', str_contains($regSrc, 'If a message was issued, check this address:'));
-$pass('failed confirm has error visual class', str_contains($regSrc, 'csr-confirm-card--failed'));
-$pass('alert role is on the lead not the card', str_contains($regSrc, 'csr-confirm-lead" role="<?php echo $mailFailed ? \'alert\' : \'status\'; ?>"'));
-$pass('resend form is outside the alert role on the lead', str_contains($regSrc, 'class="csr-confirm-resend"') && !preg_match('/role="alert"[\s\S]*csr-confirm-resend/', $regSrc));
+$pass('generic confirm uses LMS email-sent modal', str_contains($regSrc, 'id="csr-modal-email-sent"') && str_contains($regSrc, 'reg-modal-card'));
+$pass('failed confirm uses LMS error modal', str_contains($regSrc, 'id="csr-modal-error"') && str_contains($regSrc, 'reg-error-card'));
+$pass('generic lead uses status role', str_contains($regSrc, 'role="status"'));
+$pass('failed message uses alert role', str_contains($regSrc, 'role="alert"'));
+$pass('resend form is not inside the alert paragraph', str_contains($regSrc, 'class="csr-confirm-resend"') && !preg_match('/id="csr-error-message"[^>]*>[\s\S]*csr-confirm-resend[\s\S]*<\/p>/', $regSrc));
 $pass('confirmation has resend action', str_contains($regSrc, 'college_resend_verification'));
+$pass('confirm overlay keeps the registration form', str_contains($regSrc, 'id="reg-form"'));
+$pass('waiting modal is present for generic confirm', str_contains($regSrc, 'id="csr-modal-waiting"') && str_contains($regSrc, 'Waiting for email verification'));
 $pass('registration POST success uses 303 redirect', str_contains($regSrc, ", true, 303)"));
 $pass('registration uses attempted-mail-failed helper', str_contains($regSrc, 'college_public_attempted_mail_failed($result)'));
 $pass('registration GET confirm does not call register', !preg_match('/college_public_register_from_request[\s\S]*confirm=1/', $regSrc) && str_contains($regSrc, 'college_public_confirm_session_get'));

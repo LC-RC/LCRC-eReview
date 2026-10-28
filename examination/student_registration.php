@@ -56,6 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mailFailed = !empty($confirm['mail_failed']);
         $success = $mailFailed ? COLLEGE_PUBLIC_MAIL_FAILED : COLLEGE_PUBLIC_GENERIC_VERIFY;
         $confirmEmail = (string) ($confirm['email'] ?? '');
+        if ($confirmEmail !== '') {
+            $formValues['email'] = $confirmEmail;
+        }
     }
 }
 
@@ -70,8 +73,8 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-confirm-mode' : ''; ?>">
-  <div class="reg-frame8-layout<?php echo $success ? ' csr-confirm-layout' : ''; ?>">
+<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-modal-open' : ''; ?>">
+  <div class="reg-frame8-layout"<?php echo $success ? ' inert aria-hidden="true"' : ''; ?>>
     <div class="reg-frame8-left" aria-hidden="true">
       <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
       <div class="reg-grok-blob reg-grok-blob-2" aria-hidden="true"></div>
@@ -79,12 +82,12 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       <div class="reg-frame8-left-bg-shape" aria-hidden="true">
         <svg class="reg-left-logo-svg" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
           <defs>
-            <linearGradient id="csr-left-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="reg-left-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="rgba(191, 219, 254, 0.75)"/>
               <stop offset="100%" stop-color="rgba(96, 165, 250, 0.6)"/>
             </linearGradient>
           </defs>
-          <g class="reg-left-logo-g" fill="none" stroke="url(#csr-left-logo-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <g class="reg-left-logo-g" fill="none" stroke="url(#reg-left-logo-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path class="reg-paper-body" d="M 12 8 L 12 88 L 68 88 L 68 28 L 42 28 L 42 8 Z"/>
             <path class="reg-paper-fold" d="M 42 8 L 42 28 L 68 28 Z"/>
           </g>
@@ -92,9 +95,8 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       </div>
       <div class="reg-frame8-hero reg-left-statement">
         <div class="reg-left-statement-inner">
-          <p class="reg-left-statement-headline">College Examination student registration.</p>
-          <p class="reg-left-statement-metrics">Section · School · Email verification</p>
-          <p class="reg-left-statement-blurb">Register for the College Examination portal only. Your account and student number are created after you verify your email. This is separate from LMS review-package registration and does not involve payment.</p>
+          <p class="reg-left-statement-headline">Register, verify, then sit your College Examination.</p>
+          <p class="reg-left-statement-blurb">College Examination portal only. Account and College Exam ID are created after email verification. This is separate from LMS review-package registration and does not involve payment.</p>
         </div>
       </div>
     </div>
@@ -108,32 +110,6 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       <main class="reg-frame8-main">
         <h1 class="reg-frame8-title">Student Registration</h1>
         <p class="reg-frame8-subtitle">College Examination portal. Email verification required.</p>
-
-        <?php if ($success): ?>
-          <div class="csr-confirm-card<?php echo $mailFailed ? ' csr-confirm-card--failed' : ''; ?>">
-            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi <?php echo $mailFailed ? 'bi-envelope-exclamation' : 'bi-envelope-check'; ?>"></i></div>
-            <h2 class="csr-confirm-title" id="csr-confirm-heading" tabindex="-1"><?php echo $mailFailed ? 'Verification email not sent' : 'Continue verification'; ?></h2>
-            <p class="csr-confirm-lead" role="<?php echo $mailFailed ? 'alert' : 'status'; ?>"><?php echo h($success); ?></p>
-            <?php if ($confirmEmail !== ''): ?>
-              <p class="csr-confirm-email"><?php echo $mailFailed ? 'Use this address to resend:' : 'If a message was issued, check this address:'; ?> <strong><?php echo h($confirmEmail); ?></strong></p>
-            <?php endif; ?>
-            <?php if (!$mailFailed): ?>
-              <p class="csr-confirm-hint">If you already sign in with this email, try Login. Check Spam or Junk if a new message might have arrived. This screen does not confirm that the provider accepted the message.</p>
-            <?php endif; ?>
-            <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
-              <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-              <label class="csr-sr-only" for="csr-confirm-resend-email">Email address</label>
-              <input type="email" name="email" id="csr-confirm-resend-email" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($confirmEmail); ?>" placeholder="Email address" autocomplete="email">
-              <button type="submit" class="reg-submit w-full rounded-xl px-6 py-3 text-sm">Resend verification</button>
-            </form>
-            <div class="csr-confirm-actions">
-              <a class="csr-confirm-btn-secondary" href="login">Back to Login</a>
-            </div>
-            <?php if (!$mailFailed): ?>
-              <p class="csr-confirm-support">Still no email after a few minutes? Confirm the address, wait for the rate limit window, then resend. Contact LCRC support if it still does not arrive.</p>
-            <?php endif; ?>
-          </div>
-        <?php else: ?>
         <form action="student_registration" method="post" enctype="multipart/form-data" novalidate id="reg-form">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
 
@@ -145,12 +121,21 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
               </div>
             <?php endif; ?>
 
+            <nav class="reg-flow-steps mb-4" aria-label="College Examination steps">
+              <ol class="reg-flow-steps__list">
+                <li class="reg-flow-steps__item is-current"><span class="reg-flow-steps__num">1</span><span class="reg-flow-steps__label">Create Account</span></li>
+                <li class="reg-flow-steps__item"><span class="reg-flow-steps__num">2</span><span class="reg-flow-steps__label">Verify Email</span></li>
+                <li class="reg-flow-steps__item"><span class="reg-flow-steps__num">3</span><span class="reg-flow-steps__label">Sit Exam</span></li>
+              </ol>
+              <p class="reg-flow-steps__hint">First create your account, then verify your email. No payment.</p>
+            </nav>
+
             <span class="reg-section-label"><i class="bi bi-check-circle-fill reg-section-label-check" aria-hidden="true"></i>Account</span>
             <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
               <div class="space-y-1">
                 <div class="float-label-wrap" data-float-wrap>
                   <label class="float-label" for="csr-full_name">Full name <span class="csr-req" aria-hidden="true">*</span></label>
-                  <input type="text" name="full_name" id="csr-full_name" required placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['full_name']); ?>">
+                  <input type="text" name="full_name" id="csr-full_name" required placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['full_name']); ?>" autocomplete="name">
                 </div>
               </div>
               <div class="space-y-1">
@@ -159,6 +144,9 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                   <input type="email" name="email" id="csr-email" required placeholder=" " autocomplete="off" class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($formValues['email']); ?>">
                 </div>
               </div>
+            </div>
+
+            <div class="reg-section reg-frame8-grid reg-frame8-grid-2">
               <div class="space-y-1">
                 <label class="reg-top-label" for="csr-school">School <span class="csr-req" aria-hidden="true">*</span></label>
                 <select name="school_id" id="csr-school" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" aria-required="true">
@@ -171,7 +159,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
                   <p class="text-xs mt-1 opacity-80">Schools are configured by Professor Admin. Try again after a school is added and set to Active.</p>
                 <?php endif; ?>
               </div>
-              <div class="space-y-1 reg-frame8-full">
+              <div class="space-y-1">
                 <label class="reg-top-label" for="csr-section">Section <span class="csr-req" aria-hidden="true">*</span></label>
                 <select name="section" id="csr-section" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm">
                   <option value="" disabled <?php echo $formValues['section'] === '' ? 'selected' : ''; ?>><?php echo $sectionOptions === [] ? 'No sections available yet' : 'Select section'; ?></option>
@@ -268,12 +256,11 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             </button>
             <p class="text-center text-xs subtext mt-3">
               Already have an account? <a href="login">Login</a>
-              · Main eReview registration: <a href="registration">Register</a>
               · <a href="<?php echo h(ereview_url('college_resend_verification')); ?>">Resend verification</a>
+              · Main eReview registration: <a href="registration">Register</a>
             </p>
           </div>
         </form>
-        <?php endif; ?>
       </main>
 
       <footer class="reg-frame8-footer">
@@ -281,6 +268,63 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       </footer>
     </div>
   </div>
+
+  <div id="csr-modal-loading" class="reg-modal-backdrop" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-loading-orb" aria-hidden="true">
+        <div class="reg-loading-orb-inner"><span></span></div>
+      </div>
+      <p style="margin:0;color:#64748b;">Submitting your registration. Please wait...</p>
+    </div>
+  </div>
+
+  <?php if ($success && !$mailFailed): ?>
+  <div id="csr-modal-email-sent" class="reg-modal-backdrop is-active" role="dialog" aria-modal="true" aria-labelledby="csr-confirm-heading" aria-describedby="csr-confirm-lead">
+    <div class="reg-modal-card">
+      <div class="csr-modal-mail-icon" aria-hidden="true">
+        <i class="bi bi-envelope-check-fill"></i>
+      </div>
+      <h2 id="csr-confirm-heading">Continue verification</h2>
+      <p class="reg-flow-steps__modal-steps">College Examination · email verification</p>
+      <p class="csr-confirm-lead" id="csr-confirm-lead" role="status"><?php echo h($success); ?></p>
+      <?php if ($confirmEmail !== ''): ?>
+        <p class="csr-confirm-email">If a message was issued, check this address: <strong><?php echo h($confirmEmail); ?></strong></p>
+      <?php endif; ?>
+      <p class="csr-confirm-hint">This screen does not confirm that the provider accepted the message.</p>
+      <button type="button" id="csr-modal-email-sent-ok" class="btn-primary">OK, I'll check my email</button>
+      <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="email" id="csr-confirm-resend-email" value="<?php echo h($confirmEmail); ?>">
+        <button type="submit" class="csr-modal-text-action">Resend verification</button>
+      </form>
+    </div>
+  </div>
+  <div id="csr-modal-waiting" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-waiting-heading" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-loading-orb" aria-hidden="true">
+        <div class="reg-loading-orb-inner"><span></span></div>
+      </div>
+      <h2 id="csr-waiting-heading" tabindex="-1">Waiting for email verification</h2>
+      <p>If a verification message was issued, open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This page does not confirm Inbox delivery and will not update automatically.</p>
+    </div>
+  </div>
+  <?php elseif ($success && $mailFailed): ?>
+  <div id="csr-modal-error" class="reg-error-backdrop is-active" role="alertdialog" aria-modal="true" aria-labelledby="csr-error-title" aria-describedby="csr-error-message">
+    <div class="reg-error-card">
+      <div class="reg-error-icon" aria-hidden="true">
+        <i class="bi bi-exclamation-circle-fill"></i>
+      </div>
+      <h2 id="csr-error-title">Verification email not sent</h2>
+      <p id="csr-error-message" class="reg-error-message csr-confirm-lead" role="alert"><?php echo h($success); ?></p>
+      <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="email" id="csr-confirm-resend-email" value="<?php echo h($confirmEmail); ?>">
+        <button type="submit" class="btn-primary" id="csr-modal-error-close">OK, try again</button>
+      </form>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php if (is_file($regJsFile)): ?>
   <script src="assets/js/<?php echo h(basename($regJsFile)); ?>?v=<?php echo filemtime($regJsFile); ?>" defer></script>

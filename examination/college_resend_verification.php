@@ -5,7 +5,7 @@ require_once dirname(__DIR__) . '/auth.php';
 require_once dirname(__DIR__) . '/includes/url_helpers.php';
 require_once __DIR__ . '/includes/college_email_verification.php';
 
-$pageTitle = 'Resend college verification';
+$pageTitle = 'Resend verification';
 $csrf = generateCSRFToken();
 $error = null;
 $success = null;
@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
+$regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
+$showModal = $success || $mailFailed;
+$emailValue = $confirmEmail !== '' ? $confirmEmail : (string) ($_POST['email'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,61 +56,118 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page college-student-registration registration-prototype min-h-screen font-sans antialiased<?php echo $success ? ' csr-confirm-mode' : ''; ?>">
-  <div class="reg-frame8-layout">
-    <div class="reg-frame8-right" style="margin:0 auto;max-width:32rem;">
+<body class="auth-page college-student-registration registration-prototype csr-resend-page min-h-screen font-sans antialiased<?php echo $showModal ? ' csr-modal-open' : ''; ?>">
+  <div class="reg-frame8-layout"<?php echo $showModal ? ' inert aria-hidden="true"' : ''; ?>>
+    <div class="reg-frame8-left" aria-hidden="true">
+      <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
+      <div class="reg-grok-blob reg-grok-blob-2" aria-hidden="true"></div>
+      <div class="reg-grok-blob reg-grok-blob-3" aria-hidden="true"></div>
+      <div class="reg-frame8-left-bg-shape" aria-hidden="true">
+        <svg class="reg-left-logo-svg" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+          <defs>
+            <linearGradient id="reg-left-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(191, 219, 254, 0.75)"/>
+              <stop offset="100%" stop-color="rgba(96, 165, 250, 0.6)"/>
+            </linearGradient>
+          </defs>
+          <g class="reg-left-logo-g" fill="none" stroke="url(#reg-left-logo-grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path class="reg-paper-body" d="M 12 8 L 12 88 L 68 88 L 68 28 L 42 28 L 42 8 Z"/>
+            <path class="reg-paper-fold" d="M 42 8 L 42 28 L 68 28 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="reg-frame8-hero reg-left-statement">
+        <div class="reg-left-statement-inner">
+          <p class="reg-left-statement-headline">Open any valid verification link within 24 hours.</p>
+          <p class="reg-left-statement-blurb">A verification message is issued only when this portal can send one.</p>
+        </div>
+      </div>
+    </div>
+    <div class="reg-frame8-right">
       <header class="reg-frame8-header">
         <span class="reg-frame8-brand"><span class="blue">LCRC</span> <span class="amber">eReview</span></span>
+        <img src="image%20assets/lcrc-logo-reg.png" alt="LCRC Review School &amp; Training Center" class="reg-frame8-logo-right" width="140" height="36" loading="eager" decoding="async">
       </header>
       <main class="reg-frame8-main">
         <h1 class="reg-frame8-title">Resend verification</h1>
         <p class="reg-frame8-subtitle">College Examination only. Request another message if your link expired.</p>
-        <?php if ($success): ?>
-          <div class="csr-confirm-card">
-            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
-            <h2 class="csr-confirm-title" id="csr-confirm-heading" tabindex="-1">Continue verification</h2>
-            <p class="csr-confirm-lead" role="status"><?php echo h($success); ?></p>
-            <p class="csr-confirm-hint">If a message was issued, check Inbox and Spam. A valid link expires in 24 hours. This screen does not confirm that the provider accepted the message.</p>
-            <div class="csr-confirm-actions">
-              <a class="csr-confirm-btn-secondary" href="login">Back to Login</a>
-            </div>
-          </div>
-        <?php endif; ?>
-        <?php if ($mailFailed): ?>
-          <h2 class="csr-confirm-title csr-resend-fail-title" id="csr-confirm-heading" tabindex="-1">Verification email not sent</h2>
-        <?php endif; ?>
-        <?php if ($error): ?>
-          <div class="auth-alert auth-alert--error mb-4" role="alert">
-            <i class="auth-alert-icon bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-            <span class="auth-alert-text"><?php echo h($error); ?></span>
-          </div>
-        <?php endif; ?>
-        <?php if (!$success): ?>
-        <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="space-y-4">
+        <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="space-y-4" id="csr-resend-form">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+          <?php if ($error && !$mailFailed): ?>
+            <div class="auth-alert auth-alert--error" role="alert">
+              <i class="auth-alert-icon bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+              <span class="auth-alert-text"><?php echo h($error); ?></span>
+            </div>
+          <?php endif; ?>
           <div class="space-y-1">
             <label class="reg-top-label" for="email">Email address</label>
-            <input type="email" name="email" id="email" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($confirmEmail !== '' ? $confirmEmail : (string) ($_POST['email'] ?? '')); ?>" autocomplete="email">
+            <input type="email" name="email" id="email" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h($emailValue); ?>" autocomplete="email">
           </div>
-          <button type="submit" class="reg-submit w-full rounded-xl px-6 py-3.5 text-sm">Send verification email</button>
+          <div class="reg-frame8-form-fixed-bottom">
+            <button type="submit" class="reg-submit btn-shine w-full rounded-xl px-6 py-3.5 text-sm" id="csr-submit-btn">Send verification email</button>
+            <p class="text-center text-xs subtext mt-3">
+              <a href="<?php echo h(ereview_url('student_registration')); ?>">Register</a>
+              · <a href="login">Login</a>
+            </p>
+          </div>
         </form>
-        <p class="text-center text-xs subtext mt-4">
-          <a href="<?php echo h(ereview_url('student_registration')); ?>">Register</a>
-          · <a href="login">Login</a>
-        </p>
-        <?php endif; ?>
       </main>
+      <footer class="reg-frame8-footer">
+        <p class="reg-frame8-footer-copy">© <?php echo date('Y'); ?> <strong>LCRC eReview</strong> · College Examination</p>
+      </footer>
     </div>
   </div>
-  <?php if ($success || $mailFailed): ?>
-  <script>
-    (function () {
-      var heading = document.getElementById('csr-confirm-heading');
-      if (heading) {
-        heading.focus();
-      }
-    })();
-  </script>
+
+  <div id="csr-modal-loading" class="reg-modal-backdrop" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-loading-orb" aria-hidden="true">
+        <div class="reg-loading-orb-inner"><span></span></div>
+      </div>
+      <p style="margin:0;color:#64748b;">Sending your request. Please wait...</p>
+    </div>
+  </div>
+
+  <?php if ($success): ?>
+  <div id="csr-modal-email-sent" class="reg-modal-backdrop is-active" role="dialog" aria-modal="true" aria-labelledby="csr-confirm-heading" aria-describedby="csr-confirm-lead">
+    <div class="reg-modal-card">
+      <div class="csr-modal-mail-icon" aria-hidden="true">
+        <i class="bi bi-envelope-check-fill"></i>
+      </div>
+      <h2 id="csr-confirm-heading">Continue verification</h2>
+      <p class="reg-flow-steps__modal-steps">College Examination · email verification</p>
+      <p class="csr-confirm-lead" id="csr-confirm-lead" role="status"><?php echo h($success); ?></p>
+      <?php if ($confirmEmail !== ''): ?>
+        <p class="csr-confirm-email">If a message was issued, check this address: <strong><?php echo h($confirmEmail); ?></strong></p>
+      <?php endif; ?>
+      <p class="csr-confirm-hint">If a message was issued, check Inbox and Spam. A valid link expires in 24 hours. This screen does not confirm that the provider accepted the message.</p>
+      <button type="button" id="csr-modal-email-sent-ok" class="btn-primary">OK, I'll check my email</button>
+    </div>
+  </div>
+  <div id="csr-modal-waiting" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-waiting-heading" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-loading-orb" aria-hidden="true">
+        <div class="reg-loading-orb-inner"><span></span></div>
+      </div>
+      <h2 id="csr-waiting-heading" tabindex="-1">Waiting for email verification</h2>
+      <p>If a verification message was issued, open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This page does not confirm Inbox delivery and will not update automatically.</p>
+    </div>
+  </div>
+  <?php elseif ($mailFailed): ?>
+  <div id="csr-modal-error" class="reg-error-backdrop is-active" role="alertdialog" aria-modal="true" aria-labelledby="csr-error-title" aria-describedby="csr-error-message">
+    <div class="reg-error-card">
+      <div class="reg-error-icon" aria-hidden="true">
+        <i class="bi bi-exclamation-circle-fill"></i>
+      </div>
+      <h2 id="csr-error-title">Verification email not sent</h2>
+      <p id="csr-error-message" class="reg-error-message csr-confirm-lead" role="alert"><?php echo h($error); ?></p>
+      <button type="button" class="btn-primary" id="csr-modal-error-close">OK, try again</button>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <?php if (is_file($regJsFile)): ?>
+  <script src="assets/js/<?php echo h(basename($regJsFile)); ?>?v=<?php echo filemtime($regJsFile); ?>" defer></script>
   <?php endif; ?>
 </body>
 </html>

@@ -33,11 +33,12 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page college-student-registration min-h-screen font-sans antialiased">
+<body class="auth-page college-student-registration registration-prototype min-h-screen font-sans antialiased">
   <div class="reg-frame8-layout">
-    <div class="reg-frame8-right" style="margin:0 auto;max-width:32rem;">
+    <div class="reg-frame8-right" style="margin:0 auto;max-width:32rem;width:100%;">
       <header class="reg-frame8-header">
         <span class="reg-frame8-brand"><span class="blue">LCRC</span> <span class="amber">eReview</span></span>
+        <img src="image%20assets/lcrc-logo-reg.png" alt="LCRC Review School &amp; Training Center" class="reg-frame8-logo-right" width="140" height="36" loading="eager" decoding="async">
       </header>
       <main class="reg-frame8-main">
         <h1 class="reg-frame8-title">Email College Exam ID</h1>
@@ -56,9 +57,9 @@ $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
         <?php endif; ?>
         <form method="post" action="<?php echo h(ereview_url('college_resend_student_number')); ?>" class="space-y-4">
           <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
-          <div class="float-label-wrap" data-float-wrap>
-            <label class="float-label" for="email">Verified email</label>
-            <input type="email" name="email" id="email" required placeholder=" " class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h((string) ($_POST['email'] ?? '')); ?>">
+          <div class="space-y-1">
+            <label class="reg-top-label" for="email">Verified email</label>
+            <input type="email" name="email" id="email" required class="auth-input w-full rounded-xl border px-4 py-3 text-sm" value="<?php echo h((string) ($_POST['email'] ?? '')); ?>" autocomplete="email">
           </div>
           <button type="submit" class="reg-submit w-full rounded-xl px-6 py-3.5 text-sm">Send College Exam ID</button>
         </form>

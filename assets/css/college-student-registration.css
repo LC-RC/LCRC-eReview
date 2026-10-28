@@ -1629,8 +1629,7 @@ body.registration-prototype.professor-college-registration .auth-alert-text {
 }
 
 /* Professor registration layout fixes */
-body.professor-college-registration,
-body.college-student-registration {
+body.professor-college-registration {
   overflow: auto !important;
 }
 #pcs-reg-form,
@@ -1750,68 +1749,284 @@ body.csr-confirm-mode .reg-frame8-main {
   background: #fff;
 }
 .csr-confirm-btn-secondary:hover { background: rgba(31, 88, 195, 0.06); }
-.csr-confirm-btn-secondary:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
-}
-.csr-confirm-title:focus {
-  outline: none;
-}
-.csr-confirm-title:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
-  border-radius: 0.35rem;
-}
-.csr-confirm-card--failed {
-  border-color: rgba(185, 28, 28, 0.28);
-  box-shadow: 0 18px 40px -28px rgba(185, 28, 28, 0.4);
-}
-.csr-confirm-card--failed .csr-confirm-icon {
-  background: rgba(254, 226, 226, 0.95);
-  color: #b91c1c;
-}
-.csr-confirm-card--failed .csr-confirm-title {
-  color: #991b1b;
-}
-.csr-resend-fail-title {
-  text-align: left;
-  margin: 0 0 0.75rem;
-  font-size: 1.15rem;
-}
-body.college-student-registration .reg-submit {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%), linear-gradient(180deg, var(--reg-primary) 0%, #1E40AF 100%) !important;
-  color: #fff !important;
-  padding: 0.75rem 1.25rem !important;
-  border-radius: var(--reg-radius);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.8125rem;
-  min-height: var(--reg-input-height) !important;
-  border: none;
-  box-shadow: 0 4px 16px rgba(31, 88, 195, 0.4), 0 1px 0 rgba(255,255,255,0.1) inset;
-  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-body.college-student-registration .reg-submit:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: var(--reg-shadow-glow), 0 6px 24px rgba(31, 88, 195, 0.45), 0 1px 0 rgba(255,255,255,0.12) inset;
-}
-body.college-student-registration .reg-submit:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3 !important;
-}
-body.college-student-registration .auth-password-wrap button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #F59E0B !important;
-  border-radius: 0.5rem;
-}
 .csr-confirm-support { font-size: 0.75rem; margin-bottom: 0; color: #64748b; }
-@media (max-width: 768px) {
-  body.csr-confirm-mode .reg-frame8-left { flex-basis: 5.5rem; min-height: 5.5rem; }
-  body.csr-confirm-mode .reg-frame8-main { padding: 0.75rem 1rem 1.25rem !important; }
+
+/* LCRC Examination Portal — ledger system. Scoped; professor LMS registration unchanged. */
+body.college-student-registration,
+body.college-examination-login {
+  --lep-navy: #0c1e3d;
+  --lep-navy-deep: #081429;
+  --lep-blue: #1f4f9a;
+  --lep-ivory: #f4efe4;
+  --lep-paper: #fffdf8;
+  --lep-gold: #b8892e;
+  --lep-ink: #172033;
+  --lep-muted: #5a6573;
+  --lep-line: rgba(12, 30, 61, 0.14);
+  --lep-danger: #9b2c2c;
+  --lep-ok: #1f6b45;
+  --csr-navy: #0c1e3d;
+  --csr-blue: #1f4f9a;
+  --csr-gold: #b8892e;
 }
-@media (min-width: 1024px) {
-  body.csr-confirm-mode .reg-frame8-left { flex-basis: 38%; }
-  body.csr-confirm-mode .reg-frame8-right { flex: 1; }
+
+/* College login skin: same ledger, existing login form IDs */
+body.college-examination-login {
+  background: var(--lep-ivory) !important;
+  overflow: auto !important;
+}
+body.college-examination-login .animated-bg,
+body.college-examination-login .circuit-bg,
+body.college-examination-login .login-bg-blob,
+body.college-examination-login .login-cpa-visual,
+body.college-examination-login .login-cashflow-path,
+body.college-examination-login .login-bg-animation,
+body.college-examination-login .auth-corner-decor {
+  display: none !important;
+}
+body.college-examination-login .lep-stage--login {
+  display: flex;
+  align-items: stretch;
+  padding: 1.5rem 1.5rem 1.75rem;
+}
+body.college-examination-login .login-page-layout {
+  width: min(28rem, 100%);
+  margin: 0;
+  padding: 0.35rem 0 0;
+}
+body.college-examination-login .login-card-wrap {
+  max-width: none;
+}
+body.college-examination-login .login-card {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+body.college-examination-login .login-header {
+  align-items: flex-start !important;
+  text-align: left;
+  margin-bottom: 1.1rem !important;
+}
+body.college-examination-login .login-logo-wrap {
+  justify-content: flex-start;
+  margin-bottom: 0.65rem !important;
+}
+body.college-examination-login .login-logo-img {
+  width: 3rem !important;
+  height: 3rem !important;
+  max-width: 3rem;
+  object-fit: contain;
+  background: var(--lep-paper);
+  border: 1px solid var(--lep-line);
+  border-radius: 0.2rem;
+  padding: 0.12rem;
+}
+body.college-examination-login .brand-text {
+  color: var(--lep-navy) !important;
+  font-size: 1.05rem !important;
+  font-weight: 800;
+  text-align: left;
+}
+body.college-examination-login .brand-text .amber {
+  color: var(--lep-gold) !important;
+  font-weight: 650;
+}
+body.college-examination-login .login-welcome {
+  text-align: left !important;
+  margin-bottom: 1.25rem !important;
+}
+body.college-examination-login .login-card h1 {
+  color: var(--lep-navy) !important;
+  font-size: 1.55rem !important;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: left;
+}
+body.college-examination-login .login-value-statement,
+body.college-examination-login .login-signup-line,
+body.college-examination-login .login-card .subtext {
+  text-align: left;
+  color: var(--lep-muted) !important;
+}
+body.college-examination-login .login-card .subtext a {
+  color: var(--lep-blue) !important;
+  font-weight: 700;
+}
+body.college-examination-login .login-card .auth-input {
+  background: var(--lep-paper) !important;
+  border: 1px solid var(--lep-line) !important;
+  border-radius: 0.4rem !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+body.college-examination-login .login-card .auth-input:focus {
+  border-color: var(--lep-blue) !important;
+  box-shadow: 0 0 0 2px var(--lep-paper), 0 0 0 4px var(--lep-gold) !important;
+}
+body.college-examination-login #login-submit,
+body.college-examination-login .btn-shine {
+  background: var(--lep-navy) !important;
+  border-radius: 0.4rem !important;
+  box-shadow: none !important;
+}
+body.college-examination-login #login-submit:hover {
+  background: var(--lep-blue) !important;
+}
+body.college-examination-login #login-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--lep-paper), 0 0 0 4px var(--lep-gold) !important;
+}
+body.college-examination-login .login-footer-copy {
+  text-align: left;
+  color: var(--lep-muted);
+  margin-top: 1.5rem;
+}
+body.college-examination-login .login-forgot-link {
+  color: var(--lep-blue);
+}
+
+@media (max-width: 768px) {
+  body.college-student-registration .lep-shell,
+  body.college-examination-login .lep-shell {
+    grid-template-columns: 1fr;
+  }
+  body.college-student-registration .lep-rail,
+  body.college-examination-login .lep-rail {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    border-right: 0;
+    border-bottom: 3px solid var(--lep-gold);
+  }
+  body.college-student-registration .lep-rail__name,
+  body.college-examination-login .lep-rail__name {
+    writing-mode: horizontal-tb;
+    transform: none;
+    font-size: 0.68rem;
+  }
+  body.college-student-registration .lep-rail__rule,
+  body.college-examination-login .lep-rail__rule {
+    width: 1px;
+    height: 1rem;
+  }
+  body.college-student-registration .lep-stage,
+  body.college-examination-login .lep-stage--login {
+    padding: 1.15rem 1.1rem 1.6rem;
+  }
+  body.college-student-registration .lep-grid {
+    grid-template-columns: 1fr;
+  }
+  body.college-student-registration .lep-title,
+  body.college-student-registration.lep-portal .csr-page-title {
+    font-size: 1.35rem;
+  }
+  body.college-student-registration.lep-portal .reg-frame8-form-fixed-bottom,
+  body.college-student-registration .lep-actions {
+    position: static !important;
+  }
+  body.college-student-registration.lep-portal .reg-frame8-main,
+  body.college-student-registration.lep-portal .lep-main {
+    padding: 0 !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.college-student-registration .lep-btn,
+  body.college-examination-login #login-submit {
+    transition: none;
+  }
+}
+
+/* College overlay: reuse LMS registration modal chrome */
+body.college-student-registration.csr-modal-open {
+  overflow: hidden;
+}
+body.college-student-registration .csr-modal-mail-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: rgba(31, 88, 195, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.college-student-registration .csr-modal-mail-icon i {
+  font-size: 1.75rem;
+  color: #1F58C3;
+}
+body.college-student-registration .reg-modal-card,
+body.college-student-registration .reg-error-card {
+  max-height: min(32rem, calc(100vh - 3rem));
+  overflow-y: auto;
+}
+body.college-student-registration .reg-modal-card .csr-confirm-lead,
+body.college-student-registration .reg-modal-card .csr-confirm-email,
+body.college-student-registration .reg-modal-card .csr-confirm-hint {
+  text-align: center;
+  padding: 0;
+  background: none;
+  border: none;
+  margin: 0 0 1.25rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+body.college-student-registration .reg-modal-card .csr-confirm-resend,
+body.college-student-registration .reg-error-card .csr-confirm-resend {
+  display: block;
+  margin: 0;
+}
+body.college-student-registration .csr-modal-text-action {
+  display: inline-block;
+  margin-top: 0.85rem;
+  background: none;
+  border: none;
+  padding: 0.25rem 0.35rem;
+  color: #1F58C3;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+body.college-student-registration .csr-modal-text-action:hover {
+  text-decoration: underline;
+}
+body.college-student-registration .reg-error-card .btn-primary {
+  display: inline-block;
+  background: #1F58C3;
+  color: #fff;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  text-decoration: none;
+}
+body.college-student-registration .reg-error-card .btn-primary:hover {
+  background: #1E40AF;
+  transform: translateY(-2px);
+}
+body.college-student-registration .reg-modal-card .btn-primary:focus-visible,
+body.college-student-registration .reg-error-card .btn-primary:focus-visible,
+body.college-student-registration .csr-modal-text-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
+}
+@media (max-width: 480px) {
+  body.college-student-registration .reg-modal-backdrop,
+  body.college-student-registration .reg-error-backdrop {
+    padding: 1rem;
+    align-items: center;
+  }
+  body.college-student-registration .reg-modal-card,
+  body.college-student-registration .reg-error-card {
+    padding: 1.5rem 1.25rem;
+    max-height: calc(100dvh - 2rem);
+  }
 }
