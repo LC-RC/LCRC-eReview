@@ -124,30 +124,57 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $editErr = $staffErr;
         } elseif ($sn !== '') {
             $dup = mysqli_prepare($conn, 'SELECT user_id FROM users WHERE student_number=? AND user_id<>? LIMIT 1');
-            mysqli_stmt_bind_param($dup, 'si', $sn, $userId);
-            mysqli_stmt_execute($dup);
-            if (mysqli_fetch_assoc(mysqli_stmt_get_result($dup))) {
-                $editErr = 'That student number is already assigned.';
+            if (!$dup) {
+                $editErr = 'Could not validate student number.';
+            } else {
+                mysqli_stmt_bind_param($dup, 'si', $sn, $userId);
+                if (!mysqli_stmt_execute($dup)) {
+                    mysqli_stmt_close($dup);
+                    $editErr = 'Could not validate student number.';
+                } else {
+                    if (mysqli_fetch_assoc(mysqli_stmt_get_result($dup))) {
+                        $editErr = 'That student number is already assigned.';
+                    }
+                    mysqli_stmt_close($dup);
+                }
             }
-            mysqli_stmt_close($dup);
         }
         if ($editErr === null) {
             if (college_student_number_is_generated($currentSn)) {
                 $editFlash = 'Generated student number is unchanged.';
             } elseif ($sn === '') {
-                $clr = mysqli_prepare($conn, "UPDATE users SET student_number=NULL WHERE user_id=?");
-                mysqli_stmt_bind_param($clr, 'i', $userId);
-                mysqli_stmt_execute($clr);
-                mysqli_stmt_close($clr);
-                $u['student_number'] = null;
-                $editFlash = 'Student number saved.';
+                $clr = mysqli_prepare($conn, 'UPDATE users SET student_number=NULL WHERE user_id=? LIMIT 1');
+                if (!$clr) {
+                    $editErr = 'Could not clear student number.';
+                } else {
+                    mysqli_stmt_bind_param($clr, 'i', $userId);
+                    if (!mysqli_stmt_execute($clr)) {
+                        mysqli_stmt_close($clr);
+                        $editErr = 'Could not clear student number.';
+                    } else {
+                        mysqli_stmt_close($clr);
+                        $u['student_number'] = null;
+                        $editFlash = 'Student number saved.';
+                    }
+                }
             } else {
-                $upd = mysqli_prepare($conn, "UPDATE users SET student_number=? WHERE user_id=?");
-                mysqli_stmt_bind_param($upd, 'si', $sn, $userId);
-                mysqli_stmt_execute($upd);
-                mysqli_stmt_close($upd);
-                $u['student_number'] = $sn;
-                $editFlash = 'Student number saved.';
+                $upd = mysqli_prepare($conn, 'UPDATE users SET student_number=? WHERE user_id=? LIMIT 1');
+                if (!$upd) {
+                    $editErr = 'Could not save student number.';
+                } else {
+                    mysqli_stmt_bind_param($upd, 'si', $sn, $userId);
+                    if (!mysqli_stmt_execute($upd)) {
+                        $errno = mysqli_errno($conn);
+                        mysqli_stmt_close($upd);
+                        $editErr = $errno === 1062
+                            ? 'That student number is already assigned.'
+                            : 'Could not save student number.';
+                    } else {
+                        mysqli_stmt_close($upd);
+                        $u['student_number'] = $sn;
+                        $editFlash = 'Student number saved.';
+                    }
+                }
             }
         }
     } elseif ($action === 'save_school') {

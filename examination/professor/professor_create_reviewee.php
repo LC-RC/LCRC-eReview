@@ -105,13 +105,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 if ($error === null && $studentNumber !== '') {
                     $chkSn = mysqli_prepare($conn, 'SELECT user_id FROM users WHERE student_number=? LIMIT 1');
-                    mysqli_stmt_bind_param($chkSn, 's', $studentNumber);
-                    mysqli_stmt_execute($chkSn);
-                    if (mysqli_fetch_assoc(mysqli_stmt_get_result($chkSn))) {
-                        mysqli_stmt_close($chkSn);
-                        $error = 'That student number is already assigned.';
+                    if (!$chkSn) {
+                        $error = 'Could not validate student number.';
                     } else {
-                        mysqli_stmt_close($chkSn);
+                        mysqli_stmt_bind_param($chkSn, 's', $studentNumber);
+                        if (!mysqli_stmt_execute($chkSn)) {
+                            mysqli_stmt_close($chkSn);
+                            $error = 'Could not validate student number.';
+                        } elseif (mysqli_fetch_assoc(mysqli_stmt_get_result($chkSn))) {
+                            mysqli_stmt_close($chkSn);
+                            $error = 'That student number is already assigned.';
+                        } else {
+                            mysqli_stmt_close($chkSn);
+                        }
                     }
                 }
             }
@@ -141,16 +147,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ins && mysqli_stmt_execute($ins)) {
                     $newId = (int)mysqli_insert_id($conn);
                     mysqli_stmt_close($ins);
+                    $legacyNumberSaved = true;
                     if ($newId > 0 && $studentNumber !== '') {
-                        $updSn = mysqli_prepare($conn, 'UPDATE users SET student_number=? WHERE user_id=?');
-                        mysqli_stmt_bind_param($updSn, 'si', $studentNumber, $newId);
-                        mysqli_stmt_execute($updSn);
-                        mysqli_stmt_close($updSn);
+                        $legacyNumberSaved = false;
+                        $updSn = mysqli_prepare($conn, 'UPDATE users SET student_number=? WHERE user_id=? LIMIT 1');
+                        if ($updSn) {
+                            mysqli_stmt_bind_param($updSn, 'si', $studentNumber, $newId);
+                            $snOk = mysqli_stmt_execute($updSn);
+                            $snErrno = $snOk ? 0 : mysqli_errno($conn);
+                            mysqli_stmt_close($updSn);
+                            if ($snOk) {
+                                $legacyNumberSaved = true;
+                            } elseif ($snErrno === 1062) {
+                                $error = 'Reviewee account was created (user ID #' . $newId . ') but that student number is already assigned. Set a different number on the student profile.';
+                            } else {
+                                $error = 'Reviewee account was created (user ID #' . $newId . ') but the student number could not be saved. Set it on the student profile.';
+                            }
+                        } else {
+                            $error = 'Reviewee account was created (user ID #' . $newId . ') but the student number could not be saved. Set it on the student profile.';
+                        }
                     }
-                    $success = 'Reviewee account created. They can sign in at the main login page and use the college portal dashboard.';
-                    $_POST = [];
-                    $avatarPreviewPath = '';
-                    $avatarUseDefault = 1;
+                    if ($legacyNumberSaved && $error === null) {
+                        $success = 'Reviewee account created. They can sign in at the main login page and use the college portal dashboard.';
+                        $_POST = [];
+                        $avatarPreviewPath = '';
+                        $avatarUseDefault = 1;
+                    }
                 } else {
                     $error = 'Could not create account.';
                     if ($ins) {
