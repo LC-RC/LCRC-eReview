@@ -208,11 +208,27 @@
     });
   }
 
+  function focusStatusTarget() {
+    var heading = document.getElementById('csr-confirm-heading');
+    if (heading) {
+      heading.focus();
+      return;
+    }
+    var alertEl = document.querySelector('#reg-form-scroll .auth-alert--error');
+    if (alertEl) {
+      if (!alertEl.hasAttribute('tabindex')) {
+        alertEl.setAttribute('tabindex', '-1');
+      }
+      alertEl.focus();
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     bindFloatLabels();
     bindPassword();
     bindAvatar();
     bindSubmitLoading();
+    focusStatusTarget();
     var pw = document.getElementById('csr-password');
     if (pw && pw.value) {
       updatePasswordStrength(pw.value);

@@ -1750,6 +1750,62 @@ body.csr-confirm-mode .reg-frame8-main {
   background: #fff;
 }
 .csr-confirm-btn-secondary:hover { background: rgba(31, 88, 195, 0.06); }
+.csr-confirm-btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
+}
+.csr-confirm-title:focus {
+  outline: none;
+}
+.csr-confirm-title:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
+  border-radius: 0.35rem;
+}
+.csr-confirm-card--failed {
+  border-color: rgba(185, 28, 28, 0.28);
+  box-shadow: 0 18px 40px -28px rgba(185, 28, 28, 0.4);
+}
+.csr-confirm-card--failed .csr-confirm-icon {
+  background: rgba(254, 226, 226, 0.95);
+  color: #b91c1c;
+}
+.csr-confirm-card--failed .csr-confirm-title {
+  color: #991b1b;
+}
+.csr-resend-fail-title {
+  text-align: left;
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+body.college-student-registration .reg-submit {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%), linear-gradient(180deg, var(--reg-primary) 0%, #1E40AF 100%) !important;
+  color: #fff !important;
+  padding: 0.75rem 1.25rem !important;
+  border-radius: var(--reg-radius);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8125rem;
+  min-height: var(--reg-input-height) !important;
+  border: none;
+  box-shadow: 0 4px 16px rgba(31, 88, 195, 0.4), 0 1px 0 rgba(255,255,255,0.1) inset;
+  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+body.college-student-registration .reg-submit:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: var(--reg-shadow-glow), 0 6px 24px rgba(31, 88, 195, 0.45), 0 1px 0 rgba(255,255,255,0.12) inset;
+}
+body.college-student-registration .reg-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3 !important;
+}
+body.college-student-registration .auth-password-wrap button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #F59E0B !important;
+  border-radius: 0.5rem;
+}
 .csr-confirm-support { font-size: 0.75rem; margin-bottom: 0; color: #64748b; }
 @media (max-width: 768px) {
   body.csr-confirm-mode .reg-frame8-left { flex-basis: 5.5rem; min-height: 5.5rem; }

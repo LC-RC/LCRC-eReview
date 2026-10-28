@@ -13,12 +13,17 @@ require_once __DIR__ . '/college_student_create.php';
 const COLLEGE_VERIFY_EXPIRY_HOURS = 24;
 const COLLEGE_VERIFY_TXN_RETRIES = 3;
 const COLLEGE_PUBLIC_GENERIC_VERIFY =
-    'If this email can receive a college registration message, we sent one. Check your inbox and spam folder.';
+    'If this address can receive College Examination mail, check Inbox and Spam. A verification message is issued only when this portal can send one. Open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.';
+const COLLEGE_PUBLIC_MAIL_FAILED =
+    'The verification email could not be sent. Your details were saved. Wait a moment, then use Resend verification. Contact LCRC support if it still fails.';
 const COLLEGE_PUBLIC_GENERIC_NUMBER =
     'If a verified college account exists for that email, we sent the student number to that address.';
 const COLLEGE_PUBLIC_RATE_LIMITED = 'Too many attempts. Please wait and try again.';
 const COLLEGE_PUBLIC_UNAVAILABLE = 'Registration is temporarily unavailable. Please try again later.';
 const COLLEGE_VERIFY_INVALID = 'This verification link is invalid or has expired. You can request a new message from the registration page.';
+const COLLEGE_REG_CONFIRM_TTL_SECONDS = 1800;
+const COLLEGE_REG_CONFIRM_SESSION_KEY = 'college_reg_confirm';
+const COLLEGE_RESEND_CONFIRM_SESSION_KEY = 'college_resend_confirm';
 
 function college_pending_table_ready(mysqli $conn): bool
 {
@@ -122,6 +127,98 @@ function college_public_verify_url(string $rawToken): string
     }
 
     return rtrim(college_public_verify_base_url(), '/') . $path . '?token=' . rawurlencode($rawToken);
+}
+
+/**
+ * Same-app relative Location only. Never uses request-supplied URLs.
+ */
+function college_public_safe_confirm_location(string $script): string
+{
+    $allowed = [
+        'student_registration' => true,
+        'college_resend_verification' => true,
+    ];
+    $script = strtolower(trim($script));
+    $script = preg_replace('/\.php$/i', '', $script) ?? '';
+    if (!isset($allowed[$script])) {
+        $script = 'student_registration';
+    }
+    $path = function_exists('ereview_url') ? ereview_url($script) : $script;
+    $path = str_replace(["\r", "\n", "\0"], '', (string) $path);
+    if ($path === '' || preg_match('#^(https?:)?//#i', $path) === 1 || str_contains($path, '\\')) {
+        $path = $script;
+    }
+    $sep = str_contains($path, '?') ? '&' : '?';
+
+    return $path . $sep . 'confirm=1';
+}
+
+/**
+ * True only when a verification send was attempted and SMTP did not accept it.
+ * sent=false is a no-send path (including anti-enumeration) and must not be treated as SMTP failure.
+ *
+ * @param array<string,mixed> $result
+ */
+function college_public_attempted_mail_failed(array $result): bool
+{
+    return !empty($result['ok']) && !empty($result['sent']) && empty($result['delivered']);
+}
+
+/**
+ * @return array{email:string, exp:int, mail_failed:bool}
+ */
+function college_public_confirm_session_put(string $sessionKey, string $email, bool $mailFailed = false): array
+{
+    $safe = '';
+    $normalized = strtolower(trim($email));
+    if (filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
+        $safe = $normalized;
+    }
+    $payload = [
+        'email' => $safe,
+        'exp' => time() + COLLEGE_REG_CONFIRM_TTL_SECONDS,
+        'mail_failed' => $mailFailed,
+    ];
+    $_SESSION[$sessionKey] = $payload;
+
+    return $payload;
+}
+
+function college_public_confirm_session_clear(string $sessionKey): void
+{
+    unset($_SESSION[$sessionKey]);
+}
+
+/**
+ * @return array{email:string, exp:int, mail_failed:bool}|null
+ */
+function college_public_confirm_session_get(string $sessionKey): ?array
+{
+    $row = $_SESSION[$sessionKey] ?? null;
+    if (!is_array($row)) {
+        return null;
+    }
+    $exp = (int) ($row['exp'] ?? 0);
+    if ($exp < time()) {
+        unset($_SESSION[$sessionKey]);
+
+        return null;
+    }
+    $email = strtolower(trim((string) ($row['email'] ?? '')));
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $email = '';
+    }
+
+    return [
+        'email' => $email,
+        'exp' => $exp,
+        'mail_failed' => !empty($row['mail_failed']),
+    ];
+}
+
+function college_public_confirm_query_requested(): bool
+{
+    return (string) ($_GET['confirm'] ?? '') === '1';
 }
 
 function college_new_verify_token(): array

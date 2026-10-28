@@ -48,13 +48,42 @@ $src = (string) file_get_contents($root . '/examination/includes/college_email_v
 $pass('register captures SMTP delivered', str_contains($src, "'delivered' => \$delivered"));
 $pass('resend captures SMTP delivered', substr_count($src, "'delivered' => \$delivered") >= 2);
 $pass('does not use PHP mail fallback', str_contains($src, 'skipping PHP mail() fallback'));
-$pass('generic success constant unchanged for anti-enum', str_contains($src, 'If this email can receive a college registration message'));
+$pass(
+    'generic success does not claim a send',
+    str_contains($src, 'A verification message is issued only when this portal can send one')
+    && !str_contains(COLLEGE_PUBLIC_GENERIC_VERIFY, 'we sent')
+    && !str_contains(COLLEGE_PUBLIC_GENERIC_VERIFY, 'we queued')
+);
+$pass(
+    'mail-failed copy does not claim a send',
+    defined('COLLEGE_PUBLIC_MAIL_FAILED')
+    && !str_contains(COLLEGE_PUBLIC_MAIL_FAILED, 'we sent')
+    && str_contains(COLLEGE_PUBLIC_MAIL_FAILED, 'could not be sent')
+);
+$pass(
+    'no-send is not classified as mail failed',
+    !college_public_attempted_mail_failed(['ok' => true, 'sent' => false])
+    && college_public_attempted_mail_failed(['ok' => true, 'sent' => true, 'delivered' => false])
+);
 
 $regSrc = (string) file_get_contents($root . '/examination/student_registration.php');
 $pass('confirmation does not claim delivery', str_contains($regSrc, 'does not confirm that the provider accepted'));
+$pass('generic confirm does not say use the inbox', !str_contains($regSrc, 'Use the inbox for'));
+$pass('generic confirm hedges issued message', str_contains($regSrc, 'If a message was issued, check this address:'));
+$pass('failed confirm has error visual class', str_contains($regSrc, 'csr-confirm-card--failed'));
+$pass('alert role is on the lead not the card', str_contains($regSrc, 'csr-confirm-lead" role="<?php echo $mailFailed ? \'alert\' : \'status\'; ?>"'));
+$pass('resend form is outside the alert role on the lead', str_contains($regSrc, 'class="csr-confirm-resend"') && !preg_match('/role="alert"[\s\S]*csr-confirm-resend/', $regSrc));
 $pass('confirmation has resend action', str_contains($regSrc, 'college_resend_verification'));
+$pass('registration POST success uses 303 redirect', str_contains($regSrc, ", true, 303)"));
+$pass('registration uses attempted-mail-failed helper', str_contains($regSrc, 'college_public_attempted_mail_failed($result)'));
+$pass('registration GET confirm does not call register', !preg_match('/college_public_register_from_request[\s\S]*confirm=1/', $regSrc) && str_contains($regSrc, 'college_public_confirm_session_get'));
 $pass('registration has one body open', preg_match_all('/<body\b/i', $regSrc) === 1);
 $pass('registration has one body close', preg_match_all('/<\/body>/i', $regSrc) === 1);
+
+$resendSrc = (string) file_get_contents($root . '/examination/college_resend_verification.php');
+$pass('resend success does not claim link replacement', !preg_match('/new link replaces|invalidates the previous/i', $resendSrc));
+$pass('resend mail-failed heading is present', str_contains($resendSrc, 'Verification email not sent'));
+$pass('resend email uses static top label', str_contains($resendSrc, 'reg-top-label') && !str_contains($resendSrc, 'float-label-wrap'));
 
 $smtpSrc = (string) file_get_contents($root . '/smtp_sender.php');
 $pass('smtp verify_peer enabled', str_contains($smtpSrc, "'verify_peer' => true"));

@@ -13,6 +13,7 @@ $csrf = generateCSRFToken();
 $error = null;
 $success = null;
 $confirmEmail = '';
+$mailFailed = false;
 $formValues = [
     'full_name' => '',
     'email' => '',
@@ -24,6 +25,7 @@ $sectionOptions = college_sections_active_names($conn);
 $schoolOptions = college_schools_active_list($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    college_public_confirm_session_clear(COLLEGE_REG_CONFIRM_SESSION_KEY);
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCSRFToken($token)) {
         $error = 'Invalid request. Please refresh the page and try again.';
@@ -39,19 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             $avatarUseDefault = !empty($_POST['use_default_avatar']) ? 1 : 0;
         } else {
-            $success = COLLEGE_PUBLIC_GENERIC_VERIFY;
-            $postedEmail = strtolower(trim((string) ($_POST['email'] ?? '')));
-            if (filter_var($postedEmail, FILTER_VALIDATE_EMAIL)) {
-                $confirmEmail = $postedEmail;
-            }
-            $formValues = [
-                'full_name' => '',
-                'email' => '',
-                'school_id' => '',
-                'section' => '',
-            ];
-            $avatarUseDefault = 1;
+            college_public_confirm_session_put(
+                COLLEGE_REG_CONFIRM_SESSION_KEY,
+                (string) ($_POST['email'] ?? ''),
+                college_public_attempted_mail_failed($result)
+            );
+            header('Location: ' . college_public_safe_confirm_location('student_registration'), true, 303);
+            exit;
         }
+    }
+} elseif (college_public_confirm_query_requested()) {
+    $confirm = college_public_confirm_session_get(COLLEGE_REG_CONFIRM_SESSION_KEY);
+    if ($confirm !== null) {
+        $mailFailed = !empty($confirm['mail_failed']);
+        $success = $mailFailed ? COLLEGE_PUBLIC_MAIL_FAILED : COLLEGE_PUBLIC_GENERIC_VERIFY;
+        $confirmEmail = (string) ($confirm['email'] ?? '');
     }
 }
 
@@ -86,7 +90,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
           </g>
         </svg>
       </div>
-      <div class="reg-frame8-hero reg-left-statement" aria-live="polite">
+      <div class="reg-frame8-hero reg-left-statement">
         <div class="reg-left-statement-inner">
           <p class="reg-left-statement-headline">College Examination student registration.</p>
           <p class="reg-left-statement-metrics">Section · School · Email verification</p>
@@ -106,14 +110,16 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
         <p class="reg-frame8-subtitle">College Examination portal. Email verification required.</p>
 
         <?php if ($success): ?>
-          <div class="csr-confirm-card" role="status">
-            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi bi-envelope-check"></i></div>
-            <h2 class="csr-confirm-title">Check your email</h2>
-            <p class="csr-confirm-lead">If this address can receive College Examination mail, we queued a verification message. Open the link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
+          <div class="csr-confirm-card<?php echo $mailFailed ? ' csr-confirm-card--failed' : ''; ?>">
+            <div class="csr-confirm-icon" aria-hidden="true"><i class="bi <?php echo $mailFailed ? 'bi-envelope-exclamation' : 'bi-envelope-check'; ?>"></i></div>
+            <h2 class="csr-confirm-title" id="csr-confirm-heading" tabindex="-1"><?php echo $mailFailed ? 'Verification email not sent' : 'Continue verification'; ?></h2>
+            <p class="csr-confirm-lead" role="<?php echo $mailFailed ? 'alert' : 'status'; ?>"><?php echo h($success); ?></p>
             <?php if ($confirmEmail !== ''): ?>
-              <p class="csr-confirm-email">Use the inbox for <strong><?php echo h($confirmEmail); ?></strong></p>
+              <p class="csr-confirm-email"><?php echo $mailFailed ? 'Use this address to resend:' : 'If a message was issued, check this address:'; ?> <strong><?php echo h($confirmEmail); ?></strong></p>
             <?php endif; ?>
-            <p class="csr-confirm-hint">Check Spam or Junk if nothing appears in Inbox. This screen does not confirm that the provider accepted the message.</p>
+            <?php if (!$mailFailed): ?>
+              <p class="csr-confirm-hint">If you already sign in with this email, try Login. Check Spam or Junk if a new message might have arrived. This screen does not confirm that the provider accepted the message.</p>
+            <?php endif; ?>
             <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
               <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
               <label class="csr-sr-only" for="csr-confirm-resend-email">Email address</label>
@@ -123,7 +129,9 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             <div class="csr-confirm-actions">
               <a class="csr-confirm-btn-secondary" href="login">Back to Login</a>
             </div>
-            <p class="csr-confirm-support">Still no email after a few minutes? Confirm the address, wait for the rate limit window, then resend. Contact LCRC support if it still does not arrive.</p>
+            <?php if (!$mailFailed): ?>
+              <p class="csr-confirm-support">Still no email after a few minutes? Confirm the address, wait for the rate limit window, then resend. Contact LCRC support if it still does not arrive.</p>
+            <?php endif; ?>
           </div>
         <?php else: ?>
         <form action="student_registration" method="post" enctype="multipart/form-data" novalidate id="reg-form">
