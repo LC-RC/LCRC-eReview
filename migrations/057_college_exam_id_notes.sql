@@ -1,0 +1,37 @@
+-- Phase 3.22 College Exam ID (documentation / no-op).
+-- Schema is reused from 049 (users.student_number UNIQUE + college_student_number_seq).
+-- No new columns. Do not run backfill from ordinary page GET.
+--
+-- Committed migration 058_examination_archive.sql is unrelated: it archives
+-- college_exams / diagnostic_batches. It is not a successor of 057. Do not
+-- renumber 048–057 or 058. Apply 049 (PHP installer) independently of 058.
+--
+-- Yearly IDs: YYYY-NNN allocated with INSERT ... ON DUPLICATE KEY UPDATE last_n = LAST_INSERT_ID(last_n+1)
+-- inside the account-creation / email-verify transaction.
+--
+-- Existing students without a number: CLI only
+--   php scripts/college_exam_id_backfill.php
+--   php scripts/college_exam_id_backfill.php --apply
+-- Year rule: Asia/Manila year of users.created_at. Rows without created_at are skipped (not invented).
+-- Existing YYYY-NNN and legacy non-empty student_number values are never changed.
+--
+-- Rollback: migrations/049_college_student_number_seq_DOWN.sql drops
+-- college_student_number_seq and, if present, the index named
+-- uq_users_student_number only. A UNIQUE index on users.student_number with a
+-- different name is left in place. That is not a guaranteed full UNIQUE rollback.
+-- Do not drop users.student_number; that column predates 049.
+--
+-- Deployment (never from a page GET, never auto-run on production):
+--   1. Backup: mysqldump ereview users college_student_number_seq > backup.sql
+--   2. PRECHECK duplicates and inspect indexes:
+--        C:\xampp\php\php.exe scripts\migrate_049_college_student_number.php
+--      migrations/049_college_student_number_seq.sql is not authoritative for UNIQUE;
+--      use this installer (duplicate precheck + discovered index names).
+--   3. Apply on a copy first, then production if PRECHECK is clean:
+--        C:\xampp\php\php.exe scripts\migrate_049_college_student_number.php --apply
+--   4. Dry-run backfill, then apply if the year rule is accepted:
+--        C:\xampp\php\php.exe scripts\college_exam_id_backfill.php
+--        C:\xampp\php\php.exe scripts\college_exam_id_backfill.php --apply
+--   5. Seq/UNIQUE rollback is best-effort via 049_DOWN (exact name
+--      uq_users_student_number only). Prefer restoring a backup if UNIQUE must
+--      be removed on a live copy.
