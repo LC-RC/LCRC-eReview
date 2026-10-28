@@ -46,6 +46,16 @@ if (is_file($examinationAdminCssFile)) {
             echo '<script src="' . h($cssBase) . '/assets/js/lms-premium-toast.js?v=' . filemtime($lmsToastJsFile) . '" defer></script>' . "\n";
         }
     }
+    $examDraftJsFile = dirname(__DIR__, 2) . '/assets/js/examination-config-draft.js';
+    if (is_file($examDraftJsFile)) {
+        echo '<script src="' . h($cssBase) . '/assets/js/examination-config-draft.js?v=' . filemtime($examDraftJsFile) . '"></script>' . "\n";
+        if (!empty($examinationClearDraft) && is_array($examinationClearDraft)) {
+            $clearJson = json_encode($examinationClearDraft, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+            if (is_string($clearJson)) {
+                echo '<script>if(window.ereviewExamConfigDraft)window.ereviewExamConfigDraft.clearFor(' . $clearJson . ');</script>' . "\n";
+            }
+        }
+    }
     $professorModalsJsFile = dirname(__DIR__, 2) . '/assets/js/professor-modals.js';
     if (is_file($professorModalsJsFile)) {
         echo '<script src="' . h($cssBase) . '/assets/js/professor-modals.js?v=' . filemtime($professorModalsJsFile) . '" defer></script>' . "\n";

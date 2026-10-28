@@ -168,6 +168,8 @@ unset($_SESSION['examination_flash']);
 $flashError = $_SESSION['examination_flash_error'] ?? null;
 unset($_SESSION['examination_flash_error']);
 $openEditUrl = trim((string)($_GET['open_edit'] ?? ''));
+$examinationClearDraft = $_SESSION['examination_clear_draft'] ?? null;
+unset($_SESSION['examination_clear_draft']);
 $csrfToken = generateCSRFToken();
 
 require dirname(__DIR__) . '/includes/examination_list_view.php';

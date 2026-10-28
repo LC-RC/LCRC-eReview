@@ -72,7 +72,15 @@ if ($examType === 'diagnostic') {
 }
 
 ?>
-<form method="post" id="examinationConfigForm" class="<?php echo h($formClass); ?>" action="<?php echo h($formAction); ?>">
+<form method="post" id="examinationConfigForm" class="<?php echo h($formClass); ?>" action="<?php echo h($formAction); ?>"
+      data-exam-draft="1"
+      data-professor-id="<?php echo (int) (getCurrentUserId() ?? 0); ?>"
+      data-exam-identity="<?php echo h(examination_config_draft_identity((string) $examType, (int) $sourceId)); ?>"
+      data-exam-type="<?php echo h((string) $examType); ?>"
+      data-is-new="<?php echo $isNew ? '1' : '0'; ?>"
+      data-server-updated="<?php echo h((string) ($rec['updated_at'] ?? '')); ?>"
+      data-stash-applied="<?php echo !empty($examinationConfigStashApplied) ? '1' : '0'; ?>"
+      data-clear-draft="<?php echo !empty($examinationClearDraft) && is_array($examinationClearDraft) ? h(json_encode($examinationClearDraft, JSON_UNESCAPED_UNICODE)) : ''; ?>">
 
   <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
   <input type="hidden" name="action" value="save_config">
@@ -376,12 +384,14 @@ if ($examType === 'diagnostic') {
   <?php if ($isModalRender): ?>
   </div>
   <div class="admin-modal__actions">
+    <p class="exam-config-draft-status" id="examConfigDraftStatus" aria-live="polite">Unsaved</p>
     <p class="reg-bd-foot-status" id="regBreakdownFooterStatus" aria-live="polite" hidden></p>
     <button type="button" class="admin-modal__btn admin-modal__btn--ghost" data-exam-edit-cancel>Cancel</button>
     <button type="submit" name="save_action" value="draft" class="admin-modal__btn admin-modal__btn--ok"><i class="bi bi-check2"></i> Save Changes</button>
   </div>
   <?php else: ?>
   <div class="flex flex-wrap gap-3 items-center">
+    <p class="exam-config-draft-status" id="examConfigDraftStatus" aria-live="polite">Unsaved</p>
     <p class="reg-bd-foot-status" id="regBreakdownFooterStatus" aria-live="polite" hidden></p>
     <button type="submit" name="save_action" value="draft" class="admin-btn admin-btn--secondary"><i class="bi bi-save"></i> Save Draft</button>
     <?php if (!$isNew): ?>
@@ -520,6 +530,9 @@ if ($examType === 'diagnostic') {
       if (!r.checked) return;
       var url = 'professor_examination_edit?exam_type=' + encodeURIComponent(r.value);
       if (isModalRender) url += '&modal=1';
+      if (window.ereviewExamConfigDraft && typeof window.ereviewExamConfigDraft.flushForTypeSwitch === 'function') {
+        window.ereviewExamConfigDraft.flushForTypeSwitch(form, r.value);
+      }
       if (isModalRender && typeof window.examinationEditOpenUrl === 'function') {
         window.examinationEditOpenUrl(url);
         return;
@@ -626,6 +639,10 @@ if ($examType === 'diagnostic') {
     diagTitleInput.addEventListener('input', syncDiagSubjectSummary);
   }
   syncDiagSubjectSummary();
+
+  if (window.ereviewExamConfigDraft && typeof window.ereviewExamConfigDraft.bind === 'function') {
+    window.ereviewExamConfigDraft.bind(form);
+  }
 
 })();
 </script>

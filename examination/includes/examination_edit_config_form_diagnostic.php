@@ -285,6 +285,7 @@ $diagQuestionsUrl = !$isNew ? examination_domain_edit_url($examType, $sourceId, 
 </section>
 
 <div class="diag-workspace-footer">
+  <p class="exam-config-draft-status" id="examConfigDraftStatus" aria-live="polite">Unsaved</p>
   <button type="submit" name="save_action" value="draft" class="admin-btn admin-btn--primary"><i class="bi bi-save"></i> Save Changes</button>
   <?php if (!$isNew): ?>
     <a href="<?php echo h($diagQuestionsUrl); ?>" class="admin-btn admin-btn--secondary">Continue to Questions</a>

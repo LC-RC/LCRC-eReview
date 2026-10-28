@@ -10,6 +10,7 @@ require_once dirname(__DIR__) . '/includes/diagnostic_exam_helpers.php';
 require_once dirname(__DIR__) . '/includes/examination_domain.php';
 require_once dirname(__DIR__) . '/includes/examination_questions.php';
 require_once dirname(__DIR__) . '/includes/examination_question_import.php';
+require_once dirname(__DIR__) . '/includes/examination_config_draft.php';
 
 $pageTitle = 'Examination';
 $uid = (int)getCurrentUserId();
@@ -100,11 +101,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     }
                     $examType = $postType;
                     $sourceId = $postId;
+                    examination_config_draft_stash($uid, $postType, $postId, is_array($_POST) ? $_POST : []);
                 }
             }
             if ($error === null) {
                 $result = examination_domain_save_config($conn, $postType, $uid, $payload, $postId);
                 if (!empty($result['ok'])) {
+                    examination_config_draft_clear($uid);
+                    $_SESSION['examination_clear_draft'] = examination_config_draft_browser_clear_payload(
+                        $uid,
+                        $postType,
+                        $postId,
+                        (int) ($result['source_id'] ?? 0)
+                    );
                     $_SESSION['examination_flash'] = !empty($result['is_published'])
                         ? 'Examination published.'
                         : 'Examination configuration saved as draft.';
@@ -119,6 +128,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $error = (string)($result['error'] ?? 'Could not save configuration.');
                 $examType = $postType;
                 $sourceId = $postId;
+                examination_config_draft_stash($uid, $postType, $postId, is_array($_POST) ? $_POST : []);
             }
         } elseif ($step === 'questions' && $postId > 0) {
             $examType = $postType;
@@ -230,6 +240,7 @@ if ($modalMode && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $error !== nu
     $_SESSION['examination_modal_error'] = $error;
     $postType = examination_normalize_exam_type((string)($_POST['exam_type'] ?? $examType));
     $postId = examination_domain_source_id_from_request($_POST, $postType);
+    examination_config_draft_stash($uid, $postType, $postId, is_array($_POST) ? $_POST : []);
     $editUrl = $postId > 0
         ? (examination_domain_edit_url($postType, $postId, 'config') . '&modal=1')
         : ('professor_examination_edit?modal=1&exam_type=' . rawurlencode($postType));
@@ -257,6 +268,8 @@ $flashMessage = $_SESSION['examination_flash'] ?? null;
 unset($_SESSION['examination_flash']);
 $flashError = $_SESSION['examination_flash_error'] ?? null;
 unset($_SESSION['examination_flash_error']);
+$examinationClearDraft = $_SESSION['examination_clear_draft'] ?? null;
+unset($_SESSION['examination_clear_draft']);
 
 if ($step === 'questions') {
     if ($isNew) {

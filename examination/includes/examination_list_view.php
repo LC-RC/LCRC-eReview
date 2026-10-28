@@ -986,6 +986,13 @@ $toastError = ereview_lms_toast_take('error', !empty($flashError) ? (string) $fl
   syncBulkBar();
 })();
 </script>
+<?php if (!empty($examinationClearDraft) && is_array($examinationClearDraft)): ?>
+<script>
+if (window.ereviewExamConfigDraft && typeof window.ereviewExamConfigDraft.clearFor === 'function') {
+  window.ereviewExamConfigDraft.clearFor(<?php echo json_encode($examinationClearDraft, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
+}
+</script>
+<?php endif; ?>
 </body>
 
 </html>

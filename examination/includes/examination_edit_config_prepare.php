@@ -15,51 +15,84 @@ $isModalRender = ($examinationEditRenderMode === 'modal');
 
 $rec = is_array($record) ? $record : null;
 
-$titleVal = (string)($_POST['title'] ?? ($rec['title'] ?? ''));
-$descVal = (string)($_POST['description'] ?? ($rec['description'] ?? ''));
+require_once __DIR__ . '/examination_config_draft.php';
+$examinationConfigStashApplied = false;
+$posted = is_array($_POST) ? $_POST : [];
+$hasPostedConfig = $posted !== [] && (
+    array_key_exists('title', $posted)
+    || array_key_exists('description', $posted)
+    || array_key_exists('exam_type', $posted)
+);
+if (!$hasPostedConfig) {
+    $stashPost = examination_config_draft_peek(
+        (int) (getCurrentUserId() ?? 0),
+        (string) $examType,
+        (int) $sourceId
+    );
+    if (is_array($stashPost)) {
+        $posted = $stashPost;
+        $hasPostedConfig = true;
+        $examinationConfigStashApplied = true;
+    }
+}
 
-$timeSec = (int)($_POST['time_limit_seconds'] ?? ($rec['time_limit_seconds'] ?? 3600));
-if (isset($_POST['time_limit_hours']) || isset($_POST['time_limit_minutes'])) {
-    $timeSec = examination_time_limit_from_post($_POST);
+$titleVal = (string)($posted['title'] ?? ($rec['title'] ?? ''));
+$descVal = (string)($posted['description'] ?? ($rec['description'] ?? ''));
+
+$timeSec = (int)($posted['time_limit_seconds'] ?? ($rec['time_limit_seconds'] ?? 3600));
+if (isset($posted['time_limit_hours']) || isset($posted['time_limit_minutes'])) {
+    $timeSec = examination_time_limit_from_post($posted);
 }
 $timeParts = examination_format_time_limit_parts($timeSec);
 
-$scopeVal = examination_normalize_examinee_scope((string)($_POST['examinee_scope'] ?? ($rec['examinee_scope'] ?? 'college_student')));
-$modeVal = examination_normalize_assignment_mode((string)($_POST['assignment_mode'] ?? ($rec['assignment_mode'] ?? ($examType === 'diagnostic' ? 'all' : 'all'))));
+$scopeVal = examination_normalize_examinee_scope((string)($posted['examinee_scope'] ?? ($rec['examinee_scope'] ?? 'college_student')));
+$modeVal = examination_normalize_assignment_mode((string)($posted['assignment_mode'] ?? ($rec['assignment_mode'] ?? ($examType === 'diagnostic' ? 'all' : 'all'))));
 
-$availVal = (string)($_POST['available_from'] ?? '');
+$availVal = (string)($posted['available_from'] ?? '');
 if ($availVal === '' && $rec && !empty($rec['available_from'])) {
     $availVal = college_exam_format_datetime_local($rec['available_from']);
 }
 
-$deadVal = (string)($_POST['deadline'] ?? '');
+$deadVal = (string)($posted['deadline'] ?? '');
 if ($deadVal === '' && $rec && !empty($rec['deadline'])) {
     $deadVal = college_exam_format_datetime_local($rec['deadline']);
 }
 
-$sectionsVal = $_POST['sections'] ?? ($extras['sections'] ?? ['']);
+$sectionsVal = $posted['sections'] ?? ($extras['sections'] ?? ['']);
 if (!is_array($sectionsVal) || $sectionsVal === []) {
     $sectionsVal = [''];
 }
 
-$userIdsVal = array_map('intval', is_array($_POST['user_ids'] ?? null) ? $_POST['user_ids'] : ($extras['assigned_user_ids'] ?? []));
-$selectedSubjects = array_map('intval', is_array($_POST['subject_ids'] ?? null) ? $_POST['subject_ids'] : array_map(static fn($r) => (int)($r['subject_id'] ?? 0), $extras['batch_subjects'] ?? []));
+$userIdsVal = array_map('intval', is_array($posted['user_ids'] ?? null) ? $posted['user_ids'] : ($extras['assigned_user_ids'] ?? []));
+$selectedSubjects = array_map('intval', is_array($posted['subject_ids'] ?? null) ? $posted['subject_ids'] : array_map(static fn($r) => (int)($r['subject_id'] ?? 0), $extras['batch_subjects'] ?? []));
 $questionsRequired = is_array($extras['questions_required'] ?? null) ? $extras['questions_required'] : [];
+if (is_array($posted['questions_required'] ?? null)) {
+    foreach ($posted['questions_required'] as $qidKey => $qreq) {
+        $questionsRequired[(int) $qidKey] = (int) $qreq;
+    }
+}
 
-$shuffleQ = !empty($_POST['shuffle_questions']) || (!isset($_POST['title']) && !empty($extras['shuffle_questions']));
-$shuffleC = !empty($_POST['shuffle_choices']) || (!isset($_POST['title']) && !empty($extras['shuffle_choices']));
-$shuffleMcq = !empty($_POST['shuffle_mcq_questions']) || (!isset($_POST['title']) && !empty($extras['shuffle_mcq_questions']));
-$shuffleTf = !empty($_POST['shuffle_tf_questions']) || (!isset($_POST['title']) && !empty($extras['shuffle_tf_questions']));
-$descMarkdown = !empty($_POST['description_markdown']) || (!isset($_POST['title']) && !empty($extras['description_markdown']));
+$shuffleQ = !empty($posted['shuffle_questions']) || (!$hasPostedConfig && !empty($extras['shuffle_questions']));
+$shuffleC = !empty($posted['shuffle_choices']) || (!$hasPostedConfig && !empty($extras['shuffle_choices']));
+$shuffleMcq = !empty($posted['shuffle_mcq_questions']) || (!$hasPostedConfig && !empty($extras['shuffle_mcq_questions']));
+$shuffleTf = !empty($posted['shuffle_tf_questions']) || (!$hasPostedConfig && !empty($extras['shuffle_tf_questions']));
+$descMarkdown = !empty($posted['description_markdown']) || (!$hasPostedConfig && !empty($extras['description_markdown']));
 
-$reviewFromVal = (string)($_POST['review_sheet_available_from'] ?? '');
+$reviewFromVal = (string)($posted['review_sheet_available_from'] ?? '');
 if ($reviewFromVal === '' && !empty($extras['review_sheet_available_from'])) {
     $reviewFromVal = college_exam_format_datetime_local($extras['review_sheet_available_from']);
 }
 
-$reviewUntilVal = (string)($_POST['review_sheet_available_until'] ?? '');
+$reviewUntilVal = (string)($posted['review_sheet_available_until'] ?? '');
 if ($reviewUntilVal === '' && !empty($extras['review_sheet_available_until'])) {
     $reviewUntilVal = college_exam_format_datetime_local($extras['review_sheet_available_until']);
+}
+
+if ($hasPostedConfig && !empty($posted['reg_subjects_present'])) {
+    $fromPost = examination_config_draft_regular_tree_from_post($posted);
+    $extras['regular_breakdown_mode'] = $fromPost['mode'];
+    $extras['regular_total_questions_required'] = $fromPost['total'];
+    $extras['regular_subject_tree'] = $fromPost['tree'];
 }
 
 $suggestedSections = is_array($extras['suggested_sections'] ?? null) ? $extras['suggested_sections'] : [];
