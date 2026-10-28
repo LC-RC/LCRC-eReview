@@ -1,170 +1,272 @@
-# Examination Load-Test Harness
+# Examination Load-Test Harness (Regular + Diagnostic)
 
-Fail-closed harness for mass-timeout integrity testing against an **isolated**
-load-test database and staging web runtime.
+Fail-closed harness for **HTTP load / concurrency approximation** against an
+**isolated** load-test database and staging web runtime.
 
-This is **not** a capacity certificate. N=5 passing later does not prove 80/100/200 users.
+## Critical labels
 
-## Current machine defaults (important)
+| Claim | Status |
+|-------|--------|
+| Integrity remediation verified by PHP QA | Supported by `scripts/verify_exam_readiness.php` |
+| k6 proves real-browser behavior | **No** — HTTP approximation only |
+| 100–500 concurrent capacity proven | **Not by default** — run staged tests manually |
 
-| Item | Typical local status |
-|------|----------------------|
-| PHP 8.2 CLI | Available (`C:\xampp\php\php.exe`) |
-| k6 | **NOT INSTALLED** (install manually before traffic) |
-| `db.local.php` `$db` | Often `ereview` (production) — HTTP must stay **BLOCKED** |
-| `ereview_loadtest` | May not exist yet — create/import **manually** |
+**k6 does NOT reproduce a real browser.** It approximates:
 
-Until HttpPreflight writes `artifacts/http_attestation.json` with `status=SAFE`, **do not run k6**.
+- debounced answer saves (`save_seq`, ~400ms pacing)
+- `get_time` / `sync_state` polling
+- timeout submit waves
+- duplicate submit
+- retries / mixed traffic
 
-## PowerShell 5.1 rules
+It does **not** execute take-exam JavaScript, DOM, visibility handlers, or exact client timers.
 
-Use PowerShell only (not bash/`export`).
+## Safety (fail closed — do not weaken)
 
-Never write `$db:something` — PowerShell treats `$name:` as a drive scope.
+Required before any HTTP/k6 traffic:
 
-```powershell
-# Correct
-Write-Host "${env:LOADTEST_DB_NAME}"
-Write-Host ("url={0}" -f "${env:LOADTEST_BASE_URL}")
-```
+| Gate | Requirement |
+|------|-------------|
+| Flags | `EREVIEW_LOADTEST=1` and `EREVIEW_LOADTEST_CONFIRM=YES` |
+| DB | `LOADTEST_DB_NAME` ∈ `{ereview_loadtest, ereview_test}` — production names blocked |
+| URL | `LOADTEST_BASE_URL` explicit; non-loopback needs `LOADTEST_ALLOW_REMOTE_URL=YES` |
+| Attestation | `http_attestation.json` **status=SAFE** via runtime probe |
+| Start | Attempts created via CLI on guarded DB only (`LOADTEST_HTTP_START` rejected) |
+| Teardown | Extra `LOADTEST_TEARDOWN_CONFIRM=YES` |
 
-Prefer runners:
+A command accidentally pointed at production must stop before sending load.
 
-- `Invoke-Loadtest.ps1`
-- `Invoke-K6MassTimeout.ps1`
-- `Get-LoadtestDbName.ps1`
-- `Validate-LoadtestScripts.ps1`
-
-## Mandatory env (fail closed)
-
-```text
-EREVIEW_LOADTEST=1
-EREVIEW_LOADTEST_CONFIRM=YES
-LOADTEST_DB_NAME=ereview_loadtest   # or ereview_test only
-LOADTEST_BASE_URL=<isolated staging base URL>   # REQUIRED — no default
-```
-
-Copy template:
+## Config (PowerShell)
 
 ```powershell
 Copy-Item .\scripts\loadtest\config.example.env .\scripts\loadtest\config.local.env
 # Edit config.local.env — set LOADTEST_DB_NAME and LOADTEST_BASE_URL
 ```
 
-Runners load `config.local.env` only (never auto-apply the example).
+Never auto-load the example file as live config.
 
-Allowlisted DBs: `ereview_loadtest`, `ereview_test`  
-Blocked: `ereview`, `ereview_prod`, empty/unknown names  
-
-CLI connects **only** to `LOADTEST_DB_NAME` and re-checks `SELECT DATABASE()`.
-
-## Architecture
-
-| Layer | What | Gate |
-|-------|------|------|
-| A. CLI prep | seed / sessions / start / align / verify / teardown | guarded `loadtest_connect()` |
-| B. HTTP/k6 | posts to Apache `college_exam_ajax` | `http_attestation.json` **status=SAFE** only |
-
-SAFE requires a live probe of `{LOADTEST_BASE_URL}/scripts/loadtest/runtime_db_probe.php`:
-
-- Apache `db.php` → `SELECT DATABASE()` allowlisted and equals `LOADTEST_DB_NAME`
-- Web `session.save_path` matches harness `scripts/loadtest/sessions`
-- Fresh attestation (max age 30 minutes)
-- Explicit `LOADTEST_BASE_URL`
-
-Operator flags / reading `db.local.php` alone **never** yield SAFE.  
-`CONFIG_ATTESTED` is rejected.
-
-`k6_mass_timeout.js` independently refuses to run without SAFE attestation + matching env (`LOADTEST_RUN_ID`, `LOADTEST_DB_NAME`, `LOADTEST_BASE_URL`).
-
-## Static verification (no traffic)
-
-From repo root:
+Prefer:
 
 ```powershell
-.\scripts\loadtest\Validate-LoadtestScripts.ps1
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action SelfCheck
-```
-
-`SelfCheck` runs `harness_selfcheck.php` and `negative_safety_tests.php`.
-
-## Create isolated DB (manual — do not auto-create)
-
-```sql
-CREATE DATABASE ereview_loadtest CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-Import examination schema into `ereview_loadtest` only. Do not copy production rows.
-
-Point a **staging** Apache/vhost `db.local.php` `$db` at `ereview_loadtest` and set its PHP `session.save_path` to:
-
-`C:\xampp\htdocs\Ereview\scripts\loadtest\sessions`
-
-Do not change production php.ini for the live site.
-
-## Pipeline (after isolated staging is ready)
-
-```powershell
-# Prefer Set-Item so values never collide with PowerShell drive-scope parsing.
 Set-Item -Path Env:EREVIEW_LOADTEST -Value '1'
 Set-Item -Path Env:EREVIEW_LOADTEST_CONFIRM -Value 'YES'
 Set-Item -Path Env:LOADTEST_DB_NAME -Value 'ereview_loadtest'
 Set-Item -Path Env:LOADTEST_BASE_URL -Value 'http://127.0.0.1/EreviewLoadtest'
-Set-Item -Path Env:LOADTEST_N -Value '5'
+```
 
+Do **not** use Bash `export` or malformed `php -r` one-liners in PowerShell.
+
+## Integrity-only QA (no k6, no HTTP load)
+
+From repo root:
+
+```powershell
+C:\xampp\php\php.exe scripts\verify_exam_readiness.php
+C:\xampp\php\php.exe scripts\qa_exam_concurrency_integrity.php
+.\scripts\loadtest\Validate-LoadtestScripts.ps1
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Action SelfCheck
+```
+
+Expected verdict from the readiness runner when integrity is OK:
+
+```text
+INTEGRITY READY
+CAPACITY NOT YET PROVEN
+```
+
+## Pipeline template (Regular or Diagnostic)
+
+```powershell
+# 0) Safety + SAFE attestation
 .\scripts\loadtest\Invoke-Loadtest.ps1 -Action HttpPreflight
-# Must produce artifacts\http_attestation.json with status=SAFE
 
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action Seed -N 5
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action Bootstrap
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action StartAttempts
+# 1) Seed → sessions → start → align → k6 input
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Seed -N 100
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Bootstrap
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action StartAttempts
 Set-Item -Path Env:LOADTEST_ALIGN_SECONDS -Value '90'
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action Align
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action BuildK6Input
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Align
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action BuildK6Input -Scenario mixed
 
-# Requires k6 installed:
-.\scripts\loadtest\Invoke-K6MassTimeout.ps1 -N 5
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action ParseK6Stdout
-.\scripts\loadtest\Invoke-Loadtest.ps1 -Action Verify
+# 2) k6 (requires k6 on PATH; exits with WARN if missing — does not invent traffic)
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode regular -N 100 -Scenario mixed
 
+# 3) Verify
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action ParseK6Stdout
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Verify
+
+# 4) Teardown (LOADTEST-marked rows only)
 Set-Item -Path Env:LOADTEST_TEARDOWN_CONFIRM -Value 'YES'
 .\scripts\loadtest\Invoke-Loadtest.ps1 -Action Teardown
 ```
 
-## Scripts
+For Diagnostic, replace `-Mode regular` with `-Mode diagnostic`.
 
-| File | Role |
-|------|------|
-| `00_env_guard.php` | Safety + connect + attestation helpers |
-| `01_seed.php` | LOADTEST users/exam/questions |
-| `02_bootstrap_sessions.php` | Dedicated sessions + CSRF |
-| `03_start_attempts.php` | CLI start (guarded DB; no HTTP start) |
-| `04_align_expires.php` | MySQL-aligned `T_end` |
-| `05_monitor_poll.php` | Optional professor monitor observer |
-| `06_verify_integrity.php` | Hard integrity gate |
-| `07_collect_mysql_status.php` | MySQL snapshot |
-| `08_teardown.php` | Marked LOADTEST rows only |
-| `09_http_preflight.php` | Writes `http_attestation.json` |
-| `runtime_db_probe.php` | Read-only Apache runtime DB/session probe |
-| `build_k6_input.php` | Requires SAFE |
-| `k6_mass_timeout.js` | k6 scenario + self-guard |
-| `expected_answers.php` | Deterministic answers |
-| `negative_safety_tests.php` | Fail-closed tests |
-| `harness_selfcheck.php` | Static self-check |
+Legacy mass-timeout script remains: `Invoke-K6MassTimeout.ps1` / `k6_mass_timeout.js` (Regular-oriented). Prefer `Invoke-K6ExamTraffic.ps1` for the matrix below.
 
-## k6
+## Capacity ladder (prepare only — do not run against production)
 
-Install separately if needed: https://k6.io/docs/get-started/installation/
+Use **only** `ereview_loadtest` / `ereview_test` and `LOADTEST_BASE_URL` on loopback/staging.
+Do **not** point this ladder at production. Do **not** treat k6 as a real browser.
 
-Do **not** use Node/Artillery for this harness.
+Recommended order (stop if HTTP 5xx, connection errors, or answer-loss in Verify):
+
+`20 → 50 → 80 → 100 → 150 → 200 → 300`
+
+For each N:
+
+```powershell
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Action HttpPreflight
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Seed -N <N>
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Bootstrap
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action StartAttempts
+Set-Item -Path Env:LOADTEST_ALIGN_SECONDS -Value '120'
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Align
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action BuildK6Input -Scenario timeout_wave
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode regular -N <N> -Scenario timeout_wave
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action ParseK6Stdout
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Verify
+```
+
+Also run `-Scenario mixed` at the same N after timeout_wave looks clean.
+
+Record for every N:
+
+| Metric | Source |
+|---|---|
+| HTTP 5xx / 4xx | k6 / Apache access+error |
+| failed `save_answer` | k6 `save_answer_fail` |
+| failed submit | k6 `submit_fail` |
+| submit latency | k6 `submit_ms` |
+| answers sent vs persisted | Verify action / DB counts |
+| unanswered but selected before timeout | Verify vs payload (k6 approximation) |
+| duplicate submits | k6 `LOADTEST_DUPLICATE_SUBMIT_RATE` + `already_submitted` |
+| MySQL `Threads_connected` vs `max_connections` | `SHOW STATUS` / `SHOW VARIABLES` |
+| lock waits / deadlocks | MySQL `Innodb_row_lock_waits`, error log |
+| Apache/PHP worker saturation | Apache `server-status` / PHP-FPM if used |
+
+**Capacity is not proven until this ladder is actually run on staging.** Default verdict remains: `CAPACITY NOT YET PROVEN`.
+
+## Test matrix (exact commands)
+
+### 1) Integrity-only QA
+
+```powershell
+C:\xampp\php\php.exe scripts\verify_exam_readiness.php
+```
+
+### 2) Regular 100 VU
+
+```powershell
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Action HttpPreflight
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Seed -N 100
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Bootstrap
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action StartAttempts
+Set-Item -Path Env:LOADTEST_ALIGN_SECONDS -Value '120'
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Align
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action BuildK6Input -Scenario mixed
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode regular -N 100 -Scenario mixed
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action ParseK6Stdout
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action Verify
+```
+
+### 3) Regular 200 VU
+
+Same as (2) with `-N 200` on Seed and k6. **Only after 100 succeeds** and Apache/MySQL/logs look healthy.
+
+### 4) Diagnostic 100 VU
+
+```powershell
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Action HttpPreflight
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action Seed -N 100
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action Bootstrap
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action StartAttempts
+Set-Item -Path Env:LOADTEST_ALIGN_SECONDS -Value '120'
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action Align
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action BuildK6Input -Scenario mixed
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode diagnostic -N 100 -Scenario mixed
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action ParseK6Stdout
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action Verify
+```
+
+### 5) Diagnostic 200 VU
+
+Same as (4) with `-N 200`. **Only after Diagnostic 100 succeeds.**
+
+### 6) Timeout burst
+
+```powershell
+.\scripts\loadtest\Invoke-Loadtest.ps1 -Mode regular -Action BuildK6Input -Scenario timeout_wave
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode regular -N 100 -Scenario timeout_wave
+```
+
+(Align `LOADTEST_ALIGN_SECONDS` short enough that VUs converge near `T_end`.)
+
+### 7) Mixed traffic
+
+```powershell
+.\scripts\loadtest\Invoke-K6ExamTraffic.ps1 -Mode regular -N 100 -Scenario mixed
+```
+
+Scenarios cover (approximately):
+
+| Letter | Behavior |
+|--------|----------|
+| A | normal answer save |
+| B | rapid answer changes + debounce pacing |
+| C | stale `save_seq` (mixed) |
+| D | post-finalize save |
+| E | duplicate submit |
+| F | timeout submit wave |
+| G | many VUs submitting together |
+| H | polling (`get_time` / `sync_state`) |
+| I | mixed save + polling + submit |
+
+## Staged capacity sequence
+
+Execute **sequentially** with monitoring between stages:
+
+`100 → 200 → 300 → 500`
+
+Do **not** jump to 500. Between stages check:
+
+- Apache busy workers / AH00161
+- PHP/`[exam_ajax]` error_log
+- MySQL threads / slow queries
+- Integrity verify PASS
+
+Do **not** change `MaxRequestWorkers` as part of this harness.
+
+## Install k6 manually (optional)
+
+Do not auto-install from this repo.
+
+1. Download from https://k6.io/docs/get-started/installation/
+2. Ensure `k6` is on PATH (`where.exe k6`)
+3. Re-run `Invoke-K6ExamTraffic.ps1`
+
+If k6 is missing, runners report:
+
+`[WARN] k6 not installed — capacity test not executed.`
+
+## Env knobs
+
+| Variable | Purpose |
+|----------|---------|
+| `LOADTEST_MODE` | `regular` \| `diagnostic` |
+| `LOADTEST_SCENARIO` | `timeout_wave` \| `mixed` \| `polling` \| `rapid_save` \| `normal_save` |
+| `LOADTEST_N` / `-N` | VU / examinee count |
+| `LOADTEST_BASE_URL` | Staging base URL (required) |
+| `LOADTEST_DB_NAME` | Isolated DB name |
+| `LOADTEST_ALIGN_SECONDS` | Shared `T_end` offset |
+| `LOADTEST_ALLOW_REMOTE_URL` | `YES` only for non-loopback staging |
+| `LOADTEST_K6_MAX_DURATION` | k6 maxDuration override |
+
+Never hard-code production exam/batch IDs. Seed creates `[LOADTEST] …` titles only.
 
 ## Auth / start model
 
-- Sessions: CLI bootstrap (same keys as authenticated QA), path `scripts/loadtest/sessions`
-- Attempts: CLI using `college_exam_*` helpers against guarded DB  
+- Sessions: CLI bootstrap under `scripts/loadtest/sessions`
+- Attempts: CLI using college/diagnostic helpers on guarded DB
   Not identical to browser start (no start form CSRF / session-lock cookie)
-- Answers: k6 timeout submit with full expected JSON payload
-
-## Integrity hard-fails
-
-Missing/mismatched expected answer, duplicates, submit_ok while still `in_progress`, score mismatch, flush-fail then submitted.
+- Answers: k6 submit with full expected JSON + `save_seq` on autosaves

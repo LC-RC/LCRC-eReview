@@ -10,6 +10,7 @@ const LOADTEST_BLOCKED_DB_NAMES = ['ereview', 'ereview_prod', 'ereview_productio
 const LOADTEST_EMAIL_DOMAIN = 'ereview.invalid';
 const LOADTEST_NAME_PREFIX = '[LOADTEST]';
 const LOADTEST_EXAM_TITLE = '[LOADTEST] Mass Timeout Test';
+const LOADTEST_DIAGNOSTIC_BATCH_TITLE = '[LOADTEST] Diagnostic Concurrency Test';
 const LOADTEST_PROF_EMAIL = 'loadtest+professor@ereview.invalid';
 const LOADTEST_PROF_NAME = '[LOADTEST] Professor Monitor';
 const LOADTEST_SECTION = 'LOADTEST-SECTION';
@@ -296,7 +297,26 @@ function loadtest_column_exists(mysqli $conn, string $table, string $column): bo
 }
 
 /**
+ * Load-test mode: regular college exam or diagnostic exam.
+ *
+ * @return 'regular'|'diagnostic'
+ */
+function loadtest_mode(): string
+{
+    $m = strtolower(trim((string)loadtest_env('LOADTEST_MODE', 'regular')));
+    if ($m === 'diag') {
+        $m = 'diagnostic';
+    }
+    if ($m !== 'regular' && $m !== 'diagnostic') {
+        loadtest_fail("LOADTEST_MODE must be 'regular' or 'diagnostic' (got: {$m})");
+    }
+
+    return $m;
+}
+
+/**
  * Require explicit LOADTEST_BASE_URL. No silent localhost/Ereview default.
+ * Non-loopback hosts require LOADTEST_ALLOW_REMOTE_URL=YES (fail closed).
  */
 function loadtest_require_base_url(): string
 {
@@ -322,6 +342,31 @@ function loadtest_require_base_url(): string
     $host = strtolower((string)$parts['host']);
     if ($host === '' || $host === '.' || str_contains($host, '..')) {
         loadtest_fail('LOADTEST_BASE_URL host is invalid');
+    }
+
+    $loopback = in_array($host, ['127.0.0.1', 'localhost', '::1'], true)
+        || str_ends_with($host, '.localhost')
+        || str_ends_with($host, '.invalid')
+        || str_ends_with($host, '.test')
+        || str_ends_with($host, '.local');
+    $allowRemote = strtoupper(trim((string)loadtest_env('LOADTEST_ALLOW_REMOTE_URL', ''))) === 'YES';
+    if (!$loopback && !$allowRemote) {
+        loadtest_fail(
+            "LOADTEST_BASE_URL host '{$host}' is not loopback/test. " .
+            'Set LOADTEST_ALLOW_REMOTE_URL=YES only for an explicit staging host. Production is blocked by default.'
+        );
+    }
+
+    // Extra guard: bare production-looking path on a remote host still needs remote flag (already enforced).
+    $path = strtolower((string)($parts['path'] ?? ''));
+    if (!$loopback && preg_match('#(^|/)ereview/?$#', $path) && !str_contains($path, 'loadtest')) {
+        $allowProdPath = strtoupper(trim((string)loadtest_env('LOADTEST_ALLOW_PROD_PATH', ''))) === 'YES';
+        if (!$allowProdPath) {
+            loadtest_fail(
+                "LOADTEST_BASE_URL path looks like a live /Ereview deploy ('{$path}'). " .
+                'Point at an isolated staging vhost (e.g. /EreviewLoadtest) or set LOADTEST_ALLOW_PROD_PATH=YES deliberately.'
+            );
+        }
     }
 
     return $url;
@@ -350,6 +395,11 @@ function loadtest_is_loadtest_name(string $name): bool
 }
 
 function loadtest_is_loadtest_exam_title(string $title): bool
+{
+    return str_starts_with(trim($title), LOADTEST_NAME_PREFIX);
+}
+
+function loadtest_is_loadtest_batch_title(string $title): bool
 {
     return str_starts_with(trim($title), LOADTEST_NAME_PREFIX);
 }

@@ -4,17 +4,14 @@
   PowerShell-safe helpers for the Ereview examination load-test harness.
 
 .DESCRIPTION
-  Avoids PowerShell parsing pitfalls such as $db: being treated as a drive-
-  qualified variable. Prefer ${env:VAR} / ${VAR} when a value is adjacent to ':'.
-
-  Does NOT run against production. Requires EREVIEW_LOADTEST flags via
-  config.local.env or environment variables.
+  Supports Regular and Diagnostic modes via -Mode.
+  Fail-closed: never invents safety flags; never defaults LOADTEST_BASE_URL.
 
 .EXAMPLE
   .\scripts\loadtest\Invoke-Loadtest.ps1 -Action SelfCheck
 
 .EXAMPLE
-  .\scripts\loadtest\Invoke-Loadtest.ps1 -Action Seed -N 5
+  .\scripts\loadtest\Invoke-Loadtest.ps1 -Mode diagnostic -Action Seed -N 100
 #>
 [CmdletBinding()]
 param(
@@ -38,9 +35,14 @@ param(
     )]
     [string]$Action,
 
+    [ValidateSet('regular', 'diagnostic')]
+    [string]$Mode = 'regular',
+
     [int]$N = 5,
 
     [string]$RunId = '',
+
+    [string]$Scenario = '',
 
     [string]$K6StdoutPath = '',
 
@@ -71,7 +73,6 @@ function Import-LoadtestEnvFile {
         elseif ($val.StartsWith("'") -and $val.EndsWith("'")) {
             $val = $val.Substring(1, $val.Length - 2)
         }
-        # Do not override variables already set in the process
         $existing = [Environment]::GetEnvironmentVariable($key, 'Process')
         if ([string]::IsNullOrEmpty($existing)) {
             Set-Item -Path ("Env:{0}" -f $key) -Value $val
@@ -80,7 +81,6 @@ function Import-LoadtestEnvFile {
 }
 
 function Ensure-LoadtestSafetyFlags {
-    # Fail closed — never invent safety flags.
     $flag = "${env:EREVIEW_LOADTEST}".Trim().ToUpperInvariant()
     $confirm = "${env:EREVIEW_LOADTEST_CONFIRM}".Trim().ToUpperInvariant()
     if ($flag -ne '1' -and $flag -ne 'TRUE' -and $flag -ne 'YES') {
@@ -127,16 +127,18 @@ function Invoke-LoadtestPhp {
     }
 }
 
-# Load ONLY local/explicit config — never auto-apply config.example.env
-# (example is a template; loading it would silently invent safety flags).
 $local = if ($ConfigFile) { $ConfigFile } else { Join-Path $HarnessDir 'config.local.env' }
 if ($ConfigFile -and -not (Test-Path -LiteralPath $ConfigFile)) {
     throw "ConfigFile not found: $ConfigFile"
 }
 Import-LoadtestEnvFile -Path $local
 
+Set-Item -Path Env:LOADTEST_MODE -Value $Mode
 if ($N -gt 0) {
     Set-Item -Path Env:LOADTEST_N -Value ([string]$N)
+}
+if (-not [string]::IsNullOrWhiteSpace($Scenario)) {
+    Set-Item -Path Env:LOADTEST_SCENARIO -Value $Scenario
 }
 if (-not [string]::IsNullOrWhiteSpace($RunId)) {
     Set-Item -Path Env:LOADTEST_RUN_ID -Value $RunId
@@ -152,10 +154,12 @@ elseif ([string]::IsNullOrWhiteSpace("${env:LOADTEST_RUN_ID}")) {
 }
 
 Write-Host "Action=$Action"
+Write-Host ("LOADTEST_MODE={0}" -f $Mode)
 Write-Host ("LOADTEST_DB_NAME={0}" -f "${env:LOADTEST_DB_NAME}")
 Write-Host ("LOADTEST_N={0}" -f "${env:LOADTEST_N}")
 Write-Host ("LOADTEST_RUN_ID={0}" -f "${env:LOADTEST_RUN_ID}")
 Write-Host ("LOADTEST_BASE_URL={0}" -f "${env:LOADTEST_BASE_URL}")
+Write-Host ("LOADTEST_SCENARIO={0}" -f "${env:LOADTEST_SCENARIO}")
 
 switch ($Action) {
     'SelfCheck' {
@@ -175,14 +179,18 @@ switch ($Action) {
     'ShowEnv' {
         Ensure-LoadtestSafetyFlags
         Write-Host 'Safety flags OK (no DB connection attempted).'
-        Write-Host 'HTTP/k6 default: BLOCKED until HttpPreflight writes status=SAFE in http_attestation.json.'
+        Write-Host 'HTTP/k6 default: BLOCKED until HttpPreflight writes status=SAFE.'
     }
     'Seed' {
         Ensure-LoadtestSafetyFlags
         if ([string]::IsNullOrWhiteSpace("${env:LOADTEST_BASE_URL}")) {
             throw 'LOADTEST_BASE_URL is required for Seed (no default).'
         }
-        Invoke-LoadtestPhp -ScriptRelative '01_seed.php'
+        if ($Mode -eq 'diagnostic') {
+            Invoke-LoadtestPhp -ScriptRelative '01_seed_diagnostic.php'
+        } else {
+            Invoke-LoadtestPhp -ScriptRelative '01_seed.php'
+        }
     }
     'Bootstrap' {
         Ensure-LoadtestSafetyFlags
@@ -193,18 +201,30 @@ switch ($Action) {
         if ([string]::IsNullOrWhiteSpace("${env:LOADTEST_BASE_URL}")) {
             throw 'LOADTEST_BASE_URL is required for StartAttempts (no default).'
         }
-        Invoke-LoadtestPhp -ScriptRelative '03_start_attempts.php'
+        if ($Mode -eq 'diagnostic') {
+            Invoke-LoadtestPhp -ScriptRelative '03_start_attempts_diagnostic.php'
+        } else {
+            Invoke-LoadtestPhp -ScriptRelative '03_start_attempts.php'
+        }
     }
     'Align' {
         Ensure-LoadtestSafetyFlags
-        Invoke-LoadtestPhp -ScriptRelative '04_align_expires.php'
+        if ($Mode -eq 'diagnostic') {
+            Invoke-LoadtestPhp -ScriptRelative '04_align_expires_diagnostic.php'
+        } else {
+            Invoke-LoadtestPhp -ScriptRelative '04_align_expires.php'
+        }
     }
     'BuildK6Input' {
         Ensure-LoadtestSafetyFlags
         if ([string]::IsNullOrWhiteSpace("${env:LOADTEST_BASE_URL}")) {
             throw 'LOADTEST_BASE_URL is required for BuildK6Input (no default).'
         }
-        Invoke-LoadtestPhp -ScriptRelative 'build_k6_input.php'
+        if ($Mode -eq 'diagnostic') {
+            Invoke-LoadtestPhp -ScriptRelative 'build_k6_input_diagnostic.php'
+        } else {
+            Invoke-LoadtestPhp -ScriptRelative 'build_k6_input.php'
+        }
     }
     'MysqlBefore' {
         Ensure-LoadtestSafetyFlags
@@ -233,7 +253,11 @@ switch ($Action) {
     }
     'Verify' {
         Ensure-LoadtestSafetyFlags
-        Invoke-LoadtestPhp -ScriptRelative '06_verify_integrity.php'
+        if ($Mode -eq 'diagnostic') {
+            Invoke-LoadtestPhp -ScriptRelative '06_verify_integrity_diagnostic.php'
+        } else {
+            Invoke-LoadtestPhp -ScriptRelative '06_verify_integrity.php'
+        }
     }
     'Teardown' {
         Ensure-LoadtestSafetyFlags
@@ -244,4 +268,4 @@ switch ($Action) {
     }
 }
 
-Write-Host "Done: $Action"
+Write-Host "Done: $Action (mode=$Mode)"

@@ -223,9 +223,13 @@ if ($examinees === []) {
     loadtest_fail('No examinees to write into k6_input.json');
 }
 
+$scenario = strtolower(trim((string)loadtest_env('LOADTEST_SCENARIO', 'timeout_wave')));
 $out = [
     'run_id' => $runId,
+    'mode' => 'regular',
+    'scenario' => $scenario,
     'exam_id' => $examId,
+    'batch_id' => null,
     'db' => $dbName,
     'base_url' => $base,
     'ajax_url' => $ajaxUrl,
@@ -234,6 +238,11 @@ $out = [
     'grace_seconds' => 60,
     'answer_secret' => $secret,
     'question_ids' => $liveQids,
+    'notes' => [
+        'harness' => 'HTTP/load approximation — not a real browser certification',
+        'approximates' => ['debounced saves', 'save_seq', 'polling', 'submit bursts', 'duplicate submit'],
+        'does_not_reproduce' => ['DOM', 'visibility handlers', 'exact JS timers', 'CSRF cookie edge cases'],
+    ],
     'http_attestation' => [
         'status' => 'SAFE',
         'database' => $attestation['database'],

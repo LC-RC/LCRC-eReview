@@ -305,6 +305,7 @@ foreach ($students as $s) {
 
 $meta = [
     'run_id' => $runId,
+    'mode' => 'regular',
     'db' => $dbName,
     'n' => $n,
     'exam_id' => $examId,

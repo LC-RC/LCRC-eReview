@@ -62,6 +62,21 @@ expect(loadtest_is_loadtest_name('[LOADTEST] Student 001'), 'loadtest name accep
 expect(!loadtest_is_loadtest_name('Juan Dela Cruz'), 'real name rejected');
 expect(loadtest_is_loadtest_exam_title('[LOADTEST] Mass Timeout Test'), 'loadtest exam title accepted');
 expect(!loadtest_is_loadtest_exam_title('Midterm Exam'), 'real exam title rejected');
+expect(loadtest_is_loadtest_batch_title('[LOADTEST] Diagnostic Concurrency Test'), 'loadtest batch title accepted');
+expect(!loadtest_is_loadtest_batch_title('Diagnostic Batch 1'), 'real batch title rejected');
+
+$diagScripts = [
+    '01_seed_diagnostic.php',
+    '03_start_attempts_diagnostic.php',
+    '04_align_expires_diagnostic.php',
+    '06_verify_integrity_diagnostic.php',
+    'build_k6_input_diagnostic.php',
+    'k6_exam_traffic.js',
+    'Invoke-K6ExamTraffic.ps1',
+];
+foreach ($diagScripts as $rel) {
+    expect(is_file(__DIR__ . DIRECTORY_SEPARATOR . $rel), 'diagnostic/harness file present: ' . $rel);
+}
 
 // Guard subprocess checks via temp scripts (avoid PowerShell quoting issues)
 $php = PHP_BINARY;

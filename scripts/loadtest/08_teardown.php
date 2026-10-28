@@ -22,6 +22,11 @@ $deleted = [
     'exam_users' => 0,
     'questions' => 0,
     'exams' => 0,
+    'diag_answers' => 0,
+    'diag_attempts' => 0,
+    'diag_questions' => 0,
+    'diag_batches' => 0,
+    'diag_batch_users' => 0,
     'users' => 0,
 ];
 
@@ -103,6 +108,76 @@ foreach ($examIds as $examId) {
     mysqli_stmt_close($delE);
 }
 
+// 1b) Diagnostic LOADTEST batches
+$batchIds = [];
+if (loadtest_table_exists($conn, 'diagnostic_batches')) {
+    $bq = mysqli_query(
+        $conn,
+        "SELECT b.batch_id, b.title, b.created_by, u.email, u.full_name
+         FROM diagnostic_batches b
+         INNER JOIN users u ON u.user_id = b.created_by
+         WHERE b.title LIKE '[LOADTEST]%'"
+    );
+    while ($bq && ($row = mysqli_fetch_assoc($bq))) {
+        if (!loadtest_is_loadtest_batch_title((string)$row['title'])) {
+            continue;
+        }
+        if (!loadtest_is_loadtest_email((string)$row['email']) || !loadtest_is_loadtest_name((string)$row['full_name'])) {
+            fwrite(STDERR, "SKIP batch_id={$row['batch_id']}: creator is not a LOADTEST user\n");
+            continue;
+        }
+        $batchIds[] = (int)$row['batch_id'];
+    }
+    if ($bq) {
+        mysqli_free_result($bq);
+    }
+}
+
+foreach ($batchIds as $batchId) {
+    if (loadtest_table_exists($conn, 'diagnostic_answers')) {
+        $sqlAns = "DELETE ans FROM diagnostic_answers ans
+            INNER JOIN diagnostic_attempts a ON a.attempt_id = ans.attempt_id
+            INNER JOIN users u ON u.user_id = a.user_id
+            WHERE a.batch_id = " . (int)$batchId . "
+              AND u.email LIKE 'loadtest+%@ereview.invalid'
+              AND u.full_name LIKE '[LOADTEST]%'";
+        if (mysqli_query($conn, $sqlAns)) {
+            $deleted['diag_answers'] += mysqli_affected_rows($conn);
+        }
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_attempts')) {
+        $sqlAtt = "DELETE a FROM diagnostic_attempts a
+            INNER JOIN users u ON u.user_id = a.user_id
+            WHERE a.batch_id = " . (int)$batchId . "
+              AND u.email LIKE 'loadtest+%@ereview.invalid'
+              AND u.full_name LIKE '[LOADTEST]%'";
+        if (mysqli_query($conn, $sqlAtt)) {
+            $deleted['diag_attempts'] += mysqli_affected_rows($conn);
+        }
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_batch_users')) {
+        if (mysqli_query($conn, 'DELETE FROM diagnostic_batch_users WHERE batch_id=' . (int)$batchId)) {
+            $deleted['diag_batch_users'] += mysqli_affected_rows($conn);
+        }
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_batch_subjects')) {
+        mysqli_query($conn, 'DELETE FROM diagnostic_batch_subjects WHERE batch_id=' . (int)$batchId);
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_batch_sections')) {
+        mysqli_query($conn, 'DELETE FROM diagnostic_batch_sections WHERE batch_id=' . (int)$batchId);
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_questions')) {
+        if (mysqli_query($conn, 'DELETE FROM diagnostic_questions WHERE batch_id=' . (int)$batchId)) {
+            $deleted['diag_questions'] += mysqli_affected_rows($conn);
+        }
+    }
+    $delB = mysqli_prepare($conn, "DELETE FROM diagnostic_batches WHERE batch_id=? AND title LIKE '[LOADTEST]%'");
+    mysqli_stmt_bind_param($delB, 'i', $batchId);
+    mysqli_stmt_execute($delB);
+    $deleted['diag_batches'] += mysqli_stmt_affected_rows($delB);
+    mysqli_stmt_close($delB);
+}
+
 // 2) Delete LOADTEST users (students + professor) with marker checks
 $uq = mysqli_query(
     $conn,
@@ -132,6 +207,18 @@ foreach ($userIds as $uid) {
     if (loadtest_table_exists($conn, 'college_exam_users')) {
         mysqli_query($conn, 'DELETE FROM college_exam_users WHERE user_id=' . (int)$uid);
     }
+    if (loadtest_table_exists($conn, 'diagnostic_answers') && loadtest_table_exists($conn, 'diagnostic_attempts')) {
+        mysqli_query(
+            $conn,
+            'DELETE ans FROM diagnostic_answers ans
+             INNER JOIN diagnostic_attempts a ON a.attempt_id=ans.attempt_id
+             WHERE a.user_id=' . (int)$uid
+        );
+        mysqli_query($conn, 'DELETE FROM diagnostic_attempts WHERE user_id=' . (int)$uid);
+    }
+    if (loadtest_table_exists($conn, 'diagnostic_batch_users')) {
+        mysqli_query($conn, 'DELETE FROM diagnostic_batch_users WHERE user_id=' . (int)$uid);
+    }
     $delU = mysqli_prepare(
         $conn,
         "DELETE FROM users WHERE user_id=? AND email LIKE 'loadtest+%@ereview.invalid' AND full_name LIKE '[LOADTEST]%'"
@@ -146,6 +233,7 @@ $report = [
     'db' => $dbName,
     'deleted' => $deleted,
     'exam_ids' => $examIds,
+    'batch_ids' => $batchIds ?? [],
     'user_ids' => $userIds,
     'teardown_at' => date('c'),
 ];
