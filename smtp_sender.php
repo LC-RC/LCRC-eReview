@@ -17,6 +17,74 @@ function isMailConfigValid($config) {
 }
 
 /**
+ * TLS options for SMTP: verify certificate and hostname. Never disable verification.
+ *
+ * @return array<string,mixed>
+ */
+function smtp_ssl_context_options(string $peerName): array
+{
+    $opts = [
+        'verify_peer' => true,
+        'verify_peer_name' => true,
+        'allow_self_signed' => false,
+        'peer_name' => $peerName,
+        'SNI_enabled' => true,
+    ];
+    if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
+        $opts['crypto_method'] = STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+    }
+    $cafile = (string) ini_get('openssl.cafile');
+    if ($cafile !== '' && is_file($cafile)) {
+        $opts['cafile'] = $cafile;
+    }
+    $capath = (string) ini_get('openssl.capath');
+    if ($capath !== '' && is_dir($capath)) {
+        $opts['capath'] = $capath;
+    }
+
+    return $opts;
+}
+
+function smtp_create_ssl_context(string $peerName)
+{
+    return stream_context_create(['ssl' => smtp_ssl_context_options($peerName)]);
+}
+
+/**
+ * STARTTLS with certificate + hostname verification.
+ *
+ * @param resource $sock
+ * @param callable(string):void $log
+ */
+function smtp_enable_starttls($sock, string $peerName, callable $log): bool
+{
+    foreach (smtp_ssl_context_options($peerName) as $key => $value) {
+        if (!@stream_context_set_option($sock, 'ssl', $key, $value)) {
+            $log('TLS context option failed');
+
+            return false;
+        }
+    }
+    $tlsMethod = defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')
+        ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+        : STREAM_CRYPTO_METHOD_TLS_CLIENT;
+    if (!@stream_socket_enable_crypto($sock, true, $tlsMethod)) {
+        $openssl = function_exists('openssl_error_string') ? trim((string) openssl_error_string()) : '';
+        $openssl = preg_replace('#https?://\S+#i', '[url]', $openssl) ?? $openssl;
+        $log(
+            'TLS certificate verification failed. Set php.ini openssl.cafile to a current CA bundle (cacert.pem) '
+            . 'and ensure smtp_host matches the server certificate. '
+            . ($openssl !== '' ? $openssl : 'If the host is correct, use smtp_port 465 with smtp_secure=ssl.')
+        );
+
+        return false;
+    }
+    $log('TLS OK (peer verified)');
+
+    return true;
+}
+
+/**
  * Send an email via SMTP (e.g. Gmail). Returns true on success, false on failure.
  * @param string   $toEmail   Recipient address
  * @param string   $subject   Subject line
@@ -48,13 +116,7 @@ function sendMailSmtp($toEmail, $subject, $bodyPlain, $fromEmail, $fromName, $co
     $errno = 0;
     $errstr = '';
     $useImplicitSsl = ($port === 465 || $secure === 'ssl');
-    $sslCtx = stream_context_create([
-        'ssl' => [
-            'verify_peer'       => false,
-            'verify_peer_name'  => false,
-            'allow_self_signed' => true,
-        ]
-    ]);
+    $sslCtx = smtp_create_ssl_context($host);
 
     if ($useImplicitSsl) {
         $sock = @stream_socket_client(
@@ -124,13 +186,10 @@ function sendMailSmtp($toEmail, $subject, $bodyPlain, $fromEmail, $fromName, $co
             fclose($sock);
             return false;
         }
-        $tlsMethod = defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT : STREAM_CRYPTO_METHOD_TLS_CLIENT;
-        if (!@stream_socket_enable_crypto($sock, true, $tlsMethod)) {
-            $log('TLS handshake failed (try port 465 in config)');
+        if (!smtp_enable_starttls($sock, $host, $log)) {
             fclose($sock);
             return false;
         }
-        $log('TLS OK');
         if (!$send('EHLO ' . ($_SERVER['SERVER_NAME'] ?? 'localhost'))) {
             fclose($sock);
             return false;
@@ -184,6 +243,8 @@ function sendMailSmtp($toEmail, $subject, $bodyPlain, $fromEmail, $fromName, $co
 
     $headers = 'From: ' . $fromAddr . "\r\n";
     $headers .= 'To: ' . $toEmail . "\r\n";
+    $headers .= 'Reply-To: ' . $fromEmail . "\r\n";
+    $headers .= 'Date: ' . date('r') . "\r\n";
     $headers .= 'Subject: ' . $subject . "\r\n";
     $headers .= 'MIME-Version: 1.0' . "\r\n";
     $headers .= 'Content-Type: text/plain; charset=UTF-8' . "\r\n";
@@ -234,13 +295,7 @@ function sendMailSmtpHtml($toEmail, $subject, $bodyHtml, $fromEmail, $fromName, 
     $errno = 0;
     $errstr = '';
     $useImplicitSsl = ($port === 465 || $secure === 'ssl');
-    $sslCtx = stream_context_create([
-        'ssl' => [
-            'verify_peer'       => false,
-            'verify_peer_name'  => false,
-            'allow_self_signed' => true,
-        ]
-    ]);
+    $sslCtx = smtp_create_ssl_context($host);
 
     if ($useImplicitSsl) {
         $sock = @stream_socket_client(
@@ -310,13 +365,10 @@ function sendMailSmtpHtml($toEmail, $subject, $bodyHtml, $fromEmail, $fromName, 
             fclose($sock);
             return false;
         }
-        $tlsMethod = defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT : STREAM_CRYPTO_METHOD_TLS_CLIENT;
-        if (!@stream_socket_enable_crypto($sock, true, $tlsMethod)) {
-            $log('TLS handshake failed (try port 465 in config)');
+        if (!smtp_enable_starttls($sock, $host, $log)) {
             fclose($sock);
             return false;
         }
-        $log('TLS OK');
         if (!$send('EHLO ' . ($_SERVER['SERVER_NAME'] ?? 'localhost'))) {
             fclose($sock);
             return false;
@@ -370,6 +422,8 @@ function sendMailSmtpHtml($toEmail, $subject, $bodyHtml, $fromEmail, $fromName, 
 
     $headers = 'From: ' . $fromAddr . "\r\n";
     $headers .= 'To: ' . $toEmail . "\r\n";
+    $headers .= 'Reply-To: ' . $fromEmail . "\r\n";
+    $headers .= 'Date: ' . date('r') . "\r\n";
     $headers .= 'Subject: ' . $subject . "\r\n";
     $headers .= 'MIME-Version: 1.0' . "\r\n";
     $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
@@ -434,13 +488,7 @@ function sendMailSmtpHtmlWithAttachments(
     $errno = 0;
     $errstr = '';
     $useImplicitSsl = ($port === 465 || $secure === 'ssl');
-    $sslCtx = stream_context_create([
-        'ssl' => [
-            'verify_peer'       => false,
-            'verify_peer_name'  => false,
-            'allow_self_signed' => true,
-        ]
-    ]);
+    $sslCtx = smtp_create_ssl_context($host);
 
     if ($useImplicitSsl) {
         $sock = @stream_socket_client(
@@ -512,13 +560,10 @@ function sendMailSmtpHtmlWithAttachments(
             fclose($sock);
             return false;
         }
-        $tlsMethod = defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT') ? STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT : STREAM_CRYPTO_METHOD_TLS_CLIENT;
-        if (!@stream_socket_enable_crypto($sock, true, $tlsMethod)) {
-            $log('TLS handshake failed (try port 465 in config)');
+        if (!smtp_enable_starttls($sock, $host, $log)) {
             fclose($sock);
             return false;
         }
-        $log('TLS OK');
         if (!$send('EHLO ' . ($_SERVER['SERVER_NAME'] ?? 'localhost'))) {
             fclose($sock);
             return false;
