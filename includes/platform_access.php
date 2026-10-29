@@ -573,8 +573,13 @@ function ereview_session_end_no_enterable_portal(bool $preferCollegeLogin = fals
         $_SESSION['auth_matched_stores'],
         $_SESSION['active_portal']
     );
-    $_SESSION['error'] = 'Sign in with the password for this portal, or use Forgot password to set a College Examination password.';
-    $_SESSION['error_type'] = 'invalid_credentials';
+    if ($preferCollegeLogin) {
+        $_SESSION['error'] = 'Sign in with your College Examination email and password. Google and email sign-in links cannot open College Examination.';
+        $_SESSION['error_type'] = 'college_password_required';
+    } else {
+        $_SESSION['error'] = 'Sign in with the password for this portal, or use Forgot password to set a College Examination password.';
+        $_SESSION['error_type'] = 'invalid_credentials';
+    }
     unset($_SESSION['ereview_ui_portal']);
     header('Location: login');
     exit;
@@ -596,7 +601,8 @@ function ereview_user_post_login_url(mysqli $conn, int $userId, ?array $user = n
     $available = ereview_user_available_portals($conn, $userId, $user);
     $enterable = ereview_user_enterable_portals($conn, $userId, $user);
     if (count($enterable) === 0) {
-        return ereview_url('login');
+        $preferCollege = in_array('college_examination', $available, true);
+        ereview_session_end_no_enterable_portal($preferCollege);
     }
 
     if (count($enterable) === 1 && ereview_session_can_enter_portal($conn, $enterable[0], $userId, $user)) {

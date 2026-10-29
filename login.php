@@ -59,6 +59,7 @@ if (!empty($_GET['magic'])) {
             $_SESSION['last_activity'] = time();
             require_once __DIR__ . '/includes/platform_access.php';
             ereview_session_mark_identity_auth('magic');
+            deleteMagicLinkToken($magicResult['token_id']);
             if (!isStaffRole((string) ($user['role'] ?? ''))
                 && ereview_user_enterable_portals($conn, (int) $user['user_id'], $user) === []
             ) {
@@ -76,7 +77,6 @@ if (!empty($_GET['magic'])) {
                 mysqli_stmt_close($upd);
             }
             setUserPresenceStatus($uid, true);
-            deleteMagicLinkToken($magicResult['token_id']);
             if (verifySession()) {
                 header('Location: ' . ereview_resolve_post_login_url($conn, $user));
                 exit;
@@ -138,6 +138,7 @@ $errorTitles = [
     'google_not_verified' => 'Email not verified',
     'google_not_configured' => 'Google Sign-In not set up',
     'exam_session_active' => 'Exam in progress elsewhere',
+    'college_password_required' => 'College password required',
 ];
 $errorModalTitle = $errorTitles[$errorType] ?? 'Incorrect credentials';
 $googleRedirectUri = '';
@@ -629,6 +630,8 @@ if (isset($_SESSION['google_redirect_uri'])) {
             errorHint.textContent = 'An admin must approve your account before you can sign in. Please try again later or contact support.';
           } else if (serverErrorType === 'exam_session_active') {
             errorHint.textContent = 'Finish or submit the exam in the browser where you started it, or log out there first. Starting the same exam on two devices is not allowed.';
+          } else if (serverErrorType === 'college_password_required') {
+            errorHint.innerHTML = 'Use your College Examination email and password, or <a href="college_forgot_password" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your College password</a>. Google and sign-in links cannot open College Examination.';
           } else {
             errorHint.innerHTML = 'Check your email and password, or <a href="forgot_password" id="login-error-forgot-link" class="text-amber-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">reset your password</a>.';
           }

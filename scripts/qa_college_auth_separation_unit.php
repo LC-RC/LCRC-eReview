@@ -73,6 +73,10 @@ ereview_session_mark_password_auth('college', false);
 $pass('College password portal-entry can enter College', $identityEnterable($dual) === ['college_examination']);
 ereview_session_mark_password_auth('lms', false);
 $pass('LMS-only password portal-entry cannot enter College', $identityEnterable($dual) === ['ereview']);
+ereview_session_mark_identity_auth('google');
+$pass('College-only Google identity has no enterable portal', $identityEnterable(['college_examination']) === []);
+ereview_session_mark_identity_auth('magic');
+$pass('College-only magic-link identity has no enterable portal', $identityEnterable(['college_examination']) === []);
 
 ereview_session_mark_remember_auth('lms');
 $pass('LMS remember-me cannot enter College', ($_SESSION['auth_via'] ?? '') === 'remember_lms' && !ereview_session_allows_portal_choice('college_examination', $dual));
@@ -167,8 +171,17 @@ $loginPage = (string) file_get_contents($root . '/login.php');
 $pass('shared login page posts to login_process', str_contains($loginPage, 'action="login_process"'));
 $pass('shared login page does not switch College skin', !str_contains($loginPage, '$collegePortal') && !str_contains($loginPage, 'college-examination-login') && !str_contains($loginPage, 'Examination Portal'));
 $pass('shared login page uses original eReview branding', str_contains($loginPage, 'Welcome Back') && str_contains($loginPage, 'image%20assets/lms-logo.png'));
-$pass('shared login page forgot-password stays LMS helper', str_contains($loginPage, 'href="forgot_password"') && !str_contains($loginPage, 'college_forgot_password'));
+$pass('shared login page default forgot-password stays LMS helper', str_contains($loginPage, 'href="forgot_password"') && str_contains($loginPage, 'class="login-forgot-link"') && substr_count($loginPage, 'href="college_forgot_password"') === 1);
 $pass('magic link marks identity auth without College credential lookup', str_contains($loginPage, "ereview_session_mark_identity_auth('magic')") && !str_contains($loginPage, 'college_auth_credentials_exists') && !str_contains($loginPage, 'college_auth_credentials.php'));
+$magicMarkAt = strpos($loginPage, "ereview_session_mark_identity_auth('magic')");
+$magicDeleteAt = strpos($loginPage, 'deleteMagicLinkToken($magicResult[\'token_id\'])');
+$magicEmptyAt = strpos($loginPage, 'ereview_user_enterable_portals($conn, (int) $user[\'user_id\'], $user) === []');
+$pass(
+    'magic link consumes token before College-only bounce',
+    $magicMarkAt !== false && $magicDeleteAt !== false && $magicEmptyAt !== false
+    && $magicMarkAt < $magicDeleteAt && $magicDeleteAt < $magicEmptyAt
+);
+$pass('login page maps College identity bounce to College reset', str_contains($loginPage, "'college_password_required' => 'College password required'") && str_contains($loginPage, 'href="college_forgot_password"'));
 
 $google = (string) file_get_contents($root . '/google_callback.php');
 $pass('Google login marks identity auth without College credential lookup', str_contains($google, "ereview_session_mark_identity_auth('google')") && !str_contains($google, 'college_auth_credentials_exists') && !str_contains($google, 'college_auth_credentials.php'));
@@ -191,6 +204,14 @@ $pass('identity policy never authorizes College', str_contains($accessSrc, 'Coll
 $pass('portal-entry decision uses allows_portal_choice', str_contains($accessSrc, 'return ereview_session_allows_portal_choice($portal, $available);'));
 $pass('missing auth_via is LMS-only', str_contains($accessSrc, "return \$store === 'lms'"));
 $pass('empty-enterable login redirect is shared login', str_contains($accessSrc, "header('Location: login');") && !str_contains($accessSrc, 'login?portal=examination'));
+$pass('College-only identity bounce uses college_password_required', str_contains($accessSrc, "\$_SESSION['error_type'] = 'college_password_required';") && str_contains($accessSrc, 'Google and email sign-in links cannot open College Examination'));
+$emptyEnterableAt = strpos($accessSrc, 'if (count($enterable) === 0)');
+$sessionEndAt = strpos($accessSrc, 'ereview_session_end_no_enterable_portal($preferCollege)');
+$pass(
+    'empty enterable portals end the session instead of looping to login',
+    $emptyEnterableAt !== false && $sessionEndAt !== false && $emptyEnterableAt < $sessionEndAt
+    && str_contains($accessSrc, "in_array('college_examination', \$available, true)")
+);
 
 $rmSrc = (string) file_get_contents($root . '/remember_me.php');
 $pass('remember-me stores portal scope', str_contains($rmSrc, 'function setRememberMeCookie($userId, $portal = \'lms\')') && str_contains($rmSrc, 'rememberMeHasPortalColumn'));
