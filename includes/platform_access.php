@@ -489,12 +489,12 @@ function ereview_password_login_authorized_stores(
 
 /**
  * Identity login (Google / magic link) proves the shared users profile only.
- * Policy: LMS is enterable after a valid identity login. College is enterable
- * only when a college_auth_credentials row already exists. Access flags alone
- * never grant College. This does not treat a College password as an LMS
- * password, or the reverse.
+ * Policy: LMS is enterable after a valid identity login. College is never
+ * authorized by identity login, even if a college_auth_credentials row exists.
+ * Access flags alone never grant College. College requires a College password
+ * (or College-scoped remember-me).
  */
-function ereview_session_mark_identity_auth(string $via, bool $collegeCredentialReady = false): void
+function ereview_session_mark_identity_auth(string $via): void
 {
     $via = strtolower(trim($via));
     if ($via === '') {
@@ -502,7 +502,7 @@ function ereview_session_mark_identity_auth(string $via, bool $collegeCredential
     }
     $_SESSION['auth_via'] = $via;
     $_SESSION['auth_identity'] = true;
-    $_SESSION['auth_matched_stores'] = $collegeCredentialReady ? ['lms', 'college'] : ['lms'];
+    $_SESSION['auth_matched_stores'] = ['lms'];
     unset($_SESSION['active_portal']);
 }
 

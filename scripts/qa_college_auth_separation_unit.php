@@ -40,16 +40,39 @@ $pass('College-only match cannot choose LMS', !ereview_session_allows_portal_cho
 ereview_session_mark_password_auth('lms', true);
 $pass('independently matching both stores can choose either', ereview_session_allows_portal_choice('ereview', $dual) && ereview_session_allows_portal_choice('college_examination', $dual));
 
-ereview_session_mark_identity_auth('google', false);
+ereview_session_mark_identity_auth('google');
 $pass('Google identity without College credential is LMS-only', !empty($_SESSION['auth_identity']) && ereview_session_allows_portal_choice('ereview', $dual) && !ereview_session_allows_portal_choice('college_examination', $dual));
 $pass('Google identity cannot invent a portal', !ereview_session_allows_portal_choice('ereview', ['college_examination']));
-ereview_session_mark_identity_auth('google', true);
-$pass('Google identity with College credential may enter College', ereview_session_allows_portal_choice('ereview', $dual) && ereview_session_allows_portal_choice('college_examination', $dual));
+$pass('Google identity with College credential cannot enter College', ereview_session_allows_portal_choice('ereview', $dual) && !ereview_session_allows_portal_choice('college_examination', $dual));
 
-ereview_session_mark_identity_auth('magic', false);
+ereview_session_mark_identity_auth('magic');
 $pass('magic-link without College credential cannot enter College', !ereview_session_allows_portal_choice('college_examination', ['college_examination']));
-ereview_session_mark_identity_auth('magic', true);
-$pass('magic-link with College credential may enter College', ereview_session_allows_portal_choice('college_examination', ['college_examination']));
+$pass('magic-link with College credential cannot enter College', !ereview_session_allows_portal_choice('college_examination', $dual) && ereview_session_allows_portal_choice('ereview', $dual));
+
+$identityEnterable = static function (array $available): array {
+    $enterable = [];
+    foreach ($available as $portal) {
+        if (ereview_session_allows_portal_choice($portal, $available)) {
+            $enterable[] = $portal;
+        }
+    }
+
+    return $enterable;
+};
+ereview_session_mark_identity_auth('google');
+$pass(
+    'Google identity portal-entry is LMS-only even when College is available',
+    $identityEnterable($dual) === ['ereview'] && ($_SESSION['auth_matched_stores'] ?? []) === ['lms']
+);
+ereview_session_mark_identity_auth('magic');
+$pass(
+    'magic-link portal-entry is LMS-only even when College is available',
+    $identityEnterable($dual) === ['ereview']
+);
+ereview_session_mark_password_auth('college', false);
+$pass('College password portal-entry can enter College', $identityEnterable($dual) === ['college_examination']);
+ereview_session_mark_password_auth('lms', false);
+$pass('LMS-only password portal-entry cannot enter College', $identityEnterable($dual) === ['ereview']);
 
 ereview_session_mark_remember_auth('lms');
 $pass('LMS remember-me cannot enter College', ($_SESSION['auth_via'] ?? '') === 'remember_lms' && !ereview_session_allows_portal_choice('college_examination', $dual));
@@ -145,10 +168,10 @@ $pass('shared login page posts to login_process', str_contains($loginPage, 'acti
 $pass('shared login page does not switch College skin', !str_contains($loginPage, '$collegePortal') && !str_contains($loginPage, 'college-examination-login') && !str_contains($loginPage, 'Examination Portal'));
 $pass('shared login page uses original eReview branding', str_contains($loginPage, 'Welcome Back') && str_contains($loginPage, 'image%20assets/lms-logo.png'));
 $pass('shared login page forgot-password stays LMS helper', str_contains($loginPage, 'href="forgot_password"') && !str_contains($loginPage, 'college_forgot_password'));
-$pass('magic link marks identity auth with College credential check', str_contains($loginPage, "ereview_session_mark_identity_auth('magic', \$collegeCredReady)"));
+$pass('magic link marks identity auth without College credential lookup', str_contains($loginPage, "ereview_session_mark_identity_auth('magic')") && !str_contains($loginPage, 'college_auth_credentials_exists') && !str_contains($loginPage, 'college_auth_credentials.php'));
 
 $google = (string) file_get_contents($root . '/google_callback.php');
-$pass('Google login marks identity auth with College credential check', str_contains($google, "ereview_session_mark_identity_auth('google', \$collegeCredReady)"));
+$pass('Google login marks identity auth without College credential lookup', str_contains($google, "ereview_session_mark_identity_auth('google')") && !str_contains($google, 'college_auth_credentials_exists') && !str_contains($google, 'college_auth_credentials.php'));
 
 $portalSelect = (string) file_get_contents($root . '/portal_select.php');
 $pass('portal select requires login', str_contains($portalSelect, 'isLoggedIn()') && str_contains($portalSelect, 'verifySession()'));
@@ -164,7 +187,8 @@ $pass('post-login no longer forces College for dual-access', !str_contains($acce
 $pass('single portal routes only when enterable', str_contains($accessSrc, 'if (count($enterable) === 1 && ereview_session_can_enter_portal($conn, $enterable[0], $userId, $user))'));
 $pass('College portal gate checks session credential', str_contains($accessSrc, "ereview_session_can_enter_portal(\$conn, 'college_examination'"));
 $pass('LMS session gate does not apply on College surfaces', str_contains($accessSrc, 'ereview_request_is_college_examination_surface()'));
-$pass('identity policy requires a College credential row', str_contains($accessSrc, 'only when a college_auth_credentials row already exists'));
+$pass('identity policy never authorizes College', str_contains($accessSrc, 'College is never') && str_contains($accessSrc, "\$_SESSION['auth_matched_stores'] = ['lms'];") && !str_contains($accessSrc, '$collegeCredentialReady'));
+$pass('portal-entry decision uses allows_portal_choice', str_contains($accessSrc, 'return ereview_session_allows_portal_choice($portal, $available);'));
 $pass('missing auth_via is LMS-only', str_contains($accessSrc, "return \$store === 'lms'"));
 $pass('empty-enterable login redirect is shared login', str_contains($accessSrc, "header('Location: login');") && !str_contains($accessSrc, 'login?portal=examination'));
 

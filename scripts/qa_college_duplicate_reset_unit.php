@@ -133,6 +133,11 @@ $pass('verify still rejects other account types', str_contains($src, 'This email
 $pass('verify other-account path uses namespace other', str_contains($src, "if (\$ns === 'other')"));
 
 $resetSrc = (string) file_get_contents($root . '/examination/includes/college_password_reset.php');
+$pass('college reset helper does not CREATE TABLE', !preg_match('/CREATE\s+TABLE/i', $resetSrc) && !str_contains($resetSrc, 'IF NOT EXISTS'));
+$pass('college reset ensure is existence-only', (bool) preg_match('/function college_password_reset_schema_ensure\(mysqli \$conn\): bool\s*\{\s*return college_password_reset_schema_ready\(\$conn\);/s', $resetSrc));
+$pass('college reset request fails closed when table is missing', str_contains($resetSrc, '!college_password_reset_schema_ensure($conn)') && str_contains($resetSrc, "return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];"));
+$pass('college reset peek/complete fail closed when table is missing', substr_count($resetSrc, '!college_reset_token_format_valid($rawToken) || !college_password_reset_schema_ensure($conn)') === 2);
+$pass('college reset complete still rolls back on failure', substr_count($resetSrc, 'mysqli_rollback($conn)') >= 8);
 $pass('college reset does not require LMS password_reset.php', !preg_match('/\b(require|include)(_once)?\b[^;]*password_reset\.php/', $resetSrc) && !str_contains($resetSrc, 'createPasswordResetToken'));
 $pass('college reset emails hashed-token link only', str_contains($resetSrc, 'college_public_reset_url($token[\'raw\'])') && !preg_match('/password.*=.*\$token/', $resetSrc));
 $pass('college reset writes only college_auth_credentials', str_contains($resetSrc, 'college_auth_credentials_put($conn, $userId, $passwordHash)') && !preg_match('/UPDATE\s+users\s+SET\s+password\s*=/i', $resetSrc));

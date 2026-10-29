@@ -163,9 +163,7 @@ $_SESSION['full_name'] = $user['full_name'];
 $_SESSION['role'] = $user['role'];
 $_SESSION['created'] = time();
 $_SESSION['last_activity'] = time();
-require_once __DIR__ . '/examination/includes/college_auth_credentials.php';
-$collegeCredReady = college_auth_credentials_exists($conn, (int) $user['user_id']);
-ereview_session_mark_identity_auth('google', $collegeCredReady);
+ereview_session_mark_identity_auth('google');
 if (!isStaffRole((string) ($user['role'] ?? ''))
     && ereview_user_enterable_portals($conn, (int) $user['user_id'], $user) === []
 ) {
