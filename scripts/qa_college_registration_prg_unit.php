@@ -167,6 +167,14 @@ $pass('resend email uses static top label', str_contains($resendSrc, 'reg-top-la
 $pass('resend waiting modal offers continue to login', str_contains($resendSrc, 'id="csr-waiting-continue"'));
 $pass('resend verified overlay is present', str_contains($resendSrc, 'id="csr-modal-verified"'));
 
+$verifySrc = (string) file_get_contents($root . '/examination/includes/college_email_verification.php');
+$attachFn = '';
+if (preg_match('/function college_attach_lms_student_in_transaction\(.*?function college_insert_verified_college_student/s', $verifySrc, $m)) {
+    $attachFn = $m[0];
+}
+$pass('verified new College student is undergrad', substr_count($verifySrc, "VALUES (?, 'undergrad'") >= 2);
+$pass('verified LMS attach sets undergrad without INSERT users', $attachFn !== '' && substr_count($attachFn, "review_type='undergrad'") === 2 && !preg_match('/INSERT\s+INTO\s+users/i', $attachFn));
+
 $smtpSrc = (string) file_get_contents($root . '/smtp_sender.php');
 $pass('smtp TLS verify_peer still enabled', str_contains($smtpSrc, "'verify_peer' => true"));
 $pass('smtp still does not disable peer verify', !str_contains($smtpSrc, "'verify_peer' => false"));

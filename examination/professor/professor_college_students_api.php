@@ -262,10 +262,7 @@ if ($action === 'bulk_enable_college_examination' && $_SERVER['REQUEST_METHOD'] 
         $sectionVal = $section;
     }
 
-    $reviewType = strtolower(trim((string) ($_POST['review_type'] ?? 'undergrad')));
-    if (!in_array($reviewType, ['undergrad', 'reviewee'], true)) {
-        pcs_api_json(['ok' => false, 'error' => 'Review type must be undergrad or reviewee.'], 422);
-    }
+    $reviewType = 'undergrad';
 
     $adminId = (int) (getCurrentUserId() ?? 0);
     $placeholders = implode(',', array_fill(0, count($userIds), '?'));

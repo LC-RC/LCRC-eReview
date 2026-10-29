@@ -21,6 +21,13 @@ $createLib = (string) file_get_contents($root . '/examination/includes/college_s
 $login = (string) file_get_contents($root . '/login_process.php');
 $publicReg = (string) file_get_contents($root . '/examination/student_registration.php');
 $revieweeCreate = (string) file_get_contents($root . '/examination/professor/professor_create_reviewee.php');
+$verifySrc = (string) file_get_contents($root . '/examination/includes/college_email_verification.php');
+$apiSrc = (string) file_get_contents($root . '/examination/professor/professor_college_students_api.php');
+$viewSrc = (string) file_get_contents($root . '/examination/professor/professor_college_student_view.php');
+$attachFn = '';
+if (preg_match('/function college_attach_lms_student_in_transaction\(.*?function college_insert_verified_college_student/s', $verifySrc, $m)) {
+    $attachFn = $m[0];
+}
 
 $registerCtaCount = preg_match_all('/Register Student/', $page);
 $pass('page has both Register Student CTAs', $registerCtaCount === 2);
@@ -48,6 +55,30 @@ $pass('reviewee creator is still present elsewhere', str_contains($revieweeCreat
 $pass('public student_registration is unchanged by this page', str_contains($publicReg, 'college_public_register_from_request') && !str_contains($publicReg, 'professor_create_college_student'));
 $pass('staff create still skips public email verification', str_contains($createLib, 'Skips email token') && str_contains($createLib, 'college_auth_credentials_put'));
 $pass('shared login still requires College credentials plus access', str_contains($login, 'college_auth_credentials_verify') && str_contains($login, 'ereview_user_has_college_examination_access'));
+$pass(
+    'new College verify insert is undergrad college_student',
+    substr_count($verifySrc, "VALUES (?, 'undergrad'") >= 2
+    && str_contains($verifySrc, "'college_student', ?, 1, ?)")
+);
+$pass(
+    'existing LMS attach sets undergrad without inserting users or changing role',
+    $attachFn !== ''
+    && substr_count($attachFn, "review_type='undergrad'") === 2
+    && !preg_match('/INSERT\s+INTO\s+users/i', $attachFn)
+    && !preg_match('/role=[\'"]college_student/', $attachFn)
+);
+$pass(
+    'staff-created College student is undergrad college_student',
+    str_contains($createLib, "VALUES (?, 'undergrad'")
+    && str_contains($createLib, "'college_student', ?, 1, ?)")
+);
+$pass(
+    'professor roster would include attached LMS and native College undergrads',
+    str_contains($page, "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))")
+    && str_contains($page, "\$reviewTypeSql = 'undergrad'")
+);
+$pass('professor bulk enable forces undergrad', str_contains($apiSrc, "\$reviewType = 'undergrad';") && !str_contains($apiSrc, "['undergrad', 'reviewee']"));
+$pass('student view cannot reclassify as reviewee', str_contains($viewSrc, "if (\$newType !== 'undergrad')") && !str_contains($viewSrc, 'value="reviewee"'));
 
 echo PHP_EOL . ($fail === 0 ? 'ALL PASSED' : $fail . ' FAILED') . PHP_EOL;
 exit($fail === 0 ? 0 : 1);

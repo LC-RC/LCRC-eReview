@@ -125,6 +125,7 @@ $pass('LMS-only attach helper is present', $attachFn !== '');
 $pass('LMS-only attach does not insert users', $attachFn !== '' && !preg_match('/INSERT\s+INTO\s+users/i', $attachFn));
 $pass('LMS-only attach keeps student role', str_contains($attachFn, "role='student'") && str_contains($attachFn, "status='approved'"));
 $pass('LMS-only attach does not change role to college_student', $attachFn !== '' && !preg_match('/role=[\'"]college_student/', $attachFn));
+$pass('LMS-only attach classifies as undergrad', substr_count($attachFn, "review_type='undergrad'") === 2);
 $pass('LMS-only attach does not overwrite password', $attachFn !== '' && !preg_match('/\bpassword\s*=/', $attachFn));
 $pass('LMS-only attach does not overwrite profile fields', $attachFn !== '' && !str_contains($attachFn, 'full_name=?') && !str_contains($attachFn, 'school=?') && !str_contains($attachFn, 'section=?'));
 $pass('LMS-only attach allocates student_number only if missing', str_contains($attachFn, "TRIM(student_number)=''") && substr_count($attachFn, 'student_number=?') === 1);

@@ -106,8 +106,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     } elseif ($action === 'save_examinee_type') {
         $newType = strtolower(trim((string)($_POST['review_type'] ?? '')));
-        if (!in_array($newType, ['undergrad', 'reviewee'], true)) {
-            $editErr = 'Invalid examinee type.';
+        if ($newType !== 'undergrad') {
+            $editErr = 'College Examination students must be classified as undergraduate.';
         } else {
             $upd = mysqli_prepare($conn, "UPDATE users SET review_type=? WHERE user_id=?");
             mysqli_stmt_bind_param($upd, 'si', $newType, $userId);
@@ -406,10 +406,9 @@ $adminHeroActions = '<span class="admin-badge ' . $statusBadgeClass . '">' . h((
     <form method="post" action="professor_college_student_view?id=<?php echo (int)$userId; ?>" class="rounded-xl overflow-hidden page-table p-4 mb-4 max-w-xl">
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <input type="hidden" name="action" value="save_examinee_type">
-      <p class="text-sm opacity-80 mb-3">Use this to fix accounts created before college students used <code>review_type=undergrad</code>. This does not change login role (<code>college_student</code>).</p>
+      <p class="text-sm opacity-80 mb-3">Use this to classify the account as a College Examination undergraduate. This does not change login role.</p>
       <div class="flex flex-col gap-2 text-sm mb-3">
-        <label class="inline-flex items-center gap-2"><input type="radio" name="review_type" value="undergrad" <?php echo $rtLower === 'undergrad' ? 'checked' : ''; ?>> College Student (undergrad)</label>
-        <label class="inline-flex items-center gap-2"><input type="radio" name="review_type" value="reviewee" <?php echo $rtLower !== 'undergrad' ? 'checked' : ''; ?>> Reviewee</label>
+        <label class="inline-flex items-center gap-2"><input type="radio" name="review_type" value="undergrad" <?php echo $rtLower === 'undergrad' ? 'checked' : ''; ?>> College Examination Student (undergrad)</label>
       </div>
       <button type="submit" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-check2-circle"></i> Save examinee type</button>
     </form>

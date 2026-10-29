@@ -906,7 +906,8 @@ function college_public_resend_student_number(mysqli $conn, string $email): arra
 
 /**
  * Grant College Examination access on an existing LMS student row.
- * Does not INSERT a second user (users.email is unique) and does not change role.
+ * Classifies the linked account as undergraduate. Does not INSERT a second user
+ * (users.email is unique) and does not change role.
  *
  * @param array<string,mixed> $user
  * @param array<string,mixed> $pending
@@ -935,7 +936,7 @@ function college_attach_lms_student_in_transaction(
         $stmt = mysqli_prepare(
             $conn,
             "UPDATE users
-             SET email_verified=1, college_examination_access='active'
+             SET email_verified=1, college_examination_access='active', review_type='undergrad'
              WHERE user_id=? AND {$accessFilter}
              LIMIT 1"
         );
@@ -947,7 +948,7 @@ function college_attach_lms_student_in_transaction(
         $stmt = mysqli_prepare(
             $conn,
             "UPDATE users
-             SET email_verified=1, college_examination_access='active', student_number=?
+             SET email_verified=1, college_examination_access='active', review_type='undergrad', student_number=?
              WHERE user_id=? AND {$accessFilter}
                AND (student_number IS NULL OR TRIM(student_number)='')
              LIMIT 1"

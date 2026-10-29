@@ -117,6 +117,8 @@ if (preg_match('/function college_attach_lms_student_in_transaction\(.*?function
     $attachFn = $m[0];
 }
 $pass('attach writes College credential from pending hash', str_contains($attachFn, 'college_auth_credentials_put($conn, $userId, $collegeHash)'));
+$pass('new College insert classifies as undergrad', substr_count($verifySrc, "VALUES (?, 'undergrad'") >= 2 && str_contains($verifySrc, "'college_student', ?, 1, ?)"));
+$pass('attach classifies linked LMS account as undergrad', substr_count($attachFn, "review_type='undergrad'") === 2);
 $pass('attach still does not write users.password', $attachFn !== '' && !preg_match('/\bpassword\s*=/', $attachFn));
 $pass('attach still does not overwrite profile fields', $attachFn !== '' && !str_contains($attachFn, 'full_name=?') && !str_contains($attachFn, 'school=?') && !str_contains($attachFn, 'section=?'));
 
