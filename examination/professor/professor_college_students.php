@@ -16,7 +16,6 @@ college_sections_ensure_schema($conn);
 
 $search = trim((string) ($_GET['q'] ?? ''));
 $statusFilter = (string) ($_GET['status'] ?? 'all');
-$typeFilter = (string) ($_GET['type'] ?? 'college_student');
 $sectionFilter = trim((string) ($_GET['section'] ?? ''));
 $schoolFilter = trim((string) ($_GET['school'] ?? ''));
 $sort = (string) ($_GET['sort'] ?? 'created_desc');
@@ -24,21 +23,17 @@ $page = max(1, (int) ($_GET['page'] ?? 1));
 $perPageRaw = (int) ($_GET['per_page'] ?? 25);
 $perPage = in_array($perPageRaw, [10, 25, 50, 100], true) ? $perPageRaw : 25;
 
-$validStatus = ['all', 'approved', 'pending', 'rejected', 'archived'];
-$validType = ['college_student', 'reviewee'];
+$validStatus = ['all', 'archived'];
 $validSort = ['created_desc', 'created_asc', 'name_asc', 'name_desc'];
 if (!in_array($statusFilter, $validStatus, true)) {
     $statusFilter = 'all';
-}
-if (!in_array($typeFilter, $validType, true)) {
-    $typeFilter = 'college_student';
 }
 if (!in_array($sort, $validSort, true)) {
     $sort = 'created_desc';
 }
 
-$isStudentTab = ($typeFilter === 'college_student');
-$reviewTypeSql = $isStudentTab ? 'undergrad' : 'reviewee';
+$isStudentTab = true;
+$reviewTypeSql = 'undergrad';
 
 $sectionOptions = college_sections_active_names($conn);
 
@@ -128,50 +123,25 @@ $schoolAssignmentReady = college_school_assignment_schema_ready($conn);
 );
 $whereSql = implode(' AND ', $whereParts);
 
-$statsStudents = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0, 'archived' => 0];
-$statsReviewees = ['total' => 0, 'approved' => 0, 'pending' => 0, 'rejected' => 0, 'archived' => 0];
+$statsStudents = ['total' => 0, 'archived' => 0];
 $statsRosterSql = $platformColsReady
     ? "(role='college_student' OR (role='student' AND college_examination_access IN ('active','suspended')))"
     : "role='college_student'";
 $statsQ = mysqli_query(
     $conn,
-    "SELECT review_type, status, COUNT(*) AS c
+    "SELECT status, COUNT(*) AS c
      FROM users
-     WHERE {$statsRosterSql}
-     GROUP BY review_type, status"
+     WHERE review_type='undergrad' AND {$statsRosterSql}
+     GROUP BY status"
 );
 if ($statsQ) {
     while ($sr = mysqli_fetch_assoc($statsQ)) {
-        $rt = strtolower(trim((string) ($sr['review_type'] ?? '')));
         $st = (string) ($sr['status'] ?? '');
         $c = (int) ($sr['c'] ?? 0);
-        $bucket = ($rt === 'undergrad') ? 'students' : 'reviewees';
-        if ($bucket === 'students') {
-            if ($st === 'archived') {
-                $statsStudents['archived'] += $c;
-            } else {
-                $statsStudents['total'] += $c;
-                if ($st === 'approved') {
-                    $statsStudents['approved'] += $c;
-                } elseif ($st === 'pending') {
-                    $statsStudents['pending'] += $c;
-                } elseif ($st === 'rejected') {
-                    $statsStudents['rejected'] += $c;
-                }
-            }
+        if ($st === 'archived') {
+            $statsStudents['archived'] += $c;
         } else {
-            if ($st === 'archived') {
-                $statsReviewees['archived'] += $c;
-            } else {
-                $statsReviewees['total'] += $c;
-                if ($st === 'approved') {
-                    $statsReviewees['approved'] += $c;
-                } elseif ($st === 'pending') {
-                    $statsReviewees['pending'] += $c;
-                } elseif ($st === 'rejected') {
-                    $statsReviewees['rejected'] += $c;
-                }
-            }
+            $statsStudents['total'] += $c;
         }
     }
     mysqli_free_result($statsQ);
@@ -256,16 +226,15 @@ if ($listSt) {
     mysqli_stmt_close($listSt);
 }
 
-$activeStats = $isStudentTab ? $statsStudents : $statsReviewees;
+$activeStats = $statsStudents;
 
 function students_page_query(array $overrides = []): string
 {
-    global $search, $statusFilter, $typeFilter, $sectionFilter, $schoolFilter, $sort, $page, $perPage;
+    global $search, $statusFilter, $sectionFilter, $schoolFilter, $sort, $page, $perPage;
     $params = array_merge([
         'q' => $search !== '' ? $search : null,
         'status' => $statusFilter !== 'all' ? $statusFilter : null,
-        'type' => $typeFilter !== 'college_student' ? $typeFilter : null,
-        'section' => ($typeFilter === 'college_student' && $sectionFilter !== '') ? $sectionFilter : null,
+        'section' => $sectionFilter !== '' ? $sectionFilter : null,
         'school' => $schoolFilter !== '' ? $schoolFilter : null,
         'sort' => $sort !== 'created_desc' ? $sort : null,
         'page' => $page > 1 ? $page : null,
@@ -283,22 +252,15 @@ $professorFeatureHero = true;
 $adminHeroIcon = 'people';
 $adminHeroEyebrow = 'Student management';
 $adminHeroTitle = 'Students';
-$adminHeroSubtitle = 'Manage examination students and reviewees.';
+$adminHeroSubtitle = 'Manage College Examination students.';
 $lmsHeroVariant = 'navy';
-$lmsShare = static function (int $n, int $all): string {
-    return $all > 0 ? ((string) ((int) round(100 * $n / $all)) . '% of group') : '';
-};
 $adminHeroMeta = '<span class="lms-status lms-status--info">' . (int) $statsStudents['total'] . ' student' . ((int) $statsStudents['total'] === 1 ? '' : 's') . '</span>';
 $adminBreadcrumbs = [['Dashboard', 'professor_admin_dashboard'], ['Students']];
-$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" href="student_registration"><i class="bi bi-person-plus"></i> Register Student</a>'
-    . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_college_schools"><i class="bi bi-building"></i> Manage Schools</a>'
-    . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_create_reviewee"><i class="bi bi-person-badge"></i> Add Reviewee</a>';
+$adminHeroActions = '<a class="admin-btn admin-btn--primary admin-btn--sm rounded-xl" href="professor_create_college_student"><i class="bi bi-person-plus"></i> Register Student</a>'
+    . '<a class="admin-btn admin-btn--secondary admin-btn--sm rounded-xl" href="professor_college_schools"><i class="bi bi-building"></i> Manage Schools</a>';
 
 $statusChipMeta = [
     'all' => ['All', 'bi-collection', (int) $activeStats['total']],
-    'approved' => ['Approved', 'bi-check2-circle', (int) $activeStats['approved']],
-    'pending' => ['Pending', 'bi-hourglass-split', (int) $activeStats['pending']],
-    'rejected' => ['Rejected', 'bi-x-circle', (int) $activeStats['rejected']],
     'archived' => ['Archived', 'bi-archive', (int) ($activeStats['archived'] ?? 0)],
 ];
 
@@ -335,24 +297,12 @@ $apiUrl = ereview_url('professor_college_students_api');
       <article class="lms-kpi lms-kpi--total">
         <span class="lms-kpi__label"><i class="bi bi-mortarboard" aria-hidden="true"></i> Students</span>
         <span class="lms-kpi__value"><?php echo (int) $statsStudents['total']; ?></span>
-        <span class="lms-kpi__hint">College roster</span>
-      </article>
-      <article class="lms-kpi lms-kpi--live">
-        <span class="lms-kpi__label"><i class="bi bi-person-badge" aria-hidden="true"></i> Reviewees</span>
-        <span class="lms-kpi__value"><?php echo (int) $statsReviewees['total']; ?></span>
-        <span class="lms-kpi__hint">Reviewee roster</span>
-      </article>
-      <article class="lms-kpi lms-kpi--ok">
-        <span class="lms-kpi__label"><i class="bi bi-check2-circle" aria-hidden="true"></i> Approved</span>
-        <span class="lms-kpi__value"><?php echo (int) $activeStats['approved']; ?></span>
-        <?php $h = $lmsShare((int) $activeStats['approved'], (int) $activeStats['total']); ?>
-        <span class="lms-kpi__hint"><?php echo h($h !== '' ? $h : 'In this group'); ?></span>
+        <span class="lms-kpi__hint">College Examination roster</span>
       </article>
       <article class="lms-kpi lms-kpi--wait">
-        <span class="lms-kpi__label"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending</span>
-        <span class="lms-kpi__value"><?php echo (int) $activeStats['pending']; ?></span>
-        <?php $h = $lmsShare((int) $activeStats['pending'], (int) $activeStats['total']); ?>
-        <span class="lms-kpi__hint"><?php echo h($h !== '' ? $h : 'Awaiting review'); ?></span>
+        <span class="lms-kpi__label"><i class="bi bi-archive" aria-hidden="true"></i> Archived</span>
+        <span class="lms-kpi__value"><?php echo (int) $statsStudents['archived']; ?></span>
+        <span class="lms-kpi__hint">Hidden from the active roster</span>
       </article>
     </section>
     <section class="prof-workspace prof-workspace--roster lms-workspace">
@@ -360,20 +310,12 @@ $apiUrl = ereview_url('professor_college_students_api');
     <div class="prof-workspace__head lms-workspace__head">
       <div class="lms-workspace__heading">
         <div class="lms-workspace__title-row">
-          <h2 class="prof-workspace__title"><?php echo $isStudentTab ? 'Students' : 'Reviewees'; ?></h2>
-          <span class="prof-count lms-count-badge"><?php echo (int) $total; ?> <?php echo $isStudentTab ? 'student' : 'reviewee'; ?><?php echo (int) $total === 1 ? '' : 's'; ?></span>
+          <h2 class="prof-workspace__title">Students</h2>
+          <span class="prof-count lms-count-badge"><?php echo (int) $total; ?> student<?php echo (int) $total === 1 ? '' : 's'; ?></span>
         </div>
-        <p class="prof-workspace__sub"><?php echo $isStudentTab ? 'College Examination roster, sections, and account status.' : 'Reviewee accounts and access status.'; ?></p>
+        <p class="prof-workspace__sub">College Examination roster, sections, and account status.</p>
       </div>
     </div>
-    <nav class="students-view-tabs lms-tabs" aria-label="Examinee groups">
-      <a href="<?php echo h(students_page_query(['type' => 'college_student', 'section' => null, 'page' => null])); ?>" class="students-view-tab <?php echo $isStudentTab ? 'is-active' : ''; ?>">
-        <i class="bi bi-mortarboard" aria-hidden="true"></i> Students <span class="students-status-chip__count"><?php echo (int) $statsStudents['total']; ?></span>
-      </a>
-      <a href="<?php echo h(students_page_query(['type' => 'reviewee', 'section' => null, 'page' => null])); ?>" class="students-view-tab <?php echo !$isStudentTab ? 'is-active' : ''; ?>">
-        <i class="bi bi-person-badge" aria-hidden="true"></i> Reviewees <span class="students-status-chip__count"><?php echo (int) $statsReviewees['total']; ?></span>
-      </a>
-    </nav>
     </div>
     <div class="students-toolbar page-filter lms-toolbar">
       <nav class="students-status-chips" aria-label="Filter by status">
@@ -386,7 +328,6 @@ $apiUrl = ereview_url('professor_college_students_api');
         <?php endforeach; ?>
       </nav>
       <form method="get" class="students-toolbar__search">
-        <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
         <?php if ($statusFilter !== 'all'): ?>
           <input type="hidden" name="status" value="<?php echo h($statusFilter); ?>">
         <?php endif; ?>
@@ -458,15 +399,14 @@ $apiUrl = ereview_url('professor_college_students_api');
       <div class="students-table-meta">
         <span>
           <?php if ($total > 0): ?>
-            Showing <?php echo (int) $rangeStart; ?>–<?php echo (int) $rangeEnd; ?> of <?php echo (int) $total; ?> <?php echo $isStudentTab ? 'students' : 'reviewees'; ?>
+            Showing <?php echo (int) $rangeStart; ?>–<?php echo (int) $rangeEnd; ?> of <?php echo (int) $total; ?> students
           <?php else: ?>
-            0 <?php echo $isStudentTab ? 'students' : 'reviewees'; ?>
+            0 students
           <?php endif; ?>
         </span>
         <form method="get" class="flex items-center gap-2 text-sm">
           <?php if ($search !== ''): ?><input type="hidden" name="q" value="<?php echo h($search); ?>"><?php endif; ?>
           <?php if ($statusFilter !== 'all'): ?><input type="hidden" name="status" value="<?php echo h($statusFilter); ?>"><?php endif; ?>
-          <input type="hidden" name="type" value="<?php echo h($typeFilter); ?>">
           <?php if ($isStudentTab && $sectionFilter !== ''): ?><input type="hidden" name="section" value="<?php echo h($sectionFilter); ?>"><?php endif; ?>
           <?php if ($schoolFilter !== ''): ?><input type="hidden" name="school" value="<?php echo h($schoolFilter); ?>"><?php endif; ?>
           <?php if ($sort !== 'created_desc'): ?><input type="hidden" name="sort" value="<?php echo h($sort); ?>"><?php endif; ?>
@@ -482,7 +422,7 @@ $apiUrl = ereview_url('professor_college_students_api');
       <?php if ($total === 0): ?>
         <div class="students-empty-cell lms-empty" style="padding:3rem 1.5rem;">
           <div class="lms-empty__title font-semibold text-lg mb-1">
-            <?php echo $hasActiveFilters ? 'No students found' : ($isStudentTab ? 'No College Examination students yet' : 'No reviewees yet'); ?>
+            <?php echo $hasActiveFilters ? 'No students found' : 'No College Examination students yet'; ?>
           </div>
           <p class="lms-empty__text text-sm mt-1 mb-3 opacity-80">
             <?php if ($hasActiveFilters): ?>
@@ -495,11 +435,7 @@ $apiUrl = ereview_url('professor_college_students_api');
             <?php if ($hasActiveFilters): ?>
               <a href="<?php echo h(students_page_query(['q' => null, 'section' => null, 'school' => null, 'sort' => null, 'status' => null, 'page' => null])); ?>" class="admin-btn admin-btn--secondary admin-btn--sm">Clear filters</a>
             <?php endif; ?>
-            <?php if ($isStudentTab): ?>
-              <a href="student_registration" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Register Student</a>
-            <?php else: ?>
-              <a href="professor_create_reviewee" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-badge"></i> Add Reviewee</a>
-            <?php endif; ?>
+            <a href="professor_create_college_student" class="admin-btn admin-btn--primary admin-btn--sm"><i class="bi bi-person-plus"></i> Register Student</a>
           </div>
         </div>
       <?php else: ?>
@@ -813,13 +749,6 @@ $apiUrl = ereview_url('professor_college_students_api');
             <?php endforeach; ?>
           </select>
           <p class="college-exam-modal-hint text-xs mt-1 mb-0 opacity-80">Optional. Section can be assigned later.</p>
-        </div>
-        <div class="admin-modal__field">
-          <label for="pcsEnableReviewType">Review Type</label>
-          <select id="pcsEnableReviewType" name="review_type">
-            <option value="undergrad">Undergrad</option>
-            <option value="reviewee">Reviewee</option>
-          </select>
         </div>
         <p class="college-exam-modal-hint text-xs m-0 mb-2 opacity-80">Enabling login access does not automatically assign exams.</p>
         <div id="pcsEnableError" class="admin-modal__error"></div>
@@ -1341,7 +1270,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         apiPost('bulk_enable_college_examination', {
           user_ids: pendingIds,
           section: (document.getElementById('pcsEnableSection') || {}).value || '__none__',
-          review_type: (document.getElementById('pcsEnableReviewType') || {}).value || 'undergrad'
+          review_type: 'undergrad'
         }, function (data) {
           closeOverlay('pcsEnableModalOverlay');
           showFlash('success', data.message || 'College Examination enabled.');

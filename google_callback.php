@@ -12,6 +12,10 @@ if (isLoggedIn() && verifySession()) {
     require_once __DIR__ . '/includes/platform_access.php';
     $uid = (int) getCurrentUserId();
     $userRow = ereview_user_load_platform_row($conn, $uid);
+    if ($userRow && !isStaffRole((string) ($userRow['role'] ?? '')) && ereview_user_enterable_portals($conn, $uid, $userRow) === []) {
+        $preferCollege = in_array('college_examination', ereview_user_available_portals($conn, $uid, $userRow), true);
+        ereview_session_end_no_enterable_portal($preferCollege);
+    }
     header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
@@ -159,6 +163,15 @@ $_SESSION['full_name'] = $user['full_name'];
 $_SESSION['role'] = $user['role'];
 $_SESSION['created'] = time();
 $_SESSION['last_activity'] = time();
+require_once __DIR__ . '/examination/includes/college_auth_credentials.php';
+$collegeCredReady = college_auth_credentials_exists($conn, (int) $user['user_id']);
+ereview_session_mark_identity_auth('google', $collegeCredReady);
+if (!isStaffRole((string) ($user['role'] ?? ''))
+    && ereview_user_enterable_portals($conn, (int) $user['user_id'], $user) === []
+) {
+    $preferCollege = ereview_user_has_college_examination_access($conn, (int) $user['user_id'], $user);
+    ereview_session_end_no_enterable_portal($preferCollege);
+}
 
 $uid = (int) $user['user_id'];
 $now = date('Y-m-d H:i:s');

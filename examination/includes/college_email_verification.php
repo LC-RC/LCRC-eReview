@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/college_student_number.php';
 require_once __DIR__ . '/college_verify_rate_limit.php';
 require_once __DIR__ . '/college_student_create.php';
+require_once __DIR__ . '/college_auth_credentials.php';
 
 const COLLEGE_VERIFY_EXPIRY_HOURS = 24;
 const COLLEGE_VERIFY_TXN_RETRIES = 3;
@@ -18,12 +19,18 @@ const COLLEGE_PUBLIC_MAIL_FAILED =
     'The verification email could not be sent. Your details were saved. Wait a moment, then use Resend verification. Contact LCRC support if it still fails.';
 const COLLEGE_PUBLIC_GENERIC_NUMBER =
     'If a verified college account exists for that email, we sent the student number to that address.';
+const COLLEGE_PUBLIC_EXISTING_ACCOUNT =
+    'A College Examination account already exists for this email. Sign in or reset the password. A new account was not created.';
+const COLLEGE_PUBLIC_GENERIC_RESET =
+    'If a College Examination account exists for that email, a password-reset message is issued only when this portal can send one. Open any valid link within 1 hour.';
 const COLLEGE_PUBLIC_RATE_LIMITED = 'Too many attempts. Please wait and try again.';
 const COLLEGE_PUBLIC_UNAVAILABLE = 'Registration is temporarily unavailable. Please try again later.';
 const COLLEGE_VERIFY_INVALID = 'This verification link is invalid or has expired. You can request a new message from the registration page.';
+const COLLEGE_RESET_INVALID = 'This reset link is invalid or has expired. You can request a new message from the registration page.';
 const COLLEGE_REG_CONFIRM_TTL_SECONDS = 1800;
 const COLLEGE_REG_CONFIRM_SESSION_KEY = 'college_reg_confirm';
 const COLLEGE_RESEND_CONFIRM_SESSION_KEY = 'college_resend_confirm';
+const COLLEGE_RESET_CONFIRM_SESSION_KEY = 'college_reset_confirm';
 
 function college_pending_table_ready(mysqli $conn): bool
 {
@@ -137,6 +144,7 @@ function college_public_safe_confirm_location(string $script): string
     $allowed = [
         'student_registration' => true,
         'college_resend_verification' => true,
+        'college_forgot_password' => true,
     ];
     $script = strtolower(trim($script));
     $script = preg_replace('/\.php$/i', '', $script) ?? '';
@@ -165,9 +173,9 @@ function college_public_attempted_mail_failed(array $result): bool
 }
 
 /**
- * @return array{email:string, exp:int, mail_failed:bool}
+ * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool}
  */
-function college_public_confirm_session_put(string $sessionKey, string $email, bool $mailFailed = false): array
+function college_public_confirm_session_put(string $sessionKey, string $email, bool $mailFailed = false, bool $existingCollege = false): array
 {
     $safe = '';
     $normalized = strtolower(trim($email));
@@ -178,6 +186,7 @@ function college_public_confirm_session_put(string $sessionKey, string $email, b
         'email' => $safe,
         'exp' => time() + COLLEGE_REG_CONFIRM_TTL_SECONDS,
         'mail_failed' => $mailFailed,
+        'existing_college' => $existingCollege,
     ];
     $_SESSION[$sessionKey] = $payload;
 
@@ -190,7 +199,7 @@ function college_public_confirm_session_clear(string $sessionKey): void
 }
 
 /**
- * @return array{email:string, exp:int, mail_failed:bool}|null
+ * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool}|null
  */
 function college_public_confirm_session_get(string $sessionKey): ?array
 {
@@ -213,12 +222,95 @@ function college_public_confirm_session_get(string $sessionKey): ?array
         'email' => $email,
         'exp' => $exp,
         'mail_failed' => !empty($row['mail_failed']),
+        'existing_college' => !empty($row['existing_college']),
     ];
 }
 
 function college_public_confirm_query_requested(): bool
 {
     return (string) ($_GET['confirm'] ?? '') === '1';
+}
+
+/**
+ * Decide whether the confirmation modal may show verified success.
+ * $confirm comes from the session; $user is the users-row for that session email (or null).
+ *
+ * @param array<string,mixed>|null $confirm
+ * @param array<string,mixed>|null $user
+ * @return array{ok:bool, verified:bool}
+ */
+function college_public_confirm_status_decide(?array $confirm, ?array $user): array
+{
+    if ($confirm === null) {
+        return ['ok' => false, 'verified' => false];
+    }
+    if (!empty($confirm['existing_college']) || !empty($confirm['mail_failed'])) {
+        return ['ok' => true, 'verified' => false];
+    }
+    $email = strtolower(trim((string) ($confirm['email'] ?? '')));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['ok' => false, 'verified' => false];
+    }
+    if ($user === null) {
+        return ['ok' => true, 'verified' => false];
+    }
+    if ((int) ($user['email_verified'] ?? 0) !== 1) {
+        return ['ok' => true, 'verified' => false];
+    }
+    $role = (string) ($user['role'] ?? '');
+    $access = strtolower(trim((string) ($user['college_examination_access'] ?? '')));
+    $collegeOk = ($role === 'college_student') || ($access === 'active');
+
+    return ['ok' => true, 'verified' => $collegeOk];
+}
+
+/**
+ * Session-bound College verification status for the registration/resend confirm modal.
+ * Never reads email from the request.
+ *
+ * @return array{ok:bool, verified:bool}
+ */
+function college_public_confirm_verified_status(mysqli $conn): array
+{
+    $confirm = college_public_confirm_session_get(COLLEGE_REG_CONFIRM_SESSION_KEY);
+    if ($confirm === null) {
+        $confirm = college_public_confirm_session_get(COLLEGE_RESEND_CONFIRM_SESSION_KEY);
+    }
+    if ($confirm === null) {
+        return ['ok' => false, 'verified' => false];
+    }
+    $email = strtolower(trim((string) ($confirm['email'] ?? '')));
+    $user = null;
+    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $hasCea = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'college_examination_access'");
+        $ceaCol = $hasCea && mysqli_fetch_assoc($hasCea);
+        if ($hasCea) {
+            mysqli_free_result($hasCea);
+        }
+        $hasEv = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
+        $evCol = $hasEv && mysqli_fetch_assoc($hasEv);
+        if ($hasEv) {
+            mysqli_free_result($hasEv);
+        }
+        if ($evCol) {
+            $sql = $ceaCol
+                ? 'SELECT role, email_verified, college_examination_access FROM users WHERE email=? LIMIT 1'
+                : 'SELECT role, email_verified FROM users WHERE email=? LIMIT 1';
+            $st = mysqli_prepare($conn, $sql);
+            if ($st) {
+                mysqli_stmt_bind_param($st, 's', $email);
+                if (mysqli_stmt_execute($st)) {
+                    $row = mysqli_fetch_assoc(mysqli_stmt_get_result($st));
+                    if (is_array($row)) {
+                        $user = $row;
+                    }
+                }
+                mysqli_stmt_close($st);
+            }
+        }
+    }
+
+    return college_public_confirm_status_decide($confirm, $user);
 }
 
 function college_new_verify_token(): array
@@ -396,11 +488,14 @@ function college_send_student_number_email(string $toEmail, string $studentNumbe
 
 function college_users_select_email_for_update(mysqli $conn, string $email): array|false|null
 {
-    $stmt = mysqli_prepare(
-        $conn,
-        'SELECT user_id, role, status, email, email_verified, student_number, full_name, password, school, section, review_type
-         FROM users WHERE email=? LIMIT 1 FOR UPDATE'
-    );
+    $sqlWithAccess = 'SELECT user_id, role, status, email, email_verified, student_number, full_name, password, school, section, review_type, college_examination_access
+         FROM users WHERE email=? LIMIT 1 FOR UPDATE';
+    $sqlFallback = 'SELECT user_id, role, status, email, email_verified, student_number, full_name, password, school, section, review_type
+         FROM users WHERE email=? LIMIT 1 FOR UPDATE';
+    $stmt = mysqli_prepare($conn, $sqlWithAccess);
+    if (!$stmt) {
+        $stmt = mysqli_prepare($conn, $sqlFallback);
+    }
     if (!$stmt) {
         return false;
     }
@@ -414,6 +509,81 @@ function college_users_select_email_for_update(mysqli $conn, string $email): arr
     mysqli_stmt_close($stmt);
 
     return $row ?: null;
+}
+
+/**
+ * College Examination account namespace on the shared users table.
+ * LMS-only students (role=student, no college access) are not College accounts.
+ *
+ * @return 'college'|'college_unverified'|'lms_only'|'other'
+ */
+function college_user_account_namespace(array $user): string
+{
+    $role = strtolower(trim((string) ($user['role'] ?? '')));
+    $verified = (int) ($user['email_verified'] ?? 0) === 1;
+    $access = 'none';
+    if (array_key_exists('college_examination_access', $user)) {
+        $access = strtolower(trim((string) ($user['college_examination_access'] ?? 'none')));
+        if (!in_array($access, ['none', 'active', 'suspended'], true)) {
+            $access = 'none';
+        }
+    } elseif ($role === 'college_student') {
+        $access = 'active';
+    }
+    if ($role === 'college_student') {
+        return $verified ? 'college' : 'college_unverified';
+    }
+    if ($role === 'student') {
+        return in_array($access, ['active', 'suspended'], true) ? 'college' : 'lms_only';
+    }
+
+    return 'other';
+}
+
+function college_user_is_college_account(array $user): bool
+{
+    return college_user_account_namespace($user) === 'college';
+}
+
+function college_user_status_normalized(array $user): string
+{
+    return strtolower(trim((string) ($user['status'] ?? '')));
+}
+
+/**
+ * Reuses the College portal status rule: only approved LMS-only students may be attached.
+ */
+function college_user_can_attach_lms_to_college(array $user): bool
+{
+    if (college_user_account_namespace($user) !== 'lms_only') {
+        return false;
+    }
+
+    return college_user_status_normalized($user) === 'approved';
+}
+
+/**
+ * College reset is allowed only for an approved, non-suspended College account.
+ */
+function college_user_can_reset_college_password(array $user): bool
+{
+    if (college_user_account_namespace($user) !== 'college') {
+        return false;
+    }
+    if (college_user_status_normalized($user) !== 'approved') {
+        return false;
+    }
+    $access = 'none';
+    if (array_key_exists('college_examination_access', $user)) {
+        $access = strtolower(trim((string) ($user['college_examination_access'] ?? 'none')));
+        if (!in_array($access, ['none', 'active', 'suspended'], true)) {
+            $access = 'none';
+        }
+    } elseif (strtolower(trim((string) ($user['role'] ?? ''))) === 'college_student') {
+        $access = 'active';
+    }
+
+    return $access !== 'suspended';
 }
 
 function college_pending_upsert(mysqli $conn, array $data, string $tokenHash, string $expiresAt): bool
@@ -534,9 +704,13 @@ function college_public_register_from_request(mysqli $conn, array $post, ?array 
         return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
     }
     if (is_array($user)) {
-        $role = strtolower(trim((string) ($user['role'] ?? '')));
-        $verified = (int) ($user['email_verified'] ?? 0) === 1;
-        if ($role !== 'college_student' || $verified) {
+        $ns = college_user_account_namespace($user);
+        if ($ns === 'college') {
+            mysqli_commit($conn);
+
+            return ['ok' => true, 'generic' => true, 'sent' => false, 'existing_college' => true];
+        }
+        if ($ns === 'other') {
             mysqli_commit($conn);
 
             return ['ok' => true, 'generic' => true, 'sent' => false];
@@ -630,17 +804,18 @@ function college_public_resend_verification(mysqli $conn, string $email): array
 
     $send = false;
     if (is_array($user)) {
-        $role = strtolower(trim((string) ($user['role'] ?? '')));
-        $verified = (int) ($user['email_verified'] ?? 0) === 1;
-        if ($role === 'college_student' && !$verified) {
+        $ns = college_user_account_namespace($user);
+        $canResend = $ns === 'college_unverified' || ($ns === 'lms_only' && is_array($pending));
+        if ($canResend) {
+            $source = $ns === 'lms_only' && is_array($pending) ? $pending : $user;
             $payload = [
                 'email' => $email,
-                'full_name' => (string) ($user['full_name'] ?? ''),
-                'school' => (string) ($user['school'] ?? ''),
-                'section' => (string) ($user['section'] ?? ''),
-                'password_hash' => (string) ($user['password'] ?? 'x'),
-                'profile_picture' => (string) ($user['profile_picture'] ?? ''),
-                'use_default_avatar' => (int) ($user['use_default_avatar'] ?? 1),
+                'full_name' => (string) ($source['full_name'] ?? ''),
+                'school' => (string) ($source['school'] ?? ''),
+                'section' => (string) ($source['section'] ?? ''),
+                'password_hash' => (string) ($source['password_hash'] ?? $source['password'] ?? 'x'),
+                'profile_picture' => (string) ($source['profile_picture'] ?? ''),
+                'use_default_avatar' => (int) ($source['use_default_avatar'] ?? 1),
                 'existing_user_id' => (int) $user['user_id'],
             ];
             if (!college_pending_upsert($conn, $payload, $token['hash'], $expiresAt)) {
@@ -729,6 +904,76 @@ function college_public_resend_student_number(mysqli $conn, string $email): arra
     return ['ok' => true, 'generic' => true];
 }
 
+/**
+ * Grant College Examination access on an existing LMS student row.
+ * Does not INSERT a second user (users.email is unique) and does not change role.
+ *
+ * @param array<string,mixed> $user
+ * @param array<string,mixed> $pending
+ * @return array{ok:bool, error?:string, student_number?:string, user_id?:int}
+ */
+function college_attach_lms_student_in_transaction(
+    mysqli $conn,
+    array $user,
+    array $pending,
+    string $studentNumber
+): array {
+    $collegeHash = (string) ($pending['password_hash'] ?? '');
+    unset($pending);
+    $userId = (int) ($user['user_id'] ?? 0);
+    if ($userId <= 0 || $collegeHash === '' || !college_user_can_attach_lms_to_college($user)) {
+        return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+    }
+    $existingSn = trim((string) ($user['student_number'] ?? ''));
+    $sn = $existingSn !== '' ? $existingSn : $studentNumber;
+    if ($sn === '') {
+        return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+    }
+    $accessFilter = "role='student' AND status='approved'
+           AND (college_examination_access='none' OR college_examination_access='' OR college_examination_access IS NULL)";
+    if ($existingSn !== '') {
+        $stmt = mysqli_prepare(
+            $conn,
+            "UPDATE users
+             SET email_verified=1, college_examination_access='active'
+             WHERE user_id=? AND {$accessFilter}
+             LIMIT 1"
+        );
+        if (!$stmt) {
+            return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+        }
+        mysqli_stmt_bind_param($stmt, 'i', $userId);
+    } else {
+        $stmt = mysqli_prepare(
+            $conn,
+            "UPDATE users
+             SET email_verified=1, college_examination_access='active', student_number=?
+             WHERE user_id=? AND {$accessFilter}
+               AND (student_number IS NULL OR TRIM(student_number)='')
+             LIMIT 1"
+        );
+        if (!$stmt) {
+            return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+        }
+        mysqli_stmt_bind_param($stmt, 'si', $sn, $userId);
+    }
+    if (!mysqli_stmt_execute($stmt)) {
+        mysqli_stmt_close($stmt);
+
+        return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+    }
+    $affected = mysqli_stmt_affected_rows($stmt);
+    mysqli_stmt_close($stmt);
+    if ($affected !== 1) {
+        return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+    }
+    if (!college_auth_credentials_put($conn, $userId, $collegeHash)) {
+        return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+    }
+
+    return ['ok' => true, 'student_number' => $sn, 'user_id' => $userId];
+}
+
 function college_insert_verified_college_student(
     mysqli $conn,
     array $pending,
@@ -738,6 +983,7 @@ function college_insert_verified_college_student(
     $school = (string) ($pending['school'] ?? '');
     $section = (string) ($pending['section'] ?? '');
     $hash = (string) ($pending['password_hash'] ?? '');
+    $lmsHash = college_auth_unusable_lms_password_hash();
     $email = (string) ($pending['email'] ?? '');
     $profilePicturePath = (string) ($pending['profile_picture'] ?? '');
     $avatarUseDefault = (int) ($pending['use_default_avatar'] ?? 1);
@@ -769,7 +1015,7 @@ function college_insert_verified_college_student(
         if (!$ins) {
             return ['ok' => false, 'error' => 'Could not create account.'];
         }
-        mysqli_stmt_bind_param($ins, 'ssssissss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $hash, $status, $studentNumber);
+        mysqli_stmt_bind_param($ins, 'ssssissss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $lmsHash, $status, $studentNumber);
     } else {
         $ins = mysqli_prepare(
             $conn,
@@ -779,7 +1025,7 @@ function college_insert_verified_college_student(
         if (!$ins) {
             return ['ok' => false, 'error' => 'Could not create account.'];
         }
-        mysqli_stmt_bind_param($ins, 'sssssss', $fullName, $school, $section, $email, $hash, $status, $studentNumber);
+        mysqli_stmt_bind_param($ins, 'sssssss', $fullName, $school, $section, $email, $lmsHash, $status, $studentNumber);
     }
     if (!mysqli_stmt_execute($ins)) {
         $errno = mysqli_errno($conn);
@@ -789,6 +1035,9 @@ function college_insert_verified_college_student(
     }
     $userId = (int) mysqli_insert_id($conn);
     mysqli_stmt_close($ins);
+    if ($userId <= 0 || $hash === '' || !college_auth_credentials_put($conn, $userId, $hash)) {
+        return ['ok' => false, 'error' => 'Could not create account.'];
+    }
     $catalog = college_schools_find_by_name($conn, $school);
     if ($catalog && (int) ($catalog['school_id'] ?? 0) > 0) {
         college_schools_apply_user_fk($conn, $userId, (int) $catalog['school_id']);
@@ -890,14 +1139,83 @@ function college_complete_verification_once(mysqli $conn, string $tokenHash, str
     $existing = false;
 
     if (is_array($user)) {
-        $role = strtolower(trim((string) ($user['role'] ?? '')));
+        $ns = college_user_account_namespace($user);
         $userId = (int) ($user['user_id'] ?? 0);
         $existingSn = trim((string) ($user['student_number'] ?? ''));
-        if ($role !== 'college_student') {
+        if ($ns === 'other') {
             college_mark_pending_used($conn, $pendingId);
             mysqli_commit($conn);
 
             return ['ok' => false, 'error' => 'This email is already used by another account type. Contact an administrator.'];
+        }
+        if ($ns === 'college') {
+            college_mark_pending_used($conn, $pendingId);
+            if (!mysqli_commit($conn)) {
+                mysqli_rollback($conn);
+
+                return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+            }
+
+            return [
+                'ok' => true,
+                'user_id' => $userId,
+                'email' => $email,
+                'student_number' => $existingSn,
+                'number_email_sent' => false,
+                'existing' => true,
+            ];
+        }
+        if ($ns === 'lms_only') {
+            if (!college_user_can_attach_lms_to_college($user)) {
+                college_mark_pending_used($conn, $pendingId);
+                if (!mysqli_commit($conn)) {
+                    mysqli_rollback($conn);
+
+                    return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+                }
+
+                return ['ok' => false, 'error' => 'This email cannot be activated for College Examination. Contact an administrator.'];
+            }
+            if ($existingSn === '') {
+                $alloc = college_student_number_allocate_in_transaction($conn);
+                if (empty($alloc['ok'])) {
+                    $errno = (int) ($alloc['errno'] ?? 0);
+                    mysqli_rollback($conn);
+
+                    return ['ok' => false, 'error' => (string) ($alloc['error'] ?? COLLEGE_PUBLIC_UNAVAILABLE), 'errno' => $errno];
+                }
+                $studentNumber = (string) $alloc['student_number'];
+            } else {
+                $studentNumber = $existingSn;
+            }
+            $attached = college_attach_lms_student_in_transaction($conn, $user, $pending, $studentNumber);
+            if (empty($attached['ok'])) {
+                mysqli_rollback($conn);
+
+                return ['ok' => false, 'error' => (string) ($attached['error'] ?? COLLEGE_PUBLIC_UNAVAILABLE)];
+            }
+            $studentNumber = (string) ($attached['student_number'] ?? $studentNumber);
+            $existing = true;
+            if (!college_mark_pending_used($conn, $pendingId)) {
+                mysqli_rollback($conn);
+
+                return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+            }
+            if (!mysqli_commit($conn)) {
+                mysqli_rollback($conn);
+
+                return ['ok' => false, 'error' => COLLEGE_PUBLIC_UNAVAILABLE];
+            }
+            $mailOk = $studentNumber !== '' && college_send_student_number_email($email, $studentNumber);
+
+            return [
+                'ok' => true,
+                'user_id' => $userId,
+                'email' => $email,
+                'student_number' => $studentNumber,
+                'number_email_sent' => $mailOk,
+                'existing' => true,
+            ];
         }
         $existing = true;
         if ((int) ($user['email_verified'] ?? 0) !== 1) {

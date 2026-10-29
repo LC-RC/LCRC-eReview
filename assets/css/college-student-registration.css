@@ -1945,6 +1945,9 @@ body.college-examination-login .login-forgot-link {
 body.college-student-registration.csr-modal-open {
   overflow: hidden;
 }
+body.college-student-registration.csr-modal-open .reg-frame8-form-fixed-bottom {
+  display: none !important;
+}
 body.college-student-registration .csr-modal-mail-icon {
   width: 56px;
   height: 56px;
@@ -1980,6 +1983,9 @@ body.college-student-registration .reg-modal-card .csr-confirm-resend,
 body.college-student-registration .reg-error-card .csr-confirm-resend {
   display: block;
   margin: 0;
+}
+body.college-student-registration .reg-modal-card .btn-primary {
+  margin-top: 1rem;
 }
 body.college-student-registration .csr-modal-text-action {
   display: inline-block;
@@ -2028,5 +2034,237 @@ body.college-student-registration .csr-modal-text-action:focus-visible {
   body.college-student-registration .reg-error-card {
     padding: 1.5rem 1.25rem;
     max-height: calc(100dvh - 2rem);
+  }
+}
+
+/* College verify-email landing (success/error). Scoped; does not alter Frame 8 registration. */
+html:has(body.college-verify-email-page) {
+  overflow-x: hidden;
+}
+body.college-student-registration.college-verify-email-page {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1.25rem 1rem 1.5rem;
+  box-sizing: border-box;
+}
+body.college-verify-email-page .cve-shell {
+  width: 100%;
+  max-width: min(26.5rem, calc(100vw - 1.5rem));
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  box-sizing: border-box;
+}
+body.college-verify-email-page .cve-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(31, 88, 195, 0.12);
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.28), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  padding: 1.5rem 1.35rem 1.35rem;
+}
+body.college-verify-email-page .cve-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin: 0 0 1.15rem;
+  min-width: 0;
+  max-width: 100%;
+}
+body.college-verify-email-page .cve-brand-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: #1F58C3;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  box-shadow: 0 8px 16px -10px rgba(31, 88, 195, 0.8);
+}
+body.college-verify-email-page .cve-brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  min-width: 0;
+  text-align: left;
+}
+body.college-verify-email-page .cve-brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+body.college-verify-email-page .cve-brand-name .blue { color: #1F58C3; }
+body.college-verify-email-page .cve-brand-name .amber { color: #F59E0B; }
+body.college-verify-email-page .cve-brand-sub {
+  margin-top: 0.12rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+body.college-verify-email-page .cve-icon {
+  margin: 0 auto 0.85rem;
+}
+body.college-verify-email-page .cve-title {
+  margin: 0 0 0.4rem;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+body.college-verify-email-page .cve-lead,
+body.college-verify-email-page .cve-note {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+body.college-verify-email-page .cve-lead {
+  margin: 0 0 1.1rem;
+  max-width: 100%;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+body.college-verify-email-page .cve-id {
+  margin: 0 0 1rem;
+  padding: 0.95rem 1rem 0.9rem;
+  border-radius: 0.9rem;
+  background: #eef4fb;
+  border: 1px solid rgba(31, 88, 195, 0.08);
+}
+body.college-verify-email-page .cve-id__k {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+body.college-verify-email-page .cve-id__v {
+  display: block;
+  margin-top: 0.28rem;
+  color: #1F58C3;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  word-break: break-word;
+}
+body.college-verify-email-page .cve-id__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+body.college-verify-email-page .cve-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.7rem 1.15rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: #1F58C3;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+body.college-verify-email-page .cve-btn:hover {
+  background: #1E40AF;
+  transform: translateY(-1px);
+}
+body.college-verify-email-page .cve-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1F58C3;
+}
+body.college-verify-email-page .cve-btn--secondary {
+  margin-top: 0.65rem;
+  background: #fff;
+  color: #1F58C3;
+  border: 1px solid rgba(31, 88, 195, 0.28);
+}
+body.college-verify-email-page .cve-btn--secondary:hover {
+  background: #eff6ff;
+}
+body.college-verify-email-page .cve-note {
+  margin: 0.85rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+body.college-verify-email-page .cve-resend {
+  margin-top: 0.85rem;
+  text-align: left;
+}
+body.college-verify-email-page .cve-resend .reg-top-label {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+body.college-verify-email-page .cve-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+body.college-verify-email-page .cve-links a {
+  color: #1F58C3;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+body.college-verify-email-page .cve-links a:hover {
+  text-decoration: underline;
+}
+body.college-verify-email-page .cve-foot {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.72rem;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  body.college-student-registration.college-verify-email-page {
+    padding: 0.85rem 0.75rem 1.1rem;
+  }
+  body.college-verify-email-page .cve-card {
+    padding: 1.2rem 1rem 1.1rem;
+  }
+  body.college-verify-email-page .cve-brand-name {
+    font-size: 0.98rem;
+  }
+  body.college-verify-email-page .cve-brand-sub {
+    letter-spacing: 0.08em;
+  }
+  body.college-verify-email-page .cve-title {
+    font-size: 1.1rem;
+  }
+  body.college-verify-email-page .cve-id__v {
+    font-size: 1.35rem;
   }
 }

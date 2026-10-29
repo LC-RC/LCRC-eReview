@@ -120,6 +120,14 @@ function ereview_require_college_examination_portal(): void
         ereview_redirect('index');
         exit;
     }
+    if (!ereview_session_can_enter_portal($conn, 'college_examination', $userId)) {
+        if (ereview_session_can_enter_portal($conn, 'ereview', $userId)) {
+            $_SESSION['error'] = 'Sign in with your College Examination password to open that portal.';
+            ereview_redirect('student_dashboard');
+            exit;
+        }
+        ereview_session_end_no_enterable_portal(true);
+    }
     $_SESSION['active_portal'] = 'college_examination';
 }
 
@@ -212,6 +220,8 @@ function ereview_enforce_lms_student_session(?mysqli $conn = null): void
     $allowWithoutFullAccess = [
         'student_payment_proof.php' => true,
         'logout.php' => true,
+        'portal_select.php' => true,
+        'auth_success.php' => true,
     ];
     if (isset($allowWithoutFullAccess[$script])) {
         // Still hard-block archived / rejected even on allowlisted pages.
@@ -238,6 +248,19 @@ function ereview_enforce_lms_student_session(?mysqli $conn = null): void
     require_once __DIR__ . '/commerce_access_gate.php';
     $gate = commerce_student_can_login($conn, $user);
     if (!empty($gate['ok'])) {
+        $skipCredential = [
+            'portal_select.php' => true,
+            'auth_success.php' => true,
+            'logout.php' => true,
+        ];
+        if (!isset($skipCredential[$script])
+            && !ereview_request_is_college_examination_surface()
+            && !ereview_session_can_enter_portal($conn, 'ereview', $uid, $user)
+        ) {
+            ereview_redirect('portal_select');
+            exit;
+        }
+
         return;
     }
 
@@ -412,8 +435,153 @@ function ereview_portal_dashboard_url(string $portal): string
     return ereview_url('student_dashboard');
 }
 
+function ereview_request_is_college_examination_surface(): bool
+{
+    $script = strtolower(basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    if (str_starts_with($script, 'college_')) {
+        return true;
+    }
+    $uri = str_replace('\\', '/', strtolower((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+
+    return str_contains($uri, '/examination/');
+}
+
+function ereview_session_mark_password_auth(string $primaryStore, bool $alsoMatchedOther): void
+{
+    $primaryStore = $primaryStore === 'college' ? 'college' : 'lms';
+    $stores = [$primaryStore];
+    if ($alsoMatchedOther) {
+        $stores[] = $primaryStore === 'college' ? 'lms' : 'college';
+    }
+    $_SESSION['auth_via'] = 'password_' . $primaryStore;
+    $_SESSION['auth_identity'] = false;
+    $_SESSION['auth_matched_stores'] = $stores;
+    unset($_SESSION['active_portal']);
+}
+
 /**
- * Resolve post-login destination; may return portal selector URL.
+ * Independently authorize password stores for the shared login form.
+ * LMS success is users.password only. College success is college_auth_credentials
+ * only. Matching one store never proves the other. A leftover LMS hash on a
+ * College-only account is not an authorized LMS credential.
+ *
+ * @return array{lms:bool,college:bool,stores:list<string>}
+ */
+function ereview_password_login_authorized_stores(
+    bool $lmsHashMatched,
+    bool $collegeHashMatched,
+    bool $isStaff,
+    bool $hasEreviewAccess,
+    bool $hasCollegeAccess
+): array {
+    $lms = $lmsHashMatched && ($isStaff || $hasEreviewAccess);
+    $college = $collegeHashMatched && !$isStaff && $hasCollegeAccess;
+    $stores = [];
+    if ($lms) {
+        $stores[] = 'lms';
+    }
+    if ($college) {
+        $stores[] = 'college';
+    }
+
+    return ['lms' => $lms, 'college' => $college, 'stores' => $stores];
+}
+
+/**
+ * Identity login (Google / magic link) proves the shared users profile only.
+ * Policy: LMS is enterable after a valid identity login. College is enterable
+ * only when a college_auth_credentials row already exists. Access flags alone
+ * never grant College. This does not treat a College password as an LMS
+ * password, or the reverse.
+ */
+function ereview_session_mark_identity_auth(string $via, bool $collegeCredentialReady = false): void
+{
+    $via = strtolower(trim($via));
+    if ($via === '') {
+        $via = 'identity';
+    }
+    $_SESSION['auth_via'] = $via;
+    $_SESSION['auth_identity'] = true;
+    $_SESSION['auth_matched_stores'] = $collegeCredentialReady ? ['lms', 'college'] : ['lms'];
+    unset($_SESSION['active_portal']);
+}
+
+function ereview_session_mark_remember_auth(string $store): void
+{
+    $store = $store === 'college' ? 'college' : 'lms';
+    $_SESSION['auth_via'] = 'remember_' . $store;
+    $_SESSION['auth_identity'] = false;
+    $_SESSION['auth_matched_stores'] = [$store];
+    unset($_SESSION['active_portal']);
+}
+
+/**
+ * Portal choice: access flags AND a matched credential store.
+ * Missing auth_via is treated as LMS-only (never every portal).
+ * Identity sessions still require 'college' in auth_matched_stores to enter College.
+ *
+ * @param list<string> $availablePortals
+ */
+function ereview_session_allows_portal_choice(string $portal, array $availablePortals): bool
+{
+    if (!in_array($portal, $availablePortals, true)) {
+        return false;
+    }
+    $store = $portal === 'college_examination' ? 'college' : 'lms';
+    if (!isset($_SESSION['auth_via'])) {
+        return $store === 'lms';
+    }
+    $matched = $_SESSION['auth_matched_stores'] ?? [];
+    if (!is_array($matched)) {
+        return false;
+    }
+
+    return in_array($store, $matched, true);
+}
+
+function ereview_session_can_enter_portal(mysqli $conn, string $portal, int $userId, ?array $user = null): bool
+{
+    $available = ereview_user_available_portals($conn, $userId, $user);
+
+    return ereview_session_allows_portal_choice($portal, $available);
+}
+
+/**
+ * @return list<string>
+ */
+function ereview_user_enterable_portals(mysqli $conn, int $userId, ?array $user = null): array
+{
+    $enterable = [];
+    foreach (ereview_user_available_portals($conn, $userId, $user) as $portal) {
+        if (ereview_session_can_enter_portal($conn, $portal, $userId, $user)) {
+            $enterable[] = $portal;
+        }
+    }
+
+    return $enterable;
+}
+
+function ereview_session_end_no_enterable_portal(bool $preferCollegeLogin = false): void
+{
+    unset(
+        $_SESSION['user_id'],
+        $_SESSION['role'],
+        $_SESSION['full_name'],
+        $_SESSION['email'],
+        $_SESSION['auth_via'],
+        $_SESSION['auth_identity'],
+        $_SESSION['auth_matched_stores'],
+        $_SESSION['active_portal']
+    );
+    $_SESSION['error'] = 'Sign in with the password for this portal, or use Forgot password to set a College Examination password.';
+    $_SESSION['error_type'] = 'invalid_credentials';
+    unset($_SESSION['ereview_ui_portal']);
+    header('Location: login');
+    exit;
+}
+
+/**
+ * Resolve post-login destination from portals the session can actually enter.
  */
 function ereview_user_post_login_url(mysqli $conn, int $userId, ?array $user = null): string
 {
@@ -425,24 +593,21 @@ function ereview_user_post_login_url(mysqli $conn, int $userId, ?array $user = n
     if (function_exists('isStaffRole') && isStaffRole($role)) {
         return function_exists('dashboardUrlForRole') ? dashboardUrlForRole($role) : ereview_url('admin_dashboard');
     }
-    $portals = ereview_user_available_portals($conn, $userId, $user);
-    if (count($portals) === 0) {
+    $available = ereview_user_available_portals($conn, $userId, $user);
+    $enterable = ereview_user_enterable_portals($conn, $userId, $user);
+    if (count($enterable) === 0) {
         return ereview_url('login');
     }
 
-    // Examination-mode lock: college_examination_access=active routes to the College
-    // Examination portal. eReview grants/SCA stay intact and are not revoked.
-    if (in_array('college_examination', $portals, true)) {
-        $_SESSION['active_portal'] = 'college_examination';
+    if (count($enterable) === 1 && ereview_session_can_enter_portal($conn, $enterable[0], $userId, $user)) {
+        $_SESSION['active_portal'] = $enterable[0];
 
-        return ereview_portal_dashboard_url('college_examination');
+        return ereview_portal_dashboard_url($enterable[0]);
     }
 
-    if (count($portals) === 1) {
-        $_SESSION['active_portal'] = $portals[0];
-
-        return ereview_portal_dashboard_url($portals[0]);
+    if (count($available) > 1) {
+        return ereview_url('portal_select');
     }
 
-    return ereview_url('portal_select');
+    return ereview_url('login');
 }

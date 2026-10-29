@@ -15,17 +15,20 @@ if (!isLoggedIn() || !verifySession()) {
 
 $userId = (int) getCurrentUserId();
 $portals = ereview_user_available_portals($conn, $userId);
+$enterable = ereview_user_enterable_portals($conn, $userId);
 
-if (count($portals) === 0) {
-    $_SESSION['error'] = 'Your account does not have access to any platform module.';
-    header('Location: ' . ereview_url('login'));
-    exit;
+if (count($portals) === 0 || $enterable === []) {
+    $preferCollege = in_array('college_examination', $portals, true);
+    ereview_session_end_no_enterable_portal($preferCollege);
 }
 
 if (count($portals) === 1) {
-    $_SESSION['active_portal'] = $portals[0];
-    header('Location: ' . ereview_portal_dashboard_url($portals[0]));
-    exit;
+    if (ereview_session_can_enter_portal($conn, $portals[0], $userId)) {
+        $_SESSION['active_portal'] = $portals[0];
+        header('Location: ' . ereview_portal_dashboard_url($portals[0]));
+        exit;
+    }
+    ereview_session_end_no_enterable_portal($portals[0] === 'college_examination');
 }
 
 $error = null;
@@ -35,17 +38,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid request. Please try again.';
     } else {
         $choice = trim((string) ($_POST['portal'] ?? ''));
-        if ($choice === 'ereview' && in_array('ereview', $portals, true)) {
+        if ($choice === 'ereview' && ereview_session_can_enter_portal($conn, 'ereview', $userId)) {
             $_SESSION['active_portal'] = 'ereview';
+            if (!empty($_SESSION['pending_remember_me'])) {
+                unset($_SESSION['pending_remember_me']);
+                require_once __DIR__ . '/remember_me.php';
+                setRememberMeCookie($userId, 'lms');
+            }
             header('Location: ' . ereview_portal_dashboard_url('ereview'));
             exit;
         }
-        if ($choice === 'college_examination' && in_array('college_examination', $portals, true)) {
+        if ($choice === 'college_examination' && ereview_session_can_enter_portal($conn, 'college_examination', $userId)) {
             $_SESSION['active_portal'] = 'college_examination';
+            if (!empty($_SESSION['pending_remember_me'])) {
+                unset($_SESSION['pending_remember_me']);
+                require_once __DIR__ . '/remember_me.php';
+                setRememberMeCookie($userId, 'college');
+            }
             header('Location: ' . ereview_portal_dashboard_url('college_examination'));
             exit;
         }
-        $error = 'Please choose a valid portal.';
+        if (in_array($choice, $portals, true)) {
+            $error = 'That portal needs its own password.';
+        } else {
+            $error = 'Please choose a valid portal.';
+        }
     }
 }
 
@@ -107,7 +124,7 @@ $pageTitle = 'Choose Portal';
 <body>
   <div class="portal-card">
     <h1>Welcome, <?php echo h($fullName); ?></h1>
-    <p class="lead">Where would you like to go?</p>
+    <p class="lead">Choose a portal you are authorized to use.</p>
     <?php if ($error): ?>
       <p class="portal-error"><?php echo h($error); ?></p>
     <?php endif; ?>
@@ -115,7 +132,7 @@ $pageTitle = 'Choose Portal';
       <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
       <?php if (in_array('ereview', $portals, true)): ?>
       <button type="submit" name="portal" value="ereview" class="portal-option">
-        <strong><i class="bi bi-book"></i> eReview</strong>
+        <strong><i class="bi bi-book"></i> eReview LMS</strong>
         <span>Review your learning materials, lectures, handouts, and quizzes.</span>
       </button>
       <?php endif; ?>

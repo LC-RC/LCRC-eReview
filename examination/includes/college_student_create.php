@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/college_sections.php';
 require_once __DIR__ . '/college_student_number.php';
 require_once __DIR__ . '/college_schools.php';
+require_once __DIR__ . '/college_auth_credentials.php';
 
 function college_password_meets_policy(string $password): bool
 {
@@ -143,6 +144,7 @@ function college_student_create_from_request(mysqli $conn, array $post, ?array $
     $school = (string) $prepared['school'];
     $schoolId = (int) ($prepared['school_id'] ?? 0);
     $hash = password_hash((string) $prepared['password'], PASSWORD_DEFAULT);
+    $lmsHash = college_auth_unusable_lms_password_hash();
     $profilePicturePath = (string) $prepared['profile_picture_path'];
     $avatarUseDefault = (int) $prepared['use_default_avatar'];
     $avatarPreviewPath = (string) $prepared['avatar_preview_path'];
@@ -157,6 +159,7 @@ function college_student_create_from_request(mysqli $conn, array $post, ?array $
             $profilePicturePath,
             $avatarUseDefault,
             $email,
+            $lmsHash,
             $hash,
             $initialStatus,
             $schoolId
@@ -191,7 +194,8 @@ function college_student_create_staff_once(
     string $profilePicturePath,
     int $avatarUseDefault,
     string $email,
-    string $hash,
+    string $lmsHash,
+    string $collegeHash,
     string $initialStatus,
     int $schoolId = 0
 ): array {
@@ -266,7 +270,7 @@ function college_student_create_staff_once(
 
             return ['ok' => false, 'error' => 'Could not create account.'];
         }
-        mysqli_stmt_bind_param($ins, 'ssssissss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $hash, $initialStatus, $studentNumber);
+        mysqli_stmt_bind_param($ins, 'ssssissss', $fullName, $school, $section, $profilePicturePath, $avatarUseDefault, $email, $lmsHash, $initialStatus, $studentNumber);
     } else {
         $ins = mysqli_prepare(
             $conn,
@@ -278,7 +282,7 @@ function college_student_create_staff_once(
 
             return ['ok' => false, 'error' => 'Could not create account.'];
         }
-        mysqli_stmt_bind_param($ins, 'sssssss', $fullName, $school, $section, $email, $hash, $initialStatus, $studentNumber);
+        mysqli_stmt_bind_param($ins, 'sssssss', $fullName, $school, $section, $email, $lmsHash, $initialStatus, $studentNumber);
     }
 
     if (!mysqli_stmt_execute($ins)) {
@@ -293,6 +297,11 @@ function college_student_create_staff_once(
     }
     $newId = (int) mysqli_insert_id($conn);
     mysqli_stmt_close($ins);
+    if ($newId <= 0 || $collegeHash === '' || !college_auth_credentials_put($conn, $newId, $collegeHash)) {
+        mysqli_rollback($conn);
+
+        return ['ok' => false, 'error' => 'Could not create account.'];
+    }
     if ($schoolId > 0) {
         college_schools_apply_user_fk($conn, $newId, $schoolId);
     }

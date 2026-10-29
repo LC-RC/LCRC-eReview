@@ -9,6 +9,10 @@ if (isLoggedIn() && verifySession()) {
     require_once __DIR__ . '/includes/college_schema.php';
     $uid = (int) getCurrentUserId();
     $userRow = ereview_user_load_platform_row($conn, $uid);
+    if ($userRow && !isStaffRole((string) ($userRow['role'] ?? '')) && ereview_user_enterable_portals($conn, $uid, $userRow) === []) {
+        $preferCollege = in_array('college_examination', ereview_user_available_portals($conn, $uid, $userRow), true);
+        ereview_session_end_no_enterable_portal($preferCollege);
+    }
     header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
@@ -53,6 +57,16 @@ if (!empty($_GET['magic'])) {
             $_SESSION['role'] = $user['role'];
             $_SESSION['created'] = time();
             $_SESSION['last_activity'] = time();
+            require_once __DIR__ . '/includes/platform_access.php';
+            require_once __DIR__ . '/examination/includes/college_auth_credentials.php';
+            $collegeCredReady = college_auth_credentials_exists($conn, (int) $user['user_id']);
+            ereview_session_mark_identity_auth('magic', $collegeCredReady);
+            if (!isStaffRole((string) ($user['role'] ?? ''))
+                && ereview_user_enterable_portals($conn, (int) $user['user_id'], $user) === []
+            ) {
+                $preferCollege = ereview_user_has_college_examination_access($conn, (int) $user['user_id'], $user);
+                ereview_session_end_no_enterable_portal($preferCollege);
+            }
             $uid = (int) $user['user_id'];
             $now = date('Y-m-d H:i:s');
             $ip = function_exists('getLoginClientIp') ? getLoginClientIp() : ($_SERVER['REMOTE_ADDR'] ?? '');
@@ -78,18 +92,7 @@ if (!empty($_GET['magic'])) {
 }
 
 $pageTitle = 'Login';
-if (isset($_GET['portal'])) {
-    $portalParam = strtolower(trim((string) $_GET['portal']));
-    if ($portalParam === 'examination' || $portalParam === 'college') {
-        $_SESSION['ereview_ui_portal'] = 'examination';
-    } elseif ($portalParam === 'lms' || $portalParam === 'ereview') {
-        unset($_SESSION['ereview_ui_portal']);
-    }
-}
-$collegePortal = (($_SESSION['ereview_ui_portal'] ?? '') === 'examination');
-if ($collegePortal) {
-    $pageTitle = 'Examination Portal';
-}
+unset($_SESSION['ereview_ui_portal']);
 $error = $_SESSION['error'] ?? null;
 $errorType = $_SESSION['error_type'] ?? 'invalid_credentials';
 $rateLimitUntil = isset($_SESSION['rate_limit_until']) ? (int) $_SESSION['rate_limit_until'] : null;
@@ -157,14 +160,8 @@ if (isset($_SESSION['google_redirect_uri'])) {
 <head>
   <?php require_once __DIR__ . '/includes/head_public.php'; ?>
   <?php require_once __DIR__ . '/includes/auth_theme_light_glass.php'; ?>
-  <?php
-  $collegeLoginCss = __DIR__ . '/assets/css/college-student-registration.css';
-  if ($collegePortal && is_file($collegeLoginCss)):
-  ?>
-  <link rel="stylesheet" href="assets/css/<?php echo h(basename($collegeLoginCss)); ?>?v=<?php echo filemtime($collegeLoginCss); ?>">
-  <?php endif; ?>
 </head>
-<body class="auth-page login-prototype min-h-screen font-sans antialiased<?php echo $collegePortal ? ' college-examination-login' : ''; ?>" data-login-error="<?php echo ($error && !$showRateLimitBlock) ? '1' : '0'; ?>" data-login-error-message="<?php echo ($error && !$showRateLimitBlock) ? h($error) : ''; ?>" data-login-error-title="<?php echo ($error && !$showRateLimitBlock) ? h($errorModalTitle) : ''; ?>" data-login-error-type="<?php echo ($error && !$showRateLimitBlock) ? h($errorType) : ''; ?>" data-rate-limit-until="<?php echo $showRateLimitBlock ? $rateLimitUntil : ''; ?>">
+<body class="auth-page login-prototype min-h-screen font-sans antialiased" data-login-error="<?php echo ($error && !$showRateLimitBlock) ? '1' : '0'; ?>" data-login-error-message="<?php echo ($error && !$showRateLimitBlock) ? h($error) : ''; ?>" data-login-error-title="<?php echo ($error && !$showRateLimitBlock) ? h($errorModalTitle) : ''; ?>" data-login-error-type="<?php echo ($error && !$showRateLimitBlock) ? h($errorType) : ''; ?>" data-rate-limit-until="<?php echo $showRateLimitBlock ? $rateLimitUntil : ''; ?>">
   <div class="animated-bg"></div>
   <div class="circuit-bg" aria-hidden="true"></div>
   <div class="login-bg-blob" aria-hidden="true"></div>
@@ -206,39 +203,20 @@ if (isset($_SESSION['google_redirect_uri'])) {
     <span class="auth-corner-dot tl"></span><span class="auth-corner-dot tr blue"></span>
     <span class="auth-corner-dot bl blue"></span><span class="auth-corner-dot br"></span>
   </div>
-  <?php if ($collegePortal): ?>
-  <div class="lep-shell">
-    <?php require __DIR__ . '/includes/college_portal_rail.php'; ?>
-    <div class="lep-stage lep-stage--login">
-  <?php endif; ?>
   <div class="login-page-layout relative z-10">
     <div class="login-card-wrap w-full mx-auto">
       <div class="login-card">
         <div class="flex flex-col items-center login-piece login-piece-1 login-header">
           <div class="login-logo-wrap flex items-center justify-center login-logo-hover">
-            <?php if ($collegePortal): ?>
-            <img src="assets/branding/lcrc-logo.png" alt="LCRC Review School &amp; Training Center" class="login-logo-img" width="72" height="72" loading="eager" decoding="async">
-            <?php else: ?>
             <img src="image%20assets/lms-logo.png" alt="LCRC eReview" class="login-logo-img" width="160" height="62" loading="eager" decoding="async">
-            <?php endif; ?>
           </div>
-          <?php if ($collegePortal): ?>
-          <span class="brand-text">LCRC <span class="amber">Examination Portal</span></span>
-          <?php else: ?>
           <span class="brand-text"><span class="blue">LCRC</span> <span class="amber">eReview</span></span>
-          <?php endif; ?>
         </div>
 
         <div class="text-center login-piece login-piece-2 login-welcome">
-          <?php if ($collegePortal): ?>
-          <h1>Sign in</h1>
-          <p class="login-value-statement">Access assigned College Examinations with your verified student account.</p>
-          <p class="subtext login-signup-line">Need an examination account? <a href="student_registration">Register</a></p>
-          <?php else: ?>
           <h1>Welcome Back</h1>
           <p class="login-value-statement">Sign in to continue your CPA review journey.</p>
           <p class="subtext login-signup-line">Don&rsquo;t have an account yet? <a href="registration">Sign up</a></p>
-          <?php endif; ?>
         </div>
 
         <?php if ($showRateLimitBlock): ?>
@@ -357,17 +335,9 @@ if (isset($_SESSION['google_redirect_uri'])) {
       </div>
     </div>
     <footer class="login-footer-copy text-center">
-      <?php if ($collegePortal): ?>
-      © <?php echo date('Y'); ?> LCRC Examination Portal
-      <?php else: ?>
       © Copyright 2026 LCRC eReview. All rights reserved. · Built for aspiring CPAs
-      <?php endif; ?>
     </footer>
   </div>
-  <?php if ($collegePortal): ?>
-    </div>
-  </div>
-  <?php endif; ?>
   <div id="login-loading" class="login-loading-backdrop" aria-hidden="true" hidden>
     <div class="login-loading-stack">
       <div class="login-loading-orb">

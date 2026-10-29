@@ -536,7 +536,9 @@ if (!function_exists('ereview_profile_apply_update')) {
 
         if ($updatePassword) {
             require_once __DIR__ . '/../remember_me.php';
-            if (function_exists('clearRememberMeForUserId')) {
+            if (function_exists('clearRememberMeForUserIdAndPortal')) {
+                clearRememberMeForUserIdAndPortal($userId, 'lms');
+            } elseif (function_exists('clearRememberMeForUserId')) {
                 clearRememberMeForUserId($userId);
             }
         }

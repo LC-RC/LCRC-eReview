@@ -86,8 +86,12 @@ try {
     $mark('TEST2 same password hash preserved', password_verify('Testpass123!', (string) ($emailChk['password'] ?? '')), '');
     $portals2 = ereview_user_available_portals($conn, $erId);
     $mark('TEST2 dual portals', $portals2 === ['ereview', 'college_examination'], json_encode($portals2));
+    ereview_session_mark_password_auth('lms', true);
     $url2 = ereview_user_post_login_url($conn, $erId);
-    $mark('TEST2 post-login → College Examination (exam mode)', str_contains($url2, 'college_student_dashboard'), $url2);
+    $mark('TEST2 both stores matched → portal select', str_contains($url2, 'portal_select'), $url2);
+    ereview_session_mark_password_auth('lms', false);
+    $url2Lms = ereview_user_post_login_url($conn, $erId);
+    $mark('TEST2 LMS-only match → eReview dashboard', str_contains($url2Lms, 'student_dashboard') && !str_contains($url2Lms, 'portal_select') && !str_contains($url2Lms, 'college_student_dashboard'), $url2Lms);
     $mark(
         'TEST2 incomplete login row still dual',
         count(ereview_user_available_portals($conn, $erId, $incomplete)) === 2,
@@ -197,6 +201,7 @@ try {
     $mark('TEST8 legacy no ereview access', !ereview_user_has_ereview_access($conn, $legId), '');
     $legPortals = ereview_user_available_portals($conn, $legId);
     $mark('TEST8 legacy single examination portal', $legPortals === ['college_examination'], json_encode($legPortals));
+    ereview_session_mark_password_auth('college', false);
     $legUrl = ereview_user_post_login_url($conn, $legId);
     $mark('TEST8 legacy post-login → examination dashboard', str_contains($legUrl, 'college_student_dashboard'), $legUrl);
     $legExaminee = ereview_load_college_examinee_user($conn, $legId);

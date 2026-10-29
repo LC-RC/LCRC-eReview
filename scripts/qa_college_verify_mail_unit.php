@@ -78,6 +78,52 @@ $pass('resend form is not inside the alert paragraph', str_contains($regSrc, 'cl
 $pass('confirmation has resend action', str_contains($regSrc, 'college_resend_verification'));
 $pass('confirm overlay keeps the registration form', str_contains($regSrc, 'id="reg-form"'));
 $pass('waiting modal is present for generic confirm', str_contains($regSrc, 'id="csr-modal-waiting"') && str_contains($regSrc, 'Waiting for email verification'));
+$pass('waiting modal has continue to login', str_contains($regSrc, 'id="csr-waiting-continue"') && str_contains($regSrc, 'Continue to login'));
+$pass('existing-account modal is present', str_contains($regSrc, 'id="csr-modal-existing"') && str_contains($regSrc, 'college_forgot_password'));
+$pass('verified overlay is present for generic confirm', str_contains($regSrc, 'id="csr-modal-verified"') && str_contains($regSrc, 'Email verified successfully!'));
+$pass('verified overlay does not show student number', !preg_match('/csr-modal-verified[\s\S]*student_number|csr-verified-heading[\s\S]*College Exam ID/', $regSrc));
+$pass('verified overlay has a single continue-to-login CTA', substr_count($regSrc, 'id="csr-verified-continue"') === 1);
+$pass('confirm page exposes session status URL only on pending verify', str_contains($regSrc, 'data-csr-status-url') && str_contains($regSrc, 'college_registration_status'));
+$pass('waiting copy does not claim inbox delivery', str_contains($regSrc, 'This tab does not confirm Inbox delivery'));
+
+$jsSrc = (string) file_get_contents($root . '/assets/js/college-student-registration.js');
+$pass('college JS does not poll check_verification', !str_contains($jsSrc, 'check_verification'));
+$pass('college JS listens for same-origin verify signal', str_contains($jsSrc, "BroadcastChannel('csr-college-email-verified')") && str_contains($jsSrc, 'showVerifiedModal'));
+$pass('college JS confirms success via session status endpoint', str_contains($jsSrc, 'confirmVerifiedFromServer') && str_contains($jsSrc, 'data-csr-status-url'));
+$pass('college JS does not treat BroadcastChannel as verified', str_contains($jsSrc, 'confirmVerifiedFromServer();') && !preg_match('/BroadcastChannel[\s\S]{0,400}showVerifiedModal\(\)/', $jsSrc));
+$pass('college JS keeps waiting on network failure', str_contains($jsSrc, ').catch(function () {})'));
+
+$pass('pending confirm without user is not verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => false], null) === ['ok' => true, 'verified' => false]);
+$pass('unverified user row is not verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => false], ['role' => 'college_student', 'email_verified' => 0]) === ['ok' => true, 'verified' => false]);
+$pass('verified college_student is verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => false], ['role' => 'college_student', 'email_verified' => 1]) === ['ok' => true, 'verified' => true]);
+$pass('verified LMS dual-access active is verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => false], ['role' => 'student', 'email_verified' => 1, 'college_examination_access' => 'active']) === ['ok' => true, 'verified' => true]);
+$pass('LMS-only verified student is not college-verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => false], ['role' => 'student', 'email_verified' => 1, 'college_examination_access' => 'none']) === ['ok' => true, 'verified' => false]);
+$pass('missing confirm session is not ok', college_public_confirm_status_decide(null, ['role' => 'college_student', 'email_verified' => 1]) === ['ok' => false, 'verified' => false]);
+$pass('existing-college confirm is not treated as new verify', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => true, 'mail_failed' => false], ['role' => 'college_student', 'email_verified' => 1]) === ['ok' => true, 'verified' => false]);
+$pass('mail-failed confirm is not treated as verified', college_public_confirm_status_decide(['email' => 'a@example.com', 'existing_college' => false, 'mail_failed' => true], ['role' => 'college_student', 'email_verified' => 1]) === ['ok' => true, 'verified' => false]);
+$pass('empty email confirm is not ok', college_public_confirm_status_decide(['email' => '', 'existing_college' => false, 'mail_failed' => false], ['role' => 'college_student', 'email_verified' => 1]) === ['ok' => false, 'verified' => false]);
+
+$statusSrc = (string) file_get_contents($root . '/examination/college_registration_status.php');
+$pass('status endpoint is GET JSON', str_contains($statusSrc, "Content-Type: application/json") && str_contains($statusSrc, 'college_public_confirm_verified_status'));
+$pass('status endpoint ignores request email', !preg_match('/\$_GET\[.email.\]|\$_POST\[.email.\]|\$_REQUEST\[.email.\]/', $statusSrc));
+$pass('status endpoint does not return student number or email', !str_contains($statusSrc, 'student_number') && !str_contains($statusSrc, "'email'"));
+$pass('status endpoint does not accept tokens', !preg_match('/\$_GET\[.token.\]|\$_POST\[.token.\]|\$_REQUEST\[.token.\]/', $statusSrc));
+
+$verifySrc = (string) file_get_contents($root . '/examination/college_verify_email.php');
+$pass(
+    'verify success signals same-origin tabs',
+    str_contains($verifySrc, "BroadcastChannel('csr-college-email-verified')")
+    && str_contains($verifySrc, 'postMessage({ ok: true })')
+);
+$pass('verify signal is success-only', preg_match('/if \(\$ok\):[\s\S]*BroadcastChannel[\s\S]*endif/', $verifySrc) === 1);
+$pass('verify signal does not include token', !preg_match('/BroadcastChannel[\s\S]{0,500}\$_GET\[.token/', $verifySrc) && !preg_match('/postMessage\([^)]*token/', $verifySrc));
+$pass('verify signal does not include student number', !preg_match('/postMessage\([^)]*student/', $verifySrc));
+$pass('verify page still completes token verification', str_contains($verifySrc, 'college_complete_verification($conn'));
+$pass('verify success uses backend College Exam ID', str_contains($verifySrc, '$studentNumber') && str_contains($verifySrc, '$examIdDisplay') && !str_contains($verifySrc, '2026-025'));
+$pass('verify continue goes to shared login', str_contains($verifySrc, 'href="login"') && str_contains($verifySrc, 'Continue to login'));
+$pass('verify emailed-ID note is mail-sent only', str_contains($verifySrc, '$mailSent') && str_contains($verifySrc, 'number_email_sent') && str_contains($verifySrc, 'has also been sent to your verified email'));
+$pass('verify error state still offers resend and register', str_contains($verifySrc, 'college_resend_verification') && str_contains($verifySrc, 'student_registration'));
+$pass('verify page does not change exam-ID allocation', !str_contains($verifySrc, 'college_student_number_allocate'));
 $pass('registration POST success uses 303 redirect', str_contains($regSrc, ", true, 303)"));
 $pass('registration uses attempted-mail-failed helper', str_contains($regSrc, 'college_public_attempted_mail_failed($result)'));
 $pass('registration GET confirm does not call register', !preg_match('/college_public_register_from_request[\s\S]*confirm=1/', $regSrc) && str_contains($regSrc, 'college_public_confirm_session_get'));

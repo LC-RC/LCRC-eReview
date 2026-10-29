@@ -77,7 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = mysqli_prepare($conn, "UPDATE users SET password = ? WHERE user_id = ?");
         mysqli_stmt_bind_param($stmt, 'si', $hashed, $tokenValid['user_id']);
         if (mysqli_stmt_execute($stmt)) {
-            clearRememberMeForUserId((int)$tokenValid['user_id']);
+            if (function_exists('clearRememberMeForUserIdAndPortal')) {
+                clearRememberMeForUserIdAndPortal((int)$tokenValid['user_id'], 'lms');
+            } else {
+                clearRememberMeForUserId((int)$tokenValid['user_id']);
+            }
             deletePasswordResetToken($tokenValid['token_id']);
             mysqli_stmt_close($stmt);
             header('Location: login');

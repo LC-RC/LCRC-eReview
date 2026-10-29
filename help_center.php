@@ -2,6 +2,10 @@
 require_once __DIR__ . '/auth.php';
 requireLogin();
 $role = (string)($_SESSION['role'] ?? '');
+if ($role === 'college_student') {
+    require_once __DIR__ . '/includes/platform_access.php';
+    ereview_require_college_examination_portal();
+}
 $pageTitle = 'Help Center';
 
 if (!in_array($role, ['student', 'college_student', 'admin', 'professor_admin'], true)) {

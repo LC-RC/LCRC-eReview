@@ -43,6 +43,7 @@ $pass('session default mail_failed is false', empty($put['mail_failed']));
 $got = college_public_confirm_session_get(COLLEGE_REG_CONFIRM_SESSION_KEY);
 $pass('session peek returns stored email', is_array($got) && ($got['email'] ?? '') === 'student@example.com');
 $pass('session peek default mail_failed is false', is_array($got) && empty($got['mail_failed']));
+$pass('session peek default existing_college is false', is_array($got) && empty($got['existing_college']));
 
 college_public_confirm_session_put(COLLEGE_REG_CONFIRM_SESSION_KEY, 'student@example.com', true);
 $failedGot = college_public_confirm_session_get(COLLEGE_REG_CONFIRM_SESSION_KEY);
@@ -99,7 +100,10 @@ $pass(
     $registerFn !== '' && $upsertAt !== false && $sendAt !== false && $upsertAt < $sendAt
 );
 $pass('register does not delete users', $registerFn !== '' && !preg_match('/DELETE\s+FROM\s+users/i', $registerFn));
-$pass('existing non-college path returns generic without send', str_contains($src, "return ['ok' => true, 'generic' => true, 'sent' => false];"));
+$pass('staff/other path still returns generic without send', str_contains($src, "return ['ok' => true, 'generic' => true, 'sent' => false];"));
+$pass('existing college register returns existing_college', str_contains($src, "'existing_college' => true"));
+$pass('register uses college account namespace helper', str_contains($src, 'college_user_account_namespace($user)'));
+$pass('LMS-only is not treated as existing college', str_contains($src, "'lms_only'") && str_contains($src, "if (\$ns === 'college')") && !preg_match('/if \(\$role !== \'college_student\' \|\| \$verified\)/', $src));
 $pass('PHP mail fallback still skipped', str_contains($src, 'skipping PHP mail() fallback'));
 $pass('rate limit still consumed on register', str_contains($src, "college_verify_rate_limit_consume(\$conn, 'register'"));
 $pass('resend still consumes resend rate limit', str_contains($src, "college_verify_rate_limit_consume(\$conn, 'resend'"));
@@ -126,6 +130,11 @@ $pass('source: heading is Continue verification', str_contains($regSrc, 'Continu
 $pass('source: mail-failed heading is present', str_contains($regSrc, 'Verification email not sent'));
 $pass('source: failed card uses LMS error modal', str_contains($regSrc, 'reg-error-card') && str_contains($regSrc, 'reg-error-backdrop'));
 $pass('source: generic confirm uses LMS overlay modal', str_contains($regSrc, 'reg-modal-backdrop') && str_contains($regSrc, 'csr-modal-mail-icon'));
+$pass('source: waiting modal offers continue to login', str_contains($regSrc, 'id="csr-waiting-continue"') && str_contains($regSrc, 'Continue to login'));
+$pass('source: verified overlay is present', str_contains($regSrc, 'id="csr-modal-verified"'));
+$pass('source: existing-account overlay is present', str_contains($regSrc, 'id="csr-modal-existing"') && str_contains($regSrc, 'Account already exists'));
+$pass('source: existing-account offers college reset', str_contains($regSrc, 'college_forgot_password') && str_contains($regSrc, 'Reset password'));
+$pass('source: register stores existing_college flash', str_contains($regSrc, '!empty($result[\'existing_college\'])'));
 $pass('source: generic confirm does not say use the inbox', !str_contains($regSrc, 'Use the inbox for'));
 $pass('GET confirm does not call register helper', substr_count($regSrc, 'college_public_register_from_request') === 1);
 $pass('POST still calls register once', substr_count($regSrc, 'college_public_register_from_request($conn, $_POST, $_FILES)') === 1);
@@ -155,6 +164,8 @@ $pass('resend mail-failed keeps the form', str_contains($resendSrc, 'if ($mailFa
 $pass('resend mail-failed heading is present', str_contains($resendSrc, 'Verification email not sent'));
 $pass('resend success does not claim link replacement', !preg_match('/new link replaces|invalidates the previous/i', $resendSrc));
 $pass('resend email uses static top label', str_contains($resendSrc, 'reg-top-label') && !str_contains($resendSrc, 'float-label-wrap'));
+$pass('resend waiting modal offers continue to login', str_contains($resendSrc, 'id="csr-waiting-continue"'));
+$pass('resend verified overlay is present', str_contains($resendSrc, 'id="csr-modal-verified"'));
 
 $smtpSrc = (string) file_get_contents($root . '/smtp_sender.php');
 $pass('smtp TLS verify_peer still enabled', str_contains($smtpSrc, "'verify_peer' => true"));

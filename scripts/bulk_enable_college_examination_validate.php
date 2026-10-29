@@ -212,8 +212,9 @@ try {
 
     // TEST 7: login routing for examination-enabled student
     $u7 = ereview_user_load_platform_row($conn, $idsA[0]);
+    ereview_session_mark_password_auth('lms', true);
     $url7 = ereview_user_post_login_url($conn, $idsA[0], $u7);
-    $mark('TEST7 routes to College Examination', str_contains($url7, 'college_student_dashboard'), $url7);
+    $mark('TEST7 dual-access both stores → portal select', str_contains($url7, 'portal_select'), $url7);
     $emailPass = mysqli_fetch_assoc(mysqli_query($conn, 'SELECT email, password, role FROM users WHERE user_id=' . (int) $idsA[0]));
     $mark('TEST7 same credentials identity', ($emailPass['role'] ?? '') === 'student' && password_verify('Testpass123!', (string) ($emailPass['password'] ?? '')), (string) ($emailPass['email'] ?? ''));
 
@@ -241,9 +242,10 @@ try {
             $noSecOk = false;
         }
     }
+    ereview_session_mark_password_auth('lms', true);
     $url9 = ereview_user_post_login_url($conn, $idsNoSec[0], ereview_user_load_platform_row($conn, $idsNoSec[0]));
     $mark('TEST9 enable without section', $noSecOk, json_encode($r9));
-    $mark('TEST9 no-section login routes to College Examination', str_contains($url9, 'college_student_dashboard'), $url9);
+    $mark('TEST9 no-section both stores → portal select', str_contains($url9, 'portal_select'), $url9);
     if (isset($examId) && $examId > 0) {
         $assignedNoSec = examination_pure_assigned_user_ids($conn, 'regular', $examId);
         $blockedNoSec = true;

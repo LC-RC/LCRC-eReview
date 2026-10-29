@@ -3,6 +3,10 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/remember_me.php';
 requireLogin();
 $role = (string)($_SESSION['role'] ?? '');
+if ($role === 'college_student') {
+    require_once __DIR__ . '/includes/platform_access.php';
+    ereview_require_college_examination_portal();
+}
 $pageTitle = 'Preferences';
 $csrf = generateCSRFToken();
 $rememberMessage = null;

@@ -45,9 +45,12 @@ function rememberMeTableExists() {
     return $exists;
 }
 
-function rememberMeTableColumns() {
+function rememberMeTableColumns($refresh = false) {
     global $conn;
     static $cols = null;
+    if ($refresh) {
+        $cols = null;
+    }
     if ($cols !== null) return $cols;
     $cols = [];
     if (!rememberMeTableExists()) return $cols;
@@ -62,6 +65,19 @@ function rememberMeTableColumns() {
     return $cols;
 }
 
+function rememberMeNormalizePortal($portal) {
+    $p = strtolower(trim((string) $portal));
+    if ($p === 'college' || $p === 'college_examination' || $p === 'examination') {
+        return 'college';
+    }
+    return 'lms';
+}
+
+function rememberMeHasPortalColumn() {
+    $cols = rememberMeTableColumns();
+    return !empty($cols['portal']);
+}
+
 function rememberMeClientIp() {
     if (function_exists('getLoginClientIp')) {
         return (string)getLoginClientIp();
@@ -72,8 +88,9 @@ function rememberMeClientIp() {
 /**
  * Set remember-me cookie and store token in DB after successful login.
  * @param int $userId
+ * @param string $portal lms|college
  */
-function setRememberMeCookie($userId) {
+function setRememberMeCookie($userId, $portal = 'lms') {
     global $conn;
     $userId = (int) $userId;
     if ($userId <= 0 || !rememberMeTableExists()) return;
@@ -86,11 +103,18 @@ function setRememberMeCookie($userId) {
     $cols = rememberMeTableColumns();
     $ip = substr(rememberMeClientIp(), 0, 45);
     $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500);
+    $portal = rememberMeNormalizePortal($portal);
 
     $insertCols = ['user_id', 'selector', 'token_hash', 'expires_at'];
     $insertVals = ['?', '?', '?', '?'];
     $types = 'isss';
     $bind = [$userId, $selector, $tokenHash, $expiresAt];
+    if (!empty($cols['portal'])) {
+        $insertCols[] = 'portal';
+        $insertVals[] = '?';
+        $types .= 's';
+        $bind[] = $portal;
+    }
 
     if (!empty($cols['last_used_at'])) {
         $insertCols[] = 'last_used_at';
@@ -122,22 +146,44 @@ function setRememberMeCookie($userId) {
     }
     mysqli_stmt_close($stmt);
 
-    // Prune old tokens for this user (keep at most MAX)
-    $stmt = @mysqli_prepare($conn, "SELECT id FROM remember_tokens WHERE user_id = ? ORDER BY created_at ASC");
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, 'i', $userId);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        $rows = $result ? mysqli_fetch_all($result, MYSQLI_ASSOC) : [];
-        mysqli_stmt_close($stmt);
-        if (count($rows) > REMEMBER_ME_MAX_TOKENS_PER_USER) {
-            $idsToDelete = array_slice(array_column($rows, 'id'), 0, count($rows) - REMEMBER_ME_MAX_TOKENS_PER_USER);
-            foreach ($idsToDelete as $id) {
-                $del = @mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE id = ?");
-                if ($del) {
-                    mysqli_stmt_bind_param($del, 'i', $id);
-                    @mysqli_stmt_execute($del);
-                    mysqli_stmt_close($del);
+    // Prune per portal so LMS and College tokens do not evict each other.
+    if (!empty($cols['portal'])) {
+        $stmt = mysqli_prepare($conn, "SELECT id FROM remember_tokens WHERE user_id = ? AND portal = ? ORDER BY created_at ASC");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'is', $userId, $portal);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $rows = $result ? mysqli_fetch_all($result, MYSQLI_ASSOC) : [];
+            mysqli_stmt_close($stmt);
+            if (count($rows) > REMEMBER_ME_MAX_TOKENS_PER_USER) {
+                $idsToDelete = array_slice(array_column($rows, 'id'), 0, count($rows) - REMEMBER_ME_MAX_TOKENS_PER_USER);
+                foreach ($idsToDelete as $id) {
+                    $del = mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE id = ?");
+                    if ($del) {
+                        mysqli_stmt_bind_param($del, 'i', $id);
+                        mysqli_stmt_execute($del);
+                        mysqli_stmt_close($del);
+                    }
+                }
+            }
+        }
+    } else {
+        $stmt = mysqli_prepare($conn, "SELECT id FROM remember_tokens WHERE user_id = ? ORDER BY created_at ASC");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'i', $userId);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $rows = $result ? mysqli_fetch_all($result, MYSQLI_ASSOC) : [];
+            mysqli_stmt_close($stmt);
+            if (count($rows) > REMEMBER_ME_MAX_TOKENS_PER_USER) {
+                $idsToDelete = array_slice(array_column($rows, 'id'), 0, count($rows) - REMEMBER_ME_MAX_TOKENS_PER_USER);
+                foreach ($idsToDelete as $id) {
+                    $del = mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE id = ?");
+                    if ($del) {
+                        mysqli_stmt_bind_param($del, 'i', $id);
+                        mysqli_stmt_execute($del);
+                        mysqli_stmt_close($del);
+                    }
                 }
             }
         }
@@ -189,7 +235,12 @@ function loginFromRememberMe() {
 
     if (!rememberMeTableExists()) return false;
 
-    $stmt = @mysqli_prepare($conn, "SELECT id, user_id, token_hash, expires_at FROM remember_tokens WHERE selector = ? AND expires_at > NOW() LIMIT 1");
+    $rmCols = rememberMeTableColumns();
+    $rmSelect = 'id, user_id, token_hash, expires_at';
+    if (!empty($rmCols['portal'])) {
+        $rmSelect .= ', portal';
+    }
+    $stmt = @mysqli_prepare($conn, "SELECT {$rmSelect} FROM remember_tokens WHERE selector = ? AND expires_at > NOW() LIMIT 1");
     if (!$stmt) return false;
     mysqli_stmt_bind_param($stmt, 's', $selector);
     if (!@mysqli_stmt_execute($stmt)) {
@@ -291,6 +342,10 @@ function loginFromRememberMe() {
     $_SESSION['role'] = $user['role'];
     $_SESSION['created'] = time();
     $_SESSION['last_activity'] = time();
+    $rememberPortal = rememberMeNormalizePortal($row['portal'] ?? 'lms');
+    if (function_exists('ereview_session_mark_remember_auth')) {
+        ereview_session_mark_remember_auth($rememberPortal);
+    }
 
     // Rotate in place (update then set cookie) so a failed Set-Cookie cannot orphan the session.
     $newSelector = bin2hex(random_bytes(8));
@@ -367,6 +422,33 @@ function clearRememberMeForUserId($userId) {
     $stmt = @mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE user_id = ?");
     if ($stmt) {
         mysqli_stmt_bind_param($stmt, 'i', $uid);
+        @mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
+}
+
+/**
+ * Invalidate remember-me tokens for one portal only.
+ * College reset must not delete LMS tokens. If the portal column is missing,
+ * college-scoped clears are a no-op so legacy LMS tokens stay intact.
+ */
+function clearRememberMeForUserIdAndPortal($userId, $portal) {
+    global $conn;
+    $uid = (int)$userId;
+    if ($uid <= 0 || !rememberMeTableExists()) {
+        return;
+    }
+    $portal = rememberMeNormalizePortal($portal);
+    $cols = rememberMeTableColumns();
+    if (empty($cols['portal'])) {
+        if ($portal === 'lms') {
+            clearRememberMeForUserId($uid);
+        }
+        return;
+    }
+    $stmt = @mysqli_prepare($conn, "DELETE FROM remember_tokens WHERE user_id = ? AND portal = ?");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, 'is', $uid, $portal);
         @mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
     }

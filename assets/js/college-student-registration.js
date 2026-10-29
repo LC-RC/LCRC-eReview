@@ -256,6 +256,8 @@
   function bindVerifyModals() {
     var sent = document.getElementById('csr-modal-email-sent');
     var waiting = document.getElementById('csr-modal-waiting');
+    var verified = document.getElementById('csr-modal-verified');
+    var existing = document.getElementById('csr-modal-existing');
     var err = document.getElementById('csr-modal-error');
     var ok = document.getElementById('csr-modal-email-sent-ok');
     var errClose = document.getElementById('csr-modal-error-close');
@@ -264,20 +266,97 @@
       return document.querySelector('.reg-modal-backdrop.is-active, .reg-error-backdrop.is-active');
     }
 
+    var statusUrl = (document.body.getAttribute('data-csr-status-url') || '').trim();
+    var confirmed = false;
+    var pollTimer = null;
+
+    function stopStatusPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    function showVerifiedModal() {
+      if (!verified) return false;
+      confirmed = true;
+      stopStatusPoll();
+      activateBackdrop(sent, false);
+      activateBackdrop(waiting, false);
+      activateBackdrop(existing, false);
+      activateBackdrop(err, false);
+      activateBackdrop(verified, true);
+      setPageInert(true);
+      focusIn(verified, document.getElementById('csr-verified-continue') || document.getElementById('csr-verified-heading'));
+      return true;
+    }
+
+    function confirmVerifiedFromServer() {
+      if (confirmed || !statusUrl || !verified) return;
+      fetch(statusUrl, {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'EreviewCollegeStatus'
+        }
+      }).then(function (res) {
+        if (!res.ok) throw new Error('status');
+        return res.json();
+      }).then(function (body) {
+        if (!body || body.ok !== true) {
+          if (body && body.ok === false) stopStatusPoll();
+          return;
+        }
+        if (body.verified === true) showVerifiedModal();
+      }).catch(function () {});
+    }
+
+    function startStatusPoll() {
+      if (!statusUrl || !verified || confirmed) return;
+      confirmVerifiedFromServer();
+      if (pollTimer) return;
+      pollTimer = setInterval(confirmVerifiedFromServer, 4000);
+    }
+
+    if (verified) {
+      try {
+        if (typeof BroadcastChannel === 'function') {
+          var ch = new BroadcastChannel('csr-college-email-verified');
+          ch.addEventListener('message', function (ev) {
+            var data = ev && ev.data;
+            if (!data || data.ok !== true) return;
+            confirmVerifiedFromServer();
+          });
+        }
+      } catch (e) {}
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') confirmVerifiedFromServer();
+      });
+      window.addEventListener('focus', confirmVerifiedFromServer);
+    }
+
     if (ok && sent && waiting) {
       ok.addEventListener('click', function () {
+        if (verified && verified.classList.contains('is-active')) return;
+        if (confirmed) return;
         activateBackdrop(sent, false);
         activateBackdrop(waiting, true);
         setPageInert(true);
-        focusIn(waiting, document.getElementById('csr-waiting-heading'));
+        focusIn(waiting, document.getElementById('csr-waiting-continue') || document.getElementById('csr-waiting-heading'));
+        startStatusPoll();
       });
     }
 
     document.querySelectorAll('.csr-confirm-resend').forEach(function (resendForm) {
       resendForm.addEventListener('submit', function () {
+        stopStatusPoll();
         var loadingModal = document.getElementById('csr-modal-loading');
         activateBackdrop(sent, false);
         activateBackdrop(waiting, false);
+        activateBackdrop(verified, false);
+        activateBackdrop(existing, false);
         activateBackdrop(err, false);
         activateBackdrop(loadingModal, true);
       });
@@ -331,11 +410,21 @@
     if (sent && sent.classList.contains('is-active')) {
       setPageInert(true);
       focusIn(sent, ok);
+      startStatusPoll();
+      return;
+    }
+    if (existing && existing.classList.contains('is-active')) {
+      setPageInert(true);
+      focusIn(existing, document.getElementById('csr-existing-login') || document.getElementById('csr-existing-heading'));
       return;
     }
     if (err && err.classList.contains('is-active')) {
       setPageInert(true);
       focusIn(err, errClose);
+      return;
+    }
+    if (waiting && waiting.classList.contains('is-active')) {
+      startStatusPoll();
     }
   }
 

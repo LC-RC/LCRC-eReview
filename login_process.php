@@ -90,26 +90,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $result = mysqli_stmt_get_result($stmt);
     $user = mysqli_fetch_assoc($result);
 
-    $isValid = false;
+    $lmsHashMatched = false;
+    $lmsPlaintextMatched = false;
+    $collegeHashMatched = false;
+    $isStaff = false;
     if ($user) {
-        $stored = (string)($user['password'] ?? '');
+        $isStaff = isStaffRole((string) ($user['role'] ?? ''));
+        $stored = (string) ($user['password'] ?? '');
         if ($stored !== '' && password_verify($password, $stored)) {
-            $isValid = true;
+            $lmsHashMatched = true;
         } elseif ($stored !== '' && !preg_match('/^\$2[ayb]\$/', $stored) && hash_equals($stored, $password)) {
-            // Legacy plaintext seed passwords: accept once, then upgrade to bcrypt.
-            $isValid = true;
-            $newHash = password_hash($password, PASSWORD_DEFAULT);
-            $upPw = @mysqli_prepare($conn, 'UPDATE users SET password = ? WHERE user_id = ? LIMIT 1');
-            if ($upPw) {
-                $uidUp = (int)$user['user_id'];
-                mysqli_stmt_bind_param($upPw, 'si', $newHash, $uidUp);
-                @mysqli_stmt_execute($upPw);
-                mysqli_stmt_close($upPw);
-            }
+            $lmsHashMatched = true;
+            $lmsPlaintextMatched = true;
+        }
+        if (!$isStaff) {
+            require_once __DIR__ . '/examination/includes/college_auth_credentials.php';
+            $collegeHashMatched = college_auth_credentials_verify($conn, (int) $user['user_id'], $password);
         }
     }
 
-    if ($isValid) {
+    $hasEreview = $user ? ereview_user_has_ereview_access($conn, (int) $user['user_id'], $user) : false;
+    $hasCollege = $user ? ereview_user_has_college_examination_access($conn, (int) $user['user_id'], $user) : false;
+    $authz = ereview_password_login_authorized_stores(
+        $lmsHashMatched,
+        $collegeHashMatched,
+        $isStaff,
+        $hasEreview,
+        $hasCollege
+    );
+
+    if ($authz['stores'] === [] && $user && $lmsHashMatched && !$isStaff && !$hasCollege) {
+        $gate = ereview_user_can_authenticate($conn, $user);
+        if (empty($gate['ok'])) {
+            $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
+            $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
+            header('Location: login');
+            exit;
+        }
+    }
+
+    if ($authz['stores'] !== []) {
         // Enforce email verification when column exists
         $cols = @mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email_verified'");
         if ($cols && mysqli_fetch_assoc($cols)) {
@@ -126,17 +146,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         }
-        // Platform access: eReview and/or College Examination (staff bypass).
-        if (!isStaffRole($user['role'])) {
-            require_once __DIR__ . '/includes/platform_access.php';
-            $gate = ereview_user_can_authenticate($conn, $user);
-            if (empty($gate['ok'])) {
-                $_SESSION['error'] = (string) ($gate['error'] ?? 'Your account is not approved yet.');
-                $_SESSION['error_type'] = (string) ($gate['error_type'] ?? 'not_approved');
-                header('Location: login');
-                exit;
-            }
-        }
 
         $examBlock = college_exam_login_blocked_by_active_exam_session($conn, (int)$user['user_id']);
         if ($examBlock !== null) {
@@ -146,6 +155,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit;
         }
 
+        if ($lmsPlaintextMatched && !empty($authz['lms'])) {
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $upPw = @mysqli_prepare($conn, 'UPDATE users SET password = ? WHERE user_id = ? LIMIT 1');
+            if ($upPw) {
+                $uidUp = (int) $user['user_id'];
+                mysqli_stmt_bind_param($upPw, 'si', $newHash, $uidUp);
+                @mysqli_stmt_execute($upPw);
+                mysqli_stmt_close($upPw);
+            }
+        }
+
         // Set session variables
         $_SESSION['user_id'] = $user['user_id'];
         $_SESSION['full_name'] = $user['full_name'];
@@ -153,6 +173,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['role'] = $user['role'];
         $_SESSION['created'] = time();
         $_SESSION['last_activity'] = time();
+        unset($_SESSION['ereview_ui_portal']);
+        if (!empty($authz['lms']) && !empty($authz['college'])) {
+            ereview_session_mark_password_auth('lms', true);
+        } elseif (!empty($authz['college'])) {
+            ereview_session_mark_password_auth('college', false);
+        } else {
+            ereview_session_mark_password_auth('lms', false);
+        }
 
         // Update last login (columns added by add_last_login.sql)
         $uid = (int) $user['user_id'];
@@ -178,7 +206,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         clearLoginAttempts();
         if (!empty($_POST['remember_me'])) {
-            setRememberMeCookie($user['user_id']);
+            if (count($authz['stores']) === 1) {
+                setRememberMeCookie($user['user_id'], $authz['stores'][0]);
+            } else {
+                $_SESSION['pending_remember_me'] = 1;
+            }
         }
         require_once __DIR__ . '/includes/admin_acl.php';
         admin_acl_ensure_schema($conn);
@@ -188,7 +220,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         users_activity_log(
             $conn,
             'login_success',
-            ['via' => 'password'],
+            ['via' => 'password', 'stores' => $authz['stores']],
             (int) $user['user_id'],
             (string) ($user['email'] ?? $email),
             (string) ($user['role'] ?? ''),

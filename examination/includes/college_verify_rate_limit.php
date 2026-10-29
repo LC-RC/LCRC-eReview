@@ -46,7 +46,7 @@ function college_verify_rate_limit_consume(mysqli $conn, string $action, string 
         return ['ok' => false, 'error' => 'unavailable'];
     }
     $action = strtolower(trim($action));
-    if (!in_array($action, ['register', 'resend', 'resend_number'], true)) {
+    if (!in_array($action, ['register', 'resend', 'resend_number', 'reset'], true)) {
         return ['ok' => false, 'error' => 'unavailable'];
     }
     $emailNorm = strtolower(trim($email));

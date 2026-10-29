@@ -56,7 +56,7 @@ $emailValue = $confirmEmail !== '' ? $confirmEmail : (string) ($_POST['email'] ?
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page college-student-registration registration-prototype csr-resend-page min-h-screen font-sans antialiased<?php echo $showModal ? ' csr-modal-open' : ''; ?>">
+<body class="auth-page college-student-registration registration-prototype csr-resend-page min-h-screen font-sans antialiased<?php echo $showModal ? ' csr-modal-open' : ''; ?>"<?php echo ($success && !$mailFailed) ? ' data-csr-status-url="' . h(ereview_url('college_registration_status')) . '"' : ''; ?>>
   <div class="reg-frame8-layout"<?php echo $showModal ? ' inert aria-hidden="true"' : ''; ?>>
     <div class="reg-frame8-left" aria-hidden="true">
       <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
@@ -150,7 +150,18 @@ $emailValue = $confirmEmail !== '' ? $confirmEmail : (string) ($_POST['email'] ?
       </div>
       <h2 id="csr-waiting-heading" tabindex="-1">Waiting for email verification</h2>
       <p>If a verification message was issued, open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
-      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This page does not confirm Inbox delivery and will not update automatically.</p>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This tab does not confirm Inbox delivery. If you already verified, continue to login. If you opened the link in another tab on this browser, this screen can update.</p>
+      <a href="login" class="btn-primary" id="csr-waiting-continue">Continue to login</a>
+    </div>
+  </div>
+  <div id="csr-modal-verified" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-verified-heading" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-success-check" aria-hidden="true">
+        <i class="bi bi-check-lg"></i>
+      </div>
+      <h2 id="csr-verified-heading" tabindex="-1">Email verified successfully!</h2>
+      <p>Your College Examination account is verified. You can now log in.</p>
+      <a href="login" class="btn-primary" id="csr-verified-continue">Continue to login</a>
     </div>
   </div>
   <?php elseif ($mailFailed): ?>

@@ -14,6 +14,7 @@ $error = null;
 $success = null;
 $confirmEmail = '';
 $mailFailed = false;
+$existingCollege = false;
 $formValues = [
     'full_name' => '',
     'email' => '',
@@ -44,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             college_public_confirm_session_put(
                 COLLEGE_REG_CONFIRM_SESSION_KEY,
                 (string) ($_POST['email'] ?? ''),
-                college_public_attempted_mail_failed($result)
+                college_public_attempted_mail_failed($result),
+                !empty($result['existing_college'])
             );
             header('Location: ' . college_public_safe_confirm_location('student_registration'), true, 303);
             exit;
@@ -54,7 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm = college_public_confirm_session_get(COLLEGE_REG_CONFIRM_SESSION_KEY);
     if ($confirm !== null) {
         $mailFailed = !empty($confirm['mail_failed']);
-        $success = $mailFailed ? COLLEGE_PUBLIC_MAIL_FAILED : COLLEGE_PUBLIC_GENERIC_VERIFY;
+        $existingCollege = !empty($confirm['existing_college']);
+        if ($existingCollege) {
+            $success = COLLEGE_PUBLIC_EXISTING_ACCOUNT;
+        } else {
+            $success = $mailFailed ? COLLEGE_PUBLIC_MAIL_FAILED : COLLEGE_PUBLIC_GENERIC_VERIFY;
+        }
         $confirmEmail = (string) ($confirm['email'] ?? '');
         if ($confirmEmail !== '') {
             $formValues['email'] = $confirmEmail;
@@ -73,7 +80,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-modal-open' : ''; ?>">
+<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-modal-open' : ''; ?>"<?php echo ($success && !$mailFailed && !$existingCollege) ? ' data-csr-status-url="' . h(ereview_url('college_registration_status')) . '"' : ''; ?>>
   <div class="reg-frame8-layout"<?php echo $success ? ' inert aria-hidden="true"' : ''; ?>>
     <div class="reg-frame8-left" aria-hidden="true">
       <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
@@ -256,6 +263,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
             </button>
             <p class="text-center text-xs subtext mt-3">
               Already have an account? <a href="login">Login</a>
+              · <a href="<?php echo h(ereview_url('college_forgot_password')); ?>">Reset password</a>
               · <a href="<?php echo h(ereview_url('college_resend_verification')); ?>">Resend verification</a>
               · Main eReview registration: <a href="registration">Register</a>
             </p>
@@ -278,7 +286,27 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
     </div>
   </div>
 
-  <?php if ($success && !$mailFailed): ?>
+  <?php if ($success && $existingCollege): ?>
+  <div id="csr-modal-existing" class="reg-modal-backdrop is-active" role="dialog" aria-modal="true" aria-labelledby="csr-existing-heading" aria-describedby="csr-existing-lead">
+    <div class="reg-modal-card">
+      <div class="csr-modal-mail-icon" aria-hidden="true">
+        <i class="bi bi-person-check-fill"></i>
+      </div>
+      <h2 id="csr-existing-heading">Account already exists</h2>
+      <p class="reg-flow-steps__modal-steps">College Examination · existing account</p>
+      <p class="csr-confirm-lead" id="csr-existing-lead" role="status"><?php echo h($success); ?></p>
+      <?php if ($confirmEmail !== ''): ?>
+        <p class="csr-confirm-email">Use this address to sign in or reset the password: <strong><?php echo h($confirmEmail); ?></strong></p>
+      <?php endif; ?>
+      <a href="login" class="btn-primary" id="csr-existing-login">Continue to login</a>
+      <form method="post" action="<?php echo h(ereview_url('college_forgot_password')); ?>" class="csr-confirm-resend">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="email" value="<?php echo h($confirmEmail); ?>">
+        <button type="submit" class="csr-modal-text-action">Reset password</button>
+      </form>
+    </div>
+  </div>
+  <?php elseif ($success && !$mailFailed): ?>
   <div id="csr-modal-email-sent" class="reg-modal-backdrop is-active" role="dialog" aria-modal="true" aria-labelledby="csr-confirm-heading" aria-describedby="csr-confirm-lead">
     <div class="reg-modal-card">
       <div class="csr-modal-mail-icon" aria-hidden="true">
@@ -306,7 +334,23 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       </div>
       <h2 id="csr-waiting-heading" tabindex="-1">Waiting for email verification</h2>
       <p>If a verification message was issued, open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
-      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This page does not confirm Inbox delivery and will not update automatically.</p>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This tab does not confirm Inbox delivery. If you already verified, continue to login. If you opened the link in another tab on this browser, this screen can update.</p>
+      <a href="login" class="btn-primary" id="csr-waiting-continue">Continue to login</a>
+      <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
+        <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
+        <input type="hidden" name="email" value="<?php echo h($confirmEmail); ?>">
+        <button type="submit" class="csr-modal-text-action">Resend verification</button>
+      </form>
+    </div>
+  </div>
+  <div id="csr-modal-verified" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-verified-heading" aria-hidden="true">
+    <div class="reg-modal-card">
+      <div class="reg-success-check" aria-hidden="true">
+        <i class="bi bi-check-lg"></i>
+      </div>
+      <h2 id="csr-verified-heading" tabindex="-1">Email verified successfully!</h2>
+      <p>Your College Examination account is verified. You can now log in.</p>
+      <a href="login" class="btn-primary" id="csr-verified-continue">Continue to login</a>
     </div>
   </div>
   <?php elseif ($success && $mailFailed): ?>

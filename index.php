@@ -8,6 +8,10 @@ if (isLoggedIn() && verifySession()) {
     global $conn;
     $uid = (int) getCurrentUserId();
     $userRow = ereview_user_load_platform_row($conn, $uid);
+    if ($userRow && !isStaffRole((string) ($userRow['role'] ?? '')) && ereview_user_enterable_portals($conn, $uid, $userRow) === []) {
+        $preferCollege = in_array('college_examination', ereview_user_available_portals($conn, $uid, $userRow), true);
+        ereview_session_end_no_enterable_portal($preferCollege);
+    }
     header('Location: ' . ($userRow ? ereview_resolve_post_login_url($conn, $userRow) : dashboardUrlForRole(getCurrentUserRole())));
     exit;
 }
