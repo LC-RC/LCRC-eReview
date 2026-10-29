@@ -173,7 +173,7 @@ function college_public_attempted_mail_failed(array $result): bool
 }
 
 /**
- * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool}
+ * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool, waiting:bool}
  */
 function college_public_confirm_session_put(string $sessionKey, string $email, bool $mailFailed = false, bool $existingCollege = false): array
 {
@@ -187,10 +187,41 @@ function college_public_confirm_session_put(string $sessionKey, string $email, b
         'exp' => time() + COLLEGE_REG_CONFIRM_TTL_SECONDS,
         'mail_failed' => $mailFailed,
         'existing_college' => $existingCollege,
+        'waiting' => false,
     ];
     $_SESSION[$sessionKey] = $payload;
 
     return $payload;
+}
+
+/**
+ * Mark the active registration/resend confirm session as on the waiting screen (server-side).
+ */
+function college_public_confirm_session_ack_waiting(): bool
+{
+    foreach ([COLLEGE_REG_CONFIRM_SESSION_KEY, COLLEGE_RESEND_CONFIRM_SESSION_KEY] as $sessionKey) {
+        $row = $_SESSION[$sessionKey] ?? null;
+        if (!is_array($row)) {
+            continue;
+        }
+        $exp = (int) ($row['exp'] ?? 0);
+        if ($exp < time()) {
+            continue;
+        }
+        if (!empty($row['existing_college']) || !empty($row['mail_failed'])) {
+            return false;
+        }
+        $email = strtolower(trim((string) ($row['email'] ?? '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        $_SESSION[$sessionKey]['waiting'] = true;
+        unset($_SESSION['college_status_poll_at'], $_SESSION['college_status_poll_last']);
+
+        return true;
+    }
+
+    return false;
 }
 
 function college_public_confirm_session_clear(string $sessionKey): void
@@ -199,7 +230,7 @@ function college_public_confirm_session_clear(string $sessionKey): void
 }
 
 /**
- * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool}|null
+ * @return array{email:string, exp:int, mail_failed:bool, existing_college:bool, waiting:bool}|null
  */
 function college_public_confirm_session_get(string $sessionKey): ?array
 {
@@ -223,6 +254,7 @@ function college_public_confirm_session_get(string $sessionKey): ?array
         'exp' => $exp,
         'mail_failed' => !empty($row['mail_failed']),
         'existing_college' => !empty($row['existing_college']),
+        'waiting' => !empty($row['waiting']),
     ];
 }
 

@@ -267,6 +267,7 @@
     }
 
     var statusUrl = (document.body.getAttribute('data-csr-status-url') || '').trim();
+    var statusCsrf = (document.body.getAttribute('data-csr-csrf') || '').trim();
     var confirmed = false;
     var pollTimer = null;
 
@@ -320,6 +321,40 @@
       pollTimer = setInterval(confirmVerifiedFromServer, 4000);
     }
 
+    function ackWaitingOnServer() {
+      if (!statusUrl || !statusCsrf) {
+        return Promise.resolve(false);
+      }
+      var body = 'action=ack_waiting&csrf_token=' + encodeURIComponent(statusCsrf);
+      return fetch(statusUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'EreviewCollegeStatus'
+        },
+        body: body
+      }).then(function (res) {
+        if (!res.ok) return false;
+        return res.json().then(function (payload) {
+          return !!(payload && payload.ok === true);
+        });
+      }).catch(function () {
+        return false;
+      });
+    }
+
+    function enterWaitingModal() {
+      if (!waiting) return;
+      activateBackdrop(sent, false);
+      activateBackdrop(waiting, true);
+      setPageInert(true);
+      focusIn(waiting, document.getElementById('csr-waiting-heading'));
+      startStatusPoll();
+    }
+
     if (verified) {
       try {
         if (typeof BroadcastChannel === 'function') {
@@ -341,11 +376,9 @@
       ok.addEventListener('click', function () {
         if (verified && verified.classList.contains('is-active')) return;
         if (confirmed) return;
-        activateBackdrop(sent, false);
-        activateBackdrop(waiting, true);
-        setPageInert(true);
-        focusIn(waiting, document.getElementById('csr-waiting-continue') || document.getElementById('csr-waiting-heading'));
-        startStatusPoll();
+        ackWaitingOnServer().finally(function () {
+          enterWaitingModal();
+        });
       });
     }
 
@@ -407,6 +440,18 @@
       }
     });
 
+    if (verified && verified.classList.contains('is-active')) {
+      confirmed = true;
+      setPageInert(true);
+      focusIn(verified, document.getElementById('csr-verified-continue') || document.getElementById('csr-verified-heading'));
+      return;
+    }
+    if (waiting && waiting.classList.contains('is-active')) {
+      setPageInert(true);
+      focusIn(waiting, document.getElementById('csr-waiting-heading'));
+      startStatusPoll();
+      return;
+    }
     if (sent && sent.classList.contains('is-active')) {
       setPageInert(true);
       focusIn(sent, ok);
@@ -422,9 +467,6 @@
       setPageInert(true);
       focusIn(err, errClose);
       return;
-    }
-    if (waiting && waiting.classList.contains('is-active')) {
-      startStatusPoll();
     }
   }
 

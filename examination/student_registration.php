@@ -15,6 +15,8 @@ $success = null;
 $confirmEmail = '';
 $mailFailed = false;
 $existingCollege = false;
+$confirmVerified = false;
+$confirmWaiting = false;
 $formValues = [
     'full_name' => '',
     'email' => '',
@@ -66,11 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($confirmEmail !== '') {
             $formValues['email'] = $confirmEmail;
         }
+        if (!$existingCollege && !$mailFailed) {
+            $verifyStatus = college_public_confirm_verified_status($conn);
+            $confirmVerified = !empty($verifyStatus['verified']);
+            $confirmWaiting = !$confirmVerified && !empty($confirm['waiting']);
+        }
     }
 }
 
 $regCssFile = dirname(__DIR__) . '/assets/css/college-student-registration.css';
 $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
+$pendingVerifyModal = $success && !$mailFailed && !$existingCollege;
+$showConfirmIntro = $pendingVerifyModal && !$confirmVerified && !$confirmWaiting;
+$showConfirmWaiting = $pendingVerifyModal && !$confirmVerified && $confirmWaiting;
+$showConfirmVerified = $pendingVerifyModal && $confirmVerified;
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -80,7 +91,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
   <link rel="stylesheet" href="assets/css/<?php echo h(basename($regCssFile)); ?>?v=<?php echo filemtime($regCssFile); ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-modal-open' : ''; ?>"<?php echo ($success && !$mailFailed && !$existingCollege) ? ' data-csr-status-url="' . h(ereview_url('college_registration_status')) . '"' : ''; ?>>
+<body class="auth-page registration-prototype college-student-registration min-h-screen font-sans antialiased<?php echo $success ? ' csr-modal-open' : ''; ?>"<?php echo $pendingVerifyModal ? ' data-csr-status-url="' . h(ereview_url('college_registration_status')) . '" data-csr-csrf="' . h($csrf) . '"' : ''; ?>>
   <div class="reg-frame8-layout"<?php echo $success ? ' inert aria-hidden="true"' : ''; ?>>
     <div class="reg-frame8-left" aria-hidden="true">
       <div class="reg-grok-blob reg-grok-blob-1" aria-hidden="true"></div>
@@ -307,7 +318,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
     </div>
   </div>
   <?php elseif ($success && !$mailFailed): ?>
-  <div id="csr-modal-email-sent" class="reg-modal-backdrop is-active" role="dialog" aria-modal="true" aria-labelledby="csr-confirm-heading" aria-describedby="csr-confirm-lead">
+  <div id="csr-modal-email-sent" class="reg-modal-backdrop<?php echo $showConfirmIntro ? ' is-active' : ''; ?>" role="dialog" aria-modal="true" aria-labelledby="csr-confirm-heading" aria-describedby="csr-confirm-lead"<?php echo $showConfirmIntro ? '' : ' aria-hidden="true"'; ?>>
     <div class="reg-modal-card">
       <div class="csr-modal-mail-icon" aria-hidden="true">
         <i class="bi bi-envelope-check-fill"></i>
@@ -327,15 +338,14 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       </form>
     </div>
   </div>
-  <div id="csr-modal-waiting" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-waiting-heading" aria-hidden="true">
+  <div id="csr-modal-waiting" class="reg-modal-backdrop<?php echo $showConfirmWaiting ? ' is-active' : ''; ?>" role="dialog" aria-modal="true" aria-labelledby="csr-waiting-heading"<?php echo $showConfirmWaiting ? '' : ' aria-hidden="true"'; ?>>
     <div class="reg-modal-card">
       <div class="reg-loading-orb" aria-hidden="true">
         <div class="reg-loading-orb-inner"><span></span></div>
       </div>
       <h2 id="csr-waiting-heading" tabindex="-1">Waiting for email verification</h2>
       <p>If a verification message was issued, open any valid link within 24 hours. Your account and College Exam ID are created only after you verify.</p>
-      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This tab does not confirm Inbox delivery. If you already verified, continue to login. If you opened the link in another tab on this browser, this screen can update.</p>
-      <a href="login" class="btn-primary" id="csr-waiting-continue">Continue to login</a>
+      <p class="text-sm" style="color:#64748b;margin-top:0.75rem;">This tab does not confirm Inbox delivery. If you opened the verification link in another tab on this browser, this screen updates when verification completes.</p>
       <form method="post" action="<?php echo h(ereview_url('college_resend_verification')); ?>" class="csr-confirm-resend">
         <input type="hidden" name="csrf_token" value="<?php echo h($csrf); ?>">
         <input type="hidden" name="email" value="<?php echo h($confirmEmail); ?>">
@@ -343,7 +353,7 @@ $regJsFile = dirname(__DIR__) . '/assets/js/college-student-registration.js';
       </form>
     </div>
   </div>
-  <div id="csr-modal-verified" class="reg-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="csr-verified-heading" aria-hidden="true">
+  <div id="csr-modal-verified" class="reg-modal-backdrop<?php echo $showConfirmVerified ? ' is-active' : ''; ?>" role="dialog" aria-modal="true" aria-labelledby="csr-verified-heading"<?php echo $showConfirmVerified ? '' : ' aria-hidden="true"'; ?>>
     <div class="reg-modal-card">
       <div class="reg-success-check" aria-hidden="true">
         <i class="bi bi-check-lg"></i>

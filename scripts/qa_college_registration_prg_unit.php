@@ -130,7 +130,7 @@ $pass('source: heading is Continue verification', str_contains($regSrc, 'Continu
 $pass('source: mail-failed heading is present', str_contains($regSrc, 'Verification email not sent'));
 $pass('source: failed card uses LMS error modal', str_contains($regSrc, 'reg-error-card') && str_contains($regSrc, 'reg-error-backdrop'));
 $pass('source: generic confirm uses LMS overlay modal', str_contains($regSrc, 'reg-modal-backdrop') && str_contains($regSrc, 'csr-modal-mail-icon'));
-$pass('source: waiting modal offers continue to login', str_contains($regSrc, 'id="csr-waiting-continue"') && str_contains($regSrc, 'Continue to login'));
+$pass('source: waiting modal does not offer continue to login', !str_contains($regSrc, 'id="csr-waiting-continue"'));
 $pass('source: verified overlay is present', str_contains($regSrc, 'id="csr-modal-verified"'));
 $pass('source: existing-account overlay is present', str_contains($regSrc, 'id="csr-modal-existing"') && str_contains($regSrc, 'Account already exists'));
 $pass('source: existing-account offers college reset', str_contains($regSrc, 'college_forgot_password') && str_contains($regSrc, 'Reset password'));
@@ -164,7 +164,7 @@ $pass('resend mail-failed keeps the form', str_contains($resendSrc, 'if ($mailFa
 $pass('resend mail-failed heading is present', str_contains($resendSrc, 'Verification email not sent'));
 $pass('resend success does not claim link replacement', !preg_match('/new link replaces|invalidates the previous/i', $resendSrc));
 $pass('resend email uses static top label', str_contains($resendSrc, 'reg-top-label') && !str_contains($resendSrc, 'float-label-wrap'));
-$pass('resend waiting modal offers continue to login', str_contains($resendSrc, 'id="csr-waiting-continue"'));
+$pass('resend waiting modal does not offer continue to login', !str_contains($resendSrc, 'id="csr-waiting-continue"'));
 $pass('resend verified overlay is present', str_contains($resendSrc, 'id="csr-modal-verified"'));
 
 $verifySrc = (string) file_get_contents($root . '/examination/includes/college_email_verification.php');
