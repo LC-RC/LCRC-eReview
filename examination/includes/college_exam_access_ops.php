@@ -63,7 +63,23 @@ function college_exam_access_rollback_row_stale_error(
 }
 
 /**
- * Staff-assigned school only. Legacy users.school text is not enough.
+ * True when the row already has a school on record (staff timestamp or
+ * nonempty legacy users.school). Does not write assignment columns.
+ *
+ * @param array<string,mixed> $row
+ */
+function college_exam_access_row_has_school_for_ops(array $row): bool
+{
+    if (function_exists('college_school_row_is_staff_assigned') && college_school_row_is_staff_assigned($row)) {
+        return true;
+    }
+
+    return college_exam_access_school_mapped(isset($row['school']) ? (string) $row['school'] : '');
+}
+
+/**
+ * Missing school on the users row. Legacy nonempty users.school is enough.
+ * Does not require college_school_assigned_at and does not create assignments.
  *
  * @param array<int, array<string,mixed>> $found
  * @return list<int>
@@ -72,10 +88,7 @@ function college_exam_access_unmapped_ids(array $found): array
 {
     $ids = [];
     foreach ($found as $uid => $row) {
-        $assigned = function_exists('college_school_row_is_staff_assigned')
-            ? college_school_row_is_staff_assigned($row)
-            : false;
-        if (!$assigned) {
+        if (!college_exam_access_row_has_school_for_ops($row)) {
             $ids[] = (int) $uid;
         }
     }
@@ -116,7 +129,7 @@ function college_exam_access_apply_for_ids(
     if ($unmapped !== []) {
         return [
             'ok' => false,
-            'error' => 'Cannot include students without a staff-assigned school (user IDs: ' . implode(', ', $unmapped) . '). Assign a school first. Legacy school text is not enough.',
+            'error' => 'Cannot include students without a school on record (user IDs: ' . implode(', ', $unmapped) . '). Existing users.school is enough. Assign a school only when the school field is empty.',
         ];
     }
 

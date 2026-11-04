@@ -111,6 +111,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $hasEreview = $user ? ereview_user_has_ereview_access($conn, (int) $user['user_id'], $user) : false;
     $hasCollege = $user ? ereview_user_has_college_examination_access($conn, (int) $user['user_id'], $user) : false;
+    if (
+        $user
+        && !$isStaff
+        && !$collegeHashMatched
+        && $hasCollege
+        && function_exists('college_auth_credentials_legacy_fallback_permitted')
+    ) {
+        $legacyCredRow = college_auth_credentials_load($conn, (int) $user['user_id']);
+        if (
+            college_auth_credentials_legacy_fallback_permitted($legacyCredRow, $hasCollege)
+            && college_auth_credentials_users_password_matches($password, (string) ($user['password'] ?? ''))
+        ) {
+            $collegeHashMatched = true;
+        }
+    }
     $authz = ereview_password_login_authorized_stores(
         $lmsHashMatched,
         $collegeHashMatched,

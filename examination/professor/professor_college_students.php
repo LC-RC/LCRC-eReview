@@ -498,12 +498,13 @@ $apiUrl = ereview_url('professor_college_students_api');
                   $schoolMapped = $schoolAssignmentReady
                       ? college_school_row_is_staff_assigned($u)
                       : false;
+                  $schoolForExamAccess = $schoolMapped || $schoolTxt !== '';
                   $canDisable = ($role === 'student' && $hasCollEx);
-                  $canDeactivateExam = $statusLower !== 'archived' && $schoolMapped && (
+                  $canDeactivateExam = $statusLower !== 'archived' && $schoolForExamAccess && (
                       ($role === 'college_student' && $collExAccessVal !== 'suspended')
                       || ($role === 'student' && $hasCollEx)
                   );
-                  $canActivateExam = $statusLower !== 'archived' && $schoolMapped && $collExAccessVal === 'suspended';
+                  $canActivateExam = $statusLower !== 'archived' && $schoolForExamAccess && $collExAccessVal === 'suspended';
                   // LMS-linked: remove exam access only. Native college: hard-delete account.
                   $canRemoveFromExam = ($statusLower !== 'archived' && $role === 'student' && in_array($collExAccessVal, ['active', 'suspended'], true));
                   $canDeleteNative = ($statusLower !== 'archived' && $role === 'college_student');
@@ -886,7 +887,7 @@ $apiUrl = ereview_url('professor_college_students_api');
         <span class="admin-modal__hero-icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
         <div>
           <h3 id="pcsDeactivateTitle" class="admin-modal__title">Deactivate exam access?</h3>
-          <p class="admin-modal__desc">Suspends College Examination access for <strong id="pcsDeactivateCount">0</strong> selected student(s) with a <strong>staff-assigned</strong> school. Accounts, numbers, and history are kept. Unassigned students are rejected. The school filter is not the target list — only checked IDs are sent.</p>
+          <p class="admin-modal__desc">Suspends College Examination access for <strong id="pcsDeactivateCount">0</strong> selected student(s) that have a school on record (staff-assigned or existing school text). Accounts, numbers, school, section, and history are kept. Students with an empty school field are rejected. The school filter is not the target list — only checked IDs are sent.</p>
         </div>
       </div>
       <div id="pcsDeactivateError" class="admin-modal__error"></div>

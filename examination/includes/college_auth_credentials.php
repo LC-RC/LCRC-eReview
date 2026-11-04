@@ -111,3 +111,31 @@ function college_auth_credentials_verify(mysqli $conn, int $userId, string $pass
 
     return $stored !== '' && password_verify($password, $stored);
 }
+
+/**
+ * Dedicated College credential rows always win. Legacy users.password is
+ * considered only when no college_auth_credentials row exists AND the caller
+ * has already established College Examination eligibility (approved, not
+ * suspended). Does not write hashes or grant eligibility.
+ */
+function college_auth_credentials_legacy_fallback_permitted(?array $credentialRow, bool $hasCollegeAccess): bool
+{
+    return $hasCollegeAccess && $credentialRow === null;
+}
+
+/**
+ * Same users.password checks as shared login (bcrypt, then legacy plaintext).
+ * Does not authorize the LMS store. Does not write users.password.
+ */
+function college_auth_credentials_users_password_matches(string $password, string $usersPasswordHash): bool
+{
+    if ($password === '' || $usersPasswordHash === '') {
+        return false;
+    }
+    if (password_verify($password, $usersPasswordHash)) {
+        return true;
+    }
+
+    return !preg_match('/^\$2[ayb]\$/', $usersPasswordHash)
+        && hash_equals($usersPasswordHash, $password);
+}

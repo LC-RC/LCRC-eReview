@@ -106,6 +106,18 @@ $staffLms = ereview_password_login_authorized_stores(true, true, true, false, fa
 $pass('shared login staff LMS password ignores College hash', $staffLms['stores'] === ['lms'] && $staffLms['lms'] && !$staffLms['college']);
 $lmsWrongCollege = ereview_password_login_authorized_stores(true, false, false, true, true);
 $pass('shared login LMS password does not prove College', $lmsWrongCollege['stores'] === ['lms']);
+$pass(
+    'legacy fallback refused when dedicated College row exists',
+    !college_auth_credentials_legacy_fallback_permitted(['user_id' => 1, 'password_hash' => 'x'], true)
+);
+$pass(
+    'legacy fallback refused without College eligibility',
+    !college_auth_credentials_legacy_fallback_permitted(null, false)
+);
+$pass(
+    'legacy fallback allowed when eligible and no College row',
+    college_auth_credentials_legacy_fallback_permitted(null, true)
+);
 $collegeWrongLms = ereview_password_login_authorized_stores(false, true, false, true, true);
 $pass('shared login College password does not prove LMS', $collegeWrongLms['stores'] === ['college']);
 
