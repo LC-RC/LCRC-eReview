@@ -14,6 +14,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 }
 
 $uid = (int)getCurrentUserId();
+// Professor poll only. Session values are already read; later work is DB/JSON.
+// $_SESSION remains readable in memory and is not written again on this GET.
+if (function_exists('ereview_release_session_lock')) {
+    ereview_release_session_lock();
+}
 $scope = examination_monitor_parse_scope($_GET);
 if ($scope === null) {
     echo json_encode(['ok' => false, 'error' => 'Invalid scope']);

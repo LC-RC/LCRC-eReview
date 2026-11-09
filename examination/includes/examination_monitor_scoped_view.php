@@ -2198,9 +2198,15 @@ if ($isCollege) {
       if (el.classList.contains(name) === !!on) return;
       el.classList.toggle(name, !!on);
     }
+    var pollInFlight = false;
     function tick() {
+      if (pollInFlight) return;
+      pollInFlight = true;
       fetch(liveUrl, { credentials: 'same-origin' })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          if (!r.ok) throw new Error('poll');
+          return r.json();
+        })
         .then(function (data) {
           if (!data || !data.ok) throw new Error('poll');
           var elT = document.getElementById('kpiTakingCount');
@@ -2442,6 +2448,9 @@ if ($isCollege) {
         })
         .catch(function () {
           if (pollEl) setTextIfChanged(pollEl, 'Update failed - retrying...');
+        })
+        .finally(function () {
+          pollInFlight = false;
         });
     }
     applyRosterFilters();
