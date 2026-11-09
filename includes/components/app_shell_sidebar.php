@@ -58,7 +58,7 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
   </div>
   <?php endif; ?>
   <?php if ($appShellTheme === 'admin'): ?>
-  <div class="app-shell-sidebar-header app-shell-sidebar-header--brand shrink-0">
+  <div class="app-shell-sidebar-header app-shell-sidebar-header--brand shrink-0<?php echo !empty($appShellDrawerClose) ? ' app-shell-sidebar-header--drawer-close' : ''; ?>">
     <a href="<?php echo h(ereview_url($appShellBrandHref)); ?>" class="app-shell-sidebar-brand-link" aria-label="LCRC eReview System, open Dashboard">
       <img src="<?php echo h(ereview_url('assets/branding/lcrc-logo.png')); ?>" alt="" class="app-shell-sidebar-brand-logo" width="42" height="42">
       <span class="app-shell-sidebar-brand-text">
@@ -66,6 +66,11 @@ $appShellSidebarTimeTooltip = 'Program time: ' . $appShellSidebarNow->format('g:
         <span class="app-shell-sidebar-brand-sub">eReview System</span>
       </span>
     </a>
+    <?php if (!empty($appShellDrawerClose)): ?>
+    <button type="button" id="app-sidebar-close-btn" class="app-shell-sidebar-close-btn app-shell-sidebar-close-btn--professor" aria-label="Close menu">
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
   <?php if ($appShellSidebarHeader === 'profile'): ?>

@@ -32,7 +32,71 @@ body.professor-admin {
   --prof-z-modal-ui: 210;
 }
 
-/* Contain overflow without body { overflow-x: hidden } */
+/* Contain overflow without body { overflow-x: hidden }.
+   examination-admin.css sets overflow-x:hidden on examination pages.
+   That computes overflow-y to auto, so the sticky sidebar scrolls away.
+   clip contains horizontal overflow and leaves vertical scrolling on the viewport. */
+body.admin-app.professor-admin {
+  overflow-x: clip;
+}
+
+/* Shared admin chrome hides the sidebar clock from 768px up and tints it green.
+   Professor Admin keeps the student sidebar clock: same size, ring, face, and hands. */
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-time-icon {
+  display: inline-flex;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-time-ring {
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0.45;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-svg {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.18));
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-face {
+  fill: #ffffff;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-rim {
+  stroke: rgba(22, 101, 160, 0.2);
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-ticks {
+  stroke: rgba(22, 101, 160, 0.35);
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-hand line {
+  stroke: #0f4c75;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-hand--sec line {
+  stroke: #0ea5e9;
+  opacity: 0.92;
+}
+
+body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-clock-pivot {
+  fill: #0f4c75;
+}
+
 body.professor-admin,
 body.professor-admin #main,
 body.admin-app.professor-admin .admin-content,
@@ -2129,6 +2193,45 @@ body.admin-app.professor-admin .ereview-profile-menu__link--danger .ereview-prof
 
   body.admin-app.professor-admin #app-sidebar .app-shell-nav-link {
     min-height: 2.75rem;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-header--drawer-close {
+    position: relative;
+    z-index: 2;
+    gap: 0.35rem;
+    padding-right: 0.55rem;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-header--drawer-close .app-shell-sidebar-brand-link {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-close-btn--professor {
+    display: inline-flex;
+    position: relative;
+    z-index: 3;
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(147, 180, 230, 0.7);
+    background: rgba(255, 255, 255, 0.92);
+    color: #1e3a5f;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-close-btn--professor:hover {
+    background: #ffffff;
+    color: #2563eb;
+  }
+
+  body.admin-app.professor-admin #app-sidebar .app-shell-sidebar-close-btn--professor:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
 
   html[data-admin-theme="light"][data-admin-ui="v2"] body.admin-app.professor-admin .admin-topbar-menu-btn.app-shell-menu-btn .burger-icon,

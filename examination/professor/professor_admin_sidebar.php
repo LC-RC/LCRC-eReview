@@ -8,6 +8,7 @@ $appShellTheme = 'admin';
 $appShellSidebarHeader = 'brand';
 $appShellBrandHref = 'professor_admin_dashboard';
 $appShellHideEmpowerPromo = true;
+$appShellDrawerClose = true;
 
 $appShellNavConfig = [
     [
