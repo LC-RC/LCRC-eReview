@@ -212,34 +212,159 @@ if (!function_exists('cer_review_choice_text')) {
     </div>
   </section>
 
+  <?php
+    $cerWeakTopics = [];
+    foreach ($regularBreakdown as $cerWeakSubject) {
+        if (!is_array($cerWeakSubject) || empty($cerWeakSubject['topics']) || !is_array($cerWeakSubject['topics'])) {
+            continue;
+        }
+        $cerWeakSubjectName = trim((string)($cerWeakSubject['subject_name'] ?? ''));
+        if ($cerWeakSubjectName === '') {
+            $cerWeakSubjectName = 'Subject';
+        }
+        foreach ($cerWeakSubject['topics'] as $cerWeakTopic) {
+            if (!is_array($cerWeakTopic)) {
+                continue;
+            }
+            $cerWeakName = trim((string)($cerWeakTopic['topic_name'] ?? ''));
+            $cerWeakTotal = (int)($cerWeakTopic['total'] ?? 0);
+            if ($cerWeakName === '' || $cerWeakTotal <= 0 || !is_numeric($cerWeakTopic['score_pct'] ?? null)) {
+                continue;
+            }
+            $cerWeakPct = (float)$cerWeakTopic['score_pct'];
+            if ($cerWeakPct >= 50) {
+                continue;
+            }
+            $cerWeakTopics[] = [
+                'topic_name' => $cerWeakName,
+                'subject_name' => $cerWeakSubjectName,
+                'correct' => (int)($cerWeakTopic['correct'] ?? 0),
+                'total' => $cerWeakTotal,
+                'score_pct' => $cerWeakPct,
+            ];
+        }
+    }
+    $cerWeakCount = count($cerWeakTopics);
+  ?>
+  <?php if ($cerWeakTopics !== []): ?>
+  <?php $cerWeakNoun = $cerWeakCount === 1 ? 'topic' : 'topics'; ?>
+  <section class="cer-weak" aria-labelledby="cer-weak-title">
+    <div class="cer-weak__head">
+      <div class="cer-weak__medal" aria-hidden="true">
+        <span class="cer-weak__medal-num"><?php echo (int)$cerWeakCount; ?></span>
+        <span class="cer-weak__medal-k"><?php echo h($cerWeakNoun); ?></span>
+      </div>
+      <div class="cer-weak__intro">
+        <h2 class="cer-weak__title" id="cer-weak-title">Weak topics</h2>
+        <p class="cer-weak__count"><?php echo (int)$cerWeakCount . ' ' . h($cerWeakNoun); ?> scored below 50%</p>
+      </div>
+    </div>
+    <ul class="cer-weak__list">
+      <?php foreach ($cerWeakTopics as $cerWeakRow): ?>
+        <?php
+          $cerWeakWidth = college_exam_format_score_percent(max(0, min(100, (float)$cerWeakRow['score_pct'])), false);
+          $cerWeakFraction = (int)$cerWeakRow['correct'] . '/' . (int)$cerWeakRow['total'] . ' correct';
+          $cerWeakPctLabel = college_exam_format_score_percent($cerWeakRow['score_pct']);
+        ?>
+        <li class="cer-weak__item">
+          <span class="cer-weak__mark" aria-hidden="true"><i class="bi bi-bookmark"></i></span>
+          <span class="cer-weak__identity">
+            <span class="cer-weak__topic"><?php echo h($cerWeakRow['topic_name']); ?></span>
+            <span class="cer-weak__subject"><?php echo h($cerWeakRow['subject_name']); ?></span>
+          </span>
+          <span class="cer-weak__score">
+            <span class="cer-weak__fraction"><?php echo h($cerWeakFraction); ?></span>
+            <span class="cer-weak__pct"><?php echo h($cerWeakPctLabel); ?></span>
+            <span class="cer-weak__label">Review</span>
+          </span>
+          <span class="cer-weak__bar" aria-hidden="true"><span class="cer-weak__bar-fill" style="width: <?php echo h($cerWeakWidth); ?>%"></span></span>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </section>
+  <?php endif; ?>
+
   <?php if ($regularBreakdown !== []): ?>
-  <section class="cer-summary-strip" aria-labelledby="cer-breakdown-title" style="margin-top:1rem;">
-    <h2 class="cer-summary-strip__title" id="cer-breakdown-title"><?php echo $regularBreakdownMode === 'subject_topic' ? 'Subject &amp; topic breakdown' : 'Subject breakdown'; ?></h2>
-    <div class="space-y-4">
+  <section class="cer-breakdown" aria-labelledby="cer-breakdown-title">
+    <h2 class="cer-breakdown__title" id="cer-breakdown-title"><?php echo $regularBreakdownMode === 'subject_topic' ? 'Subject &amp; topic breakdown' : 'Subject breakdown'; ?></h2>
+    <div class="cer-breakdown__list">
+      <?php $cerBdIndex = 0; ?>
       <?php foreach ($regularBreakdown as $subjBd): ?>
         <?php
+          if (!is_array($subjBd)) {
+              continue;
+          }
           $sName = (string)($subjBd['subject_name'] ?? 'Subject');
           $sPct = (float)($subjBd['score_pct'] ?? 0);
           $sCorrect = (int)($subjBd['correct'] ?? 0);
           $sTotal = (int)($subjBd['total'] ?? 0);
+          $sOnTrack = $sPct >= 50;
+          $sTone = $sOnTrack ? 'on-track' : 'review';
+          $sLabel = $sOnTrack ? 'On track' : 'Review';
+          $sWidth = college_exam_format_score_percent(max(0, min(100, $sPct)), false);
+          $sScoreLine = $sCorrect . '/' . $sTotal . ' correct — ' . college_exam_format_score_percent($sPct);
+          $sTopics = [];
+          if ($regularBreakdownMode === 'subject_topic' && !empty($subjBd['topics']) && is_array($subjBd['topics'])) {
+              foreach ($subjBd['topics'] as $topicBd) {
+                  if (is_array($topicBd)) {
+                      $sTopics[] = $topicBd;
+                  }
+              }
+          }
+          $sHasTopics = $sTopics !== [];
         ?>
-        <div class="rounded-xl border border-slate-200 p-4 bg-white">
-          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-            <strong><?php echo h($sName); ?></strong>
-            <span><?php echo h(college_exam_format_score_percent($sPct)); ?> · <?php echo $sCorrect; ?>/<?php echo $sTotal; ?></span>
+        <?php if ($sHasTopics): ?>
+        <details class="cer-breakdown__subject"<?php echo $cerBdIndex === 0 ? ' open' : ''; ?>>
+          <summary class="cer-breakdown__summary">
+            <span class="cer-breakdown__chevron" aria-hidden="true"></span>
+            <span class="cer-breakdown__row">
+              <span class="cer-breakdown__name"><?php echo h($sName); ?></span>
+              <span class="cer-breakdown__score">
+                <span class="cer-breakdown__fraction"><?php echo h($sScoreLine); ?></span>
+                <span class="cer-breakdown__label cer-breakdown__label--<?php echo h($sTone); ?>"><?php echo h($sLabel); ?></span>
+              </span>
+              <span class="cer-breakdown__bar" aria-hidden="true"><span class="cer-breakdown__bar-fill cer-breakdown__bar-fill--<?php echo h($sTone); ?>" style="width: <?php echo h($sWidth); ?>%"></span></span>
+            </span>
+          </summary>
+          <ul class="cer-breakdown__topics">
+            <?php foreach ($sTopics as $topicBd): ?>
+              <?php
+                $tName = (string)($topicBd['topic_name'] ?? 'Topic');
+                $tPct = (float)($topicBd['score_pct'] ?? 0);
+                $tCorrect = (int)($topicBd['correct'] ?? 0);
+                $tTotal = (int)($topicBd['total'] ?? 0);
+                $tOnTrack = $tPct >= 50;
+                $tTone = $tOnTrack ? 'on-track' : 'review';
+                $tLabel = $tOnTrack ? 'On track' : 'Review';
+                $tWidth = college_exam_format_score_percent(max(0, min(100, $tPct)), false);
+                $tScoreLine = $tCorrect . '/' . $tTotal . ' correct — ' . college_exam_format_score_percent($tPct);
+              ?>
+              <li class="cer-breakdown__topic cer-breakdown__row">
+                <span class="cer-breakdown__name"><?php echo h($tName); ?></span>
+                <span class="cer-breakdown__score">
+                  <span class="cer-breakdown__fraction"><?php echo h($tScoreLine); ?></span>
+                  <span class="cer-breakdown__label cer-breakdown__label--<?php echo h($tTone); ?>"><?php echo h($tLabel); ?></span>
+                </span>
+                <span class="cer-breakdown__bar" aria-hidden="true"><span class="cer-breakdown__bar-fill cer-breakdown__bar-fill--<?php echo h($tTone); ?>" style="width: <?php echo h($tWidth); ?>%"></span></span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </details>
+        <?php else: ?>
+        <div class="cer-breakdown__subject">
+          <div class="cer-breakdown__summary cer-breakdown__summary--static">
+            <span class="cer-breakdown__row">
+              <span class="cer-breakdown__name"><?php echo h($sName); ?></span>
+              <span class="cer-breakdown__score">
+                <span class="cer-breakdown__fraction"><?php echo h($sScoreLine); ?></span>
+                <span class="cer-breakdown__label cer-breakdown__label--<?php echo h($sTone); ?>"><?php echo h($sLabel); ?></span>
+              </span>
+              <span class="cer-breakdown__bar" aria-hidden="true"><span class="cer-breakdown__bar-fill cer-breakdown__bar-fill--<?php echo h($sTone); ?>" style="width: <?php echo h($sWidth); ?>%"></span></span>
+            </span>
           </div>
-          <?php if ($regularBreakdownMode === 'subject_topic' && !empty($subjBd['topics']) && is_array($subjBd['topics'])): ?>
-            <ul class="m-0 pl-4 text-sm space-y-1">
-              <?php foreach ($subjBd['topics'] as $topicBd): ?>
-                <li>
-                  <?php echo h((string)($topicBd['topic_name'] ?? 'Topic')); ?>
-                  — <?php echo (int)($topicBd['correct'] ?? 0); ?>/<?php echo (int)($topicBd['total'] ?? 0); ?>
-                  (<?php echo h(college_exam_format_score_percent((float)($topicBd['score_pct'] ?? 0))); ?>)
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          <?php endif; ?>
         </div>
+        <?php endif; ?>
+        <?php $cerBdIndex++; ?>
       <?php endforeach; ?>
     </div>
   </section>
