@@ -14,7 +14,7 @@ $uid = (int)getCurrentUserId();
 $scope = examination_monitor_parse_scope($_GET);
 $pack = examination_monitor_analytics_export_context($conn, $uid, $scope);
 if (empty($pack['ok'])) {
-    $_SESSION['message'] = 'Assessment not found.';
+    $_SESSION['message'] = (string)($pack['message'] ?? 'Assessment not found.');
     header('Location: ' . (string)($pack['redirect'] ?? 'professor_examination_monitor'));
     exit;
 }
@@ -24,6 +24,7 @@ examination_monitor_output_analytics_xlsx(
     (string)$ctx['title'],
     examination_monitor_analytics_scope_label((string)$pack['section_filter']),
     is_array($pack['analytics'] ?? null) ? $pack['analytics'] : [],
-    is_array($pack['progress_rows'] ?? null) ? $pack['progress_rows'] : []
+    is_array($pack['progress_rows'] ?? null) ? $pack['progress_rows'] : [],
+    is_array($pack['report'] ?? null) ? $pack['report'] : []
 );
 exit;
